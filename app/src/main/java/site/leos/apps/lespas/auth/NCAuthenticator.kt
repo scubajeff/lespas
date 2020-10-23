@@ -45,9 +45,13 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
         // If there is a authtoken, return it
         return if (authToken.isNotEmpty()) {
             Bundle().apply {
+                val userName = mContext.getString(R.string.nc_userdata_username)
+                val secretKey = mContext.getString(R.string.nc_userdata_secret)
                 putString(AccountManager.KEY_ACCOUNT_NAME, account?.name)
                 putString(AccountManager.KEY_ACCOUNT_TYPE, account?.type)
                 putString(AccountManager.KEY_AUTHTOKEN, authToken)
+                putString(userName, am.getUserData(account, userName))
+                putString(secretKey, am.getUserData(account, secretKey))
             }
         } else {
             // If we get here, then we couldn't access the user's password - so we need to re-prompt them for their credentials. We do that by creating
