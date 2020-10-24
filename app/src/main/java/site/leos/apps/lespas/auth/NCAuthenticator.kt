@@ -67,8 +67,7 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
         return if (accounts.isEmpty()) {
             getBundle(response)
         } else {
-            val h = Handler(mContext.mainLooper)
-            h.post { Toast.makeText(mContext, R.string.error_only_one_account, Toast.LENGTH_LONG).show() }
+            Handler(mContext.mainLooper).post { Toast.makeText(mContext, R.string.error_only_one_account, Toast.LENGTH_LONG).show() }
 
             Bundle().apply {
                 putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_REQUEST)

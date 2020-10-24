@@ -30,7 +30,7 @@
     <string name="network_error">Network error, try again.</string>
 
     <!-- Various Nextcloud access endpoints -->
-    <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities</string> <!-- No credentials needed -->
+    <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
     <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users/</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>
     <string name="dav_files_endpoint">/remote.php/dav/files/</string>

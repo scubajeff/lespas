@@ -46,7 +46,7 @@ class NCLoginActivity : AppCompatActivity() {
     private lateinit var hostInputText: TextInputEditText
     private lateinit var loadingSpinner: Drawable
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled")   // Nextcloud authentication page requires JavaScript enabled
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nc_login)
@@ -55,6 +55,8 @@ class NCLoginActivity : AppCompatActivity() {
         authWebpage = findViewById(R.id.nc_auth_page)
         inputArea = findViewById(R.id.input_area)
         hostInputText = findViewById(R.id.host)
+        loadingSpinner = getSpinnerDrawable()
+        (loadingSpinner as? Animatable)?.start()
 
         // Animate the welcome message on first run
         if (savedInstanceState == null) {
@@ -78,18 +80,10 @@ class NCLoginActivity : AppCompatActivity() {
             start()
         }
 
-        // Set a loading spinner for text input view
-        loadingSpinner = getProgressBarDrawable()
-        inputArea.run {
-            endIconDrawable = loadingSpinner
-            (loadingSpinner as? Animatable)?.start()
-        }
-
         hostInputText.run {
-            //if (savedInstanceState == null) append("https://")
             setOnEditorActionListener { _, id, _ ->
                 if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
-                    attemptLogin()
+                    prepareLogin()
                     true
                 } else false
             }
@@ -110,20 +104,21 @@ class NCLoginActivity : AppCompatActivity() {
             webViewClient = object: WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     request?.url?.apply {
+                        // Detect nextcloud's special credential url scheme to retrieve token
                         if (this.scheme.equals(resources.getString(R.string.nextcloud_credential_scheme))) saveTokenAndFinish(this.path.toString())
                     }
                     return false
                 }
 
                 override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
-                    if (errorResponse != null) view?.reload()
+                    if (errorResponse != null) view?.reload()   // TODO: better error handling
                     super.onReceivedHttpError(view, request, errorResponse)
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
 
-                    // Reveal the server login page only after it finished loading in the webview
+                    // Reveal the server authentication page only after it finished loading in this webview
                     if (view!!.visibility == View.GONE && url!!.contains(getString(R.string.login_flow_endpoint))) {
                         val duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                         authWebpage.apply {
@@ -180,8 +175,8 @@ class NCLoginActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    // Get system's private drawable resource of progressBar
-    private fun Context.getProgressBarDrawable(): Drawable {
+    /* Get system's private drawable resource of spinner */
+    private fun Context.getSpinnerDrawable(): Drawable {
         val value = TypedValue()
         theme.resolveAttribute(android.R.attr.progressBarStyleSmall, value, false)
         val progressBarStyle = value.data
@@ -199,17 +194,15 @@ class NCLoginActivity : AppCompatActivity() {
     }
 
     private fun saveTokenAndFinish(path: String) {
-        val destructedRegex = ("/server:(.*)&user:(.*)&password:(.*)").toRegex()
-
         authWebpage.stopLoading()
-        destructedRegex.matchEntire(path)?.destructured?.let { (server, username, token) ->
+
+        ("/server:(.*)&user:(.*)&password:(.*)").toRegex().matchEntire(path)?.destructured?.let { (server, username, token) ->
             val url = URL(server)
             val accountName = "$username@${url.host}"
             val account = Account(accountName, getString(R.string.account_type_nc))
             val am = AccountManager.get(baseContext)
             if (am.addAccountExplicitly(account, "", null)) {
                 am.run {
-                    //setAuthToken(account, server, token)
                     setAuthToken(account, server, token)    // authTokenType set to server address
                     setUserData(account, getString(R.string.nc_userdata_server), server)
                     setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
@@ -246,29 +239,33 @@ class NCLoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun attemptLogin() {
+    private fun prepareLogin() {
         val hostUrl = "https://" + hostInputText.text.toString().trim()
         var result: Int
 
-        val mPattern = Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
-        if (!mPattern.matcher(hostUrl).matches()) {
+        if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]").matcher(hostUrl).matches()) {
             hostInputText.error = getString(R.string.host_address_validation_error)
         } else {
             // Clean up the input area
             (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostInputText.windowToken, 0) }
-            hostInputText.error = null
-            hostInputText.isEnabled = false
-            inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
+            hostInputText.run {
+                error = null
+                isEnabled = false
+            }
+            // Set a loading spinner for text input view
+            inputArea.run {
+                endIconDrawable = loadingSpinner
+                endIconMode = TextInputLayout.END_ICON_CUSTOM
+            }
 
             CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
-                result = pingServer("$hostUrl${getString(R.string.server_capabilities_endpoint)}")
+                result = pingServer(hostUrl)
 
                 withContext(Dispatchers.Main) {
-                    if (result == 200) {
-                        HashMap<String, String>().run {
-                            put("OCS-APIREQUEST", "true")
-                            authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", this)
-                        }
+                    if (result == HttpURLConnection.HTTP_OK) {
+                        // If everything ok, start loading the nextcloud authentication page in webview
+                        // the webview will reveal after page loaded
+                        authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(NEXTCLOUD_OCSAPI_HEADER, "true") })
                     } else {
                         inputArea.endIconMode = TextInputLayout.END_ICON_NONE
                         hostInputText.apply {
@@ -285,17 +282,32 @@ class NCLoginActivity : AppCompatActivity() {
         }
     }
 
+    /* Use nextcloud server capabilities OCS endpoint to validate host */
     private suspend fun pingServer(serverUrl: String): Int {
         return withContext(Dispatchers.IO) {
             try {
-                val response: Int
-                (URL(serverUrl).openConnection() as HttpURLConnection).apply {
+                var response: Int = 0
+                (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpURLConnection).apply {
+                    setRequestProperty(NEXTCLOUD_OCSAPI_HEADER, "true")
                     connectTimeout = 2000
                     readTimeout = 5000
-                    setRequestProperty("OCS-APIRequest", "true")
+                    instanceFollowRedirects = false
                     response = responseCode
+                    /*
+                    if (response == HttpURLConnection.HTTP_OK) {
+                        BufferedReader(InputStreamReader(this.inputStream)).apply {
+                            val result = StringBuffer()
+                            var line = readLine()
+                            while (line != null) {
+                                result.append(line)
+                                line = readLine()
+                            }
+                            // server should return this JSON object
+                            JSONObject(result.toString()).get("ocs")
+                        }
+                    }
+                    */
                     disconnect()
-                    // TODO: validate response 
                 }
                 response
             } catch (e: UnknownHostException) {
@@ -310,5 +322,6 @@ class NCLoginActivity : AppCompatActivity() {
 
     companion object {
         private const val WEBVIEW_VISIBLE = "WEBVIEW_VISIBLE"
+        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIREQUEST"
     }
 }
