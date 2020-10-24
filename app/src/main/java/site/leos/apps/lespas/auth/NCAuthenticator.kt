@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.widget.Toast
 import site.leos.apps.lespas.R
+import java.net.URL
 
 class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticator(mContext) {
     override fun editProperties(response: AccountAuthenticatorResponse?, accountType: String?): Bundle {
@@ -26,15 +27,13 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
     }
 
     override fun getAuthTokenLabel(authTokenType: String?): String {
-        try {
-            val destructedRegex = ("https?://(.*)/.*").toRegex()
-            destructedRegex.matchEntire(authTokenType.toString())?.destructured?.let { (server) -> return "Full access to $server"}
+        return try {
+            // authTokenType is set to server's url during account creation
+            "Full access to ${URL(authTokenType).host}"
         } catch (e: Exception) {
             e.printStackTrace()
-            return ""
+            ""
         }
-
-        return ""
     }
 
     @Throws(NetworkErrorException::class)

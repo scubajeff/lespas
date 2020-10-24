@@ -20,6 +20,8 @@ class LesPas : AppCompatActivity() {
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
+
+        finish()
     }
 
     private fun passToMainActivity() {

@@ -16,10 +16,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LesPas">
 
-        <activity android:name=".LesPas">
+        <activity android:name=".LesPas"
+            android:theme="@style/Theme.LesPas.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

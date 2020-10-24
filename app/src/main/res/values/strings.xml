@@ -9,11 +9,11 @@
 
     // Login activity
     <string name="title_activity_login">Sign in</string>
-    <string name="welcome_message">Welcome to Les Pas, the best Nextcloud picture album solution for Android!\n\nA token is
-        required to access your Nextcloud server. Please fill in the server address below and hit enter to continue. You
-        will be brought onto your server\'s authentication page to authorize this app.
+    <string name="welcome_message">Welcome to Les Pas!\n\n A token is required to access your Nextcloud server. Please fill in the server address below and hit enter to continue. You
+        will then see the server\'s authentication page in the next screen.
     </string>
-    <string name="prompt_host">Server address (https://example.com/nextcloud)</string>
+    <string name="host_textinput_label">Server address</string>
+    <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
     <string name="nextcloud_credential_scheme">nc</string>
     <string name="server_base_folder_name">/lespas</string>
     <string name="account_type_nc">site.leos.apps.lespas.nc</string>
@@ -25,18 +25,14 @@
     <string name="nc_userdata_secret">NC_SECRET</string>
 
     <string name="host_address_validation_error">Host address not valid.</string>
-    <string name="host_not_found">Server not available.</string>
+    <string name="host_not_valid">Server not valid.</string>
+    <string name="unknown_host">Server not found.</string>
+    <string name="network_error">Network error, try again.</string>
 
     <!-- Various Nextcloud access endpoints -->
-    <string name="server_capabilities_endpoint">/ocs/v1.php/cloud/capabilities</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint">/ocs/v1.php/cloud/users/</string>
+    <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities</string> <!-- No credentials needed -->
+    <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users/</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>
     <string name="dav_files_endpoint">/remote.php/dav/files/</string>
-    <string name="title_activity_les_pas">LesPas</string>
-    <!--
-    This string is used for square devices and overridden by hello_world in
-    values-round/strings.xml for round devices.
-    -->
-    <string name="hello_world">Hello Square World!</string>
 
 </resources>
