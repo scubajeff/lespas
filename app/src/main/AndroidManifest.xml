@@ -69,8 +69,8 @@
         </service>
 
         <provider
-            android:authorities="${applicationId}.StubProvider"
             android:name=".sync.StubProvider"
+            android:authorities="@string/sync_authority"
             android:exported="false"
             android:syncable="true" />
 
