@@ -29,10 +29,10 @@
     <string name="network_error">Network error, try again.</string>
 
     <!-- Various Nextcloud access endpoints and naming-->
-    <string name="server_base_folder_name">/lespas</string>
+    <string name="lespas_base_folder_name">/lespas</string>
     <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users/</string>
+    <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>
-    <string name="dav_files_endpoint">/remote.php/dav/files/</string>
+    <string name="dav_files_endpoint">/remote.php/dav/files/</string>   <!-- the trailing '/' is not a typo -->
 
 </resources>

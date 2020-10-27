@@ -39,6 +39,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".MainActivity" />
+
         <activity
             android:name=".auth.NCLoginActivity"
             android:launchMode="singleTask"
@@ -60,7 +62,8 @@
 
         <service android:name=".sync.SyncService"
             android:exported="true"
-            android:process=":sync">
+            android:process=":sync"
+            tools:ignore="ExportedService">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter"/>
             </intent-filter>
@@ -73,8 +76,6 @@
             android:authorities="@string/sync_authority"
             android:exported="false"
             android:syncable="true" />
-
-        <activity android:name=".MainActivity" />
     </application>
 
 </manifest>
