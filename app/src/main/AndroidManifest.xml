@@ -18,7 +18,7 @@
         android:theme="@style/Theme.LesPas">
 
         <receiver
-            android:name=".MyReceiver"
+            android:name=".SystemBroadcastReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

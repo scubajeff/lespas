@@ -7,7 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
-class MyReceiver : BroadcastReceiver() {
+class SystemBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val accounts = AccountManager.get(context).getAccountsByType(context.getString(R.string.account_type_nc))
         if (accounts.isNotEmpty()) {
