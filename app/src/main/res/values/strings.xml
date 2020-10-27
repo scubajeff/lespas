@@ -15,7 +15,6 @@
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
     <string name="nextcloud_credential_scheme">nc</string>
-    <string name="server_base_folder_name">/lespas</string>
     <string name="account_type_nc">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server">NC_SERVER</string>
     <string name="nc_userdata_server_protocol">NC_SERVER_PROTOCOL</string>
@@ -29,7 +28,8 @@
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
 
-    <!-- Various Nextcloud access endpoints -->
+    <!-- Various Nextcloud access endpoints and naming-->
+    <string name="server_base_folder_name">/lespas</string>
     <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
     <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users/</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>

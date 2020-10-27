@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
 
     <application
         android:allowBackup="false"
@@ -55,6 +57,22 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/nc_authenticator" />
         </service>
+
+        <service android:name=".sync.SyncService"
+            android:exported="true"
+            android:process=":sync">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter"/>
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter"
+                android:resource="@xml/nc_syncadapter" />
+        </service>
+
+        <provider
+            android:authorities="${applicationId}.StubProvider"
+            android:name=".sync.StubProvider"
+            android:exported="false"
+            android:syncable="true" />
 
         <activity android:name=".MainActivity" />
     </application>
