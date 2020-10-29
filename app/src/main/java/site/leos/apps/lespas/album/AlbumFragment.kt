@@ -12,9 +12,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.photo.PhotoListFragment
 
 class AlbumFragment : Fragment() {
-    //private val mAdapter: AlbumListAdapter = AlbumListAdapter()
     private lateinit var mAdapter: AlbumListAdapter
     private lateinit var viewModel: AlbumViewModel
 
@@ -24,7 +24,11 @@ class AlbumFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAdapter = AlbumListAdapter()
+        mAdapter = AlbumListAdapter(object: AlbumListAdapter.OnItemClickListener {
+            override fun onItemClick(album: Album) {
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotoListFragment.newInstance(album.id)).addToBackStack(null).commit()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -78,25 +82,32 @@ class AlbumFragment : Fragment() {
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter internal constructor(): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
+    class AlbumListAdapter(private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private var albums = emptyList<Album>()
 
-        inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            val coverartView: ImageView = itemView.findViewById(R.id.coverart)
-            val titleView: TextView = itemView.findViewById(R.id.title)
-            val durationView: TextView = itemView.findViewById(R.id.duration)
+        interface OnItemClickListener {
+            fun onItemClick(album: Album)
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder {
+        inner class AlbumViewHolder(private val itemView: View): RecyclerView.ViewHolder(itemView) {
+            fun bindViewItems(album: Album, clickListener: OnItemClickListener) {
+                itemView.apply {
+                    findViewById<TextView>(R.id.title).text = album.name
+                    //findViewById<TextView>(R.id.duration).text = String.format("%tF - %tF", album.startDate, album.endDate)
+                    // TODO: load coverart
+
+                    setOnClickListener { clickListener.onItemClick(album) }
+                }
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  {
             val itemView = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false)
             return AlbumViewHolder(itemView)
         }
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
-            val current = albums[position]
-            holder.titleView.text = current.name
-            //holder.durationView.text = String.format("%tF - %tF", current.startDate, current.endDate)
-            // TODO: load coverart
+            holder.bindViewItems(albums[position], itemClickListener)
         }
 
         internal fun setAlbums(albums: List<Album>){
