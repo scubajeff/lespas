@@ -1,44 +1,51 @@
 package site.leos.apps.lespas.album
 
 import androidx.lifecycle.LiveData
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import site.leos.apps.lespas.BaseDao
+import java.util.*
 
-@Entity(tableName = Album.TABLE_NAME, indices = [Index(value = ["endDate"])])
+@Entity(tableName = Album.TABLE_NAME)
 data class Album(
-    @PrimaryKey(autoGenerate = true) val _id: Long,
+    @PrimaryKey var id: String,
     var name: String,
-    var startDate: Long,
-    var endDate: Long,
+    var startDate: Date?,
+    var endDate: Date?,
     var cover: String,
     var coverBaseline: Int,
     var total: Int,
+    var sortOrder: Int,
     var eTag: String,
-    var fileId: String,
     var shareId: Int)
 {
     companion object {
-        const val TABLE_NAME = "album_table"
+        const val TABLE_NAME = "albums"
+
+        const val BY_DATE_TAKEN_ASC = 0
+        const val BY_DATE_TAKEN_DESC = 1
+        const val BY_DATE_MODIFIED_ASC = 2
+        const val BY_DATE_MODIFIED_DESC = 3
+        const val BY_NAME_ASC = 4
+        const val BY_NAME_DESC = 5
     }
 }
 
+data class AlbumSyncStatus(val id: String, val eTag: String)
+
 @Dao
-interface AlbumDao{
-    @Transaction
+abstract class AlbumDao: BaseDao<Album> {
     @Query("DELETE FROM ${Album.TABLE_NAME}")
-    suspend fun deleteAll()
+    abstract suspend fun deleteAll()
 
-    @Delete
-    suspend fun delete(vararg album: Album): Int
-
-    @Query("DELETE FROM ${Album.TABLE_NAME} WHERE _id=:rowId")
-    suspend fun deleteById(rowId: Long): Int
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(album: Album): Long
-
-    @Update(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun update(vararg album: Album): Int
+    @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract suspend fun deleteById(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate ASC")
-    fun getAllByEndDate(): LiveData<List<Album>>
+    abstract fun getAllByEndDate(): LiveData<List<Album>>
+
+    @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
+    abstract fun getSyncStatus(): List<AlbumSyncStatus>
 }

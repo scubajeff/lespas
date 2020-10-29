@@ -4,12 +4,17 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumDao
+import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoDao
 
-@Database(entities = [Album::class], version = 1, exportSchema = false)
+@Database(entities = [Album::class, Photo::class], version = 1, exportSchema = false)
+@TypeConverters(Converter::class)
 abstract class LespasDatabase: RoomDatabase() {
     abstract fun albumDao(): AlbumDao
+    abstract fun photoDao(): PhotoDao
 
     companion object {
         @Volatile
@@ -20,7 +25,9 @@ abstract class LespasDatabase: RoomDatabase() {
 
             if (tempInstance != null) return tempInstance
             synchronized(this) {
-                val instance = Room.databaseBuilder(context, LespasDatabase::class.java, "lespas.db").build()
+                // TODO: proper database migration!!!!!!!!!!!!!!!!!!!
+                //val instance = Room.databaseBuilder(context, LespasDatabase::class.java, "lespas.db").build()
+                val instance = Room.databaseBuilder(context, LespasDatabase::class.java, "lespas.db").fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 return instance
             }

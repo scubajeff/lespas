@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.album
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -74,7 +75,7 @@ class AlbumFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(AlbumViewModel::class.java)
-        viewModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums) })
+        viewModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums)})
     }
 
     // List adapter for Albums' recyclerView
@@ -95,12 +96,13 @@ class AlbumFragment : Fragment() {
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
             val current = albums[position]
             holder.titleView.text = current.name
-            holder.durationView.text = String.format("%tF - %tF", current.startDate, current.endDate)
+            //holder.durationView.text = String.format("%tF - %tF", current.startDate, current.endDate)
             // TODO: load coverart
         }
 
         internal fun setAlbums(albums: List<Album>){
             this.albums = albums
+            Log.e("======", "setAlbums ${this.albums.size}")
             notifyDataSetChanged()
         }
 
