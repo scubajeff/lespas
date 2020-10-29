@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
@@ -20,7 +19,6 @@ class PhotoListFragment : Fragment() {
 
     companion object {
         const val ALBUM_ID = "ALBUM_ID"
-        //fun newInstance() = PhotoListFragment()
         fun newInstance(album: String): PhotoListFragment {
             val fragment = PhotoListFragment()
             fragment.arguments = Bundle().apply { putString(ALBUM_ID, album) }
@@ -30,7 +28,11 @@ class PhotoListFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAdapter = PhotoGridAdapter()
+        mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener{
+            override fun onItemClick(photo: Photo) {
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotoFragment.newInstance(photo)).addToBackStack(null).commit()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -53,12 +55,22 @@ class PhotoListFragment : Fragment() {
     }
 
     // Adpater for photo grid
-    class PhotoGridAdapter internal constructor() : RecyclerView.Adapter<PhotoGridAdapter.GridViewHolder>() {
+    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<PhotoGridAdapter.GridViewHolder>() {
         private var photos = emptyList<Photo>()
 
-        inner class GridViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val picView: ImageView = itemView.findViewById(R.id.pic)
-            val titleView: TextView = itemView.findViewById(R.id.title)
+        interface OnItemClickListener {
+            fun onItemClick(photo: Photo)
+        }
+
+        inner class GridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+            fun bindViewItem(photo: Photo, clickListener: OnItemClickListener) {
+                itemView.apply {
+                    findViewById<TextView>(R.id.title).text = photo.name
+                    // TODO: findViewById<ImageView>(R.id.pic)
+
+                    setOnClickListener { clickListener.onItemClick(photo) }
+                }
+            }
         }
 
         internal fun setPhotos(photos: List<Photo>) {
@@ -72,9 +84,7 @@ class PhotoListFragment : Fragment() {
         }
 
         override fun onBindViewHolder(holder: PhotoGridAdapter.GridViewHolder, position: Int) {
-            val current = photos[position]
-            holder.titleView.text = current.name
-            // TODO: load picture
+            holder.bindViewItem(photos[position], itemClickListener)
         }
 
         override fun getItemCount() = photos.size

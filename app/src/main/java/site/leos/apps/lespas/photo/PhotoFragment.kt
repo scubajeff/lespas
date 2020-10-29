@@ -162,5 +162,12 @@ class PhotoFragment : Fragment() {
          * and a change of the status and navigation bar.
          */
         private const val UI_ANIMATION_DELAY = 300
+
+        const val PHOTO = "PHOTO"
+        fun newInstance(photo: Photo): PhotoFragment {
+            val fragment = PhotoFragment()
+            fragment.arguments = Bundle().apply { putParcelable(PHOTO, photo) }
+            return fragment
+        }
     }
 }

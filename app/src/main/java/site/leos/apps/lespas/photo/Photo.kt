@@ -1,10 +1,12 @@
 package site.leos.apps.lespas.photo
 
+import android.os.Parcelable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import androidx.room.*
 import androidx.room.ForeignKey.CASCADE
+import kotlinx.android.parcel.Parcelize
 import site.leos.apps.lespas.BaseDao
 import site.leos.apps.lespas.album.Album
 import java.util.*
@@ -14,6 +16,7 @@ import java.util.*
     indices = [Index(value = ["albumId"]), Index(value = ["dateTaken"])],
     foreignKeys = [ForeignKey(entity = Album::class, parentColumns = arrayOf("id"), childColumns = arrayOf("albumId"), onDelete = CASCADE)]
 )
+@Parcelize
 data class Photo(
     @PrimaryKey var id: String,
     var albumId: String,
@@ -21,8 +24,7 @@ data class Photo(
     var eTag: String,
     var dateTaken: Date?,
     var lastModified: Date?,
-    var shareId: Int)
-{
+    var shareId: Int) : Parcelable {
     companion object {
         const val TABLE_NAME = "photos"
     }
