@@ -9,8 +9,9 @@ class AlbumRepository(application: Application){
 
     val allAlbumsByEndDate: LiveData<List<Album>> = albumDao.getAllByEndDate()
     suspend fun insert(album: Album){ albumDao.insert(album) }
-    fun insertSync(album: Album) { albumDao.insertSync(album) }
+    fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun update(album: Album){ albumDao.update(album) }
+    fun deleteByIdSync(albumId: String) { albumDao.deleteByIdSync(albumId) }
     fun getSyncStatus(): Map<String, String> {
         return albumDao.getSyncStatus().map { it.id to it.eTag}.toMap()
     }

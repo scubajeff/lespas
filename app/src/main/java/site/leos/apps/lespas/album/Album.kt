@@ -36,12 +36,15 @@ data class Album(
 data class AlbumSyncStatus(val id: String, val eTag: String)
 
 @Dao
-abstract class AlbumDao: BaseDao<Album> {
+abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME}")
     abstract suspend fun deleteAll()
 
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract suspend fun deleteById(albumId: String): Int
+
+    @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun deleteByIdSync(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate ASC")
     abstract fun getAllByEndDate(): LiveData<List<Album>>

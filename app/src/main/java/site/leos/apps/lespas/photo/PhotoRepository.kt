@@ -7,9 +7,8 @@ import site.leos.apps.lespas.LespasDatabase
 class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
 
-    suspend fun insert(photo: Photo) { photoDao.insert(photo) }
-    fun insertSync(photo: Photo) { photoDao.insertSync(photo) }
-    suspend fun update(photo: Photo) { photoDao.update(photo) }
+    fun upsertSync(photo: Photo) { photoDao.upsertSync(photo) }
+    fun deleteByIdSync(photoId: String) { photoDao.deleteByIdSync(photoId) }
     fun getAllByDateTakenASCDistinctLiveData(albumId: String): LiveData<List<Photo>> { return photoDao.getAlbumPhotosByDateTakenASCDistinctLiveData(albumId) }
     fun getAlbumSizeDistinctLiveData(albumId: String): LiveData<Int> { return photoDao.getAlbumSizeDistinctLiveData(albumId) }
     fun getSyncStatus(albumId: String): Map<String, String> {

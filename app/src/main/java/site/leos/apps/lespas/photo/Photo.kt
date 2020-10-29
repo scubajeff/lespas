@@ -12,7 +12,7 @@ import java.util.*
 @Entity(
     tableName = Photo.TABLE_NAME,
     indices = [Index(value = ["albumId"]), Index(value = ["dateTaken"])],
-    foreignKeys = [ForeignKey(entity = Album::class, parentColumns = arrayOf("id"), childColumns = arrayOf("albumId"), onDelete = CASCADE, onUpdate = CASCADE)]
+    foreignKeys = [ForeignKey(entity = Album::class, parentColumns = arrayOf("id"), childColumns = arrayOf("albumId"), onDelete = CASCADE)]
 )
 data class Photo(
     @PrimaryKey var id: String,
@@ -31,14 +31,17 @@ data class Photo(
 data class PhotoSyncStatus(val id: String, val eTag: String)
 
 @Dao
-abstract class PhotoDao: BaseDao<Photo> {
+abstract class PhotoDao: BaseDao<Photo>() {
     @Query("DELETE FROM ${Photo.TABLE_NAME}")
     abstract suspend fun deleteAll()
 
-    @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :fileId")
-    abstract suspend fun deleteById(fileId: String): Int
+    @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
+    abstract suspend fun deleteById(photoId: String): Int
 
-    @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY id ASC")
+    @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
+    abstract fun deleteByIdSync(photoId: String): Int
+
+    @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun getAlbumSyncStatus(albumId: String): List<PhotoSyncStatus>
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
