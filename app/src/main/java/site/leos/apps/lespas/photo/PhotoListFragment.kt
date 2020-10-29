@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.photo
 
+import android.app.Application
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -17,7 +19,13 @@ class PhotoListFragment : Fragment() {
     private lateinit var viewModel: PhotoViewModel
 
     companion object {
-        fun newInstance() = PhotoListFragment()
+        const val ALBUM_ID = "ALBUM_ID"
+        //fun newInstance() = PhotoListFragment()
+        fun newInstance(album: String): PhotoListFragment {
+            val fragment = PhotoListFragment()
+            fragment.arguments = Bundle().apply { putString(ALBUM_ID, album) }
+            return fragment
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,7 +38,7 @@ class PhotoListFragment : Fragment() {
 
         view.findViewById<RecyclerView>(R.id.photogrid).adapter = mAdapter
 
-        val fab = view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener{
+        val fab = view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             //TODO: album fragment fab action
         }
 
@@ -39,15 +47,16 @@ class PhotoListFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(PhotoViewModel::class.java)
-        viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, {photos-> mAdapter.setPhotos(photos)})
+        //viewModel = ViewModelProvider(this).get(PhotoViewModel::class.java)
+        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, arguments!!.getString(ALBUM_ID)!!)).get(PhotoViewModel::class.java)
+        viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos -> mAdapter.setPhotos(photos) })
     }
 
     // Adpater for photo grid
-    class PhotoGridAdapter internal constructor(): RecyclerView.Adapter<PhotoGridAdapter.GridViewHolder>() {
+    class PhotoGridAdapter internal constructor() : RecyclerView.Adapter<PhotoGridAdapter.GridViewHolder>() {
         private var photos = emptyList<Photo>()
 
-        inner class GridViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class GridViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val picView: ImageView = itemView.findViewById(R.id.pic)
             val titleView: TextView = itemView.findViewById(R.id.title)
         }
@@ -58,7 +67,7 @@ class PhotoListFragment : Fragment() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoGridAdapter.GridViewHolder {
-            val itemView = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent,false)
+            val itemView = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false)
             return GridViewHolder(itemView)
         }
 
@@ -69,5 +78,10 @@ class PhotoListFragment : Fragment() {
         }
 
         override fun getItemCount() = photos.size
+    }
+
+    // ViewModelFactory to pass String parameter to ViewModel object
+    class ExtraParamsViewModelFactory(private val application: Application, private val myExtraParam: String) : ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
     }
 }
