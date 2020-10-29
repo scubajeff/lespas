@@ -25,8 +25,8 @@
             app:layout_constraintDimensionRatio="H,21:9"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:adjustViewBounds="true"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            tools:src="@drawable/ic_footprint" />
 
         <TextView
             android:id="@+id/title"
