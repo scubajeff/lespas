@@ -4,6 +4,9 @@
     // Album fragment
     <string name="fab_add_album">Add Album</string>
 
+    // Photo fragment
+    <string name="fab_album_slideshow">Slideshow</string>
+
     // Authenticator
     <string name="error_only_one_account">Only one account allowed</string>
 
@@ -33,6 +36,8 @@
     <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
     <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>
-    <string name="dav_files_endpoint">/remote.php/dav/files/</string>   <!-- the trailing '/' is not a typo -->
+    <string name="dav_files_endpoint">/remote.php/dav/files/</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>   <!-- the trailing '/' is not a typo -->
 
 </resources>

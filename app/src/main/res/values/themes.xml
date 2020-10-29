@@ -22,4 +22,9 @@
         <item name="android:windowDisablePreview">true</item>
         <item name="android:windowNoDisplay">true</item>
     </style>
+
+    <style name="ThemeOverlay.LesPas.FullscreenContainer" parent="">
+        <item name="fullscreenBackgroundColor">@color/black</item>
+        <item name="fullscreenTextColor">@color/light_blue_A200</item>
+    </style>
 </resources>
