@@ -11,12 +11,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Start syncing with server
-        ContentResolver.requestSync((AccountManager.get(this).accounts)[0], getString(R.string.sync_authority), Bundle().apply {
-            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-            putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-        })
+        if (savedInstanceState == null) {
+            // Start syncing with server at first run
+            ContentResolver.requestSync((AccountManager.get(this).accounts)[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+            })
 
-        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+        }
     }
 }
