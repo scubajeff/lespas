@@ -63,6 +63,9 @@ dependencies {
     // Material design
     implementation "com.google.android.material:material:1.2.1"
 
+    // Cardview
+    implementation "androidx.cardview:cardview:1.0.0"
+
     // Sardine Android WebDAV
     implementation 'com.thegrizzlylabs.sardine-android:sardine-android:0.6'
 
