@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.album
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -102,7 +101,6 @@ class AlbumFragment : Fragment() {
 
         internal fun setAlbums(albums: List<Album>){
             this.albums = albums
-            Log.e("======", "setAlbums ${this.albums.size}")
             notifyDataSetChanged()
         }
 

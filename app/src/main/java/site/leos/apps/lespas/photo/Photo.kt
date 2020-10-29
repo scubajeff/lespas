@@ -38,12 +38,16 @@ abstract class PhotoDao: BaseDao<Photo> {
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :fileId")
     abstract suspend fun deleteById(fileId: String): Int
 
-    @Query("SELECT * FROM ${Photo.TABLE_NAME} ORDER BY dateTaken ASC")
-    protected abstract fun getAllByDateTakenASC(): LiveData<List<Photo>>
-    fun getAllByDateTakenASCDistinctLiveData(): LiveData<List<Photo>> = getAllByDateTakenASC().getDistinct()
-
     @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY id ASC")
-    abstract fun getSyncStatus(albumId: String): List<PhotoSyncStatus>
+    abstract fun getAlbumSyncStatus(albumId: String): List<PhotoSyncStatus>
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
+    protected abstract fun getAlbumPhotosByDateTakenASC(albumId: String): LiveData<List<Photo>>
+    fun getAlbumPhotosByDateTakenASCDistinctLiveData(albumId: String): LiveData<List<Photo>> = getAlbumPhotosByDateTakenASC(albumId).getDistinct()
+
+    @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    protected abstract fun getAlbumSize(albumId: String): LiveData<Int>
+    fun getAlbumSizeDistinctLiveData(albumId: String): LiveData<Int> = getAlbumSize(albumId).getDistinct()
 }
 
 /**

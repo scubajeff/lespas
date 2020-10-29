@@ -16,7 +16,7 @@ data class Album(
     var endDate: Date?,
     var cover: String,
     var coverBaseline: Int,
-    var total: Int,
+    var lastModified: Date?,
     var sortOrder: Int,
     var eTag: String,
     var shareId: Int)
