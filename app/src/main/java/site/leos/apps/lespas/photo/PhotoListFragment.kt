@@ -5,7 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -18,7 +21,7 @@ class PhotoListFragment : Fragment() {
     private lateinit var viewModel: PhotoViewModel
 
     companion object {
-        const val ALBUM_ID = "ALBUM_ID"
+        private const val ALBUM_ID = "ALBUM_ID"
         fun newInstance(album: String): PhotoListFragment {
             val fragment = PhotoListFragment()
             fragment.arguments = Bundle().apply { putString(ALBUM_ID, album) }
@@ -29,8 +32,12 @@ class PhotoListFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener{
-            override fun onItemClick(photo: Photo) {
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotoFragment.newInstance(photo)).addToBackStack(null).commit()
+            override fun onItemClick(view: View, photo: Photo) {
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, "full_image")
+                    .replace(R.id.container_root, PhotoFragment.newInstance(photo)).addToBackStack(null)
+                    .commit()
             }
         })
     }
@@ -47,11 +54,20 @@ class PhotoListFragment : Fragment() {
         return view
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
+
+        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, arguments!!.getString(ALBUM_ID)!!)).get(PhotoViewModel::class.java)
+        viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
+            mAdapter.setPhotos(photos)
+            (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
+        })
+    }
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        //viewModel = ViewModelProvider(this).get(PhotoViewModel::class.java)
-        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, arguments!!.getString(ALBUM_ID)!!)).get(PhotoViewModel::class.java)
-        viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos -> mAdapter.setPhotos(photos) })
     }
 
     // Adpater for photo grid
@@ -59,16 +75,19 @@ class PhotoListFragment : Fragment() {
         private var photos = emptyList<Photo>()
 
         interface OnItemClickListener {
-            fun onItemClick(photo: Photo)
+            fun onItemClick(view: View, photo: Photo)
         }
 
         inner class GridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem(photo: Photo, clickListener: OnItemClickListener) {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = photo.name
-                    // TODO: findViewById<ImageView>(R.id.pic)
+                    findViewById<ImageView>(R.id.pic).run {
+                        setImageResource(R.drawable.ic_footprint)
+                        ViewCompat.setTransitionName(this, photo.id)
+                    }
 
-                    setOnClickListener { clickListener.onItemClick(photo) }
+                    setOnClickListener { clickListener.onItemClick(findViewById<ImageView>(R.id.pic), photo) }
                 }
             }
         }

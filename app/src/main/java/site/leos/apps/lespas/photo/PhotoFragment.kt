@@ -1,64 +1,65 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
+import android.os.Looper
+import android.view.*
 import android.widget.Button
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import site.leos.apps.lespas.R
 
-/**
- * An example full-screen fragment that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- */
 class PhotoFragment : Fragment() {
-    private val hideHandler = Handler()
+    private val hideHandler = Handler(Looper.getMainLooper())
 
-    @Suppress("InlinedApi")
     private val hidePart2Runnable = Runnable {
         // Delayed removal of status and navigation bar
 
-        // Note that some of these constants are new as of API 16 (Jelly Bean)
-        // and API 19 (KitKat). It is safe to use them, as they are inlined
+        // Note that some of these constants are new as of API 16 (Jelly Bean) and API 19 (KitKat). It is safe to use them, as they are inlined
         // at compile-time and do nothing on earlier devices.
-        val flags =
-            View.SYSTEM_UI_FLAG_LOW_PROFILE or
-                    View.SYSTEM_UI_FLAG_FULLSCREEN or
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-        activity?.window?.decorView?.systemUiVisibility = flags
-        (activity as? AppCompatActivity)?.supportActionBar?.hide()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            //val flags = View.SYSTEM_UI_FLAG_LOW_PROFILE or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+            //        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            val flags = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+            activity?.window?.decorView?.systemUiVisibility = flags
+            (activity as? AppCompatActivity)?.supportActionBar?.hide()
+        }
+        else {
+            activity?.window?.insetsController?.run {
+                hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
+            }
+        }
     }
     private val showPart2Runnable = Runnable {
         // Delayed display of UI elements
         fullscreenContentControls?.visibility = View.VISIBLE
     }
-    private var visible: Boolean = false
     private val hideRunnable = Runnable { hide() }
+    private var visible: Boolean = false
 
     /**
-     * Touch listener to use for in-layout UI controls to delay hiding the
-     * system UI. This is to prevent the jarring behavior of controls going away
+     * Touch listener to use for in-layout UI controls to delay hiding the system UI. This is to prevent the jarring behavior of controls going away
      * while interacting with activity UI.
      */
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
-        if (AUTO_HIDE) {
-            delayedHide(AUTO_HIDE_DELAY_MILLIS)
-        }
+        if (AUTO_HIDE) delayedHide(AUTO_HIDE_DELAY_MILLIS)
         false
     }
 
     private var dummyButton: Button? = null
     private var fullscreenContent: View? = null
     private var fullscreenContentControls: View? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        //sharedElementEnterTransition = TransitionInflater.from(requireContext()).inflateTransition(R.transition.view_photo)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_photo, container, false)
@@ -71,14 +72,12 @@ class PhotoFragment : Fragment() {
         visible = true
 
         dummyButton = view.findViewById(R.id.dummy_button)
-        fullscreenContent = view.findViewById(R.id.fullscreen_content)
+        fullscreenContent = view.findViewById<ImageView>(R.id.fullscreen_content).apply {setImageResource(R.drawable.ic_footprint)}
         fullscreenContentControls = view.findViewById(R.id.fullscreen_content_controls)
         // Set up the user interaction to manually show or hide the system UI.
         fullscreenContent?.setOnClickListener { toggle() }
 
-        // Upon interacting with UI controls, delay any scheduled hide()
-        // operations to prevent the jarring behavior of controls going away
-        // while interacting with the UI.
+        // Upon interacting with UI controls, delay any scheduled hide() operations to prevent the jarring behavior of controls going away while interacting with the UI.
         dummyButton?.setOnTouchListener(delayHideTouchListener)
     }
 
@@ -86,9 +85,7 @@ class PhotoFragment : Fragment() {
         super.onResume()
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
-        // Trigger the initial hide() shortly after the activity has been
-        // created, to briefly hint to the user that UI controls
-        // are available.
+        // Trigger the initial hide() shortly after the activity has been created, to briefly hint to the user that UI controls are available.
         delayedHide(100)
     }
 
@@ -97,7 +94,8 @@ class PhotoFragment : Fragment() {
         activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         // Clear the systemUiVisibility flag
-        activity?.window?.decorView?.systemUiVisibility = 0
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) activity?.window?.decorView?.systemUiVisibility = 0
+        else activity?.window?.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
         show()
     }
 
@@ -120,24 +118,25 @@ class PhotoFragment : Fragment() {
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         hideHandler.removeCallbacks(showPart2Runnable)
-        hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.post(hidePart2Runnable)
+        //hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
     }
 
-    @Suppress("InlinedApi")
     private fun show() {
         // Show the system bar
-        fullscreenContent?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) fullscreenContent?.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        else fullscreenContent?.windowInsetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
         visible = true
 
         // Schedule a runnable to display UI elements after a delay
         hideHandler.removeCallbacks(hidePart2Runnable)
-        hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.post(showPart2Runnable)
+        //hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
         (activity as? AppCompatActivity)?.supportActionBar?.show()
     }
 
     /**
-     * Schedules a call to hide() in [delayMillis], canceling any
-     * previously scheduled calls.
+     * Schedules a call to hide() in [delayMillis], canceling any previously scheduled calls.
      */
     private fun delayedHide(delayMillis: Int) {
         hideHandler.removeCallbacks(hideRunnable)
@@ -145,25 +144,16 @@ class PhotoFragment : Fragment() {
     }
 
     companion object {
-        /**
-         * Whether or not the system UI should be auto-hidden after
-         * [AUTO_HIDE_DELAY_MILLIS] milliseconds.
-         */
+        // Whether or not the system UI should be auto-hidden after [AUTO_HIDE_DELAY_MILLIS] milliseconds.
         private const val AUTO_HIDE = true
 
-        /**
-         * If [AUTO_HIDE] is set, the number of milliseconds to wait after
-         * user interaction before hiding the system UI.
-         */
+        // If [AUTO_HIDE] is set, the number of milliseconds to wait after user interaction before hiding the system UI.
         private const val AUTO_HIDE_DELAY_MILLIS = 3000
 
-        /**
-         * Some older devices needs a small delay between UI widget updates
-         * and a change of the status and navigation bar.
-         */
+        // Some older devices needs a small delay between UI widget updates and a change of the status and navigation bar.
         private const val UI_ANIMATION_DELAY = 300
 
-        const val PHOTO = "PHOTO"
+        private const val PHOTO = "PHOTO"
         fun newInstance(photo: Photo): PhotoFragment {
             val fragment = PhotoFragment()
             fragment.arguments = Bundle().apply { putParcelable(PHOTO, photo) }

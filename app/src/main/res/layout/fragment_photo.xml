@@ -12,6 +12,7 @@
          TextureView, etc. -->
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/fullscreen_content"
+        android:transitionName="full_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:keepScreenOn="true"

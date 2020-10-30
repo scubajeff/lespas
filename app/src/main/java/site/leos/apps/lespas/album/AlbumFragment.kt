@@ -64,7 +64,7 @@ class AlbumFragment : Fragment() {
             }
         })
 
-        val recyclerView = view.findViewById<RecyclerView>(R.id.albumlist).apply {
+        view.findViewById<RecyclerView>(R.id.albumlist).apply {
             adapter = mAdapter
         }
 
@@ -94,8 +94,10 @@ class AlbumFragment : Fragment() {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = album.name
                     //findViewById<TextView>(R.id.duration).text = String.format("%tF - %tF", album.startDate, album.endDate)
-                    // TODO: load coverart
-
+                    findViewById<ImageView>(R.id.coverart).apply {
+                        setImageResource(R.drawable.ic_footprint)
+                        scrollBy(0, 200)
+                    }
                     setOnClickListener { clickListener.onItemClick(album) }
                 }
             }
