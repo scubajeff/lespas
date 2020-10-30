@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,7 +10,7 @@
     android:layout_marginRight="@dimen/small_padding"
     android:clickable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardElevation="4dp"
+    app:cardElevation="2dp"
     app:cardUseCompatPadding="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -30,7 +30,7 @@
 
         <TextView
             android:id="@+id/title"
-            style="@style/TextAppearance.AppCompat.Title"
+            style="@style/TextAppearance.MaterialComponents.Headline6"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
@@ -42,7 +42,7 @@
 
         <TextView
             android:id="@+id/duration"
-            style="@style/TextAppearance.AppCompat.Caption"
+            style="@style/TextAppearance.MaterialComponents.Body2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintRight_toRightOf="parent"
@@ -50,4 +50,4 @@
             tools:text="1970.01.17 - 1977.01.10" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

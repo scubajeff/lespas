@@ -38,7 +38,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+            style="@style/TextAppearance.MaterialComponents.Body1"
             android:elegantTextHeight="true"
             android:text="@string/welcome_message"/>
 

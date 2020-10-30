@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/fullscreenBackgroundColor"
-    android:theme="@style/ThemeOverlay.LesPas.FullscreenContainer"
+    android:background="@android:color/black"
     tools:context=".photo.PhotoFragment">
 
     <!-- The primary full-screen view. This can be replaced with whatever view
@@ -17,6 +16,7 @@
         android:layout_height="match_parent"
         android:keepScreenOn="true"
         android:scaleType="fitCenter"
+        android:fitsSystemWindows="true"
         tools:src="@drawable/ic_footprint" />
 
     <!-- This FrameLayout insets its children based on system windows using

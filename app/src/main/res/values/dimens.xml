@@ -2,6 +2,8 @@
 <resources>
     <dimen name="big_padding">16dp</dimen>
     <dimen name="small_padding">8dp</dimen>
+    <dimen name="tiny_padding">4dp</dimen>
+    <dimen name="mini_padding">2dp</dimen>
     <!--
     Because the window insets on round devices are larger than 15dp, this padding only applies
     to square screens.

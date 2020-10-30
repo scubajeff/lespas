@@ -38,6 +38,7 @@
     <string name="login_flow_endpoint">/index.php/login/flow</string>
     <string name="dav_files_endpoint">/remote.php/dav/files/</string>
     <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>   <!-- the trailing '/' is not a typo -->
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_fullscreen">FullscreenActivity</string>   <!-- the trailing '/' is not a typo -->
 
 </resources>
