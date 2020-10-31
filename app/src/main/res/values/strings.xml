@@ -39,6 +39,8 @@
     <string name="dav_files_endpoint">/remote.php/dav/files/</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="title_activity_fullscreen">FullscreenActivity</string>   <!-- the trailing '/' is not a typo -->
+    <string name="title_activity_fullscreen">FullscreenActivity</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>   <!-- the trailing '/' is not a typo -->
 
 </resources>

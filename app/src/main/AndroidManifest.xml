@@ -8,8 +8,8 @@
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
-    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
-    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
 
     <application
         android:allowBackup="false"
@@ -19,18 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LesPas">
 
-        <receiver
-            android:name=".SystemBroadcastReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_OWNER_CHANGED"/>
-                <action android:name="android.accounts.action.ACCOUNT_REMOVED"/>
-            </intent-filter>
-        </receiver>
-
         <activity
             android:name=".LesPas"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.LesPas.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -60,14 +51,17 @@
                 android:resource="@xml/nc_authenticator" />
         </service>
 
-        <service android:name=".sync.SyncService"
+        <service
+            android:name=".sync.SyncService"
             android:enabled="true"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
-                <action android:name="android.content.SyncAdapter"/>
+                <action android:name="android.content.SyncAdapter" />
             </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter"
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
                 android:resource="@xml/nc_syncadapter" />
         </service>
 
@@ -76,6 +70,16 @@
             android:authorities="@string/sync_authority"
             android:exported="false"
             android:syncable="true" />
-    </application>
 
+        <receiver
+            android:name=".SystemBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_OWNER_CHANGED" />
+                <action android:name="android.accounts.action.ACCOUNT_REMOVED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
 </manifest>
