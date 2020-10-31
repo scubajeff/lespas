@@ -10,9 +10,10 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.transition.ChangeBounds
 import site.leos.apps.lespas.R
 
-class PhotoFragment : Fragment() {
+class PhotoDisplayFragment : Fragment() {
     private val hideHandler = Handler(Looper.getMainLooper())
 
     private val hidePart2Runnable = Runnable {
@@ -21,10 +22,8 @@ class PhotoFragment : Fragment() {
         // Note that some of these constants are new as of API 16 (Jelly Bean) and API 19 (KitKat). It is safe to use them, as they are inlined
         // at compile-time and do nothing on earlier devices.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            //val flags = View.SYSTEM_UI_FLAG_LOW_PROFILE or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-            //        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            val flags = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+            val flags = View.SYSTEM_UI_FLAG_LOW_PROFILE or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
             activity?.window?.decorView?.systemUiVisibility = flags
             (activity as? AppCompatActivity)?.supportActionBar?.hide()
         }
@@ -58,11 +57,11 @@ class PhotoFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //sharedElementEnterTransition = TransitionInflater.from(requireContext()).inflateTransition(R.transition.view_photo)
+        sharedElementEnterTransition = ChangeBounds()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_photo, container, false)
+        return inflater.inflate(R.layout.fragment_photodisplay, container, false)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -118,8 +117,7 @@ class PhotoFragment : Fragment() {
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         hideHandler.removeCallbacks(showPart2Runnable)
-        hideHandler.post(hidePart2Runnable)
-        //hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
     }
 
     private fun show() {
@@ -130,8 +128,7 @@ class PhotoFragment : Fragment() {
 
         // Schedule a runnable to display UI elements after a delay
         hideHandler.removeCallbacks(hidePart2Runnable)
-        hideHandler.post(showPart2Runnable)
-        //hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
         (activity as? AppCompatActivity)?.supportActionBar?.show()
     }
 
@@ -154,10 +151,7 @@ class PhotoFragment : Fragment() {
         private const val UI_ANIMATION_DELAY = 300
 
         private const val PHOTO = "PHOTO"
-        fun newInstance(photo: Photo): PhotoFragment {
-            val fragment = PhotoFragment()
-            fragment.arguments = Bundle().apply { putParcelable(PHOTO, photo) }
-            return fragment
-        }
+        @JvmStatic
+        fun newInstance(photo: Photo) = PhotoDisplayFragment().apply { arguments = Bundle().apply { putParcelable(PhotoDisplayFragment.PHOTO, photo) }}
     }
 }

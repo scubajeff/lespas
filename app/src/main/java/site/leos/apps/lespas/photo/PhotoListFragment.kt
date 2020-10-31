@@ -22,11 +22,9 @@ class PhotoListFragment : Fragment() {
 
     companion object {
         private const val ALBUM_ID = "ALBUM_ID"
-        fun newInstance(album: String): PhotoListFragment {
-            val fragment = PhotoListFragment()
-            fragment.arguments = Bundle().apply { putString(ALBUM_ID, album) }
-            return fragment
-        }
+
+        @JvmStatic
+        fun newInstance(album: String) = PhotoListFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, album) }}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,7 +34,7 @@ class PhotoListFragment : Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, "full_image")
-                    .replace(R.id.container_root, PhotoFragment.newInstance(photo)).addToBackStack(null)
+                    .replace(R.id.container_root, PhotoDisplayFragment.newInstance(photo)).addToBackStack(null)
                     .commit()
             }
         })
