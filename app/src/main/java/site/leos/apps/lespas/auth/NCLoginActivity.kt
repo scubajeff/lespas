@@ -218,6 +218,8 @@ class NCLoginActivity : AppCompatActivity() {
                     putString(AccountManager.KEY_AUTHTOKEN, token)
                     //putString("TOKEN", token)
                     putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
+                    putString(getString(R.string.nc_userdata_username), am.getUserData(account, getString(R.string.nc_userdata_username)))
+                    putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
                 }
 
                 intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(result)

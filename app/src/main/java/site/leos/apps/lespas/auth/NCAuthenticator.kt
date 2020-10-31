@@ -49,6 +49,7 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
                 putString(AccountManager.KEY_ACCOUNT_NAME, account?.name)
                 putString(AccountManager.KEY_ACCOUNT_TYPE, account?.type)
                 putString(AccountManager.KEY_AUTHTOKEN, authToken)
+                //putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
                 putString(userName, am.getUserData(account, userName))
                 putString(secretKey, am.getUserData(account, secretKey))
             }
