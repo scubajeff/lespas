@@ -13,6 +13,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
@@ -43,13 +44,22 @@ class PhotoListFragment : Fragment() {
                     .replace(R.id.container_root, PhotoDisplayFragment.newInstance(photo)).addToBackStack(null)
                     .commit()
             }
-        })
+        }).apply { setAlbum(album) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_photolist, container, false)
 
-        view.findViewById<RecyclerView>(R.id.photogrid).adapter = mAdapter
+        view.findViewById<RecyclerView>(R.id.photogrid).run {
+            val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
+            layoutManager = GridLayoutManager(activity?.applicationContext, defaultSpanCount).apply {
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
+                }
+            }
+
+            adapter = mAdapter
+        }
 
         val fab = view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
             //TODO: album fragment fab action
@@ -80,11 +90,24 @@ class PhotoListFragment : Fragment() {
     }
 
     // Adpater for photo grid
-    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<PhotoGridAdapter.GridViewHolder>() {
+    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private lateinit var album: Album
         private var photos = emptyList<Photo>()
 
         interface OnItemClickListener {
             fun onItemClick(view: View, photo: Photo)
+        }
+
+        inner class CoverViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+            fun bindViewItem() {
+                itemView.run {
+                    findViewById<ImageView>(R.id.cover).run {
+                        setImageResource(R.drawable.ic_footprint)
+                        scrollBy(0, 200)
+                    }
+                    findViewById<TextView>(R.id.title).text = album.name
+                }
+            }
         }
 
         inner class GridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -106,16 +129,31 @@ class PhotoListFragment : Fragment() {
             notifyDataSetChanged()
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoGridAdapter.GridViewHolder {
-            val itemView = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false)
-            return GridViewHolder(itemView)
+        internal fun setAlbum(album: Album) {
+            this.album = album
         }
 
-        override fun onBindViewHolder(holder: PhotoGridAdapter.GridViewHolder, position: Int) {
-            holder.bindViewItem(photos[position], itemClickListener)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
+                    else GridViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+
         }
 
-        override fun getItemCount() = photos.size
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            if (holder is GridViewHolder) holder.bindViewItem(photos[position - 1], itemClickListener)
+            else (holder as CoverViewHolder).bindViewItem()
+        }
+
+        override fun getItemCount() = photos.size + 1
+
+        override fun getItemViewType(position: Int): Int {
+            return if (position == 0) TYPE_COVER else TYPE_PHOTO
+        }
+
+        companion object {
+            private const val TYPE_COVER = 0
+            private const val TYPE_PHOTO = 1
+        }
     }
 
     // ViewModelFactory to pass String parameter to ViewModel object
