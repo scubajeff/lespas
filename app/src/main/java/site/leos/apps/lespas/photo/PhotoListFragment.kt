@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -15,20 +16,25 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 
 class PhotoListFragment : Fragment() {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var viewModel: PhotoViewModel
+    private lateinit var album: Album
 
     companion object {
-        private const val ALBUM_ID = "ALBUM_ID"
+        private const val ALBUM = "ALBUM"
 
         @JvmStatic
-        fun newInstance(album: String) = PhotoListFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, album) }}
+        fun newInstance(album: Album) = PhotoListFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        album = arguments?.getParcelable<Album>(ALBUM)!!
+
         mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener{
             override fun onItemClick(view: View, photo: Photo) {
                 parentFragmentManager.beginTransaction()
@@ -57,15 +63,20 @@ class PhotoListFragment : Fragment() {
 
         postponeEnterTransition()
 
-        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, arguments!!.getString(ALBUM_ID)!!)).get(PhotoViewModel::class.java)
+        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
         })
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onResume() {
+        super.onResume()
+
+        (activity as? AppCompatActivity)?.supportActionBar?.run {
+            setDisplayHomeAsUpEnabled(true)
+            title = album.name
+        }
     }
 
     // Adpater for photo grid

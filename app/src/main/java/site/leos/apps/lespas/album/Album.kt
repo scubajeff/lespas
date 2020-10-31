@@ -1,14 +1,17 @@
 package site.leos.apps.lespas.album
 
+import android.os.Parcelable
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import kotlinx.android.parcel.Parcelize
 import site.leos.apps.lespas.BaseDao
 import java.util.*
 
 @Entity(tableName = Album.TABLE_NAME)
+@Parcelize
 data class Album(
     @PrimaryKey var id: String,
     var name: String,
@@ -19,8 +22,7 @@ data class Album(
     var lastModified: Date?,
     var sortOrder: Int,
     var eTag: String,
-    var shareId: Int)
-{
+    var shareId: Int) : Parcelable {
     companion object {
         const val TABLE_NAME = "albums"
 

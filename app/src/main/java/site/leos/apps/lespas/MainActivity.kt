@@ -3,6 +3,7 @@ package site.leos.apps.lespas
 import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.os.Bundle
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import site.leos.apps.lespas.album.AlbumFragment
@@ -23,5 +24,13 @@ class MainActivity : AppCompatActivity() {
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            // Response to "up" affordance pressed in fragments
+            android.R.id.home -> onBackPressed()
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
