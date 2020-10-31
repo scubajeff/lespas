@@ -14,6 +14,7 @@ import androidx.transition.ChangeBounds
 import site.leos.apps.lespas.R
 
 class PhotoDisplayFragment : Fragment() {
+    private lateinit var photo: Photo
     private val hideHandler = Handler(Looper.getMainLooper())
 
     private val hidePart2Runnable = Runnable {
@@ -57,6 +58,9 @@ class PhotoDisplayFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        photo = arguments?.getParcelable<Photo>(PHOTO)!!
+
         sharedElementEnterTransition = ChangeBounds()
     }
 
@@ -86,6 +90,7 @@ class PhotoDisplayFragment : Fragment() {
 
         // Trigger the initial hide() shortly after the activity has been created, to briefly hint to the user that UI controls are available.
         delayedHide(100)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = photo.name
     }
 
     override fun onPause() {

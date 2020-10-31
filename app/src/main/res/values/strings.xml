@@ -36,11 +36,25 @@
     <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
     <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users</string>
     <string name="login_flow_endpoint">/index.php/login/flow</string>
-    <string name="dav_files_endpoint">/remote.php/dav/files/</string>
+    <string name="dav_files_endpoint">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
+
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="title_activity_fullscreen">FullscreenActivity</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>   <!-- the trailing '/' is not a typo -->
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="view_header">View</string>
+    <string name="auto_rotate_perf_key">AUTO_ROTATE</string>
+    <string name="auto_rotate_title">Rotate photo by aspect ratio</string>
+    <string name="sync_header">Sync</string>
+    <string name="sync_pref_key">SYNC</string>
+    <string name="sync_title">Sync periodically</string>
+    <string name="wifionly_pref_key">WIFI_ONLY</string>
+    <string name="wifionly_title">Sync only on WiFi network</string>
+    <string name="wifionly_summary_on">Will not use mobile data</string>
+    <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos</string>
+
+    <!-- Toolbar actions -->
+    <string name="action_settings">Settings</string>
 
 </resources>

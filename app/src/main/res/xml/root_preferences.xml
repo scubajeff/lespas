@@ -1,0 +1,28 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/view_header">
+        <SwitchPreferenceCompat
+            app:key="@string/auto_rotate_perf_key"
+            app:title="@string/auto_rotate_title"
+            app:defaultValue="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/sync_header">
+
+        <SwitchPreferenceCompat
+            app:key="@string/sync_pref_key"
+            app:title="@string/sync_title"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            app:dependency="@string/sync_pref_key"
+            app:key="@string/wifionly_pref_key"
+            app:summaryOff="@string/wifionly_summary_off"
+            app:summaryOn="@string/wifionly_summary_on"
+            app:title="@string/wifionly_title"
+            app:defaultValue="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
