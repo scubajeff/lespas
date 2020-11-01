@@ -18,14 +18,4 @@
         app:spanCount="@integer/photo_grid_span_count"
         tools:listitem="@layout/recyclerview_item_photo"/>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/big_padding"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:contentDescription="@string/fab_album_slideshow"
-        android:src="@drawable/ic_baseline_add_24"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
