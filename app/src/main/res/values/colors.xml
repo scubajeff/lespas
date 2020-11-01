@@ -14,6 +14,7 @@
     <color name="black_overlay">#FF000000</color>
     <color name="grey_200">#FFEEEEEE</color>
 
-    <color name="list_item_selected_background">@color/purple_200</color>   <!-- TODO: should be day night safe -->
+    <color name="album_item_selected_background">@color/purple_200</color>   <!-- TODO: should be day night safe -->
+    <color name="photo_item_selected_background">@color/grey_200</color>   <!-- TODO: should be day night safe -->
     <color name="cardview_daynight_background">@color/cardview_light_background</color>
 </resources>

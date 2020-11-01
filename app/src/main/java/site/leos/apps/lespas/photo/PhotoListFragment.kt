@@ -2,27 +2,31 @@ package site.leos.apps.lespas.photo
 
 import android.app.Application
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.selection.ItemDetailsLookup
+import androidx.recyclerview.selection.ItemKeyProvider
+import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 
-class PhotoListFragment : Fragment() {
+class PhotoListFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var viewModel: PhotoViewModel
     private lateinit var album: Album
+    private lateinit var selectionTracker: SelectionTracker<Long>
+    private var actionMode: ActionMode? = null
 
     companion object {
         private const val ALBUM = "ALBUM"
@@ -59,11 +63,37 @@ class PhotoListFragment : Fragment() {
             }
 
             adapter = mAdapter
+
+            selectionTracker = SelectionTracker.Builder<Long> (
+                "photoSelection",
+                this,
+                PhotoGridAdapter.PhotoKeyProvider(),
+                PhotoGridAdapter.PhotoDetailsLookup(this),
+                StorageStrategy.createLongStorage()
+            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
+                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = (key != 0L)
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
+                override fun canSelectMultiple(): Boolean = true
+            }).build().apply {
+                addObserver(object : SelectionTracker.SelectionObserver<Long>() {
+                    override fun onSelectionChanged() {
+                        super.onSelectionChanged()
+
+                        if (selectionTracker.hasSelection() && actionMode == null) {
+                            actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@PhotoListFragment)
+                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection?.size())}
+                        } else if (!selectionTracker.hasSelection() && actionMode != null) {
+                            actionMode?.finish()
+                            actionMode = null
+                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection?.size())
+                    }
+                })
+
+                if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
+            }
         }
 
-        val fab = view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            //TODO: album fragment fab action
-        }
+        mAdapter.setSelectionTracker(selectionTracker)
 
         return view
     }
@@ -93,6 +123,11 @@ class PhotoListFragment : Fragment() {
     class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private lateinit var album: Album
         private var photos = emptyList<Photo>()
+        private lateinit var selectionTracker: SelectionTracker<Long>
+
+        init {
+            setHasStableIds(true)
+        }
 
         interface OnItemClickListener {
             fun onItemClick(view: View, photo: Photo)
@@ -108,10 +143,16 @@ class PhotoListFragment : Fragment() {
                     findViewById<TextView>(R.id.title).text = album.name
                 }
             }
+
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
+                override fun getPosition(): Int = adapterPosition
+                override fun getSelectionKey(): Long? = itemId
+                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
+            }
         }
 
-        inner class GridViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItem(photo: Photo, clickListener: OnItemClickListener) {
+        inner class PhotoViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+            fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = photo.name
                     findViewById<ImageView>(R.id.pic).run {
@@ -119,8 +160,16 @@ class PhotoListFragment : Fragment() {
                         ViewCompat.setTransitionName(this, photo.id)
                     }
 
+                    this.isActivated = isActivated
+
                     setOnClickListener { clickListener.onItemClick(findViewById<ImageView>(R.id.pic), photo) }
                 }
+            }
+
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
+                override fun getPosition(): Int = adapterPosition
+                override fun getSelectionKey(): Long? = itemId
+                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
 
@@ -135,19 +184,42 @@ class PhotoListFragment : Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
-                    else GridViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+                    else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
 
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is GridViewHolder) holder.bindViewItem(photos[position - 1], itemClickListener)
+            if (holder is PhotoViewHolder) holder.bindViewItem(photos[position - 1], itemClickListener, selectionTracker.isSelected(position.toLong()))
             else (holder as CoverViewHolder).bindViewItem()
         }
 
         override fun getItemCount() = photos.size + 1
 
+        fun getPhotoAtPosition(position: Int): Photo {
+            return (photos[position - 1])
+        }
+
         override fun getItemViewType(position: Int): Int {
             return if (position == 0) TYPE_COVER else TYPE_PHOTO
+        }
+
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
+
+        class PhotoKeyProvider(): ItemKeyProvider<Long>(ItemKeyProvider.SCOPE_CACHED) {
+            override fun getKey(position: Int): Long? = position.toLong()
+            override fun getPosition(key: Long): Int = key.toInt()
+        }
+
+        class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<Long>() {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
+                recyclerView.findChildViewUnder(e.x, e.y)?.let {
+                    val holder = recyclerView.getChildViewHolder(it)
+                    return if (holder is PhotoViewHolder) holder.getItemDetails() else (holder as CoverViewHolder).getItemDetails()
+                }
+                return null
+            }
         }
 
         companion object {
@@ -159,5 +231,37 @@ class PhotoListFragment : Fragment() {
     // ViewModelFactory to pass String parameter to ViewModel object
     class ExtraParamsViewModelFactory(private val application: Application, private val myExtraParam: String) : ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
+    }
+
+    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+        mode?.menuInflater?.inflate(R.menu.actions_album, menu)
+
+        return true
+    }
+
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
+
+    override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+        return when(item?.itemId) {
+            R.id.remove_album -> {
+                for (i in selectionTracker.selection) {
+                }
+
+                selectionTracker.clearSelection()
+                true
+            }
+            R.id.share_album -> {
+                for (i in selectionTracker.selection) {}
+
+                selectionTracker.clearSelection()
+                true
+            }
+            else -> false
+        }
+    }
+
+    override fun onDestroyActionMode(mode: ActionMode?) {
+        selectionTracker.clearSelection()
+        actionMode = null
     }
 }

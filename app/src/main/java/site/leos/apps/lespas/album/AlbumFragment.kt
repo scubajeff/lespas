@@ -97,7 +97,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
+        mAdapter.setSelectionTracker(selectionTracker)
 
         fab = view.findViewById<FloatingActionButton>(R.id.fab).apply {
             setOnClickListener {
@@ -135,9 +135,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        return false
-    }
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
@@ -159,7 +157,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
-        this.actionMode = null
+        actionMode = null
         fab.isEnabled = true
     }
 
