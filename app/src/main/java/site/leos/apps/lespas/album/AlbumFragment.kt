@@ -18,7 +18,7 @@ import site.leos.apps.lespas.photo.PhotoListFragment
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: AlbumListAdapter
     private lateinit var viewModel: AlbumViewModel
-    private var selectionTracker: SelectionTracker<Long>? = null
+    private lateinit var selectionTracker: SelectionTracker<Long>
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
 
@@ -83,15 +83,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
-                        if (selectionTracker?.hasSelection()!! && actionMode == null) {
+                        if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size())}
-                        } else if (!selectionTracker?.hasSelection()!! && actionMode != null) {
+                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection?.size())}
+                        } else if (!selectionTracker.hasSelection() && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker?.selection?.size())
+                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection?.size())
                     }
                 })
+
+                if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
             }
         }
 
@@ -121,6 +123,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        selectionTracker.onSaveInstanceState(outState)
+    }
+
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.actions_album, menu)
         fab.isEnabled = false
@@ -135,15 +142,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove_album -> {
-                selectionTracker?.selection?.forEach { _ -> }
+                selectionTracker.selection?.forEach { _ -> }
 
-                selectionTracker?.clearSelection()
+                selectionTracker.clearSelection()
                 true
             }
             R.id.share_album -> {
-                selectionTracker?.selection?.forEach { _ -> }
+                selectionTracker.selection?.forEach { _ -> }
 
-                selectionTracker?.clearSelection()
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
@@ -151,7 +158,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroyActionMode(mode: ActionMode?) {
-        selectionTracker?.clearSelection()
+        selectionTracker.clearSelection()
         this.actionMode = null
         fab.isEnabled = true
     }
