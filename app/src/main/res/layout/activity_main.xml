@@ -12,8 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
-        android:theme="@style/Dark.Overlay"
-        app:popupTheme="@style/Dark.Overlay.LightPopup"
+        android:theme="@style/Theme.LesPas.Toolbar.Dark.Overlay"
+        app:popupTheme="@style/Theme.LesPas.Toolbar.Dark.Overlay.LightPopup"
         android:elevation="4dp" />
 
     <FrameLayout

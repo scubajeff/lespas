@@ -56,5 +56,8 @@
 
     <!-- Toolbar actions -->
     <string name="action_settings">Settings</string>
+    <string name="action_share_album">Share</string>
+    <string name="action_remove_album">Remove</string>
+    <string name="selected_count">%1$d selected</string>
 
 </resources>

@@ -69,6 +69,9 @@ dependencies {
     // Cardview
     implementation "androidx.cardview:cardview:1.0.0"
 
+    // RecyclerView selection
+    implementation "androidx.recyclerview:recyclerview-selection:1.0.0"
+
     // Sardine Android WebDAV
     implementation 'com.thegrizzlylabs.sardine-android:sardine-android:0.6'
 
