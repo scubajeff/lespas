@@ -53,6 +53,10 @@
     <string name="wifionly_title">Sync only on WiFi network</string>
     <string name="wifionly_summary_on">Will not use mobile data</string>
     <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos</string>
+    <string name="other_header">Others</string>
+    <string name="logout_pref_key">LOGOUT</string>
+    <string name="logout_title">Logout</string>
+    <string name="logout_dialog_msg">Logout account %1$s?</string>
 
     <!-- Toolbar actions -->
     <string name="action_settings">Settings</string>

@@ -1,4 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="@string/view_header">
         <SwitchPreferenceCompat
@@ -24,5 +25,14 @@
             app:defaultValue="true" />
 
     </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/other_header">
+        <site.leos.apps.lespas.settings.LogoutDialogPreference
+            app:key="@string/logout_pref_key"
+            app:title="@string/logout_title"
+            app:positiveButtonText="@android:string/yes"
+            app:negativeButtonText="@android:string/no" />
+    </PreferenceCategory>
+
 
 </PreferenceScreen>
