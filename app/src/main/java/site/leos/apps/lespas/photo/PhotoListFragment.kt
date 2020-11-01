@@ -103,7 +103,7 @@ class PhotoListFragment : Fragment() {
                 itemView.run {
                     findViewById<ImageView>(R.id.cover).run {
                         setImageResource(R.drawable.ic_footprint)
-                        scrollBy(0, 200)
+                        scrollTo(0, 200)
                     }
                     findViewById<TextView>(R.id.title).text = album.name
                 }

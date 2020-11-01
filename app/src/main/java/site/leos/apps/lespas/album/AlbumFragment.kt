@@ -107,7 +107,7 @@ class AlbumFragment : Fragment() {
                     //findViewById<TextView>(R.id.duration).text = String.format("%tF - %tF", album.startDate, album.endDate)
                     findViewById<ImageView>(R.id.coverart).apply {
                         setImageResource(R.drawable.ic_footprint)
-                        scrollBy(0, 200)
+                        scrollTo(0, 200)
                     }
                     setOnClickListener { clickListener.onItemClick(album) }
                 }
