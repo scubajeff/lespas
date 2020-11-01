@@ -156,7 +156,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = photo.name
                     findViewById<ImageView>(R.id.pic).run {
-                        setImageResource(R.drawable.ic_footprint)
+                        setImageResource(R.drawable.ic_baseline_broken_image_24)
                         ViewCompat.setTransitionName(this, photo.id)
                     }
 
