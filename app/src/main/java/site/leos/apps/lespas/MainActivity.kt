@@ -43,4 +43,16 @@ class MainActivity : AppCompatActivity() {
 
         return true
     }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        supportFragmentManager.run {
+            if (backStackEntryCount > 0)
+                getBackStackEntryAt(backStackEntryCount - 1).let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
+        }
+    }
+
+    interface OnWindowFocusChangedListener {
+        fun onWindowFocusChanged(hasFocus: Boolean)
+    }
 }

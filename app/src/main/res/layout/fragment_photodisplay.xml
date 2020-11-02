@@ -6,17 +6,13 @@
     android:background="@android:color/black"
     tools:context=".photo.PhotoDisplayFragment">
 
-    <!-- The primary full-screen view. This can be replaced with whatever view
-         is needed to present your content, e.g. VideoView, SurfaceView,
-         TextureView, etc. -->
     <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/fullscreen_content"
+        android:id="@+id/media"
         android:transitionName="full_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:keepScreenOn="true"
         android:scaleType="fitCenter"
-        android:fitsSystemWindows="true"
         tools:src="@drawable/ic_footprint" />
 
     <!-- This FrameLayout insets its children based on system windows using
@@ -24,10 +20,11 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/fullscreen_toolbar_bottom_margin"
         android:fitsSystemWindows="true">
 
         <LinearLayout
-            android:id="@+id/fullscreen_content_controls"
+            android:id="@+id/controls"
             style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,15 +32,30 @@
             android:orientation="horizontal"
             tools:ignore="UselessParent">
 
-            <Button
-                android:id="@+id/dummy_button"
+            <ImageButton
+                android:id="@+id/delete_button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="?android:attr/actionButtonStyle"
-                android:text="@string/dummy_button" />
+                android:src="@drawable/ic_baseline_delete_24"
+                style="?android:attr/actionButtonStyle" />
+
+            <ImageButton
+                android:id="@+id/share_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_baseline_share_24"
+                style="?android:attr/actionButtonStyle" />
+
+            <ImageButton
+                android:id="@+id/info_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_baseline_info_24"
+                style="?android:attr/actionButtonStyle" />
 
         </LinearLayout>
     </FrameLayout>
-
 </FrameLayout>

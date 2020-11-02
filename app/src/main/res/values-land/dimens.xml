@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="fullscreen_toolbar_bottom_margin">0dp</dimen>
+</resources>

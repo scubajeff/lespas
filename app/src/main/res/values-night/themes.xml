@@ -17,8 +17,4 @@
         <item name="windowActionBarOverlay">true</item>
     </style>
 
-    <style name="ThemeOverlay.LesPas.FullscreenContainer" parent="">
-        <item name="fullscreenBackgroundColor">@color/black</item>
-        <item name="fullscreenTextColor">@color/light_blue_A400</item>
-    </style>
 </resources>
