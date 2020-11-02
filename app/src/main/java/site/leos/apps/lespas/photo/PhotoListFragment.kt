@@ -25,7 +25,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var viewModel: PhotoViewModel
     private lateinit var album: Album
-    private lateinit var selectionTracker: SelectionTracker<Long>
+    private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
 
     companion object {
@@ -79,13 +79,13 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
-                        if (selectionTracker.hasSelection() && actionMode == null) {
+                        if (selectionTracker?.hasSelection() as Boolean && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@PhotoListFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection?.size())}
-                        } else if (!selectionTracker.hasSelection() && actionMode != null) {
+                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size())}
+                        } else if (!(selectionTracker?.hasSelection() as Boolean) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection?.size())
+                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker?.selection?.size())
                     }
                 })
 
@@ -93,7 +93,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        mAdapter.setSelectionTracker(selectionTracker)
+        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
 
         return view
     }
@@ -244,16 +244,16 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove_album -> {
-                for (i in selectionTracker.selection) {
+                for (i in selectionTracker?.selection!!) {
                 }
 
-                selectionTracker.clearSelection()
+                selectionTracker?.clearSelection()
                 true
             }
             R.id.share_album -> {
-                for (i in selectionTracker.selection) {}
+                for (i in selectionTracker?.selection!!) {}
 
-                selectionTracker.clearSelection()
+                selectionTracker?.clearSelection()
                 true
             }
             else -> false
@@ -261,7 +261,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroyActionMode(mode: ActionMode?) {
-        selectionTracker.clearSelection()
+        selectionTracker?.clearSelection()
         actionMode = null
     }
 }
