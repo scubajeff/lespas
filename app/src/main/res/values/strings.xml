@@ -4,8 +4,7 @@
     // Album fragment
     <string name="fab_add_album">Add Album</string>
 
-    // Photo fragment
-    <string name="fab_album_slideshow">Slideshow</string>
+    // PhotoList fragment
 
     // Authenticator
     <string name="error_only_one_account">Only one account allowed</string>
@@ -17,48 +16,49 @@
     </string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
-    <string name="nextcloud_credential_scheme">nc</string>
-    <string name="account_type_nc">site.leos.apps.lespas.nc</string>
-    <string name="nc_userdata_server">NC_SERVER</string>
-    <string name="nc_userdata_server_protocol">NC_SERVER_PROTOCOL</string>
-    <string name="nc_userdata_server_host">NC_SERVER_HOST</string>
-    <string name="nc_userdata_server_port">NC_SERVER_PORT</string>
-    <string name="nc_userdata_username">NC_USERNAME</string>
-    <string name="nc_userdata_secret">NC_SECRET</string>
+    <string name="nextcloud_credential_scheme" translatable="false">nc</string>
+    <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
+    <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
+    <string name="nc_userdata_server_protocol" translatable="false">NC_SERVER_PROTOCOL</string>
+    <string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
+    <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
+    <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
+    <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
 
     <string name="host_address_validation_error">Host address not valid.</string>
     <string name="host_not_valid">Server not valid.</string>
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
 
-    <!-- Various Nextcloud access endpoints and naming-->
-    <string name="lespas_base_folder_name">/lespas</string>
-    <string name="server_capabilities_endpoint">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint">/ocs/v2.php/cloud/users</string>
-    <string name="login_flow_endpoint">/index.php/login/flow</string>
-    <string name="dav_files_endpoint">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
+    // Various Nextcloud access endpoints and naming
+    <string name="lespas_base_folder_name" translatable="false">/lespas</string>
+    <string name="server_capabilities_endpoint" translatable="false">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
+    <string name="user_metadata_endpoint" translatable="false">/ocs/v2.php/cloud/users</string>
+    <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
+    <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
+    // PhotoDisplay fragment
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
 
-    <!-- Settings -->
+    // Setting fragment
     <string name="settings_title">Settings</string>
     <string name="view_header">View</string>
-    <string name="auto_rotate_perf_key">AUTO_ROTATE</string>
+    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotate photo by aspect ratio</string>
     <string name="sync_header">Sync</string>
-    <string name="sync_pref_key">SYNC</string>
+    <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_title">Sync periodically</string>
-    <string name="wifionly_pref_key">WIFI_ONLY</string>
+    <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi network</string>
     <string name="wifionly_summary_on">Will not use mobile data</string>
     <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos</string>
     <string name="other_header">Others</string>
-    <string name="logout_pref_key">LOGOUT</string>
+    <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
     <string name="logout_dialog_msg">Logout account %1$s?</string>
 
-    <!-- Toolbar actions -->
+    // Toolbar actions
     <string name="action_settings">Settings</string>
     <string name="action_share_album">Share</string>
     <string name="action_remove_album">Remove</string>
