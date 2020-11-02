@@ -40,7 +40,7 @@
     </style>
 
     <style name="Theme.LesPas.Toolbar.Dark.Overlay.LightPopup" parent="ThemeOverlay.AppCompat.Light">
-        <item name="android:background">@color/grey_200</item>
+        <item name="android:background">@android:color/transparent</item>
     </style>
 
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
