@@ -33,7 +33,6 @@ class PhotoDisplayFragment : Fragment() {
                 systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
             }
         }
-        (activity as? AppCompatActivity)?.supportActionBar?.hide()
     }
     private val showPart2Runnable = Runnable {
         // Delayed display of UI elements
@@ -90,7 +89,8 @@ class PhotoDisplayFragment : Fragment() {
 
         // Trigger the initial hide() shortly after the activity has been created, to briefly hint to the user that UI controls are available.
         delayedHide(100)
-        (activity as? AppCompatActivity)?.supportActionBar?.title = photo.name
+
+        (activity as? AppCompatActivity)?.supportActionBar?.hide()
     }
 
     override fun onPause() {
@@ -104,6 +104,8 @@ class PhotoDisplayFragment : Fragment() {
     }
 
     override fun onDestroy() {
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
+
         super.onDestroy()
         dummyButton = null
         fullscreenContent = null
@@ -122,7 +124,8 @@ class PhotoDisplayFragment : Fragment() {
 
         // Schedule a runnable to remove the status and navigation bar after a delay
         hideHandler.removeCallbacks(showPart2Runnable)
-        hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
+        //hideHandler.postDelayed(hidePart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.post(hidePart2Runnable)
     }
 
     private fun show() {
@@ -133,8 +136,8 @@ class PhotoDisplayFragment : Fragment() {
 
         // Schedule a runnable to display UI elements after a delay
         hideHandler.removeCallbacks(hidePart2Runnable)
-        hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
-        (activity as? AppCompatActivity)?.supportActionBar?.show()
+        //hideHandler.postDelayed(showPart2Runnable, UI_ANIMATION_DELAY.toLong())
+        hideHandler.post(showPart2Runnable)
     }
 
     /**
