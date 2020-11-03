@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -18,7 +19,7 @@ import site.leos.apps.lespas.R
 
 class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListener, GestureDetector.OnGestureListener {
     private lateinit var photo: Photo
-    private lateinit var deleteButton: ImageButton
+    private lateinit var setCoverButton: ImageButton
     private lateinit var shareButton: ImageButton
     private lateinit var infoButton: ImageButton
     private lateinit var media: ImageView
@@ -64,12 +65,12 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
                 }
             }
         }
-        deleteButton = view.findViewById(R.id.delete_button)
+        setCoverButton = view.findViewById(R.id.set_cover_button)
         shareButton = view.findViewById(R.id.share_button)
         infoButton = view.findViewById(R.id.info_button)
 
         // Upon interacting with UI controls, delay any scheduled hide() operations to prevent the jarring behavior of controls going away while interacting with the UI.
-        deleteButton.setOnTouchListener(delayHideTouchListener)
+        setCoverButton.setOnTouchListener(delayHideTouchListener)
         shareButton.setOnTouchListener(delayHideTouchListener)
         infoButton.setOnTouchListener(delayHideTouchListener)
 
@@ -92,7 +93,10 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
     }
 
     override fun onDestroy() {
-        (activity as? AppCompatActivity)?.supportActionBar?.show()
+        (activity as? AppCompatActivity)?.run {
+            supportActionBar?.show()
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        }
 
         super.onDestroy()
     }

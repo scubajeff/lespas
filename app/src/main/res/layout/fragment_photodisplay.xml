@@ -34,11 +34,11 @@
             tools:ignore="UselessParent">
 
             <ImageButton
-                android:id="@+id/delete_button"
+                android:id="@+id/set_cover_button"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:src="@drawable/ic_baseline_delete_24"
+                android:src="@drawable/ic_baseline_set_cover_24"
                 style="?android:attr/actionButtonStyle" />
 
             <ImageButton
