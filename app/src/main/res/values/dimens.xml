@@ -4,5 +4,6 @@
     <dimen name="small_padding">8dp</dimen>
     <dimen name="tiny_padding">4dp</dimen>
     <dimen name="mini_padding">2dp</dimen>
-    <dimen name="fullscreen_toolbar_bottom_margin">48dp</dimen>
+    <dimen name="fullscreen_controls_height">96dp</dimen>
+    <dimen name="fullscreen_controls_bottom_margin">48dp</dimen>
 </resources>

@@ -5,9 +5,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.transition.Slide
+import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import site.leos.apps.lespas.MainActivity
@@ -19,7 +22,7 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
     private lateinit var shareButton: ImageButton
     private lateinit var infoButton: ImageButton
     private lateinit var media: ImageView
-    private lateinit var controls: View
+    private lateinit var controls: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,26 +41,29 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as? AppCompatActivity)?.supportActionBar?.hide()
 
         // Briefly show controls
         visible = true
 
+        controls = view.findViewById(R.id.controls)
         media = view.findViewById<ImageView>(R.id.media).apply {
-            setImageResource(R.drawable.ic_footprint)
+            setImageResource(R.drawable.ic_baseline_broken_image_24)
             setOnClickListener { toggle() }
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 setOnSystemUiVisibilityChangeListener {visibility ->
+                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     controls.visibility = if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) View.VISIBLE else View.GONE
                 }
             }
             else {
                 setOnApplyWindowInsetsListener { v, insets ->
+                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     controls.visibility = if (insets.isVisible(WindowInsets.Type.statusBars())) View.VISIBLE else View.GONE
                     insets
                 }
             }
         }
-        controls = view.findViewById(R.id.controls)
         deleteButton = view.findViewById(R.id.delete_button)
         shareButton = view.findViewById(R.id.share_button)
         infoButton = view.findViewById(R.id.info_button)
@@ -73,7 +79,6 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
     override fun onResume() {
         super.onResume()
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-        (activity as? AppCompatActivity)?.supportActionBar?.hide()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -142,6 +147,7 @@ class PhotoDisplayFragment : Fragment(), MainActivity.OnWindowFocusChangedListen
         false
     }
 
+    // Gesture handling
     override fun onDown(e: MotionEvent?): Boolean = true
 
     override fun onShowPress(e: MotionEvent?) {}

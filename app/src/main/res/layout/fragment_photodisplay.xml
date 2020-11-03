@@ -20,16 +20,17 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="@dimen/fullscreen_toolbar_bottom_margin"
         android:fitsSystemWindows="true">
 
         <LinearLayout
             android:id="@+id/controls"
             style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/fullscreen_controls_height"
+            android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
             android:layout_gravity="bottom|center_horizontal"
             android:orientation="horizontal"
+            android:background="@drawable/fullscreen_controls_background"
             tools:ignore="UselessParent">
 
             <ImageButton
