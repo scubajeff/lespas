@@ -38,6 +38,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:src="@drawable/ic_baseline_set_cover_24"
+                android:tooltipText="@string/tooltip_text_set_cover"
+                android:contentDescription="@string/tooltip_text_set_cover"
                 style="?android:attr/actionButtonStyle" />
 
             <ImageButton
@@ -46,6 +48,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:src="@drawable/ic_baseline_share_24"
+                android:tooltipText="@string/tooltip_text_share"
+                android:contentDescription="@string/tooltip_text_share"
                 style="?android:attr/actionButtonStyle" />
 
             <ImageButton
@@ -54,6 +58,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:src="@drawable/ic_baseline_info_24"
+                android:tooltipText="@string/tooltip_text_info"
+                android:contentDescription="@string/tooltip_text_info"
                 style="?android:attr/actionButtonStyle" />
 
         </LinearLayout>
