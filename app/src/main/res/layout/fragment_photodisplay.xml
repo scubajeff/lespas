@@ -25,7 +25,7 @@
             android:id="@+id/controls"
             style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/fullscreen_controls_height"
+            android:layout_height="wrap_content"
             android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
             android:layout_gravity="bottom|center_horizontal"
             android:orientation="horizontal"
