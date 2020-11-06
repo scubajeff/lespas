@@ -35,6 +35,8 @@ data class Album(
     }
 }
 
+data class Cover(val name: String, val baseLine: Int)
+
 data class AlbumSyncStatus(val id: String, val eTag: String)
 
 @Dao

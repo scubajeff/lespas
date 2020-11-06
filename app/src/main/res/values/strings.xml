@@ -40,6 +40,13 @@
     // PhotoDisplay fragment
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="tooltip_text_set_cover">Set cover art</string>
+    <string name="tooltip_text_share">Share this</string>
+    <string name="tooltip_text_info">More info</string>
+
+    // CropCover fragment
+    <string name="toast_cover_applied">New cover applied.</string>
+    <string name="toast_cover_set_canceled">Cancel setting new cover.</string>
 
     // Setting fragment
     <string name="settings_title">Settings</string>
