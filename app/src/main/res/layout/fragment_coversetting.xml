@@ -9,7 +9,7 @@
     android:clickable="true"
     android:focusable="true"
     android:background="@android:color/transparent"
-    tools:context=".photo.CropCoverFragment">
+    tools:context=".photo.CoverSettingFragment">
 
     <View
         android:id="@+id/upper"

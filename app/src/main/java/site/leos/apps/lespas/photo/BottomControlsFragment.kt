@@ -74,7 +74,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         uiToggle = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.UIViewModel::class.java)
         uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
 
-        return inflater.inflate(R.layout.fragment_bottom_controls, container, false)
+        return inflater.inflate(R.layout.fragment_bottomcontrols, container, false)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -94,7 +94,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                 controls.visibility = View.GONE
                 hideHandler.post(hideSystemUI)
-                parentFragmentManager.beginTransaction().setReorderingAllowed(true).replace(R.id.container_bottom_toolbar, CropCoverFragment()).addToBackStack(CropCoverFragment.javaClass.name).commit()
+                parentFragmentManager.beginTransaction().setReorderingAllowed(true).replace(R.id.container_bottom_toolbar, CoverSettingFragment()).addToBackStack(CoverSettingFragment.javaClass.name).commit()
             }
         }
         shareButton.run {

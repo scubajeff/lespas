@@ -21,7 +21,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.album.CoverViewModel
 
-class CropCoverFragment : Fragment() {
+class CoverSettingFragment : Fragment() {
     private lateinit var root: ConstraintLayout
     private lateinit var applyButton: FloatingActionButton
     private lateinit var cropArea: ViewGroup
@@ -45,7 +45,7 @@ class CropCoverFragment : Fragment() {
         coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
         currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
 
-        return inflater.inflate(R.layout.fragment_cropcover, container, false)
+        return inflater.inflate(R.layout.fragment_coversetting, container, false)
     }
 
     @SuppressLint("ClickableViewAccessibility")
