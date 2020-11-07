@@ -70,16 +70,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
-        uiToggle = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.UIViewModel::class.java)
-        uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
-
         return inflater.inflate(R.layout.fragment_bottomcontrols, container, false)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
+        uiToggle = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.UIViewModel::class.java)
+        uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
 
         // Controls
         controls = view.findViewById(R.id.controls)

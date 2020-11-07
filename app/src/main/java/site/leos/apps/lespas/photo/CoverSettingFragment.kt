@@ -42,15 +42,15 @@ class CoverSettingFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
-
         return inflater.inflate(R.layout.fragment_coversetting, container, false)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
+        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
 
         root = view.findViewById(R.id.root)
         applyButton = view.findViewById(R.id.apply)
