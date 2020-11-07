@@ -33,30 +33,37 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
+
+        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-                if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                    controls.visibility = View.VISIBLE
-                    visible = true
-                    hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-                } else {
-                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                    controls.visibility = View.GONE
-                    visible = false
-                }
+                try {
+                    if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+                        TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                        controls.visibility = View.VISIBLE
+                        visible = true
+                        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+                    } else {
+                        TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                        controls.visibility = View.GONE
+                        visible = false
+                    }
+                } catch (e: UninitializedPropertyAccessException) {}
             }
         } else {
             window.decorView.setOnApplyWindowInsetsListener { v, insets ->
-                TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                if (insets.isVisible(WindowInsets.Type.statusBars())) {
-                    controls.visibility = View.VISIBLE
-                    hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-                    visible = true
-                } else {
-                    controls.visibility = View.GONE
-                    visible = false
-                }
+                try {
+                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                    if (insets.isVisible(WindowInsets.Type.statusBars())) {
+                        controls.visibility = View.VISIBLE
+                        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+                        visible = true
+                    } else {
+                        controls.visibility = View.GONE
+                        visible = false
+                    }
+                } catch (e: UninitializedPropertyAccessException) {}
+
                 insets
             }
         }
@@ -113,13 +120,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         else hideHandler.removeCallbacks(hideSystemUI)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        // Clean up
-        hideHandler.removeCallbacksAndMessages(null)
     }
 
     // Hide/Show controls, status bar, navigation bar
