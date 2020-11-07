@@ -3,14 +3,12 @@ package site.leos.apps.lespas.photo
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -68,22 +66,22 @@ class CropCoverFragment : Fragment() {
             }
 
             val d = resources.getDrawable(R.drawable.ic_footprint)
-            Log.e("===========", "${d.intrinsicHeight} ${d.intrinsicWidth}")
             val sw = widthPixels.toFloat()
             val sh = heightPixels.toFloat()
-            var dh: Float
-            var fh: Int
+            val dh: Float
+            val dw: Float
+            val fh: Int
 
-            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                dh = sw * d.intrinsicHeight/d.intrinsicWidth
-                fh = (sw * 9 / 21).toInt()
+            if (sh/d.intrinsicHeight > sw/d.intrinsicWidth) {
+                dh = d.intrinsicHeight * (sw /d.intrinsicWidth)
+                dw = sw
             } else {
                 dh = sh
-                fh = (sh * (d.intrinsicWidth / d.intrinsicHeight) * 9 / 21).toInt()
+                dw = d.intrinsicWidth * (sh / d.intrinsicHeight)
             }
+            fh = (dw * 9 / 21).toInt()
 
             val ug = (sh - dh) / 2
-            val lg = sh - ug
             scrollTop = ug / (sh - fh)
             scrollBottom = (sh - ug - fh) / (sh - fh)
             if (scrollTop < 0f) scrollTop = 0f
