@@ -45,7 +45,8 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, "full_image")
-                    .replace(R.id.container_root, PhotoDisplayFragment.newInstance(photo)).addToBackStack(null)
+                    .replace(R.id.container_root, PhotoDisplayFragment.newInstance(photo)).addToBackStack(PhotoDisplayFragment.javaClass.name)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment(), BottomControlsFragment.javaClass.name)
                     .commit()
             }
         }).apply { setAlbum(album) }

@@ -10,6 +10,7 @@ import android.os.Handler
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -23,37 +24,28 @@ import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.album.CoverViewModel
 
 class CropCoverFragment : Fragment() {
-    private lateinit var photo: Photo
     private lateinit var root: ConstraintLayout
     private lateinit var applyButton: FloatingActionButton
     private lateinit var cropArea: ViewGroup
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
     private lateinit var coverModel: CoverViewModel
+    private lateinit var currentPhoto: PhotoDisplayFragment.CurrentPhotoViewModel
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
     private var scrollDistance = 0f
     private var scrollTop = 0f
     private var scrollBottom = 1f
 
-    companion object {
-        private const val PHOTO = "PHOTO"
-        private const val BIAS = "BIAS"
-
-        @JvmStatic
-        fun newInstance(photo: Photo) = CropCoverFragment().apply { arguments = Bundle().apply { putParcelable(PHOTO, photo) } }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        photo = arguments?.getParcelable(PHOTO)!!
 
         if (savedInstanceState != null) newBias = savedInstanceState.getFloat(BIAS)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
-        coverModel.settingCover()
+        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoDisplayFragment.CurrentPhotoViewModel::class.java)
 
         return inflater.inflate(R.layout.fragment_cropcover, container, false)
     }
@@ -75,7 +67,8 @@ class CropCoverFragment : Fragment() {
                 requireActivity().display?.getRealMetrics(this)
             }
 
-            val d = resources.getDrawable(R.drawable.ic_baseline_broken_image_24)
+            val d = resources.getDrawable(R.drawable.ic_footprint)
+            Log.e("===========", "${d.intrinsicHeight} ${d.intrinsicWidth}")
             val sw = widthPixels.toFloat()
             val sh = heightPixels.toFloat()
             var dh: Float
@@ -195,7 +188,7 @@ class CropCoverFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            coverModel.setCover(Cover(photo.name, (newBias * 100).toInt()))     // TODO: should translate to actual moving distance in pixel
+            coverModel.setCover(Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))     // TODO: should translate to actual moving distance in pixel
             Handler(requireContext().mainLooper).post {
                 Toast.makeText(requireContext(), R.string.toast_cover_applied, Toast.LENGTH_SHORT).show()
             }
@@ -210,7 +203,10 @@ class CropCoverFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        coverModel.notSettingCover()
         super.onDestroyView()
+    }
+
+    companion object {
+        private const val BIAS = "BIAS"
     }
 }
