@@ -25,8 +25,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var setCoverButton: ImageButton
     private lateinit var shareButton: ImageButton
     private lateinit var infoButton: ImageButton
-    private lateinit var currentPhoto: PhotoDisplayFragment.CurrentPhotoViewModel
-    private lateinit var uiToggle: PhotoDisplayFragment.UIViewModel
+    private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
+    private lateinit var uiToggle: PhotoSlideFragment.UIViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,8 +70,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoDisplayFragment.CurrentPhotoViewModel::class.java)
-        uiToggle = ViewModelProvider(requireActivity()).get(PhotoDisplayFragment.UIViewModel::class.java)
+        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
+        uiToggle = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.UIViewModel::class.java)
         uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
 
         return inflater.inflate(R.layout.fragment_bottom_controls, container, false)

@@ -2,6 +2,7 @@ package site.leos.apps.lespas.photo
 
 import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -41,11 +42,11 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
         album = arguments?.getParcelable<Album>(ALBUM)!!
 
         mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener{
-            override fun onItemClick(view: View, photo: Photo) {
+            override fun onItemClick(view: View, position: Int) {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, "full_image")
-                    .replace(R.id.container_root, PhotoDisplayFragment.newInstance(photo)).addToBackStack(PhotoDisplayFragment.javaClass.name)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment.javaClass.name)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment(), BottomControlsFragment.javaClass.name)
                     .commit()
             }
@@ -131,7 +132,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
         }
 
         interface OnItemClickListener {
-            fun onItemClick(view: View, photo: Photo)
+            fun onItemClick(view: View, position: Int)
         }
 
         inner class CoverViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -162,8 +163,11 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
                     }
 
                     this.isActivated = isActivated
+                    setOnClickListener {
+                        Log.e(">>>>", "$adapterPosition")
 
-                    setOnClickListener { clickListener.onItemClick(findViewById<ImageView>(R.id.pic), photo) }
+                        clickListener.onItemClick(findViewById<ImageView>(R.id.pic), adapterPosition - 1)
+                    }
                 }
             }
 
@@ -195,10 +199,6 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun getItemCount() = photos.size + 1
-
-        fun getPhotoAtPosition(position: Int): Photo {
-            return (photos[position - 1])
-        }
 
         override fun getItemViewType(position: Int): Int {
             return if (position == 0) TYPE_COVER else TYPE_PHOTO

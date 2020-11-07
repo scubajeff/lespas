@@ -28,7 +28,7 @@ class CropCoverFragment : Fragment() {
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
     private lateinit var coverModel: CoverViewModel
-    private lateinit var currentPhoto: PhotoDisplayFragment.CurrentPhotoViewModel
+    private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
     private var scrollDistance = 0f
@@ -43,7 +43,7 @@ class CropCoverFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoDisplayFragment.CurrentPhotoViewModel::class.java)
+        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
 
         return inflater.inflate(R.layout.fragment_cropcover, container, false)
     }
@@ -188,7 +188,7 @@ class CropCoverFragment : Fragment() {
         applyButton.setOnClickListener {
             coverModel.setCover(Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))     // TODO: should translate to actual moving distance in pixel
             Handler(requireContext().mainLooper).post {
-                Toast.makeText(requireContext(), R.string.toast_cover_applied, Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
             }
 
             parentFragmentManager.popBackStack()

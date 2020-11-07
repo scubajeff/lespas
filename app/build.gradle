@@ -42,20 +42,19 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.3.2'
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
     // Room components
     implementation 'androidx.room:room-runtime:2.2.5'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.preference:preference:1.1.1'
     kapt "androidx.room:room-compiler:2.2.5"
     implementation 'androidx.room:room-ktx:2.2.5'
     androidTestImplementation 'androidx.room:room-testing:2.2.5'
 
     // Lifecycle components
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-    kapt "androidx.lifecycle:lifecycle-compiler:2.2.0"
+    //kapt "androidx.lifecycle:lifecycle-compiler:2.2.0"
+    kapt "androidx.lifecycle:lifecycle-common-java8:2.2.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0"
 
     // Kotlin components
@@ -63,18 +62,18 @@ dependencies {
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7'
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9'
 
-    // Material design
+    // Other UI components
     implementation "com.google.android.material:material:1.2.1"
-
-    // Cardview
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.cardview:cardview:1.0.0"
-
-    // RecyclerView selection
     implementation "androidx.recyclerview:recyclerview-selection:1.0.0"
+    implementation "androidx.viewpager2:viewpager2:1.0.0"
+    implementation 'androidx.preference:preference-ktx:1.1.1'
 
     // Sardine Android WebDAV
     implementation 'com.thegrizzlylabs.sardine-android:sardine-android:0.6'
 
+    // Chris Banes PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'
 
     testImplementation 'junit:junit:4.+'

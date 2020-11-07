@@ -5,14 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black"
-    tools:context=".photo.PhotoDisplayFragment">
+    tools:context=".photo.PhotoSlideFragment">
 
-    <com.github.chrisbanes.photoview.PhotoView
-        android:id="@+id/media"
-        android:transitionName="full_image"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        tools:src="@drawable/ic_footprint" />
+        android:layout_height="match_parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

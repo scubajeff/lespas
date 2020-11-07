@@ -45,7 +45,7 @@
     <string name="tooltip_text_info">More info</string>
 
     // CropCover fragment
-    <string name="toast_cover_applied">New cover applied.</string>
+    <string name="toast_cover_applied">New cover %1$s applied.</string>
     <string name="toast_cover_set_canceled">Cancel setting new cover.</string>
 
     // Setting fragment
