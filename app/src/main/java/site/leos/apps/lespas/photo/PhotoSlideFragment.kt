@@ -19,6 +19,7 @@ import site.leos.apps.lespas.album.Album
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
     private var startAt: Int = 0
+    private var firstRun = true     // Dirty hack in order to set the initial position of viewpager at first run
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
     private lateinit var albumModel: PhotoViewModel     // TODO naming
@@ -55,24 +56,33 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         uiModel = ViewModelProvider(requireActivity()).get(UIViewModel::class.java)
-        currentPhotoModel = ViewModelProvider(requireActivity()).get(CurrentPhotoViewModel::class.java).apply { setCurrentPhoto(null, startAt) }
+        currentPhotoModel = ViewModelProvider(requireActivity()).get(CurrentPhotoViewModel::class.java)
         pAdapter = PhotoSlideAdapter(object : PhotoSlideAdapter.Listener {
             override fun onTouch(photo: Photo, position: Int) {
                 uiModel.toggleOnOff()
-                currentPhotoModel.setCurrentPhoto(photo, position)
+                //currentPhotoModel.setCurrentPhoto(photo)
             }
         })
-
-        slider = view.findViewById<ViewPager2>(R.id.pager).apply {
-            adapter = pAdapter
-        }
 
         albumModel = ViewModelProvider(this, PhotoListFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         albumModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
-            slider.setCurrentItem(currentPhotoModel.getPosition(), false)
-            currentPhotoModel.setCurrentPhoto(photos[currentPhotoModel.getPosition()])
+            if (firstRun) {
+                slider.setCurrentItem(startAt, false)
+                firstRun = false
+            }
+            //currentPhotoModel.setCurrentPhoto(photos[startAt])
         })
+
+        slider = view.findViewById<ViewPager2>(R.id.pager).apply {
+            adapter = pAdapter
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    currentPhotoModel.setCurrentPhoto(albumModel.allPhotoInAlbum.value!![position])
+                }
+            })
+        }
 
         // TODO: should be started when view loaded
         // Briefly show controls
@@ -158,15 +168,9 @@ class PhotoSlideFragment : Fragment() {
     // Share current photo within this fragment and BottomControlsFragment and CropCoverFragement
     class CurrentPhotoViewModel : ViewModel() {
         private val photo = MutableLiveData<Photo>()
-        private var position = 0
 
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
         fun setCurrentPhoto(newPhoto: Photo) { photo.value = newPhoto }
-        fun setCurrentPhoto(newPhoto: Photo?, position: Int) {
-            photo.value = newPhoto
-            this.position = position
-        }
-        fun getPosition(): Int = position
     }
 
     // Share system ui visibility status with BottomControlsFragment
