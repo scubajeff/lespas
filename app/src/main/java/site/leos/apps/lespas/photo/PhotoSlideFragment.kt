@@ -15,6 +15,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumDetailFragment
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -64,7 +65,7 @@ class PhotoSlideFragment : Fragment() {
             }
         })
 
-        photosModel = ViewModelProvider(this, PhotoListFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        photosModel = ViewModelProvider(this, AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
             if (firstRun) {

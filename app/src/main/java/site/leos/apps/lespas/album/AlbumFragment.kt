@@ -13,7 +13,6 @@ import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.photo.PhotoListFragment
 
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: AlbumListAdapter
@@ -30,7 +29,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
         mAdapter = AlbumListAdapter(object: AlbumListAdapter.OnItemClickListener {
             override fun onItemClick(album: Album) {
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotoListFragment.newInstance(album)).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
             }
         })
     }
