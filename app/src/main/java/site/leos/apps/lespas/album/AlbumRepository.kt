@@ -7,7 +7,8 @@ import site.leos.apps.lespas.LespasDatabase
 class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
-    val allAlbumsByEndDate: LiveData<List<Album>> = albumDao.getAllByEndDate()
+    val allAlbumsSortByEndDate: LiveData<List<Album>> = albumDao.getAllSortByEndDate()
+    fun getAlbumByID(albumId: String): LiveData<Album> = albumDao.getAlbumByID(albumId)
     suspend fun insert(album: Album){ albumDao.insert(album) }
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun update(album: Album){ albumDao.update(album) }
@@ -15,6 +16,7 @@ class AlbumRepository(application: Application){
     fun getSyncStatus(): Map<String, String> {
         return albumDao.getSyncStatus().map { it.id to it.eTag}.toMap()
     }
+    suspend fun setCover(album: Album, cover: Cover){ albumDao.setCover(album.id, cover.name, cover.baseLine) }
 
     companion object {
         private var repo: AlbumRepository? = null

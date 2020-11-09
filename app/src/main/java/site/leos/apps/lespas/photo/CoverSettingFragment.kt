@@ -18,16 +18,17 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
-import site.leos.apps.lespas.album.CoverViewModel
 
 class CoverSettingFragment : Fragment() {
+    private lateinit var album: Album
     private lateinit var root: ConstraintLayout
     private lateinit var applyButton: FloatingActionButton
     private lateinit var cropArea: ViewGroup
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
-    private lateinit var coverModel: CoverViewModel
     private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
@@ -35,8 +36,18 @@ class CoverSettingFragment : Fragment() {
     private var scrollTop = 0f
     private var scrollBottom = 1f
 
+    companion object {
+        private const val BIAS = "BIAS"
+        private const val ALBUM = "ALBUM"
+
+        @JvmStatic
+        fun newInstance(album: Album) = CoverSettingFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        album = arguments?.getParcelable(ALBUM)!!
 
         if (savedInstanceState != null) newBias = savedInstanceState.getFloat(BIAS)
     }
@@ -49,8 +60,7 @@ class CoverSettingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
+        currentPhoto = ViewModelProvider(this).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
 
         root = view.findViewById(R.id.root)
         applyButton = view.findViewById(R.id.apply)
@@ -186,7 +196,7 @@ class CoverSettingFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            coverModel.setCover(Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))     // TODO: should translate to actual moving distance in pixel
+            ViewModelProvider(this).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))   // TODO: should translate to actual moving distance in pixel
             Handler(requireContext().mainLooper).post {
                 Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
             }
@@ -202,9 +212,5 @@ class CoverSettingFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-    }
-
-    companion object {
-        private const val BIAS = "BIAS"
     }
 }

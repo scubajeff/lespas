@@ -22,7 +22,7 @@ class PhotoSlideFragment : Fragment() {
     private var firstRun = true     // Dirty hack in order to set the initial position of viewpager at first run
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
-    private lateinit var albumModel: PhotoViewModel     // TODO naming
+    private lateinit var photosModel: PhotoViewModel     // TODO naming
     private lateinit var currentPhotoModel: CurrentPhotoViewModel
     private lateinit var uiModel: UIViewModel
 
@@ -64,8 +64,8 @@ class PhotoSlideFragment : Fragment() {
             }
         })
 
-        albumModel = ViewModelProvider(this, PhotoListFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
-        albumModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
+        photosModel = ViewModelProvider(this, PhotoListFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
             if (firstRun) {
                 slider.setCurrentItem(startAt, false)
@@ -79,7 +79,7 @@ class PhotoSlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    currentPhotoModel.setCurrentPhoto(albumModel.allPhotoInAlbum.value!![position])
+                    currentPhotoModel.setCurrentPhoto(photosModel.allPhotoInAlbum.value!![position])
                 }
             })
         }
@@ -165,7 +165,7 @@ class PhotoSlideFragment : Fragment() {
         }
     }
 
-    // Share current photo within this fragment and BottomControlsFragment and CropCoverFragement
+    // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
     class CurrentPhotoViewModel : ViewModel() {
         private val photo = MutableLiveData<Photo>()
 

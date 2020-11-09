@@ -18,7 +18,6 @@ import site.leos.apps.lespas.photo.PhotoListFragment
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: AlbumListAdapter
     private lateinit var viewModel: AlbumViewModel
-    private lateinit var coverModel: CoverViewModel
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
@@ -113,8 +112,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(AlbumViewModel::class.java)
         viewModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums)})
-        coverModel = ViewModelProvider(requireActivity()).get(CoverViewModel::class.java)
-        coverModel.getCover().observe(viewLifecycleOwner, {newCover-> updateCover(newCover)})
     }
 
     override fun onResume() {
@@ -162,10 +159,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         selectionTracker?.clearSelection()
         actionMode = null
         fab.isEnabled = true
-    }
-
-    fun updateCover(cover: Cover) {
-        // TODO
     }
 
     // List adapter for Albums' recyclerView

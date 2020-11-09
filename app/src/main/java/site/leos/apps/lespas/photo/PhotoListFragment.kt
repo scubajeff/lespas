@@ -21,10 +21,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumViewModel
 
 class PhotoListFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
-    private lateinit var viewModel: PhotoViewModel
+    private lateinit var photoListViewModel: PhotoViewModel
+    private lateinit var currentAlbumModel: AlbumViewModel
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
@@ -39,7 +41,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable<Album>(ALBUM)!!
+        album = arguments?.getParcelable(ALBUM)!!
 
         mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener{
             override fun onItemClick(view: View, position: Int) {
@@ -47,7 +49,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
                     .setReorderingAllowed(true)
                     .addSharedElement(view, "full_image")
                     .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment.javaClass.name)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment(), BottomControlsFragment.javaClass.name)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment.javaClass.name)
                     .commit()
             }
         }).apply { setAlbum(album) }
@@ -57,6 +59,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
         val view = inflater.inflate(R.layout.fragment_photolist, container, false)
 
         view.findViewById<RecyclerView>(R.id.photogrid).run {
+            // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
             layoutManager = GridLayoutManager(activity?.applicationContext, defaultSpanCount).apply {
                 spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -105,8 +108,10 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
 
-        viewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
-        viewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
+        currentAlbumModel = ViewModelProvider(this).get(AlbumViewModel::class.java)
+        currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
+        photoListViewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
         })
@@ -185,6 +190,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
 
         internal fun setAlbum(album: Album) {
             this.album = album
+            notifyDataSetChanged()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -234,6 +240,7 @@ class PhotoListFragment : Fragment(), ActionMode.Callback {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
     }
 
+    // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.actions_album, menu)
 

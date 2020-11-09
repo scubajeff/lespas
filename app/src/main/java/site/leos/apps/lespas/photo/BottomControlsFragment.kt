@@ -18,8 +18,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
+    private lateinit var album: Album
     private lateinit var window: Window
     private lateinit var controls: LinearLayout
     private lateinit var setCoverButton: ImageButton
@@ -28,8 +30,19 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
     private lateinit var uiToggle: PhotoSlideFragment.UIViewModel
 
+    companion object {
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+
+        private const val ALBUM = "ALBUM"
+
+        @JvmStatic
+        fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        album = arguments?.getParcelable(ALBUM)!!
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
@@ -94,7 +107,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                 controls.visibility = View.GONE
                 hideHandler.post(hideSystemUI)
-                parentFragmentManager.beginTransaction().setReorderingAllowed(true).replace(R.id.container_bottom_toolbar, CoverSettingFragment()).addToBackStack(CoverSettingFragment.javaClass.name).commit()
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album))
+                    .addToBackStack(CoverSettingFragment.javaClass.name)
+                    .commit()
             }
         }
         shareButton.run {
@@ -180,10 +197,5 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 .setPositiveButton(android.R.string.ok) { _, i_ -> }
                 .create()
         }
-    }
-
-    companion object {
-        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
-
     }
 }

@@ -12,10 +12,18 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     val allAlbumsByEndDate: LiveData<List<Album>>
 
     init {
-        allAlbumsByEndDate = repository.allAlbumsByEndDate
+        allAlbumsByEndDate = repository.allAlbumsSortByEndDate
     }
 
     fun insertAsync(album: Album) = viewModelScope.launch(Dispatchers.IO){
         repository.insert(album)
+    }
+
+    fun getAlbumByID(albumId: String): LiveData<Album> {
+        return repository.getAlbumByID(albumId)
+    }
+
+    fun setCover(album: Album, cover: Cover) = viewModelScope.launch(Dispatchers.IO) {
+        repository.setCover(album, cover)
     }
 }

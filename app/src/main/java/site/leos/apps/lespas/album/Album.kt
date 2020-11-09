@@ -51,8 +51,14 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun deleteByIdSync(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate ASC")
-    abstract fun getAllByEndDate(): LiveData<List<Album>>
+    abstract fun getAllSortByEndDate(): LiveData<List<Album>>
+
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun getAlbumByID(albumId: String): LiveData<Album>
 
     @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
     abstract fun getSyncStatus(): List<AlbumSyncStatus>
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline WHERE id = :albumId")
+    abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int)
 }
