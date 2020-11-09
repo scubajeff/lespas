@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -20,7 +21,6 @@ import site.leos.apps.lespas.album.AlbumDetailFragment
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
     private var startAt: Int = 0
-    private var firstRun = true     // Dirty hack in order to set the initial position of viewpager at first run
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
     private lateinit var photosModel: PhotoViewModel     // TODO naming
@@ -61,18 +61,13 @@ class PhotoSlideFragment : Fragment() {
         pAdapter = PhotoSlideAdapter(object : PhotoSlideAdapter.Listener {
             override fun onTouch(photo: Photo, position: Int) {
                 uiModel.toggleOnOff()
-                //currentPhotoModel.setCurrentPhoto(photo)
             }
         })
 
         photosModel = ViewModelProvider(this, AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
-            if (firstRun) {
-                slider.setCurrentItem(startAt, false)
-                firstRun = false
-            }
-            //currentPhotoModel.setCurrentPhoto(photos[startAt])
+            (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
         })
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
