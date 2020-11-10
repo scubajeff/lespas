@@ -9,12 +9,15 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumDao
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoDao
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionDao
 
-@Database(entities = [Album::class, Photo::class], version = 3, exportSchema = false)
+@Database(entities = [Album::class, Photo::class, Action::class], version = 4, exportSchema = false)
 @TypeConverters(Converter::class)
 abstract class LespasDatabase: RoomDatabase() {
     abstract fun albumDao(): AlbumDao
     abstract fun photoDao(): PhotoDao
+    abstract fun actionDao(): ActionDao
 
     companion object {
         @Volatile
