@@ -59,7 +59,7 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         pAdapter = PhotoSlideAdapter(object : PhotoSlideAdapter.Listener {
-            override fun onTouch(photo: Photo, position: Int) {
+            override fun onTouch() {
                 uiModel.toggleOnOff()
             }
         })
@@ -127,15 +127,15 @@ class PhotoSlideFragment : Fragment() {
         private var photos = emptyList<Photo>()
 
         interface Listener {
-            fun onTouch(photo: Photo, position: Int)
+            fun onTouch()
         }
 
         inner class PagerViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(photo: Photo, itemListener: Listener) {
                 itemView.findViewById<PhotoView>(R.id.media).apply {
                     setImageResource(R.drawable.ic_footprint)
-                    setOnPhotoTapListener { _, _, _ -> itemListener.onTouch(photo, adapterPosition) }
-                    setOnOutsidePhotoTapListener { itemListener.onTouch(photo, adapterPosition) }
+                    setOnPhotoTapListener { _, _, _ -> itemListener.onTouch() }
+                    setOnOutsidePhotoTapListener { itemListener.onTouch() }
                     maximumScale = 5.0f
                     mediumScale = 2.5f
                 }
