@@ -209,7 +209,7 @@ class CoverSettingFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            ViewModelProvider(this).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))   // TODO: should translate to actual moving distance in pixel
+            ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.name, (newBias * 100).toInt()))   // TODO: should translate to actual moving distance in pixel
             Handler(requireContext().mainLooper).post {
                 Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
             }

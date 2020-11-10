@@ -7,7 +7,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +16,7 @@ import site.leos.apps.lespas.R
 
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: AlbumListAdapter
-    private val albumsModel: AlbumViewModel by viewModels()
+    private val albumsModel: AlbumViewModel by activityViewModels()
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton

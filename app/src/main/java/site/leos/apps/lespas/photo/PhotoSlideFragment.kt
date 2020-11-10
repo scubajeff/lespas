@@ -47,7 +47,7 @@ class PhotoSlideFragment : Fragment() {
         album = arguments?.getParcelable(ALBUM)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
-        photosModel = ViewModelProvider(this, AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        photosModel = ViewModelProvider(requireActivity(), AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         //sharedElementEnterTransition = ChangeBounds()
     }
 
