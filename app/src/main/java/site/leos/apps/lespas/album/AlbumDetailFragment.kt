@@ -56,7 +56,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         })
 
-        photoListViewModel = ViewModelProvider(requireActivity(), ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        photoListViewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
