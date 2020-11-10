@@ -7,7 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 
 class PhotoViewModel(application: Application, private val albumId: String): AndroidViewModel(application) {
-    private val repository = PhotoRepository.getRepository(application)
+    //private val repository = PhotoRepository.getRepository(application)
+    private val repository = PhotoRepository(application)
     val allPhotoInAlbum: LiveData<List<Photo>>
     val albumSize: LiveData<Int>
 
