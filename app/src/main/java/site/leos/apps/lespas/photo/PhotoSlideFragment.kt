@@ -7,6 +7,7 @@ import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -24,8 +25,8 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
     private lateinit var photosModel: PhotoViewModel     // TODO naming
-    private lateinit var currentPhotoModel: CurrentPhotoViewModel
-    private lateinit var uiModel: UIViewModel
+    private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
+    private val uiModel: UIViewModel by activityViewModels()
 
     companion object {
         private const val ALBUM = "ALBUM"
@@ -46,6 +47,7 @@ class PhotoSlideFragment : Fragment() {
         album = arguments?.getParcelable(ALBUM)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
+        photosModel = ViewModelProvider(this, AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         //sharedElementEnterTransition = ChangeBounds()
     }
 
@@ -56,15 +58,12 @@ class PhotoSlideFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        uiModel = ViewModelProvider(requireActivity()).get(UIViewModel::class.java)
-        currentPhotoModel = ViewModelProvider(requireActivity()).get(CurrentPhotoViewModel::class.java)
         pAdapter = PhotoSlideAdapter(object : PhotoSlideAdapter.Listener {
             override fun onTouch(photo: Photo, position: Int) {
                 uiModel.toggleOnOff()
             }
         })
 
-        photosModel = ViewModelProvider(this, AlbumDetailFragment.ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }

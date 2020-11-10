@@ -28,7 +28,7 @@ import site.leos.apps.lespas.photo.PhotoViewModel
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var photoListViewModel: PhotoViewModel
-    private lateinit var currentAlbumModel: AlbumViewModel
+    //private val currentAlbumModel: AlbumViewModel by activityViewModels()
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
@@ -54,7 +54,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment.javaClass.name)
                     .commit()
             }
-        })//.apply { setAlbum(album) }  Set by viewmodel
+        }).apply { setAlbum(album) }
+
+        photoListViewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -110,9 +112,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
 
-        currentAlbumModel = ViewModelProvider(this).get(AlbumViewModel::class.java)
-        currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
-        photoListViewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+        //currentAlbumModel = ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java)
+        //currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
         photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
@@ -149,7 +150,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         setImageResource(R.drawable.ic_footprint)
                         scrollTo(0, 200)
                     }
-                    findViewById<TextView>(R.id.title).text = album?.name
+                    //findViewById<TextView>(R.id.title).text = album?.name
+                    findViewById<TextView>(R.id.title).text = album?.cover
                 }
             }
 
@@ -171,8 +173,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     this.isActivated = isActivated
                     setOnClickListener {
-                        Log.e(">>>>", "$adapterPosition")
-
                         clickListener.onItemClick(findViewById<ImageView>(R.id.pic), adapterPosition - 1)
                     }
                 }
@@ -193,6 +193,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setAlbum(album: Album) {
             this.album = album
             notifyDataSetChanged()
+            Log.e("====", "new album set for renew cover in AlbumDetail")
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

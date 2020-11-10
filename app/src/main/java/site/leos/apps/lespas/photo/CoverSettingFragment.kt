@@ -15,6 +15,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
@@ -29,7 +30,8 @@ class CoverSettingFragment : Fragment() {
     private lateinit var cropArea: ViewGroup
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
-    private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
+    private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
     private var scrollDistance = 0f
@@ -59,8 +61,6 @@ class CoverSettingFragment : Fragment() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        currentPhoto = ViewModelProvider(this).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
 
         root = view.findViewById(R.id.root)
         applyButton = view.findViewById(R.id.apply)

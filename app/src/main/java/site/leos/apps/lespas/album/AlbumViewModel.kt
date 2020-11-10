@@ -8,7 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
-    private val repository: AlbumRepository = AlbumRepository.getRepository(application)
+    //private val repository: AlbumRepository = AlbumRepository.getRepository(application)
+    private val repository: AlbumRepository = AlbumRepository(application)
     val allAlbumsByEndDate: LiveData<List<Album>>
 
     init {

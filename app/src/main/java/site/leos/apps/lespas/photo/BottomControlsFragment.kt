@@ -15,7 +15,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.activityViewModels
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -27,8 +27,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var setCoverButton: ImageButton
     private lateinit var shareButton: ImageButton
     private lateinit var infoButton: ImageButton
-    private lateinit var currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel
-    private lateinit var uiToggle: PhotoSlideFragment.UIViewModel
+    private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+    private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
@@ -90,8 +90,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        currentPhoto = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.CurrentPhotoViewModel::class.java)
-        uiToggle = ViewModelProvider(requireActivity()).get(PhotoSlideFragment.UIViewModel::class.java)
         uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
 
         // Controls

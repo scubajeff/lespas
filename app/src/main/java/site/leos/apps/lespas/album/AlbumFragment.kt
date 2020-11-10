@@ -7,8 +7,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -16,7 +16,7 @@ import site.leos.apps.lespas.R
 
 class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: AlbumListAdapter
-    private lateinit var viewModel: AlbumViewModel
+    private val albumsModel: AlbumViewModel by viewModels()
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
@@ -109,8 +109,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(AlbumViewModel::class.java)
-        viewModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums)})
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums)})
     }
 
     override fun onResume() {
@@ -182,7 +181,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         setImageResource(R.drawable.ic_footprint)
                         scrollTo(0, 200)
                     }
-                    findViewById<TextView>(R.id.duration).text = "1970.01.17 - 1977.01.10"
+                    findViewById<TextView>(R.id.duration).text = album.cover
                     setOnClickListener { clickListener.onItemClick(album) }
                     this.isActivated = isActivated
                 }

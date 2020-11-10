@@ -3,6 +3,8 @@ package site.leos.apps.lespas.photo
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 
 class PhotoViewModel(application: Application, private val albumId: String): AndroidViewModel(application) {
     private val repository = PhotoRepository.getRepository(application)
@@ -13,4 +15,8 @@ class PhotoViewModel(application: Application, private val albumId: String): And
         allPhotoInAlbum = repository.getAllByDateTakenASCDistinctLiveData(albumId)
         albumSize = repository.getAlbumSizeDistinctLiveData(albumId)
     }
+}
+
+class PhotoViewModelFactory(private val application: Application, private val albumId: String) : ViewModelProvider.NewInstanceFactory() {
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, albumId) as T
 }
