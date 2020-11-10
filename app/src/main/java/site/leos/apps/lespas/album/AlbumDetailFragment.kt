@@ -54,7 +54,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment.javaClass.name)
                     .commit()
             }
-        }).apply { setAlbum(album) }
+        })//.apply { setAlbum(album) }  Set by viewmodel
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -130,7 +130,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private lateinit var album: Album
+        private var album: Album? = null
         private var photos = emptyList<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
 
@@ -149,7 +149,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         setImageResource(R.drawable.ic_footprint)
                         scrollTo(0, 200)
                     }
-                    findViewById<TextView>(R.id.title).text = album.name
+                    findViewById<TextView>(R.id.title).text = album?.name
                 }
             }
 
