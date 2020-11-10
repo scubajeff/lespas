@@ -8,6 +8,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,6 +22,7 @@ class MainActivity : AppCompatActivity() {
             ContentResolver.requestSync((AccountManager.get(this).accounts)[0], getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.ACTION_SYNC_WITH_SERVER)
             })
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
