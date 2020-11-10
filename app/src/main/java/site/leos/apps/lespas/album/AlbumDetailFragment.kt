@@ -2,7 +2,6 @@ package site.leos.apps.lespas.album
 
 import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -11,6 +10,7 @@ import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -28,7 +28,7 @@ import site.leos.apps.lespas.photo.PhotoViewModel
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var photoListViewModel: PhotoViewModel
-    //private val currentAlbumModel: AlbumViewModel by activityViewModels()
+    private val currentAlbumModel: AlbumViewModel by activityViewModels()
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
@@ -54,7 +54,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment.javaClass.name)
                     .commit()
             }
-        }).apply { setAlbum(album) }
+        })
 
         photoListViewModel = ViewModelProvider(this, ExtraParamsViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
     }
@@ -112,8 +112,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
 
-        //currentAlbumModel = ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java)
-        //currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
+        currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
         photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
@@ -193,7 +192,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setAlbum(album: Album) {
             this.album = album
             notifyDataSetChanged()
-            Log.e("====", "new album set for renew cover in AlbumDetail")
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
