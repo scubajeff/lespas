@@ -157,42 +157,55 @@ class CoverSettingFragment : Fragment() {
                 }
                 false
             }
-            // Animation crop area, hinting user that is can be moved
-            // TODO: Better way to tom chain transitions??
-            if (newBias == 0.5f) {
-                post { ConstraintSet().apply {
-                    var i = 1
-                    val t = AutoTransition()
-                    t.duration = 300
-                    t.addListener(object: android.transition.Transition.TransitionListener {
-                        override fun onTransitionStart(transition: android.transition.Transition?) {}
-                        override fun onTransitionEnd(transition: android.transition.Transition?) {
-                            if (i < 2) {
-                                t.duration = 600
-                                clone(root)
-                                setVerticalBias(R.id.croparea, 0.55f)
-                                TransitionManager.beginDelayedTransition(root, t)
-                                applyTo(root)
-                                i += 1
-                            } else if (i < 3){
-                                t.duration = 300
-                                clone(root)
-                                setVerticalBias(R.id.croparea, 0.5f)
-                                TransitionManager.beginDelayedTransition(root, t)
-                                applyTo(root)
-                                i += 1
+        }
+
+        // Animation crop area, hinting user that it can be moved
+        if (newBias == 0.5f) {
+            applyButton.alpha = 0f
+            applyButton.visibility = View.GONE
+            applyButton.animate().alpha(1f).setDuration(300).setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+
+                    // TODO: Better way to tom chain transitions??
+                    ConstraintSet().apply {
+                        var i = 1
+                        val t = AutoTransition()
+                        t.duration = 300
+                        t.addListener(object : android.transition.Transition.TransitionListener {
+                            override fun onTransitionStart(transition: android.transition.Transition?) {}
+                            override fun onTransitionEnd(transition: android.transition.Transition?) {
+                                if (i < 2) {
+                                    t.duration = 600
+                                    clone(root)
+                                    setVerticalBias(R.id.croparea, 0.55f)
+                                    TransitionManager.beginDelayedTransition(root, t)
+                                    applyTo(root)
+                                    i += 1
+                                } else if (i < 3) {
+                                    t.duration = 300
+                                    clone(root)
+                                    setVerticalBias(R.id.croparea, 0.5f)
+                                    TransitionManager.beginDelayedTransition(root, t)
+                                    applyTo(root)
+                                    applyButton.visibility = View.VISIBLE
+                                    i += 1
+                                }
                             }
-                        }
-                        override fun onTransitionCancel(transition: android.transition.Transition?) {}
-                        override fun onTransitionPause(transition: android.transition.Transition?) {}
-                        override fun onTransitionResume(transition: android.transition.Transition?) {}
-                    })
-                    clone(root)
-                    setVerticalBias(R.id.croparea, 0.45f)
-                    TransitionManager.beginDelayedTransition(root, t)
-                    applyTo(root)
-                }}
-            }
+
+                            override fun onTransitionCancel(transition: android.transition.Transition?) {}
+                            override fun onTransitionPause(transition: android.transition.Transition?) {}
+                            override fun onTransitionResume(transition: android.transition.Transition?) {}
+                        })
+                        clone(root)
+                        setVerticalBias(R.id.croparea, 0.45f)
+                        TransitionManager.beginDelayedTransition(root, t)
+                        applyTo(root)
+                    }
+
+
+                }
+            })
         }
 
         applyButton.setOnClickListener {
