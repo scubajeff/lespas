@@ -10,7 +10,7 @@ import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -28,7 +28,7 @@ import site.leos.apps.lespas.photo.PhotoViewModel
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var photoListViewModel: PhotoViewModel
-    private val currentAlbumModel: AlbumViewModel by activityViewModels()
+    private val currentAlbumModel: AlbumViewModel by viewModels()
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
