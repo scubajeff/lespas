@@ -138,7 +138,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                selectionTracker?.selection?.forEach { _ -> }
+                val albums = mutableListOf<Album>()
+                for (i in selectionTracker?.selection!!) {
+                    albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
+                }
+                albumsModel.deleteAlbums(albums)
 
                 selectionTracker?.clearSelection()
                 true

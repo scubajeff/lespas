@@ -27,9 +27,7 @@ class PhotoViewModel(application: Application, private val albumId: String): And
             // Create new actions on server side
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
-            photos.forEach {
-                actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, it.albumId, it.name, timestamp))
-            }
+            photos.forEach {photo ->  actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, photo.name, timestamp)) }
             actionRepository.addActions(actions)
         }
     }

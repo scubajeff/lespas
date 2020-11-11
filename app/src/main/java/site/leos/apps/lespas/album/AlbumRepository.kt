@@ -16,6 +16,7 @@ class AlbumRepository(application: Application){
     fun getSyncStatus(): Map<String, String> = albumDao.getSyncStatus().map { it.id to it.eTag}.toMap()
     suspend fun setCover(album: Album, cover: Cover) { albumDao.setCover(album.id, cover.name, cover.baseLine) }
     fun getAlbumName(albumId: String): String = albumDao.getAlbumName(albumId)
+    suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
 
     companion object {
         private var repo: AlbumRepository? = null

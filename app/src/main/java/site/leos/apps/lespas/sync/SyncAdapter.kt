@@ -69,7 +69,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             sardine.delete("$resourceRoot/$albumName/${action.fileName}")
                         }
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                            sardine.delete("$resourceRoot/${action.fileName}")
+                            sardine.delete("$resourceRoot/${action.fileName}")      // ${action.filename} is the directory name set when action created
                         }
                         Action.ACTION_ADD_FILES_ON_SERVER -> {
 

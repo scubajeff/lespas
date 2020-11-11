@@ -6,19 +6,30 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionRepository
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
     //private val repository: AlbumRepository = AlbumRepository.getRepository(application)
-    private val repository: AlbumRepository = AlbumRepository(application)
+    private val albumRepository = AlbumRepository(application)
+    private val actionRepository = ActionRepository(application)
     val allAlbumsByEndDate: LiveData<List<Album>>
 
     init {
-        allAlbumsByEndDate = repository.allAlbumsSortByEndDate
+        allAlbumsByEndDate = albumRepository.allAlbumsSortByEndDate
     }
 
-    fun insertAsync(album: Album) = viewModelScope.launch(Dispatchers.IO) { repository.insert(album) }
+    fun insertAsync(album: Album) = viewModelScope.launch(Dispatchers.IO) { albumRepository.insert(album) }
+    fun getAlbumByID(albumId: String): LiveData<Album> = albumRepository.getAlbumByID(albumId)
+    fun setCover(album: Album, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(album, cover) }
+    fun deleteAlbums(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            albumRepository.deleteAlbums(albums)
 
-    fun getAlbumByID(albumId: String): LiveData<Album> = repository.getAlbumByID(albumId)
-
-    fun setCover(album: Album, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { repository.setCover(album, cover) }
+            val actions = mutableListOf<Action>()
+            val timestamp = System.currentTimeMillis()
+            albums.forEach {album -> actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name, timestamp)) }
+            actionRepository.addActions(actions)
+        }
+    }
 }
