@@ -161,9 +161,10 @@ class CoverSettingFragment : Fragment() {
 
         // Animation crop area, hinting user that it can be moved
         if (newBias == 0.5f) {
+            val duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             applyButton.alpha = 0f
             applyButton.visibility = View.GONE
-            applyButton.animate().alpha(1f).setDuration(300).setListener(object : AnimatorListenerAdapter() {
+            applyButton.animate().alpha(1f).setDuration(duration).setListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator?) {
                     super.onAnimationEnd(animation)
 
@@ -171,19 +172,19 @@ class CoverSettingFragment : Fragment() {
                     ConstraintSet().apply {
                         var i = 1
                         val t = AutoTransition()
-                        t.duration = 300
+                        t.duration = duration
                         t.addListener(object : android.transition.Transition.TransitionListener {
                             override fun onTransitionStart(transition: android.transition.Transition?) {}
                             override fun onTransitionEnd(transition: android.transition.Transition?) {
                                 if (i < 2) {
-                                    t.duration = 600
+                                    t.duration = duration * 2
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.55f)
                                     TransitionManager.beginDelayedTransition(root, t)
                                     applyTo(root)
                                     i += 1
                                 } else if (i < 3) {
-                                    t.duration = 300
+                                    t.duration = duration
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.5f)
                                     TransitionManager.beginDelayedTransition(root, t)
