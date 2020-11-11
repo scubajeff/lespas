@@ -26,7 +26,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
-            val order = extras.getInt(ACTION) ?: SYNC_LOCAL_CHANGES
+            val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
 
             val resourceRoot: String
             val sardine =  OkHttpSardine()
