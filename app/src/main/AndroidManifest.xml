@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="site.leos.apps.lespas">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -66,8 +67,9 @@
         </service>
 
         <provider
-            android:name=".sync.StubProvider"
+            android:name=".sync.SyncContentProvider"
             android:authorities="@string/sync_authority"
+            android:enabled="true"
             android:exported="false"
             android:syncable="true" />
 

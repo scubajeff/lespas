@@ -2,32 +2,34 @@ package site.leos.apps.lespas.sync
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.accounts.AuthenticatorException
 import android.app.Application
 import android.content.AbstractThreadedSyncAdapter
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.SyncResult
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
+import androidx.preference.PreferenceManager
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import java.io.IOException
 import javax.xml.namespace.QName
 
-class SyncAdapter @JvmOverloads constructor(context: Context, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
-) : AbstractThreadedSyncAdapter(context, autoInitialize, allowParallelSyncs){
+class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
+) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
-        val action: Int
-
         try {
-            var resourceRoot: String
-            val sardine =  OkHttpSardine()
+            val order = extras.getInt(ACTION) ?: SYNC_LOCAL_CHANGES
 
-            action = extras.getInt(ACTION) ?: ACTION_SYNC_WITH_SERVER
+            val resourceRoot: String
+            val sardine =  OkHttpSardine()
 
             // Initialize sardine library
             AccountManager.get(context).run {
@@ -43,112 +45,128 @@ class SyncAdapter @JvmOverloads constructor(context: Context, autoInitialize: Bo
                 return
             }
 
-            // TODO: could be const
-            val ncProps = setOf(
-                QName(DAV_NS, DAV_GETETAG, "D"),
-                QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
-                QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
-                QName(DAV_NS, DAV_RESOURCETYPE, "D"),
-                QName(OC_NS, OC_UNIQUE_ID, "oc"),
-                QName(OC_NS, OC_SHARETYPE, "oc"),
-                QName(NC_NS, NC_HASPREVIEW, "nc"),
-                QName(OC_NS, OC_CHECKSUMS, "oc"),
-                QName(OC_NS, OC_SIZE, "oc"),
-                QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
-            )
+            val albumRepository = AlbumRepository(application)
+            val photoRepository = PhotoRepository(application)
+            val actionRepository = ActionRepository(application)
 
-            val albumRepository = AlbumRepository.getRepository(context as Application)     // SyncService pass applicationContext to us
-            val photoRepository = PhotoRepository.getRepository(context as Application)     // SyncService pass applicationContext to us
-
-            when(action) {
-                ACTION_SYNC_WITH_SERVER-> {
-                    // Compare remote and local album list
-                    val localAlbums = albumRepository.getSyncStatus()
-                    val pendingUpdate: MutableList<Album> = mutableListOf()
-                    sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, ncProps).drop(1).run {
-                        val remoteAlbum = mutableListOf<String>()
-                        forEach { album ->
-                            remoteAlbum.add(album.customProps[OC_UNIQUE_ID]!!)
-                            if (album.isDirectory) {
-                                if (localAlbums[album.customProps[OC_UNIQUE_ID]!!] != album.etag) {
-                                    Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbums[album.customProps[OC_UNIQUE_ID]!!]}")
-                                    pendingUpdate.add(Album(album.customProps[OC_UNIQUE_ID]!!, album.name, null, null, "", 0, album.modified, Album.BY_DATE_TAKEN_ASC, album.etag, 0))
-                                }
-                            }
+            // Processing pending actions
+            if (order == SYNC_LOCAL_CHANGES) {
+                actionRepository.getAllPendingActions().forEach { action ->
+                    // Check network type on every loop
+                    if (PreferenceManager.getDefaultSharedPreferences(application)   // SyncService pass applicationContext to us
+                            .getBoolean(application.getString(R.string.wifionly_pref_key), true)
+                    ) {
+                        if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                            // Delay next sync for at least 30 minutes
+                            syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 30 * 60
+                            return
                         }
-                        //Log.e("======", "changed albums:${pendingUpdate.size}")
-
-                        // Delete those albums not exist on server
-                        for (localAlbum in localAlbums) {
-                            if (!remoteAlbum.contains(localAlbum.key)) {
-                                Log.e("=======", "deleting album: ${localAlbum.key}")
-                                albumRepository.deleteByIdSync(localAlbum.key)
-                            }
-                        }
-
                     }
 
-                    // Sync each changed album
-                    val pendingDownload = mutableListOf<Photo>()
-                    val remotePhotos = mutableListOf<String>()
-                    for(album in pendingUpdate) {
-                        // Update album first, so that it's photos can be insert without FOREIGN KEY constraint failed
-                        albumRepository.upsertSync(album)
+                    when (action.action) {
+                        Action.ACTION_DELETE_FILES_ON_SERVER -> {
+                            val albumName = albumRepository.getAlbumName(action.folderId)
+                            sardine.delete("$resourceRoot/$albumName/${action.fileName}")
+                        }
+                        Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
+                            sardine.delete("$resourceRoot/${action.fileName}")
+                        }
+                        Action.ACTION_ADD_FILES_ON_SERVER -> {
 
-                        var count = 0
-                        val localPhotos = photoRepository.getSyncStatus(album.id)
-                        sardine.list("$resourceRoot/${album.name}", FOLDER_CONTENT_DEPTH, ncProps).run {
-                            forEach { remotePhoto->
-                                if (remotePhoto.contentType.startsWith("image", true)) {
-                                    // Accumulate remote photos list
-                                    remotePhotos.add(remotePhoto.customProps[OC_UNIQUE_ID]!!)
+                        }
+                        Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
+                            sardine.createDirectory("$resourceRoot/${action.fileName}")
+                        }
+                        Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
 
-                                    count++
-                                    if (localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!] != remotePhoto.etag) {
-                                        Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!]}")
-                                        pendingDownload.add(Photo(remotePhoto.customProps[OC_UNIQUE_ID]!!, album.id, remotePhoto.name, remotePhoto.etag, null, remotePhoto.modified, 0))
-                                    }
-                                }
+                        }
+                    }
+                }
+            } else {
+                // Compare remote and local album list
+                val localAlbums = albumRepository.getSyncStatus()
+                val pendingUpdate: MutableList<Album> = mutableListOf()
+                sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).drop(1).run {
+                    val remoteAlbum = mutableListOf<String>()
+                    forEach { album ->
+                        remoteAlbum.add(album.customProps[OC_UNIQUE_ID]!!)
+                        if (album.isDirectory) {
+                            if (localAlbums[album.customProps[OC_UNIQUE_ID]!!] != album.etag) {
+                                Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbums[album.customProps[OC_UNIQUE_ID]!!]}")
+                                pendingUpdate.add(Album(album.customProps[OC_UNIQUE_ID]!!, album.name, null, null, "", 0, album.modified, Album.BY_DATE_TAKEN_ASC, album.etag, 0))
                             }
-                            //Log.e("===========", "total:$count changed photos:${pendingDownload.size}")
+                        }
+                    }
+                    //Log.e("======", "changed albums:${pendingUpdate.size}")
 
-                            // Update photo
-                            for (photo in pendingDownload) photoRepository.upsertSync(photo)
-
-                            // Delete those photos not exist on server
-                            for (localPhoto in localPhotos) {
-                                if (!remotePhotos.contains(localPhoto.key)) {
-                                    Log.e("=======", "deleting photo: ${localPhoto.key}")
-                                    photoRepository.deleteByIdSync(localPhoto.key)
-                                }
-                            }
-
-                            // Recycle the list
-                            remotePhotos.clear()
-                            pendingDownload.clear()
+                    // Delete those albums not exist on server
+                    for (localAlbum in localAlbums) {
+                        if (!remoteAlbum.contains(localAlbum.key)) {
+                            Log.e("=======", "deleting album: ${localAlbum.key}")
+                            albumRepository.deleteByIdSync(localAlbum.key)
                         }
                     }
                 }
 
-                ACTION_DELETE_FILES_ON_SERVER-> {
+                // Sync each changed album
+                val pendingDownload = mutableListOf<Photo>()
+                val remotePhotos = mutableListOf<String>()
+                for (album in pendingUpdate) {
+                    // Update album first, so that it's photos can be insert without FOREIGN KEY constraint failed
+                    albumRepository.upsertSync(album)
 
+                    var count = 0
+                    val localPhotos = photoRepository.getSyncStatus(album.id)
+                    sardine.list("$resourceRoot/${album.name}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).run {
+                        forEach { remotePhoto ->
+                            if (remotePhoto.contentType.startsWith("image", true)) {
+                                // Accumulate remote photos list
+                                remotePhotos.add(remotePhoto.customProps[OC_UNIQUE_ID]!!)
+
+                                count++
+                                if (localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!] != remotePhoto.etag) {
+                                    Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!]}")
+                                    pendingDownload.add(Photo(remotePhoto.customProps[OC_UNIQUE_ID]!!, album.id, remotePhoto.name, remotePhoto.etag, null, remotePhoto.modified, 0))
+                                }
+                            }
+                        }
+                        //Log.e("===========", "total:$count changed photos:${pendingDownload.size}")
+
+                        // Update photo
+                        for (photo in pendingDownload) photoRepository.upsertSync(photo)
+
+                        // Delete those photos not exist on server
+                        for (localPhoto in localPhotos) {
+                            if (!remotePhotos.contains(localPhoto.key)) {
+                                Log.e("=======", "deleting photo: ${localPhoto.key}")
+                                photoRepository.deleteByIdSync(localPhoto.key)
+                            }
+                        }
+
+                        // Recycle the list
+                        remotePhotos.clear()
+                        pendingDownload.clear()
+                    }
                 }
             }
 
+            // Clear status counters
+            syncResult.stats.clear()
+        } catch (e: IOException) {
+            syncResult.stats.numAuthExceptions++
+            e.printStackTrace()
+        } catch (e: AuthenticatorException) {
+            syncResult.stats.numAuthExceptions++
+            e.printStackTrace()
         } catch (e:Exception) {
-            Log.e("=======", e.toString())
-            //e.printStackTrace()
+            e.printStackTrace()
         }
     }
 
     companion object {
         const val ACTION = "ACTION"
-        const val ACTION_SYNC_WITH_SERVER = 0
-        const val ACTION_DELETE_FILES_ON_SERVER = 1
-        const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
-        const val ACTION_ADD_FILES_ON_SERVER = 3
-        const val ACTION_ADD_DIRECTORY_ON_SERVER = 4
-        const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
+        const val SYNC_LOCAL_CHANGES = 0
+        const val SYNC_SERVER_CHANGES = 1
 
         // PROPFIND properties namespace
         const val DAV_NS = "DAV:"
@@ -172,5 +190,18 @@ class SyncAdapter @JvmOverloads constructor(context: Context, autoInitialize: Bo
 
         const val JUST_FOLDER_DEPTH = 0
         const val FOLDER_CONTENT_DEPTH = 1
+
+        val NC_PROFIND_PROP = setOf(
+            QName(DAV_NS, DAV_GETETAG, "D"),
+            QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
+            QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
+            QName(DAV_NS, DAV_RESOURCETYPE, "D"),
+            QName(OC_NS, OC_UNIQUE_ID, "oc"),
+            QName(OC_NS, OC_SHARETYPE, "oc"),
+            QName(NC_NS, NC_HASPREVIEW, "nc"),
+            QName(OC_NS, OC_CHECKSUMS, "oc"),
+            QName(OC_NS, OC_SIZE, "oc"),
+            QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
+        )
     }
 }

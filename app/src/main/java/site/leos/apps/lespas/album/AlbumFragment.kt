@@ -137,13 +137,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
-            R.id.remove_album -> {
+            R.id.remove -> {
                 selectionTracker?.selection?.forEach { _ -> }
 
                 selectionTracker?.clearSelection()
                 true
             }
-            R.id.share_album -> {
+            R.id.share -> {
                 selectionTracker?.selection?.forEach { _ -> }
 
                 selectionTracker?.clearSelection()

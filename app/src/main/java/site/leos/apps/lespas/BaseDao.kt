@@ -50,7 +50,7 @@ abstract class BaseDao<T> {
     abstract fun insertSync(obj: List<T>): List<Long>
 
     @Update
-    abstract fun updateSync(obj: T)
+    abstract fun updateSync(obj: T): Int
 
     @Update
     abstract fun updateSync(obj: List<T>)

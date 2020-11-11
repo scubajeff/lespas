@@ -7,7 +7,7 @@ import android.os.IBinder
 class SyncService : Service() {
     override fun onCreate() {
         synchronized(sSyncAdapterLock) {
-            sSyncAdapter = sSyncAdapter ?: SyncAdapter(applicationContext, true)
+            sSyncAdapter = sSyncAdapter ?: SyncAdapter(application, true)
         }
     }
     override fun onBind(intent: Intent?): IBinder? {

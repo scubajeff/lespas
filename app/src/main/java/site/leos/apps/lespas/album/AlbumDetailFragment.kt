@@ -252,14 +252,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
-            R.id.remove_album -> {
+            R.id.remove -> {
+                val photos = mutableListOf<Photo>()
                 for (i in selectionTracker?.selection!!) {
+                    photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
                 }
+                photoListViewModel.deletePhotos(photos)
 
                 selectionTracker?.clearSelection()
                 true
             }
-            R.id.share_album -> {
+            R.id.share -> {
                 for (i in selectionTracker?.selection!!) {}
 
                 selectionTracker?.clearSelection()

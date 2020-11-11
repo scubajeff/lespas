@@ -61,4 +61,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline WHERE id = :albumId")
     abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int)
+
+    @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun getAlbumName(albumId: String): String
 }

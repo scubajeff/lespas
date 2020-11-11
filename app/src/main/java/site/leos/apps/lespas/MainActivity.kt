@@ -1,7 +1,9 @@
 package site.leos.apps.lespas
 
+import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -9,24 +11,44 @@ import androidx.appcompat.app.AppCompatActivity
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
+import site.leos.apps.lespas.sync.SyncContentObserver
+import site.leos.apps.lespas.sync.SyncContentProvider
 
 class MainActivity : AppCompatActivity() {
+    // ContentObserver for SyncAdapter
+    private lateinit var syncContentObserver: SyncContentObserver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         setSupportActionBar(findViewById(R.id.toolbar))
 
+        val account: Account = AccountManager.get(this).accounts[0]
         if (savedInstanceState == null) {
-            // Start syncing with server at first run
-            ContentResolver.requestSync((AccountManager.get(this).accounts)[0], getString(R.string.sync_authority), Bundle().apply {
+            // Syncing server changes at startup
+            ContentResolver.requestSync(account, SyncContentProvider.AUTHORITIES, Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.ACTION_SYNC_WITH_SERVER)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_SERVER_CHANGES)
             })
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
         }
+
+        // Setup ContentObserver to fire up SyncAdapter
+        syncContentObserver = SyncContentObserver(account)
+        ContentResolver.setSyncAutomatically(account, SyncContentProvider.AUTHORITIES, true)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        contentResolver.registerContentObserver(Uri.parse(SyncContentProvider.URI),true, syncContentObserver)
+    }
+
+    override fun onPause() {
+        contentResolver.unregisterContentObserver(syncContentObserver)
+        super.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

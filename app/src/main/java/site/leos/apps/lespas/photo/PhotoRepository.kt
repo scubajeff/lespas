@@ -14,6 +14,7 @@ class PhotoRepository(application: Application) {
     fun getSyncStatus(albumId: String): Map<String, String> {
         return photoDao.getAlbumSyncStatus(albumId).map { it.id to it.eTag }.toMap()
     }
+    suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
 
     companion object {
         private var repo: PhotoRepository? = null

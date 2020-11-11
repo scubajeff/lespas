@@ -1,20 +1,37 @@
 package site.leos.apps.lespas.photo
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionRepository
 
 class PhotoViewModel(application: Application, private val albumId: String): AndroidViewModel(application) {
     //private val repository = PhotoRepository.getRepository(application)
-    private val repository = PhotoRepository(application)
+    private val photoRepository = PhotoRepository(application)
+    private val actionRepository = ActionRepository(application)
     val allPhotoInAlbum: LiveData<List<Photo>>
     val albumSize: LiveData<Int>
 
     init {
-        allPhotoInAlbum = repository.getAllByDateTakenASCDistinctLiveData(albumId)
-        albumSize = repository.getAlbumSizeDistinctLiveData(albumId)
+        allPhotoInAlbum = photoRepository.getAllByDateTakenASCDistinctLiveData(albumId)
+        albumSize = photoRepository.getAlbumSizeDistinctLiveData(albumId)
+    }
+
+    fun deletePhotos(photos: List<Photo>)  {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Delete from local database
+            photoRepository.deletePhotos(photos)
+
+            // Create new actions on server side
+            val actions = mutableListOf<Action>()
+            val timestamp = System.currentTimeMillis()
+            photos.forEach {
+                actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, it.albumId, it.name, timestamp))
+            }
+            actionRepository.addActions(actions)
+        }
     }
 }
 
