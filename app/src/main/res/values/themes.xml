@@ -16,7 +16,7 @@
         <item name="windowActionModeOverlay">true</item>
 
         <!-- Setting screen -->
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay.LesPas</item>
+        <item name="preferenceTheme">@style/Theme.LesPas.PreferenceThemeOverlay</item>
 
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
@@ -31,7 +31,7 @@
         <item name="android:windowNoDisplay">true</item>
     </style>
 
-    <style name="PreferenceThemeOverlay.LesPas" parent="@style/PreferenceThemeOverlay">
+    <style name="Theme.LesPas.PreferenceThemeOverlay" parent="@style/PreferenceThemeOverlay">
         <item name="android:layout">@layout/fragment_settings</item>
     </style>
 
