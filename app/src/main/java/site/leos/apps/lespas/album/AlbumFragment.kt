@@ -12,9 +12,10 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import site.leos.apps.lespas.ConfirmDialogFragment
 import site.leos.apps.lespas.R
 
-class AlbumFragment : Fragment(), ActionMode.Callback {
+class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
     private lateinit var mAdapter: AlbumListAdapter
     private val albumsModel: AlbumViewModel by activityViewModels()
     private var selectionTracker: SelectionTracker<Long>? = null
@@ -138,11 +139,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                val albums = mutableListOf<Album>()
-                for (i in selectionTracker?.selection!!) {
-                    albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
+                ConfirmDialogFragment(getString(R.string.confirm_delete)).run {
+                    setTargetFragment(this, 0)
+                    show(parentFragmentManager, "")
                 }
-                albumsModel.deleteAlbums(albums)
 
                 selectionTracker?.clearSelection()
                 true
@@ -231,5 +231,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return null
             }
         }
+    }
+
+    override fun onPositiveConfirmed() {
+        val albums = mutableListOf<Album>()
+        for (i in selectionTracker?.selection!!) {
+            albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
+        }
+        albumsModel.deleteAlbums(albums)
     }
 }

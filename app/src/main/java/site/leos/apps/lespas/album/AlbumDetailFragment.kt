@@ -19,13 +19,14 @@ import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import site.leos.apps.lespas.ConfirmDialogFragment
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.photo.PhotoViewModel
 
-class AlbumDetailFragment : Fragment(), ActionMode.Callback {
+class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var photoListViewModel: PhotoViewModel
     private val currentAlbumModel: AlbumViewModel by activityViewModels()
@@ -253,11 +254,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                val photos = mutableListOf<Photo>()
-                for (i in selectionTracker?.selection!!) {
-                    photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
+                ConfirmDialogFragment(getString(R.string.confirm_delete)).run {
+                    setTargetFragment(this, 0)
+                    show(parentFragmentManager, "")
                 }
-                photoListViewModel.deletePhotos(photos)
 
                 selectionTracker?.clearSelection()
                 true
@@ -275,5 +275,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker?.clearSelection()
         actionMode = null
+    }
+
+    override fun onPositiveConfirmed() {
+        val photos = mutableListOf<Photo>()
+        for (i in selectionTracker?.selection!!) {
+            photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
+        }
+        photoListViewModel.deletePhotos(photos)
     }
 }

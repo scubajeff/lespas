@@ -4,7 +4,8 @@
     // Album fragment
     <string name="fab_add_album">Add Album</string>
 
-    // PhotoList fragment
+    // AlbumDetail fragment
+    <string name="confirm_delete">Are you sure?</string>
 
     // Authenticator
     <string name="error_only_one_account">Only one account allowed</string>
@@ -36,7 +37,7 @@
     <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
-    // PhotoDisplay fragment
+    // PhotoSlide fragment
     <string name="tooltip_text_set_cover">Set cover art</string>
     <string name="tooltip_text_share">Share this</string>
     <string name="tooltip_text_info">More info</string>
