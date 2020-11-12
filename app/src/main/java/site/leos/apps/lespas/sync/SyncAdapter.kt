@@ -126,7 +126,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 count++
                                 if (localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!] != remotePhoto.etag) {
                                     Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!]}")
-                                    pendingDownload.add(Photo(remotePhoto.customProps[OC_UNIQUE_ID]!!, album.id, remotePhoto.name, remotePhoto.etag, null, remotePhoto.modified, 0))
+                                    pendingDownload.add(
+                                        Photo(remotePhoto.customProps[OC_UNIQUE_ID]!!,
+                                                album.id,
+                                                "$resourceRoot/${album.name}/${remotePhoto.name}",      // Use full url for easy Glide load
+                                                remotePhoto.etag, null, remotePhoto.modified, 0))
                                 }
                             }
                         }
