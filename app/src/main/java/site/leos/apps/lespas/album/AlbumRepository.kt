@@ -1,14 +1,14 @@
 package site.leos.apps.lespas.album
 
 import android.app.Application
-import androidx.lifecycle.LiveData
+import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.LespasDatabase
 
 class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
-    val allAlbumsSortByEndDate: LiveData<List<Album>> = albumDao.getAllSortByEndDate()
-    fun getAlbumByID(albumId: String): LiveData<Album> = albumDao.getAlbumByID(albumId)
+    fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
+    fun getAlbumByID(albumId: String): Flow<Album> = albumDao.getAlbumByID(albumId)
     suspend fun insert(album: Album){ albumDao.insert(album) }
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun update(album: Album){ albumDao.update(album) }

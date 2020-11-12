@@ -1,19 +1,17 @@
 package site.leos.apps.lespas.photo
 
 import android.app.Application
-import androidx.lifecycle.LiveData
+import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.LespasDatabase
 
 class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
 
+    fun getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosByDateTakenASC(albumId)
+    fun getAlbumSize(albumId: String): Flow<Int> = photoDao.getAlbumSize(albumId)
     fun upsertSync(photo: Photo) { photoDao.upsertSync(photo) }
     fun deleteByIdSync(photoId: String) { photoDao.deleteByIdSync(photoId) }
-    fun getAllByDateTakenASCDistinctLiveData(albumId: String): LiveData<List<Photo>> { return photoDao.getAlbumPhotosByDateTakenASCDistinctLiveData(albumId) }
-    fun getAlbumSizeDistinctLiveData(albumId: String): LiveData<Int> { return photoDao.getAlbumSizeDistinctLiveData(albumId) }
-    fun getSyncStatus(albumId: String): Map<String, String> {
-        return photoDao.getAlbumSyncStatus(albumId).map { it.id to it.eTag }.toMap()
-    }
+    fun getSyncStatus(albumId: String): Map<String, String> = photoDao.getAlbumSyncStatus(albumId).map { it.id to it.eTag }.toMap()
     suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
 
     companion object {

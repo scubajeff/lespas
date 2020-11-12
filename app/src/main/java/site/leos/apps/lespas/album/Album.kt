@@ -1,12 +1,12 @@
 package site.leos.apps.lespas.album
 
 import android.os.Parcelable
-import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import kotlinx.android.parcel.Parcelize
+import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.BaseDao
 import java.util.*
 
@@ -51,10 +51,10 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun deleteByIdSync(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate ASC")
-    abstract fun getAllSortByEndDate(): LiveData<List<Album>>
+    abstract fun getAllSortByEndDate(): Flow<List<Album>>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getAlbumByID(albumId: String): LiveData<Album>
+    abstract fun getAlbumByID(albumId: String): Flow<Album>
 
     @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
     abstract fun getSyncStatus(): List<AlbumSyncStatus>

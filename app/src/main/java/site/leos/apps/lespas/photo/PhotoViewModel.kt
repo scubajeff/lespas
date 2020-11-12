@@ -11,14 +11,9 @@ class PhotoViewModel(application: Application, private val albumId: String): And
     //private val repository = PhotoRepository.getRepository(application)
     private val photoRepository = PhotoRepository(application)
     private val actionRepository = ActionRepository(application)
-    val allPhotoInAlbum: LiveData<List<Photo>>
-    val albumSize: LiveData<Int>
 
-    init {
-        allPhotoInAlbum = photoRepository.getAllByDateTakenASCDistinctLiveData(albumId)
-        albumSize = photoRepository.getAlbumSizeDistinctLiveData(albumId)
-    }
-
+    val allPhotoInAlbum: LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
+    val albumSize: LiveData<Int> = photoRepository.getAlbumSize(albumId).asLiveData()
     fun deletePhotos(photos: List<Photo>)  {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete from local database
