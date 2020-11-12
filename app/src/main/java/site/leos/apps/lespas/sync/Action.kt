@@ -14,7 +14,8 @@ data class Action (
     val action: Int,
     val folderId: String,
     val fileName: String,
-    val date: Long) {
+    val date: Long,
+    val retry: Int) {
    companion object {
         const val TABLE_NAME = "actions"
 
@@ -25,7 +26,8 @@ data class Action (
         const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
 
        fun fromContentValues(values: ContentValues): Action =
-           Action(values.getAsLong("id"), values.getAsInteger("action"), values.getAsString("folderId"), values.getAsString("fileName"), values.getAsLong("date"))
+           Action(values.getAsLong("id"), values.getAsInteger("action"), values.getAsString("folderId"),
+               values.getAsString("fileName"), values.getAsLong("date"), values.getAsInteger("retry"))
    }
 }
 
