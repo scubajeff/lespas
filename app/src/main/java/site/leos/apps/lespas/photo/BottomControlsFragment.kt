@@ -122,7 +122,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                InfoDialogFragment(currentPhoto.getCurrentPhoto().value!!.name).show(parentFragmentManager, "")
+                InfoDialogFragment.newInstance(currentPhoto.getCurrentPhoto().value!!.name).show(parentFragmentManager, "")
             }
         }
 
@@ -188,12 +188,18 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         false
     }
 
-    class InfoDialogFragment(private val message: String) : DialogFragment() {
+    class InfoDialogFragment() : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             return AlertDialog.Builder(requireActivity())
-                .setMessage(message)
+                .setMessage(arguments?.getString(MESSAGE))
                 .setPositiveButton(android.R.string.ok) { _, i_ -> }
                 .create()
+        }
+
+        companion object {
+            const val MESSAGE = "MESSAGE"
+
+            fun newInstance(message: String) = InfoDialogFragment().apply { arguments = Bundle().apply { putString(MESSAGE, message) } }
         }
     }
 }

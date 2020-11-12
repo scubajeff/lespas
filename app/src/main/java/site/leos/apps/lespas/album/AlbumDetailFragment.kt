@@ -254,12 +254,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                ConfirmDialogFragment(getString(R.string.confirm_delete)).run {
-                    setTargetFragment(this, 0)
-                    show(parentFragmentManager, "")
+                ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, "")
                 }
 
-                selectionTracker?.clearSelection()
                 true
             }
             R.id.share -> {
@@ -283,5 +282,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
         }
         photoListViewModel.deletePhotos(photos)
+
+        selectionTracker?.clearSelection()
     }
 }

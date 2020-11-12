@@ -139,12 +139,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                ConfirmDialogFragment(getString(R.string.confirm_delete)).run {
-                    setTargetFragment(this, 0)
-                    show(parentFragmentManager, "")
+                ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, "")
                 }
-
-                selectionTracker?.clearSelection()
                 true
             }
             R.id.share -> {
@@ -239,5 +237,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
         }
         albumsModel.deleteAlbums(albums)
+
+        selectionTracker?.clearSelection()
     }
 }
