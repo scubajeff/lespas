@@ -65,7 +65,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                            val albumName = albumRepository.getAlbumName(action.folderId)
                             sardine.delete(action.fileName)
                             // TODO need to update album's etag
                         }
