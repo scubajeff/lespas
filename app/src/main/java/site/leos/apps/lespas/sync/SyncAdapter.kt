@@ -66,7 +66,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
                             val albumName = albumRepository.getAlbumName(action.folderId)
-                            sardine.delete("$resourceRoot/$albumName/${action.fileName}")
+                            sardine.delete(action.fileName)
+                            // TODO need to update album's etag
                         }
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
                             sardine.delete("$resourceRoot/${action.fileName}")      // ${action.filename} is the directory name set when action created
