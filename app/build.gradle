@@ -17,7 +17,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        resValue "string", "sync_authority", "${applicationId}.syncprovider"
+        resValue "string", "sync_authority", "${applicationId}.StubProvider"
     }
 
     buildTypes {

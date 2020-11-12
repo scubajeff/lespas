@@ -80,9 +80,8 @@
         </service>
 
         <provider
-            android:name=".sync.SyncContentProvider"
+            android:name=".sync.StubProvider"
             android:authorities="@string/sync_authority"
-            android:enabled="true"
             android:exported="false"
             android:syncable="true" />
 

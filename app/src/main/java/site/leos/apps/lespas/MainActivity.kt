@@ -3,20 +3,18 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
-import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
-import site.leos.apps.lespas.sync.SyncContentObserver
-import site.leos.apps.lespas.sync.SyncContentProvider
 
 class MainActivity : AppCompatActivity() {
-    // ContentObserver for SyncAdapter
-    private lateinit var syncContentObserver: SyncContentObserver
+    private val actionsPendingModel: ActionViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,27 +25,27 @@ class MainActivity : AppCompatActivity() {
         val account: Account = AccountManager.get(this).accounts[0]
         if (savedInstanceState == null) {
             // Syncing server changes at startup
-            ContentResolver.requestSync(account, SyncContentProvider.AUTHORITIES, Bundle().apply {
+            ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_SERVER_CHANGES)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
             })
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
         }
 
-        // Setup ContentObserver to fire up SyncAdapter
-        syncContentObserver = SyncContentObserver(account)
-        ContentResolver.setSyncAutomatically(account, SyncContentProvider.AUTHORITIES, true)
+        // Setup observer to fire up SyncAdapter
+        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
+        actionsPendingModel.allActions.observe(this, {actions->
+            if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
+        })
     }
 
     override fun onResume() {
         super.onResume()
-        contentResolver.registerContentObserver(Uri.parse(SyncContentProvider.URI),true, syncContentObserver)
     }
 
     override fun onPause() {
-        contentResolver.unregisterContentObserver(syncContentObserver)
         super.onPause()
     }
 

@@ -27,12 +27,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
+            Log.e("*****", order.toString())
 
             val resourceRoot: String
             val sardine =  OkHttpSardine()
 
             // Initialize sardine library
-            AccountManager.get(context).run {
+            AccountManager.get(application).run {
                 val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
                 val serverRoot = getUserData(account, context.getString(R.string.nc_userdata_server))
                 sardine.setCredentials(userName, peekAuthToken(account, serverRoot), true)
@@ -51,6 +52,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Processing pending actions
             if (order == SYNC_LOCAL_CHANGES) {
+                Log.e("**********", "sync local changes")
                 actionRepository.getAllPendingActions().forEach { action ->
                     // Check network type on every loop
                     if (PreferenceManager.getDefaultSharedPreferences(application)   // SyncService pass applicationContext to us
@@ -65,6 +67,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
+                            Log.e("**********", "removing ${action.fileName}")
                             sardine.delete(action.fileName)
                             // TODO need to update album's etag
                         }
@@ -81,8 +84,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         }
                     }
+
+                    // TODO: Error retry strategy
+                    actionRepository.deleteAllActions()
                 }
             } else {
+                Log.e("**********", "sync remote changes")
                 // Compare remote and local album list
                 val localAlbums = albumRepository.getSyncStatus()
                 val pendingUpdate: MutableList<Album> = mutableListOf()
@@ -97,7 +104,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     }
-                    //Log.e("======", "changed albums:${pendingUpdate.size}")
+                    Log.e("======", "changed albums:${pendingUpdate.size}")
 
                     // Delete those albums not exist on server
                     for (localAlbum in localAlbums) {
@@ -158,7 +165,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             syncResult.stats.clear()
         } catch (e: IOException) {
             syncResult.stats.numAuthExceptions++
-            e.printStackTrace()
+            Log.e("************", e.message.toString())
         } catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
             e.printStackTrace()
@@ -170,7 +177,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     companion object {
         const val ACTION = "ACTION"
         const val SYNC_LOCAL_CHANGES = 0
-        const val SYNC_SERVER_CHANGES = 1
+        const val SYNC_REMOTE_CHANGES = 1
 
         // PROPFIND properties namespace
         const val DAV_NS = "DAV:"
