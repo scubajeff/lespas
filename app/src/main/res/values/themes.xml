@@ -31,6 +31,14 @@
         <item name="android:windowNoDisplay">true</item>
     </style>
 
+    <style name="Theme.LesPas.Transparent" parent="Theme.LesPas">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
     <style name="Theme.LesPas.PreferenceThemeOverlay" parent="@style/PreferenceThemeOverlay">
         <item name="android:layout">@layout/fragment_settings</item>
     </style>

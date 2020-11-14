@@ -18,6 +18,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import java.io.File
 import java.io.IOException
 import javax.xml.namespace.QName
 
@@ -27,7 +28,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
-            Log.e("*****", order.toString())
 
             val resourceRoot: String
             val sardine =  OkHttpSardine()
@@ -40,7 +40,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 resourceRoot = serverRoot + context.getString(R.string.dav_files_endpoint) + userName + context.getString(R.string.lespas_base_folder_name)
             }
 
-            // Make sure lespas base directory is there
+            // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
             if (!sardine.exists(resourceRoot)) {
                 sardine.createDirectory(resourceRoot)
                 return
@@ -51,7 +51,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val actionRepository = ActionRepository(application)
 
             // Processing pending actions
-            if (order == SYNC_LOCAL_CHANGES) {
+            //if (order == SYNC_LOCAL_CHANGES) {
                 Log.e("**********", "sync local changes")
                 actionRepository.getAllPendingActions().forEach { action ->
                     // Check network type on every loop
@@ -67,28 +67,30 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                            Log.e("**********", "removing ${action.fileName}")
                             sardine.delete(action.fileName)
-                            // TODO need to update album's etag
+                            // TODO need to update album's etag to reduce network usage during next remote sync
                         }
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                            sardine.delete("$resourceRoot/${action.fileName}")      // ${action.filename} is the directory name set when action created
+                            sardine.delete("$resourceRoot/${action.folderName}")
                         }
                         Action.ACTION_ADD_FILES_ON_SERVER -> {
-
+                            // Upload to server and verify
+                            Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
+                            sardine.put("$resourceRoot/${action.folderName}/${action.fileName}", File(application.filesDir, action.fileName), "image/*")
+                            // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                         }
                         Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                            sardine.createDirectory("$resourceRoot/${action.fileName}")
+                            sardine.createDirectory("$resourceRoot/${action.folderName}")
                         }
                         Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
-
+                            TODO()
                         }
                     }
 
-                    // TODO: Error retry strategy
+                    // TODO: Error retry strategy, directory etag update, etc.
                     actionRepository.deleteAllActions()
                 }
-            } else {
+            //} else {
                 Log.e("**********", "sync remote changes")
                 // Compare remote and local album list
                 val localAlbums = albumRepository.getSyncStatus()
@@ -104,7 +106,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     }
-                    Log.e("======", "changed albums:${pendingUpdate.size}")
+                    //Log.e("======", "changed albums:${pendingUpdate.size}")
 
                     // Delete those albums not exist on server
                     for (localAlbum in localAlbums) {
@@ -159,18 +161,18 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         pendingDownload.clear()
                     }
                 }
-            }
+            //}
 
             // Clear status counters
             syncResult.stats.clear()
         } catch (e: IOException) {
-            syncResult.stats.numAuthExceptions++
-            Log.e("************", e.message.toString())
+            syncResult.stats.numIoExceptions++
+            Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
-            e.printStackTrace()
+            Log.e("****Exception: ", e.stackTraceToString())
         } catch (e:Exception) {
-            e.printStackTrace()
+            Log.e("****Exception: ", e.stackTraceToString())
         }
     }
 
