@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/big_padding"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/small_padding"
+        style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+        android:textStyle="bold"
+        android:text="@string/preparing_files" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/small_padding"
+        style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
+        android:ellipsize="middle"
+        tools:text="filename" />
+
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/progress_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/small_padding"
+        style="?android:attr/progressBarStyleHorizontal" />
+
+
+</LinearLayout>
+<!--
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/big_padding">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:padding="@dimen/small_padding"
+        style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+        android:textStyle="bold"
+        android:text="@string/preparing_files" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        android:padding="@dimen/small_padding"
+        style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
+        android:ellipsize="middle"
+        tools:text="filename" />
+
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/progress_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/name"
+        android:padding="@dimen/small_padding"
+        style="?android:attr/progressBarStyleHorizontal" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+-->
