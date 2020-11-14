@@ -13,6 +13,7 @@ data class Action (
     @PrimaryKey(autoGenerate = true) val id: Long?,
     val action: Int,
     val folderId: String,
+    val folderName: String,
     val fileName: String,
     val date: Long,
     val retry: Int) {
