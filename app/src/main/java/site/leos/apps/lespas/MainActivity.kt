@@ -36,17 +36,9 @@ class MainActivity : AppCompatActivity() {
 
         // Setup observer to fire up SyncAdapter
         ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-        actionsPendingModel.allActions.observe(this, {actions->
+        actionsPendingModel.allActions.observe(this, { actions ->
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
         })
-    }
-
-    override fun onResume() {
-        super.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
