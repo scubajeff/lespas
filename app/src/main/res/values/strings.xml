@@ -1,16 +1,10 @@
 <resources>
     <string name="app_name">Les Pas</string>
 
-    // Album fragment
-    <string name="fab_add_album">Add Album</string>
-
-    // AlbumDetail fragment
-    <string name="confirm_delete">Are you sure?</string>
-
-    // Authenticator
+    <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>
 
-    // Login activity
+    <!-- NCLogin activity -->
     <string name="welcome_message">Welcome to Les Pas!\n\n A token is required to access your Nextcloud server. Please fill in the server address below and hit enter to continue. You
         will then see the server\'s authentication page in the next screen.
     </string>
@@ -30,23 +24,29 @@
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
 
-    // Various Nextcloud access endpoints and naming
+    <!-- Various Nextcloud access endpoints and naming -->
     <string name="lespas_base_folder_name" translatable="false">/lespas</string>
     <string name="server_capabilities_endpoint" translatable="false">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
     <string name="user_metadata_endpoint" translatable="false">/ocs/v2.php/cloud/users</string>
     <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
-    // PhotoSlide fragment
+    <!-- Album fragment -->
+    <string name="fab_add_album">Add Album</string>
+
+    <!-- AlbumDetail fragment -->
+    <string name="confirm_delete">Are you sure?</string>
+
+    <!-- PhotoSlide fragment -->
     <string name="tooltip_text_set_cover">Set cover art</string>
     <string name="tooltip_text_share">Share this</string>
     <string name="tooltip_text_info">More info</string>
 
-    // CropCover fragment
+    <!-- CropCover fragment -->
     <string name="toast_cover_applied">New cover %1$s applied.</string>
     <string name="toast_cover_set_canceled">Cancel setting new cover.</string>
 
-    // Setting fragment
+    <!-- Setting fragment -->
     <string name="settings_title">Settings</string>
     <string name="view_header">View</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
@@ -63,7 +63,14 @@
     <string name="logout_title">Logout</string>
     <string name="logout_dialog_msg">Logout account %1$s?</string>
 
-    // Toolbar actions
+    <!-- Destination DialogFragment -->
+    <string name="choose_destination">Pick an album</string>
+    <string name="create_new_album">Create new album</string>
+
+    <!-- Acquiring DialogFragment -->
+    <string name="preparing_files">Preparing photos</string>
+
+    <!-- Toolbar actions -->
     <string name="action_settings">Settings</string>
     <string name="action_share_album">Share</string>
     <string name="action_remove_album">Remove</string>

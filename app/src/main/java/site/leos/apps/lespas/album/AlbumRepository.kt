@@ -17,6 +17,7 @@ class AlbumRepository(application: Application){
     suspend fun setCover(album: Album, cover: Cover) { albumDao.setCover(album.id, cover.name, cover.baseLine) }
     fun getAlbumName(albumId: String): String = albumDao.getAlbumName(albumId)
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
+    fun getAllAlbumNamesAndIds(): Flow<List<AlbumNameAndId>> = albumDao.getAllAlbumNamesAndId()
 
     companion object {
         private var repo: AlbumRepository? = null

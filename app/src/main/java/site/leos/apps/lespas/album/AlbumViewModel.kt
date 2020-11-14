@@ -29,4 +29,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
             actionRepository.addActions(actions)
         }
     }
+    val allAlbumNamesAndIds: LiveData<List<AlbumNameAndId>> = albumRepository.getAllAlbumNamesAndIds().asLiveData()
 }

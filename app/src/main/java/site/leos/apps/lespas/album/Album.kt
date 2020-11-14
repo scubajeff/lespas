@@ -36,8 +36,8 @@ data class Album(
 }
 
 data class Cover(val name: String, val baseLine: Int)
-
 data class AlbumSyncStatus(val id: String, val eTag: String)
+data class AlbumNameAndId(val id: String, val name: String)
 
 @Dao
 abstract class AlbumDao: BaseDao<Album>() {
@@ -64,4 +64,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumName(albumId: String): String
+
+    @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
+    abstract fun getAllAlbumNamesAndId(): Flow<List<AlbumNameAndId>>
 }
