@@ -64,8 +64,8 @@
     <string name="logout_dialog_msg">Logout account %1$s?</string>
 
     <!-- Destination DialogFragment -->
-    <string name="choose_destination">Pick an album</string>
-    <string name="create_new_album">Create new album</string>
+    <string name="choose_destination">Add to album</string>
+    <string name="create_new_album">Add to new album</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photos</string>

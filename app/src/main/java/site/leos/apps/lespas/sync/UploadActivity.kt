@@ -33,10 +33,10 @@ class UploadActivity: AppCompatActivity() {
 
         if (files.isNotEmpty()) {
             destinationModel.getDestination().observe(this, { album->
-                destinationDialogFragment.dismiss()
+                //destinationDialogFragment.dismiss()
 
                 if (album.id.isEmpty()) {
-                    TODO()
+                    finish()
                 } else {
                     // Choose existing album
                     acquiringModel = ViewModelProvider(this, AcquiringDialogFragment.AcquiringViewModelFactory(application, files)).get(AcquiringDialogFragment.AcquiringViewModel::class.java)
