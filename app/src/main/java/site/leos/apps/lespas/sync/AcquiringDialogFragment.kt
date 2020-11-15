@@ -33,6 +33,8 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCreate(savedInstanceState)
 
         total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
+
+        retainInstance = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

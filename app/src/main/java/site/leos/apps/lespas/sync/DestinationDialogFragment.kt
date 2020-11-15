@@ -28,7 +28,9 @@ class DestinationDialogFragment(): DialogFragment() {
         albumAdapter = AlbumNameAdapter(object : AlbumNameAdapter.OnItemClickListener {
             override fun onItemClick(albumId: AlbumNameAndId) { destinationModel.setDestination(albumId) }
         })
-        albumNameModel.allAlbumNamesAndIds.observe(this, { albums-> albumAdapter.setAlbumNames(albums)})
+        albumNameModel.allAlbumNamesAndIds.observe(this, { albums -> albumAdapter.setDestinations(albums) })
+
+        retainInstance = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

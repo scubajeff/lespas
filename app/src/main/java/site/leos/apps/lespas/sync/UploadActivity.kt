@@ -15,7 +15,6 @@ import site.leos.apps.lespas.R
 
 class UploadActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
-    private val destinationDialogFragment = DestinationDialogFragment.newInstance()
     private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
     private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
@@ -64,11 +63,11 @@ class UploadActivity: AppCompatActivity() {
                             finish()
                         }
                     })
-                    AcquiringDialogFragment.newInstance(files).show(supportFragmentManager, TAG)
+                    if (savedInstanceState == null) { AcquiringDialogFragment.newInstance(files).show(supportFragmentManager, TAG) }
                 }
             })
 
-            destinationDialogFragment.show(supportFragmentManager, TAG)
+            if (savedInstanceState == null) { DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG) }
         }
         else finish()
     }
