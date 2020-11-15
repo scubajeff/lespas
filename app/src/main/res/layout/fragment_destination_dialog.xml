@@ -40,6 +40,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             android:padding="@dimen/small_padding"
+            app:errorEnabled="true"
             android:visibility="gone"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 

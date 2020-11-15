@@ -24,7 +24,7 @@ import kotlinx.android.synthetic.main.fragment_destination_dialog.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumNameAndId
 import site.leos.apps.lespas.album.AlbumViewModel
-
+import java.util.regex.Pattern
 
 class DestinationDialogFragment(): DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter
@@ -49,7 +49,7 @@ class DestinationDialogFragment(): DialogFragment() {
                         requestFocus()
                     }
                 }
-                // User choose an exsiting album
+                // User choose an existing album
                 else {
                     destinationModel.setDestination(album)
                     dismiss()
@@ -71,9 +71,21 @@ class DestinationDialogFragment(): DialogFragment() {
         name_textinputedittext.run {
             setOnEditorActionListener { v, actionId, event ->
                 if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
-                    // Return with album id field empty, calling party will know this is a new album
-                    destinationModel.setDestination(AlbumNameAndId("", name_textinputedittext.text.toString().trim()))
-                    dismiss()
+                    // Valid the name
+                    val name = name_textinputedittext.text.toString().trim()
+                    if (!Pattern.compile("[^\\\\/:*\"?<>|;@&=+\$,{}#%^`\\[\\]]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
+                        name_textinputedittext.error = getString(R.string.invalid_character_found)
+                    } else if (name.length > 200) {
+                        name_textinputedittext.error = getString(R.string.name_too_long)
+                    } else if (!Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![\\s])\\z").matcher(name).matches()) {
+                        name_textinputedittext.error = getString(R.string.invalid_name_found)
+                    } else if (isAlbumExisted(name)) {
+                        name_textinputedittext.error = getString(R.string.album_existed)
+                    } else {
+                        // Return with album id field empty, calling party will know this is a new album
+                        destinationModel.setDestination(AlbumNameAndId("", name))
+                        dismiss()
+                    }
                     true
                 } else false
             }
@@ -81,7 +93,7 @@ class DestinationDialogFragment(): DialogFragment() {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { error = null }
                 override fun afterTextChanged(s: Editable?) {
-                    // TODO name validation, since this album name will be the folder name on NextCloud server, it has to follow some rules
+                    // TODO name validation on the run?
                 }
             })
         }
@@ -94,6 +106,7 @@ class DestinationDialogFragment(): DialogFragment() {
     }
 
     override fun onResume() {
+        // Fixed dialog width to 90% of screen width
         val width = (resources.displayMetrics.widthPixels * 0.9).toInt()
         dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
@@ -105,6 +118,12 @@ class DestinationDialogFragment(): DialogFragment() {
 
         // If called by UploadActivity, quit immediately, otherwise return normally
         if (tag == UploadActivity.TAG) activity?.finish()
+    }
+
+    private fun isAlbumExisted(name: String): Boolean {
+        var existed = false
+        albumNameModel.allAlbumNamesAndIds.value!!.forEach { if (it.name == name) existed = true }
+        return existed
     }
 
     class DestinationAdapter(private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
