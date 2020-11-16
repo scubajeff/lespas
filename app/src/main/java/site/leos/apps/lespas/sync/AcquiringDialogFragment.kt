@@ -53,6 +53,14 @@ class AcquiringDialogFragment: DialogFragment() {
         })
     }
 
+    override fun onResume() {
+        // Set dialog width to a fixed ration of screen width
+        val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
+        dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+
+        super.onResume()
+    }
+
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 

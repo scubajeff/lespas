@@ -105,8 +105,8 @@ class DestinationDialogFragment : DialogFragment() {
     }
 
     override fun onResume() {
-        // Fixed dialog width to 90% of screen width
-        val width = (resources.displayMetrics.widthPixels * 0.9).toInt()
+        // Set dialog width to a fixed ration of screen width
+        val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
         dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
         super.onResume()
