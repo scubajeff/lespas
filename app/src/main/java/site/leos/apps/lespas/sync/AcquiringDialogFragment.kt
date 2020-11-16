@@ -33,8 +33,6 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCreate(savedInstanceState)
 
         total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
-
-        retainInstance = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -48,7 +46,7 @@ class AcquiringDialogFragment: DialogFragment() {
         progressBar = view.findViewById<ContentLoadingProgressBar>(R.id.progress_horizontal).apply {
             max = total
         }
-        acquiringModel.getProgress().observe(viewLifecycleOwner, { progress->
+        acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress->
             if (progress == total) dismiss()
             name?.text = acquiringModel.getCurrentName()
             progressBar?.progress = progress
@@ -59,7 +57,10 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCancel(dialog)
 
         // If called by UploadActivity, quit immediately, otherwise return normally
-        if (tag == UploadActivity.TAG) activity?.finish()
+        if (tag == UploadActivity.TAG_ACQUIRING_DIALOG) activity?.apply {
+            finish()
+            overridePendingTransition(0, 0)
+        }
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>): AndroidViewModel(application) {
@@ -74,7 +75,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 val buf = ByteArray(4096)
                 var len: Int
 
-                uris.forEachIndexed() { index, uri ->
+                uris.forEachIndexed { index, uri ->
                     // find out the real name
                     application.contentResolver.query(uri, null, null, null, null)?.apply {
                         val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -83,7 +84,7 @@ class AcquiringDialogFragment: DialogFragment() {
                         close()
                     }
                     withContext(Dispatchers.Main) { setProgress(index, fileName) }
-                    Log.e(">>>>>>>>>>", "${uri.toString()} >>>>>>> $fileName")
+                    Log.e(">>>>>>>>>>", "$uri >>>>>>> $fileName")
 
                     inputStream = application.contentResolver.openInputStream(uri)!!
                     outputStream = application.openFileOutput(fileName, Context.MODE_PRIVATE)
@@ -115,6 +116,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
     companion object {
         const val URIS = "URIS"
+
         fun newInstance(uris: ArrayList<Uri>) = AcquiringDialogFragment().apply { arguments = Bundle().apply { putParcelableArrayList(URIS, uris) }}
     }
 }

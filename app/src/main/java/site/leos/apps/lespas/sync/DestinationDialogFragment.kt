@@ -26,7 +26,7 @@ import site.leos.apps.lespas.album.AlbumNameAndId
 import site.leos.apps.lespas.album.AlbumViewModel
 import java.util.regex.Pattern
 
-class DestinationDialogFragment(): DialogFragment() {
+class DestinationDialogFragment : DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter
     private val albumNameModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
@@ -57,8 +57,6 @@ class DestinationDialogFragment(): DialogFragment() {
             }
         })
         albumNameModel.allAlbumNamesAndIds.observe(this, { albums -> albumAdapter.setDestinations(albums) })
-
-        retainInstance = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -69,7 +67,7 @@ class DestinationDialogFragment(): DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         destination_recyclerview.adapter = albumAdapter
         name_textinputedittext.run {
-            setOnEditorActionListener { v, actionId, event ->
+            setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     // Valid the name
                     val name = name_textinputedittext.text.toString().trim()
@@ -102,6 +100,7 @@ class DestinationDialogFragment(): DialogFragment() {
         if (destinationModel.isEditing()) {
             destination_recyclerview.visibility = View.GONE
             new_album_textinputlayout.visibility = View.VISIBLE
+            new_album_textinputlayout.requestFocus()
         }
     }
 
@@ -117,7 +116,10 @@ class DestinationDialogFragment(): DialogFragment() {
         super.onCancel(dialog)
 
         // If called by UploadActivity, quit immediately, otherwise return normally
-        if (tag == UploadActivity.TAG) activity?.finish()
+        if (tag == UploadActivity.TAG_DESTINATION_DIALOG) activity?.apply {
+            finish()
+            activity?.overridePendingTransition(0, 0)
+        }
     }
 
     private fun isAlbumExisted(name: String): Boolean {

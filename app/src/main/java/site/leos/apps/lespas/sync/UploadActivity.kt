@@ -9,8 +9,8 @@ import android.os.Parcelable
 import android.provider.OpenableColumns
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.observe
 import site.leos.apps.lespas.R
 
 class UploadActivity: AppCompatActivity() {
@@ -32,15 +32,13 @@ class UploadActivity: AppCompatActivity() {
         }
 
         if (files.isNotEmpty()) {
-            destinationModel.getDestination().observe(this, { album->
-                //destinationDialogFragment.dismiss()
-
+            destinationModel.getDestination().observe (this, Observer { album->
                 if (album.id.isEmpty()) {
                     finish()
                 } else {
                     // Choose existing album
                     acquiringModel = ViewModelProvider(this, AcquiringDialogFragment.AcquiringViewModelFactory(application, files)).get(AcquiringDialogFragment.AcquiringViewModel::class.java)
-                    acquiringModel.getProgress().observe(this, {progress->
+                    acquiringModel.getProgress().observe(this, Observer { progress->
                         if (progress == files.size) {
                             // Files are under control, we can create sync action now
                             val actions = mutableListOf<Action>()
@@ -61,18 +59,25 @@ class UploadActivity: AppCompatActivity() {
                             })
 
                             finish()
+                            overridePendingTransition(0, 0)
                         }
                     })
-                    if (savedInstanceState == null) { AcquiringDialogFragment.newInstance(files).show(supportFragmentManager, TAG) }
+                    if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                        AcquiringDialogFragment.newInstance(files).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             })
 
-            if (savedInstanceState == null) { DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG) }
+            if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
+                DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
-        else finish()
+        else {
+            finish()
+            overridePendingTransition(0, 0)
+        }
     }
 
     companion object {
-        const val TAG = "UPLOAD_ACTIVITY"
+        const val TAG_DESTINATION_DIALOG = "UPLOAD_ACTIVITY_DESTINATION_DIALOG"
+        const val TAG_ACQUIRING_DIALOG = "UPLOAD_ACTIVITY_ACQUIRING_DIALOG"
     }
 }
