@@ -72,7 +72,7 @@
     <string name="album_existed">Album already existed.</string>
 
     <!-- Acquiring DialogFragment -->
-    <string name="preparing_files">Preparing photos</string>
+    <string name="preparing_files">Preparing photos %1$d of %2$d</string>
 
     <!-- Toolbar actions -->
     <string name="action_settings">Settings</string>

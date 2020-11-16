@@ -10,23 +10,20 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.AppCompatTextView
-import androidx.core.widget.ContentLoadingProgressBar
+import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.*
+import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import java.io.InputStream
 import java.io.OutputStream
-import java.lang.Thread.sleep
 
 class AcquiringDialogFragment: DialogFragment() {
     private var total = -1
-    private var progressBar: ContentLoadingProgressBar? = null
-    private var name: AppCompatTextView? = null
     private val acquiringModel: AcquiringViewModel by activityViewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(URIS)!!) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,14 +39,15 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        name = view.findViewById(R.id.name)
-        progressBar = view.findViewById<ContentLoadingProgressBar>(R.id.progress_horizontal).apply {
-            max = total
-        }
+        current_progress.max = total
+        dialog_title_textview.text = getString(R.string.preparing_files, 1, total)
+
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress->
             if (progress == total) dismiss()
-            name?.text = acquiringModel.getCurrentName()
-            progressBar?.progress = progress
+
+            dialog_title_textview.text = getString(R.string.preparing_files, progress+1, total)
+            filename_textview.text = acquiringModel.getCurrentName()
+            current_progress.progress = progress
         })
     }
 
@@ -91,9 +89,11 @@ class AcquiringDialogFragment: DialogFragment() {
                         fileName = getString(columnIndex)
                         close()
                     }
-                    withContext(Dispatchers.Main) { setProgress(index, fileName) }
-                    Log.e(">>>>>>>>>>", "$uri >>>>>>> $fileName")
 
+                    // Update dialog view
+                    withContext(Dispatchers.Main) { setProgress(index, fileName) }
+
+                    // Copy the file to our private storage
                     inputStream = application.contentResolver.openInputStream(uri)!!
                     outputStream = application.openFileOutput(fileName, Context.MODE_PRIVATE)
                     len = inputStream.read(buf)
@@ -104,8 +104,9 @@ class AcquiringDialogFragment: DialogFragment() {
                     inputStream.close()
                     outputStream.close()
                     Log.e("======", "finished copying $fileName")
-                    sleep(500)
-                    withContext(Dispatchers.Main) { setProgress(index + 1, fileName) }    // Try to finish at the end by setting progress to more than 100%
+
+                    // Try to finish at the end by setting progress to more than 100%
+                    withContext(Dispatchers.Main) { setProgress(index + 1, fileName) }
                 }
             }
         }

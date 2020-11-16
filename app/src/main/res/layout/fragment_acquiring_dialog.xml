@@ -8,7 +8,7 @@
     android:orientation="vertical">
 
     <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/title"
+        android:id="@+id/dialog_title_textview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/small_padding"
@@ -17,7 +17,7 @@
         android:text="@string/preparing_files" />
 
     <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/name"
+        android:id="@+id/filename_textview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/small_padding"
@@ -26,7 +26,7 @@
         tools:text="filename" />
 
     <androidx.core.widget.ContentLoadingProgressBar
-        android:id="@+id/progress_horizontal"
+        android:id="@+id/current_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/small_padding"
