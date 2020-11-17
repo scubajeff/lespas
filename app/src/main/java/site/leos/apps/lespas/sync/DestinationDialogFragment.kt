@@ -104,9 +104,12 @@ class DestinationDialogFragment : DialogFragment() {
 
         // Maintain current mode after screen rotation
         if (destinationModel.isEditing()) {
+            dialog_title_textview.text = getString(R.string.create_new_album)
             destination_recyclerview.visibility = View.GONE
-            new_album_textinputlayout.visibility = View.VISIBLE
-            new_album_textinputlayout.requestFocus()
+            new_album_textinputlayout.apply {
+                visibility = View.VISIBLE
+                requestFocus()
+            }
         }
     }
 
