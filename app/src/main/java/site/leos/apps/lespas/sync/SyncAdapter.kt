@@ -97,25 +97,30 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             //} else {
                 Log.e("**********", "sync remote changes")
                 // Compare remote and local album list
-                val localAlbums = albumRepository.getSyncStatus()
+                val localAlbumsETags = albumRepository.getETagsMap()
+                val localAlbumsNames = albumRepository.getNamesMap()
                 val changedAlbums: MutableList<Album> = mutableListOf()
                 sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).drop(1).run {
-                    val remoteAlbum = mutableListOf<String>()
+                    val remoteAlbumIds = mutableListOf<String>()
                     var albumId: String
                     forEach { album ->
                         albumId = album.customProps[OC_UNIQUE_ID]!!
                         if (album.isDirectory) {
-                            remoteAlbum.add(albumId)
-                            if (localAlbums[albumId] != album.etag) {   // Also matched with new album id
-                                Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbums[albumId]}")
+                            // Find changed/added items
+                            remoteAlbumIds.add(albumId)
+                            if (localAlbumsETags[albumId] != album.etag) {   // Also matched with new album id
+                                Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbumsETags[albumId]}")
                                 changedAlbums.add(Album(albumId, album.name, null, null, "", 0, album.modified, Album.BY_DATE_TAKEN_ASC, album.etag, 0))
+                            } else if (localAlbumsNames[albumId] != album.name) {
+                                // Rename operation on server would not change item's own eTag, have to sync name changes here
+                                albumRepository.changeName(albumId, album.name)
                             }
                         }
                     }
 
                     // Delete those albums not exist on server, happens when user delete album on the server
-                    for (localAlbum in localAlbums) {
-                        if (!remoteAlbum.contains(localAlbum.key)) {
+                    for (localAlbum in localAlbumsETags) {
+                        if (!remoteAlbumIds.contains(localAlbum.key)) {
                             Log.e("=======", "deleting album: ${localAlbum.key}")
                             albumRepository.deleteByIdSync(localAlbum.key)
                         }
@@ -124,46 +129,45 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Sync each changed album
                 val changedPhotos = mutableListOf<Photo>()
-                val remotePhotos = mutableListOf<String>()
+                val remotePhotoIds = mutableListOf<String>()
                 for (album in changedAlbums) {
                     // Update album first, so that it's photos can be insert without FOREIGN KEY constraint failed
                     albumRepository.upsertSync(album)
 
-                    var count = 0
-                    val localPhotos = photoRepository.getSyncStatus(album.id)
+                    val localPhotoETags = photoRepository.getETagsMap(album.id)
+                    val localPhotoNames = photoRepository.getNamesMap(album.id)
                     var photoId: String
-                    sardine.list("$resourceRoot/${Uri.encode(album.name)}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).run {
-                        forEach { remotePhoto ->
-                            if (remotePhoto.contentType.startsWith("image", true)) {
-                                // Accumulate remote photos list
-                                photoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
-                                remotePhotos.add(photoId)
-                                count++
-                                if (localPhotos[photoId] != remotePhoto.etag) { // Also matches new photos
-                                    Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[photoId]}")
-                                    changedPhotos.add(
-                                        Photo(photoId, album.id,
-                                                "$resourceRoot/${album.name}/${remotePhoto.name}",      // Use full url for easy Glide load
-                                                remotePhoto.etag, null, remotePhoto.modified, 0))
-                                }
+                    sardine.list("$resourceRoot/${Uri.encode(album.name)}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).forEach { remotePhoto ->
+                        if (remotePhoto.contentType.startsWith("image", true)) {
+                            // Accumulate remote photos list
+                            photoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
+                            remotePhotoIds.add(photoId)
+                            if (localPhotoETags[photoId] != remotePhoto.etag) { // Also matches new photos
+                                Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[photoId]}")
+                                changedPhotos.add(
+                                    Photo(photoId, album.id,
+                                            "$resourceRoot/${album.name}/${remotePhoto.name}",      // Use full url for easy Glide load
+                                            remotePhoto.etag, null, remotePhoto.modified, 0))
+                            } else if (localPhotoNames[photoId]?.substringAfterLast('/') != remotePhoto.name) {
+                                // Rename operation on server would not change item's own eTag, have to sync name changes here
+                                photoRepository.changeName(photoId, "$resourceRoot/${album.name}/${remotePhoto.name}")
                             }
                         }
-
-                        // Update photo
-                        for (photo in changedPhotos) photoRepository.upsertSync(photo)
-
-                        // Delete those photos not exist on server, happens when user delete photos on the server
-                        for (localPhoto in localPhotos) {
-                            if (!remotePhotos.contains(localPhoto.key)) {
-                                Log.e("=======", "deleting photo: ${localPhoto.key}")
-                                photoRepository.deleteByIdSync(localPhoto.key)
-                            }
-                        }
-
-                        // Recycle the list
-                        remotePhotos.clear()
-                        changedPhotos.clear()
                     }
+                    // Update photo
+                    for (photo in changedPhotos) photoRepository.upsertSync(photo)
+
+                    // Delete those photos not exist on server, happens when user delete photos on the server
+                    for (localPhoto in localPhotoETags) {
+                        if (!remotePhotoIds.contains(localPhoto.key)) {
+                            Log.e("=======", "deleting photo: ${localPhoto.key}")
+                            photoRepository.deleteByIdSync(localPhoto.key)
+                        }
+                    }
+
+                    // Recycle the list
+                    remotePhotoIds.clear()
+                    changedPhotos.clear()
                 }
             //}
 

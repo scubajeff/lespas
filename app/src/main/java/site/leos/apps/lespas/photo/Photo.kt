@@ -28,7 +28,8 @@ data class Photo(
     }
 }
 
-data class PhotoSyncStatus(val id: String, val eTag: String)
+data class PhotoETag(val id: String, val eTag: String)
+data class PhotoName(val id: String, val name: String)
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
@@ -42,7 +43,13 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun deleteByIdSync(photoId: String): Int
 
     @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
-    abstract fun getAlbumSyncStatus(albumId: String): List<PhotoSyncStatus>
+    abstract fun getETagsMap(albumId: String): List<PhotoETag>
+
+    @Query("SELECT id, name FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    abstract fun getNamesMap(albumId: String): List<PhotoName>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET name = :newName WHERE id = :id")
+    abstract fun changeName(id: String, newName: String)
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>>

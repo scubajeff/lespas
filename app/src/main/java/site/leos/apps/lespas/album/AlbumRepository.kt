@@ -13,7 +13,9 @@ class AlbumRepository(application: Application){
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun update(album: Album){ albumDao.update(album) }
     fun deleteByIdSync(albumId: String) { albumDao.deleteByIdSync(albumId) }
-    fun getSyncStatus(): Map<String, String> = albumDao.getSyncStatus().map { it.id to it.eTag}.toMap()
+    fun getETagsMap(): Map<String, String> = albumDao.getETagsMap().map { it.id to it.eTag}.toMap()
+    fun getNamesMap(): Map<String, String> = albumDao.getNamesMap().map { it.id to it.name}.toMap()
+    fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
     suspend fun setCover(album: Album, cover: Cover) { albumDao.setCover(album.id, cover.name, cover.baseLine) }
     fun getAlbumName(albumId: String): String = albumDao.getAlbumName(albumId)
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }

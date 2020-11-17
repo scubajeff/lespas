@@ -11,7 +11,9 @@ class PhotoRepository(application: Application) {
     fun getAlbumSize(albumId: String): Flow<Int> = photoDao.getAlbumSize(albumId)
     fun upsertSync(photo: Photo) { photoDao.upsertSync(photo) }
     fun deleteByIdSync(photoId: String) { photoDao.deleteByIdSync(photoId) }
-    fun getSyncStatus(albumId: String): Map<String, String> = photoDao.getAlbumSyncStatus(albumId).map { it.id to it.eTag }.toMap()
+    fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
+    fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
+    fun changeName(photoId: String, newName: String) = photoDao.changeName(photoId, newName)
     suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
 
     companion object {

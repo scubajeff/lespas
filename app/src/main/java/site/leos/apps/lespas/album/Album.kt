@@ -36,7 +36,7 @@ data class Album(
 }
 
 data class Cover(val name: String, val baseLine: Int)
-data class AlbumSyncStatus(val id: String, val eTag: String)
+data class AlbumETagAndId(val id: String, val eTag: String)
 data class AlbumNameAndId(val id: String, val name: String)
 
 @Dao
@@ -57,7 +57,13 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAlbumByID(albumId: String): Flow<Album>
 
     @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getSyncStatus(): List<AlbumSyncStatus>
+    abstract fun getETagsMap(): List<AlbumETagAndId>
+
+    @Query("SELECT id, name FROM ${Album.TABLE_NAME} ORDER BY id ASC")
+    abstract fun getNamesMap(): List<AlbumNameAndId>
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
+    abstract fun changeName(id: String, newName: String)
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline WHERE id = :albumId")
     abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int)
