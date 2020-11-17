@@ -71,7 +71,8 @@ class DestinationDialogFragment : DialogFragment() {
                 if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     // Valid the name
                     val name = name_textinputedittext.text.toString().trim()
-                    if (!Pattern.compile("[^\\\\/:*\"?<>|;@&=+\$,{}#%^`\\[\\]]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
+                    //if (!Pattern.compile("[^\\\\/:*\"?<>|;@&=+\$,{}#%^`\\[\\]]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
+                    if (!Pattern.compile("[^\\\\/]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
                         name_textinputedittext.error = getString(R.string.invalid_character_found)
                     } else if (name.length > 200) {
                         name_textinputedittext.error = getString(R.string.name_too_long)

@@ -66,7 +66,7 @@
     <!-- Destination DialogFragment -->
     <string name="choose_destination">Add to album</string>
     <string name="create_new_album">Add to new album</string>
-    <string name="invalid_character_found">Invalid characters: `@#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string>
+    <string name="invalid_character_found">Invalid characters: \\/</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed.</string>
     <string name="name_too_long">Name too long.</string>
     <string name="album_existed">Album already existed.</string>

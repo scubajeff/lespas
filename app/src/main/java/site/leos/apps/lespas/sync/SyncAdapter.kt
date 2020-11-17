@@ -9,6 +9,7 @@ import android.content.ContentProviderClient
 import android.content.Context
 import android.content.SyncResult
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.preference.PreferenceManager
@@ -67,20 +68,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                            sardine.delete(action.fileName)
+                            sardine.delete(Uri.encode(action.fileName))
                             // TODO need to update album's etag to reduce network usage during next remote sync
                         }
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                            sardine.delete("$resourceRoot/${action.folderName}")
+                            sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}")
                         }
                         Action.ACTION_ADD_FILES_ON_SERVER -> {
                             // Upload to server and verify
                             Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
-                            sardine.put("$resourceRoot/${action.folderName}/${action.fileName}", File(application.filesDir, action.fileName), "image/*")
+                            sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(application.filesDir, action.fileName), "image/*")
                             // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                         }
                         Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                            sardine.createDirectory("$resourceRoot/${action.folderName}")
+                            sardine.createDirectory("$resourceRoot/${Uri.encode(action.folderName)}")
                         }
                         Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
                             TODO()
