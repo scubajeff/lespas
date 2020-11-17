@@ -124,10 +124,10 @@ class DestinationDialogFragment : DialogFragment() {
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 
-        // If called by UploadActivity, quit immediately, otherwise return normally
-        if (tag == UploadActivity.TAG_DESTINATION_DIALOG) activity?.apply {
+        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
+        if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) activity?.apply {
             finish()
-            activity?.overridePendingTransition(0, 0)
+            overridePendingTransition(0, 0)
         }
     }
 

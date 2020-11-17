@@ -13,7 +13,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import site.leos.apps.lespas.R
 
-class UploadActivity: AppCompatActivity() {
+class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
     private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()

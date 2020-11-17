@@ -32,7 +32,7 @@
 
         <activity android:name=".MainActivity" />
 
-        <activity android:name=".sync.UploadActivity"
+        <activity android:name=".sync.ShareReceiverActivity"
             android:theme="@style/Theme.LesPas.Transparent"
             android:windowSoftInputMode="adjustPan"
             android:excludeFromRecents="true">

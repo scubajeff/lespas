@@ -62,8 +62,8 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 
-        // If called by UploadActivity, quit immediately, otherwise return normally
-        if (tag == UploadActivity.TAG_ACQUIRING_DIALOG) activity?.apply {
+        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
+        if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.apply {
             finish()
             overridePendingTransition(0, 0)
         }
