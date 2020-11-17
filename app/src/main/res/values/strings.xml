@@ -66,11 +66,11 @@
     <!-- Destination DialogFragment -->
     <string name="choose_destination">Add to album</string>
     <string name="create_new_album">Add to new album</string>
-    <string name="invalid_character_found">Invalid characters: \\/</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
-    <string name="invalid_name_found">Name not allowed.</string>
-    <string name="name_too_long">Name too long.</string>
-    <string name="album_existed">Album already existed.</string>
-    <string name="leading_dots_found">"No leading '.' allowed"</string>
+    <string name="invalid_character_found">"Path separator '\\' '/' not allowed"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
+    <string name="invalid_name_found">Name not allowed</string>
+    <string name="name_too_long">Name too long</string>
+    <string name="album_existed">Album already existed</string>
+    <string name="leading_dots_found">"Leading '.' not allowed"</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>

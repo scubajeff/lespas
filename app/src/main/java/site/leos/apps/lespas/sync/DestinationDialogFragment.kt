@@ -72,18 +72,10 @@ class DestinationDialogFragment : DialogFragment() {
                     // Validate the name
                     val name = name_textinputedittext.text.toString().trim()    // Trim the leading and trailing blank
 
-                    //if (!Pattern.compile("[^\\\\/:*\"?<>|;@&=+\$,{}#%^`\\[\\]]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
-                    if (!Pattern.compile("[^\\\\/]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
-                        name_textinputedittext.error = getString(R.string.invalid_character_found)
-                    } else if (name.length > 200) {
-                        name_textinputedittext.error = getString(R.string.name_too_long)
-                    } else if (!Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![\\s])\\z").matcher(name).matches()) {
-                        name_textinputedittext.error = getString(R.string.invalid_name_found)
-                    } else if (isAlbumExisted(name)) {
-                        name_textinputedittext.error = getString(R.string.album_existed)
-                    } else if(!Pattern.compile("^\\..*").matcher(name).matches()) {
-                        name_textinputedittext.error = getString(R.string.leading_dots_found)
-                    } else {
+                    if (error != null)
+                    else if (name.isEmpty())
+                    else if (isAlbumExisted(name)) name_textinputedittext.error = getString(R.string.album_existed)
+                    else {
                         // Return with album id field empty, calling party will know this is a new album
                         destinationModel.setDestination(AlbumNameAndId("", name))
                         dismiss()
@@ -92,10 +84,20 @@ class DestinationDialogFragment : DialogFragment() {
                 } else false
             }
             addTextChangedListener(object: TextWatcher {
+                val slashesPattern =  Pattern.compile("[^\\\\/]+(?<![.])\\z")
+                val devPattern = Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![.])\\z")
+                val leadingDotPattern = Pattern.compile("^\\..*")
+
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { error = null }
                 override fun afterTextChanged(s: Editable?) {
-                    // TODO name validation on the run?
+                    val txt = s!!.toString()
+
+                    if (txt.isEmpty()) error = null
+                    else if (txt.length > 200) name_textinputedittext.error = getString(R.string.name_too_long)
+                    else if (!slashesPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.invalid_character_found)
+                    else if (!devPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.invalid_name_found)
+                    else if (leadingDotPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.leading_dots_found)
                 }
             })
         }
