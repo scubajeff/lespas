@@ -14,7 +14,7 @@ class PhotoViewModel(application: Application, private val albumId: String): And
 
     val allPhotoInAlbum: LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
     val albumSize: LiveData<Int> = photoRepository.getAlbumSize(albumId).asLiveData()
-    fun deletePhotos(photos: List<Photo>)  {
+    fun deletePhotos(photos: List<Photo>, albumName: String)  {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete from local database
             photoRepository.deletePhotos(photos)
@@ -23,7 +23,7 @@ class PhotoViewModel(application: Application, private val albumId: String): And
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
             // folderName field can be blank in these actons
-            photos.forEach {photo ->  actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, "", photo.name, timestamp, 1)) }
+            photos.forEach {photo ->  actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.name, timestamp, 1)) }
             actionRepository.addActions(actions)
         }
     }

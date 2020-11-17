@@ -286,7 +286,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         for (i in selectionTracker?.selection!!) {
             photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
         }
-        photoListViewModel.deletePhotos(photos)
+        photoListViewModel.deletePhotos(photos, album.name)
 
         selectionTracker?.clearSelection()
     }

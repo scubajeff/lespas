@@ -68,7 +68,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                            sardine.delete(Uri.encode(action.fileName))
+                            sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName.substringAfterLast('/'))}")
                             // TODO need to update album's etag to reduce network usage during next remote sync
                         }
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {

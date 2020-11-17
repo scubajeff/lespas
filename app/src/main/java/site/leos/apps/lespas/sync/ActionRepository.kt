@@ -7,6 +7,7 @@ import site.leos.apps.lespas.LespasDatabase
 class ActionRepository(application: Application){
     private val actionDao = LespasDatabase.getDatabase(application).actionDao()
 
+    fun deleteSync(action: Action) = actionDao.deleteSync(action)
     fun pendingActionsFlow(): Flow<List<Action>> = actionDao.pendingActionsFlow()
     fun getAllPendingActions(): List<Action> = actionDao.getAllPendingActions()
     fun hasPendingActions(): Boolean = actionDao.getPendingTotal() > 0
