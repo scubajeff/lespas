@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="light_blue_600">#FF039BE5</color>
-    <color name="light_blue_900">#FF01579B</color>
-    <color name="light_blue_A200">#FF40C4FF</color>
-    <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#FF000000</color>
-    <color name="grey_200">#FFEEEEEE</color>
     <color name="frosted_glass">#A0000000</color>
 
-    <color name="album_item_selected_background">@color/purple_200</color>   <!-- TODO: should be day night safe -->
-    <color name="photo_item_selected_background">@color/grey_200</color>   <!-- TODO: should be day night safe -->
-    <color name="cardview_daynight_background">@color/cardview_light_background</color>
+    <!-- Straight from https://vanschneider.com/colors -->
+    <color name="color_primary">#E57066</color>
+    <color name="color_primary_variant">#CE7082</color>
+    <color name="color_on_primary">#F9F7E8</color>
+    <color name="color_secondary">#61BFAD</color>
+    <color name="color_secondary_variant">#055A5B</color>
+    <color name="color_on_secondary">#1B1D1C</color>
+
+    <color name="album_item_selected_background">#EED974</color>   <!-- TODO: should be day night safe -->
+    <color name="photo_item_selected_background">#A0EEEEEE</color>   <!-- TODO: should be day night safe -->
+    <color name="cardview_daynight_background">#F9F7E8</color>     <!-- @color/cardview_light_background -->
 </resources>
