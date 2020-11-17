@@ -89,7 +89,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     // TODO: Error retry strategy, directory etag update, etc.
-                    actionRepository.deleteAllActions()
+                    actionRepository.deleteSync(action)
                 }
             //} else {
                 Log.e("**********", "sync remote changes")
