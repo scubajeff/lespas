@@ -70,6 +70,7 @@
     <string name="invalid_name_found">Name not allowed.</string>
     <string name="name_too_long">Name too long.</string>
     <string name="album_existed">Album already existed.</string>
+    <string name="leading_dots_found">"No leading '.' allowed"</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>

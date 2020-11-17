@@ -69,8 +69,9 @@ class DestinationDialogFragment : DialogFragment() {
         name_textinputedittext.run {
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
-                    // Valid the name
-                    val name = name_textinputedittext.text.toString().trim()
+                    // Validate the name
+                    val name = name_textinputedittext.text.toString().trim()    // Trim the leading and trailing blank
+
                     //if (!Pattern.compile("[^\\\\/:*\"?<>|;@&=+\$,{}#%^`\\[\\]]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
                     if (!Pattern.compile("[^\\\\/]{1,254}(?<![\\s])\\z").matcher(name).matches()) {
                         name_textinputedittext.error = getString(R.string.invalid_character_found)
@@ -80,6 +81,8 @@ class DestinationDialogFragment : DialogFragment() {
                         name_textinputedittext.error = getString(R.string.invalid_name_found)
                     } else if (isAlbumExisted(name)) {
                         name_textinputedittext.error = getString(R.string.album_existed)
+                    } else if(!Pattern.compile("^\\..*").matcher(name).matches()) {
+                        name_textinputedittext.error = getString(R.string.leading_dots_found)
                     } else {
                         // Return with album id field empty, calling party will know this is a new album
                         destinationModel.setDestination(AlbumNameAndId("", name))
