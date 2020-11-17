@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.sync
 
-import android.database.Cursor
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -36,17 +35,8 @@ abstract class ActionDao: BaseDao<Action>() {
     @Query("SELECT * FROM ${Action.TABLE_NAME} ORDER BY id ASC")
     abstract fun getAllPendingActions(): List<Action>
 
-    @Query("SELECT * FROM ${Action.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getAllCursor(): Cursor
-
-    @Query("SELECT * FROM ${Action.TABLE_NAME} WHERE id = :actionId")
-    abstract fun getByIdCursor(actionId: Long): Cursor
-
     @Query("DELETE FROM ${Action.TABLE_NAME}")
     abstract fun deleteAllSync()
-
-    @Query("DELETE FROM ${Action.TABLE_NAME} WHERE id = :rowId")
-    abstract fun deleteById(rowId: Long): Int
 
     @Query("SELECT COUNT(*) FROM ${Action.TABLE_NAME}")
     abstract fun getPendingTotal(): Int
