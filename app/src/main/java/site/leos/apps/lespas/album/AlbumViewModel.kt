@@ -25,7 +25,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
 
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
-            albums.forEach {album -> actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", timestamp,0)) }
+            albums.forEach {album -> actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", timestamp,1)) }
             actionRepository.addActions(actions)
         }
     }
