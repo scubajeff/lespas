@@ -1,5 +1,8 @@
 package site.leos.apps.lespas.album
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -23,6 +26,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private lateinit var fab: FloatingActionButton
 
     companion object {
+        const val REQUEST_FOR_IMAGES = 1111
+
         fun newInstance() = AlbumFragment()
     }
 
@@ -101,7 +106,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         fab = view.findViewById<FloatingActionButton>(R.id.fab).apply {
             setOnClickListener {
-                //TODO: album fragment fab action
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
+                startActivityForResult(intent, REQUEST_FOR_IMAGES)
             }
         }
 
@@ -125,6 +134,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         selectionTracker?.onSaveInstanceState(outState)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+        val uris = ArrayList<Uri>()
+
+        super.onActivityResult(requestCode, resultCode, intent)
+
+        if (resultCode == Activity.RESULT_OK) {
+            when(requestCode) {
+                REQUEST_FOR_IMAGES-> {
+                    intent?.clipData?.apply {for (i in 0..itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
+
+                    if (uris.isNotEmpty()) {
+
+                    }
+                }
+            }
+        }
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
