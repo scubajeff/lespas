@@ -82,6 +82,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                         Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                             sardine.createDirectory("$resourceRoot/${Uri.encode(action.folderName)}")
+
+                            // Verify it. TODO is this necessary??
+                            sardine.exists("$resourceRoot/${Uri.encode(action.folderName)}")
                         }
                         Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
                             TODO()
@@ -95,21 +98,22 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Log.e("**********", "sync remote changes")
                 // Compare remote and local album list
                 val localAlbums = albumRepository.getSyncStatus()
-                val pendingUpdate: MutableList<Album> = mutableListOf()
+                val changedAlbums: MutableList<Album> = mutableListOf()
                 sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).drop(1).run {
                     val remoteAlbum = mutableListOf<String>()
+                    var albumId: String
                     forEach { album ->
-                        remoteAlbum.add(album.customProps[OC_UNIQUE_ID]!!)
+                        albumId = album.customProps[OC_UNIQUE_ID]!!
                         if (album.isDirectory) {
-                            if (localAlbums[album.customProps[OC_UNIQUE_ID]!!] != album.etag) {
-                                Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbums[album.customProps[OC_UNIQUE_ID]!!]}")
-                                pendingUpdate.add(Album(album.customProps[OC_UNIQUE_ID]!!, album.name, null, null, "", 0, album.modified, Album.BY_DATE_TAKEN_ASC, album.etag, 0))
+                            remoteAlbum.add(albumId)
+                            if (localAlbums[albumId] != album.etag) {   // Also matched with new album id
+                                Log.e("=======", "album changed: ${album.name} r_etag:${album.etag} l_etag:${localAlbums[albumId]}")
+                                changedAlbums.add(Album(albumId, album.name, null, null, "", 0, album.modified, Album.BY_DATE_TAKEN_ASC, album.etag, 0))
                             }
                         }
                     }
-                    //Log.e("======", "changed albums:${pendingUpdate.size}")
 
-                    // Delete those albums not exist on server
+                    // Delete those albums not exist on server, happens when user delete album on the server
                     for (localAlbum in localAlbums) {
                         if (!remoteAlbum.contains(localAlbum.key)) {
                             Log.e("=======", "deleting album: ${localAlbum.key}")
@@ -119,37 +123,36 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Sync each changed album
-                val pendingDownload = mutableListOf<Photo>()
+                val changedPhotos = mutableListOf<Photo>()
                 val remotePhotos = mutableListOf<String>()
-                for (album in pendingUpdate) {
+                for (album in changedAlbums) {
                     // Update album first, so that it's photos can be insert without FOREIGN KEY constraint failed
                     albumRepository.upsertSync(album)
 
                     var count = 0
                     val localPhotos = photoRepository.getSyncStatus(album.id)
-                    sardine.list("$resourceRoot/${album.name}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).run {
+                    var photoId: String
+                    sardine.list("$resourceRoot/${Uri.encode(album.name)}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).run {
                         forEach { remotePhoto ->
                             if (remotePhoto.contentType.startsWith("image", true)) {
                                 // Accumulate remote photos list
-                                remotePhotos.add(remotePhoto.customProps[OC_UNIQUE_ID]!!)
-
+                                photoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
+                                remotePhotos.add(photoId)
                                 count++
-                                if (localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!] != remotePhoto.etag) {
-                                    Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[remotePhoto.customProps[OC_UNIQUE_ID]!!]}")
-                                    pendingDownload.add(
-                                        Photo(remotePhoto.customProps[OC_UNIQUE_ID]!!,
-                                                album.id,
+                                if (localPhotos[photoId] != remotePhoto.etag) { // Also matches new photos
+                                    Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotos[photoId]}")
+                                    changedPhotos.add(
+                                        Photo(photoId, album.id,
                                                 "$resourceRoot/${album.name}/${remotePhoto.name}",      // Use full url for easy Glide load
                                                 remotePhoto.etag, null, remotePhoto.modified, 0))
                                 }
                             }
                         }
-                        //Log.e("===========", "total:$count changed photos:${pendingDownload.size}")
 
                         // Update photo
-                        for (photo in pendingDownload) photoRepository.upsertSync(photo)
+                        for (photo in changedPhotos) photoRepository.upsertSync(photo)
 
-                        // Delete those photos not exist on server
+                        // Delete those photos not exist on server, happens when user delete photos on the server
                         for (localPhoto in localPhotos) {
                             if (!remotePhotos.contains(localPhoto.key)) {
                                 Log.e("=======", "deleting photo: ${localPhoto.key}")
@@ -159,7 +162,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Recycle the list
                         remotePhotos.clear()
-                        pendingDownload.clear()
+                        changedPhotos.clear()
                     }
                 }
             //}
