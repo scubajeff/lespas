@@ -36,6 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            app:fabSize="mini"
             android:src="@drawable/ic_baseline_check_24" />
     </FrameLayout>
     <View
