@@ -129,6 +129,9 @@ class DestinationDialogFragment : DialogFragment() {
             finish()
             overridePendingTransition(0, 0)
         }
+
+        // Clear editing mode
+        destinationModel.setEditMode(false)
     }
 
     private fun isAlbumExisted(name: String): Boolean {
