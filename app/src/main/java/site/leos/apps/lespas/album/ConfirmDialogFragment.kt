@@ -1,10 +1,11 @@
-package site.leos.apps.lespas
+package site.leos.apps.lespas.album
 
 import android.app.Dialog
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : DialogFragment() {
     private lateinit var onPositiveConfirmedListener: OnPositiveConfirmedListener
