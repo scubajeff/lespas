@@ -21,6 +21,8 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.IOException
+import java.io.InterruptedIOException
+import javax.net.ssl.SSLHandshakeException
 import javax.xml.namespace.QName
 
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
@@ -78,6 +80,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // Upload to server and verify
                             Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
                             sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(application.filesDir, action.fileName), "image/*")
+                            File(application.filesDir, action.fileName).delete()
                             // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                         }
                         Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -176,7 +179,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e: IOException) {
             syncResult.stats.numIoExceptions++
             Log.e("****Exception: ", e.stackTraceToString())
-        } catch (e: AuthenticatorException) {
+        } catch (e: InterruptedIOException) {
+            syncResult.stats.numIoExceptions++
+            Log.e("****Exception: ", e.stackTraceToString())
+        } catch (e: SSLHandshakeException) {
+            syncResult.stats.numIoExceptions++
+            Log.e("****Exception: ", e.stackTraceToString())
+        }
+        catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e:Exception) {

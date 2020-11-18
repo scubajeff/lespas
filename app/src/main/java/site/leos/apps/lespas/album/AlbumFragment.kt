@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -12,22 +13,31 @@ import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.ConfirmDialogFragment
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
 
 class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
     private lateinit var mAdapter: AlbumListAdapter
     private val albumsModel: AlbumViewModel by activityViewModels()
+    private val actionModel: ActionViewModel by activityViewModels()
+    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+    private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
 
     companion object {
         const val REQUEST_FOR_IMAGES = 1111
-
+        const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
+        const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         fun newInstance() = AlbumFragment()
     }
 
@@ -147,6 +157,37 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                     intent?.clipData?.apply {for (i in 0..itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
 
                     if (uris.isNotEmpty()) {
+                        destinationModel.getDestination().observe (this, Observer { album->
+                            // Acquire files
+                            acquiringModel = ViewModelProvider(requireActivity(), AcquiringDialogFragment.AcquiringViewModelFactory(requireActivity().application, uris))
+                                .get(AcquiringDialogFragment.AcquiringViewModel::class.java)
+                            acquiringModel.getProgress().observe(this, Observer { progress->
+                                if (progress == uris.size) {
+                                    // Files are under control, we can create sync action now
+                                    val actions = mutableListOf<Action>()
+
+                                    // Create new album first
+                                    if (album.id.isEmpty()) actions.add(
+                                        Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", System.currentTimeMillis(), 1))
+
+                                    uris.forEach {uri->
+                                        requireContext().contentResolver.query(uri, null, null, null, null)?.apply {
+                                            val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                                            moveToFirst()
+                                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, getString(columnIndex), System.currentTimeMillis(), 1))
+                                            close()
+                                        }
+                                    }
+                                    actionModel.addActions(actions)
+                                }
+                            })
+
+                            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                                AcquiringDialogFragment.newInstance(uris).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                        })
+
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
+                            DestinationDialogFragment.newInstance().show(parentFragmentManager, TAG_DESTINATION_DIALOG)
 
                     }
                 }
