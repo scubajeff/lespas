@@ -2,12 +2,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/share"
-        android:title="@string/action_share_album"
+        android:title="@string/action_share"
         android:icon="@drawable/ic_baseline_share_24"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/remove"
-        android:title="@string/action_remove_album"
+        android:title="@string/action_remove"
         android:icon="@drawable/ic_baseline_delete_24"
         app:showAsAction="ifRoom" />
 </menu>

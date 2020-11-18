@@ -196,7 +196,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_album, menu)
+        mode?.menuInflater?.inflate(R.menu.actions_delete_and_share, menu)
         fab.isEnabled = false
 
         return true

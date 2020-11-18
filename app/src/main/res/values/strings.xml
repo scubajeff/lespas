@@ -76,9 +76,10 @@
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>
 
     <!-- Toolbar actions -->
-    <string name="action_settings">Settings</string>
-    <string name="action_share_album">Share</string>
-    <string name="action_remove_album">Remove</string>
+    <string name="item_settings">Settings</string>
+    <string name="item_rename">Rename Album</string>
+    <string name="action_share">Share</string>
+    <string name="action_remove">Remove</string>
     <string name="selected_count">%1$d selected</string>
 
 </resources>

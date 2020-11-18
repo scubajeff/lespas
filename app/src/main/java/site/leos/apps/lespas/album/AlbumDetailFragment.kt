@@ -58,6 +58,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         })
 
         photoListViewModel = ViewModelProvider(this, PhotosViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
+
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -246,9 +248,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.album_detail_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.option_menu_rename-> {
+                return true
+            }
+        }
+        return false
+    }
+
     // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_album, menu)
+        mode?.menuInflater?.inflate(R.menu.actions_delete_and_share, menu)
 
         return true
     }

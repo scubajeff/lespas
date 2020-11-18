@@ -31,7 +31,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        menu.run { findItem(R.id.action_settings).isVisible = false }
+        menu.run { findItem(R.id.option_menu_settings).isVisible = false }
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference?) {

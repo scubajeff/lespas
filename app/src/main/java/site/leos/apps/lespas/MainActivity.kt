@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.actions_main, menu)
+        menuInflater.inflate(R.menu.main_menu, menu)
 
         return true
     }
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         when(item.itemId) {
             // Response to "up" affordance pressed in fragments
             android.R.id.home -> onBackPressed()
-            R.id.action_settings -> supportFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
+            R.id.option_menu_settings -> supportFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
             else -> return super.onOptionsItemSelected(item)
         }
 
