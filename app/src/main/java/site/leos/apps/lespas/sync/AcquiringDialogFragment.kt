@@ -18,6 +18,7 @@ import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 import java.io.InputStream
 import java.io.OutputStream
@@ -30,7 +31,6 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCreate(savedInstanceState)
 
         total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
-        setStyle(STYLE_NO_TITLE, R.style.Theme_LesPas_Dialog)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -52,22 +52,24 @@ class AcquiringDialogFragment: DialogFragment() {
         })
     }
 
-    override fun onResume() {
-        // Set dialog width to a fixed ration of screen width
-        val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-        dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+    override fun onStart() {
+        super.onStart()
 
-        super.onResume()
+        dialog!!.window!!.apply {
+            // Set dialog width to a fixed ration of screen width
+            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
+            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
+            setWindowAnimations(R.style.DialogAnimation_Window)
+        }
     }
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 
         // If called by ShareReceiverActivity, quit immediately, otherwise return normally
-        if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.apply {
-            finish()
-            overridePendingTransition(0, 0)
-        }
+        if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>): AndroidViewModel(application) {

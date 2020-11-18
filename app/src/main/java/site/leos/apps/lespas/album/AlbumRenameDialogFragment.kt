@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.fragment_albumrename_dialog.*
 import site.leos.apps.lespas.AlbumNameValidator
+import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 
 class AlbumRenameDialogFragment: DialogFragment() {
@@ -21,7 +22,6 @@ class AlbumRenameDialogFragment: DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, R.style.Theme_LesPas_Dialog)
         onFinishListener = targetFragment as OnFinishListener
     }
 
@@ -52,13 +52,19 @@ class AlbumRenameDialogFragment: DialogFragment() {
         }
     }
 
-    override fun onResume() {
-        // Set dialog width to a fixed ration of screen width
-        val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-        dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-        rename_textinputlayout.requestFocus()
+    override fun onStart() {
+        super.onStart()
 
-        super.onResume()
+        dialog!!.window!!.apply {
+            // Set dialog width to a fixed ration of screen width
+            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
+            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
+            setWindowAnimations(R.style.DialogAnimation_Window)
+
+            rename_textinputlayout.requestFocus()
+        }
     }
 
     companion object {

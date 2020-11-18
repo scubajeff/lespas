@@ -20,6 +20,7 @@ import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_destination_dialog.*
 import site.leos.apps.lespas.AlbumNameValidator
+import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumNameAndId
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -31,8 +32,6 @@ class DestinationDialogFragment : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setStyle(STYLE_NO_TITLE, R.style.Theme_LesPas_Dialog)
 
         albumAdapter = DestinationAdapter(object : DestinationAdapter.OnItemClickListener {
             override fun onItemClick(album: AlbumNameAndId) {
@@ -95,25 +94,27 @@ class DestinationDialogFragment : DialogFragment() {
         }
     }
 
-    override fun onResume() {
-        // Set dialog width to a fixed ration of screen width
-        val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-        dialog!!.window!!.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+    override fun onStart() {
+        super.onStart()
 
-        super.onResume()
+        dialog!!.window!!.apply {
+            // Set dialog width to a fixed ration of screen width
+            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
+            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
+            setWindowAnimations(R.style.DialogAnimation_Window)
+        }
     }
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 
-        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
-        if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) activity?.apply {
-            finish()
-            overridePendingTransition(0, 0)
-        }
-
         // Clear editing mode
         destinationModel.setEditMode(false)
+
+        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
+        if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) activity?.finish()
     }
 
     private fun isAlbumExisted(name: String): Boolean {

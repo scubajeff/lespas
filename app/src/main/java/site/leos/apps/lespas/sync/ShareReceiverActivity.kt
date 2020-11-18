@@ -61,7 +61,6 @@ class ShareReceiverActivity: AppCompatActivity() {
 
                         // Done
                         finish()
-                        overridePendingTransition(0, 0)
                     }
                 })
 
@@ -74,7 +73,6 @@ class ShareReceiverActivity: AppCompatActivity() {
         }
         else {
             finish()
-            overridePendingTransition(0, 0)
         }
     }
 

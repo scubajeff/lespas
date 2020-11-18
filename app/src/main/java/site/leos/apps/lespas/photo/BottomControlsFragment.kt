@@ -16,6 +16,7 @@ import android.widget.LinearLayout
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -190,10 +191,23 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
     class InfoDialogFragment() : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            return AlertDialog.Builder(requireActivity(), R.style.Theme_LesPas_Dialog)
+            return AlertDialog.Builder(requireActivity())
                 .setMessage(arguments?.getString(MESSAGE))
-                .setPositiveButton(android.R.string.ok) { _, i_ -> }
+                .setPositiveButton(android.R.string.ok) { _, i_ ->}
                 .create()
+        }
+
+        override fun onStart() {
+            super.onStart()
+
+            dialog!!.window!!.apply {
+                // Set dialog width to a fixed ration of screen width
+                val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
+                setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+
+                setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
+                setWindowAnimations(R.style.DialogAnimation_Window)
+            }
         }
 
         companion object {

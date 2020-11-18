@@ -5,4 +5,5 @@
     <dimen name="tiny_padding">4dp</dimen>
     <dimen name="mini_padding">2dp</dimen>
     <dimen name="fullscreen_controls_bottom_margin">48dp</dimen>
+    <dimen name="dialog_frame_radius">12dp</dimen>
 </resources>
