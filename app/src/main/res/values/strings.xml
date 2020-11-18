@@ -36,6 +36,7 @@
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure?</string>
+    <string name="rename_to">Change album name to</string>
 
     <!-- PhotoSlide fragment -->
     <string name="tooltip_text_set_cover">Set cover art</string>

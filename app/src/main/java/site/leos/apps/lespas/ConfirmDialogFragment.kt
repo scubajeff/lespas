@@ -6,7 +6,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 
-class ConfirmDialogFragment() : DialogFragment() {
+class ConfirmDialogFragment : DialogFragment() {
     private lateinit var onPositiveConfirmedListener: OnPositiveConfirmedListener
 
     interface OnPositiveConfirmedListener {

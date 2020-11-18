@@ -11,6 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -25,11 +26,14 @@ import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.photo.PhotoViewModel
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionViewModel
 
-class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
+class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var mAdapter: PhotoGridAdapter
     private lateinit var photoListViewModel: PhotoViewModel
-    private val currentAlbumModel: AlbumViewModel by activityViewModels()
+    private val albumModel: AlbumViewModel by activityViewModels()
+    private val actionModel: ActionViewModel by viewModels()
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
@@ -115,7 +119,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         postponeEnterTransition()
 
-        currentAlbumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
+        albumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
         photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
@@ -256,6 +260,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_rename-> {
+                AlbumRenameDialogFragment.newInstance(album.name).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, "")
+                }
                 return true
             }
         }
@@ -304,5 +312,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         photoListViewModel.deletePhotos(photos, album.name)
 
         selectionTracker?.clearSelection()
+    }
+
+    override fun onRenameFinished(newName: String) {
+        if (newName != album.name) {
+            if (!albumModel.isAlbumNameExisted(newName)) {
+                // Action's filename field is the new directory name
+                actionModel.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, album.id, album.name, newName, System.currentTimeMillis(), 1))
+            }
+        }
     }
 }

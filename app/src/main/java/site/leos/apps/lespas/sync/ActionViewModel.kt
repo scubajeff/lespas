@@ -12,4 +12,5 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val actionRepository = ActionRepository(application)
     val allActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
     fun addActions(actions: List<Action>) = viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(actions) }
+    fun addActions(action: Action) = viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(action) }
 }

@@ -17,13 +17,14 @@ data class Action (
     val date: Long,
     val retry: Int) {
    companion object {
-        const val TABLE_NAME = "actions"
+       const val TABLE_NAME = "actions"
 
-        const val ACTION_DELETE_FILES_ON_SERVER = 1
-        const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
-        const val ACTION_ADD_FILES_ON_SERVER = 3
-        const val ACTION_ADD_DIRECTORY_ON_SERVER = 4
-        const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
+       const val ACTION_DELETE_FILES_ON_SERVER = 1
+       const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
+       const val ACTION_ADD_FILES_ON_SERVER = 3
+       const val ACTION_ADD_DIRECTORY_ON_SERVER = 4
+       const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
+       const val ACTION_RENAME_DIRECTORY = 6
    }
 }
 

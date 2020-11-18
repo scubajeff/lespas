@@ -92,6 +92,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
                             TODO()
                         }
+                        Action.ACTION_RENAME_DIRECTORY -> {
+                            // Action's filename field is the new directory name
+                            sardine.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
+                            albumRepository.changeName(action.folderId, action.fileName)
+                        }
                     }
 
                     // TODO: Error retry strategy, directory etag update, etc.

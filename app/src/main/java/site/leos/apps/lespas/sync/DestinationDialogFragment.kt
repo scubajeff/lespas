@@ -2,8 +2,6 @@ package site.leos.apps.lespas.sync
 
 import android.content.DialogInterface
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,10 +19,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_destination_dialog.*
+import site.leos.apps.lespas.AlbumNameValidator
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumNameAndId
 import site.leos.apps.lespas.album.AlbumViewModel
-import java.util.regex.Pattern
 
 class DestinationDialogFragment : DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter
@@ -83,23 +81,7 @@ class DestinationDialogFragment : DialogFragment() {
                     true
                 } else false
             }
-            addTextChangedListener(object: TextWatcher {
-                val slashesPattern =  Pattern.compile("[^\\\\/]+(?<![.])\\z")
-                val devPattern = Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![.])\\z")
-                val leadingDotPattern = Pattern.compile("^\\..*")
-
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { error = null }
-                override fun afterTextChanged(s: Editable?) {
-                    val txt = s!!.toString()
-
-                    if (txt.isEmpty()) error = null
-                    else if (txt.length > 200) name_textinputedittext.error = getString(R.string.name_too_long)
-                    else if (!slashesPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.invalid_character_found)
-                    else if (!devPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.invalid_name_found)
-                    else if (leadingDotPattern.matcher(txt).matches()) name_textinputedittext.error = getString(R.string.leading_dots_found)
-                }
-            })
+            addTextChangedListener(AlbumNameValidator(this, context))
         }
 
         // Maintain current mode after screen rotation

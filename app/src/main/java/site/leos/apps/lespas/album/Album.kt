@@ -73,4 +73,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
     abstract fun getAllAlbumNamesAndId(): Flow<List<AlbumNameAndId>>
+
+    @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name")
+    abstract fun searchForName(name: String): List<Album>
 }

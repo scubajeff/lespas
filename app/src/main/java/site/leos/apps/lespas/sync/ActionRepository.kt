@@ -13,4 +13,5 @@ class ActionRepository(application: Application){
     fun hasPendingActions(): Boolean = actionDao.getPendingTotal() > 0
     fun deleteAllActions() = actionDao.deleteAllSync()
     suspend fun addActions(actions: List<Action>) = actionDao.insert(actions)
+    suspend fun addActions(action: Action) = actionDao.insert(action)
 }

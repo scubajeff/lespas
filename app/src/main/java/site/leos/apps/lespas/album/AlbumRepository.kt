@@ -20,6 +20,7 @@ class AlbumRepository(application: Application){
     fun getAlbumName(albumId: String): String = albumDao.getAlbumName(albumId)
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun getAllAlbumNamesAndIds(): Flow<List<AlbumNameAndId>> = albumDao.getAllAlbumNamesAndId()
+    fun searchForName(name: String) = albumDao.searchForName(name)
 
     companion object {
         private var repo: AlbumRepository? = null

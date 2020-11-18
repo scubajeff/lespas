@@ -30,4 +30,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
         }
     }
     val allAlbumNamesAndIds: LiveData<List<AlbumNameAndId>> = albumRepository.getAllAlbumNamesAndIds().asLiveData()
+    fun isAlbumNameExisted(name: String): Boolean = albumRepository.searchForName(name).isNotEmpty()
 }
