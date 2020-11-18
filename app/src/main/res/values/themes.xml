@@ -9,8 +9,16 @@
         <item name="colorSecondary">@color/color_secondary</item>
         <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
         <item name="colorOnSecondary">@color/color_on_secondary</item>
+        <!-- Additional UI colors -->
+        <item name="colorError">@color/color_error</item>
+        <item name="android:colorBackground">@color/color_background</item>
+        <item name="colorSurface">@color/color_background</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
+
+        <!-- fonts -->
+        <item name="fontFamily">@font/archer_bold</item>
+
         <!-- Customize your theme here. -->
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionModeOverlay">true</item>
@@ -20,6 +28,7 @@
 
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
+
     </style>
 
     <style name="Theme.LesPas.NoDisplay" parent="Theme.LesPas">
@@ -54,6 +63,21 @@
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
         <item name="background">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
+    </style>
+
+    <style name="Theme.LesPas.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant</item>
+        <item name="colorOnPrimary">@color/color_primary</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
+        <item name="colorOnSecondary">@color/color_on_secondary</item>
+        <!-- Additional UI colors -->
+        <item name="colorError">@color/color_error</item>
+
+        <item name="android:windowBackground">@drawable/dialog_background</item>
     </style>
 
 </resources>

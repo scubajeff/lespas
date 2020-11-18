@@ -34,7 +34,6 @@
             android:layout_margin="@dimen/small_padding"
             android:lines="1"
             android:ellipsize="end"
-            style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             tools:text="Title name goes here" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

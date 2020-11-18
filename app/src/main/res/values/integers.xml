@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer name="photo_grid_span_count">3</integer>
-    <integer name="dialog_width_ratio">90</integer>
+    <integer name="dialog_width_ratio">80</integer>
 </resources>

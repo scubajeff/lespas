@@ -155,8 +155,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         setImageResource(R.drawable.ic_footprint)
                         scrollTo(0, 200)
                     }
-                    //findViewById<TextView>(R.id.title).text = album?.name
-                    findViewById<TextView>(R.id.title).text = album?.cover
+                    findViewById<TextView>(R.id.title).text = album?.name
                 }
             }
 
@@ -170,7 +169,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         inner class PhotoViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
-                    findViewById<TextView>(R.id.title).text = photo.name
+                    findViewById<TextView>(R.id.title).text = photo.name.substringAfterLast('/')
                     findViewById<ImageView>(R.id.pic).run {
                         setImageResource(R.drawable.ic_baseline_broken_image_24)
                         ViewCompat.setTransitionName(this, photo.id)

@@ -10,8 +10,10 @@
     <color name="color_secondary">#61BFAD</color>
     <color name="color_secondary_variant">#055A5B</color>
     <color name="color_on_secondary">#1B1D1C</color>
+    <color name="color_background">#D3E8E1</color>
+    <color name="color_error">#FFD101</color>
 
     <color name="album_item_selected_background">#EED974</color>   <!-- TODO: should be day night safe -->
-    <color name="photo_item_selected_background">#A0EEEEEE</color>   <!-- TODO: should be day night safe -->
-    <color name="cardview_daynight_background">#F9F7E8</color>     <!-- @color/cardview_light_background -->
+    <color name="photo_item_selected_background">#A0E3E3E3</color>   <!-- TODO: should be day night safe -->
+    <color name="cardview_daynight_background">@color/color_on_primary</color>     <!-- @color/cardview_light_background -->
 </resources>

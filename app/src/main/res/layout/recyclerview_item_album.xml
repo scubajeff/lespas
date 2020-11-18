@@ -10,7 +10,8 @@
     android:layout_marginRight="@dimen/small_padding"
     android:clickable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardElevation="2dp"
+    app:cardCornerRadius="0dp"
+    app:cardElevation="6dp"
     app:cardUseCompatPadding="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -25,7 +26,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:scaleType="centerCrop"
-            tools:src="@drawable/ic_footprint" />
+            tools:src="@drawable/login_background_gradient_1" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -41,20 +42,23 @@
                 app:layout_constraintLeft_toLeftOf="parent"
                 android:paddingTop="@dimen/big_padding"
                 android:paddingHorizontal="@dimen/big_padding"
-                style="@style/TextAppearance.MaterialComponents.Body1"
                 android:ellipsize="end"
-                android:singleLine="true"
+                android:lines="1"
+                android:textSize="18sp"
+                android:textColor="@color/color_on_secondary"
                 tools:text="Title" />
 
             <TextView
                 android:id="@+id/duration"
-                style="@style/TextAppearance.MaterialComponents.Caption"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/title"
                 android:paddingBottom="@dimen/small_padding"
                 android:paddingHorizontal="@dimen/big_padding"
+                android:lines="1"
+                android:textSize="13sp"
+                android:textColor="?android:attr/textColorSecondary"
                 tools:text="1970.01.17 - 1977.01.10" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

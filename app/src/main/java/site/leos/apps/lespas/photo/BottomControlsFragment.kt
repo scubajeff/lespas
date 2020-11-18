@@ -190,7 +190,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
     class InfoDialogFragment() : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            return AlertDialog.Builder(requireActivity())
+            return AlertDialog.Builder(requireActivity(), R.style.Theme_LesPas_Dialog)
                 .setMessage(arguments?.getString(MESSAGE))
                 .setPositiveButton(android.R.string.ok) { _, i_ -> }
                 .create()

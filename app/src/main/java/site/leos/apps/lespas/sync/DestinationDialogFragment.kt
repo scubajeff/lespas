@@ -34,7 +34,7 @@ class DestinationDialogFragment : DialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setStyle(STYLE_NO_TITLE, 0)
+        setStyle(STYLE_NO_TITLE, R.style.Theme_LesPas_Dialog)
 
         albumAdapter = DestinationAdapter(object : DestinationAdapter.OnItemClickListener {
             override fun onItemClick(album: AlbumNameAndId) {

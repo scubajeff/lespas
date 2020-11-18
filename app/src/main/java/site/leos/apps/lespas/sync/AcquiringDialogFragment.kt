@@ -30,6 +30,7 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCreate(savedInstanceState)
 
         total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
+        setStyle(STYLE_NO_TITLE, R.style.Theme_LesPas_Dialog)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
