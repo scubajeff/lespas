@@ -1,9 +1,10 @@
 package site.leos.apps.lespas.photo
 
-import android.content.pm.ActivityInfo
-import android.os.Build
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -104,23 +105,6 @@ class PhotoSlideFragment : Fragment() {
         super.onPause()
 
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-    }
-
-    override fun onDestroy() {
-        // BACK TO NORMAL UI
-        (requireActivity() as AppCompatActivity).run {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-                window.decorView.setOnSystemUiVisibilityChangeListener(null)
-            } else {
-                window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                window.decorView.setOnApplyWindowInsetsListener(null)
-            }
-            supportActionBar?.show()
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        }
-
-        super.onDestroy()
     }
 
     class PhotoSlideAdapter(private val itemListener: Listener) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {

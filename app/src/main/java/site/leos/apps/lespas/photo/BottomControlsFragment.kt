@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -13,6 +14,7 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -130,6 +132,25 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         // Breifly show SystemUI at start
         //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         //hideHandler.post(showSystemUI)
+    }
+
+    override fun onDestroy() {
+        // BACK TO NORMAL UI
+        hideHandler.removeCallbacksAndMessages(null)
+
+        (requireActivity() as AppCompatActivity).run {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                window.decorView.setOnSystemUiVisibilityChangeListener(null)
+            } else {
+                window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                window.decorView.setOnApplyWindowInsetsListener(null)
+            }
+            supportActionBar?.show()
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        }
+
+        super.onDestroy()
     }
 
     // TODO: what is the usage scenario of this
