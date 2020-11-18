@@ -40,7 +40,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     companion object {
         private const val ALBUM = "ALBUM"
 
-        @JvmStatic
         fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 

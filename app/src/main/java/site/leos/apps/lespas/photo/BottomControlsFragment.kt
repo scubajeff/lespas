@@ -38,7 +38,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         private const val ALBUM = "ALBUM"
 
-        @JvmStatic
         fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 

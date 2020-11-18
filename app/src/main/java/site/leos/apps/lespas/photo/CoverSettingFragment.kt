@@ -42,7 +42,6 @@ class CoverSettingFragment : Fragment() {
         private const val BIAS = "BIAS"
         private const val ALBUM = "ALBUM"
 
-        @JvmStatic
         fun newInstance(album: Album) = CoverSettingFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 
