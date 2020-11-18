@@ -37,6 +37,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         const val REQUEST_FOR_IMAGES = 1111
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+
         fun newInstance() = AlbumFragment()
     }
 
@@ -206,9 +208,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
                     it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, "")
+                    it.show(parentFragmentManager, "CONFIRM_DIALOG")
                 }
                 true
             }

@@ -39,6 +39,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     companion object {
         private const val ALBUM = "ALBUM"
+        private const val RENAME_DIALOG = "RENAME_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
 
         fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
@@ -258,9 +260,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_rename-> {
-                AlbumRenameDialogFragment.newInstance(album.name).let {
+                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
                     it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, "")
+                    it.show(parentFragmentManager, RENAME_DIALOG)
                 }
                 return true
             }
@@ -280,9 +282,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
                     it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, "")
+                    it.show(parentFragmentManager, CONFIRM_DIALOG)
                 }
 
                 true

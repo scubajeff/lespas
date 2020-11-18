@@ -37,6 +37,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         private const val ALBUM = "ALBUM"
+        private const val INFO_DIALOG = "INFO_DIALOG"
 
         fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
@@ -124,7 +125,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                InfoDialogFragment.newInstance(currentPhoto.getCurrentPhoto().value!!.name).show(parentFragmentManager, "")
+                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null)
+                    InfoDialogFragment.newInstance(currentPhoto.getCurrentPhoto().value!!.name).show(parentFragmentManager, INFO_DIALOG)
             }
         }
 
@@ -209,7 +211,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         false
     }
 
-    class InfoDialogFragment() : DialogFragment() {
+    class InfoDialogFragment : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             return AlertDialog.Builder(requireActivity())
                 .setMessage(arguments?.getString(MESSAGE))
