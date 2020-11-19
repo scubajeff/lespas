@@ -44,7 +44,7 @@
                 android:paddingHorizontal="@dimen/big_padding"
                 android:ellipsize="end"
                 android:lines="1"
-                style="@style/TextAppearance.AppCompat.Title"
+                style="@style/TextAppearance.AppCompat.Subhead"
                 tools:text="Title" />
 
             <androidx.appcompat.widget.AppCompatTextView
