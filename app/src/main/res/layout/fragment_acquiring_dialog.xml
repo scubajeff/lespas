@@ -1,39 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.appcompat.widget.LinearLayoutCompat
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/big_padding"
-    android:orientation="vertical">
+    android:padding="@dimen/tiny_padding">
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/dialog_title_textview"
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/small_padding"
-        style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
-        android:textStyle="bold"
-        android:text="@string/preparing_files" />
+        android:padding="@dimen/big_padding"
+        android:orientation="vertical">
 
-    <androidx.appcompat.widget.AppCompatTextView
-        android:id="@+id/filename_textview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/small_padding"
-        style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
-        android:ellipsize="middle"
-        tools:text="filename" />
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/dialog_title_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/small_padding"
+            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+            android:textStyle="bold"
+            android:text="@string/preparing_files" />
 
-    <androidx.core.widget.ContentLoadingProgressBar
-        android:id="@+id/current_progress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/small_padding"
-        style="?android:attr/progressBarStyleHorizontal" />
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/filename_textview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/small_padding"
+            style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
+            android:ellipsize="middle"
+            tools:text="filename" />
 
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/current_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/small_padding"
+            style="?android:attr/progressBarStyleHorizontal" />
 
-</LinearLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</androidx.appcompat.widget.LinearLayoutCompat>
 <!--
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"

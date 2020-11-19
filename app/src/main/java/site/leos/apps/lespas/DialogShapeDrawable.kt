@@ -7,14 +7,20 @@ import com.google.android.material.shape.ShapeAppearanceModel
 
 class DialogShapeDrawable : MaterialShapeDrawable() {
     companion object {
-        fun newInstance(context: Context) = MaterialShapeDrawable(
+        const val NO_STROKE = -1
+
+        fun newInstance(context: Context, strokeColor: Int) = MaterialShapeDrawable(
             ShapeAppearanceModel.builder()
             .setAllCornerSizes(context.resources.getDimension(R.dimen.dialog_frame_radius))
             .setAllCorners(ConcaveRoundedCornerTreatment())
             .build()
         ).apply {
-            fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background))
-            createWithElevationOverlay(context, 8.0f)
+            if (strokeColor != NO_STROKE) {
+                setStroke(4.0f, strokeColor)
+                fillColor = ColorStateList.valueOf(context.resources.getColor(android.R.color.transparent))
+            } else {
+                fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background))
+            }
         }
     }
 }

@@ -10,8 +10,9 @@
         <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
     </style>
 
-    <style name="DialogAnimation.Window" parent="ThemeOverlay.MaterialComponents.Dialog">
+    <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">
         <item name="android:windowEnterAnimation">@anim/dialog_entering</item>
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
+
 </resources>

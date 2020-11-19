@@ -62,6 +62,8 @@ class DestinationDialogFragment : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
         destination_recyclerview.adapter = albumAdapter
         name_textinputedittext.run {
             setOnEditorActionListener { _, actionId, _ ->
@@ -102,8 +104,8 @@ class DestinationDialogFragment : DialogFragment() {
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
-            setWindowAnimations(R.style.DialogAnimation_Window)
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }
 

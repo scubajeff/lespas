@@ -50,6 +50,7 @@ class AlbumRenameDialogFragment: DialogFragment() {
                 } else false
             }
         }
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
     }
 
     override fun onStart() {
@@ -60,8 +61,8 @@ class AlbumRenameDialogFragment: DialogFragment() {
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
-            setWindowAnimations(R.style.DialogAnimation_Window)
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE))
+            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
 
             rename_textinputlayout.requestFocus()
         }

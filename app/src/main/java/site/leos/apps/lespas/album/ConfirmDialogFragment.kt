@@ -1,10 +1,12 @@
 package site.leos.apps.lespas.album
 
-import android.app.Dialog
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 
@@ -20,12 +22,17 @@ class ConfirmDialogFragment : DialogFragment() {
         onPositiveConfirmedListener = targetFragment as OnPositiveConfirmedListener
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        AlertDialog.Builder(requireContext())
-            .setMessage(arguments?.getString(MESSAGE))
-            .setPositiveButton(android.R.string.ok) {_, _-> onPositiveConfirmedListener.onPositiveConfirmed() }
-            .setNegativeButton(android.R.string.cancel) {_, _->}
-            .create()
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.fragment_confirm_dialog, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+        message_textview.text = arguments?.getString(MESSAGE)
+        ok_button.setOnClickListener { _-> onPositiveConfirmedListener.onPositiveConfirmed() }
+        cancel_button.setOnClickListener { _-> dismiss() }
+    }
 
     override fun onStart() {
         super.onStart()
@@ -35,8 +42,8 @@ class ConfirmDialogFragment : DialogFragment() {
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
-            setWindowAnimations(R.style.DialogAnimation_Window)
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }
 

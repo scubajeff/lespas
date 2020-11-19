@@ -1,8 +1,6 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
-import android.app.Dialog
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Build
@@ -18,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -212,11 +211,15 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     class InfoDialogFragment : DialogFragment() {
-        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            return AlertDialog.Builder(requireActivity())
-                .setMessage(arguments?.getString(MESSAGE))
-                .setPositiveButton(android.R.string.ok) { _, i_ ->}
-                .create()
+        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+            return inflater.inflate(R.layout.fragment_info_dialog, container, false)
+        }
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+            background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+            message_textview.text = arguments?.getString(MESSAGE)
+            ok_button.setOnClickListener { _-> dismiss() }
         }
 
         override fun onStart() {
@@ -227,8 +230,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
                 setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
-                setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
-                setWindowAnimations(R.style.DialogAnimation_Window)
+                setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+                setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
             }
         }
 

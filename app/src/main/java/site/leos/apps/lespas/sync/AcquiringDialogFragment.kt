@@ -40,6 +40,7 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
         current_progress.max = total
         dialog_title_textview.text = getString(R.string.preparing_files, 1, total)
 
@@ -60,8 +61,8 @@ class AcquiringDialogFragment: DialogFragment() {
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context))
-            setWindowAnimations(R.style.DialogAnimation_Window)
+            setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }
 
