@@ -2,19 +2,37 @@
     <!-- Base application theme. -->
     <style name="Theme.LesPas" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimary">@color/color_primary_variant</item>
         <item name="colorPrimaryVariant">@color/color_primary_variant</item>
         <item name="colorOnPrimary">@color/color_on_secondary</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/color_secondary</item>
-        <item name="colorSecondaryVariant">@color/color_secondary</item>
-        <item name="colorOnSecondary">@color/color_on_secondary</item>
+        <item name="colorSecondary">@color/color_secondary_variant</item>
+        <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
+        <item name="colorOnSecondary">@color/color_on_primary</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+
+        <!-- fonts -->
+        <item name="fontFamily">@font/archer_bold</item>
+
         <!-- Customize your theme here. -->
-        <item name="android:windowActionBarOverlay">true</item>
-        <!-- Support library attribute for compatibility -->
+        <item name="android:windowActivityTransitions">true</item>
         <item name="windowActionBarOverlay">true</item>
+        <item name="windowActionModeOverlay">true</item>
+
+        <!-- Setting screen -->
+        <item name="preferenceTheme">@style/Theme.LesPas.PreferenceThemeOverlay</item>
+
+        <!-- ActionMode -->
+        <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
     </style>
 
+    <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:background">?attr/colorPrimaryVariant</item>
+    </style>
+
+    <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
+        <item name="background">?attr/colorPrimaryVariant</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+    </style>
 </resources>

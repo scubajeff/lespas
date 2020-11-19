@@ -8,7 +8,7 @@
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/color_secondary</item>
         <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
-        <item name="colorOnSecondary">@color/color_on_secondary</item>
+        <item name="colorOnSecondary">@color/color_on_primary</item>
         <!-- Additional UI colors -->
         <item name="colorError">@color/color_error</item>
         <item name="android:colorBackground">@color/color_background</item>
@@ -20,6 +20,7 @@
         <item name="fontFamily">@font/archer_bold</item>
 
         <!-- Customize your theme here. -->
+        <item name="android:windowActivityTransitions">true</item>
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionModeOverlay">true</item>
 
