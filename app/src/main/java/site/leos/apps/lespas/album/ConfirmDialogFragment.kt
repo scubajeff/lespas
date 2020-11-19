@@ -41,6 +41,10 @@ class ConfirmDialogFragment : DialogFragment() {
             // Set dialog width to a fixed ration of screen width
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+            attributes.apply {
+                dimAmount = 0.6f
+                flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
+            }
 
             setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
