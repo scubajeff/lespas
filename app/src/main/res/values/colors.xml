@@ -13,7 +13,7 @@
     <color name="color_background">#D3E8E1</color>
     <color name="color_error">#FFD101</color>
 
-    <color name="album_item_selected_background">#EED974</color>   <!-- TODO: should be day night safe -->
+    <color name="album_item_selected_background">#97B8A3</color>   <!-- TODO: should be day night safe -->
     <color name="photo_item_selected_background">#A0E3E3E3</color>   <!-- TODO: should be day night safe -->
     <color name="cardview_daynight_background">@color/color_on_primary</color>     <!-- @color/cardview_light_background -->
 </resources>

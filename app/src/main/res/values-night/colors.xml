@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="cardview_daynight_background">@color/cardview_dark_background</color>
+    <color name="color_background">#3A745F</color>
+    <color name="album_item_selected_background">#89937A</color>   <!-- TODO: should be day night safe -->
+    <color name="cardview_daynight_background">#1F3B34</color>
 </resources>

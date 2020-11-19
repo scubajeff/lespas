@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/mini_padding">
 
-    <ImageView
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/cover"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -18,7 +18,7 @@
         android:scaleType="centerCrop"
         tools:src="@drawable/login_background_gradient_2" />
 
-    <TextView
+    <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
@@ -26,7 +26,7 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         android:padding="@dimen/big_padding"
-        android:textAppearance="@android:style/TextAppearance.Material.Headline"
+        style="@style/TextAppearance.AppCompat.Headline"
         tools:text = "Title" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
