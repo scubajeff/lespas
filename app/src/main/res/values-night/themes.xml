@@ -2,11 +2,11 @@
     <!-- Base application theme. -->
     <style name="Theme.LesPas" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/color_primary_variant</item>
+        <item name="colorPrimary">@color/color_primary</item>
         <item name="colorPrimaryVariant">@color/color_primary_variant</item>
         <item name="colorOnPrimary">@color/color_on_secondary</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/color_secondary_variant</item>
+        <item name="colorSecondary">@color/color_secondary</item>
         <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
         <item name="colorOnSecondary">@color/color_on_primary</item>
         <item name="android:colorBackground">@color/color_background</item>
