@@ -12,6 +12,8 @@ import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
@@ -19,6 +21,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Make sure photo's directory existed
+        Executors.newSingleThreadExecutor().execute {
+            File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir()
+        }
 
         setSupportActionBar(findViewById(R.id.toolbar))
 
