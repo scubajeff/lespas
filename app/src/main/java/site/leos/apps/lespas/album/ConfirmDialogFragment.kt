@@ -30,7 +30,10 @@ class ConfirmDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
         background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
         message_textview.text = arguments?.getString(MESSAGE)
-        ok_button.setOnClickListener { _-> onPositiveConfirmedListener.onPositiveConfirmed() }
+        ok_button.setOnClickListener { _->
+            onPositiveConfirmedListener.onPositiveConfirmed()
+            dismiss()
+        }
         cancel_button.setOnClickListener { _-> dismiss() }
     }
 
