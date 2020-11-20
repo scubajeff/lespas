@@ -50,7 +50,7 @@ class AlbumRenameDialogFragment: DialogFragment() {
                 } else false
             }
         }
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
     }
 
     override fun onStart() {

@@ -63,7 +63,7 @@ class DestinationDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+        root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         destination_recyclerview.adapter = albumAdapter
         name_textinputedittext.run {
             setOnEditorActionListener { _, actionId, _ ->

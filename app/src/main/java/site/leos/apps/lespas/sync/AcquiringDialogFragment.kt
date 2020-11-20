@@ -40,7 +40,7 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         current_progress.max = total
         dialog_title_textview.text = getString(R.string.preparing_files, 1, total)
 
@@ -88,6 +88,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 var outputStream: OutputStream
                 val buf = ByteArray(4096)
                 var len: Int
+                val appRootFolder = application.getString(R.string.lespas_base_folder_name)
 
                 uris.forEachIndexed { index, uri ->
                     // find out the real name
@@ -103,7 +104,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
                     // Copy the file to our private storage
                     inputStream = application.contentResolver.openInputStream(uri)!!
-                    outputStream = application.openFileOutput(fileName, Context.MODE_PRIVATE)
+                    outputStream = application.openFileOutput("$appRootFolder/$fileName", Context.MODE_PRIVATE)
                     len = inputStream.read(buf)
                     while (len > 0) {
                         outputStream.write(buf, 0, len)

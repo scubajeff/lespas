@@ -28,7 +28,7 @@ class ConfirmDialogFragment : DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         message_textview.text = arguments?.getString(MESSAGE)
         ok_button.setOnClickListener { _->
             onPositiveConfirmedListener.onPositiveConfirmed()
