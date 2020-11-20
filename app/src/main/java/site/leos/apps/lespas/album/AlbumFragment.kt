@@ -253,7 +253,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         scrollTo(0, 200)
                     }
                     findViewById<TextView>(R.id.duration).text = album.cover
-                    setOnClickListener { clickListener.onItemClick(album) }
+                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
                     this.isActivated = isActivated
                 }
             }

@@ -182,8 +182,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
 
                     this.isActivated = isActivated
-                    setOnClickListener {
-                        clickListener.onItemClick(findViewById<ImageView>(R.id.pic), adapterPosition - 1)
+                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(picture_imageview, adapterPosition - 1)
                     }
                 }
             }
