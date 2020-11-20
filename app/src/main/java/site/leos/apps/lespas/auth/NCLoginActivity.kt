@@ -209,7 +209,7 @@ class NCLoginActivity : AppCompatActivity() {
                     setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
                     setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
                     setUserData(account, getString(R.string.nc_userdata_username), username)
-                    setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("$username:$token".encodeToByteArray(), Base64.DEFAULT))
+                    setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("$username:$token".encodeToByteArray(), Base64.NO_WRAP))
                 }
 
                 val result = Bundle().apply {
