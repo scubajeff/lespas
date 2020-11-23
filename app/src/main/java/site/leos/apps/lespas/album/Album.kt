@@ -1,28 +1,26 @@
 package site.leos.apps.lespas.album
 
 import android.os.Parcelable
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.android.parcel.Parcelize
 import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.BaseDao
-import java.util.*
+import site.leos.apps.lespas.photo.Photo
+import java.time.LocalDateTime
 
 @Entity(tableName = Album.TABLE_NAME)
 @Parcelize
 data class Album(
     @PrimaryKey var id: String,
     var name: String,
-    var startDate: Date?,
-    var endDate: Date?,
+    var startDate: LocalDateTime,
+    var endDate: LocalDateTime,
     var cover: String,
     var coverBaseline: Int,
-    var lastModified: Date?,
+    var lastModified: LocalDateTime,
     var sortOrder: Int,
     var eTag: String,
-    var shareId: Int) : Parcelable {
+    var shareId: Int): Parcelable {
     companion object {
         const val TABLE_NAME = "albums"
 
@@ -35,8 +33,16 @@ data class Album(
     }
 }
 
-data class Cover(val name: String, val baseLine: Int)
-data class AlbumETagAndId(val id: String, val eTag: String)
+data class AlbumWithPhotos(
+    @Embedded var album: Album,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "albumId"
+    )
+    var photos: List<Photo>
+)
+
+data class Cover(val id: String, val baseLine: Int)
 data class AlbumNameAndId(val id: String, val name: String)
 
 @Dao
@@ -50,17 +56,17 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun deleteByIdSync(albumId: String): Int
 
-    @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate ASC")
+    @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate DESC")
     abstract fun getAllSortByEndDate(): Flow<List<Album>>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumByID(albumId: String): Flow<Album>
 
-    @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getETagsMap(): List<AlbumETagAndId>
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun getThisAlbum(albumId: String): List<Album>
 
-    @Query("SELECT id, name FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getNamesMap(): List<AlbumNameAndId>
+    @Query("SELECT id FROM ${Album.TABLE_NAME} ORDER BY id ASC")
+    abstract fun getAllIds(): List<String>
 
     @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)
@@ -71,9 +77,15 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumName(albumId: String): String
 
-    @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
+    @Query("SELECT id, name FROM ${Album.TABLE_NAME} ORDER BY id ASC")
     abstract fun getAllAlbumNamesAndId(): Flow<List<AlbumNameAndId>>
 
-    @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name")
-    abstract fun searchForName(name: String): List<String>
+    @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
+    abstract fun isAlbumExisted(name: String): Boolean
+
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id IN (:albums) ORDER BY id ASC")
+    abstract fun getTheseAlbums(albums: ArrayList<String>): List<Album>
+
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun getAlbumWithPhotos(albumId: String): List<AlbumWithPhotos>
 }

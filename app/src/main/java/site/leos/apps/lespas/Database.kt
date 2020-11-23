@@ -12,7 +12,7 @@ import site.leos.apps.lespas.photo.PhotoDao
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionDao
 
-@Database(entities = [Album::class, Photo::class, Action::class], version = 5, exportSchema = false)
+@Database(entities = [Album::class, Photo::class, Action::class], version = 6, exportSchema = false)
 @TypeConverters(Converter::class)
 abstract class LespasDatabase: RoomDatabase() {
     abstract fun albumDao(): AlbumDao

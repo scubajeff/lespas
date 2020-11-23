@@ -41,13 +41,13 @@ class ShareReceiverActivity: AppCompatActivity() {
                         val actions = mutableListOf<Action>()
 
                         // Create new album first
-                        if (album.id.isEmpty()) actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", System.currentTimeMillis(), 1))
+                        if (album.id.isEmpty()) actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
 
                         files.forEach {uri->
                             contentResolver.query(uri, null, null, null, null)?.apply {
                                 val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                                 moveToFirst()
-                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, getString(columnIndex), System.currentTimeMillis(), 1))
+                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", getString(columnIndex), System.currentTimeMillis(), 1))
                                 close()
                             }
                         }

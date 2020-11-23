@@ -169,13 +169,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
                                     // Create new album first
                                     if (album.id.isEmpty()) actions.add(
-                                        Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", System.currentTimeMillis(), 1))
+                                        Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
 
                                     uris.forEach {uri->
                                         requireContext().contentResolver.query(uri, null, null, null, null)?.apply {
                                             val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                                             moveToFirst()
-                                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, getString(columnIndex), System.currentTimeMillis(), 1))
+                                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "",
+                                                getString(columnIndex), System.currentTimeMillis(), 1))
                                             close()
                                         }
                                     }
@@ -247,12 +248,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             fun bindViewItems(album: Album, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = album.name
-                    //findViewById<TextView>(R.id.duration).text = String.format("%tF - %tF", album.startDate, album.endDate)
+                    findViewById<TextView>(R.id.duration).text = String.format("%tF ~ %tF", album.startDate, album.endDate)
                     findViewById<ImageView>(R.id.coverart).apply {
                         setImageResource(R.drawable.ic_footprint)
-                        scrollTo(0, 200)
                     }
-                    findViewById<TextView>(R.id.duration).text = album.cover
                     setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
                     this.isActivated = isActivated
                 }
@@ -305,7 +304,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         for (i in selectionTracker?.selection!!) {
             albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
         }
-        albumsModel.deleteAlbums(albums)
+        actionModel.deleteAlbums(albums)
 
         selectionTracker?.clearSelection()
     }

@@ -20,12 +20,12 @@ import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.photo.PhotoViewModel
-import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
@@ -55,8 +55,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, "full_image")
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment.javaClass.name)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment.javaClass.name)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
                     .commit()
             }
         })
@@ -119,8 +119,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         postponeEnterTransition()
 
-        albumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> mAdapter.setAlbum(album) })
+        albumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> if (album != null) mAdapter.setAlbum(album) })
         photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
+            // If all photos removed, go back
+            if (photos.isEmpty()) parentFragmentManager.popBackStack()
+
             mAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
         })
@@ -159,7 +162,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 itemView.run {
                     findViewById<ImageView>(R.id.cover).run {
                         setImageResource(R.drawable.ic_footprint)
-                        scrollTo(0, 200)
                     }
                     findViewById<TextView>(R.id.title).text = album?.name
                 }
@@ -182,7 +184,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
 
                     this.isActivated = isActivated
-                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(picture_imageview, adapterPosition - 1)
+                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(pic, adapterPosition - 1)
                     }
                 }
             }
@@ -308,17 +310,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         for (i in selectionTracker?.selection!!) {
             photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
         }
-        photoListViewModel.deletePhotos(photos, album.name)
+        actionModel.deletePhotos(photos, album.name)
 
         selectionTracker?.clearSelection()
     }
 
     override fun onRenameFinished(newName: String) {
         if (newName != album.name) {
-            if (!albumModel.isAlbumNameExisted(newName)) {
-                // Action's filename field is the new directory name
-                actionModel.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, album.id, album.name, newName, System.currentTimeMillis(), 1))
-            }
+            actionModel.renameAlbum(album.id, album.name, newName)
         }
     }
 }

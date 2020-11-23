@@ -1,16 +1,18 @@
 package site.leos.apps.lespas
 
 import androidx.room.TypeConverter
-import java.util.*
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 class Converter {
     @TypeConverter
-    fun fromTimestamp(value: Long?): Date? {
-        return value?.let { Date(it) }
+    fun fromLong(value: Long): LocalDateTime {
+        return Instant.ofEpochSecond(value).atZone(ZoneId.systemDefault()).toLocalDateTime()
     }
 
     @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? {
-        return date?.time?.toLong()
+    fun toLong(date: LocalDateTime): Long {
+        return date.atZone(ZoneId.systemDefault()).toEpochSecond()
     }
 }

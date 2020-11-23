@@ -15,6 +15,9 @@ class PhotoRepository(application: Application) {
     fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
     fun changeName(photoId: String, newName: String) = photoDao.changeName(photoId, newName)
     suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
+    fun getAllPhotoIdsByAlbum(albumId: String): List<PhotoName> = photoDao.getNamesMap(albumId)
+    fun deletePhotosByAlbum(albumId: String) = photoDao.deletePhotosByAlbum(albumId)
+    fun getAlbumPhotos(albumId: String) = photoDao.getAlbumPhotos(albumId)
 
     companion object {
         private var repo: PhotoRepository? = null

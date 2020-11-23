@@ -13,6 +13,7 @@ data class Action (
     val action: Int,
     val folderId: String,
     val folderName: String,
+    val fileId: String,
     val fileName: String,
     val date: Long,
     val retry: Int) {

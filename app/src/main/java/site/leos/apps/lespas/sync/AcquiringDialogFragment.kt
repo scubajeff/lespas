@@ -1,12 +1,10 @@
 package site.leos.apps.lespas.sync
 
 import android.app.Application
-import android.content.Context
 import android.content.DialogInterface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,8 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.File
 
 class AcquiringDialogFragment: DialogFragment() {
     private var total = -1
@@ -84,11 +81,7 @@ class AcquiringDialogFragment: DialogFragment() {
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileName = ""
-                var inputStream: InputStream
-                var outputStream: OutputStream
-                val buf = ByteArray(4096)
-                var len: Int
-                val appRootFolder = application.getString(R.string.lespas_base_folder_name)
+                val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
 
                 uris.forEachIndexed { index, uri ->
                     // find out the real name
@@ -103,16 +96,11 @@ class AcquiringDialogFragment: DialogFragment() {
                     withContext(Dispatchers.Main) { setProgress(index, fileName) }
 
                     // Copy the file to our private storage
-                    inputStream = application.contentResolver.openInputStream(uri)!!
-                    outputStream = application.openFileOutput("$appRootFolder/$fileName", Context.MODE_PRIVATE)
-                    len = inputStream.read(buf)
-                    while (len > 0) {
-                        outputStream.write(buf, 0, len)
-                        len = inputStream.read(buf)
+                    application.contentResolver.openInputStream(uri).use { input ->
+                        File(appRootFolder, fileName).outputStream().use { output ->
+                            input!!.copyTo(output, 8192)
+                        }
                     }
-                    inputStream.close()
-                    outputStream.close()
-                    Log.e("======", "finished copying $fileName")
 
                     // Try to finish at the end by setting progress to more than 100%
                     withContext(Dispatchers.Main) { setProgress(index + 1, fileName) }
