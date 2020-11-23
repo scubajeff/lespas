@@ -17,9 +17,9 @@ class DialogShapeDrawable : MaterialShapeDrawable() {
         ).apply {
             if (strokeColor != NO_STROKE) {
                 setStroke(4.0f, strokeColor)
-                fillColor = ColorStateList.valueOf(context.resources.getColor(android.R.color.transparent))
+                fillColor = ColorStateList.valueOf(context.resources.getColor(android.R.color.transparent, null))
             } else {
-                fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background))
+                fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background, null))
             }
         }
     }
