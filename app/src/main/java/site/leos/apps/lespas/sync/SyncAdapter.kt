@@ -9,7 +9,9 @@ import android.content.AbstractThreadedSyncAdapter
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.SyncResult
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
@@ -174,6 +176,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (changedAlbums.isNotEmpty()) {
                     // Sync each changed album
                     var exif: ExifInterface
+                    var exifRotation: Int
+                    var exifTranslation: Int    // TODO flip
                     val changedPhotos = mutableListOf<Photo>()
                     val remotePhotoIds = mutableListOf<String>()
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -236,6 +240,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             if (changedPhoto.dateTaken > changedAlbum.endDate) changedAlbum.endDate = changedPhoto.dateTaken
                             if (changedPhoto.dateTaken < changedAlbum.startDate) changedAlbum.startDate = changedPhoto.dateTaken
 
+                            exifRotation = exif.rotationDegrees
+                            if (exifRotation != 0) {
+                                Bitmap.createBitmap(
+                                    BitmapFactory.decodeFile(
+                                        "$localRootFolder/${changedPhoto.id}"),
+                                        0, 0,
+                                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
+                                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
+                                        Matrix().apply{ preRotate(exifRotation.toFloat()) },
+                                        true).apply {
+                                    compress(Bitmap.CompressFormat.JPEG, 100, File(localRootFolder, changedPhoto.id).outputStream())
+                                    recycle()
+                                }
+                            }
                             BitmapFactory.decodeFile("$localRootFolder/${changedPhoto.id}", options)
                             changedPhoto.width = options.outWidth
                             changedPhoto.height = options.outHeight
