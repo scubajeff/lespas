@@ -19,11 +19,11 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_destination_dialog.*
-import site.leos.apps.lespas.AlbumNameValidator
-import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumNameAndId
 import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.helper.AlbumNameValidator
+import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class DestinationDialogFragment : DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter

@@ -1,4 +1,4 @@
-package site.leos.apps.lespas
+package site.leos.apps.lespas.helper
 
 import androidx.room.TypeConverter
 import java.time.Instant

@@ -1,9 +1,10 @@
-package site.leos.apps.lespas
+package site.leos.apps.lespas.helper
 
 import android.content.Context
 import android.text.Editable
 import android.text.TextWatcher
 import com.google.android.material.textfield.TextInputEditText
+import site.leos.apps.lespas.R
 import java.util.regex.Pattern
 
 class AlbumNameValidator(private val edittext: TextInputEditText, private val context: Context): TextWatcher {

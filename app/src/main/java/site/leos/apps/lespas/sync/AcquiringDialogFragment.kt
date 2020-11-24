@@ -19,8 +19,8 @@ import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.DialogShapeDrawable
 import java.io.File
 import java.text.CharacterIterator
 import java.text.StringCharacterIterator

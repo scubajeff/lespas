@@ -13,14 +13,15 @@ import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
-import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
@@ -124,8 +125,17 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null)
-                    InfoDialogFragment.newInstance(currentPhoto.getCurrentPhoto().value!!.name).show(parentFragmentManager, INFO_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) {
+                    val exif = ExifInterface("${requireActivity().filesDir}/lespas/${currentPhoto.getCurrentPhoto().value!!.id}")
+                    val message = "${currentPhoto.getCurrentPhoto().value!!.id} ${currentPhoto.getCurrentPhoto().value!!.name}\n" +
+                            "${currentPhoto.getCurrentPhoto().value!!.dateTaken}\n" +
+                            "TAG_MAKER_NOTE: ${exif.getAttribute(ExifInterface.TAG_MAKER_NOTE)}\n" +
+                            //"TAG_ORIENTATION: ${exif.getAttribute(ExifInterface.TAG_ORIENTATION)}\n" +
+                            "TAG_ORIENTATION: ${exif.rotationDegrees}\n" +
+                            "TAG_IMAGE_WIDTH: ${exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)}\n" +
+                            "TAG_IMAGE_HEIGHT: ${exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH)}\n"
+                    InfoDialogFragment.newInstance(message).show(parentFragmentManager, INFO_DIALOG)
+                }
             }
         }
 

@@ -7,8 +7,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
-import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class ConfirmDialogFragment : DialogFragment() {
     private lateinit var onPositiveConfirmedListener: OnPositiveConfirmedListener

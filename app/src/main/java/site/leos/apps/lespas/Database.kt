@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumDao
+import site.leos.apps.lespas.helper.Converter
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoDao
 import site.leos.apps.lespas.sync.Action

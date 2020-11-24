@@ -9,9 +9,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.fragment_albumrename_dialog.*
-import site.leos.apps.lespas.AlbumNameValidator
-import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.AlbumNameValidator
+import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class AlbumRenameDialogFragment: DialogFragment() {
     private lateinit var onFinishListener: OnFinishListener
