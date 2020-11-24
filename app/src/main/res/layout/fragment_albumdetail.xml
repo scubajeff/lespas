@@ -14,6 +14,7 @@
         android:layout_height="match_parent"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/photo_grid_span_count"
+        android:background="@android:color/black"
         tools:listitem="@layout/recyclerview_item_photo"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
