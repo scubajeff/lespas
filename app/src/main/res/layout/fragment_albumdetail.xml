@@ -13,8 +13,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        android:layout_marginTop="@dimen/mini_padding"
-        android:layout_marginBottom="@dimen/mini_padding"
         app:spanCount="@integer/photo_grid_span_count"
         tools:listitem="@layout/recyclerview_item_photo"/>
 

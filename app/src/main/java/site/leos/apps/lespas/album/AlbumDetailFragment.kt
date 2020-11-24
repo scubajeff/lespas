@@ -17,11 +17,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
@@ -33,6 +35,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var photoListViewModel: PhotoViewModel
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
@@ -50,16 +53,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         album = arguments?.getParcelable(ALBUM)!!
 
-        mAdapter = PhotoGridAdapter(object: PhotoGridAdapter.OnItemClickListener {
-            override fun onItemClick(view: View, position: Int) {
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(view, "full_image")
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment::class.simpleName)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
-                    .commit()
+        mAdapter = PhotoGridAdapter(
+            object : PhotoGridAdapter.OnItemClickListener {
+                override fun onItemClick(view: View, position: Int) {
+                    parentFragmentManager.beginTransaction()
+                        .setReorderingAllowed(true)
+                        .addSharedElement(view, "full_image")
+                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                        .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
+                        .commit()
+                }
+            },
+            object : PhotoGridAdapter.OnLoadImage {
+                override fun loadImage(photo: Photo, view: ImageView, type: String) {
+                    imageLoaderModel.loadPhoto(photo, view, type)
+                }
             }
-        })
+        )
 
         photoListViewModel = ViewModelProvider(this, PhotosViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
 
@@ -80,7 +90,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             adapter = mAdapter
 
-            selectionTracker = SelectionTracker.Builder<Long> (
+            selectionTracker = Builder(
                 "photoSelection",
                 this,
                 PhotoGridAdapter.PhotoKeyProvider(),
@@ -144,7 +154,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     }
 
     // Adpater for photo grid
-    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var album: Album? = null
         private var photos = emptyList<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
@@ -157,7 +167,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun onItemClick(view: View, position: Int)
         }
 
-        inner class CoverViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        interface OnLoadImage {
+            fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
+        inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
                 itemView.run {
                     findViewById<ImageView>(R.id.cover).run {
@@ -169,17 +183,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
-                override fun getSelectionKey(): Long? = itemId
+                override fun getSelectionKey(): Long = itemId
                 //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
 
-        inner class PhotoViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
-                    findViewById<TextView>(R.id.title).text = photo.name.substringAfterLast('/')
                     findViewById<ImageView>(R.id.pic).run {
-                        setImageResource(R.drawable.ic_baseline_broken_image_24)
+                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
                         ViewCompat.setTransitionName(this, photo.id)
                     }
 
@@ -191,7 +204,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
-                override fun getSelectionKey(): Long? = itemId
+                override fun getSelectionKey(): Long = itemId
                 //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
@@ -227,8 +240,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
 
-        class PhotoKeyProvider(): ItemKeyProvider<Long>(ItemKeyProvider.SCOPE_CACHED) {
-            override fun getKey(position: Int): Long? = position.toLong()
+        class PhotoKeyProvider: ItemKeyProvider<Long>(SCOPE_CACHED) {
+            override fun getKey(position: Int): Long = position.toLong()
             override fun getPosition(key: Long): Int = key.toInt()
         }
 
@@ -249,6 +262,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     }
 
     // ViewModelFactory to pass String parameter to ViewModel object
+    @Suppress("UNCHECKED_CAST")
     class PhotosViewModelFactory(private val application: Application, private val myExtraParam: String) : ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
     }
@@ -291,7 +305,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 true
             }
             R.id.share -> {
-                for (i in selectionTracker?.selection!!) {}
+                for (i in selectionTracker?.selection!!) { }
 
                 selectionTracker?.clearSelection()
                 true

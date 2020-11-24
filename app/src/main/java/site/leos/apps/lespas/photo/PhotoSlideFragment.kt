@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -19,6 +20,7 @@ import com.github.chrisbanes.photoview.PhotoView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumDetailFragment
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -28,6 +30,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var photosModel: PhotoViewModel     // TODO naming
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     companion object {
         private const val ALBUM = "ALBUM"
@@ -58,11 +61,18 @@ class PhotoSlideFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        pAdapter = PhotoSlideAdapter(object : PhotoSlideAdapter.Listener {
-            override fun onTouch() {
-                uiModel.toggleOnOff()
+        pAdapter = PhotoSlideAdapter(
+            object : PhotoSlideAdapter.OnTouchListener {
+                override fun onTouch() {
+                    uiModel.toggleOnOff()
+                }
+            },
+            object : PhotoSlideAdapter.OnLoadImage {
+                override fun loadImage(photo: Photo, view: ImageView, type: String) {
+                    imageLoaderModel.loadPhoto(photo, view, type)
+                }
             }
-        })
+        )
 
         photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
@@ -106,17 +116,21 @@ class PhotoSlideFragment : Fragment() {
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
-    class PhotoSlideAdapter(private val itemListener: Listener) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {
+    class PhotoSlideAdapter(private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {
         private var photos = emptyList<Photo>()
 
-        interface Listener {
+        interface OnTouchListener {
             fun onTouch()
         }
 
+        interface OnLoadImage {
+            fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
         inner class PagerViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(photo: Photo, itemListener: Listener) {
+            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
                 itemView.findViewById<PhotoView>(R.id.media).apply {
-                    setImageResource(R.drawable.ic_footprint)
+                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
                     setOnPhotoTapListener { _, _, _ -> itemListener.onTouch() }
                     setOnOutsidePhotoTapListener { itemListener.onTouch() }
                     maximumScale = 5.0f
