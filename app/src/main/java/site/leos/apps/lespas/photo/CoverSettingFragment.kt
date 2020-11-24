@@ -37,6 +37,10 @@ class CoverSettingFragment : Fragment() {
     private var scrollDistance = 0f
     private var scrollTop = 0f
     private var scrollBottom = 1f
+    private var screenHeight = 0f
+    private var drawableHeight = 0f
+    private var frameHeight = 0
+    private var upperGap = 0f
 
     companion object {
         private const val BIAS = "BIAS"
@@ -74,31 +78,28 @@ class CoverSettingFragment : Fragment() {
                 requireActivity().display?.getRealMetrics(this)
             }
 
-            val d = resources.getDrawable(R.drawable.ic_footprint)
-            val sw = widthPixels.toFloat()
-            val sh = heightPixels.toFloat()
-            val dh: Float
-            val dw: Float
-            val fh: Int
+            val d = currentPhoto.getCurrentPhoto().value!!
+            val screenWidth = widthPixels.toFloat()
+            screenHeight = heightPixels.toFloat()
+            val drawableWidth: Float
 
-            if (sh/d.intrinsicHeight > sw/d.intrinsicWidth) {
-                dh = d.intrinsicHeight * (sw /d.intrinsicWidth)
-                dw = sw
+            if (screenHeight/d.height > screenWidth/d.width) {
+                drawableHeight = d.height * (screenWidth/d.width)
+                drawableWidth = screenWidth
             } else {
-                dh = sh
-                dw = d.intrinsicWidth * (sh / d.intrinsicHeight)
+                drawableHeight = screenHeight
+                drawableWidth = d.width * (screenHeight/d.height)
             }
-            fh = (dw * 9 / 21).toInt()
+            frameHeight = (drawableWidth * 9 / 21).toInt()
 
-            val ug = (sh - dh) / 2
-            scrollTop = ug / (sh - fh)
-            scrollBottom = (sh - ug - fh) / (sh - fh)
+            upperGap = (screenHeight - drawableHeight) / 2
+            scrollTop = upperGap/(screenHeight-frameHeight)
             if (scrollTop < 0f) scrollTop = 0f
-            if (scrollBottom >  1f) scrollTop = 1f
+            scrollBottom = 1 - scrollTop
 
-            scrollDistance = sh * 12 / 21   // 21 - 9 = 12
+            scrollDistance = screenHeight
 
-            constraintSet.setDimensionRatio(R.id.croparea, "H,$widthPixels:$fh")
+            constraintSet.setDimensionRatio(R.id.croparea, "H,$widthPixels:$frameHeight")
         }
 
         constraintSet.setVerticalBias(R.id.croparea, newBias)
@@ -209,7 +210,8 @@ class CoverSettingFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.id, (newBias * 100).toInt()))   // TODO: should translate to actual moving distance in pixel
+            val baseLine = ((currentPhoto.getCurrentPhoto().value!!.height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).toInt()
+            ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.id, baseLine))
             Handler(requireContext().mainLooper).post {
                 Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
             }
