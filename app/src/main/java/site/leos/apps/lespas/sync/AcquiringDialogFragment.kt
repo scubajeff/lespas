@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.sync
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.DialogInterface
 import android.net.Uri
@@ -12,6 +13,8 @@ import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.*
+import androidx.transition.TransitionInflater
+import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,6 +22,9 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.DialogShapeDrawable
 import site.leos.apps.lespas.R
 import java.io.File
+import java.text.CharacterIterator
+import java.text.StringCharacterIterator
+
 
 class AcquiringDialogFragment: DialogFragment() {
     private var total = -1
@@ -38,16 +44,22 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        current_progress.max = total
-        dialog_title_textview.text = getString(R.string.preparing_files, 1, total)
 
-        acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress->
-            if (progress == total) dismiss()
-
-            dialog_title_textview.text = getString(R.string.preparing_files, progress+1, total)
-            filename_textview.text = acquiringModel.getCurrentName()
-            current_progress.progress = progress
+        acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
+            if (progress >= total) {
+                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                progress_linearlayout.visibility = View.GONE
+                dialog_title_textview.text = getString(R.string.finished_preparing_files)
+                message_textview.text = getString(R.string.it_takes_time, humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                message_textview.visibility = View.VISIBLE
+            } else {
+                dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
+                filename_textview.text = acquiringModel.getCurrentName()
+                current_progress.progress = progress
+            }
         })
+
+        current_progress.max = total
     }
 
     override fun onStart() {
@@ -67,6 +79,7 @@ class AcquiringDialogFragment: DialogFragment() {
         }
     }
 
+
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 
@@ -74,9 +87,28 @@ class AcquiringDialogFragment: DialogFragment() {
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
+        if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun humanReadableByteCountSI(size: Long): String {
+        var bytes = size
+        if (-1000 < bytes && bytes < 1000) return "$bytes B"
+        val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
+        while (bytes <= -999950 || bytes >= 999950) {
+            bytes /= 1000
+            ci.next()
+        }
+        return java.lang.String.format("%d%cB", bytes/1000, ci.current())
+    }
+
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>): AndroidViewModel(application) {
         private var currentProgress = MutableLiveData<Int>()
         private var currentName: String = ""
+        private var totalBytes = 0L
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -98,7 +130,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     // Copy the file to our private storage
                     application.contentResolver.openInputStream(uri).use { input ->
                         File(appRootFolder, fileName).outputStream().use { output ->
-                            input!!.copyTo(output, 8192)
+                            totalBytes += input!!.copyTo(output, 8192)
                         }
                     }
 
@@ -114,6 +146,7 @@ class AcquiringDialogFragment: DialogFragment() {
         }
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
+        fun getTotalBytes(): Long = totalBytes
     }
 
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>): ViewModelProvider.NewInstanceFactory() {

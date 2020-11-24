@@ -75,6 +75,8 @@
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>
+    <string name="finished_preparing_files">Preparing photos finished</string>
+    <string name="it_takes_time">Need to send %1$s data to server. New album, photos will show up in your phone when upload is finished. Please be patient and keep the network stable.</string>
 
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
