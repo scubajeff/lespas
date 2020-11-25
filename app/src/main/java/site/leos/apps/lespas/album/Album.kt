@@ -17,10 +17,13 @@ data class Album(
     var endDate: LocalDateTime,
     var cover: String,
     var coverBaseline: Int,
+    var coverWidth: Int,
+    var coverHeight: Int,
     var lastModified: LocalDateTime,
     var sortOrder: Int,
     var eTag: String,
-    var shareId: Int): Parcelable {
+    var shareId: Int,
+): Parcelable {
     companion object {
         const val TABLE_NAME = "albums"
 
@@ -33,13 +36,8 @@ data class Album(
     }
 }
 
-data class AlbumWithPhotosAndCover(
+data class AlbumWithPhotos(
     @Embedded var album: Album,
-    @Relation(
-        parentColumn = "cover",
-        entityColumn = "id",
-    )
-    var cover: List<Photo>,
     @Relation(
         parentColumn = "id",
         entityColumn = "albumId"
@@ -47,7 +45,7 @@ data class AlbumWithPhotosAndCover(
     var photos: List<Photo>
 )
 
-data class Cover(val id: String, val baseLine: Int)
+data class Cover(val id: String, val baseLine: Int, val width: Int, val height: Int)
 data class AlbumNameAndId(val id: String, val name: String)
 
 @Dao
@@ -78,8 +76,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)
 
-    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline WHERE id = :albumId")
-    abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int)
+    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height WHERE id = :albumId")
+    abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
 
     @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumName(albumId: String): String
@@ -95,5 +93,5 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Transaction
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotosAndCover>
+    abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>
 }

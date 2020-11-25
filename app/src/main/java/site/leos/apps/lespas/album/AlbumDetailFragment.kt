@@ -31,6 +31,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.photo.PhotoViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
+import java.time.LocalDateTime
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var mAdapter: PhotoGridAdapter
@@ -207,12 +208,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        internal fun setAlbum(album: AlbumWithPhotosAndCover) {
+        internal fun setAlbum(album: AlbumWithPhotos) {
             this.album = album.album
-            val coverPhoto = album.cover.get(0)
-            coverPhoto.shareId = album.album.coverBaseline
-            this.photos.clear()
-            this.photos.add(coverPhoto)
+            photos.clear()
+            album.album.run { photos.add(Photo(cover, id, "", "", LocalDateTime.now(), LocalDateTime.now(), coverWidth, coverHeight, coverBaseline)) }
             this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
             notifyDataSetChanged()
         }

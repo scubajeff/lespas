@@ -17,10 +17,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
@@ -28,6 +24,7 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
+import java.time.LocalDateTime
 
 class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
     private lateinit var mAdapter: AlbumListAdapter
@@ -145,15 +142,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
-            CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
-                val covers = mutableListOf<Photo>()
-                albums.forEach { album ->
-                    covers.add(albumsModel.getCoverPhoto(album.cover))
-                    covers.last().shareId = album.coverBaseline
-                }
-
-                withContext(Dispatchers.Main) { mAdapter.setAlbums(albums, covers) }
+            val covers = mutableListOf<Photo>()
+            albums.forEach { album ->
+                covers.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
             }
+            mAdapter.setAlbums(albums, covers)
         })
     }
 

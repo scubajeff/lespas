@@ -130,7 +130,7 @@ class CoverSettingFragment : Fragment() {
         })
 
         root.run {
-            setOnTouchListener { v, event ->
+            setOnTouchListener { _, event ->
                 cropFrameGestureDetector.onTouchEvent(event)
 
                 if (event.action == MotionEvent.ACTION_UP) {
@@ -210,8 +210,10 @@ class CoverSettingFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            val baseLine = ((currentPhoto.getCurrentPhoto().value!!.height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).toInt()
-            ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(currentPhoto.getCurrentPhoto().value!!.id, baseLine))
+            currentPhoto.getCurrentPhoto().value!!.run {
+                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).toInt()
+                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(id, baseLine, width, height))
+            }
             Handler(requireContext().mainLooper).post {
                 Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
             }

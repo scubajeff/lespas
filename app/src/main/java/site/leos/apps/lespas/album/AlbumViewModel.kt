@@ -16,7 +16,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val photoRepository = PhotoRepository(application)
 
     val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
-    fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotosAndCover> = albumRepository.getAlbumDetail(albumId).asLiveData()
+    fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
     fun insertAsync(album: Album) = viewModelScope.launch(Dispatchers.IO) { albumRepository.insert(album) }
     fun getAlbumByID(albumId: String): LiveData<Album> = albumRepository.getAlbumByID(albumId).asLiveData()
     fun setCover(album: Album, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(album, cover) }

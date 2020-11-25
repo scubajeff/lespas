@@ -133,6 +133,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         localAlbum[0].endDate,  // Preserve local data
                                         localAlbum[0].cover,    // Preserve local data
                                         localAlbum[0].coverBaseline,    // Preserve local data
+                                        localAlbum[0].coverWidth,
+                                        localAlbum[0].coverHeight,
                                         remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),  // Use remote version
                                         localAlbum[0].sortOrder,    // Preserve local data
                                         remoteAlbum.etag,   // Use remote version
@@ -146,7 +148,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } else {
                             // No hit at local, a new album created on server
                             changedAlbums.add(Album(
-                                remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0,
+                                remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
                                 remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
                                 Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0
                             ))
@@ -207,9 +209,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
 
-                        // If this is a new album from server, then set it's cover to the first photo in the return list
-                        if (changedAlbum.cover.isEmpty()) changedAlbum.cover = changedPhotos[0].id
-
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         for (changedPhoto in changedPhotos) {
                             // Get the image file ready
@@ -262,6 +261,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             photoRepository.upsertSync(changedPhoto)
                         }
 
+                        // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline default to show middle part of the photo
+                        if (changedAlbum.cover.isEmpty()) {
+                            changedAlbum.cover = changedPhotos[0].id
+                            changedAlbum.coverBaseline = (changedPhotos[0].height - (changedPhotos[0].width * 9 / 21)) / 2
+                            changedAlbum.coverWidth = changedPhotos[0].width
+                            changedAlbum.coverHeight = changedPhotos[0].height
+                        }
+
                         // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                         albumRepository.upsertSync(changedAlbum)
 
@@ -311,29 +318,29 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_REMOTE_CHANGES = 1
 
         // PROPFIND properties namespace
-        const val DAV_NS = "DAV:"
-        const val OC_NS = "http://owncloud.org/ns"
-        const val NC_NS = "http://nextcloud.org/ns"
+        private const val DAV_NS = "DAV:"
+        private const val OC_NS = "http://owncloud.org/ns"
+        private const val NC_NS = "http://nextcloud.org/ns"
 
         // OC and NC defined localpart
-        const val OC_UNIQUE_ID = "fileid"
-        const val OC_SHARETYPE = "share-types"
-        const val OC_CHECKSUMS = "checksums"
-        const val NC_HASPREVIEW = "has-preview"
-        const val OC_SIZE = "size"
-        const val OC_DATA_FINGERPRINT = "data-fingerprint"
+        private const val OC_UNIQUE_ID = "fileid"
+        private const val OC_SHARETYPE = "share-types"
+        private const val OC_CHECKSUMS = "checksums"
+        private const val NC_HASPREVIEW = "has-preview"
+        private const val OC_SIZE = "size"
+        private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
         // WebDAV defined localpart
-        const val DAV_GETETAG = "getetag"
-        const val DAV_GETLASTMODIFIED = "getlastmodified"
-        const val DAV_GETCONTENTTYPE = "getcontenttype"
-        const val DAV_RESOURCETYPE = "resourcetype"
-        const val DAV_GETCONTENTLENGTH = "getcontentlength"
+        private const val DAV_GETETAG = "getetag"
+        private const val DAV_GETLASTMODIFIED = "getlastmodified"
+        private const val DAV_GETCONTENTTYPE = "getcontenttype"
+        private const val DAV_RESOURCETYPE = "resourcetype"
+        private const val DAV_GETCONTENTLENGTH = "getcontentlength"
 
         const val JUST_FOLDER_DEPTH = 0
         const val FOLDER_CONTENT_DEPTH = 1
 
-        val NC_PROFIND_PROP = setOf(
+        private val NC_PROFIND_PROP = setOf(
             QName(DAV_NS, DAV_GETETAG, "D"),
             QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
