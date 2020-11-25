@@ -20,6 +20,7 @@ import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.selection.StorageStrategy
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
@@ -88,6 +89,24 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
             }
 
+        }
+
+        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        //postponeEnterTransition()
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
+            Log.e("+++++++", "album coverid: ${album.album.cover}")
+            mAdapter.setAlbum(album)
+            (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
+        })
+
+        view.findViewById<RecyclerView>(R.id.photogrid).run {
             adapter = mAdapter
 
             selectionTracker = Builder(
@@ -118,22 +137,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
             }
         }
-
         mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
 
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        //postponeEnterTransition()
-
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
-            Log.e("+++++++", "album coverid: ${album.album.cover}")
-            mAdapter.setAlbum(album)
-            (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
-        })
     }
 
     override fun onResume() {
@@ -209,11 +214,26 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
+            Log.e("----", "setAlbum called")
+            val oldPhotos = mutableListOf<Photo>()
+            oldPhotos.addAll(0, photos)
             this.album = album.album
             photos.clear()
             album.album.run { photos.add(Photo(cover, id, "", "", LocalDateTime.now(), LocalDateTime.now(), coverWidth, coverHeight, coverBaseline)) }
             this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
-            notifyDataSetChanged()
+            //notifyDataSetChanged()
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize() = oldPhotos.size
+
+                override fun getNewListSize() = photos.size
+
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldPhotos.get(oldItemPosition).id == photos.get(newItemPosition).id
+
+                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                    oldPhotos.get(oldItemPosition).id == photos.get(newItemPosition).id &&
+                            oldPhotos.get(oldItemPosition).shareId == photos.get(newItemPosition).shareId
+
+            }).dispatchUpdatesTo(this)
         }
 
         internal fun getPhotoAt(position: Int): Photo {

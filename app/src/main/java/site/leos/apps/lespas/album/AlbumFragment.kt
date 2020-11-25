@@ -15,6 +15,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
@@ -297,9 +298,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         }
 
         internal fun setAlbums(albums: List<Album>, covers: List<Photo>){
+            val oldAlbums = mutableListOf<Album>()
+            oldAlbums.addAll(0, this.albums)
             this.albums = albums
             this.covers = covers
-            notifyDataSetChanged()
+            //notifyDataSetChanged()
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize() = oldAlbums.size
+
+                override fun getNewListSize() = albums.size
+
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums.get(oldItemPosition).id == albums.get(newItemPosition).id
+
+                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+                    oldAlbums.get(oldItemPosition).id == albums.get(newItemPosition).id &&
+                            oldAlbums.get(oldItemPosition).cover == albums.get(newItemPosition).cover &&
+                            oldAlbums.get(oldItemPosition).coverBaseline == albums.get(newItemPosition).coverBaseline
+
+            }).dispatchUpdatesTo(this)
         }
 
         internal fun getAlbumAt(position: Int): Album {
