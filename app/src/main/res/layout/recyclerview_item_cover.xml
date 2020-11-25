@@ -14,7 +14,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:adjustViewBounds="true"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         tools:src="@drawable/login_background_gradient_2" />
 
     <androidx.appcompat.widget.AppCompatTextView

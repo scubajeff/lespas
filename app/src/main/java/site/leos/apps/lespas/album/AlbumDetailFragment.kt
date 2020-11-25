@@ -2,16 +2,17 @@ package site.leos.apps.lespas.album
 
 import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
-import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -21,6 +22,7 @@ import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -32,7 +34,6 @@ import site.leos.apps.lespas.sync.ActionViewModel
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var mAdapter: PhotoGridAdapter
-    private lateinit var photoListViewModel: PhotoViewModel
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
@@ -59,7 +60,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(view, "full_image")
-                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
                         .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
                         .commit()
                 }
@@ -70,8 +71,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
             }
         )
-
-        photoListViewModel = ViewModelProvider(this, PhotosViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
 
         setHasOptionsMenu(true)
     }
@@ -127,25 +126,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        postponeEnterTransition()
+        //postponeEnterTransition()
 
-        albumModel.getAlbumByID(album.id).observe(viewLifecycleOwner, { album-> if (album != null) mAdapter.setAlbum(album) })
-        photoListViewModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos ->
-            // If all photos removed, go back
-            if (photos.isEmpty()) parentFragmentManager.popBackStack()
-
-            mAdapter.setPhotos(photos)
-            (view.parent as? ViewGroup)?.doOnPreDraw { startPostponedEnterTransition() }
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
+            Log.e("+++++++", "album coverid: ${album.album.cover}")
+            mAdapter.setAlbum(album)
+            (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
         })
     }
 
     override fun onResume() {
         super.onResume()
 
-        (activity as? AppCompatActivity)?.supportActionBar?.run {
-            setDisplayHomeAsUpEnabled(true)
-            title = album.name
-        }
+        (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -156,7 +149,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var album: Album? = null
-        private var photos = emptyList<Photo>()
+        private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
 
         init {
@@ -175,7 +168,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun bindViewItem() {
                 itemView.run {
                     findViewById<ImageView>(R.id.cover).run {
-                        setImageResource(R.drawable.ic_footprint)
+                        photos.firstOrNull()?.let { imageLoader.loadImage(it, this, ImageLoaderViewModel.TYPE_COVER) }
                     }
                     findViewById<TextView>(R.id.title).text = album?.name
                 }
@@ -192,12 +185,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
                     findViewById<ImageView>(R.id.pic).run {
+                        /*
+                        setPadding(
+                            if (((adapterPosition - 1) % resources.getInteger(R.integer.photo_grid_span_count))!= 0) 2 else 0,
+                            2, 0, 0)
+
+                         */
                         imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
                         ViewCompat.setTransitionName(this, photo.id)
                     }
 
                     this.isActivated = isActivated
-                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(pic, adapterPosition - 1)
+                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(pic, adapterPosition)
                     }
                 }
             }
@@ -205,18 +204,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
                 override fun getSelectionKey(): Long = itemId
-                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
 
-        internal fun setPhotos(photos: List<Photo>) {
-            this.photos = photos
+        internal fun setAlbum(album: AlbumWithPhotosAndCover) {
+            this.album = album.album
+            val coverPhoto = album.cover.get(0)
+            coverPhoto.shareId = album.album.coverBaseline
+            this.photos.clear()
+            this.photos.add(coverPhoto)
+            this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
             notifyDataSetChanged()
         }
 
-        internal fun setAlbum(album: Album) {
-            this.album = album
-            notifyDataSetChanged()
+        internal fun getPhotoAt(position: Int): Photo {
+            return photos[position]
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -226,11 +228,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is PhotoViewHolder) holder.bindViewItem(photos[position - 1], itemClickListener, selectionTracker.isSelected(position.toLong()))
+            if (holder is PhotoViewHolder) holder.bindViewItem(photos[position], itemClickListener, selectionTracker.isSelected(position.toLong()))
             else (holder as CoverViewHolder).bindViewItem()
         }
 
-        override fun getItemCount() = photos.size + 1
+        override fun getItemCount() = photos.size
 
         override fun getItemViewType(position: Int): Int {
             return if (position == 0) TYPE_COVER else TYPE_PHOTO
@@ -321,9 +323,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onPositiveConfirmed() {
         val photos = mutableListOf<Photo>()
-        for (i in selectionTracker?.selection!!) {
-            photos.add(photoListViewModel.allPhotoInAlbum.value!![i.toInt() - 1])
-        }
+        for (i in selectionTracker?.selection!!) photos.add(mAdapter.getPhotoAt(i.toInt()))
         actionModel.deletePhotos(photos, album.name)
 
         selectionTracker?.clearSelection()

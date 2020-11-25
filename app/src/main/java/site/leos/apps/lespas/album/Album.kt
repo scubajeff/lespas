@@ -33,8 +33,13 @@ data class Album(
     }
 }
 
-data class AlbumWithPhotos(
+data class AlbumWithPhotosAndCover(
     @Embedded var album: Album,
+    @Relation(
+        parentColumn = "cover",
+        entityColumn = "id",
+    )
+    var cover: List<Photo>,
     @Relation(
         parentColumn = "id",
         entityColumn = "albumId"
@@ -60,6 +65,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAllSortByEndDate(): Flow<List<Album>>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    //protected abstract fun _getAlbumById(albumId: String): Flow<Album>
+    //fun getAlbumByID(albumId: String): Flow<Album> = _getAlbumById(albumId).distinctUntilChanged()
     abstract fun getAlbumByID(albumId: String): Flow<Album>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
@@ -86,6 +93,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id IN (:albums) ORDER BY id ASC")
     abstract fun getTheseAlbums(albums: ArrayList<String>): List<Album>
 
+    @Transaction
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getAlbumWithPhotos(albumId: String): List<AlbumWithPhotos>
+    abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotosAndCover>
 }

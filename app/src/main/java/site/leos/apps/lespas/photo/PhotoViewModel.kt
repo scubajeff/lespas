@@ -8,6 +8,7 @@ class PhotoViewModel(application: Application, private val albumId: String): And
 
     val allPhotoInAlbum: LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
     val albumSize: LiveData<Int> = photoRepository.getAlbumSize(albumId).asLiveData()
+    suspend fun getPhotoById(photoId: String): Photo = photoRepository.getPhotoById(photoId)
 }
 
 class PhotoViewModelFactory(private val application: Application, private val albumId: String) : ViewModelProvider.NewInstanceFactory() {

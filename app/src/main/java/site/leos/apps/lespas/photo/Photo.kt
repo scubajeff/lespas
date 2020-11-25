@@ -2,6 +2,7 @@ package site.leos.apps.lespas.photo
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import site.leos.apps.lespas.BaseDao
 import java.time.LocalDateTime
 
@@ -51,13 +52,20 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun getAlbumPhotos(albumId: String): List<Photo>
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
-    abstract fun getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>>
+    abstract fun _getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>>
+    fun getAlbumPhotosByDateTakenASC(albumId: String) = _getAlbumPhotosByDateTakenASC(albumId).distinctUntilChanged()
 
     @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun getAlbumSize(albumId: String): Flow<Int>
 
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun deletePhotosByAlbum(albumId: String)
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
+    abstract suspend fun getPhotoById(photoId: String): Photo
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id IN (:ids)")
+    abstract suspend fun getThesePhotos(ids: List<String>): List<Photo>
 }
 
 /**

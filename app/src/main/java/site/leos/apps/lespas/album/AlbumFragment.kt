@@ -17,7 +17,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -29,6 +35,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
@@ -44,11 +51,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAdapter = AlbumListAdapter(object: AlbumListAdapter.OnItemClickListener {
-            override fun onItemClick(album: Album) {
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
+        mAdapter = AlbumListAdapter(
+            object : AlbumListAdapter.OnItemClickListener {
+                override fun onItemClick(album: Album) {
+                    parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
+                }
+            },
+            object : AlbumListAdapter.OnLoadImage {
+                override fun loadImage(photo: Photo, view: ImageView, type: String) {
+                    imageLoaderModel.loadPhoto(photo, view, type)
+                }
             }
-        })
+        )
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -130,7 +144,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums -> mAdapter.setAlbums(albums)})
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
+            CoroutineScope(Dispatchers.IO).launch(Dispatchers.IO) {
+                val covers = mutableListOf<Photo>()
+                albums.forEach { album ->
+                    covers.add(albumsModel.getCoverPhoto(album.cover))
+                    covers.last().shareId = album.coverBaseline
+                }
+
+                withContext(Dispatchers.Main) { mAdapter.setAlbums(albums, covers) }
+            }
+        })
     }
 
     override fun onResume() {
@@ -232,8 +256,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
+    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private var albums = emptyList<Album>()
+        private var covers = emptyList<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
 
         init {
@@ -244,13 +269,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             fun onItemClick(album: Album)
         }
 
+        interface OnLoadImage {
+            fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
         inner class AlbumViewHolder(private val itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(album: Album, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format("%tF ~ %tF", album.startDate, album.endDate)
                     findViewById<ImageView>(R.id.coverart).apply {
-                        setImageResource(R.drawable.ic_footprint)
+                        //setImageResource(R.drawable.ic_footprint)
+                        imageLoader.loadImage(covers[adapterPosition], this, ImageLoaderViewModel.TYPE_COVER)
                     }
                     setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
                     this.isActivated = isActivated
@@ -259,7 +289,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
-                override fun getSelectionKey(): Long? = itemId
+                override fun getSelectionKey(): Long = itemId
                 //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
@@ -273,9 +303,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             holder.bindViewItems(albums[position], itemClickListener, selectionTracker.isSelected(position.toLong()))
         }
 
-        internal fun setAlbums(albums: List<Album>){
+        internal fun setAlbums(albums: List<Album>, covers: List<Photo>){
             this.albums = albums
+            this.covers = covers
             notifyDataSetChanged()
+        }
+
+        internal fun getAlbumAt(position: Int): Album {
+            return albums[position]
         }
 
         override fun getItemCount() = albums.size
@@ -301,9 +336,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onPositiveConfirmed() {
         val albums = mutableListOf<Album>()
-        for (i in selectionTracker?.selection!!) {
-            albums.add(albumsModel.allAlbumsByEndDate.value!![i.toInt()])
-        }
+        for (i in selectionTracker?.selection!!) albums.add(mAdapter.getAlbumAt(i.toInt()))
         actionModel.deleteAlbums(albums)
 
         selectionTracker?.clearSelection()

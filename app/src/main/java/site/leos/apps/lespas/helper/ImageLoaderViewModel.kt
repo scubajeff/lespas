@@ -3,9 +3,8 @@ package site.leos.apps.lespas.helper
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
+import android.graphics.*
+import android.util.Log
 import android.util.LruCache
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
@@ -16,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
+import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath: String
@@ -28,7 +28,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             put(PLACEHOLDER_BITMAP, getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24))
         }
         rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
-
     }
 
     private fun getBitmapFromVector(application: Application, vectorResource: Int): Bitmap {
@@ -44,13 +43,15 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
         viewModelScope.launch(Dispatchers.IO) {
             var bitmap: Bitmap?
-            val key = "${photo.id}$type"
+            var key = "${photo.id}$type"
+
+            if (type == TYPE_COVER) key = "$key-${photo.shareId}"   // suffix baseline
 
             try {
-                bitmap = imageCache.get(key)
                 // Show something first
                 //view.setImageBitmap(imageCache.get(PLACEHOLDER_BITMAP))
                 //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                bitmap = imageCache.get(key)
                 if (bitmap == null) when (type) {
                     TYPE_VIEW -> {
                         /*
@@ -72,20 +73,26 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         bitmap = BitmapFactory.decodeFile("$rootPath/${photo.id}")
                     }
                     TYPE_COVER -> {
+                        val size = if ((photo.height < 1000) || (photo.width < 1000)) 1 else 2
+                        // cover baseline passed in field shareId
+                        val bottom = min(photo.shareId + (photo.width * 9 / 21).toInt(), photo.height)
+                        val rect = Rect(0, photo.shareId, photo.width, bottom)
+                        bitmap = BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply { this.inSampleSize = size })
                     }
                 }
                 if (bitmap != null) {
                     withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
                     imageCache.put(key, bitmap)
-                }
-                else view.setImageBitmap(imageCache.get(ERROR_BITMAP))
+                } else view.setImageBitmap(imageCache.get(ERROR_BITMAP))
             } catch (e: Exception) {
                 e.printStackTrace()
+            } finally {
+                Log.e("-------", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
             }
         }
     }
 
-    class ImageCache constructor(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
+    open class ImageCache constructor(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int {
             return value.byteCount
         }

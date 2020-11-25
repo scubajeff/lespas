@@ -23,7 +23,7 @@ class AlbumRepository(application: Application){
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
     fun getAllAlbumIds(): List<String> = albumDao.getAllIds()
     fun getTheseAlbums(albums: ArrayList<String>): List<Album> = albumDao.getTheseAlbums(albums)
-    fun getAlbumWithPhotos(albumId: String): List<AlbumWithPhotos> = albumDao.getAlbumWithPhotos(albumId)
+    fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotosAndCover> = albumDao.getAlbumDetail(albumId)
 
     companion object {
         private var repo: AlbumRepository? = null
