@@ -4,15 +4,12 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.graphics.*
-import android.util.Log
 import android.util.LruCache
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
 import kotlin.math.min
@@ -23,9 +20,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
 
+    private var loadingJob = SupervisorJob()
+    private var loadingScope = CoroutineScope(Dispatchers.IO + loadingJob)
+    private val jobMap = HashMap<Int, Job>()
+
     private fun getBitmapFromVector(application: Application, vectorResource: Int): Bitmap {
         val vectorDrawable = ContextCompat.getDrawable(application, vectorResource)!!
-        val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.RGB_565)
+        val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
         Canvas(bitmap).run {
             vectorDrawable.setBounds(0, 0, width, height)
             vectorDrawable.draw(this)
@@ -34,7 +35,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        val job = viewModelScope.launch(Dispatchers.IO) {
             var bitmap: Bitmap?
             var key = "${photo.id}$type"
 
@@ -45,8 +46,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 //view.setImageBitmap(placeholderBitmap)
                 //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                 //if (type == TYPE_COVER) Log.e("----", "requesting $key")
-                bitmap = imageCache.get(key)
-                bitmap ?: when (type) {
+                bitmap = imageCache.get(key) ?: when (type) {
                     TYPE_VIEW -> {
                         /*
                         var inSampleSize = 1
@@ -61,33 +61,54 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
                         */
                         val size = if ((photo.height < 1000) || (photo.width < 1000)) 2 else 4
-                        bitmap = BitmapFactory.decodeFile("$rootPath/${photo.id}", BitmapFactory.Options().apply { this.inSampleSize = size })
+                        BitmapFactory.decodeFile(
+                            "$rootPath/${photo.id}",
+                            BitmapFactory.Options().apply {
+                                this.inSampleSize = size
+                                this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                            })
                     }
                     TYPE_FULL -> {
-                        bitmap = BitmapFactory.decodeFile("$rootPath/${photo.id}")
+                        BitmapFactory.decodeFile("$rootPath/${photo.id}")
                     }
                     TYPE_COVER -> {
                         val size = if ((photo.height < 1000) || (photo.width < 1000)) 1 else 2
                         // cover baseline passed in field shareId
                         val bottom = min(photo.shareId + (photo.width * 9 / 21).toInt(), photo.height)
                         val rect = Rect(0, photo.shareId, photo.width, bottom)
-                        bitmap = BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply { this.inSampleSize = size })
+                        BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply {
+                            this.inSampleSize = size
+                            this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                        })
                     }
+                    else -> errorBitmap
                 }
                 if (bitmap == null) bitmap = errorBitmap
                 else imageCache.put(key, bitmap)
 
-                withContext(Dispatchers.Main) {
-                    view.setImageBitmap(bitmap)
-                    //if (type == TYPE_COVER) view.postInvalidate()
+                // If we are still active at this moment, set the imageview
+                if (isActive) {
+                    withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+                    //Log.e(Thread.currentThread().name, "setting bitmap: $key to ${System.identityHashCode(view)}")
                 }
             } catch (e: Exception) {
-                Log.e("ImageLoaderViewModel", e.message.toString())
+                e.printStackTrace()
+                //Log.e("ImageLoaderViewModel ${Thread.currentThread().name}", "$key ${e.message}")
             } finally {
-                //Log.e("-------", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
-                //if (type == TYPE_COVER) Log.e("-----", "setting bitmap: $key")
+                //Log.e("ImageLoaderViewModel", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
             }
         }
+        cancelPrevious(System.identityHashCode(view), job)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        loadingJob.cancel("", Throwable())
+    }
+
+    private fun cancelPrevious(key: Int, newJob: Job) {
+        jobMap[key]?.let { it.cancel() }
+        jobMap[key] = newJob
     }
 
     open class ImageCache constructor(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {

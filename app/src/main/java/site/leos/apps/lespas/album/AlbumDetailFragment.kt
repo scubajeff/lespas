@@ -2,7 +2,6 @@ package site.leos.apps.lespas.album
 
 import android.app.Application
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -90,7 +89,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
+        //Log.e("==========", "AlbumDetailFragment newstart")
 
         return view
     }
@@ -98,7 +97,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
-            Log.e("+++++++", "observer return coverid: ${album.album.cover}-${album.album.coverBaseline}")
             mAdapter.setAlbum(album)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
         })
@@ -174,6 +172,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun bindViewItem() {
                 itemView.run {
                     findViewById<ImageView>(R.id.cover).run {
+                        //Log.e("CoverViewHolder", System.identityHashCode(this).toString())
                         photos.firstOrNull()?.let { imageLoader.loadImage(it, this, ImageLoaderViewModel.TYPE_COVER) }
                     }
                     findViewById<TextView>(R.id.title).text = photos[0].name
@@ -197,6 +196,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             2, 0, 0)
 
                          */
+                        //Log.e("PhotoViewHolder", System.identityHashCode(this).toString())
                         imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
                         ViewCompat.setTransitionName(this, photo.id)
                     }
@@ -228,7 +228,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     if (oldItemPosition == 0) oldPhotos[oldItemPosition] == photos[newItemPosition]
                     else oldPhotos[oldItemPosition].id == photos[newItemPosition].id
             }).dispatchUpdatesTo(this)
-            Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
+
+            //Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
         }
 
         internal fun getPhotoAt(position: Int): Photo {
