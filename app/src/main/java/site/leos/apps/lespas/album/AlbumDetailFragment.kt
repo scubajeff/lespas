@@ -35,7 +35,8 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.photo.PhotoViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
-import java.time.LocalDateTime
+import java.time.Duration
+import java.time.ZoneId
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var mAdapter: PhotoGridAdapter
@@ -198,6 +199,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         })
                     }
                     findViewById<TextView>(R.id.title).text = photos[0].name
+                    findViewById<TextView>(R.id.statistic).text = resources.getString(
+                        R.string.album_statistic,
+                        Duration.between(photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(), photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays(),
+                        photos.size - 1
+                    )
                 }
             }
 
@@ -251,7 +257,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
-            album.album.run { photos.add(Photo(cover, id, name, "", LocalDateTime.now(), LocalDateTime.now(), coverWidth, coverHeight, coverBaseline)) }
+            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, coverBaseline)) }
             this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
             //notifyDataSetChanged()
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
