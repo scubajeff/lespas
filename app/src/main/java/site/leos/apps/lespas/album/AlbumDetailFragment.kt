@@ -105,6 +105,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
+            this.album = album.album
             mAdapter.setAlbum(album)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
         })
@@ -388,8 +389,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onPositiveConfirmed() {
         val photos = mutableListOf<Photo>()
-        for (i in selectionTracker?.selection!!) photos.add(mAdapter.getPhotoAt(i.toInt()))
-        actionModel.deletePhotos(photos, album.name)
+        for (i in selectionTracker?.selection!!)
+            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
 
         selectionTracker?.clearSelection()
     }
