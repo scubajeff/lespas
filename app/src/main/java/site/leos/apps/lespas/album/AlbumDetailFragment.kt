@@ -60,7 +60,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         album = arguments?.getParcelable(ALBUM)!!
 
         mAdapter = PhotoGridAdapter(
-            object : PhotoGridAdapter.OnItemClickListener {
+            object : PhotoGridAdapter.OnItemClick {
                 override fun onItemClick(view: View, position: Int) {
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
@@ -74,6 +74,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 override fun loadImage(photo: Photo, view: ImageView, type: String) {
                     imageLoaderModel.loadPhoto(photo, view, type)
                 }
+            },
+            object : PhotoGridAdapter.OnTitleVisibility {
+                override fun setTitle(visible: Boolean) { (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
             }
         )
 
@@ -154,8 +157,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         selectionTracker?.onSaveInstanceState(outState)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+        (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(true)
+    }
+
     // Adpater for photo grid
-    class PhotoGridAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdator: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         //private var album: Album? = null
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
@@ -165,12 +174,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             setHasStableIds(true)
         }
 
-        interface OnItemClickListener {
+        interface OnItemClick {
             fun onItemClick(view: View, position: Int)
         }
 
         interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
+        interface OnTitleVisibility {
+            fun setTitle(visible: Boolean)
         }
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -196,7 +209,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
+            fun bindViewItem(photo: Photo, clickListener: OnItemClick, isActivated: Boolean) {
                 itemView.apply {
                     this.isActivated = isActivated
 
@@ -275,6 +288,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewAttachedToWindow(holder)
+            if (holder is CoverViewHolder) titleUpdator.setTitle(false)
+        }
+
+        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewDetachedFromWindow(holder)
+            if (holder is CoverViewHolder) titleUpdator.setTitle(true)
+        }
 
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
 
