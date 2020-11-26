@@ -12,14 +12,13 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.album.AlbumDetailFragment
+import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
 class PhotoSlideFragment : Fragment() {
@@ -27,10 +26,10 @@ class PhotoSlideFragment : Fragment() {
     private var startAt: Int = 0
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
-    private lateinit var photosModel: PhotoViewModel     // TODO naming
+    private val albumModel: AlbumViewModel by activityViewModels()
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     companion object {
         private const val ALBUM = "ALBUM"
@@ -74,7 +73,7 @@ class PhotoSlideFragment : Fragment() {
             }
         )
 
-        photosModel.allPhotoInAlbum.observe(viewLifecycleOwner, { photos->
+        albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, Observer { photos->
             pAdapter.setPhotos(photos)
             (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
         })
@@ -84,7 +83,7 @@ class PhotoSlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    currentPhotoModel.setCurrentPhoto(photosModel.allPhotoInAlbum.value!![position])
+                    currentPhotoModel.setCurrentPhoto(pAdapter.getPhotoAt(position))
                 }
             })
         }
@@ -149,6 +148,10 @@ class PhotoSlideFragment : Fragment() {
 
         override fun getItemCount(): Int {
             return photos.size
+        }
+
+        internal fun getPhotoAt(position: Int): Photo {
+            return photos[position]
         }
 
         fun setPhotos(collection: List<Photo>) {

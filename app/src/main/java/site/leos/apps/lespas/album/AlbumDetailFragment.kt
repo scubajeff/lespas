@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.album
 
-import android.app.Application
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
@@ -16,8 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
@@ -34,7 +31,6 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
-import site.leos.apps.lespas.photo.PhotoViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.time.Duration
 import java.time.ZoneId
@@ -334,12 +330,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             private const val TYPE_COVER = 0
             private const val TYPE_PHOTO = 1
         }
-    }
-
-    // ViewModelFactory to pass String parameter to ViewModel object
-    @Suppress("UNCHECKED_CAST")
-    class PhotosViewModelFactory(private val application: Application, private val myExtraParam: String) : ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = PhotoViewModel(application, myExtraParam) as T
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

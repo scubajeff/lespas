@@ -24,5 +24,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     suspend fun isAlbumNameExisted(name: String): Boolean = albumRepository.isAlbumExisted(name)
     suspend fun getAllCovers(ids: List<String>): List<Photo> = photoRepository.getThesePhotos(ids)
     suspend fun getCoverPhoto(coverId: String): Photo = photoRepository.getPhotoById(coverId)
-
+    fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
 }
