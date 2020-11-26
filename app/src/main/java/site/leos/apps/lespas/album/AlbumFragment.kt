@@ -305,16 +305,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             //notifyDataSetChanged()
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldAlbums.size
-
                 override fun getNewListSize() = albums.size
-
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums.get(oldItemPosition).id == albums.get(newItemPosition).id
-
-                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
-                    oldAlbums.get(oldItemPosition).id == albums.get(newItemPosition).id &&
-                            oldAlbums.get(oldItemPosition).cover == albums.get(newItemPosition).cover &&
-                            oldAlbums.get(oldItemPosition).coverBaseline == albums.get(newItemPosition).coverBaseline
-
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition].id == albums[newItemPosition].id
+                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition] == albums[newItemPosition]
             }).dispatchUpdatesTo(this)
         }
 

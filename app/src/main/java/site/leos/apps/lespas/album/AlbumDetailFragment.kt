@@ -154,7 +154,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var album: Album? = null
+        //private var album: Album? = null
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
 
@@ -176,7 +176,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     findViewById<ImageView>(R.id.cover).run {
                         photos.firstOrNull()?.let { imageLoader.loadImage(it, this, ImageLoaderViewModel.TYPE_COVER) }
                     }
-                    findViewById<TextView>(R.id.title).text = album?.name
+                    findViewById<TextView>(R.id.title).text = photos[0].name
                 }
             }
 
@@ -214,26 +214,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
-            Log.e("----", "setAlbum called")
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
-            this.album = album.album
             photos.clear()
-            album.album.run { photos.add(Photo(cover, id, "", "", LocalDateTime.now(), LocalDateTime.now(), coverWidth, coverHeight, coverBaseline)) }
+            album.album.run { photos.add(Photo(cover, id, name, "", LocalDateTime.now(), LocalDateTime.now(), coverWidth, coverHeight, coverBaseline)) }
             this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
             //notifyDataSetChanged()
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldPhotos.size
-
                 override fun getNewListSize() = photos.size
-
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldPhotos.get(oldItemPosition).id == photos.get(newItemPosition).id
-
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldPhotos[oldItemPosition].id == photos[newItemPosition].id
                 override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
-                    oldPhotos.get(oldItemPosition).id == photos.get(newItemPosition).id &&
-                            oldPhotos.get(oldItemPosition).shareId == photos.get(newItemPosition).shareId
-
+                    if (oldItemPosition == 0) oldPhotos[oldItemPosition] == photos[newItemPosition]
+                    else oldPhotos[oldItemPosition].id == photos[newItemPosition].id
             }).dispatchUpdatesTo(this)
+            Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
         }
 
         internal fun getPhotoAt(position: Int): Photo {
