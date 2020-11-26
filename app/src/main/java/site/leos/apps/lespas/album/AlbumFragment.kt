@@ -8,6 +8,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.view.*
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AlphaAnimation
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -279,6 +281,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         imageLoader.loadImage(covers[adapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
+                        this.startAnimation(AlphaAnimation(0.5f, 1f).apply {
+                            duration = 300
+                            interpolator = AccelerateDecelerateInterpolator()
+                        })
                     }
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format("%tF ~ %tF", album.startDate, album.endDate)

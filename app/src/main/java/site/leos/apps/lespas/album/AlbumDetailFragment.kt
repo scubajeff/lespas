@@ -5,6 +5,8 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
 import android.view.*
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AlphaAnimation
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -177,6 +179,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     findViewById<ImageView>(R.id.cover).run {
                         //Log.e("CoverViewHolder", System.identityHashCode(this).toString())
                         photos.firstOrNull()?.let { imageLoader.loadImage(it, this, ImageLoaderViewModel.TYPE_COVER) }
+                        this.startAnimation(AlphaAnimation(0.5f, 1f).apply {
+                            duration = 300
+                            interpolator = AccelerateDecelerateInterpolator()
+                        })
                     }
                     findViewById<TextView>(R.id.title).text = photos[0].name
                 }
@@ -213,6 +219,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         ViewCompat.setTransitionName(photoImageview, photo.id)
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(photoImageview, adapterPosition) }
+                        photoImageview.startAnimation(AlphaAnimation(0.5f, 1f).apply {
+                            duration = 300
+                            interpolator = AccelerateDecelerateInterpolator()
+                        })
                     }
 
                 }
