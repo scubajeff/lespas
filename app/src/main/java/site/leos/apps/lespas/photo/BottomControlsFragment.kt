@@ -20,11 +20,10 @@ import androidx.fragment.app.activityViewModels
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
-    private lateinit var album: Album
+    private lateinit var albumId: String
     private lateinit var window: Window
     private lateinit var controls: LinearLayout
     private lateinit var setCoverButton: ImageButton
@@ -36,16 +35,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
-        private const val ALBUM = "ALBUM"
+        private const val ALBUM_ID = "ALBUM_ID"
         private const val INFO_DIALOG = "INFO_DIALOG"
 
-        fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
+        fun newInstance(albumId: String) = BottomControlsFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable(ALBUM)!!
+        albumId = arguments?.getString(ALBUM_ID)!!
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
@@ -110,7 +109,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hideHandler.post(hideSystemUI)
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
-                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album))
+                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(albumId))
                     .addToBackStack(CoverSettingFragment.javaClass.name)
                     .commit()
             }

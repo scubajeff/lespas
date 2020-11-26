@@ -63,8 +63,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(view, "full_image")
-                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
-                        .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
+                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                        .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                         .commit()
                 }
             },

@@ -19,12 +19,11 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 
 class CoverSettingFragment : Fragment() {
-    private lateinit var album: Album
+    private lateinit var albumId: String
     private lateinit var root: ConstraintLayout
     private lateinit var applyButton: FloatingActionButton
     private lateinit var cropArea: ViewGroup
@@ -44,15 +43,15 @@ class CoverSettingFragment : Fragment() {
 
     companion object {
         private const val BIAS = "BIAS"
-        private const val ALBUM = "ALBUM"
+        private const val ALBUM_ID = "ALBUM_ID"
 
-        fun newInstance(album: Album) = CoverSettingFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
+        fun newInstance(albumId: String) = CoverSettingFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable(ALBUM)!!
+        albumId = arguments?.getString(ALBUM_ID)!!
 
         if (savedInstanceState != null) newBias = savedInstanceState.getFloat(BIAS)
     }
@@ -107,9 +106,7 @@ class CoverSettingFragment : Fragment() {
 
         cropFrameGestureDetector = GestureDetectorCompat(activity, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
-                Handler(requireContext().mainLooper).post {
-                    Toast.makeText(requireContext(), R.string.toast_cover_set_canceled, Toast.LENGTH_SHORT).show()
-                }
+                Handler(requireContext().mainLooper).post { Toast.makeText(requireContext(), R.string.toast_cover_set_canceled, Toast.LENGTH_SHORT).show() }
                 parentFragmentManager.popBackStack()
                 return true
             }
@@ -203,8 +200,6 @@ class CoverSettingFragment : Fragment() {
                         TransitionManager.beginDelayedTransition(root, t)
                         applyTo(root)
                     }
-
-
                 }
             })
         }
@@ -212,11 +207,9 @@ class CoverSettingFragment : Fragment() {
         applyButton.setOnClickListener {
             currentPhoto.getCurrentPhoto().value!!.run {
                 val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).toInt()
-                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album, Cover(id, baseLine, width, height))
+                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
             }
-            Handler(requireContext().mainLooper).post {
-                Toast.makeText(requireContext(), getString(R.string.toast_cover_applied, currentPhoto.getCurrentPhoto().value!!.name), Toast.LENGTH_SHORT).show()
-            }
+            Handler(requireContext().mainLooper).post { Toast.makeText(requireContext(), getString(R.string.toast_cover_applied), Toast.LENGTH_SHORT).show() }
 
             parentFragmentManager.popBackStack()
         }
@@ -225,9 +218,5 @@ class CoverSettingFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putFloat(BIAS, newBias)    // TODO: saving bias is not enough
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
     }
 }

@@ -22,7 +22,7 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
 class PhotoSlideFragment : Fragment() {
-    private lateinit var album: Album
+    private lateinit var albumId: String
     private var startAt: Int = 0
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
@@ -32,12 +32,12 @@ class PhotoSlideFragment : Fragment() {
     private val uiModel: UIViewModel by activityViewModels()
 
     companion object {
-        private const val ALBUM = "ALBUM"
+        private const val ALBUM_ID = "ALBUM_ID"
         private const val POSITION = "POSITION"
 
-        fun newInstance(album: Album, position: Int) = PhotoSlideFragment().apply {
+        fun newInstance(albumId: String, position: Int) = PhotoSlideFragment().apply {
             arguments = Bundle().apply {
-                putParcelable(ALBUM, album)
+                putString(ALBUM_ID, albumId)
                 putInt(POSITION, position)
             }
         }
@@ -46,10 +46,9 @@ class PhotoSlideFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable(ALBUM)!!
+        albumId = arguments?.getString(ALBUM_ID)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
-        photosModel = ViewModelProvider(this, AlbumDetailFragment.PhotosViewModelFactory(this.requireActivity().application, album.id)).get(PhotoViewModel::class.java)
         //sharedElementEnterTransition = ChangeBounds()
     }
 
