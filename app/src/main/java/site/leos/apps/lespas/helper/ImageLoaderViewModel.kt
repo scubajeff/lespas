@@ -18,17 +18,10 @@ import site.leos.apps.lespas.photo.Photo
 import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
-    private val rootPath: String
-    private val imageCache: ImageCache
-
-    init {
-        val heapSize = ((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass
-        imageCache = ImageCache(1024 * 1024 * heapSize / 8).apply {
-            put(ERROR_BITMAP, getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24))
-            put(PLACEHOLDER_BITMAP, getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24))
-        }
-        rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
-    }
+    private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
+    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
+    private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
+    private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
 
     private fun getBitmapFromVector(application: Application, vectorResource: Int): Bitmap {
         val vectorDrawable = ContextCompat.getDrawable(application, vectorResource)!!
@@ -45,14 +38,15 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             var bitmap: Bitmap?
             var key = "${photo.id}$type"
 
-            if (type == TYPE_COVER) key = "$key-${photo.shareId}"   // suffix baseline
+            if (type == TYPE_COVER) key = "$key-${photo.shareId}"   // suffix 'baseline' in case same photo chosen
 
             try {
                 // Show something first
-                //view.setImageBitmap(imageCache.get(PLACEHOLDER_BITMAP))
+                //view.setImageBitmap(placeholderBitmap)
                 //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                //if (type == TYPE_COVER) Log.e("----", "requesting $key")
                 bitmap = imageCache.get(key)
-                if (bitmap == null) when (type) {
+                bitmap ?: when (type) {
                     TYPE_VIEW -> {
                         /*
                         var inSampleSize = 1
@@ -80,14 +74,18 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         bitmap = BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply { this.inSampleSize = size })
                     }
                 }
-                if (bitmap != null) {
-                    withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
-                    imageCache.put(key, bitmap)
-                } else view.setImageBitmap(imageCache.get(ERROR_BITMAP))
+                if (bitmap == null) bitmap = errorBitmap
+                else imageCache.put(key, bitmap)
+
+                withContext(Dispatchers.Main) {
+                    view.setImageBitmap(bitmap)
+                    //if (type == TYPE_COVER) view.postInvalidate()
+                }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("ImageLoaderViewModel", e.message.toString())
             } finally {
-                Log.e("-------", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
+                //Log.e("-------", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
+                //if (type == TYPE_COVER) Log.e("-----", "setting bitmap: $key")
             }
         }
     }
@@ -102,8 +100,5 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         const val TYPE_VIEW = "_view"
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
-
-        const val ERROR_BITMAP = "ERROR_BITMAP"
-        const val PLACEHOLDER_BITMAP = "PLACEHOLDER_BITMAP"
     }
 }
