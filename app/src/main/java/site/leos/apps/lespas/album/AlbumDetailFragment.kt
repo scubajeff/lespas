@@ -26,6 +26,7 @@ import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import site.leos.apps.lespas.R
@@ -200,11 +201,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         })
                     }
                     findViewById<TextView>(R.id.title).text = photos[0].name
-                    findViewById<TextView>(R.id.statistic).text = resources.getString(
-                        R.string.album_statistic,
-                        Duration.between(photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(), photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays(),
-                        photos.size - 1
-                    )
+                    val days = Duration.between(
+                        photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
+                        photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays().toInt()
+                    findViewById<TextView>(R.id.duration).text = when(days) {
+                        0-> resources.getString(R.string.duration_days, 1)
+                        in 1..21-> resources.getString(R.string.duration_days, days)
+                        in 22..56-> resources.getString(R.string.duration_weeks, days / 7)
+                        in 57..365-> resources.getString(R.string.duration_months, days / 30)
+                        else-> resources.getString(R.string.duration_years, days / 365)
+                    }
+                    findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
                 }
             }
 

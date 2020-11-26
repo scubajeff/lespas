@@ -37,7 +37,11 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure?</string>
     <string name="rename_to">Change album name to</string>
-    <string name="album_statistic">Duration: %1$d days  |  Photos: %2$d</string>
+    <string name="total_photo">Photos: %1$d</string>
+    <string name="duration_days">Days: %1$d</string>
+    <string name="duration_weeks">Weeks: %1$d</string>
+    <string name="duration_months">Months: %1$d</string>
+    <string name="duration_years">Years: %1$d</string>
 
     <!-- PhotoSlide fragment -->
     <string name="tooltip_text_set_cover">Set cover art</string>
