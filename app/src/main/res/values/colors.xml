@@ -12,6 +12,7 @@
     <color name="color_on_secondary">#1B1D1C</color>
     <color name="color_background">#D3E8E1</color>
     <color name="color_error">#FFD101</color>
+    <color name="color_text_light">#FFEFE5</color>
 
     <color name="album_item_selected_background">#97B8A3</color>   <!-- TODO: should be day night safe -->
     <color name="photo_item_selected_background">#A0E3E3E3</color>   <!-- TODO: should be day night safe -->

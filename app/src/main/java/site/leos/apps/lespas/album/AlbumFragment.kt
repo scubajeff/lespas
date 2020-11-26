@@ -30,6 +30,8 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
     private lateinit var mAdapter: AlbumListAdapter
@@ -287,7 +289,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         })
                     }
                     findViewById<TextView>(R.id.title).text = album.name
-                    findViewById<TextView>(R.id.duration).text = String.format("%tF ~ %tF", album.startDate, album.endDate)
+                    findViewById<TextView>(R.id.duration).text = String.format(
+                        "%s  -  %s",
+                        album.startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
+                        album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                    )
 
                     setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
                 }
