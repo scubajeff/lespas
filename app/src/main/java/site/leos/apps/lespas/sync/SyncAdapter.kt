@@ -115,7 +115,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var remoteAlbumId: String
                 // Merge changed and/or new album from server
                 var localAlbum: List<Album>
-                sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).drop(1).forEach {remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
+                sardine.list(resourceRoot, FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
                     remoteAlbumId = remoteAlbum.customProps[OC_UNIQUE_ID]!!
                     if (remoteAlbum.isDirectory) {
                         remoteAlbumIds.add(remoteAlbumId)
@@ -189,7 +189,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                         var remotePhotoId: String
-                        sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROFIND_PROP).drop(1).forEach { remotePhoto ->
+                        sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
                             if (remotePhoto.contentType.startsWith("image", true)) {
                                 // Accumulate remote photos list
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
@@ -340,7 +340,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val JUST_FOLDER_DEPTH = 0
         const val FOLDER_CONTENT_DEPTH = 1
 
-        private val NC_PROFIND_PROP = setOf(
+        private val NC_PROPFIND_PROP = setOf(
             QName(DAV_NS, DAV_GETETAG, "D"),
             QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
