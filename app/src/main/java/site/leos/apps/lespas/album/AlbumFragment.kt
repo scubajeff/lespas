@@ -63,8 +63,21 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         )
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_album, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        inflater.inflate(R.layout.fragment_album, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        // Register data observer first, try feeding adapter with lastest data asap
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
+            val covers = mutableListOf<Photo>()
+            albums.forEach { album ->
+                covers.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
+            }
+            mAdapter.setAlbums(albums, covers)
+        })
+
+        super.onViewCreated(view, savedInstanceState)
+
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver(){
             init {
                 toggleEmptyView()
@@ -136,19 +149,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                 startActivityForResult(intent, REQUEST_FOR_IMAGES)
             }
         }
-
-        return view
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
-            val covers = mutableListOf<Photo>()
-            albums.forEach { album ->
-                covers.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
-            }
-            mAdapter.setAlbums(albums, covers)
-        })
     }
 
     override fun onResume() {

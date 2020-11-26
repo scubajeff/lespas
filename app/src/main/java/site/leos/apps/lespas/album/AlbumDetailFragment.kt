@@ -88,7 +88,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
                 }
             }
-
         }
 
         mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
@@ -97,14 +96,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        //postponeEnterTransition()
+        // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
-            Log.e("+++++++", "album coverid: ${album.album.cover}")
+            Log.e("+++++++", "observer return coverid: ${album.album.cover}-${album.album.coverBaseline}")
             mAdapter.setAlbum(album)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
         })
+
+        super.onViewCreated(view, savedInstanceState)
+
+        //postponeEnterTransition()
 
         view.findViewById<RecyclerView>(R.id.photogrid).run {
             adapter = mAdapter
@@ -136,9 +137,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                 if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
             }
+            mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
         }
-        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
-
     }
 
     override fun onResume() {
