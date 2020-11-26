@@ -2,6 +2,8 @@ package site.leos.apps.lespas.album
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -254,6 +256,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         private var albums = emptyList<Album>()
         private var covers = emptyList<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
+        private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         init {
             setHasStableIds(true)
@@ -270,14 +273,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         inner class AlbumViewHolder(private val itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(album: Album, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
+                    this.isActivated = isActivated
+                    findViewById<ImageView>(R.id.coverart).let {coverImageview ->
+                        //setImageResource(R.drawable.ic_footprint)
+                        imageLoader.loadImage(covers[adapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
+                        if (this.isActivated) coverImageview.colorFilter = selectedFilter
+                        else coverImageview.clearColorFilter()
+                    }
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format("%tF ~ %tF", album.startDate, album.endDate)
-                    findViewById<ImageView>(R.id.coverart).apply {
-                        //setImageResource(R.drawable.ic_footprint)
-                        imageLoader.loadImage(covers[adapterPosition], this, ImageLoaderViewModel.TYPE_COVER)
-                    }
+
                     setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
-                    this.isActivated = isActivated
                 }
             }
 

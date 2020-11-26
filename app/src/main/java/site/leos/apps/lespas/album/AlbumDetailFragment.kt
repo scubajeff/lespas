@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.album
 
 import android.app.Application
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -155,6 +157,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         //private var album: Album? = null
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
+        private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         init {
             setHasStableIds(true)
@@ -189,7 +192,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem(photo: Photo, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
-                    findViewById<ImageView>(R.id.pic).run {
+                    this.isActivated = isActivated
+
+                    findViewById<ImageView>(R.id.photo).let {photoImageview ->
                         /*
                         setPadding(
                             if (((adapterPosition - 1) % resources.getInteger(R.integer.photo_grid_span_count))!= 0) 2 else 0,
@@ -197,13 +202,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                          */
                         //Log.e("PhotoViewHolder", System.identityHashCode(this).toString())
-                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
-                        ViewCompat.setTransitionName(this, photo.id)
+                        imageLoader.loadImage(photo, photoImageview, ImageLoaderViewModel.TYPE_VIEW)
+                        if (this.isActivated) {
+                            photoImageview.colorFilter = selectedFilter
+                            findViewById<ImageView>(R.id.selection_mark).visibility = View.VISIBLE
+                        } else {
+                            photoImageview.clearColorFilter()
+                            findViewById<ImageView>(R.id.selection_mark).visibility = View.GONE
+                        }
+                        ViewCompat.setTransitionName(photoImageview, photo.id)
+
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(photoImageview, adapterPosition) }
                     }
 
-                    this.isActivated = isActivated
-                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(pic, adapterPosition)
-                    }
                 }
             }
 
