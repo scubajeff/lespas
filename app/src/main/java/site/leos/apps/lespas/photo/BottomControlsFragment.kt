@@ -115,7 +115,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(albumId))
-                    .addToBackStack(CoverSettingFragment::class.java.name)
+                    .addToBackStack(CoverSettingFragment::class.simpleName)
                     .commit()
             }
         }
