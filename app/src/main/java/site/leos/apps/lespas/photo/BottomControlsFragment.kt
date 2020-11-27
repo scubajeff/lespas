@@ -21,6 +21,10 @@ import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.DialogShapeDrawable
+import java.io.File
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import kotlin.math.roundToInt
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var albumId: String
@@ -41,6 +45,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         fun newInstance(albumId: String) = BottomControlsFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
     }
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -66,7 +71,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 } catch (e: UninitializedPropertyAccessException) {}
             }
         } else {
-            window.decorView.setOnApplyWindowInsetsListener { v, insets ->
+            window.decorView.setOnApplyWindowInsetsListener { _, insets ->
                 try {
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.statusBars())) {
@@ -92,7 +97,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        uiToggle.status().observe(viewLifecycleOwner, { value-> toggle() })
+        uiToggle.status().observe(viewLifecycleOwner, { toggle() })
 
         // Controls
         controls = view.findViewById(R.id.controls)
@@ -110,7 +115,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(albumId))
-                    .addToBackStack(CoverSettingFragment.javaClass.name)
+                    .addToBackStack(CoverSettingFragment::class.java.name)
                     .commit()
             }
         }
@@ -125,15 +130,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) {
-                    val exif = ExifInterface("${requireActivity().filesDir}/lespas/${currentPhoto.getCurrentPhoto().value!!.id}")
-                    val message = "${currentPhoto.getCurrentPhoto().value!!.id} ${currentPhoto.getCurrentPhoto().value!!.name}\n" +
-                            "${currentPhoto.getCurrentPhoto().value!!.dateTaken}\n" +
-                            "TAG_MAKER_NOTE: ${exif.getAttribute(ExifInterface.TAG_MAKER_NOTE)}\n" +
-                            //"TAG_ORIENTATION: ${exif.getAttribute(ExifInterface.TAG_ORIENTATION)}\n" +
-                            "TAG_ORIENTATION: ${exif.rotationDegrees}\n" +
-                            "TAG_IMAGE_WIDTH: ${exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)}\n" +
-                            "TAG_IMAGE_HEIGHT: ${exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH)}\n"
-                    InfoDialogFragment.newInstance(message).show(parentFragmentManager, INFO_DIALOG)
+                    currentPhoto.getCurrentPhoto().value!!.run {
+                        InfoDialogFragment.newInstance(id, name, dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)), width.toString(), height.toString()
+                        ).show(parentFragmentManager, INFO_DIALOG)
+                    }
                 }
             }
         }
@@ -143,6 +143,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         //hideHandler.post(showSystemUI)
     }
 
+    @Suppress("DEPRECATION")
     override fun onDestroy() {
         // BACK TO NORMAL UI
         hideHandler.removeCallbacksAndMessages(null)
@@ -177,6 +178,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         hideHandler.post(if (visible) hideSystemUI else showSystemUI)
     }
 
+    @Suppress("DEPRECATION")
     private val hideSystemUI = Runnable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
@@ -198,6 +200,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         visible = false
     }
 
+    @Suppress("DEPRECATION")
     private val showSystemUI = Runnable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
@@ -227,8 +230,20 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
             background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-            message_textview.text = arguments?.getString(MESSAGE)
-            ok_button.setOnClickListener { _-> dismiss() }
+            ok_button.setOnClickListener { dismiss() }
+            info_filename.text = arguments?.getString(NAME)
+            info_shotat.text = arguments?.getString(DATE)
+            info_dimension.text = String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT))
+            val exif = ExifInterface("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}")
+            info_camera_mfg.text = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
+            info_camera_model.text = String.format("%s %s", exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "", exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
+            info_parameter.text = String.format("%s  %s  %s  %s",
+                exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm" } ?: "",
+                exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it" } ?: "",
+                exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
+                exif.getAttribute(ExifInterface.TAG_ISO_SPEED) ?: ""
+            )
+            info_size.text = String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576)
         }
 
         override fun onStart() {
@@ -249,9 +264,20 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         }
 
         companion object {
-            const val MESSAGE = "MESSAGE"
+            const val ID = "ID"
+            const val NAME = "NAME"
+            const val DATE = "DATE"
+            const val WIDTH = "WIDTH"
+            const val HEIGHT = "HEIGHT"
 
-            fun newInstance(message: String) = InfoDialogFragment().apply { arguments = Bundle().apply { putString(MESSAGE, message) } }
+            fun newInstance(photoId: String, photoName: String, photoDate: String, photoWidth: String, photoHeight: String) = InfoDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ID, photoId)
+                    putString(NAME, photoName)
+                    putString(DATE, photoDate)
+                    putString(WIDTH, photoWidth)
+                    putString(HEIGHT, photoHeight)
+            }}
         }
     }
 }

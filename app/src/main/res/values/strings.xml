@@ -83,6 +83,15 @@
     <string name="finished_preparing_files">Preparing photos finished</string>
     <string name="it_takes_time">Need to send %1$s data to server. New album, photos will show up in your phone when upload is finished. Please be patient and keep the network stable.</string>
 
+    <!-- Info DialogFragment -->
+    <string name="file_name">Filename:</string>
+    <string name="shot_at">Created at:</string>
+    <string name="dimension">Dimension:</string>
+    <string name="size">Size:</string>
+    <string name="camera_manufacturer">Mfg:</string>
+    <string name="camera_model">Model:</string>
+    <string name="parameter">Parameters:</string>
+
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_rename">Rename Album</string>

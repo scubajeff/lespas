@@ -2,7 +2,6 @@
 <androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="@dimen/tiny_padding">
 
@@ -14,17 +13,100 @@
         android:paddingTop="@dimen/big_padding"
         android:paddingBottom="@dimen/small_padding">
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TableLayout
             android:id="@+id/message_textview"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="@dimen/big_padding"
-            android:maxLines="6"
-            android:textAlignment="textStart"
-            tools:text="Message?"/>
+            android:stretchColumns="2">
+
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/file_name"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_filename"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/shot_at"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_shotat"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/dimension"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_dimension"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/size"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_size"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/camera_manufacturer"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_camera_mfg"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/camera_model"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:id="@+id/info_camera_model"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/parameter"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_parameter"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
+        </TableLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/ok_button"
