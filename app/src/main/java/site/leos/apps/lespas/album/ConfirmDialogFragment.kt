@@ -19,7 +19,8 @@ class ConfirmDialogFragment : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        onPositiveConfirmedListener = targetFragment as OnPositiveConfirmedListener
+        if (targetFragment is OnPositiveConfirmedListener) onPositiveConfirmedListener = targetFragment as OnPositiveConfirmedListener
+        else parentFragmentManager.popBackStack()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
