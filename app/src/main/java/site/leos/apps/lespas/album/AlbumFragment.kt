@@ -16,10 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
@@ -43,15 +43,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
     private lateinit var fab: FloatingActionButton
-
-    companion object {
-        const val REQUEST_FOR_IMAGES = 1111
-        const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
-        const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-
-        fun newInstance() = AlbumFragment()
-    }
+    private lateinit var recyclerView: RecyclerView
+    private var lastScrollPosition = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,12 +67,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Register data observer first, try feeding adapter with lastest data asap
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             val covers = mutableListOf<Photo>()
             albums.forEach { album ->
                 covers.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
             }
             mAdapter.setAlbums(albums, covers)
+            if (lastScrollPosition != -1) {
+                (recyclerView.layoutManager as LinearLayoutManager).scrollToPosition(lastScrollPosition)
+            }
         })
 
         super.onViewCreated(view, savedInstanceState)
@@ -116,10 +112,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         })
 
 
-        view.findViewById<RecyclerView>(R.id.albumlist).apply {
+        recyclerView = view.findViewById<RecyclerView>(R.id.albumlist).apply {
             adapter = mAdapter
 
-            selectionTracker = SelectionTracker.Builder<Long> (
+            selectionTracker = SelectionTracker.Builder(
                 "albumSelection",
                 this,
                 AlbumListAdapter.AlbumKeyProvider(),
@@ -140,11 +136,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                     }
                 })
 
-                if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
+                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
             }
         }
 
         mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
+        lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
 
         fab = view.findViewById<FloatingActionButton>(R.id.fab).apply {
             setOnClickListener {
@@ -169,6 +166,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         selectionTracker?.onSaveInstanceState(outState)
+        outState.putInt(SCROLL_POSITION, (recyclerView.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition())
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
@@ -182,11 +180,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                     intent?.clipData?.apply {for (i in 0..itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
 
                     if (uris.isNotEmpty()) {
-                        destinationModel.getDestination().observe (this, Observer { album->
+                        destinationModel.getDestination().observe (this, { album->
                             // Acquire files
                             acquiringModel = ViewModelProvider(requireActivity(), AcquiringDialogFragment.AcquiringViewModelFactory(requireActivity().application, uris))
                                 .get(AcquiringDialogFragment.AcquiringViewModel::class.java)
-                            acquiringModel.getProgress().observe(this, Observer { progress->
+                            acquiringModel.getProgress().observe(this, { progress->
                                 if (progress == uris.size) {
                                     // Files are under control, we can create sync action now
                                     val actions = mutableListOf<Action>()
@@ -255,6 +253,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         fab.isEnabled = true
     }
 
+    override fun onPositiveConfirmed() {
+        val albums = mutableListOf<Album>()
+        for (i in selectionTracker?.selection!!) albums.add(mAdapter.getAlbumAt(i.toInt()))
+        actionModel.deleteAlbums(albums)
+
+        selectionTracker?.clearSelection()
+    }
+
     // List adapter for Albums' recyclerView
     class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private var albums = emptyList<Album>()
@@ -274,12 +280,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             fun loadImage(photo: Photo, view: ImageView, type: String)
         }
 
-        inner class AlbumViewHolder(private val itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(album: Album, clickListener: OnItemClickListener, isActivated: Boolean) {
                 itemView.apply {
                     this.isActivated = isActivated
                     findViewById<ImageView>(R.id.coverart).let {coverImageview ->
-                        //setImageResource(R.drawable.ic_footprint)
                         imageLoader.loadImage(covers[adapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
@@ -302,7 +307,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
                 override fun getSelectionKey(): Long = itemId
-                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
         }
 
@@ -320,7 +324,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             oldAlbums.addAll(0, this.albums)
             this.albums = albums
             this.covers = covers
-            //notifyDataSetChanged()
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldAlbums.size
                 override fun getNewListSize() = albums.size
@@ -339,8 +342,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
 
-        class AlbumKeyProvider: ItemKeyProvider<Long>(ItemKeyProvider.SCOPE_CACHED) {
-            override fun getKey(position: Int): Long? = position.toLong()
+        class AlbumKeyProvider: ItemKeyProvider<Long>(SCOPE_CACHED) {
+            override fun getKey(position: Int): Long = position.toLong()
             override fun getPosition(key: Long): Int = key.toInt()
         }
 
@@ -354,11 +357,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         }
     }
 
-    override fun onPositiveConfirmed() {
-        val albums = mutableListOf<Album>()
-        for (i in selectionTracker?.selection!!) albums.add(mAdapter.getAlbumAt(i.toInt()))
-        actionModel.deleteAlbums(albums)
+    companion object {
+        const val REQUEST_FOR_IMAGES = 1111
+        const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
+        const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val SCROLL_POSITION = "SCROLL_POSITION"
 
-        selectionTracker?.clearSelection()
+        fun newInstance() = AlbumFragment()
     }
 }

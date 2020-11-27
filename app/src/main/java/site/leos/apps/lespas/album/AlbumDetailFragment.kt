@@ -42,14 +42,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var album: Album
     private var selectionTracker: SelectionTracker<Long>? = null
     private var actionMode: ActionMode? = null
-
-    companion object {
-        private const val ALBUM = "ALBUM"
-        private const val RENAME_DIALOG = "RENAME_DIALOG"
-        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-
-        fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
-    }
+    private lateinit var recyclerView: RecyclerView
+    private var lastScrollPosition = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,8 +89,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        //Log.e("==========", "AlbumDetailFragment newstart")
-
         return view
     }
 
@@ -106,13 +98,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             this.album = album.album
             mAdapter.setAlbum(album)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
+            if (lastScrollPosition != -1) {
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
+            }
         })
 
         super.onViewCreated(view, savedInstanceState)
 
         //postponeEnterTransition()
 
-        view.findViewById<RecyclerView>(R.id.photogrid).run {
+        recyclerView = view.findViewById<RecyclerView>(R.id.photogrid).apply {
             adapter = mAdapter
 
             selectionTracker = Builder(
@@ -140,9 +135,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
                 })
 
-                if (savedInstanceState != null) onRestoreInstanceState(savedInstanceState)
+                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
             }
             mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
+            lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         }
     }
 
@@ -155,6 +151,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         selectionTracker?.onSaveInstanceState(outState)
+        outState.putInt(SCROLL_POSITION, (recyclerView.layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
     }
 
     override fun onDestroy() {
@@ -403,5 +400,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             private const val TYPE_COVER = 0
             private const val TYPE_PHOTO = 1
         }
+    }
+
+    companion object {
+        private const val ALBUM = "ALBUM"
+        private const val RENAME_DIALOG = "RENAME_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val SCROLL_POSITION = "SCROLL_POSITION"
+
+        fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 }
