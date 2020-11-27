@@ -122,6 +122,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createLongStorage()
             ).withSelectionPredicate(SelectionPredicates.createSelectAnything()).build().apply {
+                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
+
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -135,8 +137,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         } else actionMode?.title = getString(R.string.selected_count, selectionTracker?.selection?.size())
                     }
                 })
-
-                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
             }
         }
 
@@ -150,6 +150,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                     putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                 }
                 startActivityForResult(intent, REQUEST_FOR_IMAGES)
+            }
+        }
+
+        selectionTracker?.let {
+            if (selectionTracker?.hasSelection() as Boolean && actionMode == null) {
+                actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
+                actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size())}
             }
         }
     }

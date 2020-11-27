@@ -121,6 +121,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
+                savedInstanceState?.let { onRestoreInstanceState(savedState!!) }
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -134,11 +135,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         } else actionMode?.title = getString(R.string.selected_count, selectionTracker?.selection?.size())
                     }
                 })
-
-                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
             }
             mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
-            lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
+            selectionTracker?.let {
+                if (selectionTracker?.hasSelection() as Boolean && actionMode == null) {
+                    actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
+                    actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size()) }
+                }
+            }
+
+            lastScrollPosition = savedState?.getInt(SCROLL_POSITION) ?: -1
         }
     }
 
