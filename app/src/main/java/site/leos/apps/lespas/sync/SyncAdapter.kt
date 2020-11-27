@@ -252,6 +252,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     compress(Bitmap.CompressFormat.JPEG, 100, File(localRootFolder, changedPhoto.id).outputStream())
                                     recycle()
                                 }
+
+                                exif.resetOrientation()
+                                val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
+                                exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
+                                exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
+                                exif.saveAttributes()
                             }
                             BitmapFactory.decodeFile("$localRootFolder/${changedPhoto.id}", options)
                             changedPhoto.width = options.outWidth
