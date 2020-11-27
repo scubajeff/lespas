@@ -14,7 +14,6 @@ import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.recyclerview.selection.ItemDetailsLookup
 import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
@@ -74,7 +73,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
             },
             object : PhotoGridAdapter.OnTitleVisibility {
-                override fun setTitle(visible: Boolean) { (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
+                override fun setTitle(visible: Boolean) {
+                    (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible)
+                }
             }
         )
 
@@ -101,7 +102,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Register data observer first, try feeding adapter with lastest data asap
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, Observer { album->
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, { album->
             this.album = album.album
             mAdapter.setAlbum(album)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
@@ -162,12 +163,80 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(true)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.album_detail_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item.itemId) {
+            R.id.option_menu_rename-> {
+                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, RENAME_DIALOG)
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    // On special Actions of this fragment
+    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+        mode?.menuInflater?.inflate(R.menu.actions_delete_and_share, menu)
+
+        return true
+    }
+
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
+
+    override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+        return when(item?.itemId) {
+            R.id.remove -> {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+
+                true
+            }
+            R.id.share -> {
+                for (i in selectionTracker?.selection!!) { }
+
+                selectionTracker?.clearSelection()
+                true
+            }
+            else -> false
+        }
+    }
+
+    override fun onDestroyActionMode(mode: ActionMode?) {
+        selectionTracker?.clearSelection()
+        actionMode = null
+    }
+
+    override fun onPositiveConfirmed() {
+        val photos = mutableListOf<Photo>()
+        for (i in selectionTracker?.selection!!)
+            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+
+        selectionTracker?.clearSelection()
+    }
+
+    override fun onRenameFinished(newName: String) {
+        if (newName != album.name) {
+            actionModel.renameAlbum(album.id, album.name, newName)
+        }
+    }
+
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdator: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         //private var album: Album? = null
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
+        private var currentHolder = 0
 
         init {
             setHasStableIds(true)
@@ -301,12 +370,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
             super.onViewAttachedToWindow(holder)
-            if (holder is CoverViewHolder) titleUpdator.setTitle(false)
+            if (holder is CoverViewHolder) {
+                currentHolder = System.identityHashCode(holder)
+                titleUpdator.setTitle(false)
+            }
         }
 
         override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
             super.onViewDetachedFromWindow(holder)
-            if (holder is CoverViewHolder) titleUpdator.setTitle(true)
+            if (holder is CoverViewHolder)
+                if (System.identityHashCode(holder) == currentHolder) titleUpdator.setTitle(true)
         }
 
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
@@ -329,73 +402,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         companion object {
             private const val TYPE_COVER = 0
             private const val TYPE_PHOTO = 1
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.album_detail_menu, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
-            R.id.option_menu_rename-> {
-                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
-                    it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, RENAME_DIALOG)
-                }
-                return true
-            }
-        }
-        return false
-    }
-
-    // On special Actions of this fragment
-    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_delete_and_share, menu)
-
-        return true
-    }
-
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
-
-    override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-        return when(item?.itemId) {
-            R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
-                    it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-
-                true
-            }
-            R.id.share -> {
-                for (i in selectionTracker?.selection!!) { }
-
-                selectionTracker?.clearSelection()
-                true
-            }
-            else -> false
-        }
-    }
-
-    override fun onDestroyActionMode(mode: ActionMode?) {
-        selectionTracker?.clearSelection()
-        actionMode = null
-    }
-
-    override fun onPositiveConfirmed() {
-        val photos = mutableListOf<Photo>()
-        for (i in selectionTracker?.selection!!)
-            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
-
-        selectionTracker?.clearSelection()
-    }
-
-    override fun onRenameFinished(newName: String) {
-        if (newName != album.name) {
-            actionModel.renameAlbum(album.id, album.name, newName)
         }
     }
 }
