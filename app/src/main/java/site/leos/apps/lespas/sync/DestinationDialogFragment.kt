@@ -150,27 +150,22 @@ class DestinationDialogFragment : DialogFragment() {
 
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(position: Int, clickListener: OnItemClickListener) {
-                itemView.run {
+                with(itemView) {
                     if (position == destinations.size) {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             setImageResource(R.drawable.ic_baseline_add_24)
-                            setColorFilter(0x89000000.toInt(), android.graphics.PorterDuff.Mode.MULTIPLY)   // #89000000 is android's secondaryTextColor, matching text color setting in layout
+                            scaleType = ImageView.ScaleType.FIT_CENTER
                         }
-                        findViewById<AppCompatTextView>(R.id.name).apply {
-                            text = resources.getString(R.string.create_new_album)
-
-                        }
+                        findViewById<AppCompatTextView>(R.id.name).text = resources.getString(R.string.create_new_album)
                         setOnClickListener { clickListener.onItemClick(
                             Album("", "",
                                 LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0)
                         )}
                     } else {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
-                            visibility = View.VISIBLE
-                            //setImageResource(R.drawable.ic_footprint)
+                            scaleType = ImageView.ScaleType.CENTER_CROP
                             // TODO smaller size cover type
                             imageLoader.loadImage(covers[position], this, ImageLoaderViewModel.TYPE_COVER)
-                            clearColorFilter()
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name
                         setOnClickListener { clickListener.onItemClick(destinations[position]) }
