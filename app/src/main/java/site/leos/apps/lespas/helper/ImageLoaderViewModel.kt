@@ -81,6 +81,15 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             this.inPreferredConfig = Bitmap.Config.RGBA_F16
                         })
                     }
+                    TYPE_SMALL_COVER -> {
+                        // cover baseline passed in field shareId
+                        val bottom = min(photo.shareId + (photo.width * 9 / 21).toInt(), photo.height)
+                        val rect = Rect(0, photo.shareId, photo.width, bottom)
+                        BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply {
+                            this.inSampleSize = 4
+                            this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                        })
+                    }
                     else -> errorBitmap
                 }
                 if (bitmap == null) bitmap = errorBitmap
@@ -122,5 +131,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         const val TYPE_VIEW = "_view"
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
+        const val TYPE_SMALL_COVER = "_smallcover"
     }
 }

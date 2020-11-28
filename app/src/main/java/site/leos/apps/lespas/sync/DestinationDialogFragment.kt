@@ -59,7 +59,10 @@ class DestinationDialogFragment : DialogFragment() {
             },
             { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
         )
-        albumNameModel.allAlbumsByEndDate.observe(this, { albums -> albumAdapter.setDestinations(albums) })
+        albumNameModel.allAlbumsByEndDate.observe(this, { albums ->
+            albumAdapter.setDestinations(albums)
+            albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -139,6 +142,7 @@ class DestinationDialogFragment : DialogFragment() {
     class DestinationAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
         private var destinations = emptyList<Album>()
         private var covers = mutableListOf<Photo>()
+        private var coverType: String = ImageLoaderViewModel.TYPE_SMALL_COVER
 
         fun interface OnItemClickListener {
             fun onItemClick(album: Album)
@@ -165,7 +169,7 @@ class DestinationDialogFragment : DialogFragment() {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             // TODO smaller size cover type
-                            imageLoader.loadImage(covers[position], this, ImageLoaderViewModel.TYPE_COVER)
+                            imageLoader.loadImage(covers[position], this, coverType)
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name
                         setOnClickListener { clickListener.onItemClick(destinations[position]) }
@@ -189,6 +193,10 @@ class DestinationDialogFragment : DialogFragment() {
             covers.clear()
             this.destinations.forEach { covers.add(Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, it.coverBaseline)) }
             notifyDataSetChanged()
+        }
+
+        fun setCoverType(smallCover: Boolean) {
+            coverType = if (smallCover) ImageLoaderViewModel.TYPE_SMALL_COVER else ImageLoaderViewModel.TYPE_COVER
         }
     }
 
