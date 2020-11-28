@@ -34,17 +34,20 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
+    private var actionMode: ActionMode? = null
     private lateinit var mAdapter: AlbumListAdapter
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var fab: FloatingActionButton
+
+    private lateinit var selectionTracker: SelectionTracker<Long>
+    private lateinit var lastSelection: MutableSet<Long>
+    private var lastScrollPosition = -1
+
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private var selectionTracker: SelectionTracker<Long>? = null
-    private var actionMode: ActionMode? = null
-    private lateinit var fab: FloatingActionButton
-    private lateinit var recyclerView: RecyclerView
-    private var lastScrollPosition = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,12 +63,21 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                 }
             }
         )
+        lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
+        lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.fragment_album, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val view = inflater.inflate(R.layout.fragment_album, container, false)
+        recyclerView = view.findViewById(R.id.albumlist)
+        fab = view.findViewById(R.id.fab)
+
+        return view
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         // Register data observer first, try feeding adapter with lastest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             val covers = mutableListOf<Photo>()
@@ -78,19 +90,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             }
         })
 
-        super.onViewCreated(view, savedInstanceState)
-
-        mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver(){
+        mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
                 toggleEmptyView()
             }
 
             private fun toggleEmptyView() {
                 if (mAdapter.itemCount == 0) {
-                    view.findViewById<RecyclerView>(R.id.albumlist).visibility = View.GONE
+                    recyclerView.visibility = View.GONE
                     view.findViewById<ImageView>(R.id.emptyview).visibility = View.VISIBLE
                 } else {
-                    view.findViewById<RecyclerView>(R.id.albumlist).visibility = View.VISIBLE
+                    recyclerView.visibility = View.VISIBLE
                     view.findViewById<ImageView>(R.id.emptyview).visibility = View.GONE
                 }
             }
@@ -112,7 +122,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         })
 
 
-        recyclerView = view.findViewById<RecyclerView>(R.id.albumlist).apply {
+        with(recyclerView) {
             adapter = mAdapter
 
             selectionTracker = SelectionTracker.Builder(
@@ -122,42 +132,48 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createLongStorage()
             ).withSelectionPredicate(SelectionPredicates.createSelectAnything()).build().apply {
-                savedInstanceState?.let { onRestoreInstanceState(savedInstanceState) }
-
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
-                        if (selectionTracker?.hasSelection() as Boolean && actionMode == null) {
+                        if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size())}
-                        } else if (!(selectionTracker?.hasSelection() as Boolean) && actionMode != null) {
+                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection.size())}
+                        } else if (!selectionTracker.hasSelection() && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker?.selection?.size())
+                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
+                    }
+
+                    override fun onItemStateChanged(key: Long, selected: Boolean) {
+                        super.onItemStateChanged(key, selected)
+                        if (selected) lastSelection.add(key)
+                        else lastSelection.remove(key)
                     }
                 })
             }
-        }
 
-        mAdapter.setSelectionTracker(selectionTracker as SelectionTracker<Long>)
-        lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
+            mAdapter.setSelectionTracker(selectionTracker)
 
-        fab = view.findViewById<FloatingActionButton>(R.id.fab).apply {
-            setOnClickListener {
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "image/*"
-                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            // Restore selection state
+            if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
+
+            // Get scroll position after scroll idle
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) lastScrollPosition = (layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
                 }
-                startActivityForResult(intent, REQUEST_FOR_IMAGES)
-            }
+            })
         }
 
-        selectionTracker?.let {
-            if (selectionTracker?.hasSelection() as Boolean && actionMode == null) {
-                actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
-                actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker?.selection?.size())}
+
+        fab.setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             }
+            startActivityForResult(intent, REQUEST_FOR_IMAGES)
         }
     }
 
@@ -172,8 +188,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        selectionTracker?.onSaveInstanceState(outState)
-        outState.putInt(SCROLL_POSITION, (recyclerView.layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition())
+        outState.putInt(SCROLL_POSITION, lastScrollPosition)
+        outState.putLongArray(SELECTION, lastSelection.toLongArray())
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // TODO right place to do this?
+        recyclerView.clearOnScrollListeners()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
@@ -245,9 +267,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                 true
             }
             R.id.share -> {
-                selectionTracker?.selection?.forEach { _ -> }
+                selectionTracker.selection.forEach { _ -> }
 
-                selectionTracker?.clearSelection()
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
@@ -255,17 +277,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     }
 
     override fun onDestroyActionMode(mode: ActionMode?) {
-        selectionTracker?.clearSelection()
+        selectionTracker.clearSelection()
         actionMode = null
         fab.isEnabled = true
     }
 
     override fun onPositiveConfirmed() {
         val albums = mutableListOf<Album>()
-        for (i in selectionTracker?.selection!!) albums.add(mAdapter.getAlbumAt(i.toInt()))
+        for (i in selectionTracker.selection) albums.add(mAdapter.getAlbumAt(i.toInt()))
         actionModel.deleteAlbums(albums)
 
-        selectionTracker?.clearSelection()
+        selectionTracker.clearSelection()
     }
 
     // List adapter for Albums' recyclerView
@@ -370,6 +392,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SCROLL_POSITION = "SCROLL_POSITION"
+        private const val SELECTION = "SELECTION"
 
         fun newInstance() = AlbumFragment()
     }
