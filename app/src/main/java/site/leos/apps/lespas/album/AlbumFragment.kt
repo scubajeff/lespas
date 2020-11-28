@@ -51,18 +51,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mAdapter = AlbumListAdapter(
-            object : AlbumListAdapter.OnItemClickListener {
-                override fun onItemClick(album: Album) {
-                    parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
-                }
-            },
-            object : AlbumListAdapter.OnLoadImage {
-                override fun loadImage(photo: Photo, view: ImageView, type: String) {
-                    imageLoaderModel.loadPhoto(photo, view, type)
-                }
-            }
-        )
+
         lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
     }
@@ -71,6 +60,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         val view = inflater.inflate(R.layout.fragment_album, container, false)
         recyclerView = view.findViewById(R.id.albumlist)
         fab = view.findViewById(R.id.fab)
+        mAdapter = AlbumListAdapter(
+            { album -> parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit() }
+        ) { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
 
         return view
     }
@@ -301,11 +293,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             setHasStableIds(true)
         }
 
-        interface OnItemClickListener {
+        fun interface OnItemClickListener {
             fun onItemClick(album: Album)
         }
 
-        interface OnLoadImage {
+        fun interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
         }
 

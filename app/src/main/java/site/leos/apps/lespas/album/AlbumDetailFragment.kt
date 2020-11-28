@@ -50,29 +50,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         album = arguments?.getParcelable(ALBUM)!!
 
-        mAdapter = PhotoGridAdapter(
-            object : PhotoGridAdapter.OnItemClick {
-                override fun onItemClick(view: View, position: Int) {
-                    parentFragmentManager.beginTransaction()
-                        .setReorderingAllowed(true)
-                        .addSharedElement(view, "full_image")
-                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
-                        .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
-                        .commit()
-                }
-            },
-            object : PhotoGridAdapter.OnLoadImage {
-                override fun loadImage(photo: Photo, view: ImageView, type: String) {
-                    imageLoaderModel.loadPhoto(photo, view, type)
-                }
-            },
-            object : PhotoGridAdapter.OnTitleVisibility {
-                override fun setTitle(visible: Boolean) {
-                    (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible)
-                }
-            }
-        )
-
         setHasOptionsMenu(true)
 
         // Must be restore here
@@ -82,9 +59,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // View might not be destroy at all, reuse it here
-        val view = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
+        val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
-        recyclerView = view.findViewById<RecyclerView>(R.id.photogrid).apply {
+        recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
             layoutManager = GridLayoutManager(activity?.applicationContext, defaultSpanCount).apply {
@@ -94,7 +71,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        return view
+        mAdapter = PhotoGridAdapter(
+            { view, position ->
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, "full_image")
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
+                    .commit()
+            },
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
+        ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
+
+        return vg
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -265,15 +254,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             setHasStableIds(true)
         }
 
-        interface OnItemClick {
+        fun interface OnItemClick {
             fun onItemClick(view: View, position: Int)
         }
 
-        interface OnLoadImage {
+        fun interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
         }
 
-        interface OnTitleVisibility {
+        fun interface OnTitleVisibility {
             fun setTitle(visible: Boolean)
         }
 
