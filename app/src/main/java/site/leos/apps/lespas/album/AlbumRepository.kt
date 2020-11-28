@@ -21,7 +21,6 @@ class AlbumRepository(application: Application){
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
     fun getAllAlbumIds(): List<String> = albumDao.getAllIds()
-    fun getTheseAlbums(albums: ArrayList<String>): List<Album> = albumDao.getTheseAlbums(albums)
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
 
     companion object {

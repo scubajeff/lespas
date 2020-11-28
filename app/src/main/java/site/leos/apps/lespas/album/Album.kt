@@ -85,9 +85,6 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
     abstract fun isAlbumExisted(name: String): Boolean
 
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id IN (:albums) ORDER BY id ASC")
-    abstract fun getTheseAlbums(albums: ArrayList<String>): List<Album>
-
     @Transaction
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>

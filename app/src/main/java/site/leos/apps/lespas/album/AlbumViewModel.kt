@@ -11,7 +11,6 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
-    //private val repository: AlbumRepository = AlbumRepository.getRepository(application)
     private val albumRepository = AlbumRepository(application)
     private val photoRepository = PhotoRepository(application)
 
@@ -21,7 +20,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getAlbumByID(albumId: String): LiveData<Album> = albumRepository.getAlbumByID(albumId).asLiveData()
     fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(albumId, cover) }
     suspend fun isAlbumNameExisted(name: String): Boolean = albumRepository.isAlbumExisted(name)
-    suspend fun getAllCovers(ids: List<String>): List<Photo> = photoRepository.getThesePhotos(ids)
     suspend fun getCoverPhoto(coverId: String): Photo = photoRepository.getPhotoById(coverId)
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
 }
