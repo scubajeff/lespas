@@ -63,7 +63,7 @@ class NCLoginActivity : AppCompatActivity() {
         // Animate the welcome message on first run
         if (savedInstanceState == null) {
             with(welcomePage) {
-                alpha = 0f
+                alpha = 0.3f
                 translationY = 100f
                 animate().alpha(1f).translationY(0f).setDuration(2000).setInterpolator(DecelerateInterpolator())
                     .setListener(object: AnimatorListenerAdapter() {
