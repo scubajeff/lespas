@@ -96,6 +96,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 //Log.e("ImageLoaderViewModel ${Thread.currentThread().name}", "$key ${e.message}")
             } finally {
                 //Log.e("ImageLoaderViewModel", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
+
             }
         }
         cancelPrevious(System.identityHashCode(view), job)
@@ -107,7 +108,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private fun cancelPrevious(key: Int, newJob: Job) {
-        jobMap[key]?.let { it.cancel() }
+        jobMap[key]?.cancel()
         jobMap[key] = newJob
     }
 

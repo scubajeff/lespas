@@ -4,8 +4,6 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
 import android.view.*
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AlphaAnimation
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -268,16 +266,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
-                itemView.run {
-                    findViewById<ImageView>(R.id.cover).run {
-                        //Log.e("CoverViewHolder", System.identityHashCode(this).toString())
-                        photos.firstOrNull()?.let { imageLoader.loadImage(it, this, ImageLoaderViewModel.TYPE_COVER) }
-                        this.startAnimation(AlphaAnimation(0.5f, 1f).apply {
-                            duration = 300
-                            interpolator = AccelerateDecelerateInterpolator()
-                        })
-                    }
+                with(itemView) {
+                    photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover), ImageLoaderViewModel.TYPE_COVER) }
+
                     findViewById<TextView>(R.id.title).text = photos[0].name
+
                     val days = Duration.between(
                         photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
                         photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays().toInt()
@@ -288,6 +281,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         in 57..365-> resources.getString(R.string.duration_months, days / 30)
                         else-> resources.getString(R.string.duration_years, days / 365)
                     }
+
                     findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
                 }
             }
@@ -301,32 +295,37 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem(photo: Photo, clickListener: OnItemClick, isActivated: Boolean) {
-                itemView.apply {
-                    this.isActivated = isActivated
+                itemView.let {
+                    it.isActivated = isActivated
 
-                    findViewById<ImageView>(R.id.photo).let {photoImageview ->
+                    with(it.findViewById<ImageView>(R.id.photo)) {
                         /*
                         setPadding(
                             if (((adapterPosition - 1) % resources.getInteger(R.integer.photo_grid_span_count))!= 0) 2 else 0,
                             2, 0, 0)
 
                          */
-                        //Log.e("PhotoViewHolder", System.identityHashCode(this).toString())
-                        imageLoader.loadImage(photo, photoImageview, ImageLoaderViewModel.TYPE_VIEW)
-                        if (this.isActivated) {
-                            photoImageview.colorFilter = selectedFilter
-                            findViewById<ImageView>(R.id.selection_mark).visibility = View.VISIBLE
-                        } else {
-                            photoImageview.clearColorFilter()
-                            findViewById<ImageView>(R.id.selection_mark).visibility = View.GONE
-                        }
-                        ViewCompat.setTransitionName(photoImageview, photo.id)
+                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
 
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(photoImageview, adapterPosition) }
-                        photoImageview.startAnimation(AlphaAnimation(0.5f, 1f).apply {
+                        if (this.isActivated) {
+                            colorFilter = selectedFilter
+                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.VISIBLE
+                        } else {
+                            clearColorFilter()
+                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.GONE
+                        }
+
+                        ViewCompat.setTransitionName(this, photo.id)
+
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(this, adapterPosition) }
+
+                        /*
+                        startAnimation(AlphaAnimation(0.5f, 1f).apply {
                             duration = 300
                             interpolator = AccelerateDecelerateInterpolator()
                         })
+
+                         */
                     }
 
                 }
