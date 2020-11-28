@@ -20,7 +20,7 @@ import android.util.Base64
 import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.View
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.*
@@ -65,7 +65,7 @@ class NCLoginActivity : AppCompatActivity() {
             with(welcomePage) {
                 alpha = 0.3f
                 translationY = 100f
-                animate().alpha(1f).translationY(0f).setDuration(2000).setInterpolator(DecelerateInterpolator())
+                animate().alpha(1f).translationY(0f).setDuration(2000).setInterpolator(AccelerateDecelerateInterpolator())
                     .setListener(object: AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)

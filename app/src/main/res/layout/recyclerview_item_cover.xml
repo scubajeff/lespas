@@ -32,9 +32,12 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintBottom_toTopOf="@id/seperator"
+            android:layout_marginHorizontal="@dimen/extra_padding"
             android:layout_marginBottom="@dimen/mini_padding"
-            style="@style/TextAppearance.AppCompat.Title"
-            android:textColor="@android:color/white"
+            android:lines="1"
+            android:ellipsize="end"
+            style="@style/TextAppearance.MaterialComponents.Headline5"
+            android:textColor="@color/color_on_primary"
             tools:text="Title" />
 
         <TextView
@@ -47,8 +50,8 @@
             android:paddingHorizontal="@dimen/big_padding"
             android:layout_marginBottom="@dimen/extra_padding"
             android:text="|"
-            android:textColor="@android:color/white"
-            style="@style/TextAppearance.AppCompat.Body1" />
+            android:textColor="@color/color_on_primary"
+            style="@style/TextAppearance.MaterialComponents.Body2" />
 
 
         <TextView
@@ -59,8 +62,8 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/seperator"
             android:layout_marginLeft="@dimen/small_padding"
-            style="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="@android:color/white"
+            style="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="@color/color_on_primary"
             android:textAlignment="textEnd"
             tools:text="subtitle" />
 

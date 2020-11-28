@@ -44,7 +44,7 @@
                 android:paddingHorizontal="@dimen/big_padding"
                 android:ellipsize="end"
                 android:lines="1"
-                style="@style/TextAppearance.AppCompat.Subhead"
+                style="@style/TextAppearance.MaterialComponents.Subtitle1"
                 tools:text="Title" />
 
             <androidx.appcompat.widget.AppCompatTextView
@@ -56,7 +56,7 @@
                 android:paddingBottom="@dimen/small_padding"
                 android:paddingHorizontal="@dimen/big_padding"
                 android:lines="1"
-                style="@style/TextAppearance.AppCompat.Caption"
+                style="@style/TextAppearance.MaterialComponents.Caption"
                 tools:text="1969.01.01 - 1976.01.23" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
