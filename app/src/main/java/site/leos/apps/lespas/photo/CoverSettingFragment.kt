@@ -5,12 +5,10 @@ import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
 import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.util.DisplayMetrics
 import android.view.*
-import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
@@ -21,6 +19,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
+import kotlin.math.roundToInt
 
 class CoverSettingFragment : Fragment() {
     private lateinit var albumId: String
@@ -33,13 +32,13 @@ class CoverSettingFragment : Fragment() {
 
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
-    private var scrollDistance = 0f
+    //private var scrollDistance = 0f
     private var scrollTop = 0f
     private var scrollBottom = 1f
     private var screenHeight = 0f
     private var drawableHeight = 0f
     private var frameHeight = 0
-    private var upperGap = 0f
+    private var upperGap = 0
 
     companion object {
         private const val BIAS = "BIAS"
@@ -82,21 +81,19 @@ class CoverSettingFragment : Fragment() {
             screenHeight = heightPixels.toFloat()
             val drawableWidth: Float
 
-            if (screenHeight/d.height > screenWidth/d.width) {
-                drawableHeight = d.height * (screenWidth/d.width)
+            if (screenHeight/d.height > screenWidth / d.width) {
+                drawableHeight = d.height * (screenWidth / d.width)
                 drawableWidth = screenWidth
             } else {
                 drawableHeight = screenHeight
-                drawableWidth = d.width * (screenHeight/d.height)
+                drawableWidth = d.width * (screenHeight / d.height)
             }
-            frameHeight = (drawableWidth * 9 / 21).toInt()
+            frameHeight = (drawableWidth * 9 / 21).roundToInt()
 
-            upperGap = (screenHeight - drawableHeight) / 2
-            scrollTop = upperGap/(screenHeight-frameHeight)
+            upperGap = ((screenHeight - drawableHeight) / 2).roundToInt()
+            scrollTop = upperGap / (screenHeight - frameHeight)
             if (scrollTop < 0f) scrollTop = 0f
             scrollBottom = 1 - scrollTop
-
-            scrollDistance = screenHeight
 
             constraintSet.setDimensionRatio(R.id.croparea, "H,$widthPixels:$frameHeight")
         }
@@ -106,13 +103,14 @@ class CoverSettingFragment : Fragment() {
 
         cropFrameGestureDetector = GestureDetectorCompat(activity, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
-                Handler(requireContext().mainLooper).post { Toast.makeText(requireContext(), R.string.toast_cover_set_canceled, Toast.LENGTH_SHORT).show() }
+                //Handler(requireContext().mainLooper).post { Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT).show() }
+                currentPhoto.coverApplied(false)
                 parentFragmentManager.popBackStack()
                 return true
             }
 
             override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
-                newBias -= distanceY / scrollDistance
+                newBias -= distanceY / screenHeight
                 if (newBias < scrollTop) newBias = scrollTop
                 if (newBias > scrollBottom) newBias = scrollBottom
 
@@ -206,10 +204,11 @@ class CoverSettingFragment : Fragment() {
 
         applyButton.setOnClickListener {
             currentPhoto.getCurrentPhoto().value!!.run {
-                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).toInt()
+                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
             }
-            Handler(requireContext().mainLooper).post { Toast.makeText(requireContext(), getString(R.string.toast_cover_applied), Toast.LENGTH_SHORT).show() }
+            //Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_applied), Snackbar.LENGTH_SHORT).show()
+            currentPhoto.coverApplied(true)
 
             parentFragmentManager.popBackStack()
         }

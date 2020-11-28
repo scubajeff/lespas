@@ -17,6 +17,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -141,6 +142,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         // Breifly show SystemUI at start
         //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         //hideHandler.post(showSystemUI)
+        currentPhoto.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
+            if (currentPhoto.forReal()) Snackbar.make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+                .setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setAnchorView(controls).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_on_primary)).show()
+        })
     }
 
     @Suppress("DEPRECATION")

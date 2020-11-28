@@ -162,9 +162,21 @@ class PhotoSlideFragment : Fragment() {
     // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
     class CurrentPhotoViewModel : ViewModel() {
         private val photo = MutableLiveData<Photo>()
+        private val coverApplyStatus = MutableLiveData<Boolean>()
+        private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
 
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
         fun setCurrentPhoto(newPhoto: Photo) { photo.value = newPhoto }
+        fun coverApplied(applied: Boolean) {
+            coverApplyStatus.value = applied
+            forReal = true
+        }
+        fun getCoverAppliedStatus(): LiveData<Boolean> { return coverApplyStatus }
+        fun forReal(): Boolean {
+            val r = forReal
+            forReal = false
+            return r
+        }
     }
 
     // Share system ui visibility status with BottomControlsFragment
