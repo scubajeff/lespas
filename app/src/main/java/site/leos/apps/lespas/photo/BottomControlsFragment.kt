@@ -246,7 +246,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
-                exif.getAttribute(ExifInterface.TAG_ISO_SPEED) ?: ""
+                exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: ""
             )
             info_size.text = String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576)
         }
