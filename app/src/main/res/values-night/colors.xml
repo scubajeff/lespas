@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="color_primary">#4F3A4B</color>
+    <color name="color_primary_variant">#261423</color>
     <color name="color_secondary">#055A5B</color>
+    <color name="color_secondary_variant">#003032</color>
     <color name="color_background">#3A745F</color>
     <color name="album_item_selected_background">#89937A</color>   <!-- TODO: should be day night safe -->
     <color name="cardview_daynight_background">#1F3B34</color>
