@@ -9,7 +9,6 @@ import android.os.Parcelable
 import android.provider.OpenableColumns
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import site.leos.apps.lespas.R
 
@@ -32,16 +31,17 @@ class ShareReceiverActivity: AppCompatActivity() {
         }
 
         if (files.isNotEmpty()) {
-            destinationModel.getDestination().observe (this, Observer { album->
+            destinationModel.getDestination().observe (this, { album->
                 // Acquire files
                 acquiringModel = ViewModelProvider(this, AcquiringDialogFragment.AcquiringViewModelFactory(application, files)).get(AcquiringDialogFragment.AcquiringViewModel::class.java)
-                acquiringModel.getProgress().observe(this, Observer { progress->
+                acquiringModel.getProgress().observe(this, { progress->
                     if (progress == files.size) {
                         // Files are under control, we can create sync action now
                         val actions = mutableListOf<Action>()
 
                         // Create new album first
-                        if (album.id.isEmpty()) actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                        if (album.id.isEmpty())
+                            actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
 
                         files.forEach { uri ->
                             contentResolver.query(uri, null, null, null, null)?.apply {

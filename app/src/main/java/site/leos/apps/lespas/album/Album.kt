@@ -46,7 +46,7 @@ data class AlbumWithPhotos(
 )
 
 data class Cover(val id: String, val baseLine: Int, val width: Int, val height: Int)
-data class AlbumNameAndId(val id: String, val name: String)
+//data class AlbumDestination(val id: String, val name: String, val cover: String)
 
 @Dao
 abstract class AlbumDao: BaseDao<Album>() {
@@ -81,9 +81,6 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumName(albumId: String): String
-
-    @Query("SELECT id, name FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getAllAlbumNamesAndId(): Flow<List<AlbumNameAndId>>
 
     @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
     abstract fun isAlbumExisted(name: String): Boolean

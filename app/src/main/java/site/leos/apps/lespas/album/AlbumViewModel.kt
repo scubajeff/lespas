@@ -20,7 +20,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun insertAsync(album: Album) = viewModelScope.launch(Dispatchers.IO) { albumRepository.insert(album) }
     fun getAlbumByID(albumId: String): LiveData<Album> = albumRepository.getAlbumByID(albumId).asLiveData()
     fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(albumId, cover) }
-    val allAlbumNamesAndIds: LiveData<List<AlbumNameAndId>> = albumRepository.getAllAlbumNamesAndIds().asLiveData()
     suspend fun isAlbumNameExisted(name: String): Boolean = albumRepository.isAlbumExisted(name)
     suspend fun getAllCovers(ids: List<String>): List<Photo> = photoRepository.getThesePhotos(ids)
     suspend fun getCoverPhoto(coverId: String): Photo = photoRepository.getPhotoById(coverId)

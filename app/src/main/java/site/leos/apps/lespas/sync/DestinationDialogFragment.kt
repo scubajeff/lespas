@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.widget.ImageView
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.fragment.app.DialogFragment
@@ -20,21 +21,25 @@ import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_destination_dialog.*
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.AlbumNameAndId
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.Photo
+import java.time.LocalDateTime
 
 class DestinationDialogFragment : DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter
     private val albumNameModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        albumAdapter = DestinationAdapter(object : DestinationAdapter.OnItemClickListener {
-            override fun onItemClick(album: AlbumNameAndId) {
+        albumAdapter = DestinationAdapter(
+            { album ->
                 if (album.id.isEmpty()) {
                     destinationModel.setEditMode(true)
 
@@ -51,9 +56,10 @@ class DestinationDialogFragment : DialogFragment() {
                     destinationModel.setDestination(album)
                     dismiss()
                 }
-            }
-        })
-        albumNameModel.allAlbumNamesAndIds.observe(this, { albums -> albumAdapter.setDestinations(albums) })
+            },
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
+        )
+        albumNameModel.allAlbumsByEndDate.observe(this, { albums -> albumAdapter.setDestinations(albums) })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -76,7 +82,8 @@ class DestinationDialogFragment : DialogFragment() {
                     else if (isAlbumExisted(name)) name_textinputedittext.error = getString(R.string.album_existed)
                     else {
                         // Return with album id field empty, calling party will know this is a new album
-                        destinationModel.setDestination(AlbumNameAndId("", name))
+                        destinationModel.setDestination(Album("", name,
+                            LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0))
                         dismiss()
                     }
                     true
@@ -125,15 +132,20 @@ class DestinationDialogFragment : DialogFragment() {
 
     private fun isAlbumExisted(name: String): Boolean {
         var existed = false
-        albumNameModel.allAlbumNamesAndIds.value!!.forEach { if (it.name == name) existed = true }
+        albumNameModel.allAlbumsByEndDate.value!!.forEach { if (it.name == name) existed = true }
         return existed
     }
 
-    class DestinationAdapter(private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
-        private var destinations = emptyList<AlbumNameAndId>()
+    class DestinationAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
+        private var destinations = emptyList<Album>()
+        private var covers = mutableListOf<Photo>()
 
-        interface OnItemClickListener {
-            fun onItemClick(album: AlbumNameAndId)
+        fun interface OnItemClickListener {
+            fun onItemClick(album: Album)
+        }
+
+        fun interface OnLoadImage {
+            fun loadImage(photo: Photo, view: ImageView, type: String)
         }
 
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -148,11 +160,16 @@ class DestinationDialogFragment : DialogFragment() {
                             text = resources.getString(R.string.create_new_album)
 
                         }
-                        setOnClickListener { clickListener.onItemClick(AlbumNameAndId("", "")) }
+                        setOnClickListener { clickListener.onItemClick(
+                            Album("", "",
+                                LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0)
+                        )}
                     } else {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             visibility = View.VISIBLE
-                            setImageResource(R.drawable.ic_footprint)
+                            //setImageResource(R.drawable.ic_footprint)
+                            // TODO smaller size cover type
+                            imageLoader.loadImage(covers[position], this, ImageLoaderViewModel.TYPE_COVER)
                             clearColorFilter()
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name
@@ -172,18 +189,20 @@ class DestinationDialogFragment : DialogFragment() {
 
         override fun getItemCount(): Int = destinations.size + 1
 
-        fun setDestinations(destinations: List<AlbumNameAndId>) {
+        fun setDestinations(destinations: List<Album>) {
             this.destinations = destinations
+            covers.clear()
+            this.destinations.forEach { covers.add(Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, it.coverBaseline)) }
             notifyDataSetChanged()
         }
     }
 
     class DestinationViewModel: ViewModel() {
-        private var destination = MutableLiveData<AlbumNameAndId>()
+        private var destination = MutableLiveData<Album>()
         private var inEditing = false
 
-        fun setDestination(newDestination: AlbumNameAndId) { this.destination.value = newDestination }
-        fun getDestination(): LiveData<AlbumNameAndId> = destination
+        fun setDestination(newDestination: Album) { this.destination.value = newDestination }
+        fun getDestination(): LiveData<Album> = destination
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
     }
