@@ -5,8 +5,9 @@
     <string name="error_only_one_account">Only one account allowed</string>
 
     <!-- NCLogin activity -->
-    <string name="welcome_message">Welcome to Les Pas!\n\n A token is required to access your Nextcloud server. Please fill in the server address below and hit enter to continue. You
-        will then see the server\'s authentication page in the next screen.
+    <string name="welcome_message_title">Welcome to Les Pas!</string>
+    <string name="welcome_message">A token is required to access your Nextcloud server. Please input server address below and hit enter to continue. You
+        will then see your server\'s authentication page in the next screen.
     </string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>

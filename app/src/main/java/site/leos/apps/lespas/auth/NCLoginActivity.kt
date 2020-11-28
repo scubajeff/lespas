@@ -14,6 +14,8 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.transition.Fade
+import android.transition.TransitionManager
 import android.util.Base64
 import android.util.TypedValue
 import android.view.KeyEvent
@@ -60,7 +62,7 @@ class NCLoginActivity : AppCompatActivity() {
 
         // Animate the welcome message on first run
         if (savedInstanceState == null) {
-            welcomePage.run {
+            with(welcomePage) {
                 alpha = 0f
                 translationY = 100f
                 animate().alpha(1f).translationY(0f).setDuration(2000).setInterpolator(DecelerateInterpolator())
@@ -69,8 +71,11 @@ class NCLoginActivity : AppCompatActivity() {
                             super.onAnimationEnd(animation)
                             // Clear the focus of input area, make the screen cleaner
                             inputArea.clearFocus()
+                            TransitionManager.beginDelayedTransition(welcomePage, Fade(Fade.IN).setDuration(1000))
+                            inputArea.visibility = View.VISIBLE
                         }
-                    })
+                    }
+                )
             }
         }
         // Animate the background

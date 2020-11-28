@@ -24,7 +24,7 @@
         android:id="@+id/welcome_page"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="@dimen/big_padding"
+        android:padding="@dimen/extra_padding"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -32,13 +32,26 @@
         app:layout_constraintVertical_bias="0.7">
 
         <androidx.appcompat.widget.AppCompatTextView
-            android:id="@+id/welcome_message"
+            android:id="@+id/welcome_message_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             style="@style/TextAppearance.AppCompat.Subhead"
+            android:textColor="@color/color_on_primary"
+            android:text="@string/welcome_message_title"/>
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/welcome_message"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/welcome_message_title"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_marginTop="@dimen/small_padding"
+            style="@style/TextAppearance.MaterialComponents.Caption"
+            android:textColor="@color/color_on_primary"
             android:text="@string/welcome_message"/>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -49,11 +62,13 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:layout_marginTop="24dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+            app:boxStrokeColor="@color/color_secondary_variant"
+            app:helperTextTextColor="@color/color_on_primary"
             app:helperTextEnabled="true"
             app:errorEnabled="true"
-            android:hint="@string/host_textinput_label"
-            app:prefixText="https://">
+            app:prefixText="https://"
+            android:visibility="invisible">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/host"
