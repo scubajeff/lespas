@@ -13,7 +13,7 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         android:theme="@style/Theme.LesPas.Toolbar.Dark.Overlay"
-        app:popupTheme="@style/Theme.LesPas.Toolbar.Dark.Overlay.LightPopup"
+        app:popupTheme="@style/Theme.LesPas.Toolbar.Dark.Overlay.Popup"
         android:elevation="4dp" />
 
     <FrameLayout

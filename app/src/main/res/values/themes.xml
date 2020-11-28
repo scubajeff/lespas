@@ -51,12 +51,14 @@
         <item name="android:layout">@layout/fragment_settings</item>
     </style>
 
-    <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+    <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.MaterialComponents.ActionBar">
         <item name="android:background">?attr/colorPrimary</item>
+        <item name="android:textColorPrimary">@color/color_on_primary</item>
     </style>
 
-    <style name="Theme.LesPas.Toolbar.Dark.Overlay.LightPopup" parent="ThemeOverlay.AppCompat.Light">
+    <style name="Theme.LesPas.Toolbar.Dark.Overlay.Popup" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
         <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColorPrimary">@color/color_on_secondary</item>
     </style>
 
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
