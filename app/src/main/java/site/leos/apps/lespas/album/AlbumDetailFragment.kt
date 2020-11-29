@@ -296,8 +296,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
                         photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays().toInt()
                     findViewById<TextView>(R.id.duration).text = when(days) {
-                        0-> resources.getString(R.string.duration_days, 1)
-                        in 1..21-> resources.getString(R.string.duration_days, days)
+                        in 0..21-> resources.getString(R.string.duration_days, days + 1)
                         in 22..56-> resources.getString(R.string.duration_weeks, days / 7)
                         in 57..365-> resources.getString(R.string.duration_months, days / 30)
                         else-> resources.getString(R.string.duration_years, days / 365)
