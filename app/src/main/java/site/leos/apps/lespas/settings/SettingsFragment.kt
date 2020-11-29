@@ -27,6 +27,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
         (activity as? AppCompatActivity)?.supportActionBar?.run {
             title = getString(R.string.settings_title)
             setDisplayHomeAsUpEnabled(true)
+            setDisplayShowTitleEnabled(true)
         }
     }
 

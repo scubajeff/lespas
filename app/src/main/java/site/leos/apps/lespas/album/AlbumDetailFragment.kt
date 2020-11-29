@@ -188,12 +188,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         recyclerView.clearOnScrollListeners()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-
-        (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(true)
-    }
-
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)

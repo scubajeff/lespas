@@ -199,6 +199,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
             setDisplayHomeAsUpEnabled(false)
+            setDisplayShowTitleEnabled(true)
             title = getString(R.string.app_name)
         }
     }
