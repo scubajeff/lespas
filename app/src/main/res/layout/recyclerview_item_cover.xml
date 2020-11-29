@@ -37,7 +37,7 @@
             android:lines="1"
             android:ellipsize="end"
             style="@style/TextAppearance.MaterialComponents.Headline5"
-            android:textColor="@color/color_on_primary"
+            android:textColor="@color/color_text_light"
             tools:text="Title" />
 
         <TextView
@@ -50,7 +50,7 @@
             android:paddingHorizontal="@dimen/big_padding"
             android:layout_marginBottom="@dimen/extra_padding"
             android:text="|"
-            android:textColor="@color/color_on_primary"
+            android:textColor="@color/color_text_light"
             style="@style/TextAppearance.MaterialComponents.Body2" />
 
 
@@ -63,7 +63,7 @@
             app:layout_constraintRight_toLeftOf="@id/seperator"
             android:layout_marginLeft="@dimen/small_padding"
             style="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/color_on_primary"
+            android:textColor="@color/color_text_light"
             android:textAlignment="textEnd"
             tools:text="subtitle" />
 
@@ -75,7 +75,7 @@
             app:layout_constraintLeft_toRightOf="@id/seperator"
             app:layout_constraintRight_toRightOf="parent"
             style="@style/TextAppearance.AppCompat.Body1"
-            android:textColor="@android:color/white"
+            android:textColor="@color/color_text_light"
             tools:text="subtitle" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
