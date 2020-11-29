@@ -5,7 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layoutAnimation="@null"
     android:padding="@dimen/tiny_padding">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -34,8 +33,6 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:animateLayoutChanges="false"
-            android:layoutAnimation="@null"
             tools:listitem="@layout/recyclerview_item_destination" />
 
         <com.google.android.material.textfield.TextInputLayout
