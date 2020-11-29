@@ -77,8 +77,16 @@ class PhotoSlideFragment : Fragment() {
             (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
         })
 
+        // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
+        val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply{ isAccessible = true }).get(this) as RecyclerView
+        (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
+            isAccessible = true
+            set(recyclerView, (get(recyclerView) as Int) * 7)
+        }
+
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
+
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
