@@ -159,6 +159,7 @@ class DestinationDialogFragment : DialogFragment() {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             setImageResource(R.drawable.ic_baseline_add_24)
                             scaleType = ImageView.ScaleType.FIT_CENTER
+                            setBackgroundColor(0)
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = resources.getString(R.string.create_new_album)
                         setOnClickListener { clickListener.onItemClick(
@@ -168,6 +169,7 @@ class DestinationDialogFragment : DialogFragment() {
                     } else {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             scaleType = ImageView.ScaleType.CENTER_CROP
+                            setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
                             // TODO smaller size cover type
                             imageLoader.loadImage(covers[position], this, coverType)
                         }

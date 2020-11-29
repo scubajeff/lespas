@@ -14,13 +14,12 @@
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/cover"
-            android:layout_width="80dp"
-            android:layout_height="0dp"
+            android:layout_width="88dp"
+            android:layout_height="40dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintDimensionRatio="H,16:9"
-            android:scaleType="centerCrop"
+            android:padding="@dimen/mini_padding"
             tools:src="@drawable/ic_footprint" />
 
         <androidx.appcompat.widget.AppCompatTextView
