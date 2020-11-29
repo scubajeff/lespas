@@ -175,7 +175,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     // Hide/Show controls, status bar, navigation bar
-    private var visible: Boolean = true
+    private var visible: Boolean = false
     private val hideHandler = Handler(Looper.getMainLooper())
 
     private fun toggle() {

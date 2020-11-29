@@ -24,6 +24,10 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private var loadingScope = CoroutineScope(Dispatchers.IO + loadingJob)
     private val jobMap = HashMap<Int, Job>()
 
+    fun interface LoadCompleteListener{
+        fun onLoadComplete()
+    }
+
     private fun getBitmapFromVector(application: Application, vectorResource: Int): Bitmap {
         val vectorDrawable = ContextCompat.getDrawable(application, vectorResource)!!
         val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
@@ -32,6 +36,83 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             vectorDrawable.draw(this)
         }
         return bitmap
+    }
+
+    fun loadPhoto(photo: Photo, view: ImageView, type: String, callBack: LoadCompleteListener?) {
+        val job = viewModelScope.launch(Dispatchers.IO) {
+            var bitmap: Bitmap?
+            var key = "${photo.id}$type"
+
+            if (type == TYPE_COVER) key = "$key-${photo.shareId}"   // suffix 'baseline' in case same photo chosen
+
+            try {
+                // Show something first
+                //view.setImageBitmap(placeholderBitmap)
+                //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                //if (type == TYPE_COVER) Log.e("----", "requesting $key")
+                bitmap = imageCache.get(key) ?: when (type) {
+                    TYPE_VIEW -> {
+                        /*
+                        var inSampleSize = 1
+                        if ((photo.height > view.measuredHeight) || (photo.width > view.measuredWidth)) {
+                            val halfHeight = photo.height / 2
+                            val halfWidth = photo.width / 2
+                            while ((halfHeight / inSampleSize >= view.measuredHeight) && (halfWidth / inSampleSize >= view.measuredWidth)) {
+                                inSampleSize *= 2
+                                Log.e("+++++", "$inSampleSize")
+                            }
+                        }
+
+                        */
+                        val size = if ((photo.height < 1000) || (photo.width < 1000)) 2 else 4
+                        BitmapFactory.decodeFile(
+                            "$rootPath/${photo.id}",
+                            BitmapFactory.Options().apply {
+                                this.inSampleSize = size
+                                this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                            })
+                    }
+                    TYPE_FULL -> {
+                        BitmapFactory.decodeFile("$rootPath/${photo.id}")
+                    }
+                    TYPE_COVER -> {
+                        val size = if ((photo.height < 1000) || (photo.width < 1000)) 1 else 2
+                        // cover baseline passed in field shareId
+                        val bottom = min(photo.shareId + (photo.width * 9 / 21).toInt(), photo.height)
+                        val rect = Rect(0, photo.shareId, photo.width, bottom)
+                        BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply {
+                            this.inSampleSize = size
+                            this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                        })
+                    }
+                    TYPE_SMALL_COVER -> {
+                        // cover baseline passed in field shareId
+                        val bottom = min(photo.shareId + (photo.width * 9 / 21).toInt(), photo.height)
+                        val rect = Rect(0, photo.shareId, photo.width, bottom)
+                        BitmapRegionDecoder.newInstance("$rootPath/${photo.id}", false).decodeRegion(rect, BitmapFactory.Options().apply {
+                            this.inSampleSize = 4
+                            this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                        })
+                    }
+                    else -> errorBitmap
+                }
+                if (bitmap == null) bitmap = errorBitmap
+                else imageCache.put(key, bitmap)
+
+                // If we are still active at this moment, set the imageview
+                if (isActive) {
+                    withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+                    //Log.e(Thread.currentThread().name, "setting bitmap: $key to ${System.identityHashCode(view)}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                //Log.e("ImageLoaderViewModel ${Thread.currentThread().name}", "$key ${e.message}")
+            } finally {
+                //Log.e("ImageLoaderViewModel", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
+                callBack?.onLoadComplete()
+            }
+        }
+        cancelPrevious(System.identityHashCode(view), job)
     }
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
@@ -105,7 +186,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 //Log.e("ImageLoaderViewModel ${Thread.currentThread().name}", "$key ${e.message}")
             } finally {
                 //Log.e("ImageLoaderViewModel", "${imageCache.hitCount()} ${imageCache.missCount()} ${imageCache.evictionCount()}")
-
             }
         }
         cancelPrevious(System.identityHashCode(view), job)

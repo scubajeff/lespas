@@ -7,6 +7,8 @@ import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.transition.TransitionInflater
+import android.util.Log
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AlphaAnimation
@@ -14,6 +16,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -54,6 +57,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+
+        postponeEnterTransition()
+        sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.album_to_albumdetail)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -61,14 +67,33 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         recyclerView = view.findViewById(R.id.albumlist)
         fab = view.findViewById(R.id.fab)
         mAdapter = AlbumListAdapter(
-            { album -> parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit() }
-        ) { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
+            { album, imageView ->
+                Log.e("+++", imageView.transitionName)
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
+            }
+        ) { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
 
         return view
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        /*
+        (view.parent as ViewGroup).also {
+            it.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    it.viewTreeObserver.removeOnPreDrawListener(this)
+                    startPostponedEnterTransition()
+                    return false
+                }
+            })
+        }
+
+         */
 
         // Register data observer first, try feeding adapter with lastest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
@@ -294,7 +319,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         }
 
         fun interface OnItemClickListener {
-            fun onItemClick(album: Album)
+            fun onItemClick(album: Album, imageView: ImageView)
         }
 
         fun interface OnLoadImage {
@@ -313,6 +338,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                             duration = 300
                             interpolator = AccelerateDecelerateInterpolator()
                         })
+                        ViewCompat.setTransitionName(coverImageview, album.id)
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album, coverImageview) }
                     }
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format(
@@ -321,7 +348,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
 
-                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album) }
                 }
             }
 

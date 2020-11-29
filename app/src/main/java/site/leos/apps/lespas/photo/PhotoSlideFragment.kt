@@ -1,12 +1,14 @@
 package site.leos.apps.lespas.photo
 
 import android.os.Bundle
+import android.transition.TransitionInflater
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -30,25 +32,15 @@ class PhotoSlideFragment : Fragment() {
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
 
-    companion object {
-        private const val ALBUM_ID = "ALBUM_ID"
-        private const val POSITION = "POSITION"
-
-        fun newInstance(albumId: String, position: Int) = PhotoSlideFragment().apply {
-            arguments = Bundle().apply {
-                putString(ALBUM_ID, albumId)
-                putInt(POSITION, position)
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         albumId = arguments?.getString(ALBUM_ID)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
-        //sharedElementEnterTransition = ChangeBounds()
+        postponeEnterTransition()
+        sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.albumdetail_to_photoslide)
+        sharedElementReturnTransition = null
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -56,7 +48,7 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             { uiModel.toggleOnOff() }
-        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
+        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -90,7 +82,7 @@ class PhotoSlideFragment : Fragment() {
 
         // TODO: should be started when view loaded
         // Briefly show controls
-        uiModel.hideUI()
+        //uiModel.hideUI()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -134,6 +126,7 @@ class PhotoSlideFragment : Fragment() {
                     setOnOutsidePhotoTapListener { itemListener.onTouch() }
                     maximumScale = 5.0f
                     mediumScale = 2.5f
+                    ViewCompat.setTransitionName(this, photo.id)
                 }
             }
         }
@@ -182,11 +175,23 @@ class PhotoSlideFragment : Fragment() {
 
     // Share system ui visibility status with BottomControlsFragment
     class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData<Boolean>()
+        private val showUI = MutableLiveData<Boolean>(false)
 
         fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
         fun status(): LiveData<Boolean> { return showUI }
+    }
+
+    companion object {
+        private const val ALBUM_ID = "ALBUM_ID"
+        private const val POSITION = "POSITION"
+
+        fun newInstance(albumId: String, position: Int) = PhotoSlideFragment().apply {
+            arguments = Bundle().apply {
+                putString(ALBUM_ID, albumId)
+                putInt(POSITION, position)
+            }
+        }
     }
 }
 

@@ -3,6 +3,8 @@ package site.leos.apps.lespas.album
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
+import android.transition.TransitionInflater
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -38,6 +40,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var lastScrollPosition = -1
+    private var loadPhoto = true
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
@@ -48,11 +51,31 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         album = arguments?.getParcelable(ALBUM)!!
 
-        setHasOptionsMenu(true)
-
         // Must be restore here
         lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+
+        if (savedInstanceState == null) {
+            postponeEnterTransition()
+            with(TransitionInflater.from(context)) {
+                sharedElementEnterTransition = inflateTransition(R.transition.album_to_albumdetail).apply {
+                    addListener(object : android.transition.Transition.TransitionListener {
+                        override fun onTransitionStart(transition: android.transition.Transition?) {Log.e("+++", "started")}
+                        override fun onTransitionEnd(transition: android.transition.Transition?) {
+                            mAdapter.loadPhoto()
+                            loadPhoto = true
+                        }
+                        override fun onTransitionCancel(transition: android.transition.Transition?) {}
+                        override fun onTransitionPause(transition: android.transition.Transition?) {}
+                        override fun onTransitionResume(transition: android.transition.Transition?) {}
+                    })
+                }
+                //exitTransition = inflateTransition(R.transition.albumdetail_exit)
+            }
+            loadPhoto = false
+        }
+
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -73,12 +96,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             { view, position ->
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
-                    .addSharedElement(view, "full_image")
+                    .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { if (type == ImageLoaderViewModel.TYPE_COVER) startPostponedEnterTransition() } }
         ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
 
         return vg
@@ -87,12 +110,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        //postponeEnterTransition()
-
         // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, { album->
             this.album = album.album
-            mAdapter.setAlbum(album)
+            mAdapter.setAlbum(album, loadPhoto)
             (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
 
             if (lastScrollPosition != -1) {
@@ -242,7 +263,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdator: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        //private var album: Album? = null
+        private lateinit var album: AlbumWithPhotos
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -267,7 +288,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
                 with(itemView) {
-                    photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover), ImageLoaderViewModel.TYPE_COVER) }
+                    photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover).apply { ViewCompat.setTransitionName(this, it.albumId) }, ImageLoaderViewModel.TYPE_COVER) }
 
                     findViewById<TextView>(R.id.title).text = photos[0].name
 
@@ -337,13 +358,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        internal fun setAlbum(album: AlbumWithPhotos) {
+        internal fun loadPhoto() {
+            photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
+            notifyDataSetChanged()
+        }
+
+        internal fun setAlbum(album: AlbumWithPhotos, loadPhoto: Boolean) {
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
             album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, coverBaseline)) }
-            this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
-            //notifyDataSetChanged()
+            if (loadPhoto) this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
+            else this.album = album
+
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldPhotos.size
                 override fun getNewListSize() = photos.size
