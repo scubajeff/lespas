@@ -12,7 +12,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -53,39 +52,21 @@ class PhotoSlideFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_photoslide, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
 
         pAdapter = PhotoSlideAdapter(
-            object : PhotoSlideAdapter.OnTouchListener {
-                override fun onTouch() {
-                    uiModel.toggleOnOff()
-                }
-            },
-            object : PhotoSlideAdapter.OnLoadImage {
-                override fun loadImage(photo: Photo, view: ImageView, type: String) {
-                    imageLoaderModel.loadPhoto(photo, view, type)
-                }
-            }
-        )
-
-        albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, Observer { photos->
-            pAdapter.setPhotos(photos)
-            (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
-        })
-
-        // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
-        val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply{ isAccessible = true }).get(this) as RecyclerView
-        (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
-            isAccessible = true
-            set(recyclerView, (get(recyclerView) as Int) * 7)
-        }
+            { uiModel.toggleOnOff() }
+        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
+
+            // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
+            val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply{ isAccessible = true }).get(this) as RecyclerView
+            (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
+                isAccessible = true
+                set(recyclerView, (get(recyclerView) as Int) * 7)
+            }
 
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
@@ -94,6 +75,18 @@ class PhotoSlideFragment : Fragment() {
                 }
             })
         }
+
+
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, { photos->
+            pAdapter.setPhotos(photos)
+            (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
+        })
 
         // TODO: should be started when view loaded
         // Briefly show controls
@@ -125,11 +118,11 @@ class PhotoSlideFragment : Fragment() {
     class PhotoSlideAdapter(private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {
         private var photos = emptyList<Photo>()
 
-        interface OnTouchListener {
+        fun interface OnTouchListener {
             fun onTouch()
         }
 
-        interface OnLoadImage {
+        fun interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
         }
 
