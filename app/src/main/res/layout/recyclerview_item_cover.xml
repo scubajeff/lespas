@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/seperator"
+            app:layout_constraintBottom_toTopOf="@id/divider"
             android:layout_marginHorizontal="@dimen/extra_padding"
             android:layout_marginBottom="@dimen/mini_padding"
             android:lines="1"
@@ -41,7 +41,7 @@
             tools:text="Title" />
 
         <TextView
-            android:id="@+id/seperator"
+            android:id="@+id/divider"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -51,16 +51,17 @@
             android:layout_marginBottom="@dimen/extra_padding"
             android:text="|"
             android:textColor="@color/color_text_light"
-            style="@style/TextAppearance.MaterialComponents.Body2" />
+            style="@style/TextAppearance.MaterialComponents.Body2"
+            android:visibility="invisible" />
 
 
         <TextView
             android:id="@+id/duration"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintBaseline_toBaselineOf="@id/seperator"
+            app:layout_constraintBaseline_toBaselineOf="@id/divider"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/seperator"
+            app:layout_constraintRight_toLeftOf="@id/divider"
             android:layout_marginLeft="@dimen/small_padding"
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
@@ -71,8 +72,8 @@
             android:id="@+id/total"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintBaseline_toBaselineOf="@id/seperator"
-            app:layout_constraintLeft_toRightOf="@id/seperator"
+            app:layout_constraintBaseline_toBaselineOf="@id/divider"
+            app:layout_constraintLeft_toRightOf="@id/divider"
             app:layout_constraintRight_toRightOf="parent"
             style="@style/TextAppearance.AppCompat.Body1"
             android:textColor="@color/color_text_light"

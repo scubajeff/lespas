@@ -262,6 +262,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
+        private var showStatistics = true
 
         init {
             setHasStableIds(true)
@@ -284,19 +285,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 with(itemView) {
                     photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover).apply { ViewCompat.setTransitionName(this, it.albumId) }, ImageLoaderViewModel.TYPE_COVER) }
 
-                    findViewById<TextView>(R.id.title).text = photos[0].name
+                    if (showStatistics) {
+                        findViewById<TextView>(R.id.title).text = photos[0].name
 
-                    val days = Duration.between(
-                        photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
-                        photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()).toDays().toInt()
-                    findViewById<TextView>(R.id.duration).text = when(days) {
-                        in 0..21-> resources.getString(R.string.duration_days, days + 1)
-                        in 22..56-> resources.getString(R.string.duration_weeks, days / 7)
-                        in 57..365-> resources.getString(R.string.duration_months, days / 30)
-                        else-> resources.getString(R.string.duration_years, days / 365)
+                        val days = Duration.between(
+                            photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
+                            photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()
+                        ).toDays().toInt()
+                        findViewById<TextView>(R.id.duration).text = when (days) {
+                            in 0..21 -> resources.getString(R.string.duration_days, days + 1)
+                            in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
+                            in 57..365 -> resources.getString(R.string.duration_months, days / 30)
+                            else -> resources.getString(R.string.duration_years, days / 365)
+                        }
+
+                        findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
+                        findViewById<TextView>(R.id.divider).visibility = View.VISIBLE
                     }
-
-                    findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
                 }
             }
 
@@ -353,6 +358,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         internal fun loadPhoto() {
             photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
+            showStatistics = true
             notifyDataSetChanged()
         }
 
@@ -362,7 +368,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             photos.clear()
             album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, coverBaseline)) }
             if (loadPhoto) this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
-            else this.album = album
+            else {
+                this.album = album
+                showStatistics = false
+            }
 
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldPhotos.size
