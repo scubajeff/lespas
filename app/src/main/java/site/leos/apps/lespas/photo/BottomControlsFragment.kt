@@ -238,17 +238,18 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             ok_button.setOnClickListener { dismiss() }
             info_filename.text = arguments?.getString(NAME)
             info_shotat.text = arguments?.getString(DATE)
-            info_dimension.text = String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT))
             val exif = ExifInterface("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}")
             info_camera_mfg.text = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-            info_camera_model.text = String.format("%s %s", exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "", exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
+            info_camera_model.text = String.format("%s%s", exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "", exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
             info_parameter.text = String.format("%s  %s  %s  %s",
                 exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: ""
             )
-            info_size.text = String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576)
+            info_size.text = String.format("%s  %s",
+                String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576),
+                String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))
         }
 
         override fun onStart() {
