@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity" />
+        <activity android:name=".MainActivity" android:launchMode="singleTask" />
 
         <activity android:name=".sync.ShareReceiverActivity"
             android:theme="@style/Theme.LesPas.Transparent"
