@@ -12,9 +12,9 @@
         android:id="@+id/photogrid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingLeft="1dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/photo_grid_span_count"
-        android:background="@android:color/black"
         tools:listitem="@layout/recyclerview_item_photo"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
