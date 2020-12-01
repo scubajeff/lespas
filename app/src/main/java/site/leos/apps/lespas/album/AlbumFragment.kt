@@ -145,7 +145,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             selectionTracker = SelectionTracker.Builder(
                 "albumSelection",
                 this,
-                AlbumListAdapter.AlbumKeyProvider(),
+                AlbumListAdapter.AlbumKeyProvider(mAdapter),
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createLongStorage()
             ).withSelectionPredicate(SelectionPredicates.createSelectAnything()).build().apply {
@@ -302,7 +302,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
     override fun onPositiveConfirmed() {
         val albums = mutableListOf<Album>()
-        for (i in selectionTracker.selection) albums.add(mAdapter.getAlbumAt(i.toInt()))
+        // Selection key is Album.id
+        for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
         actionModel.deleteAlbums(albums)
 
         selectionTracker.clearSelection()
@@ -314,10 +315,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         private var covers = emptyList<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
-
-        init {
-            setHasStableIds(true)
-        }
 
         fun interface OnItemClickListener {
             fun onItemClick(album: Album, imageView: ImageView)
@@ -354,7 +351,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
                 override fun getPosition(): Int = adapterPosition
-                override fun getSelectionKey(): Long = itemId
+                override fun getSelectionKey(): Long = getItemId(adapterPosition)
             }
         }
 
@@ -364,7 +361,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         }
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
-            holder.bindViewItems(albums[position], itemClickListener, selectionTracker.isSelected(position.toLong()))
+            holder.bindViewItems(albums[position], itemClickListener, selectionTracker.isSelected(getItemId(position)))
         }
 
         internal fun setAlbums(albums: List<Album>, covers: List<Photo>){
@@ -380,19 +377,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             }).dispatchUpdatesTo(this)
         }
 
-        internal fun getAlbumAt(position: Int): Album {
-            return albums[position]
-        }
+        internal fun getItemBySelectionKey(key: Long): Album = (albums.find { it.id.toLong() == key })!!
 
         override fun getItemCount() = albums.size
 
-        override fun getItemId(position: Int): Long = position.toLong()
+        override fun getItemId(position: Int): Long = albums[position].id.toLong()
+
+        fun getPosition(key: Long): Int = albums.indexOfFirst { it.id.toLong() == key}
 
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
 
-        class AlbumKeyProvider: ItemKeyProvider<Long>(SCOPE_CACHED) {
-            override fun getKey(position: Int): Long = position.toLong()
-            override fun getPosition(key: Long): Int = key.toInt()
+        class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<Long>(SCOPE_CACHED) {
+            override fun getKey(position: Int): Long = adapter.getItemId(position)
+            override fun getPosition(key: Long): Int = adapter.getPosition(key)
         }
 
         class AlbumDetailsLookup(private val recyclerView: RecyclerView) : ItemDetailsLookup<Long>() {
