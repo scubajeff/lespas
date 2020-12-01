@@ -86,7 +86,7 @@ class DestinationDialogFragment : DialogFragment() {
                     else {
                         // Return with album id field empty, calling party will know this is a new album
                         destinationModel.setDestination(Album("", name,
-                            LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0))
+                            LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))
                         dismiss()
                     }
                     true
@@ -164,7 +164,7 @@ class DestinationDialogFragment : DialogFragment() {
                         findViewById<AppCompatTextView>(R.id.name).text = resources.getString(R.string.create_new_album)
                         setOnClickListener { clickListener.onItemClick(
                             Album("", "",
-                                LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0)
+                                LocalDateTime.now(), LocalDateTime.now(), "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)
                         )}
                     } else {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
