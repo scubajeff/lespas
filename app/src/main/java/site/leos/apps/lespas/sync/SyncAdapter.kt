@@ -178,7 +178,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Sync each changed album
                     var exif: ExifInterface
                     var exifRotation: Int
-                    var exifTranslation: Int    // TODO flip
                     val changedPhotos = mutableListOf<Photo>()
                     val remotePhotoIds = mutableListOf<String>()
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -196,6 +195,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 // Accumulate remote photos list
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 remotePhotoIds.add(remotePhotoId)
+
                                 if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches new photos
                                     Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
                                     changedPhotos.add(
@@ -204,10 +204,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), 0, 0, 0
                                         )
                                     )  // TODO will share status change create new eTag?
-                                } else    // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive thing is we don't have to fetch it from server
-                                    if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
-                                        photoRepository.changeName(remotePhotoId, remotePhoto.name)
-                                    }
+                                } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
+                                    // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive thing is we don't have to fetch it from server
+                                    photoRepository.changeName(remotePhotoId, remotePhoto.name)
+                                }
                             }
                         }
 
@@ -241,6 +241,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             if (changedPhoto.dateTaken > changedAlbum.endDate) changedAlbum.endDate = changedPhoto.dateTaken
                             if (changedPhoto.dateTaken < changedAlbum.startDate) changedAlbum.startDate = changedPhoto.dateTaken
 
+                            // Rotate the photo if EXIF say so
                             exifRotation = exif.rotationDegrees
                             if (exifRotation != 0) {
                                 Bitmap.createBitmap(
@@ -261,6 +262,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
                                 exif.saveAttributes()
                             }
+
+                            // Get width and height
                             BitmapFactory.decodeFile("$localRootFolder/${changedPhoto.id}", options)
                             changedPhoto.width = options.outWidth
                             changedPhoto.height = options.outHeight
