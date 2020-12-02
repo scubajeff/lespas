@@ -14,6 +14,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
+import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -336,7 +337,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album, coverImageview) }
                         if (album.eTag.isEmpty()) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
-                        } else coverImageview.clearColorFilter()
+                            with(findViewById<ContentLoadingProgressBar>(R.id.sync_progress)) {
+                                visibility = View.VISIBLE
+                                setProgress((album.syncProgress * 100).toInt())
+                            }
+                        } else {
+                            coverImageview.clearColorFilter()
+                            findViewById<ContentLoadingProgressBar>(R.id.sync_progress).visibility = View.GONE
+                        }
                     }
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format(
