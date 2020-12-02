@@ -23,6 +23,7 @@ data class Album(
     var sortOrder: Int,
     var eTag: String,
     var shareId: Int,
+    var syncProgress: Float,
 ): Parcelable {
     companion object {
         const val TABLE_NAME = "albums"
@@ -59,7 +60,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun deleteByIdSync(albumId: String): Int
 
-    @Query("SELECT * FROM ${Album.TABLE_NAME} ORDER BY endDate DESC")
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDate(): Flow<List<Album>>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
@@ -88,4 +89,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Transaction
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>
+
+    @Query( "UPDATE ${Album.TABLE_NAME} SET syncProgress = :progress WHERE id = :albumId")
+    abstract fun updateAlbumSyncStatus(albumId: String, progress: Float)
 }

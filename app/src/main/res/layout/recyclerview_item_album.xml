@@ -28,6 +28,16 @@
             android:scaleType="centerCrop"
             tools:src="@drawable/login_background_gradient_1" />
 
+        <androidx.core.widget.ContentLoadingProgressBar
+            android:id="@+id/sync_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/coverart"
+            app:layout_constraintBottom_toBottomOf="@id/coverart"
+            android:max="100"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/progressbar_horizontal" />
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

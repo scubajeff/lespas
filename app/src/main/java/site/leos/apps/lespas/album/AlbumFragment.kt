@@ -8,15 +8,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.transition.TransitionInflater
-import android.util.Log
 import android.view.*
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AlphaAnimation
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.view.ViewCompat
+import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -24,6 +22,7 @@ import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -68,13 +67,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         fab = view.findViewById(R.id.fab)
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                Log.e("+++", imageView.transitionName)
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                     .replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
             }
-        ) { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
+        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() } }
 
         return view
     }
@@ -97,11 +95,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         // Register data observer first, try feeding adapter with lastest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
-            val covers = mutableListOf<Photo>()
-            albums.forEach { album ->
-                covers.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
-            }
-            mAdapter.setAlbums(albums, covers)
+            mAdapter.setAlbums(albums,)
             if (lastScrollPosition != -1) {
                 (recyclerView.layoutManager as LinearLayoutManager).scrollToPosition(lastScrollPosition)
             }
@@ -140,6 +134,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
 
         with(recyclerView) {
+            // Stop item from blinking when notifying changes
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
             adapter = mAdapter
 
             selectionTracker = SelectionTracker.Builder(
@@ -312,7 +309,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     // List adapter for Albums' recyclerView
     class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private var albums = emptyList<Album>()
-        private var covers = emptyList<Photo>()
+        private var oldAlbums = mutableListOf<Album>()
+        private var covers = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
@@ -332,12 +330,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         imageLoader.loadImage(covers[adapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
-                        this.startAnimation(AlphaAnimation(0.5f, 1f).apply {
-                            duration = 300
-                            interpolator = AccelerateDecelerateInterpolator()
-                        })
                         ViewCompat.setTransitionName(coverImageview, album.id)
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album, coverImageview) }
+                        if (album.eTag.isEmpty()) {
+                            coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
+                            with(findViewById<ContentLoadingProgressBar>(R.id.sync_progress)) {
+                                visibility = View.VISIBLE
+                                setProgress((album.syncProgress * 100).toInt())
+                            }
+                        } else {
+                            coverImageview.clearColorFilter()
+                            findViewById<ContentLoadingProgressBar>(R.id.sync_progress).visibility = View.GONE
+                        }
                     }
                     findViewById<TextView>(R.id.title).text = album.name
                     findViewById<TextView>(R.id.duration).text = String.format(
@@ -345,7 +349,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         album.startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
-
                 }
             }
 
@@ -364,11 +367,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             holder.bindViewItems(albums[position], itemClickListener, selectionTracker.isSelected(getItemId(position)))
         }
 
-        internal fun setAlbums(albums: List<Album>, covers: List<Photo>){
-            val oldAlbums = mutableListOf<Album>()
-            oldAlbums.addAll(0, this.albums)
+        internal fun setAlbums(albums: List<Album>) {
+            oldAlbums.let {
+                it.clear()
+                it.addAll(0, this.albums)
+            }
             this.albums = albums
-            this.covers = covers
+            this.covers.apply {
+                clear()
+                albums.forEach { album ->
+                    this.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.coverBaseline))
+                }
+            }
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldAlbums.size
                 override fun getNewListSize() = albums.size

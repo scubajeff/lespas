@@ -1,4 +1,3 @@
-
 package site.leos.apps.lespas.sync
 
 import android.accounts.Account
@@ -138,7 +137,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),  // Use remote version
                                         localAlbum[0].sortOrder,    // Preserve local data
                                         remoteAlbum.etag,   // Use remote version
-                                        0       // TODO share
+                                        0,       // TODO share
+                                        1f
                                     )
                                 )
                             } else {
@@ -147,11 +147,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         } else {
                             // No hit at local, a new album created on server
-                            changedAlbums.add(Album(
-                                remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
+                            changedAlbums.add(Album(remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
                                 remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
-                                Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0
-                            ))
+                                Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0, 1f)
+                            )
                         }
                     }
                 }
@@ -184,8 +183,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val remotePhotoIds = mutableListOf<String>()
                     val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                     var timeString: String?
+                    var tempAlbum: Album
 
                     for (changedAlbum in changedAlbums) {
+                        tempAlbum = changedAlbum.copy(eTag = "")
+
                         val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                         var remotePhotoId: String
@@ -210,7 +212,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
 
                         // Fetch changed photo files, extract EXIF info, update Photo table
-                        for (changedPhoto in changedPhotos) {
+                        changedPhotos.forEachIndexed {i, changedPhoto->
                             // Get the image file ready
                             if (File(localRootFolder, changedPhoto.name).exists()) {
                                 // Newly added photo from local, so we have acquired the file and it still bears the original name
@@ -265,14 +267,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                             // update row when everything's fine. any thing that broke before this point will be captured by exception handler and will be worked on again in next round of sync
                             photoRepository.upsertSync(changedPhoto)
-                        }
 
-                        // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline default to show middle part of the photo
-                        if (changedAlbum.cover.isEmpty()) {
-                            changedAlbum.cover = changedPhotos[0].id
-                            changedAlbum.coverBaseline = (changedPhotos[0].height - (changedPhotos[0].width * 9 / 21)) / 2
-                            changedAlbum.coverWidth = changedPhotos[0].width
-                            changedAlbum.coverHeight = changedPhotos[0].height
+                            // Need to update and show the new album in list asap, so have to do this in the loop
+                            if (i == 0) {
+                                if (changedAlbum.cover.isEmpty()) {
+                                    // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline
+                                    // default to show middle part of the photo
+                                    changedAlbum.cover = changedPhotos[0].id
+                                    changedAlbum.coverBaseline = (changedPhotos[0].height - (changedPhotos[0].width * 9 / 21)) / 2
+                                    changedAlbum.coverWidth = changedPhotos[0].width
+                                    changedAlbum.coverHeight = changedPhotos[0].height
+
+                                    // Get cover updated
+                                    tempAlbum = changedAlbum.copy(eTag = "", syncProgress = 0f)
+                                }
+                                // Update UI only if more than one photo changed
+                                if (changedPhotos.size > 1) albumRepository.upsertSync(tempAlbum)
+                            } else {
+                                // Even new album created on server is in local now, update album's sync progress only
+                                albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size)
+                            }
                         }
 
                         // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
