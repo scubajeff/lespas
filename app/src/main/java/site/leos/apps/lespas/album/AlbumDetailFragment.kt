@@ -19,6 +19,7 @@ import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
@@ -83,6 +84,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
         recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
+            // Stop item from blinking when notifying changes
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
             layoutManager = GridLayoutManager(activity?.applicationContext, defaultSpanCount).apply {
