@@ -99,8 +99,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         mAdapter = PhotoGridAdapter(
             { view, position ->
                 parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(view, view.transitionName)
+                    //.setReorderingAllowed(true)
+                    //.addSharedElement(view, view.transitionName)
                     .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
