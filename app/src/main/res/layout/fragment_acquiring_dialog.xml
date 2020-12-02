@@ -41,7 +41,7 @@
                 android:id="@+id/current_progress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingVertical="@dimen/small_padding"
+                android:progressDrawable="@drawable/thicker_progressbar_horizontal"
                 style="?android:attr/progressBarStyleHorizontal" />
         </androidx.appcompat.widget.LinearLayoutCompat>
 
