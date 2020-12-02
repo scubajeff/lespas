@@ -175,7 +175,7 @@ class PhotoSlideFragment : Fragment() {
 
     // Share system ui visibility status with BottomControlsFragment
     class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData<Boolean>(false)
+        private val showUI = MutableLiveData<Boolean>(true)
 
         fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
