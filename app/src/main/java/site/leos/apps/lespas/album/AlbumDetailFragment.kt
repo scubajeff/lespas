@@ -4,7 +4,6 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.os.Bundle
 import android.transition.TransitionInflater
-import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -61,7 +60,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             with(TransitionInflater.from(context)) {
                 sharedElementEnterTransition = inflateTransition(R.transition.album_to_albumdetail).apply {
                     addListener(object : android.transition.Transition.TransitionListener {
-                        override fun onTransitionStart(transition: android.transition.Transition?) {Log.e("+++", "started")}
+                        override fun onTransitionStart(transition: android.transition.Transition?) {}
                         override fun onTransitionEnd(transition: android.transition.Transition?) {
                             mAdapter.loadPhoto()
                             loadPhoto = true

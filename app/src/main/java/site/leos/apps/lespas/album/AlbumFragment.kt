@@ -6,7 +6,6 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.transition.TransitionInflater
 import android.view.*
 import android.widget.ImageView
@@ -24,6 +23,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
@@ -232,21 +234,33 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                                 if (progress == uris.size) {
                                     // Files are under control, we can create sync action now
                                     val actions = mutableListOf<Action>()
+                                    val newPhotos = acquiringModel.getNewPhotos()
 
                                     // Create new album first
-                                    if (album.id.isEmpty()) actions.add(
-                                        Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                                    if (album.id.isEmpty()) {
+                                        // Set a fake ID, sync adapter will correct it when real id is available
+                                        album.id = System.currentTimeMillis().toString()
 
-                                    uris.forEach {uri->
-                                        requireContext().contentResolver.query(uri, null, null, null, null)?.apply {
-                                            val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                                            moveToFirst()
-                                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "",
-                                                getString(columnIndex), System.currentTimeMillis(), 1))
-                                            close()
-                                        }
+                                        // Store cover, e.g. first photo in new album, in member filename
+                                        album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
+                                        album.coverWidth = newPhotos[0].width
+                                        album.coverHeight = newPhotos[0].height
+                                        actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
                                     }
+
+                                    newPhotos.forEach {
+                                        it.albumId = album.id
+                                        if (it.dateTaken < album.startDate) album.startDate = it.dateTaken
+                                        if (it.dateTaken > album.endDate) album.endDate = it.dateTaken
+                                        actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", it.name, System.currentTimeMillis(), 1))
+                                    }
+
                                     actionModel.addActions(actions)
+                                    GlobalScope.launch(Dispatchers.Default) {
+                                        albumsModel.addPhotos(newPhotos)
+                                        albumsModel.upsertAsync(album)
+                                    }
+
                                 }
                             })
 

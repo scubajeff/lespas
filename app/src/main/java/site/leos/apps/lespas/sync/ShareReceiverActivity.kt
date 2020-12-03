@@ -6,14 +6,19 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
-import android.provider.OpenableColumns
+import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.AlbumViewModel
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
+    private val albumModel: AlbumViewModel by viewModels()
     private val actionModel: ActionViewModel by viewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
     private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
@@ -38,20 +43,33 @@ class ShareReceiverActivity: AppCompatActivity() {
                     if (progress == files.size) {
                         // Files are under control, we can create sync action now
                         val actions = mutableListOf<Action>()
+                        val newPhotos = acquiringModel.getNewPhotos()
 
                         // Create new album first
-                        if (album.id.isEmpty())
-                            actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                        if (album.id.isEmpty()) {
+                            // Set a fake ID, sync adapter will correct it when real id is available
+                            album.id = System.currentTimeMillis().toString()
 
-                        files.forEach { uri ->
-                            contentResolver.query(uri, null, null, null, null)?.apply {
-                                val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                                moveToFirst()
-                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", getString(columnIndex), System.currentTimeMillis(), 1))
-                                close()
-                            }
+                            // Store cover, e.g. first photo in new album, in member filename
+                            album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
+                            album.coverWidth = newPhotos[0].width
+                            album.coverHeight = newPhotos[0].height
+                            actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
+
                         }
+
+                        newPhotos.forEach {
+                            it.albumId = album.id
+                            if (it.dateTaken < album.startDate) album.startDate = it.dateTaken
+                            if (it.dateTaken > album.endDate) album.endDate = it.dateTaken
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", it.name, System.currentTimeMillis(), 1))
+                        }
+
                         actionModel.addActions(actions)
+                        GlobalScope.launch(Dispatchers.Default) {
+                            albumModel.addPhotos(newPhotos)
+                            albumModel.upsertAsync(album)
+                        }
 
                         // Request sync immediately, since the viewmodel observing Action table might not be running at this moments
                         ContentResolver.requestSync(AccountManager.get(this).accounts[0], getString(R.string.sync_authority), Bundle().apply {
@@ -69,6 +87,7 @@ class ShareReceiverActivity: AppCompatActivity() {
                 DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
         else {
+            Log.e("+++++++++", "no files")
             finish()
         }
     }

@@ -92,4 +92,10 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query( "UPDATE ${Album.TABLE_NAME} SET syncProgress = :progress WHERE id = :albumId")
     abstract fun updateAlbumSyncStatus(albumId: String, progress: Float)
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET id = :newId, cover = :coverId WHERE id = :oldId")
+    abstract fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String)
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId WHERE id = :albumId")
+    abstract fun fixCoverId(albumId: String, newCoverId: String)
 }

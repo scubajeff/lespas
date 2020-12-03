@@ -27,6 +27,7 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.IOException
 import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,6 +77,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     }
 
+                    // Do not do too many works here, as the local sync should be as simple as making several webdav calls, so that if any thing bad happen, we will be catched by
+                    // exceptions handling down below, and start again right here in later sync, e.g. atomic
                     when (action.action) {
                         Action.ACTION_DELETE_FILES_ON_SERVER -> {
                             sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
@@ -87,11 +90,36 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Action.ACTION_ADD_FILES_ON_SERVER -> {
                             // Upload to server and verify
                             //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
-                            sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), "image/*")
+                            try {
+                                sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), "image/*")
+                                Log.e("****", "Uploaded ${action.fileName}")
+                            } catch (e: SardineException) {
+                                if (e.statusCode != 405) {
+                                    syncResult.stats.numIoExceptions++
+                                    Log.e("****Exception: ", e.stackTraceToString())
+                                    return
+                                }
+                                else Log.e("****Exception:", "File ${action.fileName} is readonly on server")
+                            }
                             // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                         }
                         Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                            sardine.createDirectory("$resourceRoot/${Uri.encode(action.folderName)}")
+                            with("$resourceRoot/${Uri.encode(action.folderName)}") {
+                                try {
+                                    sardine.createDirectory(this)
+                                } catch (e: SardineException) {
+                                    if (e.statusCode != 405) {
+                                        syncResult.stats.numIoExceptions++
+                                        Log.e("****Exception: ", e.stackTraceToString())
+                                        return
+                                    }
+                                    else Log.e("****Exception:", "Folder ${action.folderName} exists on server")
+                                }
+                                sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+                                    photoRepository.fixNewPhotosAlbumId(action.folderId, it)
+                                    albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
+                                }
+                            }
                         }
                         Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
                             TODO()
@@ -159,7 +187,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val localAlbumIds = albumRepository.getAllAlbumIds()
                 for (localId in localAlbumIds) {
                     if (!remoteAlbumIds.contains(localId)) {
-                        Log.e("=======", "deleting album: $localId")
                         albumRepository.deleteByIdSync(localId)
                         val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(localId)
                         photoRepository.deletePhotosByAlbum(localId)
@@ -171,6 +198,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 File(localRootFolder, it.name).delete()
                             } catch(e: Exception) { e.printStackTrace() }
                         }
+                        Log.e("****", "Deleted album: $localId")
                     }
                 }
 
@@ -187,7 +215,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     for (changedAlbum in changedAlbums) {
                         tempAlbum = changedAlbum.copy(eTag = "")
 
-                        val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
+                        var localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                         var remotePhotoId: String
                         sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
@@ -196,16 +224,33 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 remotePhotoIds.add(remotePhotoId)
 
-                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches new photos
-                                    Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
-                                    changedPhotos.add(
-                                        Photo(
-                                            remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
+                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches new photos, e.g. no such remotePhotoId in local table
+                                    //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
+
+                                    if (localPhotoETags.containsKey(remotePhoto.name)) {
+                                        // If there is a row in local Photo table with remote photo's name as it's id, that means it's a local added photo which is now coming back
+                                        // from server. Update it's id to the real fileid and also etag now, rename image file name to fileid too.
+                                        //Log.e("<><><>", "coming back now ${remotePhoto.name}")
+                                        if (File(localRootFolder, remotePhoto.name).exists()) {
+                                            try {
+                                                File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
+                                            } catch (e: Exception) { e.printStackTrace() }
+                                        }
+                                        photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
+                                            remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+                                        // Taking care the cover
+                                        // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
+                                        if (changedAlbum.cover == remotePhoto.name) {
+                                            albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
+                                            changedAlbum.cover = remotePhotoId
+                                        }
+                                    } else changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
                                             remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), 0, 0, 0
                                         )
                                     )  // TODO will share status change create new eTag?
                                 } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
-                                    // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive thing is we don't have to fetch it from server
+                                    // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
+                                    // file again from server
                                     photoRepository.changeName(remotePhotoId, remotePhoto.name)
                                 }
                             }
@@ -213,20 +258,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         changedPhotos.forEachIndexed {i, changedPhoto->
-                            // Get the image file ready
-                            if (File(localRootFolder, changedPhoto.name).exists()) {
-                                // Newly added photo from local, so we have acquired the file and it still bears the original name
-                                // Since we have the fileId now, rename it here
-                                try {
-                                    File(localRootFolder, changedPhoto.name).renameTo(File(localRootFolder, changedPhoto.id))
-                                } catch (e: Exception) { e.printStackTrace() }
-                            } else {
-                                // No local copy, need to download from server
-                                sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}").use { input ->
-                                    File("$localRootFolder/${changedPhoto.id}").outputStream().use { output ->
-                                        input.copyTo(output, 8192)
-                                        Log.e("1111111", "finished downloading ${changedPhoto.name}")
-                                    }
+                            // Download image file from server
+                            sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}").use { input ->
+                                File("$localRootFolder/${changedPhoto.id}").outputStream().use { output ->
+                                    input.copyTo(output, 8192)
+                                    Log.e("****", "Downloaded ${changedPhoto.name}")
                                 }
                             }
 
@@ -296,13 +332,37 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         albumRepository.upsertSync(changedAlbum)
 
                         // Delete those photos not exist on server, happens when user delete photos on the server
+                        var deletion = false
+                        localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         for (localPhoto in localPhotoETags) {
                             if (!remotePhotoIds.contains(localPhoto.key)) {
-                                Log.e("=======", "deleting photo: ${localPhoto.key}")
+                                deletion = true
                                 photoRepository.deleteByIdSync(localPhoto.key)
                                 try {
                                     File(localRootFolder, localPhoto.key).delete()
                                 } catch (e: Exception) { e.printStackTrace() }
+                                Log.e("****", "Deleted photo: ${localPhoto.key}")
+                            }
+                        }
+
+                        if (deletion) {
+                            // Maintaining album cover and duration if deletion happened
+                            val photosLeft = photoRepository.getAlbumPhotos(changedAlbum.id)
+                            if (photosLeft.isNotEmpty()) {
+                                val album = albumRepository.getThisAlbum(changedAlbum.id)
+                                album[0].startDate = photosLeft[0].dateTaken
+                                album[0].endDate = photosLeft.last().dateTaken
+                                photosLeft.find { it.id == album[0].cover } ?: run {
+                                    album[0].cover = photosLeft[0].id
+                                    album[0].coverBaseline = (photosLeft[0].height - (photosLeft[0].width * 9 / 21)) / 2
+                                    album[0].coverWidth = photosLeft[0].width
+                                    album[0].coverHeight = photosLeft[0].height
+                                }
+                                albumRepository.updateSync(album[0])
+                            } else {
+                                // All photos under this album removed, delete album on both local and remote
+                                albumRepository.deleteByIdSync(changedAlbum.id)
+                                actionRepository.addAction(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, changedAlbum.id, changedAlbum.name, "", "", System.currentTimeMillis(), 1))
                             }
                         }
 
@@ -316,6 +376,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Clear status counters
             syncResult.stats.clear()
         } catch (e: IOException) {
+            syncResult.stats.numIoExceptions++
+            Log.e("****Exception: ", e.stackTraceToString())
+        } catch (e: SocketTimeoutException) {
             syncResult.stats.numIoExceptions++
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: InterruptedIOException) {

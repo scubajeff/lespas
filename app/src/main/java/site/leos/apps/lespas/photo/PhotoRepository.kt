@@ -3,6 +3,7 @@ package site.leos.apps.lespas.photo
 import android.app.Application
 import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.LespasDatabase
+import java.time.LocalDateTime
 
 class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
@@ -20,6 +21,9 @@ class PhotoRepository(application: Application) {
     fun getAlbumPhotos(albumId: String) = photoDao.getAlbumPhotos(albumId)
     suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     suspend fun getThesePhotos(ids: List<String>): List<Photo> = photoDao.getThesePhotos(ids)
+    suspend fun insert(photos: List<Photo>) { photoDao.insert(photos) }
+    fun fixNewPhotosAlbumId(oldId: String, newId: String) { photoDao.fixNewPhotosAlbumId(oldId, newId) }
+    fun fixPhotoId(oldId: String, newId: String, eTag: String, lastModified: LocalDateTime) { photoDao.fixPhotoId(oldId, newId, eTag, lastModified) }
 
     companion object {
         private var repo: PhotoRepository? = null

@@ -63,8 +63,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                     File(localRootFolder, photo.name).delete()
                 } catch (e: Exception) { e.printStackTrace() }
 
-                // folderName field can be blank in these actons
-                actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.id, photo.name, timestamp, 1))
+                // For a synced photo, id can not be the same as name (sort of, in very rare case, filename can be the same as it's future fileid on server, if this ever happens,
+                // the only problem is that it would reappear after next sync, e.g. can only be deleted on server. This can be solved with adding another column in Photo table)
+                // folderName field can be empty in these actions
+                if (photo.id != photo.name) actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.id, photo.name, timestamp, 1))
             }
 
             // Get remaining photos in album, the return list is sort by dateTaken ASC

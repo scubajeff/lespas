@@ -12,6 +12,7 @@ class AlbumRepository(application: Application){
     fun getThisAlbum(albumId: String): List<Album> = albumDao.getThisAlbum(albumId)
     suspend fun insert(album: Album){ albumDao.insert(album) }
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
+    suspend fun upsert(album: Album) { albumDao.upsert(album) }
     fun updateSync(albums: List<Album>) { albumDao.updateSync(albums) }
     fun updateSync(album: Album) { albumDao.updateSync(album) }
     suspend fun update(album: Album){ albumDao.update(album) }
@@ -23,6 +24,8 @@ class AlbumRepository(application: Application){
     fun getAllAlbumIds(): List<String> = albumDao.getAllIds()
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float) { albumDao.updateAlbumSyncStatus(albumId, progress)}
+    fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
+    fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
 
     companion object {
         private var repo: AlbumRepository? = null

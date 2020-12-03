@@ -66,6 +66,12 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id IN (:ids)")
     abstract suspend fun getThesePhotos(ids: List<String>): List<Photo>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET albumId = :newId WHERE albumId = :oldId")
+    abstract fun fixNewPhotosAlbumId(oldId: String, newId: String)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, lastModified = :lastModified WHERE id = :oldId")
+    abstract fun fixPhotoId(oldId: String, newId: String, eTag: String, lastModified: LocalDateTime)
 }
 
 /**

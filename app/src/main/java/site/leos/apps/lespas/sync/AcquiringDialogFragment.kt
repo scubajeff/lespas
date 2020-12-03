@@ -3,6 +3,9 @@ package site.leos.apps.lespas.sync
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.DialogInterface
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -10,9 +13,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.*
+import androidx.lifecycle.Observer
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
@@ -21,9 +26,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.text.CharacterIterator
+import java.text.SimpleDateFormat
 import java.text.StringCharacterIterator
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 
 class AcquiringDialogFragment: DialogFragment() {
@@ -109,11 +120,19 @@ class AcquiringDialogFragment: DialogFragment() {
         private var currentProgress = MutableLiveData<Int>()
         private var currentName: String = ""
         private var totalBytes = 0L
+        private val newPhotos = mutableListOf<Photo>()
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileName = ""
                 val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
+                var exif: ExifInterface
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                var timeString: String?
+                val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
+                var exifRotation: Int
+                var lastModified: Date
+
 
                 uris.forEachIndexed { index, uri ->
                     // find out the real name
@@ -134,6 +153,43 @@ class AcquiringDialogFragment: DialogFragment() {
                         }
                     }
 
+                    // Update dateTaken, width, height fields
+                    lastModified = Date(File(appRootFolder, fileName).lastModified())
+                    exif = ExifInterface("$appRootFolder/$fileName")
+                    timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+                    if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
+                    if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
+                    if (timeString == null) timeString = dateFormatter.format(lastModified)
+
+                    exifRotation = exif.rotationDegrees
+                    if (exifRotation != 0) {
+                        Bitmap.createBitmap(
+                            BitmapFactory.decodeFile("$appRootFolder/$fileName"),
+                            0, 0,
+                            exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
+                            exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
+                            Matrix().apply{ preRotate(exifRotation.toFloat()) },
+                            true).apply {
+                            compress(Bitmap.CompressFormat.JPEG, 100, File(appRootFolder, fileName).outputStream())
+                            recycle()
+                        }
+
+                        exif.resetOrientation()
+                        val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
+                        exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
+                        exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
+                        exif.saveAttributes()
+                    }
+
+                    // Get width and height
+                    BitmapFactory.decodeFile("$appRootFolder/$fileName", options)
+
+                    newPhotos.add(Photo(fileName, "", fileName, "",
+                        LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss")),
+                        lastModified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                        options.outWidth, options.outHeight, 0))
+
+
                     // Try to finish at the end by setting progress to more than 100%
                     withContext(Dispatchers.Main) { setProgress(index + 1, fileName) }
                 }
@@ -147,6 +203,7 @@ class AcquiringDialogFragment: DialogFragment() {
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
         fun getTotalBytes(): Long = totalBytes
+        fun getNewPhotos(): List<Photo> = newPhotos
     }
 
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>): ViewModelProvider.NewInstanceFactory() {
