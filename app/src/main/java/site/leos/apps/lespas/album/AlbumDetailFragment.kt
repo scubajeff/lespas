@@ -1,7 +1,9 @@
 package site.leos.apps.lespas.album
 
+import android.content.Intent
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.net.Uri
 import android.os.Bundle
 import android.transition.TransitionInflater
 import android.view.*
@@ -9,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -28,6 +31,7 @@ import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.sync.ActionViewModel
+import java.io.File
 import java.time.Duration
 import java.time.ZoneId
 
@@ -229,7 +233,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 true
             }
             R.id.share -> {
-                for (i in selectionTracker.selection) { }
+                val uris = arrayListOf<Uri>()
+                val path = File(requireActivity().filesDir, getString(R.string.lespas_base_folder_name))
+                val authority = getString(R.string.file_authority)
+                for (i in selectionTracker.selection)
+                    uris.add(FileProvider.getUriForFile(requireContext(), authority, File(path, mAdapter.getPhotoAt(i.toInt()).id)))
+
+                startActivity(Intent.createChooser(
+                    Intent().apply{
+                        action = Intent.ACTION_SEND_MULTIPLE
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        type = "image/*"
+                    }, getString(R.string.share_to))
+                )
 
                 selectionTracker.clearSelection()
                 true

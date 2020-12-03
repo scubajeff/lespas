@@ -18,6 +18,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resValue "string", "sync_authority", "${applicationId}.StubProvider"
+        resValue "string", "file_authority", "${applicationId}.FileProvider"
     }
 
     buildTypes {
