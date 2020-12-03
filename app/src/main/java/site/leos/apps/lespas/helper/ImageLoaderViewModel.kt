@@ -40,15 +40,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
         var bitmap: Bitmap? = null
-        var fileName: String
+        var fileName = "$rootPath/${photo.id}"
+
+        if (!(File(fileName).exists())) {
+            fileName = "$rootPath/${photo.name}"
+            if (!(File(fileName).exists())) return errorBitmap
+        }
 
         try {
-            fileName = "$rootPath/${photo.id}"
-            if (!(File(fileName).exists())) {
-                fileName = "$rootPath/${photo.name}"
-                if (!(File(fileName).exists())) return errorBitmap
-            }
-
             bitmap = when (type) {
                 TYPE_VIEW -> {
                     /*
@@ -137,7 +136,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         loadingJob.cancel("")
     }
 
-    open class ImageCache constructor(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
+    class ImageCache (maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
 
