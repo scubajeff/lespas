@@ -79,55 +79,64 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Do not do too many works here, as the local sync should be as simple as making several webdav calls, so that if any thing bad happen, we will be catched by
                     // exceptions handling down below, and start again right here in later sync, e.g. atomic
-                    when (action.action) {
-                        Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                            sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
-                            // TODO need to update album's etag to reduce network usage during next remote sync
-                        }
-                        Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                            sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}")
-                        }
-                        Action.ACTION_ADD_FILES_ON_SERVER -> {
-                            // Upload to server and verify
-                            //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
-                            try {
+                    try {
+                        when (action.action) {
+                            Action.ACTION_DELETE_FILES_ON_SERVER -> {
+                                sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+                                // TODO need to update album's etag to reduce network usage during next remote sync
+                            }
+                            Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
+                                sardine.delete("$resourceRoot/${Uri.encode(action.folderName)}")
+                            }
+                            Action.ACTION_ADD_FILES_ON_SERVER -> {
+                                // Upload to server and verify
+                                //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
                                 sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), "image/*")
                                 Log.e("****", "Uploaded ${action.fileName}")
-                            } catch (e: SardineException) {
-                                if (e.statusCode != 405) {
-                                    syncResult.stats.numIoExceptions++
-                                    Log.e("****Exception: ", e.stackTraceToString())
-                                    return
-                                }
-                                else Log.e("****Exception:", "File ${action.fileName} is readonly on server")
+                                // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
-                            // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
-                        }
-                        Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                            with("$resourceRoot/${Uri.encode(action.folderName)}") {
-                                try {
+                            Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
+                                with("$resourceRoot/${Uri.encode(action.folderName)}") {
                                     sardine.createDirectory(this)
-                                } catch (e: SardineException) {
-                                    if (e.statusCode != 405) {
-                                        syncResult.stats.numIoExceptions++
-                                        Log.e("****Exception: ", e.stackTraceToString())
-                                        return
+                                    sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+                                        photoRepository.fixNewPhotosAlbumId(action.folderId, it)
+                                        albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
                                     }
-                                    else Log.e("****Exception:", "Folder ${action.folderName} exists on server")
-                                }
-                                sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
-                                    photoRepository.fixNewPhotosAlbumId(action.folderId, it)
-                                    albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
                                 }
                             }
+                            Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
+                                TODO()
+                            }
+                            Action.ACTION_RENAME_DIRECTORY -> {
+                                // Action's filename field is the new directory name
+                                sardine.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
+                                //albumRepository.changeName(action.folderId, action.fileName)
+                            }
                         }
-                        Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {
-                            TODO()
-                        }
-                        Action.ACTION_RENAME_DIRECTORY -> {
-                            // Action's filename field is the new directory name
-                            sardine.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
-                            //albumRepository.changeName(action.folderId, action.fileName)
+                    } catch (e: SardineException) {
+                        Log.e("****SardineException: ", e.stackTraceToString())
+                        when(e.statusCode) {
+                            400, 404, 405, 406, 410-> {
+                                // target not found, target readonly, target already existed, etc. should be skipped and move onto next action
+                            }
+                            401, 403, 407-> {
+                                syncResult.stats.numAuthExceptions++
+                                return
+                            }
+                            409-> {
+                                syncResult.stats.numConflictDetectedExceptions++
+                                return
+                            }
+                            423-> {
+                                // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
+                                syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
+                                return
+                            }
+                            else-> {
+                                // Other unhandled error should be retried
+                                syncResult.stats.numIoExceptions++
+                                return
+                            }
                         }
                     }
 
