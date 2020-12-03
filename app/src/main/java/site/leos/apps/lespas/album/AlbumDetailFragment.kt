@@ -119,10 +119,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         super.onViewCreated(view, savedInstanceState)
 
         // Register data observer first, try feeding adapter with lastest data asap
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, { album->
-            this.album = album.album
-            mAdapter.setAlbum(album, loadPhoto)
-            (activity as? AppCompatActivity)?.supportActionBar?.title = album.album.name
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
+            // Cover might changed, photo might be deleted, so get updates from latest here
+            this.album = it.album
+
+            mAdapter.setAlbum(it, loadPhoto)
+            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
             if (lastScrollPosition != -1) {
                 (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
@@ -408,6 +410,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     if (oldItemPosition == 0) oldPhotos[oldItemPosition] == photos[newItemPosition]
                     else oldPhotos[oldItemPosition].id == photos[newItemPosition].id
             }).dispatchUpdatesTo(this)
+
+            notifyItemChanged(0)
 
             //Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
         }
