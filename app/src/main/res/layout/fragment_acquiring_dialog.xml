@@ -41,6 +41,7 @@
                 android:id="@+id/current_progress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/small_padding"
                 android:progressDrawable="@drawable/thicker_progressbar_horizontal"
                 style="?android:attr/progressBarStyleHorizontal" />
         </androidx.appcompat.widget.LinearLayoutCompat>
@@ -49,7 +50,7 @@
             android:id="@+id/message_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="@dimen/tiny_padding"
+            android:layout_marginBottom="@dimen/small_padding"
             android:maxLines="4"
             style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             android:text="@string/it_takes_time"
