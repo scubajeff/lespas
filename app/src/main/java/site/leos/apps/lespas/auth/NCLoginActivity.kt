@@ -14,8 +14,6 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.transition.Fade
-import android.transition.TransitionManager
 import android.util.Base64
 import android.util.TypedValue
 import android.view.KeyEvent
@@ -60,29 +58,38 @@ class NCLoginActivity : AppCompatActivity() {
         loadingSpinner = getSpinnerDrawable()
         (loadingSpinner as? Animatable)?.start()
 
-        // Animate the welcome message on first run
-        if (savedInstanceState == null) {
-            with(welcomePage) {
-                alpha = 0.3f
-                translationY = 100f
-                animate().alpha(1f).translationY(0f).setDuration(2000).setInterpolator(AccelerateDecelerateInterpolator())
-                    .setListener(object: AnimatorListenerAdapter() {
-                        override fun onAnimationEnd(animation: Animator?) {
-                            super.onAnimationEnd(animation)
-                            // Clear the focus of input area, make the screen cleaner
-                            inputArea.clearFocus()
-                            TransitionManager.beginDelayedTransition(welcomePage, Fade(Fade.IN).setDuration(1000))
-                            inputArea.visibility = View.VISIBLE
-                        }
-                    }
-                )
-            }
-        }
         // Animate the background
         (findViewById<ConstraintLayout>(R.id.layout_background).background as AnimationDrawable).run {
             setEnterFadeDuration(2000)
             setExitFadeDuration(4000)
             start()
+        }
+
+        // Animate the welcome page on first run
+        if (savedInstanceState == null) {
+            with(welcomePage) {
+                alpha = 0.3f
+                animate().alpha(1f).setDuration(1500).setInterpolator(AccelerateDecelerateInterpolator())
+                    .setListener(object: AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator?) {
+                            super.onAnimationEnd(animation)
+                            // Clear the focus of input area, make the screen cleaner
+                            inputArea.clearFocus()
+                            with(findViewById<ConstraintLayout>(R.id.slide_up)) {
+                                alpha = 0.3f
+                                translationY = 100f
+                                animate().alpha(1f).translationY(0f).setDuration(1000).setInterpolator(AccelerateDecelerateInterpolator())
+                                    .setListener(object: AnimatorListenerAdapter() {
+                                        override fun onAnimationEnd(animation: Animator?) {
+                                            super.onAnimationEnd(animation)
+                                            findViewById<ConstraintLayout>(R.id.slide_up).visibility = View.VISIBLE
+                                        }
+                                    })
+                            }
+                        }
+                    }
+                )
+            }
         }
 
         hostInputText.run {
@@ -92,7 +99,7 @@ class NCLoginActivity : AppCompatActivity() {
                     true
                 } else false
             }
-            setOnFocusChangeListener { v, hasFocus ->  inputArea.helperText = if (hasFocus) getString(R.string.url_helper_text) else null}
+            setOnFocusChangeListener { _, hasFocus ->  inputArea.helperText = if (hasFocus) getString(R.string.url_helper_text) else null}
             addTextChangedListener(object: TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { error = null }
@@ -290,10 +297,11 @@ class NCLoginActivity : AppCompatActivity() {
     }
 
     /* Use nextcloud server capabilities OCS endpoint to validate host */
+    @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun pingServer(serverUrl: String): Int {
         return withContext(Dispatchers.IO) {
             try {
-                var response: Int = 0
+                var response = 0
                 (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpURLConnection).apply {
                     setRequestProperty(NEXTCLOUD_OCSAPI_HEADER, "true")
                     connectTimeout = 2000

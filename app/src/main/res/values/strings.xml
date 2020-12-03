@@ -7,7 +7,7 @@
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Welcome to Les Pas!</string>
     <string name="welcome_message">A token is required to access your Nextcloud server. Please input server address below and hit enter to continue. You
-        will then see your server\'s authentication page in the next screen.
+        will then finish authentication on your server.
     </string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
