@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
+import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -234,17 +235,24 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
             R.id.share -> {
                 val uris = arrayListOf<Uri>()
-                val path = File(requireActivity().filesDir, getString(R.string.lespas_base_folder_name))
+                val filePath = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+                val cachePath = requireActivity().cacheDir
                 val authority = getString(R.string.file_authority)
-                for (i in selectionTracker.selection)
-                    uris.add(FileProvider.getUriForFile(requireContext(), authority, File(path, mAdapter.getPhotoAt(i.toInt()).id)))
+                for (i in selectionTracker.selection) {
+                    with(mAdapter.getPhotoAt(i.toInt())) {
+                        File(filePath, id).copyTo(File(cachePath, name), true, 4096)
+                        uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
+                        //uris.add(FileProvider.getUriForFile(requireContext(), authority, File(filePath, id)))
+                    }
+                }
 
                 startActivity(Intent.createChooser(
                     Intent().apply{
                         action = Intent.ACTION_SEND_MULTIPLE
-                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                         type = "image/*"
-                    }, getString(R.string.share_to))
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    }, null)
                 )
 
                 selectionTracker.clearSelection()
