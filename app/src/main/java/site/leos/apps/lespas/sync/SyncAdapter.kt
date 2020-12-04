@@ -8,20 +8,17 @@ import android.content.AbstractThreadedSyncAdapter
 import android.content.ContentProviderClient
 import android.content.Context
 import android.content.SyncResult
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
@@ -30,7 +27,6 @@ import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import javax.net.ssl.SSLHandshakeException
 import javax.xml.namespace.QName
 
@@ -111,6 +107,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         }
                                     }
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+                                        // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
                                         photoRepository.fixNewPhotosAlbumId(action.folderId, it)
                                         albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
                                     }
@@ -129,7 +126,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Log.e("****SardineException: ", e.stackTraceToString())
                         when(e.statusCode) {
                             400, 404, 405, 406, 410-> {
-                                // target not found, target readonly, target already existed, etc. should be skipped and move onto next action
+                                // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
                             }
                             401, 403, 407-> {
                                 syncResult.stats.numAuthExceptions++
@@ -225,12 +222,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 if (changedAlbums.isNotEmpty()) {
                     // Sync each changed album
-                    var exif: ExifInterface
-                    var exifRotation: Int
                     val changedPhotos = mutableListOf<Photo>()
                     val remotePhotoIds = mutableListOf<String>()
-                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    var timeString: String?
                     var tempAlbum: Album
 
                     for (changedAlbum in changedAlbums) {
@@ -245,7 +238,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 remotePhotoIds.add(remotePhotoId)
 
-                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches new photos, e.g. no such remotePhotoId in local table
+                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches newly created photo id from server, e.g. no such remotePhotoId in local table
                                     //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
 
                                     if (localPhotoETags.containsKey(remotePhoto.name)) {
@@ -255,6 +248,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         if (File(localRootFolder, remotePhoto.name).exists()) {
                                             try {
                                                 File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
+                                                Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
                                         photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
@@ -298,48 +292,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                             }
 
-                            // Update dateTaken, width, height fields
-                            exif = ExifInterface("$localRootFolder/${changedPhoto.id}")
-                            timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-                            if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-                            if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-                            if (timeString == null) changedPhoto.dateTaken = changedPhoto.lastModified
-                            else changedPhoto.dateTaken = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                            with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}")) {
+                                changedPhoto.dateTaken = dateTaken
+                                changedPhoto.width = width
+                                changedPhoto.height = height
+                            }
+
                             // Update album's startDate, endDate fields
                             if (changedPhoto.dateTaken > changedAlbum.endDate) changedAlbum.endDate = changedPhoto.dateTaken
                             if (changedPhoto.dateTaken < changedAlbum.startDate) changedAlbum.startDate = changedPhoto.dateTaken
 
-                            // Rotate the photo if EXIF say so
-                            exifRotation = exif.rotationDegrees
-                            if (exifRotation != 0) {
-                                Bitmap.createBitmap(
-                                    BitmapFactory.decodeFile(
-                                        "$localRootFolder/${changedPhoto.id}"),
-                                        0, 0,
-                                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
-                                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
-                                        Matrix().apply{ preRotate(exifRotation.toFloat()) },
-                                        true).apply {
-                                    compress(Bitmap.CompressFormat.JPEG, 100, File(localRootFolder, changedPhoto.id).outputStream())
-                                    recycle()
-                                }
-
-                                exif.resetOrientation()
-                                val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
-                                exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
-                                exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
-                                exif.saveAttributes()
-                            }
-
-                            // Get width and height
-                            BitmapFactory.decodeFile("$localRootFolder/${changedPhoto.id}", options)
-                            changedPhoto.width = options.outWidth
-                            changedPhoto.height = options.outHeight
-
                             // update row when everything's fine. any thing that broke before this point will be captured by exception handler and will be worked on again in next round of sync
                             photoRepository.upsertSync(changedPhoto)
 
-                            // Need to update and show the new album in list asap, so have to do this in the loop
+                            // Need to update and show the new album from server in local album list asap, have to do this in the loop
                             if (i == 0) {
                                 if (changedAlbum.cover.isEmpty()) {
                                     // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline
