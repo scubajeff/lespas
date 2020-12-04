@@ -407,11 +407,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 override fun getNewListSize() = photos.size
                 override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldPhotos[oldItemPosition].id == photos[newItemPosition].id
                 override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
-                    if (oldItemPosition == 0) oldPhotos[oldItemPosition] == photos[newItemPosition]
-                    else oldPhotos[oldItemPosition].id == photos[newItemPosition].id
+                    if (oldItemPosition == 0) (oldPhotos[oldItemPosition] == photos[newItemPosition]) && oldPhotos.size == photos.size
+                    else oldPhotos[oldItemPosition] == photos[newItemPosition]
             }).dispatchUpdatesTo(this)
-
-            notifyItemChanged(0)
 
             //Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
         }
