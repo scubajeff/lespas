@@ -23,11 +23,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.Action
@@ -235,6 +234,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                                     // Files are under control, we can create sync action now
                                     val actions = mutableListOf<Action>()
                                     val newPhotos = acquiringModel.getNewPhotos()
+                                    var allPhotoNameMap = emptyList<AlbumPhotoName>()
+
+                                    runBlocking {
+                                        allPhotoNameMap = GlobalScope.async(Dispatchers.Default) {
+                                            albumsModel.getAllPhotoNameMap()
+                                        }.await()
+                                    }
 
                                     // Create new album first
                                     if (album.id.isEmpty()) {
@@ -250,6 +256,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
                                     newPhotos.forEach {
                                         it.albumId = album.id
+
+                                        // Is there a photo with same name exists in the same album?
+                                        if (allPhotoNameMap.contains(AlbumPhotoName(it.albumId, it.name))) it.id = ""
+
                                         if (it.dateTaken < album.startDate) album.startDate = it.dateTaken
                                         if (it.dateTaken > album.endDate) album.endDate = it.dateTaken
                                         actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", it.name, System.currentTimeMillis(), 1))
@@ -257,6 +267,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
                                     actionModel.addActions(actions)
                                     GlobalScope.launch(Dispatchers.Default) {
+                                        // If photo with same exists, don't duplicate it
+                                        val addPhotos = mutableListOf<Photo>()
+                                        newPhotos.forEach { if (it.id.isNotEmpty()) addPhotos.add(it) }
+
                                         albumsModel.addPhotos(newPhotos)
                                         albumsModel.upsertAsync(album)
                                     }

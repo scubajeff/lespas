@@ -51,7 +51,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/small_padding"
-            android:maxLines="4"
+            android:maxLines="5"
             style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             android:text="@string/it_takes_time"
             android:visibility="gone"/>

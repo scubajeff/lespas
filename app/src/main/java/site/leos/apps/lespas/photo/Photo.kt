@@ -27,6 +27,7 @@ data class Photo(
 
 data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
+data class AlbumPhotoName(val albumId: String, val name: String)
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
@@ -72,6 +73,9 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, lastModified = :lastModified WHERE id = :oldId")
     abstract fun fixPhotoId(oldId: String, newId: String, eTag: String, lastModified: LocalDateTime)
+
+    @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")
+    abstract fun getAllPhotoNameMap(): List<AlbumPhotoName>
 }
 
 /**

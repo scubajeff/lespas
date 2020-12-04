@@ -7,6 +7,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 
@@ -24,4 +25,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     suspend fun getCoverPhoto(coverId: String): Photo = photoRepository.getPhotoById(coverId)
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
     suspend fun addPhotos(photos: List<Photo>) { photoRepository.insert(photos) }
+    fun getAllPhotoNameMap(): List<AlbumPhotoName> = photoRepository.getAllPhotoNameMap()
 }

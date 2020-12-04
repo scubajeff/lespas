@@ -255,7 +255,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         if (File(localRootFolder, remotePhoto.name).exists()) {
                                             try {
                                                 File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                            } catch (e: Exception) { e.printStackTrace() }
+                                            } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
                                         photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
                                             remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
@@ -279,11 +279,22 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         changedPhotos.forEachIndexed {i, changedPhoto->
-                            // Download image file from server
-                            sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}").use { input ->
-                                File("$localRootFolder/${changedPhoto.id}").outputStream().use { output ->
-                                    input.copyTo(output, 8192)
-                                    Log.e("****", "Downloaded ${changedPhoto.name}")
+                            // Prepare the image file
+                            if (File(localRootFolder, changedPhoto.name).exists()) {
+                                // If image file with 'name' exists, replace the old file with this
+                                try {
+                                    File(localRootFolder, changedPhoto.id).delete()
+                                    File(localRootFolder, changedPhoto.name).renameTo(File(localRootFolder, changedPhoto.id))
+                                    Log.e("****", "rename file ${changedPhoto.name} to ${changedPhoto.id}")
+                                } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
+                            }
+                            else {
+                                // Download image file from server
+                                sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}").use { input ->
+                                    File("$localRootFolder/${changedPhoto.id}").outputStream().use { output ->
+                                        input.copyTo(output, 8192)
+                                        Log.e("****", "Downloaded ${changedPhoto.name}")
+                                    }
                                 }
                             }
 

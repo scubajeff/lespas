@@ -10,11 +10,11 @@ import android.util.Log
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.photo.AlbumPhotoName
+import site.leos.apps.lespas.photo.Photo
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
@@ -44,6 +44,13 @@ class ShareReceiverActivity: AppCompatActivity() {
                         // Files are under control, we can create sync action now
                         val actions = mutableListOf<Action>()
                         val newPhotos = acquiringModel.getNewPhotos()
+                        var allPhotoNameMap = emptyList<AlbumPhotoName>()
+
+                        runBlocking {
+                            allPhotoNameMap = GlobalScope.async(Dispatchers.Default) {
+                                albumModel.getAllPhotoNameMap()
+                            }.await()
+                        }
 
                         // Create new album first
                         if (album.id.isEmpty()) {
@@ -60,6 +67,10 @@ class ShareReceiverActivity: AppCompatActivity() {
 
                         newPhotos.forEach {
                             it.albumId = album.id
+
+                            // Is there a photo with same name exists in the same album?
+                            if (allPhotoNameMap.contains(AlbumPhotoName(it.albumId, it.name))) it.id = ""
+
                             if (it.dateTaken < album.startDate) album.startDate = it.dateTaken
                             if (it.dateTaken > album.endDate) album.endDate = it.dateTaken
                             actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", it.name, System.currentTimeMillis(), 1))
@@ -67,7 +78,11 @@ class ShareReceiverActivity: AppCompatActivity() {
 
                         actionModel.addActions(actions)
                         GlobalScope.launch(Dispatchers.Default) {
-                            albumModel.addPhotos(newPhotos)
+                            // If photo with same exists, don't duplicate it
+                            val addPhotos = mutableListOf<Photo>()
+                            newPhotos.forEach { if (it.id.isNotEmpty()) addPhotos.add(it) }
+
+                            albumModel.addPhotos(addPhotos)
                             albumModel.upsertAsync(album)
                         }
 

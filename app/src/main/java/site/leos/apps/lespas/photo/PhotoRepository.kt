@@ -24,6 +24,7 @@ class PhotoRepository(application: Application) {
     suspend fun insert(photos: List<Photo>) { photoDao.insert(photos) }
     fun fixNewPhotosAlbumId(oldId: String, newId: String) { photoDao.fixNewPhotosAlbumId(oldId, newId) }
     fun fixPhotoId(oldId: String, newId: String, eTag: String, lastModified: LocalDateTime) { photoDao.fixPhotoId(oldId, newId, eTag, lastModified) }
+    fun getAllPhotoNameMap(): List<AlbumPhotoName> = photoDao.getAllPhotoNameMap()
 
     companion object {
         private var repo: PhotoRepository? = null

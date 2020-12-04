@@ -133,7 +133,6 @@ class AcquiringDialogFragment: DialogFragment() {
                 var exifRotation: Int
                 var lastModified: Date
 
-
                 uris.forEachIndexed { index, uri ->
                     // find out the real name
                     application.contentResolver.query(uri, null, null, null, null)?.apply {
@@ -190,7 +189,7 @@ class AcquiringDialogFragment: DialogFragment() {
                         options.outWidth, options.outHeight, 0))
 
 
-                    // Try to finish at the end by setting progress to more than 100%
+                    // By setting progress to more than 100%, signaling the calling fragment/activity
                     withContext(Dispatchers.Main) { setProgress(index + 1, fileName) }
                 }
             }
@@ -200,6 +199,7 @@ class AcquiringDialogFragment: DialogFragment() {
             currentProgress.value = progress
             currentName = name
         }
+
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
         fun getTotalBytes(): Long = totalBytes
