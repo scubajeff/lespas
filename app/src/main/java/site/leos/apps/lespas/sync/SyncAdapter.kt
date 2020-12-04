@@ -97,7 +97,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                                 with("$resourceRoot/${Uri.encode(action.folderName)}") {
-                                    sardine.createDirectory(this)
+                                    // Should catch status code 405 here to ignore folder already exists on server
+                                    try {
+                                        sardine.createDirectory(this)
+                                    } catch(e: SardineException) {
+                                        when(e.statusCode) {
+                                            405-> {}
+                                            else-> {
+                                                Log.e("****SardineException: ", e.stackTraceToString())
+                                                syncResult.stats.numIoExceptions++
+                                                return
+                                            }
+                                        }
+                                    }
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
                                         photoRepository.fixNewPhotosAlbumId(action.folderId, it)
                                         albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
