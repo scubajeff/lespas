@@ -13,6 +13,7 @@ import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -123,7 +124,19 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         shareButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                startActivity(Intent.createChooser(Intent().setAction(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, currentPhoto.getCurrentPhoto().value!!.name), null))
+                with(currentPhoto.getCurrentPhoto().value!!) {
+                    File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
+                    startActivity(
+                        Intent.createChooser(
+                            Intent().apply {
+                                action = Intent.ACTION_SEND
+                                type = "image/*"
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name)))
+                            }, null
+                        )
+                    )
+                }
             }
         }
         infoButton.apply {
