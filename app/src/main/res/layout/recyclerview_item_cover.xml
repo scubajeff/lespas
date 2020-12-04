@@ -19,12 +19,12 @@
         tools:src="@drawable/login_background_gradient_2" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/summary"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="H,21:9"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@drawable/bottom_controls_background">
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/title"

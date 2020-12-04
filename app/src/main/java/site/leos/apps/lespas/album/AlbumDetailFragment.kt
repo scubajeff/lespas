@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -315,6 +316,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover).apply { ViewCompat.setTransitionName(this, it.albumId) }, ImageLoaderViewModel.TYPE_COVER) }
 
                     if (showStatistics) {
+                        findViewById<ConstraintLayout>(R.id.summary).background = resources.getDrawable(R.drawable.bottom_controls_background)
                         findViewById<TextView>(R.id.title).text = photos[0].name
 
                         val days = Duration.between(
