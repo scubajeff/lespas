@@ -32,6 +32,7 @@
             app:layout_constraintTop_toBottomOf="@id/dialog_title_textview"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintHeight_max="@dimen/destination_list_maximum_height"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/recyclerview_item_destination" />
 
