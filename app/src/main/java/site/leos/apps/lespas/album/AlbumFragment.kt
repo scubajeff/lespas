@@ -16,7 +16,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -26,10 +25,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.LocalDateTime
@@ -49,7 +46,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private lateinit var acquiringModel: AcquiringDialogFragment.AcquiringViewModel
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -227,59 +223,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                     if (uris.isNotEmpty()) {
                         destinationModel.getDestination().observe (this, { album->
                             // Acquire files
-                            acquiringModel = ViewModelProvider(requireActivity(), AcquiringDialogFragment.AcquiringViewModelFactory(requireActivity().application, uris))
-                                .get(AcquiringDialogFragment.AcquiringViewModel::class.java)
-                            acquiringModel.getProgress().observe(this, { progress->
-                                if (progress == uris.size) {
-                                    // Files are under control, we can create sync action now
-                                    val actions = mutableListOf<Action>()
-                                    val newPhotos = acquiringModel.getNewPhotos()
-                                    var allPhotoNameMap = emptyList<AlbumPhotoName>()
-
-                                    runBlocking {
-                                        allPhotoNameMap = GlobalScope.async(Dispatchers.Default) {
-                                            albumsModel.getAllPhotoNameMap()
-                                        }.await()
-                                    }
-
-                                    // Create new album first
-                                    if (album.id.isEmpty()) {
-                                        // Set a fake ID, sync adapter will correct it when real id is available
-                                        album.id = System.currentTimeMillis().toString()
-
-                                        // Store cover, e.g. first photo in new album, in member filename
-                                        album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
-                                        album.coverWidth = newPhotos[0].width
-                                        album.coverHeight = newPhotos[0].height
-                                        actions.add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
-                                    }
-
-                                    newPhotos.forEach {
-                                        it.albumId = album.id
-
-                                        // Is there a photo with same name exists in the same album?
-                                        if (allPhotoNameMap.contains(AlbumPhotoName(it.albumId, it.name))) it.id = ""
-
-                                        if (it.dateTaken < album.startDate) album.startDate = it.dateTaken
-                                        if (it.dateTaken > album.endDate) album.endDate = it.dateTaken
-                                        actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", it.name, System.currentTimeMillis(), 1))
-                                    }
-
-                                    actionModel.addActions(actions)
-                                    GlobalScope.launch(Dispatchers.Default) {
-                                        // If photo with same exists, don't duplicate it
-                                        val addPhotos = mutableListOf<Photo>()
-                                        newPhotos.forEach { if (it.id.isNotEmpty()) addPhotos.add(it) }
-
-                                        albumsModel.addPhotos(newPhotos)
-                                        albumsModel.upsertAsync(album)
-                                    }
-
-                                }
-                            })
-
                             if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                                AcquiringDialogFragment.newInstance(uris).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                         })
 
                         if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)

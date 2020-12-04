@@ -111,6 +111,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         }
                                     }
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+                                        // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
                                         photoRepository.fixNewPhotosAlbumId(action.folderId, it)
                                         albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
                                     }
@@ -129,7 +130,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         Log.e("****SardineException: ", e.stackTraceToString())
                         when(e.statusCode) {
                             400, 404, 405, 406, 410-> {
-                                // target not found, target readonly, target already existed, etc. should be skipped and move onto next action
+                                // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
                             }
                             401, 403, 407-> {
                                 syncResult.stats.numAuthExceptions++
@@ -245,7 +246,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 remotePhotoIds.add(remotePhotoId)
 
-                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches new photos, e.g. no such remotePhotoId in local table
+                                if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches newly created photo id from server, e.g. no such remotePhotoId in local table
                                     //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
 
                                     if (localPhotoETags.containsKey(remotePhoto.name)) {
@@ -255,6 +256,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         if (File(localRootFolder, remotePhoto.name).exists()) {
                                             try {
                                                 File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
+                                                Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
                                         photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
