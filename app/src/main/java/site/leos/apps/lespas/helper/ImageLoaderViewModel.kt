@@ -74,7 +74,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 TYPE_COVER, TYPE_SMALL_COVER -> {
                     val size = if (type == TYPE_SMALL_COVER) 4
                     else if ((photo.height < 1000) || (photo.width < 1000)) 1 else 2
-                    // cover baseline value passed in member shareId
+                    // cover baseline value passed in property shareId
                     val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
                     val rect = Rect(0, photo.shareId, photo.width, bottom)
                     BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
