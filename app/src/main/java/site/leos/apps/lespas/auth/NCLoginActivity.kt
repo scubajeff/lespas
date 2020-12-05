@@ -22,9 +22,13 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.*
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.getDrawableOrThrow
+import androidx.transition.AutoTransition
+import androidx.transition.TransitionManager
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +44,7 @@ import java.util.regex.Pattern
 import kotlin.collections.HashMap
 
 class NCLoginActivity : AppCompatActivity() {
-    private lateinit var welcomePage: ConstraintLayout
+    private lateinit var welcomePage: LinearLayout
     private lateinit var authWebpage: WebView
     private lateinit var inputArea: TextInputLayout
     private lateinit var hostInputText: TextInputEditText
@@ -51,6 +55,7 @@ class NCLoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nc_login)
 
+        val root = findViewById<ConstraintLayout>(R.id.layout_background)
         welcomePage = findViewById(R.id.welcome_page)
         authWebpage = findViewById(R.id.nc_auth_page)
         inputArea = findViewById(R.id.input_area)
@@ -60,8 +65,8 @@ class NCLoginActivity : AppCompatActivity() {
 
         // Animate the background
         (findViewById<ConstraintLayout>(R.id.layout_background).background as AnimationDrawable).run {
-            setEnterFadeDuration(2000)
-            setExitFadeDuration(4000)
+            setEnterFadeDuration(3000)
+            setExitFadeDuration(3000)
             start()
         }
 
@@ -73,24 +78,25 @@ class NCLoginActivity : AppCompatActivity() {
                     .setListener(object: AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)
-                            // Clear the focus of input area, make the screen cleaner
-                            inputArea.clearFocus()
-                            with(findViewById<ConstraintLayout>(R.id.slide_up)) {
-                                alpha = 0.3f
-                                translationY = 100f
-                                animate().alpha(1f).translationY(0f).setDuration(1000).setInterpolator(AccelerateDecelerateInterpolator())
-                                    .setListener(object: AnimatorListenerAdapter() {
-                                        override fun onAnimationEnd(animation: Animator?) {
-                                            super.onAnimationEnd(animation)
-                                            findViewById<ConstraintLayout>(R.id.slide_up).visibility = View.VISIBLE
-                                        }
-                                    })
+
+                            ConstraintSet().run {
+                                val t = AutoTransition().apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                                clone(root)
+                                constrainPercentHeight(R.id.welcome_page, 0.8f)
+                                TransitionManager.beginDelayedTransition(root, t)
+                                applyTo(root)
                             }
+                            inputArea.apply {
+                                // Clear the focus of input area, make the screen cleaner
+                                clearFocus()
+                                visibility = View.VISIBLE
+                            }
+
                         }
                     }
                 )
             }
-        }
+        } else inputArea.visibility = View.VISIBLE
 
         hostInputText.run {
             setOnEditorActionListener { _, id, _ ->

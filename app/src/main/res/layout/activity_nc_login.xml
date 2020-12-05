@@ -20,26 +20,22 @@
         android:elevation="2dp"
         android:visibility="gone" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:id="@+id/welcome_page"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintVertical_bias="0.15"
-        app:layout_constraintHeight_percent="0.7"
-
-        android:padding="@dimen/extra_padding">
+        android:padding="@dimen/extra_padding"
+        android:orientation="vertical"
+        android:gravity="center">
 
         <ImageView
             android:id="@+id/logo"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
             android:src="@drawable/ic_logo"
             tools:ignore="ContentDescription" />
 
@@ -47,60 +43,32 @@
             android:id="@+id/welcome_message_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/logo"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
             android:layout_marginVertical="@dimen/small_padding"
             style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:textColor="@color/color_on_primary"
+            android:textColor="@color/color_text_light"
             android:text="@string/welcome_message_title" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/slide_up"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/input_area"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            android:visibility="invisible">
+            android:layout_marginTop="56dp"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+            app:helperTextEnabled="true"
+            android:hint="@string/host_textinput_label"
+            app:errorEnabled="true"
+            app:prefixText="https://"
+            android:visibility="gone">
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/welcome_message"
-                android:layout_width="0dp"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/host"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintBottom_toTopOf="@id/input_area"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                android:layout_marginBottom="@dimen/extra_padding"
-                style="@style/TextAppearance.MaterialComponents.Caption"
-                android:textColor="@color/color_on_primary"
-                android:text="@string/welcome_message"/>
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:imeOptions="actionGo"/>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/input_area"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
-                app:boxStrokeColor="@color/color_secondary_variant"
-                app:helperTextTextColor="@color/color_on_primary"
-                app:helperTextEnabled="true"
-                app:errorEnabled="true"
-                app:prefixText="https://">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/host"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textUri"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:imeOptions="actionGo"/>
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
