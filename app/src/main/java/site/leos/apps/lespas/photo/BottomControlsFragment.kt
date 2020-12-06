@@ -37,6 +37,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var infoButton: ImageButton
     private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
+    private var ignore = true
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
@@ -97,7 +98,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        uiToggle.status().observe(viewLifecycleOwner, { toggle() })
+        uiToggle.status().observe(viewLifecycleOwner, {
+            if (ignore) {
+                hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+                ignore = false
+            } else toggle()
+        })
 
         // Controls
         controls = view.findViewById(R.id.controls)

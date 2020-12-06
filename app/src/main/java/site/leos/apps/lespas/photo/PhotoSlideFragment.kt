@@ -72,7 +72,6 @@ class PhotoSlideFragment : Fragment() {
             })
         }
 
-
         return view
     }
 
@@ -91,8 +90,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-
-        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
+        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
     }
 
     override fun onResume() {
