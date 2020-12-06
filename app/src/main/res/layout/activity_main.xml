@@ -16,12 +16,12 @@
         app:popupTheme="@style/Theme.LesPas.Toolbar.Dark.Overlay.Popup"
         android:elevation="4dp" />
 
-    <FrameLayout
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/container_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <FrameLayout
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/container_bottom_toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
