@@ -9,7 +9,6 @@ import android.view.WindowManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
@@ -80,12 +79,8 @@ class PhotoSlideFragment : Fragment() {
 
         albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
-            (view.parent as? ViewGroup)?.doOnPreDraw { slider.setCurrentItem(startAt, false) }
+            slider.setCurrentItem(startAt, false)
         })
-
-        // TODO: should be started when view loaded
-        // Briefly show controls
-        //uiModel.hideUI()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
