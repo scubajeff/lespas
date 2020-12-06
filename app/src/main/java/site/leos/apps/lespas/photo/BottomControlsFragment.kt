@@ -64,7 +64,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                         TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                         controls.visibility = View.VISIBLE
                         visible = true
-                        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
                     } else {
                         TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                         controls.visibility = View.GONE
@@ -78,7 +77,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.statusBars())) {
                         controls.visibility = View.VISIBLE
-                        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
                         visible = true
                     } else {
                         controls.visibility = View.GONE
