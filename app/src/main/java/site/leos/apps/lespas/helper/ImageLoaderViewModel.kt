@@ -17,7 +17,7 @@ import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
-    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
+    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     //private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
 
