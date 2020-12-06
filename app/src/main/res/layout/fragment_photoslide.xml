@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
+    android:background="#121212"
     tools:context=".photo.PhotoSlideFragment">
 
     <androidx.viewpager2.widget.ViewPager2
