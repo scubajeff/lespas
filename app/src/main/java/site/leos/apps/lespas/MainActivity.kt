@@ -3,11 +3,16 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.view.drawToBitmap
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -17,6 +22,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
+    private lateinit var toolbar: Toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +33,8 @@ class MainActivity : AppCompatActivity() {
             File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir()
         }
 
-        setSupportActionBar(findViewById(R.id.toolbar))
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         val account: Account = AccountManager.get(this).accounts[0]
         if (savedInstanceState == null) {
@@ -75,5 +82,9 @@ class MainActivity : AppCompatActivity() {
 
     interface OnWindowFocusChangedListener {
         fun onWindowFocusChanged(hasFocus: Boolean)
+    }
+
+    fun getToolbarViewContent(): Drawable {
+        return BitmapDrawable(resources, toolbar.drawToBitmap(Bitmap.Config.ARGB_8888))
     }
 }

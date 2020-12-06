@@ -28,6 +28,7 @@ import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.BottomControlsFragment
@@ -41,6 +42,7 @@ import java.time.ZoneId
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var album: Album
     private var actionMode: ActionMode? = null
+    private lateinit var stub: View
     private lateinit var recyclerView: RecyclerView
     private lateinit var mAdapter: PhotoGridAdapter
 
@@ -73,6 +75,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         // View might not be destroy at all, reuse it here
         val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
+        stub = vg.findViewById(R.id.stub)
         recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
             // Stop item from blinking when notifying changes
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
@@ -88,6 +91,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         mAdapter = PhotoGridAdapter(
             { view, position ->
+                stub.background = (activity as MainActivity).getToolbarViewContent()
                 exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()

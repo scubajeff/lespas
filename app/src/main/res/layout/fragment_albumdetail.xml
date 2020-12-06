@@ -5,17 +5,29 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="?attr/actionBarSize"
     tools:context="album.AlbumDetailFragment">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/photogrid"
+    <View
+        android:id="@+id/stub"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@color/color_primary"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:transitionGroup="true"
-        android:paddingLeft="1dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="@integer/photo_grid_span_count"
-        tools:listitem="@layout/recyclerview_item_photo"/>
+        android:layout_marginTop="?attr/actionBarSize">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/photogrid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingLeft="1dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="@integer/photo_grid_span_count"
+            tools:listitem="@layout/recyclerview_item_photo"
+            tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
