@@ -39,7 +39,6 @@ class PhotoSlideFragment : Fragment() {
         albumId = arguments?.getString(ALBUM_ID)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
-        //sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.albumdetail_to_photoslide)
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -108,7 +107,6 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
