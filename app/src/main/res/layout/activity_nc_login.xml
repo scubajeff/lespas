@@ -48,14 +48,25 @@
             android:textColor="@color/color_text_light"
             android:text="@string/welcome_message_title" />
 
+        <TextView
+            android:id="@+id/welcome_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/extra_padding"
+            android:layout_gravity="fill_horizontal"
+            style="@style/TextAppearance.MaterialComponents.Subtitle2"
+            android:textColor="@color/color_text_light"
+            android:text="@string/welcom_message"
+            android:visibility="gone" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/input_area"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="56dp"
+            android:layout_marginTop="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+            app:boxStrokeColor="@color/color_secondary"
             app:helperTextEnabled="true"
-            android:hint="@string/host_textinput_label"
             app:errorEnabled="true"
             app:prefixText="https://"
             android:visibility="gone">
@@ -67,6 +78,7 @@
                 android:inputType="textUri"
                 android:maxLines="1"
                 android:singleLine="true"
+                android:textCursorDrawable="@null"
                 android:imeOptions="actionGo"/>
 
         </com.google.android.material.textfield.TextInputLayout>

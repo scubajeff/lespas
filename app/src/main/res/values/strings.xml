@@ -6,7 +6,8 @@
 
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Welcome to Les Pas!</string>
-    <string name="host_textinput_label">Nextcloud server address</string>
+    <string name="welcom_message">To get started, please grant access on your Nextcloud server.</string>
+    <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>

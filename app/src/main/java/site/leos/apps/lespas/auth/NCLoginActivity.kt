@@ -23,6 +23,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.*
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -86,6 +87,7 @@ class NCLoginActivity : AppCompatActivity() {
                                 TransitionManager.beginDelayedTransition(root, t)
                                 applyTo(root)
                             }
+                            welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
                             inputArea.apply {
                                 // Clear the focus of input area, make the screen cleaner
                                 clearFocus()
