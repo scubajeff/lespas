@@ -24,7 +24,8 @@
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="H,21:9"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@drawable/bottom_controls_background">
 
         <TextView
             android:id="@+id/title"
@@ -52,8 +53,7 @@
             android:layout_marginBottom="@dimen/extra_padding"
             android:text="|"
             android:textColor="@color/color_text_light"
-            style="@style/TextAppearance.MaterialComponents.Body2"
-            android:visibility="invisible" />
+            style="@style/TextAppearance.MaterialComponents.Body2" />
 
 
         <TextView

@@ -1,17 +1,16 @@
 package site.leos.apps.lespas.album
 
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
-import android.transition.TransitionInflater
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -23,6 +22,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
@@ -46,7 +47,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var lastScrollPosition = -1
-    private var loadPhoto = true
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
@@ -61,24 +61,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
 
-        if (savedInstanceState == null) {
-            postponeEnterTransition()
-            with(TransitionInflater.from(context)) {
-                sharedElementEnterTransition = inflateTransition(R.transition.album_to_albumdetail).apply {
-                    addListener(object : android.transition.Transition.TransitionListener {
-                        override fun onTransitionStart(transition: android.transition.Transition?) {}
-                        override fun onTransitionEnd(transition: android.transition.Transition?) {
-                            mAdapter.loadPhoto()
-                            loadPhoto = true
-                        }
-                        override fun onTransitionCancel(transition: android.transition.Transition?) {}
-                        override fun onTransitionPause(transition: android.transition.Transition?) {}
-                        override fun onTransitionResume(transition: android.transition.Transition?) {}
-                    })
-                }
-                //exitTransition = inflateTransition(R.transition.albumdetail_exit)
-            }
-            loadPhoto = false
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
         }
 
         setHasOptionsMenu(true)
@@ -103,14 +88,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         mAdapter = PhotoGridAdapter(
             { view, position ->
+                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()
-                    //.setReorderingAllowed(true)
-                    //.addSharedElement(view, view.transitionName)
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { if (type == ImageLoaderViewModel.TYPE_COVER) startPostponedEnterTransition() } }
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
         ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
 
         return vg
@@ -119,12 +106,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        postponeEnterTransition()
+        ViewCompat.setTransitionName(view, album.id)
+
         // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
             // Cover might changed, photo might be deleted, so get updates from latest here
             this.album = it.album
 
-            mAdapter.setAlbum(it, loadPhoto)
+            mAdapter.setAlbum(it)
             (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
             if (lastScrollPosition != -1) {
@@ -287,12 +277,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdator: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private lateinit var album: AlbumWithPhotos
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
-        private var showStatistics = true
 
         init {
             setHasStableIds(true)
@@ -313,26 +301,24 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
                 with(itemView) {
-                    photos.firstOrNull()?.let { imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover).apply { ViewCompat.setTransitionName(this, it.albumId) }, ImageLoaderViewModel.TYPE_COVER) }
-
-                    if (showStatistics) {
-                        findViewById<ConstraintLayout>(R.id.summary).background = resources.getDrawable(R.drawable.bottom_controls_background, null)
-                        findViewById<TextView>(R.id.title).text = photos[0].name
-
-                        val days = Duration.between(
-                            photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
-                            photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()
-                        ).toDays().toInt()
-                        findViewById<TextView>(R.id.duration).text = when (days) {
-                            in 0..21 -> resources.getString(R.string.duration_days, days + 1)
-                            in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
-                            in 57..365 -> resources.getString(R.string.duration_months, days / 30)
-                            else -> resources.getString(R.string.duration_years, days / 365)
-                        }
-
-                        findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
-                        findViewById<TextView>(R.id.divider).visibility = View.VISIBLE
+                    photos.firstOrNull()?.let {
+                        imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
                     }
+
+                    findViewById<TextView>(R.id.title).text = photos[0].name
+
+                    val days = Duration.between(
+                        photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
+                        photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()
+                    ).toDays().toInt()
+                    findViewById<TextView>(R.id.duration).text = when (days) {
+                        in 0..21 -> resources.getString(R.string.duration_days, days + 1)
+                        in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
+                        in 57..365 -> resources.getString(R.string.duration_months, days / 30)
+                        else -> resources.getString(R.string.duration_years, days / 365)
+                    }
+
+                    findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
                 }
             }
 
@@ -387,22 +373,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
 
-        internal fun loadPhoto() {
-            photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
-            showStatistics = true
-            notifyDataSetChanged()
-        }
-
-        internal fun setAlbum(album: AlbumWithPhotos, loadPhoto: Boolean) {
+        internal fun setAlbum(album: AlbumWithPhotos) {
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
             album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, coverBaseline)) }
-            if (loadPhoto) this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
-            else {
-                this.album = album
-                showStatistics = false
-            }
+            this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
 
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {
                 override fun getOldListSize() = oldPhotos.size

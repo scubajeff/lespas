@@ -1,7 +1,7 @@
 package site.leos.apps.lespas.photo
 
+import android.graphics.Color
 import android.os.Bundle
-import android.transition.TransitionInflater
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +18,7 @@ import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -38,13 +39,17 @@ class PhotoSlideFragment : Fragment() {
         albumId = arguments?.getString(ALBUM_ID)!!
         startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
-        postponeEnterTransition()
-        sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.albumdetail_to_photoslide)
-        sharedElementReturnTransition = null
+        //sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.albumdetail_to_photoslide)
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
+
+        postponeEnterTransition()
 
         pAdapter = PhotoSlideAdapter(
             { uiModel.toggleOnOff() }
