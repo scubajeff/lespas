@@ -160,8 +160,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         //hideHandler.post(showSystemUI)
         currentPhoto.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
-            if (currentPhoto.forReal()) Snackbar.make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
-                .setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setAnchorView(controls).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_on_primary)).show()
+            if (currentPhoto.forReal())
+                Snackbar
+                    .make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+                    .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+                    .setAnchorView(controls)
+                    .setBackgroundTint(resources.getColor(R.color.color_primary, null))
+                    .setTextColor(resources.getColor(R.color.color_text_light))
+                    .show()
         })
     }
 
