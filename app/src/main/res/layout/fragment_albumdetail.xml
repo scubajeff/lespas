@@ -27,7 +27,7 @@
     <View
         android:id="@+id/stub"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
+        android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         android:background="@android:color/transparent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
