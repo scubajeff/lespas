@@ -270,6 +270,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: ""
             )
+            info_artist.text = exif.getAttribute((ExifInterface.TAG_ARTIST))?.let { it } ?: ""
             info_size.text = String.format("%s  %s",
                 String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576),
                 String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))

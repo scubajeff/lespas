@@ -94,6 +94,18 @@
                     android:id="@+id/info_parameter"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
+            <TableRow>
+                <TextView
+                    android:layout_column="1"
+                    android:padding="@dimen/mini_padding"
+                    android:text="@string/artist"
+                    android:textAlignment="textEnd"
+                    style="@style/TextAppearance.AppCompat.Small"/>
+                <TextView
+                    android:lines="1"
+                    android:id="@+id/info_artist"
+                    android:padding="@dimen/mini_padding"/>
+            </TableRow>
         </TableLayout>
 
         <com.google.android.material.button.MaterialButton

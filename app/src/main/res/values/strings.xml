@@ -89,6 +89,7 @@
     <string name="camera_manufacturer">Mfg:</string>
     <string name="camera_model">Model:</string>
     <string name="parameter">Param.:</string>
+    <string name="artist">Artist:</string>
 
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
