@@ -54,8 +54,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
-
-        //sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.album_to_albumdetail)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -188,6 +186,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             setDisplayShowTitleEnabled(true)
             title = getString(R.string.app_name)
         }
+        exitTransition = null
+        reenterTransition = null
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
