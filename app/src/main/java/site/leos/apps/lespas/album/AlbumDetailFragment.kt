@@ -64,7 +64,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
-            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
         }
 
@@ -111,7 +111,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         super.onViewCreated(view, savedInstanceState)
 
         postponeEnterTransition()
-        ViewCompat.setTransitionName(view, album.id)
+        ViewCompat.setTransitionName(recyclerView, album.id)
 
         // Register data observer first, try feeding adapter with lastest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {

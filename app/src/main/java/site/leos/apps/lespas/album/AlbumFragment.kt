@@ -64,8 +64,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         fab = view.findViewById(R.id.fab)
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)

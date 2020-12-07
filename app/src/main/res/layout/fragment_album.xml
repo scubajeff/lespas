@@ -5,20 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_marginTop="?attr/actionBarSize"
     tools:context="site.leos.apps.lespas.album.AlbumFragment">
-
-    <View
-        android:id="@+id/stub"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@color/color_primary"/>
-
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/albumlist"
@@ -61,5 +49,4 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/fab_add_album"
         android:src="@drawable/ic_baseline_add_24"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

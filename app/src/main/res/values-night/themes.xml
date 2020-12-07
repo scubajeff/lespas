@@ -12,7 +12,7 @@
         <item name="android:colorBackground">@color/color_background</item>
         <item name="colorSurface">@color/color_background</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
 
         <!-- fonts -->
         <item name="fontFamily">@font/archer_bold</item>
@@ -30,11 +30,11 @@
     </style>
 
     <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-        <item name="android:background">?attr/colorPrimaryVariant</item>
+        <item name="android:background">?attr/colorPrimary</item>
     </style>
 
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
-        <item name="background">?attr/colorPrimaryVariant</item>
+        <item name="background">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>
 </resources>
