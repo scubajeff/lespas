@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.photo
 
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,6 +15,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
@@ -31,6 +33,7 @@ class PhotoSlideFragment : Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
+    private var autoRotate = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +45,8 @@ class PhotoSlideFragment : Fragment() {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
         }
+
+        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -51,7 +56,8 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             { uiModel.toggleOnOff() }
-        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
+        ) { photo, imageView, type ->
+            imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -67,6 +73,9 @@ class PhotoSlideFragment : Fragment() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentPhotoModel.setCurrentPhoto(pAdapter.getPhotoAt(position))
+
+                    val photo = pAdapter.getPhotoAt(position)
+                    if (autoRotate) activity?.requestedOrientation = if (photo.width > photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 }
             })
         }

@@ -4,7 +4,7 @@
         <SwitchPreferenceCompat
             app:key="@string/auto_rotate_perf_key"
             app:title="@string/auto_rotate_title"
-            app:defaultValue="true" />
+            app:defaultValue="false" />
 
     </PreferenceCategory>
 
