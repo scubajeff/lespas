@@ -35,6 +35,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
+import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.time.Duration
@@ -243,6 +244,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     it.setTargetFragment(this, 0)
                     it.show(parentFragmentManager, RENAME_DIALOG)
                 }
+                return true
+            }
+            R.id.option_menu_settings -> {
+                exitTransition = null
+                reenterTransition = null
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
                 return true
             }
         }

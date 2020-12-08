@@ -7,4 +7,9 @@
         android:title="@string/item_rename"
         android:orderInCategory="10"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_settings"
+        android:title="@string/item_settings"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
 </menu>

@@ -5,7 +5,6 @@ import android.app.ActivityManager
 import android.content.ContentResolver
 import android.content.Context
 import android.os.Bundle
-import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -17,8 +16,6 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
-
-        setHasOptionsMenu(true)
     }
 
     override fun onResume() {
@@ -53,12 +50,6 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
             }
         }
         return super.onPreferenceTreeClick(preference)
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        menu.run { findItem(R.id.option_menu_settings).isVisible = false }
     }
 
     companion object {
