@@ -9,7 +9,9 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.SharedElementCallback
 import androidx.core.view.ViewCompat
+import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
@@ -26,7 +28,6 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var albumId: String
-    private var startAt: Int = 0
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
@@ -39,12 +40,17 @@ class PhotoSlideFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         albumId = arguments?.getString(ALBUM_ID)!!
-        startAt = savedInstanceState?.getInt(POSITION) ?: arguments?.getInt(POSITION)!!
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
         }
+
+        // Adjusting the shared element mapping
+        setEnterSharedElementCallback(object : SharedElementCallback() {
+            override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                sharedElements?.put(names?.get(0)!!, slider[0].findViewById(R.id.media))}
+        })
 
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), true)
     }
@@ -72,7 +78,7 @@ class PhotoSlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    currentPhotoModel.setCurrentPhoto(pAdapter.getPhotoAt(position))
+                    currentPhotoModel.setCurrentPhoto(pAdapter.getPhotoAt(position), position + 1)
 
                     val photo = pAdapter.getPhotoAt(position)
                     if (autoRotate) activity?.requestedOrientation = if (photo.width > photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -88,7 +94,7 @@ class PhotoSlideFragment : Fragment() {
 
         albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos)
-            slider.setCurrentItem(startAt, false)
+            slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         })
     }
 
@@ -100,11 +106,6 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(POSITION, slider.currentItem)
     }
 
     override fun onPause() {
@@ -160,12 +161,28 @@ class PhotoSlideFragment : Fragment() {
 
     // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
     class CurrentPhotoViewModel : ViewModel() {
+        // AlbumDetail fragment grid item positions
+        private var currentPosition = 0
+        private var firstPosition = 0
+        private var lastPosition = 1
+        fun setCurrentPosition(position: Int) { currentPosition = position }
+        fun getCurrentPosition(): Int = currentPosition
+        fun setFirstPosition(position: Int) { firstPosition = position }
+        fun getFirstPosition(): Int = firstPosition
+        fun setLastPosition(position: Int) { lastPosition = position }
+        fun getLastPosition(): Int = lastPosition
+
+        // Current photo shared with CoverSetting and BottomControl fragments
         private val photo = MutableLiveData<Photo>()
         private val coverApplyStatus = MutableLiveData<Boolean>()
         private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
 
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
-        fun setCurrentPhoto(newPhoto: Photo) { photo.value = newPhoto }
+        fun setCurrentPhoto(newPhoto: Photo, position: Int) {
+            photo.value = newPhoto
+            currentPosition = position
+        }
+
         fun coverApplied(applied: Boolean) {
             coverApplyStatus.value = applied
             forReal = true
@@ -189,14 +206,8 @@ class PhotoSlideFragment : Fragment() {
 
     companion object {
         private const val ALBUM_ID = "ALBUM_ID"
-        private const val POSITION = "POSITION"
 
-        fun newInstance(albumId: String, position: Int) = PhotoSlideFragment().apply {
-            arguments = Bundle().apply {
-                putString(ALBUM_ID, albumId)
-                putInt(POSITION, position)
-            }
-        }
+        fun newInstance(albumId: String) = PhotoSlideFragment().apply { arguments = Bundle().apply { putString(ALBUM_ID, albumId) }}
     }
 }
 

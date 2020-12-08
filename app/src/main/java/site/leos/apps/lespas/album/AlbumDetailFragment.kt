@@ -11,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.app.SharedElementCallback
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -48,11 +49,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
-    private var lastScrollPosition = -1
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,13 +61,30 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         album = arguments?.getParcelable(ALBUM)!!
 
         // Must be restore here
-        lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
-        lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+        lastSelection = mutableSetOf()
+        savedInstanceState?.let {
+            lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
+        } ?: run {
+            with(currentPhotoModel) {
+                setCurrentPosition(0)
+                setFirstPosition(0)
+                setLastPosition(1)
+            }
+        }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
         }
+
+        // Adjusting the shared element mapping
+        setExitSharedElementCallback(object : SharedElementCallback() {
+            override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                recyclerView.findViewHolderForAdapterPosition(currentPhotoModel.getCurrentPosition())?.let {
+                    sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.photo))
+                }
+            }
+        })
 
         setHasOptionsMenu(true)
     }
@@ -91,16 +109,25 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         mAdapter = PhotoGridAdapter(
             { view, position ->
+                currentPhotoModel.run {
+                    setCurrentPosition(position)
+                    setFirstPosition((recyclerView.layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                    setLastPosition((recyclerView.layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                }
+
+                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
                 stub.background = (activity as MainActivity).getToolbarViewContent()
+
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                     excludeTarget(R.id.stub, true)
                 }
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, position - 1)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
@@ -124,8 +151,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             mAdapter.setAlbum(it)
             (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
-            if (lastScrollPosition != -1) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
+            // Scroll to the correct position
+            with(currentPhotoModel) {
+                val cp = getCurrentPosition()
+                val fp = getFirstPosition()
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
             }
         })
 
@@ -172,7 +202,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) lastScrollPosition = (layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition()
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        with(currentPhotoModel) {
+                            setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                            setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                            setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                        }
+                    }
                 }
             })
         }
@@ -186,7 +222,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(SCROLL_POSITION, lastScrollPosition)
         outState.putLongArray(SELECTION, lastSelection.toLongArray())
     }
 
@@ -342,12 +377,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     it.isActivated = isActivated
 
                     with(it.findViewById<ImageView>(R.id.photo)) {
-                        /*
-                        setPadding(
-                            if (((adapterPosition - 1) % resources.getInteger(R.integer.photo_grid_span_count))!= 0) 2 else 0,
-                            2, 0, 0)
-
-                         */
                         imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
@@ -361,14 +390,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         ViewCompat.setTransitionName(this, photo.id)
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(this, adapterPosition) }
-
-                        /*
-                        startAnimation(AlphaAnimation(0.5f, 1f).apply {
-                            duration = 300
-                            interpolator = AccelerateDecelerateInterpolator()
-                        })
-
-                         */
                     }
 
                 }
@@ -395,8 +416,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     if (oldItemPosition == 0) (oldPhotos[oldItemPosition] == photos[newItemPosition]) && oldPhotos.size == photos.size
                     else oldPhotos[oldItemPosition] == photos[newItemPosition]
             }).dispatchUpdatesTo(this)
-
-            //Log.e("----", "setAlbum called ${photos[0].id}-${photos[0].shareId}")
         }
 
         internal fun getPhotoAt(position: Int): Photo {
@@ -463,7 +482,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val ALBUM = "ALBUM"
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val SCROLL_POSITION = "SCROLL_POSITION"
         private const val SELECTION = "SELECTION"
 
         fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
