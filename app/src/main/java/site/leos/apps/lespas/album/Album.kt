@@ -90,8 +90,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>
 
-    @Query( "UPDATE ${Album.TABLE_NAME} SET syncProgress = :progress WHERE id = :albumId")
-    abstract fun updateAlbumSyncStatus(albumId: String, progress: Float)
+    @Query( "UPDATE ${Album.TABLE_NAME} SET syncProgress = :progress, startDate = :startDate, endDate = :endDate WHERE id = :albumId")
+    abstract fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime)
 
     @Query("UPDATE ${Album.TABLE_NAME} SET id = :newId, cover = :coverId WHERE id = :oldId")
     abstract fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String)

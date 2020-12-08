@@ -322,7 +322,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 if (changedPhotos.size > 1) albumRepository.upsertSync(tempAlbum)
                             } else {
                                 // Even new album created on server is in local now, update album's sync progress only
-                                albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size)
+                                albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
                             }
                         }
 

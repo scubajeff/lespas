@@ -3,6 +3,7 @@ package site.leos.apps.lespas.album
 import android.app.Application
 import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.LespasDatabase
+import java.time.LocalDateTime
 
 class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
@@ -23,7 +24,7 @@ class AlbumRepository(application: Application){
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
     fun getAllAlbumIds(): List<String> = albumDao.getAllIds()
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
-    fun updateAlbumSyncStatus(albumId: String, progress: Float) { albumDao.updateAlbumSyncStatus(albumId, progress)}
+    fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
 
