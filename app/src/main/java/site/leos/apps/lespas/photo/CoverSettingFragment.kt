@@ -9,12 +9,18 @@ import android.transition.AutoTransition
 import android.transition.TransitionManager
 import android.util.DisplayMetrics
 import android.view.*
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.transition.Fade
+import androidx.transition.Slide
+import androidx.transition.Transition
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -124,7 +130,7 @@ class CoverSettingFragment : Fragment() {
             }
         })
 
-        root.run {
+        with(root) {
             setOnTouchListener { _, event ->
                 cropFrameGestureDetector.onTouchEvent(event)
 
@@ -154,32 +160,47 @@ class CoverSettingFragment : Fragment() {
             }
         }
 
-        // Animation crop area, hinting user that it can be moved
-        if (newBias == 0.5f) {
-            val duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-            applyButton.alpha = 0f
-            applyButton.visibility = View.GONE
-            applyButton.animate().alpha(1f).setDuration(duration).setListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator?) {
-                    super.onAnimationEnd(animation)
+        applyButton.setOnClickListener {
+            currentPhoto.getCurrentPhoto().value!!.run {
+                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
+                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
+            }
+            currentPhoto.coverApplied(true)
 
+            parentFragmentManager.popBackStack()
+        }
+
+        enterTransition = Slide().apply {
+            duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong()
+            interpolator = AccelerateInterpolator()
+            //addTarget(root)
+            excludeTarget(R.id.upper, true)
+            excludeTarget(R.id.lower, true)
+            addListener(object : Transition.TransitionListener{
+                override fun onTransitionStart(transition: Transition) {}
+                override fun onTransitionCancel(transition: Transition) {}
+                override fun onTransitionPause(transition: Transition) {}
+                override fun onTransitionResume(transition: Transition) {}
+                override fun onTransitionEnd(transition: Transition) {
                     // TODO: Better way to chain transitions??
+                    // Animation crop area, hinting user that it can be moved
                     ConstraintSet().apply {
                         var i = 1
                         val t = AutoTransition()
-                        t.duration = duration
+                        t.duration = 160
+                        t.interpolator = AccelerateDecelerateInterpolator()
                         t.addListener(object : android.transition.Transition.TransitionListener {
                             override fun onTransitionStart(transition: android.transition.Transition?) {}
                             override fun onTransitionEnd(transition: android.transition.Transition?) {
                                 if (i < 2) {
-                                    t.duration = duration * 2
+                                    t.duration = 360
                                     clone(root)
-                                    setVerticalBias(R.id.croparea, 0.55f)
+                                    setVerticalBias(R.id.croparea, 0.58f)
                                     TransitionManager.beginDelayedTransition(root, t)
                                     applyTo(root)
                                     i += 1
                                 } else if (i < 3) {
-                                    t.duration = duration
+                                    t.duration = 300
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.5f)
                                     TransitionManager.beginDelayedTransition(root, t)
@@ -194,24 +215,20 @@ class CoverSettingFragment : Fragment() {
                             override fun onTransitionResume(transition: android.transition.Transition?) {}
                         })
                         clone(root)
-                        setVerticalBias(R.id.croparea, 0.45f)
+                        setVerticalBias(R.id.croparea, 0.38f)
                         TransitionManager.beginDelayedTransition(root, t)
                         applyTo(root)
                     }
                 }
             })
         }
-
-        applyButton.setOnClickListener {
-            currentPhoto.getCurrentPhoto().value!!.run {
-                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
-                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
-            }
-            //Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_applied), Snackbar.LENGTH_SHORT).show()
-            currentPhoto.coverApplied(true)
-
-            parentFragmentManager.popBackStack()
+        returnTransition = Fade().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            addTarget(root)
         }
+
+        postponeEnterTransition()
+        view.doOnPreDraw { startPostponedEnterTransition() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

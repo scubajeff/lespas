@@ -18,6 +18,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.transition.Fade
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
@@ -111,13 +112,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         shareButton = view.findViewById(R.id.share_button)
         infoButton = view.findViewById(R.id.info_button)
 
-        // Upon interacting with UI controls, delay any scheduled hide() operations to prevent the jarring behavior of controls going away while interacting with the UI.
         setCoverButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                controls.visibility = View.GONE
-                hideHandler.post(hideSystemUI)
+                exitTransition = Fade().apply { duration = 80 }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(albumId))
@@ -156,11 +154,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             }
         }
 
-        // Breifly show SystemUI at start
-        //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-        //hideHandler.post(showSystemUI)
         currentPhoto.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
-            if (currentPhoto.forReal())
+            if (currentPhoto.forReal()) {
                 Snackbar
                     .make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
@@ -168,6 +163,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
                     .setTextColor(resources.getColor(R.color.color_text_light))
                     .show()
+
+                // Clear transition when coming back from CoverSettingFragment
+                exitTransition = null
+            }
         })
     }
 

@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root"
+    android:transitionGroup="false"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clickable="true"
@@ -35,9 +36,11 @@
             android:id="@+id/apply"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_gravity="bottom|right"
+            android:layout_margin="@dimen/big_padding"
             app:fabSize="mini"
-            android:src="@drawable/ic_baseline_check_24" />
+            android:visibility="gone"
+            android:src="@drawable/ic_baseline_content_cut_24" />
     </FrameLayout>
     <View
         android:id="@+id/lower"
