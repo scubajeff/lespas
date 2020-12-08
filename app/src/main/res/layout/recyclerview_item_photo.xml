@@ -17,7 +17,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
         tools:src="@drawable/login_background_gradient_2"/>
 
     <androidx.appcompat.widget.AppCompatImageView

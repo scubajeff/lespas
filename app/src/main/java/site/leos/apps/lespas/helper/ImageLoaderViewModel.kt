@@ -20,7 +20,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     //private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-
     private var loadingJob = SupervisorJob()
     private val jobMap = HashMap<Int, Job>()
 
@@ -49,7 +48,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
         try {
             bitmap = when (type) {
-                TYPE_VIEW -> {
+                TYPE_GRID -> {
                     /*
                     var inSampleSize = 1
                     if ((photo.height > view.measuredHeight) || (photo.width > view.measuredWidth)) {
@@ -61,19 +60,27 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         }
                     }
                     */
-                    val size = if ((photo.height < 1000) || (photo.width < 1000)) 2 else 4
-                    BitmapFactory.decodeFile(fileName,
-                        BitmapFactory.Options().apply {
-                            this.inSampleSize = size
-                            this.inPreferredConfig = Bitmap.Config.RGBA_F16
-                        })
+                    val size = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8
+                    var rect: Rect
+                    if (photo.height > photo.width) {
+                        val top = (photo.height - photo.width) / 2
+                        val bottom = top + photo.width
+                        rect = Rect(0, top, photo.width, bottom)
+                    } else {
+                        val left = (photo.width - photo.height) / 2
+                        val right = left + photo.height
+                        rect = Rect(left, 0, right, photo.height)
+                    }
+                    BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
+                        this.inSampleSize = size
+                        this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                    })
                 }
                 TYPE_FULL -> {
                     BitmapFactory.decodeFile(fileName)
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
-                    val size = if (type == TYPE_SMALL_COVER) 4
-                    else if ((photo.height < 1000) || (photo.width < 1000)) 1 else 2
+                    val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
                     // cover baseline value passed in property shareId
                     val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
                     val rect = Rect(0, photo.shareId, photo.width, bottom)
@@ -141,7 +148,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     companion object {
-        const val TYPE_VIEW = "_view"
+        const val TYPE_GRID = "_view"
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"

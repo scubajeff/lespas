@@ -345,7 +345,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             2, 0, 0)
 
                          */
-                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_VIEW)
+                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
