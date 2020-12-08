@@ -94,7 +94,7 @@
                     android:id="@+id/info_parameter"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow>
+            <TableRow android:id="@+id/artist_row">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"

@@ -256,8 +256,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
+
             background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+
             ok_button.setOnClickListener { dismiss() }
+
             info_filename.text = arguments?.getString(NAME)
             info_shotat.text = arguments?.getString(DATE)
             val exif = ExifInterface("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}")
@@ -269,7 +272,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
                 exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: ""
             )
-            info_artist.text = exif.getAttribute((ExifInterface.TAG_ARTIST))?.let { it } ?: ""
+            exif.getAttribute((ExifInterface.TAG_ARTIST))?.let {
+                if (it.isEmpty()) artist_row.visibility = View.GONE
+                else info_artist.text = it
+            } ?: run { artist_row.visibility = View.GONE }
             info_size.text = String.format("%s  %s",
                 String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576),
                 String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))
