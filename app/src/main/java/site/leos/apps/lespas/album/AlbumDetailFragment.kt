@@ -92,7 +92,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         mAdapter = PhotoGridAdapter(
             { view, position ->
                 stub.background = (activity as MainActivity).getToolbarViewContent()
-                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply {
+                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                    excludeTarget(R.id.stub, true)
+                }
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
