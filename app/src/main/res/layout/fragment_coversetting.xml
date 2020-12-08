@@ -36,10 +36,8 @@
             android:id="@+id/apply"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|right"
-            android:layout_margin="@dimen/big_padding"
+            android:layout_gravity="center"
             app:fabSize="mini"
-            android:visibility="gone"
             android:src="@drawable/ic_baseline_content_cut_24" />
     </FrameLayout>
     <View

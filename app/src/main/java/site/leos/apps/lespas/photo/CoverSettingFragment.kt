@@ -10,13 +10,12 @@ import android.transition.TransitionManager
 import android.util.DisplayMetrics
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AccelerateInterpolator
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
-import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.ViewModelProvider
 import androidx.transition.Fade
 import androidx.transition.Slide
@@ -68,6 +67,9 @@ class CoverSettingFragment : Fragment() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        //postponeEnterTransition()
+        //view.doOnPreDraw { startPostponedEnterTransition() }
 
         root = view.findViewById(R.id.root)
         applyButton = view.findViewById(R.id.apply)
@@ -171,13 +173,14 @@ class CoverSettingFragment : Fragment() {
         }
 
         enterTransition = Slide().apply {
-            duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong()
-            interpolator = AccelerateInterpolator()
+            //duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+            duration = 0
+            //interpolator = AccelerateInterpolator()
             //addTarget(root)
-            excludeTarget(R.id.upper, true)
-            excludeTarget(R.id.lower, true)
+            //excludeTarget(R.id.upper, true)
+            //excludeTarget(R.id.lower, true)
             addListener(object : Transition.TransitionListener{
-                override fun onTransitionStart(transition: Transition) {}
+                override fun onTransitionStart(transition: Transition) { applyButton.visibility = View.GONE }
                 override fun onTransitionCancel(transition: Transition) {}
                 override fun onTransitionPause(transition: Transition) {}
                 override fun onTransitionResume(transition: Transition) {}
@@ -187,8 +190,8 @@ class CoverSettingFragment : Fragment() {
                     ConstraintSet().apply {
                         var i = 1
                         val t = AutoTransition()
-                        t.duration = 160
                         t.interpolator = AccelerateDecelerateInterpolator()
+                        t.duration = 160
                         t.addListener(object : android.transition.Transition.TransitionListener {
                             override fun onTransitionStart(transition: android.transition.Transition?) {}
                             override fun onTransitionEnd(transition: android.transition.Transition?) {
@@ -201,6 +204,7 @@ class CoverSettingFragment : Fragment() {
                                     i += 1
                                 } else if (i < 3) {
                                     t.duration = 300
+                                    t.interpolator = FastOutSlowInInterpolator()
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.5f)
                                     TransitionManager.beginDelayedTransition(root, t)
@@ -226,9 +230,6 @@ class CoverSettingFragment : Fragment() {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             addTarget(root)
         }
-
-        postponeEnterTransition()
-        view.doOnPreDraw { startPostponedEnterTransition() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
