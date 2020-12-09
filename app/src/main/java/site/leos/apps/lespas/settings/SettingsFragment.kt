@@ -35,7 +35,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
                     ContentResolver.addPeriodicSync(
                         AccountManager.get(context).accounts[0],
                         getString(R.string.sync_authority),
-                        Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) },
+                        Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
                         6 * 60 * 60
                     )
                 else ContentResolver.removePeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
