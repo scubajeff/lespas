@@ -63,7 +63,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Processing pending actions
             //if (order == SYNC_LOCAL_CHANGES) {
-                Log.e("**********", "sync local changes")
+                //Log.e("**********", "sync local changes")
                 actionRepository.getAllPendingActions().forEach { action ->
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     if (PreferenceManager.getDefaultSharedPreferences(application).getBoolean(application.getString(R.string.wifionly_pref_key), true)) {
@@ -88,7 +88,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 // Upload to server and verify
                                 //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
                                 sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), "image/*")
-                                Log.e("****", "Uploaded ${action.fileName}")
+                                //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -154,7 +154,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
             //} else {
-                Log.e("**********", "sync remote changes")
+                //Log.e("**********", "sync remote changes")
                 val changedAlbums: MutableList<Album> = mutableListOf()
                 val remoteAlbumIds = arrayListOf<String>()
                 var remoteAlbumId: String
@@ -216,7 +216,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 File(localRootFolder, it.name).delete()
                             } catch(e: Exception) { e.printStackTrace() }
                         }
-                        Log.e("****", "Deleted album: $localId")
+                        //Log.e("****", "Deleted album: $localId")
                     }
                 }
 
@@ -248,7 +248,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         if (File(localRootFolder, remotePhoto.name).exists()) {
                                             try {
                                                 File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                                Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
+                                                //Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
                                         photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
@@ -279,7 +279,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 try {
                                     File(localRootFolder, changedPhoto.id).delete()
                                     File(localRootFolder, changedPhoto.name).renameTo(File(localRootFolder, changedPhoto.id))
-                                    Log.e("****", "rename file ${changedPhoto.name} to ${changedPhoto.id}")
+                                    //Log.e("****", "rename file ${changedPhoto.name} to ${changedPhoto.id}")
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
                             }
                             else {
@@ -287,7 +287,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}").use { input ->
                                     File("$localRootFolder/${changedPhoto.id}").outputStream().use { output ->
                                         input.copyTo(output, 8192)
-                                        Log.e("****", "Downloaded ${changedPhoto.name}")
+                                        //Log.e("****", "Downloaded ${changedPhoto.name}")
                                     }
                                 }
                             }
@@ -339,7 +339,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 try {
                                     File(localRootFolder, localPhoto.key).delete()
                                 } catch (e: Exception) { e.printStackTrace() }
-                                Log.e("****", "Deleted photo: ${localPhoto.key}")
+                                //Log.e("****", "Deleted photo: ${localPhoto.key}")
                             }
                         }
 
