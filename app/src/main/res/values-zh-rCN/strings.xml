@@ -24,7 +24,7 @@
     <string name="toast_cover_set_canceled">操作已取消。</string>
     <string name="settings_title">设置</string>
     <string name="view_header">浏览</string>
-    <string name="auto_rotate_title">依照照片长宽比自动旋转屏幕</string>
+    <string name="auto_rotate_title">依照其长宽比自动旋转显示照片</string>
     <string name="sync_header">同步</string>
     <string name="sync_title">定时同步</string>
     <string name="wifionly_title">只使用WiFi网络同步</string>
