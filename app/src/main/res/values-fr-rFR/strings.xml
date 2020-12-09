@@ -6,8 +6,8 @@
     <string name="welcom_message">Pour commencer, veuillez accorder l\'accès à votre serveur Nextcloud.</string>
     <string name="host_textinput_label">Adresse du serveur</string>
     <string name="url_helper_text">par exemple: https://example.com/nextcloud</string>
-    <string name="host_address_validation_error">L\'adresse de l\'hôte n\'est pas valide.</string>
-    <string name="host_not_valid">Serveur non valide.</string>
+    <string name="host_address_validation_error">L\'hôte non valide.</string>
+    <string name="host_not_valid">Adresse non valide.</string>
     <string name="unknown_host">Serveur non trouvé.</string>
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
     <string name="fab_add_album">Ajouter un album</string>

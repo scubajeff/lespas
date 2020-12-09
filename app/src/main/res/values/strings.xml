@@ -18,8 +18,8 @@
     <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
     <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
 
-    <string name="host_address_validation_error">Host address not valid.</string>
-    <string name="host_not_valid">Server not valid.</string>
+    <string name="host_address_validation_error">Host not valid.</string>
+    <string name="host_not_valid">Address not valid.</string>
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
 
