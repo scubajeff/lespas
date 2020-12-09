@@ -24,13 +24,13 @@
     <string name="toast_cover_applied">Nouvelle couverture mise en place.</string>
     <string name="toast_cover_set_canceled">Annulation de la mise en place d\'une nouvelle couverture.</string>
     <string name="settings_title">Paramètres</string>
-    <string name="view_header">Voir</string>
-    <string name="auto_rotate_title">Faire pivoter l\'écran selon le format de la photo</string>
+    <string name="view_header">Affichage</string>
+    <string name="auto_rotate_title">Rotation de l\'écran selon le format de la photo</string>
     <string name="sync_header">Synchronisation</string>
     <string name="sync_title">Synchroniser périodiquement</string>
     <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
-    <string name="wifionly_summary_on">N\'utilisera pas le réseau mobile.</string>
-    <string name="wifionly_summary_off">Utilisez le réseau mobile, en faisant attention lorsque vous avez une grande collection de photos.</string>
+    <string name="wifionly_summary_on">N\'utilisera pas les réseau données.</string>
+    <string name="wifionly_summary_off">Utilisez les réseau données, en faisant attention lorsque vous avez une grande collection de photos.</string>
     <string name="other_header">Autres</string>
     <string name="logout_title">Déconnexion-vous</string>
     <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
