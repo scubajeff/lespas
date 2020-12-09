@@ -161,7 +161,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
                     .setAnchorView(controls)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
-                    .setTextColor(resources.getColor(R.color.color_text_light))
+                    .setTextColor(resources.getColor(R.color.color_text_light, null))
                     .show()
 
                 // Clear transition when coming back from CoverSettingFragment
@@ -250,9 +250,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     class InfoDialogFragment : DialogFragment() {
-        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-            return inflater.inflate(R.layout.fragment_info_dialog, container, false)
-        }
+        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+            inflater.inflate(R.layout.fragment_info_dialog, container, false)
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
@@ -261,24 +260,25 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
             ok_button.setOnClickListener { dismiss() }
 
+            val fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}"
             info_filename.text = arguments?.getString(NAME)
             info_shotat.text = arguments?.getString(DATE)
-            val exif = ExifInterface("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}")
-            info_camera_mfg.text = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-            info_camera_model.text = String.format("%s%s", exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "", exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
-            info_parameter.text = String.format("%s  %s  %s  %s",
-                exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm" } ?: "",
-                exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it" } ?: "",
-                exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s" } ?: "",
-                exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: ""
-            )
-            exif.getAttribute((ExifInterface.TAG_ARTIST))?.let {
-                if (it.isEmpty()) artist_row.visibility = View.GONE
-                else info_artist.text = it
-            } ?: run { artist_row.visibility = View.GONE }
             info_size.text = String.format("%s  %s",
-                String.format("%.1fM", File("${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}", arguments?.getString(ID)!!).length().toFloat() / 1048576),
+                String.format("%.1fM", File(fileName).length().toFloat() / 1048576),
                 String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))
+
+            val exif = ExifInterface(fileName)
+            var t = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
+            if (t.isEmpty()) mfg_row.visibility = View.GONE else info_camera_mfg.text = t
+            t = (exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
+            if (t.isEmpty()) model_row.visibility = View.GONE else info_camera_model.text = t
+            t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
+                (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it  " } ?: "") +
+                (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s  " } ?: "") +
+                (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
+            if (t.trim().isEmpty()) param_row.visibility = View.GONE else info_parameter.text = t
+            t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
+            if (t.isEmpty()) artist_row.visibility = View.GONE else info_artist.text = t
         }
 
         override fun onStart() {

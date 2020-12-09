@@ -59,7 +59,7 @@
                     android:id="@+id/info_size"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow>
+            <TableRow android:id="@+id/mfg_row">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -71,7 +71,7 @@
                     android:id="@+id/info_camera_mfg"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow>
+            <TableRow android:id="@+id/model_row">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -82,7 +82,7 @@
                     android:id="@+id/info_camera_model"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow>
+            <TableRow android:id="@+id/param_row">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"

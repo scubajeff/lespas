@@ -55,7 +55,7 @@
 
     <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.MaterialComponents.ActionBar">
         <item name="android:background">?attr/colorPrimary</item>
-        <item name="android:textColorPrimary">@color/color_on_primary</item>
+        <item name="android:textColorPrimary">@color/color_text_light</item>
     </style>
 
     <style name="Theme.LesPas.Toolbar.Dark.Overlay.Popup" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
