@@ -243,7 +243,6 @@ class NCLoginActivity : AppCompatActivity() {
                 }
 
                 intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(result)
-                // TODO: Create our base folder on server if needed
                 /*
                 val mAccountAuthenticatorResponse
                         = intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)

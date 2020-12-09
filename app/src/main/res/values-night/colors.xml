@@ -9,6 +9,6 @@
     <color name="color_background">#1F3B34</color>
     <color name="color_text_secondary">#A7BBC3</color>
 
-    <color name="album_item_selected_background">#89937A</color>   <!-- TODO: should be day night safe -->
+    <color name="album_item_selected_background">#89937A</color>
     <color name="cardview_daynight_background">#3A745F</color>
 </resources>

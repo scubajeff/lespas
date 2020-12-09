@@ -170,7 +170,6 @@ class DestinationDialogFragment : DialogFragment() {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
-                            // TODO smaller size cover type
                             imageLoader.loadImage(covers[position], this, coverType)
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name

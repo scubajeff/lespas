@@ -234,6 +234,6 @@ class CoverSettingFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putFloat(BIAS, newBias)    // TODO: saving bias is not enough
+        outState.putFloat(BIAS, newBias)
     }
 }
