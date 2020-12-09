@@ -49,20 +49,20 @@
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">New cover applied.</string>
-    <string name="toast_cover_set_canceled">Cancel setting new cover.</string>
+    <string name="toast_cover_set_canceled">Cancelled setting new cover.</string>
 
     <!-- Setting fragment -->
     <string name="settings_title">Settings</string>
     <string name="view_header">View</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
-    <string name="auto_rotate_title">Rotate photo by aspect ratio</string>
-    <string name="sync_header">Sync</string>
+    <string name="auto_rotate_title">Rotate screen by photo aspect ratio</string>
+    <string name="sync_header">Synchronization</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_title">Sync periodically</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi network</string>
-    <string name="wifionly_summary_on">Will not use mobile data</string>
-    <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos</string>
+    <string name="wifionly_summary_on">Will not use mobile data.</string>
+    <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos.</string>
     <string name="other_header">Others</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
@@ -75,7 +75,7 @@
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>
     <string name="album_existed">Album already existed</string>
-    <string name="leading_dots_found">"Leading '.' not allowed"</string>
+    <string name="leading_dots_found">Prefix \'.\' not allowed</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>
