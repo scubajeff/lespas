@@ -65,10 +65,11 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-            app:boxStrokeColor="@color/color_secondary"
-            app:helperTextEnabled="true"
+            app:helperTextEnabled="false"
             app:errorEnabled="true"
             app:prefixText="https://"
+            app:boxStrokeColor="@color/color_secondary"
+            app:helperTextTextColor="@color/color_text_light"
             android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText

@@ -98,7 +98,10 @@ class NCLoginActivity : AppCompatActivity() {
                     }
                 )
             }
-        } else inputArea.visibility = View.VISIBLE
+        } else {
+            welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
+            inputArea.visibility = View.VISIBLE
+        }
 
         hostInputText.run {
             setOnEditorActionListener { _, id, _ ->
@@ -107,7 +110,7 @@ class NCLoginActivity : AppCompatActivity() {
                     true
                 } else false
             }
-            setOnFocusChangeListener { _, hasFocus ->  inputArea.helperText = if (hasFocus) getString(R.string.url_helper_text) else null}
+            //setOnFocusChangeListener { _, hasFocus ->  inputArea.helperText = if (hasFocus) getString(R.string.url_helper_text) else null}
             addTextChangedListener(object: TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { error = null }
