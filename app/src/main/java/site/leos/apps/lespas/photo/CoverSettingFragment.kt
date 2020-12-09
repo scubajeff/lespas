@@ -15,7 +15,6 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import androidx.lifecycle.ViewModelProvider
 import androidx.transition.Fade
 import androidx.transition.Slide
@@ -37,7 +36,6 @@ class CoverSettingFragment : Fragment() {
 
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
-    //private var scrollDistance = 0f
     private var scrollTop = 0f
     private var scrollBottom = 1f
     private var screenHeight = 0f
@@ -45,19 +43,10 @@ class CoverSettingFragment : Fragment() {
     private var frameHeight = 0
     private var upperGap = 0
 
-    companion object {
-        private const val BIAS = "BIAS"
-        private const val ALBUM_ID = "ALBUM_ID"
-
-        fun newInstance(albumId: String) = CoverSettingFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         albumId = arguments?.getString(ALBUM_ID)!!
-
-        if (savedInstanceState != null) newBias = savedInstanceState.getFloat(BIAS)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -106,7 +95,16 @@ class CoverSettingFragment : Fragment() {
             constraintSet.setDimensionRatio(R.id.croparea, "H,$widthPixels:$frameHeight")
         }
 
-        constraintSet.setVerticalBias(R.id.croparea, newBias)
+        savedInstanceState?.let {
+            val oldBias = it.getFloat(BIAS)
+            val oldSH = it.getFloat(SH)
+            val oldDH = it.getFloat(DH)
+            val oldFH = it.getInt(FH)
+
+            newBias = (((drawableHeight / oldDH) * ((oldSH - oldFH) * oldBias - oldSH / 2)) + screenHeight / 2) / (screenHeight - frameHeight)
+
+            constraintSet.setVerticalBias(R.id.croparea, newBias)
+        }
         constraintSet.applyTo(root)
 
         cropFrameGestureDetector = GestureDetectorCompat(activity, object : GestureDetector.SimpleOnGestureListener() {
@@ -191,20 +189,20 @@ class CoverSettingFragment : Fragment() {
                         var i = 1
                         val t = AutoTransition()
                         t.interpolator = AccelerateDecelerateInterpolator()
-                        t.duration = 160
+                        t.duration = 200
                         t.addListener(object : android.transition.Transition.TransitionListener {
                             override fun onTransitionStart(transition: android.transition.Transition?) {}
                             override fun onTransitionEnd(transition: android.transition.Transition?) {
                                 if (i < 2) {
-                                    t.duration = 360
+                                    t.duration = 180
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.58f)
                                     TransitionManager.beginDelayedTransition(root, t)
                                     applyTo(root)
                                     i += 1
                                 } else if (i < 3) {
-                                    t.duration = 300
-                                    t.interpolator = FastOutSlowInInterpolator()
+                                    t.duration = 120
+                                    //t.interpolator = FastOutSlowInInterpolator()
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.5f)
                                     TransitionManager.beginDelayedTransition(root, t)
@@ -235,5 +233,19 @@ class CoverSettingFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putFloat(BIAS, newBias)
+        outState.putFloat(SH, screenHeight)
+        outState.putFloat(DH, drawableHeight)
+        outState.putInt(FH, frameHeight)
+    }
+
+
+    companion object {
+        private const val BIAS = "BIAS"
+        private const val SH = "SH"
+        private const val FH = "FH"
+        private const val DH = "DH"
+
+        private const val ALBUM_ID = "ALBUM_ID"
+        fun newInstance(albumId: String) = CoverSettingFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
     }
 }
