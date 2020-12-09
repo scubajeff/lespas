@@ -11,7 +11,7 @@
     android:clickable="true"
     android:foreground="?android:attr/selectableItemBackground"
     app:cardCornerRadius="0dp"
-    app:cardElevation="6dp"
+    app:cardElevation="4dp"
     app:cardUseCompatPadding="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -67,7 +67,7 @@
                 android:paddingHorizontal="@dimen/big_padding"
                 android:lines="1"
                 style="@style/TextAppearance.MaterialComponents.Caption"
-                tools:text="1969.01.01 - 1976.01.23" />
+                tools:text="1969.01.01 - 1976.12.23" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>
