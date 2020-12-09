@@ -10,5 +10,5 @@
     <color name="color_text_secondary">#A7BBC3</color>
 
     <color name="album_item_selected_background">#89937A</color>
-    <color name="cardview_daynight_background">#3A745F</color>
+    <color name="cardview_daynight_background">#26564E</color>
 </resources>

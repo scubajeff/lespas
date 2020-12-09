@@ -15,6 +15,6 @@
     <color name="color_text_light">#F9F7E8</color>
     <color name="color_text_secondary">#758076</color>
 
-    <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3-->
-    <color name="cardview_daynight_background">#E8E1CC</color>     <!-- @color/cardview_light_background -->
+    <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
+    <color name="cardview_daynight_background">#E8E1CC</color>
 </resources>
