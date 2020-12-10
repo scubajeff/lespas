@@ -65,6 +65,6 @@
 
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
         <item name="background">?attr/colorPrimary</item>
-        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="android:textColor">@color/color_text_light</item>
     </style>
 </resources>
