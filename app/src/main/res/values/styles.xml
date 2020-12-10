@@ -8,6 +8,7 @@
         <item name="background">@android:color/transparent</item>
         <item name="android:minHeight">48dp</item>
         <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
+        <item name="tint">@color/color_text_light</item>
     </style>
 
     <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">
