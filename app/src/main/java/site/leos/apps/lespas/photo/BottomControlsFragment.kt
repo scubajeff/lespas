@@ -41,6 +41,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
+    private var previousNavBarColor = 0
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
@@ -170,6 +171,17 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exitTransition = null
             }
         })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        previousNavBarColor = window.navigationBarColor
+        window.navigationBarColor = Color.BLACK
+    }
+
+    override fun onPause() {
+        super.onPause()
+        window.navigationBarColor = previousNavBarColor
     }
 
     @Suppress("DEPRECATION")
