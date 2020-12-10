@@ -56,4 +56,8 @@
     <string name="action_remove">删除</string>
     <string name="selected_count">已选择%1$d项</string>
     <string name="error_only_one_account">同一服务器只允许设置一个帐号</string>
+    <string name="auto_theme_title">应用主题样式</string>
+    <string name="theme_light_entries">选用浅色主题</string>
+    <string name="theme_dark_entries">选用深色主题</string>
+    <string name="theme_auto_entries">由系统自动决定</string>
 </resources>

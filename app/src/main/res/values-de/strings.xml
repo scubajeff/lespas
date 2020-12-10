@@ -56,4 +56,8 @@
     <string name="item_rename">Album umbenennen</string>
     <string name="action_share">Teilen Sie</string>
     <string name="action_remove">Entfernen Sie</string>
+    <string name="auto_theme_title">App-Thema</string>
+    <string name="theme_light_entries">Lichtthema</string>
+    <string name="theme_dark_entries">Dunkles Thema</string>
+    <string name="theme_auto_entries">Systemeinstellung befolgen</string>
 </resources>

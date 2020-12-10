@@ -56,6 +56,14 @@
     <string name="view_header">View</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotate screen by photo aspect ratio</string>
+    <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
+    <string name="auto_theme_title">App theme</string>
+    <string name="theme_light_entries">Light theme</string>
+    <string name="theme_dark_entries">Dark theme</string>
+    <string name="theme_auto_entries">Follow system setting</string>
+    <string name="theme_light_values" translatable="false">1</string>
+    <string name="theme_dark_values" translatable="false">2</string>
+    <string name="theme_auto_values" translatable="false">-1</string>
     <string name="sync_header">Synchronization</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_title">Sync periodically</string>

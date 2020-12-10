@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="auto_theme_entries">
+        <item>@string/theme_light_entries</item>
+        <item>@string/theme_dark_entries</item>
+        <item>@string/theme_auto_entries</item>
+    </string-array>
+
+    <string-array name="auto_theme_values">
+        <item>@string/theme_light_values</item>
+        <item>@string/theme_dark_values</item>
+        <item>@string/theme_auto_values</item>
+    </string-array>
+
+</resources>

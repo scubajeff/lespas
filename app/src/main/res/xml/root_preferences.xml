@@ -1,6 +1,14 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/view_header">
+        <ListPreference
+            app:key="@string/auto_theme_perf_key"
+            app:title="@string/auto_theme_title"
+            app:entries="@array/auto_theme_entries"
+            app:entryValues="@array/auto_theme_values"
+            app:defaultValue="@string/theme_auto_values"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             app:key="@string/auto_rotate_perf_key"
             app:title="@string/auto_rotate_title"

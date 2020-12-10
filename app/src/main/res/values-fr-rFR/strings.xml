@@ -56,4 +56,8 @@
     <string name="action_share">Partager</string>
     <string name="action_remove">Suprimer</string>
     <string name="selected_count">%1$d sélectionnés</string>
+    <string name="theme_auto_entries">Suivre le paramétrage du système</string>
+    <string name="theme_dark_entries">Thème sombre</string>
+    <string name="theme_light_entries">Thème lumineux</string>
+    <string name="auto_theme_title">Thème de l\'application</string>
 </resources>

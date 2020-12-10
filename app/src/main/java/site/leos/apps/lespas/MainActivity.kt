@@ -10,8 +10,10 @@ import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.drawToBitmap
+import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -24,6 +26,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        PreferenceManager.getDefaultSharedPreferences(applicationContext).getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
+            AppCompatDelegate.setDefaultNightMode(it.toInt())
+        }
+
         setContentView(R.layout.activity_main)
 
         // Make sure photo's directory existed and clear cache directory

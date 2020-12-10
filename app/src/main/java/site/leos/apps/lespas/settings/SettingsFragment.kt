@@ -6,6 +6,8 @@ import android.content.ContentResolver
 import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import site.leos.apps.lespas.R
@@ -16,6 +18,13 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+        findPreference<ListPreference>(getString(R.string.auto_theme_perf_key))?.let {
+            it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                AppCompatDelegate.setDefaultNightMode((newValue as String).toInt())
+                true
+            }
+        }
     }
 
     override fun onResume() {
@@ -39,6 +48,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
                         6 * 60 * 60
                     )
                 else ContentResolver.removePeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
+
+                return true
             }
             getString(R.string.logout_pref_key)-> {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_LOGOUT_DIALOG) == null) {
@@ -47,9 +58,18 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
                         it.show(parentFragmentManager, CONFIRM_LOGOUT_DIALOG)
                     }
                 }
+
+                return true
             }
+            getString(R.string.auto_theme_perf_key)-> {
+                preference.sharedPreferences.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
+                    AppCompatDelegate.setDefaultNightMode(it.toInt())
+                }
+
+                return true
+            }
+            else -> return super.onPreferenceTreeClick(preference)
         }
-        return super.onPreferenceTreeClick(preference)
     }
 
     companion object {
