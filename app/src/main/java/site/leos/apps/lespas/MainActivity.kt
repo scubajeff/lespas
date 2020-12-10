@@ -26,9 +26,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Make sure photo's directory existed
+        // Make sure photo's directory existed and clear cache directory
         Executors.newSingleThreadExecutor().execute {
             File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir()
+            application.cacheDir.deleteRecursively()
         }
 
         toolbar = findViewById(R.id.toolbar)
