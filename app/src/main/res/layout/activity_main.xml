@@ -13,7 +13,8 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         android:theme="@style/Theme.LesPas.Toolbar.Dark.Overlay"
-        app:popupTheme="@style/Theme.LesPas.Toolbar.Dark.Overlay.Popup"
+        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        android:background="@color/color_primary"
         android:elevation="4dp" />
 
     <androidx.fragment.app.FragmentContainerView

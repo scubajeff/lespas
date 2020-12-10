@@ -29,12 +29,4 @@
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
     </style>
 
-    <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
-        <item name="android:background">?attr/colorPrimary</item>
-    </style>
-
-    <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
-        <item name="background">?attr/colorPrimary</item>
-        <item name="android:textColor">?attr/colorOnPrimary</item>
-    </style>
 </resources>
