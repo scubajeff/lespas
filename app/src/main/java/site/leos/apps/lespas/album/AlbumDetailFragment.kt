@@ -280,22 +280,38 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 val filePath = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
                 val cachePath = requireActivity().cacheDir
                 val authority = getString(R.string.file_authority)
+
                 for (i in selectionTracker.selection) {
                     with(mAdapter.getPhotoAt(i.toInt())) {
                         File(filePath, id).copyTo(File(cachePath, name), true, 4096)
                         uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
-                        //uris.add(FileProvider.getUriForFile(requireContext(), authority, File(filePath, id)))
                     }
                 }
 
-                startActivity(Intent.createChooser(
-                    Intent().apply{
-                        action = Intent.ACTION_SEND_MULTIPLE
-                        type = "image/*"
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                    }, null)
-                )
+                if (selectionTracker.selection.size() > 1) {
+                    startActivity(
+                        Intent.createChooser(
+                            Intent().apply {
+                                action = Intent.ACTION_SEND_MULTIPLE
+                                type = "image/*"
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            }, null
+                        )
+                    )
+                } else {
+                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                    startActivity(
+                        Intent.createChooser(
+                            Intent().apply {
+                                action = Intent.ACTION_SEND
+                                type = "image/*"
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                putExtra(Intent.EXTRA_STREAM, uris[0])
+                            }, null
+                        )
+                    )
+                }
 
                 selectionTracker.clearSelection()
                 true
