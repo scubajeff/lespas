@@ -189,19 +189,19 @@ class CoverSettingFragment : Fragment() {
                         var i = 1
                         val t = AutoTransition()
                         t.interpolator = AccelerateDecelerateInterpolator()
-                        t.duration = 200
+                        t.duration = 500
                         t.addListener(object : android.transition.Transition.TransitionListener {
                             override fun onTransitionStart(transition: android.transition.Transition?) {}
                             override fun onTransitionEnd(transition: android.transition.Transition?) {
                                 if (i < 2) {
-                                    t.duration = 180
+                                    t.duration = 400
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.58f)
                                     TransitionManager.beginDelayedTransition(root, t)
                                     applyTo(root)
                                     i += 1
                                 } else if (i < 3) {
-                                    t.duration = 120
+                                    t.duration = 200
                                     //t.interpolator = FastOutSlowInInterpolator()
                                     clone(root)
                                     setVerticalBias(R.id.croparea, 0.5f)
