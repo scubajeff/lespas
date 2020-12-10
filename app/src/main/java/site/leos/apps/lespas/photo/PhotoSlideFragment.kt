@@ -72,7 +72,7 @@ class PhotoSlideFragment : Fragment() {
             val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply{ isAccessible = true }).get(this) as RecyclerView
             (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
                 isAccessible = true
-                set(recyclerView, (get(recyclerView) as Int) * 6)
+                set(recyclerView, (get(recyclerView) as Int) * 4)
             }
 
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
