@@ -35,6 +35,7 @@ class ConfirmDialogFragment : DialogFragment() {
         shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         message_textview.text = arguments?.getString(MESSAGE)
+        arguments?.getString(OK_TEXT)?.let { ok_button.text = it }
         ok_button.setOnClickListener { _->
             onPositiveConfirmedListener.onPositiveConfirmed()
             dismiss()
@@ -60,6 +61,14 @@ class ConfirmDialogFragment : DialogFragment() {
 
     companion object {
         const val MESSAGE = "MESSAGE"
-        fun newInstance(message: String) = ConfirmDialogFragment().apply { arguments = Bundle().apply { putString(MESSAGE, message) } }
+        const val OK_TEXT = "OK_TEXT"
+
+        fun newInstance(message: String, okButtonText: String) =
+            ConfirmDialogFragment().apply {
+                arguments = Bundle().apply {
+                    putString(MESSAGE, message)
+                    putString(OK_TEXT, okButtonText)
+                }
+            }
     }
 }

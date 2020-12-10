@@ -60,4 +60,6 @@
     <string name="theme_dark_entries">Thème sombre</string>
     <string name="theme_light_entries">Thème clair</string>
     <string name="auto_theme_title">Thème de l\'application</string>
+    <string name="yes_delete">Supprimer</string>
+    <string name="yes_logout">Déconnexion</string>
 </resources>

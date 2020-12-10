@@ -268,7 +268,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete)).let {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
                     it.setTargetFragment(this, 0)
                     it.show(parentFragmentManager, CONFIRM_DIALOG)
                 }

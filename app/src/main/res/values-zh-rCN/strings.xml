@@ -60,4 +60,6 @@
     <string name="theme_light_entries">选用浅色主题</string>
     <string name="theme_dark_entries">选用深色主题</string>
     <string name="theme_auto_entries">由系统自动决定</string>
+    <string name="yes_delete">同意删除</string>
+    <string name="yes_logout">同意登出</string>
 </resources>

@@ -35,6 +35,7 @@
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure?</string>
+    <string name="yes_delete">Yes, delete</string>
     <string name="rename_to">Change album name to</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Days: %1$d</string>
@@ -75,6 +76,7 @@
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
     <string name="logout_dialog_msg">Logout account %1$s?</string>
+    <string name="yes_logout">Yes, logout</string>
 
     <!-- Destination DialogFragment -->
     <string name="choose_destination">Add to album</string>

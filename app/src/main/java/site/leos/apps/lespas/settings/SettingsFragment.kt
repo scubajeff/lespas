@@ -53,7 +53,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnPos
             }
             getString(R.string.logout_pref_key)-> {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_LOGOUT_DIALOG) == null) {
-                    ConfirmDialogFragment.newInstance(getString(R.string.logout_dialog_msg, AccountManager.get(context).accounts[0].name)).let {
+                    ConfirmDialogFragment.newInstance(getString(R.string.logout_dialog_msg, AccountManager.get(context).accounts[0].name), getString(R.string.yes_logout)).let {
                         it.setTargetFragment(this, 0)
                         it.show(parentFragmentManager, CONFIRM_LOGOUT_DIALOG)
                     }
