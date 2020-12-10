@@ -1,5 +1,7 @@
 package site.leos.apps.lespas.album
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -50,6 +52,7 @@ class AlbumRenameDialogFragment: DialogFragment() {
                 } else false
             }
         }
+        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
     }
 
@@ -64,8 +67,7 @@ class AlbumRenameDialogFragment: DialogFragment() {
                 dimAmount = 0.6f
                 flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
             }
-
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE))
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
 
             rename_textinputlayout.requestFocus()

@@ -3,6 +3,8 @@ package site.leos.apps.lespas.photo
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -256,6 +258,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
+            shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
             background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
 
             ok_button.setOnClickListener { dismiss() }
@@ -293,7 +296,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
                 }
 
-                setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
                 setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
             }
         }

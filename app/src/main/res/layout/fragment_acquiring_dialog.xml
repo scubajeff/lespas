@@ -2,6 +2,7 @@
 <androidx.appcompat.widget.LinearLayoutCompat
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shape_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/tiny_padding">
@@ -13,7 +14,7 @@
         android:padding="@dimen/big_padding"
         android:orientation="vertical">
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/dialog_title_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,7 +29,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <androidx.appcompat.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/filename_textview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -46,11 +47,12 @@
                 style="?android:attr/progressBarStyleHorizontal" />
         </androidx.appcompat.widget.LinearLayoutCompat>
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/message_textview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/small_padding"
+            android:singleLine="false"
             android:maxLines="5"
             style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             android:text="@string/it_takes_time"

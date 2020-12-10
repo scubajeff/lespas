@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.DialogInterface
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -53,6 +55,7 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
 
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
@@ -92,7 +95,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
             }
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }
@@ -205,7 +208,6 @@ class AcquiringDialogFragment: DialogFragment() {
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
         fun getTotalBytes(): Long = totalBytes
-        fun getNewPhotos(): List<Photo> = newPhotos
     }
 
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {

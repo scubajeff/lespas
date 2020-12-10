@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.sync
 
 import android.content.DialogInterface
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -72,6 +74,7 @@ class DestinationDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         destination_recyclerview.adapter = albumAdapter
         name_textinputedittext.run {
@@ -118,7 +121,7 @@ class DestinationDialogFragment : DialogFragment() {
                 flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
             }
 
-            setBackgroundDrawable(DialogShapeDrawable.newInstance(context, DialogShapeDrawable.NO_STROKE))
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
     }

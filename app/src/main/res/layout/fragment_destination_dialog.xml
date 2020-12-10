@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shape_background"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="@dimen/tiny_padding">
@@ -13,7 +14,7 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/big_padding">
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/dialog_title_textview"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -21,6 +22,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:padding="@dimen/small_padding"
+            android:layout_marginBottom="@dimen/small_padding"
             style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             android:textStyle="bold"
             android:text="@string/choose_destination" />
