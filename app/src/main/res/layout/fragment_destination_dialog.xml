@@ -22,7 +22,6 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:padding="@dimen/small_padding"
-            android:layout_marginBottom="@dimen/small_padding"
             style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             android:textStyle="bold"
             android:text="@string/choose_destination" />
@@ -35,6 +34,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintHeight_max="@dimen/destination_list_maximum_height"
+            android:layout_marginTop="@dimen/small_padding"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/recyclerview_item_destination" />
 
