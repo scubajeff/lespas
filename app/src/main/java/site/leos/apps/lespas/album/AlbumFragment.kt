@@ -17,10 +17,7 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.selection.*
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.recyclerview.widget.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
@@ -87,7 +84,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             mAdapter.setAlbums(albums,)
             if (lastScrollPosition != -1) {
-                (recyclerView.layoutManager as LinearLayoutManager).scrollToPosition(lastScrollPosition)
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
             }
         })
 
@@ -166,7 +163,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) lastScrollPosition = (layoutManager as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) lastScrollPosition = (layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition()
                 }
             })
         }
