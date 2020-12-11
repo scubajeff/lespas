@@ -4,8 +4,8 @@
     <color name="progressbar_background">#C0C0C0C0</color>
 
     <!-- Straight from https://vanschneider.com/colors -->
-    <color name="color_primary">#E57066</color>
-    <color name="color_primary_variant">#AF413B</color>
+    <color name="color_primary">#DE633A</color>
+    <color name="color_primary_variant">#C15733</color>
     <color name="color_on_primary">#F9F7E8</color>
     <color name="color_secondary">#2B8E7E</color> <!-- 61BFAD -->
     <color name="color_secondary_variant">#236E5F</color>
