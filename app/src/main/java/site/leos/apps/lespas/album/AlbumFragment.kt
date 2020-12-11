@@ -320,11 +320,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
                         else coverImageview.clearColorFilter()
                         ViewCompat.setTransitionName(coverImageview, album.id)
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album, coverImageview) }
-                        if (album.eTag.isEmpty()) {
+                        //if (album.eTag.isEmpty()) {
+                        if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
                             with(findViewById<ContentLoadingProgressBar>(R.id.sync_progress)) {
                                 visibility = View.VISIBLE
-                                setProgress((album.syncProgress * 100).toInt())
+                                progress = (album.syncProgress * 100).toInt()
                             }
                         } else {
                             coverImageview.clearColorFilter()
