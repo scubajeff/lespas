@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.album
 
+import android.content.ClipData
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.ColorMatrix
@@ -288,12 +289,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
                 }
 
+                val clipData = ClipData.newUri(requireActivity().contentResolver, getString(R.string.action_share), uris[0])
+                for (uri in uris) clipData.addItem(ClipData.Item(uri))
+
                 if (selectionTracker.selection.size() > 1) {
                     startActivity(
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_SEND_MULTIPLE
                                 type = "image/*"
+                                this.clipData = clipData
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                             }, null
@@ -306,6 +311,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             Intent().apply {
                                 action = Intent.ACTION_SEND
                                 type = "image/*"
+                                this.clipData = clipData
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
                             }, null
