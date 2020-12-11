@@ -55,11 +55,12 @@
     <string name="item_rename">Renommer l\'album</string>
     <string name="action_share">Partager</string>
     <string name="action_remove">Supprimer</string>
-    <string name="selected_count">%1$d sélectionnés</string>
+    <string name="selected_count">%1$d sélectionné</string>
     <string name="theme_auto_entries">Suivre le paramétrage du système</string>
     <string name="theme_dark_entries">Thème sombre</string>
     <string name="theme_light_entries">Thème clair</string>
     <string name="auto_theme_title">Thème de l\'application</string>
     <string name="yes_delete">Supprimer</string>
     <string name="yes_logout">Déconnexion</string>
+    <string name="action_select_all">Sélectionner tout</string>
 </resources>

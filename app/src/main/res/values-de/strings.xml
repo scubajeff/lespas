@@ -62,4 +62,5 @@
     <string name="theme_auto_entries">Systemeinstellung befolgen</string>
     <string name="yes_delete">Löschen</string>
     <string name="yes_logout">Abmelden</string>
+    <string name="action_select_all">Alle auswählen</string>
 </resources>

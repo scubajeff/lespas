@@ -258,7 +258,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_delete_and_share, menu)
+        mode?.menuInflater?.inflate(R.menu.actions_mode, menu)
 
         return true
     }
@@ -314,6 +314,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
 
                 selectionTracker.clearSelection()
+                true
+            }
+            R.id.select_all -> {
+                for (i in 0..mAdapter.itemCount) selectionTracker.select(i.toLong())
                 true
             }
             else -> false

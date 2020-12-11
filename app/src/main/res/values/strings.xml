@@ -106,6 +106,7 @@
     <string name="item_rename">Rename Album</string>
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
+    <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>
 
 </resources>
