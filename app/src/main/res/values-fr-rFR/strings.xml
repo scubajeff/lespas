@@ -11,7 +11,7 @@
     <string name="unknown_host">Serveur non trouvé.</string>
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
     <string name="fab_add_album">Ajouter un album</string>
-    <string name="confirm_delete">Êtes-vous sûr ?</string>
+    <string name="confirm_delete">Êtes-vous sûr de supprimer?</string>
     <string name="rename_to">Changer le nom de l\'album en</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Journées: %1$d</string>

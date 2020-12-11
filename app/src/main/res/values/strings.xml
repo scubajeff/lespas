@@ -34,7 +34,7 @@
     <string name="fab_add_album">Add Album</string>
 
     <!-- AlbumDetail fragment -->
-    <string name="confirm_delete">Are you sure?</string>
+    <string name="confirm_delete">Are you sure to delete?</string>
     <string name="yes_delete">Yes, delete</string>
     <string name="rename_to">Change album name to</string>
     <string name="total_photo">Photos: %1$d</string>
