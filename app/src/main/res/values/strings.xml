@@ -91,6 +91,8 @@
     <string name="preparing_files">Preparing photos %1$d of %2$d</string>
     <string name="finished_preparing_files">Preparing photos finished</string>
     <string name="it_takes_time">Need to send %1$s data to server. It might take a while before new photos show up in server. Please keep the network connection stable.</string>
+    <string name="error_preparing_files">Error preparing files</string>
+    <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use others.</string>
 
     <!-- Info DialogFragment -->
     <string name="file_name">Name:</string>

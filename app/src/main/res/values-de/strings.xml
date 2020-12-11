@@ -63,4 +63,6 @@
     <string name="yes_delete">Löschen</string>
     <string name="yes_logout">Abmelden</string>
     <string name="action_select_all">Alle auswählen</string>
+    <string name="access_right_violation">Die Freigabe-App folgt nicht der Android Storage Access Guideline, daher kann Les Pas diese Dateien nicht empfangen. Bitte aktualisieren Sie die Freigabe-App oder verwenden Sie andere.</string>
+    <string name="error_preparing_files">Fehler beim Vorbereiten von Dateien</string>
 </resources>

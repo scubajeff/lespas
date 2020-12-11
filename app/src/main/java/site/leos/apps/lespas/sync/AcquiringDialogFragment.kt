@@ -33,6 +33,7 @@ import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.io.FileNotFoundException
 import java.text.CharacterIterator
 import java.text.StringCharacterIterator
 import java.time.LocalDateTime
@@ -73,10 +74,16 @@ class AcquiringDialogFragment: DialogFragment() {
                 dialog_title_textview.text = getString(R.string.finished_preparing_files)
                 message_textview.text = getString(R.string.it_takes_time, humanReadableByteCountSI(acquiringModel.getTotalBytes()))
                 message_textview.visibility = View.VISIBLE
-            } else {
+            } else if (progress >= 0) {
                 dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
                 filename_textview.text = acquiringModel.getCurrentName()
                 current_progress.progress = progress
+            } else if (progress == AcquiringViewModel.ACCESS_RIGHT_EXCEPTION) {
+                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                progress_linearlayout.visibility = View.GONE
+                dialog_title_textview.text = getString(R.string.error_preparing_files)
+                message_textview.text = getString(R.string.access_right_violation)
+                message_textview.visibility = View.VISIBLE
             }
         })
 
@@ -162,10 +169,18 @@ class AcquiringDialogFragment: DialogFragment() {
                     withContext(Dispatchers.Main) { setProgress(index, fileName) }
 
                     // Copy the file to our private storage
-                    application.contentResolver.openInputStream(uri).use { input ->
-                        File(appRootFolder, fileName).outputStream().use { output ->
-                            totalBytes += input!!.copyTo(output, 8192)
+                    try {
+                        application.contentResolver.openInputStream(uri).use { input ->
+                            File(appRootFolder, fileName).outputStream().use { output ->
+                                totalBytes += input!!.copyTo(output, 8192)
+                            }
                         }
+                    } catch (e:FileNotFoundException) {
+                        withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
+                        return@launch
+                    } catch (e:Exception) {
+                        e.printStackTrace()
+                        return@launch
                     }
 
                     // If no photo with same name exists in album, create new photo
@@ -208,6 +223,10 @@ class AcquiringDialogFragment: DialogFragment() {
         fun getProgress(): LiveData<Int> = currentProgress
         fun getCurrentName() = currentName
         fun getTotalBytes(): Long = totalBytes
+
+        companion object {
+            const val ACCESS_RIGHT_EXCEPTION = -100
+        }
     }
 
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {

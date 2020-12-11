@@ -63,4 +63,6 @@
     <string name="yes_delete">Supprimer</string>
     <string name="yes_logout">Déconnexion</string>
     <string name="action_select_all">Sélectionner tout</string>
+    <string name="access_right_violation">L\'application de partage ne suit pas la directive Android Storage Access Guideline, Les Pas ne peuvent donc pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser d\'autres.</string>
+    <string name="error_preparing_files">Erreur de préparation des fichiers</string>
 </resources>
