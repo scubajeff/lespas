@@ -17,6 +17,8 @@
         <item name="colorSurface">@color/color_background</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
+        <item name="actionMenuTextColor">@color/color_on_primary_invert</item>
+        <item name="android:actionMenuTextColor">@color/color_on_primary_invert</item>
 
         <!-- fonts -->
         <item name="fontFamily">@font/archer_bold</item>
@@ -56,6 +58,7 @@
     <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.MaterialComponents.ActionBar">
         <item name="android:textColorPrimary">@color/color_text_light</item>
         <item name="android:textColorSecondary">@color/color_text_light</item>
+        <item name="android:textColor">@color/color_on_primary_invert</item>
     </style>
 
     <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
