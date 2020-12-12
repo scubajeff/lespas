@@ -67,7 +67,8 @@
     <string name="theme_auto_values" translatable="false">-1</string>
     <string name="sync_header">Synchronization</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
-    <string name="sync_title">Sync periodically</string>
+    <string name="background_sync_title">Sync periodically</string>
+    <string name="background_sync_summary">Check server update every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi network</string>
     <string name="wifionly_summary_on">Will not use mobile data.</string>

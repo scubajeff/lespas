@@ -28,7 +28,7 @@
     <string name="view_header">Siehe</string>
     <string name="auto_rotate_title">Bildschirm nach Bildseitenverhältnis drehen</string>
     <string name="sync_header">Synchronisierung</string>
-    <string name="sync_title">Periodisch synchronisieren</string>
+    <string name="background_sync_title">Periodisch synchronisieren</string>
     <string name="wifionly_title">Nur im WiFi-Netzwerk synchronisieren</string>
     <string name="wifionly_summary_on">Wird keine mobilen Daten verwenden.</string>
     <string name="wifionly_summary_off">Verwenden Sie mobile Daten, vorsichtig, wenn Sie eine große Fotosammlung haben.</string>
@@ -65,4 +65,5 @@
     <string name="action_select_all">Alle auswählen</string>
     <string name="access_right_violation">Die Freigabe-App folgt nicht der Android Storage Access Guideline, daher kann Les Pas diese Dateien nicht empfangen. Bitte aktualisieren Sie die Freigabe-App oder verwenden Sie andere.</string>
     <string name="error_preparing_files">Fehler beim Vorbereiten von Dateien</string>
+    <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
 </resources>

@@ -27,7 +27,7 @@
     <string name="view_header">Affichage</string>
     <string name="auto_rotate_title">Rotation de l\'écran selon le format de la photo</string>
     <string name="sync_header">Synchronisation</string>
-    <string name="sync_title">Synchroniser périodiquement</string>
+    <string name="background_sync_title">Synchroniser périodiquement</string>
     <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
     <string name="wifionly_summary_on">N\'utilisera pas les réseau données.</string>
     <string name="wifionly_summary_off">Utilisez les réseau données, en faisant attention lorsque vous avez une grande collection de photos.</string>
@@ -65,4 +65,5 @@
     <string name="action_select_all">Sélectionner tout</string>
     <string name="access_right_violation">L\'application de partage ne suit pas la directive Android Storage Access Guideline, Les Pas ne peuvent donc pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser d\'autres.</string>
     <string name="error_preparing_files">Erreur de préparation des fichiers</string>
+    <string name="background_sync_summary">Vérifiez la mise à jour du serveur toutes les 6 heures</string>
 </resources>
