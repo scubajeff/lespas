@@ -49,7 +49,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:paddingHorizontal="@dimen/big_padding"
-            android:layout_marginBottom="@dimen/extra_padding"
+            android:layout_marginBottom="@dimen/big_padding"
             android:text="|"
             android:textColor="@color/color_text_light"
             style="@style/TextAppearance.MaterialComponents.Body2"
