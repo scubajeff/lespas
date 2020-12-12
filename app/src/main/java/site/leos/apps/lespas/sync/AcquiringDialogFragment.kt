@@ -65,7 +65,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     // Request sync immediately if called from ShareReceiverActivity, since the viewmodel observing Action table might not be running at this moments
                     ContentResolver.requestSync(AccountManager.get(requireContext()).accounts[0], getString(R.string.sync_authority), Bundle().apply {
                         putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                        putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                     })
                 }
 

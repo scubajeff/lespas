@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             // Syncing server changes at startup
             ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
             })
 
