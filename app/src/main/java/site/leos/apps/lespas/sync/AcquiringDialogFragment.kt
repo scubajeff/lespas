@@ -202,22 +202,25 @@ class AcquiringDialogFragment: DialogFragment() {
                     if (date > album.endDate) album.endDate = date
                 }
 
-                if ((album.id == fakeAlbumId) && photoActions.isNotEmpty()) {
-                    // New album, update cover information but without leaving cover column empty as the sign of local added new album
-                    album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
-                    album.coverWidth = newPhotos[0].width
-                    album.coverHeight = newPhotos[0].height
+                if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
+                else {
+                    if (album.id == fakeAlbumId) {
+                        // New album, update cover information but without leaving cover column empty as the sign of local added new album
+                        album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
+                        album.coverWidth = newPhotos[0].width
+                        album.coverHeight = newPhotos[0].height
 
-                    // Create new album first, store cover, e.g. first photo in new album, in property filename
-                    actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
+                        // Create new album first, store cover, e.g. first photo in new album, in property filename
+                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
+                    }
+
+                    actionRepository.addActions(photoActions)
+                    photoRepository.insert(newPhotos)
+                    albumRepository.upsert(album)
+
+                    // By setting progress to more than 100%, signaling the calling fragment/activity
+                    withContext(Dispatchers.Main) { setProgress(uris.size, fileName) }
                 }
-
-                actionRepository.addActions(photoActions)
-                photoRepository.insert(newPhotos)
-                albumRepository.upsert(album)
-
-                // By setting progress to more than 100%, signaling the calling fragment/activity
-                withContext(Dispatchers.Main) { setProgress(uris.size, fileName) }
             }
         }
 
