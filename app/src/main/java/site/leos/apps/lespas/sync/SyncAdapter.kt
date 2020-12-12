@@ -26,7 +26,6 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.net.ssl.SSLHandshakeException
 import javax.xml.namespace.QName
 
@@ -182,7 +181,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         localAlbum[0].coverBaseline,    // Preserve local data
                                         localAlbum[0].coverWidth,
                                         localAlbum[0].coverHeight,
-                                        remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),  // Use remote version
+                                        Tools.dateToLocalDateTime(remoteAlbum.modified),  // Use remote version
                                         localAlbum[0].sortOrder,    // Preserve local data
                                         remoteAlbum.etag,   // Use remote version
                                         0,       // TODO share
@@ -196,8 +195,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } else {
                             // No hit at local, a new album created on server
                             changedAlbums.add(Album(remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
-                                remoteAlbum.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(),
-                                Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0, 1f)
+                                Tools.dateToLocalDateTime(remoteAlbum.modified), Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0, 1f)
                             )
                         }
                     }
@@ -253,8 +251,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                 //Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
-                                        photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag,
-                                            remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+                                        photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag, Tools.dateToLocalDateTime(remotePhoto.modified))
                                         // Taking care the cover
                                         // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
                                         if (changedAlbum.cover == remotePhoto.name) {
@@ -262,7 +259,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             changedAlbum.cover = remotePhotoId
                                         }
                                     } else changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
-                                            remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), 0, 0, remotePhoto.contentType, 0
+                                            Tools.dateToLocalDateTime(remotePhoto.modified), 0, 0, remotePhoto.contentType, 0
                                         )
                                     )  // TODO will share status change create new eTag?
                                 } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {

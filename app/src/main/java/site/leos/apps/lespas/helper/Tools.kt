@@ -62,7 +62,9 @@ object Tools {
             BitmapFactory.decodeFile(pathName, this)
         }
 
-        return Photo("", "", "", "", tDate, lastModified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), options.outWidth, options.outHeight,
+        return Photo("", "", "", "", tDate, dateToLocalDateTime(lastModified), options.outWidth, options.outHeight,
             "", 0)
     }
+
+    fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
 }
