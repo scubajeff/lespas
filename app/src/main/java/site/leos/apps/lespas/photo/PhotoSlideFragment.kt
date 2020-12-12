@@ -52,7 +52,7 @@ class PhotoSlideFragment : Fragment() {
                 sharedElements?.put(names?.get(0)!!, slider[0].findViewById(R.id.media))}
         })
 
-        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), true)
+        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
