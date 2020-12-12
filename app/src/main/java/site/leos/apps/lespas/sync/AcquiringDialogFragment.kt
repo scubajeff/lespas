@@ -138,7 +138,7 @@ class AcquiringDialogFragment: DialogFragment() {
         private var currentName: String = ""
         private var totalBytes = 0L
         private val newPhotos = mutableListOf<Photo>()
-        private val actions = mutableListOf<Action>()
+        private val photoActions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
         private val albumRepository = AlbumRepository(application)
         private val actionRepository = ActionRepository(application)
@@ -189,7 +189,7 @@ class AcquiringDialogFragment: DialogFragment() {
                             Tools.getPhotoParams("$appRootFolder/$fileName").copy(id = fileName, albumId = album.id, name = fileName)
                         )
                     }
-                    actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", fileName, System.currentTimeMillis(), 1))
+                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", fileName, System.currentTimeMillis(), 1))
 
                     date = newPhotos.last().dateTaken
                     if (date < album.startDate) album.startDate = date
@@ -197,16 +197,16 @@ class AcquiringDialogFragment: DialogFragment() {
                 }
 
                 if (album.id == fakeAlbumId) {
-                    // New album
+                    // New album, update cover information but without leaving cover column empty as the sign of local added new album
                     album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
                     album.coverWidth = newPhotos[0].width
                     album.coverHeight = newPhotos[0].height
 
                     // Create new album first, store cover, e.g. first photo in new album, in property filename
-                    actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
+                    actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
                 }
 
-                actionRepository.addActions(actions)
+                actionRepository.addActions(photoActions)
                 photoRepository.insert(newPhotos)
                 albumRepository.upsert(album)
 

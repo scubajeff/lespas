@@ -22,7 +22,7 @@ class AlbumRepository(application: Application){
     suspend fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.id, cover.baseLine, cover.width, cover.height) }
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
-    fun getAllAlbumIds(): List<String> = albumDao.getAllIds()
+    fun getAllAlbumIds(): List<IDandCover> = albumDao.getAllIdAndCover()
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}

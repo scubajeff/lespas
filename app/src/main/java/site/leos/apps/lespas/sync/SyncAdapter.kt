@@ -93,11 +93,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                                 with("$resourceRoot/${Uri.encode(action.folderName)}") {
-                                    // Should catch status code 405 here to ignore folder already exists on server
                                     try {
                                         sardine.createDirectory(this)
                                     } catch(e: SardineException) {
                                         when(e.statusCode) {
+                                            // Should catch status code 405 here to ignore folder already exists on server
                                             405-> {}
                                             else-> {
                                                 Log.e("****SardineException: ", e.stackTraceToString())
@@ -106,8 +106,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             }
                                         }
                                     }
+                                    // TODO if the following fail then the local newly added folder will still carry the fake id and will be removed at the next server sync, since it's id
+                                    // does NOT exist on the server
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
                                         // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
+                                        // mind that we purposely leave the eTag column empty
                                         photoRepository.fixNewPhotosAlbumId(action.folderId, it)
                                         albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
                                     }
@@ -201,13 +204,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Delete those albums not exist on server, happens when user delete album on the server
-                val localAlbumIds = albumRepository.getAllAlbumIds()
-                for (localId in localAlbumIds) {
-                    if (!remoteAlbumIds.contains(localId)) {
-                        albumRepository.deleteByIdSync(localId)
-                        val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(localId)
-                        photoRepository.deletePhotosByAlbum(localId)
+                // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with cover column empty
+                val localAlbumIdAndCover = albumRepository.getAllAlbumIds()
+                for (local in localAlbumIdAndCover) {
+                    if (!remoteAlbumIds.contains(local.id) && local.cover.isNotEmpty()) {
+                        albumRepository.deleteByIdSync(local.id)
+                        val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(local.id)
+                        photoRepository.deletePhotosByAlbum(local.id)
                         allPhotoIds.forEach {
                             try {
                                 File(localRootFolder, it.id).delete()
@@ -216,7 +219,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 File(localRootFolder, it.name).delete()
                             } catch(e: Exception) { e.printStackTrace() }
                         }
-                        //Log.e("****", "Deleted album: $localId")
+                        //Log.e("****", "Deleted album: ${local.id}")
                     }
                 }
 

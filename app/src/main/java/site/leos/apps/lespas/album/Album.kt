@@ -47,13 +47,11 @@ data class AlbumWithPhotos(
 )
 
 data class Cover(val id: String, val baseLine: Int, val width: Int, val height: Int)
+data class IDandCover(val id: String, val cover: String)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
 @Dao
 abstract class AlbumDao: BaseDao<Album>() {
-    @Query("DELETE FROM ${Album.TABLE_NAME}")
-    abstract suspend fun deleteAll()
-
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract suspend fun deleteById(albumId: String): Int
 
@@ -71,8 +69,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getThisAlbum(albumId: String): List<Album>
 
-    @Query("SELECT id FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getAllIds(): List<String>
+    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} ORDER BY id ASC")
+    abstract fun getAllIdAndCover(): List<IDandCover>
 
     @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)
