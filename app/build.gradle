@@ -73,10 +73,14 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.1.1'
 
     // Sardine Android WebDAV
-    implementation 'com.thegrizzlylabs.sardine-android:sardine-android:0.6'
+    implementation ('com.thegrizzlylabs.sardine-android:sardine-android:0.6') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
 
     // Chris Banes PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'
+
+    implementation 'com.squareup.okhttp3:okhttp:3.14.9'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
