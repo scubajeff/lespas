@@ -4,6 +4,7 @@ import android.os.Parcelable
 import androidx.room.*
 import kotlinx.android.parcel.Parcelize
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import site.leos.apps.lespas.BaseDao
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime
@@ -56,7 +57,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun deleteByIdSync(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' ORDER BY endDate DESC")
-    abstract fun getAllSortByEndDate(): Flow<List<Album>>
+    abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
+    fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getThisAlbum(albumId: String): List<Album>
