@@ -32,12 +32,6 @@ data class AlbumPhotoName(val albumId: String, val name: String)
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
-    @Query("DELETE FROM ${Photo.TABLE_NAME}")
-    abstract suspend fun deleteAll()
-
-    @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
-    abstract suspend fun deleteById(photoId: String): Int
-
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun deleteByIdSync(photoId: String): Int
 
@@ -54,20 +48,11 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun getAlbumPhotos(albumId: String): List<Photo>
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
-    abstract fun _getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>>
-    fun getAlbumPhotosByDateTakenASC(albumId: String) = _getAlbumPhotosByDateTakenASC(albumId).distinctUntilChanged()
-
-    @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
-    abstract fun getAlbumSize(albumId: String): Flow<Int>
+    abstract fun getAlbumPhotosByDateTakenASCDistinct(albumId: String): Flow<List<Photo>>
+    fun getAlbumPhotosByDateTakenASC(albumId: String) = getAlbumPhotosByDateTakenASCDistinct(albumId).distinctUntilChanged()
 
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun deletePhotosByAlbum(albumId: String)
-
-    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
-    abstract suspend fun getPhotoById(photoId: String): Photo
-
-    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id IN (:ids)")
-    abstract suspend fun getThesePhotos(ids: List<String>): List<Photo>
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET albumId = :newId WHERE albumId = :oldId")
     abstract fun fixNewPhotosAlbumId(oldId: String, newId: String)
@@ -78,26 +63,3 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")
     abstract fun getAllPhotoNameMap(): List<AlbumPhotoName>
 }
-
-/**
- * LiveData that propagates only distinct emissions.
-fun <T> LiveData<T>.getDistinct(): LiveData<T> {
-val distinctLiveData = MediatorLiveData<T>()
-distinctLiveData.addSource(this, object : Observer<T> {
-private var initialized = false
-private var lastObj: T? = null
-
-override fun onChanged(obj: T?) {
-if (!initialized) {
-initialized = true
-lastObj = obj
-distinctLiveData.postValue(lastObj)
-} else if ((obj == null && lastObj != null) || obj != lastObj) {
-lastObj = obj
-distinctLiveData.postValue(lastObj)
-}
-}
-})
-
-return distinctLiveData
- */

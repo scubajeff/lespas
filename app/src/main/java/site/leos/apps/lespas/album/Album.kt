@@ -53,18 +53,10 @@ data class IDandCover(val id: String, val cover: String)
 @Dao
 abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract suspend fun deleteById(albumId: String): Int
-
-    @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun deleteByIdSync(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDate(): Flow<List<Album>>
-
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    //protected abstract fun _getAlbumById(albumId: String): Flow<Album>
-    //fun getAlbumByID(albumId: String): Flow<Album> = _getAlbumById(albumId).distinctUntilChanged()
-    abstract fun getAlbumByID(albumId: String): Flow<Album>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getThisAlbum(albumId: String): List<Album>
@@ -77,9 +69,6 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height WHERE id = :albumId")
     abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
-
-    @Query("SELECT name FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getAlbumName(albumId: String): String
 
     @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
     abstract fun isAlbumExisted(name: String): Boolean
