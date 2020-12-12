@@ -438,7 +438,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
-            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, coverBaseline)) }
+            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
             this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
 
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {

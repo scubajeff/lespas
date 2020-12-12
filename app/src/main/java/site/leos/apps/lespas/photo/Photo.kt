@@ -19,6 +19,7 @@ data class Photo(
     var lastModified: LocalDateTime,
     var width: Int,
     var height: Int,
+    var mimeType: String,
     var shareId: Int) {
     companion object {
         const val TABLE_NAME = "photos"

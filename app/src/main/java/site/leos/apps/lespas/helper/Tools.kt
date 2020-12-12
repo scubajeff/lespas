@@ -62,6 +62,7 @@ object Tools {
             BitmapFactory.decodeFile(pathName, this)
         }
 
-        return Photo("", "", "", "", tDate, lastModified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), options.outWidth, options.outHeight, 0)
+        return Photo("", "", "", "", tDate, lastModified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), options.outWidth, options.outHeight,
+            "", 0)
     }
 }

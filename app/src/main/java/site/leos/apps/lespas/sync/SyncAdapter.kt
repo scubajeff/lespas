@@ -263,7 +263,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             changedAlbum.cover = remotePhotoId
                                         }
                                     } else changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
-                                            remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), 0, 0, 0
+                                            remotePhoto.modified.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime(), 0, 0, remotePhoto.contentType, 0
                                         )
                                     )  // TODO will share status change create new eTag?
                                 } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {

@@ -17,7 +17,8 @@ class ShareReceiverActivity: AppCompatActivity() {
         if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!!)) {
             files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
         }
-        if ((intent.action == Intent.ACTION_SEND_MULTIPLE) && (intent.type?.startsWith("image/")!!)) {
+        if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
+            // MIME type checking will be done in AcquiringDialogFragment
             intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
                 files.add(it as Uri)
             }

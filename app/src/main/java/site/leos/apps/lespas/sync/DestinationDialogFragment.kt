@@ -195,7 +195,7 @@ class DestinationDialogFragment : DialogFragment() {
         fun setDestinations(destinations: List<Album>) {
             this.destinations = destinations
             covers.clear()
-            this.destinations.forEach { covers.add(Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, it.coverBaseline)) }
+            this.destinations.forEach { covers.add(Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, "", it.coverBaseline)) }
             notifyDataSetChanged()
         }
 

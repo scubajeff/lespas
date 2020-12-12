@@ -146,10 +146,12 @@ class AcquiringDialogFragment: DialogFragment() {
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileName = ""
+                var mimeType = ""
                 val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
                 val fakeAlbumId = System.currentTimeMillis().toString()
+                val contentResolver = application.contentResolver
 
                 uris.forEachIndexed { index, uri ->
                     if (album.id.isEmpty()) {
@@ -158,12 +160,16 @@ class AcquiringDialogFragment: DialogFragment() {
                     }
 
                     // find out the real name
-                    application.contentResolver.query(uri, null, null, null, null)?.apply {
+                    contentResolver.query(uri, null, null, null, null)?.apply {
                         val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                         moveToFirst()
                         fileName = getString(columnIndex)
+                        mimeType = contentResolver.getType(uri) ?: ""
                         close()
                     }
+
+                    // If it's not image, skip it
+                    if (!(mimeType.startsWith("image/"))) return@forEachIndexed
 
                     // Update progress in UI
                     withContext(Dispatchers.Main) { setProgress(index, fileName) }
@@ -186,7 +192,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     // If no photo with same name exists in album, create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileName)))) {
                         newPhotos.add(
-                            Tools.getPhotoParams("$appRootFolder/$fileName").copy(id = fileName, albumId = album.id, name = fileName)
+                            Tools.getPhotoParams("$appRootFolder/$fileName").copy(id = fileName, albumId = album.id, name = fileName, mimeType = mimeType)
                         )
                     }
                     photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", fileName, System.currentTimeMillis(), 1))
@@ -196,7 +202,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     if (date > album.endDate) album.endDate = date
                 }
 
-                if (album.id == fakeAlbumId) {
+                if ((album.id == fakeAlbumId) && photoActions.isNotEmpty()) {
                     // New album, update cover information but without leaving cover column empty as the sign of local added new album
                     album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
                     album.coverWidth = newPhotos[0].width
