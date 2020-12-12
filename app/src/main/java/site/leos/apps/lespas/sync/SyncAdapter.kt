@@ -87,7 +87,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             Action.ACTION_ADD_FILES_ON_SERVER -> {
                                 // Upload to server and verify
                                 //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
-                                sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), "image/*")
+                                // MIME type is passed in fileId properties
+                                sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), action.fileId)
                                 //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }

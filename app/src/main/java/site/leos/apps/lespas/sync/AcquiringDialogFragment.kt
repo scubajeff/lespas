@@ -195,7 +195,8 @@ class AcquiringDialogFragment: DialogFragment() {
                             Tools.getPhotoParams("$appRootFolder/$fileName").copy(id = fileName, albumId = album.id, name = fileName, mimeType = mimeType)
                         )
                     }
-                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, "", fileName, System.currentTimeMillis(), 1))
+                    // Pass photo mimeType in Action's fileId property
+                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, mimeType, fileName, System.currentTimeMillis(), 1))
 
                     date = newPhotos.last().dateTaken
                     if (date < album.startDate) album.startDate = date
