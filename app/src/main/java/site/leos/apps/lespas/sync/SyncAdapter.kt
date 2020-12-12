@@ -107,8 +107,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             }
                                         }
                                     }
-                                    // TODO if the following fail then the local newly added folder will still carry the fake id and will be removed at the next server sync, since it's id
-                                    // does NOT exist on the server
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
                                         // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
                                         // mind that we purposely leave the eTag column empty
