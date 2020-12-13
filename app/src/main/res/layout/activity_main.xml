@@ -14,7 +14,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:theme="@style/Theme.LesPas.Toolbar.Dark.Overlay"
         app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        android:background="@color/color_primary"
+        android:background="?attr/colorPrimary"
         android:elevation="4dp" />
 
     <androidx.fragment.app.FragmentContainerView

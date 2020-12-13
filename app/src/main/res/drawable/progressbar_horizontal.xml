@@ -12,7 +12,7 @@
         <scale android:scaleWidth="100%">
             <shape android:shape="rectangle">
                 <size android:height="2dp" />
-                <solid android:color="@color/color_background"/>
+                <solid android:color="?android:attr/colorBackground"/>
             </shape>
         </scale>
     </item>
@@ -21,7 +21,7 @@
         <scale android:scaleWidth="100%">
             <shape android:shape="rectangle">
                 <size android:height="2dp" />
-                <solid android:color="@color/color_error" />
+                <solid android:color="?attr/colorError" />
             </shape>
         </scale>
     </item>

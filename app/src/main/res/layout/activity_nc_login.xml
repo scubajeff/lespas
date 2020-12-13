@@ -68,7 +68,7 @@
             app:helperTextEnabled="false"
             app:errorEnabled="true"
             app:prefixText="https://"
-            app:boxStrokeColor="@color/color_secondary"
+            app:boxStrokeColor="?attr/colorSecondary"
             app:helperTextTextColor="@color/color_text_light"
             android:visibility="gone">
 

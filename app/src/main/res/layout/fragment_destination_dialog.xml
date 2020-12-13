@@ -50,7 +50,7 @@
             app:errorEnabled="true"
             android:visibility="gone"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
-            app:boxStrokeColor="@color/color_secondary_variant">
+            app:boxStrokeColor="?attr/colorSecondaryVariant">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/name_textinputedittext"

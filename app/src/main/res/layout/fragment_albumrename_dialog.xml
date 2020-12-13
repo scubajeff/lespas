@@ -36,7 +36,7 @@
             android:padding="@dimen/small_padding"
             app:errorEnabled="true"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
-            app:boxStrokeColor="@color/color_secondary_variant">
+            app:boxStrokeColor="?attr/colorSecondaryVariant">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/rename_textinputedittext"
