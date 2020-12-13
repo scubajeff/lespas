@@ -289,7 +289,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
                 }
 
-                val clipData = ClipData.newUri(requireActivity().contentResolver, getString(R.string.action_share), uris[0])
+                val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
                 for (uri in uris) clipData.addItem(ClipData.Item(uri))
 
                 if (selectionTracker.selection.size() > 1) {
@@ -298,9 +298,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             Intent().apply {
                                 action = Intent.ACTION_SEND_MULTIPLE
                                 type = "image/*"
-                                this.clipData = clipData
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                this.clipData = clipData
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }, null
                         )
                     )
@@ -311,9 +311,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             Intent().apply {
                                 action = Intent.ACTION_SEND
                                 type = "image/*"
-                                this.clipData = clipData
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
+                                this.clipData = clipData
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }, null
                         )
                     )

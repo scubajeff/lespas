@@ -1,8 +1,8 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
+import android.content.ClipData
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
@@ -130,13 +130,17 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 with(currentPhoto.getCurrentPhoto().value!!) {
                     File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
+                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
+                    val mimeType = this.mimeType
+
                     startActivity(
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_SEND
-                                type = "image/*"
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name)))
+                                type = mimeType
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }, null
                         )
                     )
