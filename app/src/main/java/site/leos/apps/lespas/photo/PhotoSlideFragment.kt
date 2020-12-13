@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.ImageView
 import androidx.core.app.SharedElementCallback
 import androidx.core.view.ViewCompat
@@ -100,16 +99,6 @@ class PhotoSlideFragment : Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-    }
-
-    override fun onResume() {
-        super.onResume()
-        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
     class PhotoSlideAdapter(private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {

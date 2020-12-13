@@ -180,22 +180,25 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
-            window.statusBarColor = Color.TRANSPARENT
-            window.setDecorFitsSystemWindows(false)
+        window.run {
+            previousNavBarColor = navigationBarColor
+            navigationBarColor = Color.BLACK
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
+                statusBarColor = Color.TRANSPARENT
+                setDecorFitsSystemWindows(false)
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        previousNavBarColor = window.navigationBarColor
-        window.navigationBarColor = Color.BLACK
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
     override fun onPause() {
         super.onPause()
-        window.navigationBarColor = previousNavBarColor
+        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
     }
 
     @Suppress("DEPRECATION")
@@ -216,6 +219,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 window.setDecorFitsSystemWindows(true)
                 window.decorView.setOnApplyWindowInsetsListener(null)
             }
+            window.navigationBarColor = previousNavBarColor
             supportActionBar?.show()
         }
 
