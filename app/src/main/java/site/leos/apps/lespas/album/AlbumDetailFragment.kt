@@ -297,7 +297,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_SEND_MULTIPLE
-                                type = "image/*"
+                                type = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt()).mimeType
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
