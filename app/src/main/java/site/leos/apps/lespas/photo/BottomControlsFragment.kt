@@ -65,12 +65,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
                 try {
+                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                        TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
-                        TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                         controls.visibility = View.GONE
                         visible = false
                     }
@@ -80,7 +79,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             window.decorView.setOnApplyWindowInsetsListener { _, insets ->
                 try {
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                    if (insets.isVisible(WindowInsets.Type.statusBars())) {
+                    if (insets.isVisible(WindowInsets.Type.navigationBars())) {
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -173,6 +172,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
+            window.statusBarColor = Color.TRANSPARENT
+            window.setDecorFitsSystemWindows(false)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         previousNavBarColor = window.navigationBarColor
@@ -194,11 +203,15 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
                 window.decorView.setOnSystemUiVisibilityChangeListener(null)
             } else {
-                window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                window.insetsController?.apply {
+                    show(WindowInsets.Type.systemBars())
+                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
+                }
+                window.statusBarColor = resources.getColor(R.color.color_primary)
+                window.setDecorFitsSystemWindows(true)
                 window.decorView.setOnApplyWindowInsetsListener(null)
             }
             supportActionBar?.show()
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         }
 
         super.onDestroy()
@@ -232,12 +245,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_FULLSCREEN)
 
-        } else {
-            window.insetsController?.run {
-                hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
-            }
-        }
+        } else window.insetsController?.hide(WindowInsets.Type.systemBars())
         visible = false
     }
 
@@ -248,7 +256,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-        else window.insetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+        else window.insetsController?.show(WindowInsets.Type.systemBars())
         visible = true
 
         // auto hide
