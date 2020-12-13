@@ -4,5 +4,5 @@
     android:exitFadeDuration="150">
 
     <item android:state_activated="true" android:drawable="@color/album_item_selected_background" />
-    <item android:drawable="@color/cardview_daynight_background" />
+    <item android:drawable="@color/color_surface" />
 </selector>

@@ -10,7 +10,7 @@
         <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
         <item name="colorOnSecondary">@color/color_on_primary</item>
         <item name="android:colorBackground">@color/color_background</item>
-        <item name="colorSurface">@color/color_background</item>
+        <item name="colorSurface">@color/color_surface</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimary</item>
 
