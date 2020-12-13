@@ -10,6 +10,7 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import com.google.android.material.color.MaterialColors
 import kotlinx.android.synthetic.main.fragment_albumrename_dialog.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.AlbumNameValidator
@@ -53,7 +54,8 @@ class AlbumRenameDialogFragment: DialogFragment() {
             }
         }
         shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
     }
 
     override fun onStart() {

@@ -21,6 +21,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.transition.Fade
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
@@ -283,7 +284,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             super.onViewCreated(view, savedInstanceState)
 
             shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-            background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+            //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+            background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
 
             ok_button.setOnClickListener { dismiss() }
 

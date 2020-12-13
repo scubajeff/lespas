@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
+import com.google.android.material.color.MaterialColors
 import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.DialogShapeDrawable
@@ -33,7 +34,8 @@ class ConfirmDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
         message_textview.text = arguments?.getString(MESSAGE)
         arguments?.getString(OK_TEXT)?.let { ok_button.text = it }
         ok_button.setOnClickListener { _->

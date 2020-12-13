@@ -20,7 +20,12 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
+import com.google.android.material.color.MaterialColors
 import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
+import kotlinx.android.synthetic.main.fragment_acquiring_dialog.background
+import kotlinx.android.synthetic.main.fragment_acquiring_dialog.message_textview
+import kotlinx.android.synthetic.main.fragment_acquiring_dialog.shape_background
+import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,7 +62,8 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
 
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
             if (progress >= total) {

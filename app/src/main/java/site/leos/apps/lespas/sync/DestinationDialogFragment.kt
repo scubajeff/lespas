@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
+import com.google.android.material.color.MaterialColors
 import kotlinx.android.synthetic.main.fragment_destination_dialog.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -75,7 +76,8 @@ class DestinationDialogFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        //root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
+        root.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
         destination_recyclerview.adapter = albumAdapter
         name_textinputedittext.run {
             setOnEditorActionListener { _, actionId, _ ->
@@ -172,7 +174,8 @@ class DestinationDialogFragment : DialogFragment() {
                     } else {
                         findViewById<AppCompatImageView>(R.id.cover).apply {
                             scaleType = ImageView.ScaleType.CENTER_CROP
-                            setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
+                            //setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
+                            setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSecondaryVariant))
                             imageLoader.loadImage(covers[position], this, coverType)
                         }
                         findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name
