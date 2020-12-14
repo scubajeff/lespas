@@ -208,7 +208,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         if (resultCode == Activity.RESULT_OK) {
             when(requestCode) {
                 REQUEST_FOR_IMAGES-> {
-                    intent?.clipData?.apply {for (i in 0..itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
+                    intent?.clipData?.apply {for (i in 0 until itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
 
                     if (uris.isNotEmpty()) {
                         destinationModel.getDestination().observe (this, { album->
