@@ -66,7 +66,6 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             "${requireContext().filesDir}${resources.getString(R.string.lespas_base_folder_name)}",
-            { settable->  },
             { uiModel.toggleOnOff() }
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
@@ -113,13 +112,12 @@ class PhotoSlideFragment : Fragment() {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
     }
 
-    class PhotoSlideAdapter(private val rootPath: String, private val coverSetter: OnSetCoverable, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage,
+    class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage,
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = emptyList<Photo>()
 
         fun interface OnTouchListener { fun onTouch() }
         fun interface OnLoadImage { fun loadImage(photo: Photo, view: ImageView, type: String) }
-        fun interface OnSetCoverable { fun setCoverable(coverable: Boolean) }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
