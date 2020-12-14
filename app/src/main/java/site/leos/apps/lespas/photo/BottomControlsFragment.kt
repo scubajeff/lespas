@@ -27,6 +27,7 @@ import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.Tools
 import java.io.File
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -108,10 +109,13 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 ignore = false
             } else toggle()
         })
+        currentPhoto.getCurrentPhoto().observe(viewLifecycleOwner, {
+            setCoverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+        })
 
         // Controls
         controls = view.findViewById(R.id.controls)
-        setCoverButton = view.findViewById(R.id.cover_button)
+        setCoverButton = view.findViewById<ImageButton>(R.id.cover_button)
         shareButton = view.findViewById(R.id.share_button)
         infoButton = view.findViewById(R.id.info_button)
 

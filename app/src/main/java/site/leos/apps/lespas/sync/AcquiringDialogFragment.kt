@@ -198,7 +198,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     // If no photo with same name exists in album, create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileName)))) {
                         newPhotos.add(
-                            Tools.getPhotoParams("$appRootFolder/$fileName").copy(id = fileName, albumId = album.id, name = fileName, mimeType = mimeType)
+                            Tools.getPhotoParams("$appRootFolder/$fileName", mimeType).copy(id = fileName, albumId = album.id, name = fileName)
                         )
                     }
                     // Pass photo mimeType in Action's fileId property

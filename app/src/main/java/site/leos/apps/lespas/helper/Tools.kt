@@ -3,7 +3,9 @@ package site.leos.apps.lespas.helper
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
+import android.graphics.drawable.AnimatedImageDrawable
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
@@ -16,43 +18,60 @@ import java.util.*
 
 object Tools {
     @SuppressLint("SimpleDateFormat")
-    fun getPhotoParams(pathName: String): Photo {
+    fun getPhotoParams(pathName: String, mimeType: String): Photo {
         var timeString: String?
         val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
+        var mMimeType = mimeType
 
         // Update dateTaken, width, height fields
         val lastModified = Date(File(pathName).lastModified())
+        timeString = dateFormatter.format(lastModified)
 
-        val exif = ExifInterface(pathName)
-        timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-        if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-        if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-        if (timeString == null) timeString = dateFormatter.format(lastModified)
-        val tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+        when(mimeType) {
+            "image/jpeg", "image/tiff"-> {
+                val exif = ExifInterface(pathName)
+                timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+                if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
+                if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
+                if (timeString == null) timeString = dateFormatter.format(lastModified)
 
-        val exifRotation = exif.rotationDegrees
-        if (exifRotation != 0) {
-            Bitmap.createBitmap(
-                BitmapFactory.decodeFile(pathName),
-                0, 0,
-                exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
-                exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
-                Matrix().apply { preRotate(exifRotation.toFloat()) },
-                true
-            ).apply {
-                compress(Bitmap.CompressFormat.JPEG, 100, File(pathName).outputStream())
-                recycle()
+                val exifRotation = exif.rotationDegrees
+                if (exifRotation != 0) {
+                    Bitmap.createBitmap(
+                        BitmapFactory.decodeFile(pathName),
+                        0, 0,
+                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
+                        exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
+                        Matrix().apply { preRotate(exifRotation.toFloat()) },
+                        true
+                    ).apply {
+                        compress(Bitmap.CompressFormat.JPEG, 100, File(pathName).outputStream())
+                        recycle()
+                    }
+
+                    exif.resetOrientation()
+                    val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
+                    exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
+                    exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
+                    try {
+                        exif.saveAttributes()
+                    } catch (e: Exception) {
+                        // TODO: If EXIF.saveAttributes throw exception, it's OK, we don't need these updated data which already saved in our table
+                        Log.e("****Exception", e.stackTraceToString())
+                    }
+                }
             }
-
-            exif.resetOrientation()
-            val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
-            exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
-            exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
-            try {
-                exif.saveAttributes()
-            } catch (e:Exception) {
-                // TODO: If EXIF.saveAttributes throw exception, it's OK, we don't need these updated data which already saved in our table
-                Log.e("****Exception", e.stackTraceToString())
+            "image/gif"-> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    // Set my own image/agif mimetype for animated GIF
+                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                }
+            }
+            "image/webp"-> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    // Set my own image/awebo mimetype for animated WebP
+                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                }
             }
         }
 
@@ -61,10 +80,11 @@ object Tools {
             inJustDecodeBounds = true
             BitmapFactory.decodeFile(pathName, this)
         }
+        val tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
 
-        return Photo("", "", "", "", tDate, dateToLocalDateTime(lastModified), options.outWidth, options.outHeight,
-            "", 0)
+        return Photo("", "", "", "", tDate, dateToLocalDateTime(lastModified), options.outWidth, options.outHeight, mMimeType, 0)
     }
 
     fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+    fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/"))
 }

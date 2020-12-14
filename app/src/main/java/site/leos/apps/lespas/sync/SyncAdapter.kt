@@ -291,10 +291,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                             }
 
-                            with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}")) {
+                            with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType)) {
                                 changedPhoto.dateTaken = dateTaken
                                 changedPhoto.width = width
                                 changedPhoto.height = height
+                                changedPhoto.mimeType = mimeType
                             }
 
                             // Update album's startDate, endDate fields

@@ -4,7 +4,9 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.graphics.*
+import android.media.ThumbnailUtils
 import android.util.LruCache
+import android.util.Size
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -76,20 +78,32 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                      */
 
                     val size = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8
-                    var rect: Rect
-                    if (photo.height > photo.width) {
+                    val rect: Rect
+                    rect = if (photo.height > photo.width) {
                         val top = (photo.height - photo.width) / 2
                         val bottom = top + photo.width
-                        rect = Rect(0, top, photo.width, bottom)
+                        Rect(0, top, photo.width, bottom)
                     } else {
                         val left = (photo.width - photo.height) / 2
                         val right = left + photo.height
-                        rect = Rect(left, 0, right, photo.height)
+                        Rect(left, 0, right, photo.height)
                     }
-                    BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
-                        this.inSampleSize = size
-                        this.inPreferredConfig = Bitmap.Config.RGBA_F16
-                    })
+                    with(photo.mimeType) {
+                        when {
+                            this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
+                                    ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
+                                else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
+                            }
+                            this == "image/jpeg" || this == "image/png" -> {
+                                BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
+                                    this.inSampleSize = size
+                                    this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                                })
+                            }
+                            else-> BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
+                        }
+                    }
                 }
                 TYPE_FULL -> {
                     BitmapFactory.decodeFile(fileName)

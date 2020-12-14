@@ -1,9 +1,13 @@
 package site.leos.apps.lespas.photo
 
+import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.graphics.Color
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -23,6 +27,8 @@ import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.Tools
+import java.io.File
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var albumId: String
@@ -59,9 +65,12 @@ class PhotoSlideFragment : Fragment() {
         postponeEnterTransition()
 
         pAdapter = PhotoSlideAdapter(
+            "${requireContext().filesDir}${resources.getString(R.string.lespas_base_folder_name)}",
+            { settable->  },
             { uiModel.toggleOnOff() }
         ) { photo, imageView, type ->
-            imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
+            if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
+            else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -76,10 +85,13 @@ class PhotoSlideFragment : Fragment() {
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    currentPhotoModel.setCurrentPhoto(pAdapter.getPhotoAt(position), position + 1)
 
-                    val photo = pAdapter.getPhotoAt(position)
-                    if (autoRotate) activity?.requestedOrientation = if (photo.width > photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    pAdapter.getPhotoAt(position).run {
+                        currentPhotoModel.setCurrentPhoto(this, position + 1)
+
+                        if (autoRotate) activity?.requestedOrientation =
+                            if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
                 }
             })
         }
@@ -101,18 +113,15 @@ class PhotoSlideFragment : Fragment() {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
     }
 
-    class PhotoSlideAdapter(private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage) : RecyclerView.Adapter<PhotoSlideAdapter.PagerViewHolder>() {
+    class PhotoSlideAdapter(private val rootPath: String, private val coverSetter: OnSetCoverable, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage,
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = emptyList<Photo>()
 
-        fun interface OnTouchListener {
-            fun onTouch()
-        }
+        fun interface OnTouchListener { fun onTouch() }
+        fun interface OnLoadImage { fun loadImage(photo: Photo, view: ImageView, type: String) }
+        fun interface OnSetCoverable { fun setCoverable(coverable: Boolean) }
 
-        fun interface OnLoadImage {
-            fun loadImage(photo: Photo, view: ImageView, type: String)
-        }
-
-        inner class PagerViewHolder(private val itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
                 itemView.findViewById<PhotoView>(R.id.media).apply {
                     imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
@@ -125,12 +134,41 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoSlideAdapter.PagerViewHolder {
-            return PagerViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
+        inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            @SuppressLint("ClickableViewAccessibility")
+            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
+                itemView.findViewById<ImageView>(R.id.media).apply {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
+                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
+
+                        var fileName = "$rootPath/${photo.id}"
+                        if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
+                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName))).apply { if (this is AnimatedImageDrawable) this.start() })
+                    }
+                    setOnTouchListener { _, event ->
+                        if (event.action == MotionEvent.ACTION_DOWN) {
+                            itemListener.onTouch()
+                            true
+                        } else false
+                    }
+                    ViewCompat.setTransitionName(this, photo.id)
+                }
+            }
         }
 
-        override fun onBindViewHolder(holder: PhotoSlideAdapter.PagerViewHolder, position: Int) {
-            holder.bindViewItems(photos[position], itemListener)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return when(viewType) {
+                TYPE_ANIMATED-> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
+                else-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
+            }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            when(holder) {
+                is AnimatedViewHolder-> holder.bindViewItems(photos[position], itemListener)
+                else-> (holder as PhotoViewHolder).bindViewItems(photos[position], itemListener)
+            }
         }
 
         override fun getItemCount(): Int {
@@ -144,6 +182,22 @@ class PhotoSlideFragment : Fragment() {
         fun setPhotos(collection: List<Photo>) {
             photos = collection
             notifyDataSetChanged()
+        }
+
+        override fun getItemViewType(position: Int): Int {
+            with(getPhotoAt(position).mimeType) {
+                return when {
+                    this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
+                    this.startsWith("video/") -> TYPE_VIDEO
+                    else -> TYPE_PHOTO
+                }
+            }
+        }
+
+        companion object {
+            private const val TYPE_PHOTO = 0
+            private const val TYPE_ANIMATED = 1
+            private const val TYPE_VIDEO = 2
         }
     }
 
@@ -164,13 +218,11 @@ class PhotoSlideFragment : Fragment() {
         private val photo = MutableLiveData<Photo>()
         private val coverApplyStatus = MutableLiveData<Boolean>()
         private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
-
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
         fun setCurrentPhoto(newPhoto: Photo, position: Int) {
             photo.value = newPhoto
             currentPosition = position
         }
-
         fun coverApplied(applied: Boolean) {
             coverApplyStatus.value = applied
             forReal = true
