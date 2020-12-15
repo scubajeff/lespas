@@ -11,7 +11,9 @@ import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
+import java.text.CharacterIterator
 import java.text.SimpleDateFormat
+import java.text.StringCharacterIterator
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -120,5 +122,18 @@ object Tools {
     }
 
     fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
+
+    @SuppressLint("DefaultLocale")
+    fun humanReadableByteCountSI(size: Long): String {
+        var bytes = size
+        if (-1000 < bytes && bytes < 1000) return "$bytes B"
+        val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
+        while (bytes <= -999950 || bytes >= 999950) {
+            bytes /= 1000
+            ci.next()
+        }
+        return java.lang.String.format("%d%cB", bytes/1000, ci.current())
+    }
 }

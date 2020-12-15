@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.sync
 
 import android.accounts.AccountManager
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.DialogInterface
@@ -40,8 +39,6 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.FileNotFoundException
-import java.text.CharacterIterator
-import java.text.StringCharacterIterator
 import java.time.LocalDateTime
 import java.util.*
 
@@ -79,7 +76,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                 progress_linearlayout.visibility = View.GONE
                 dialog_title_textview.text = getString(R.string.finished_preparing_files)
-                message_textview.text = getString(R.string.it_takes_time, humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                message_textview.text = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
                 message_textview.visibility = View.VISIBLE
             } else if (progress >= 0) {
                 dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
@@ -126,18 +123,6 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onDismiss(dialog)
         // If called by ShareReceiverActivity, quit immediately, otherwise return normally
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
-    }
-
-    @SuppressLint("DefaultLocale")
-    private fun humanReadableByteCountSI(size: Long): String {
-        var bytes = size
-        if (-1000 < bytes && bytes < 1000) return "$bytes B"
-        val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
-        while (bytes <= -999950 || bytes >= 999950) {
-            bytes /= 1000
-            ci.next()
-        }
-        return java.lang.String.format("%d%cB", bytes/1000, ci.current())
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {

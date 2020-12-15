@@ -274,8 +274,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             val fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}"
             info_filename.text = arguments?.getString(NAME)
             info_shotat.text = arguments?.getString(DATE)
-            info_size.text = String.format("%s  %s",
-                String.format("%.1fM", File(fileName).length().toFloat() / 1048576),
+            info_size.text = String.format("%s, %s",
+                Tools.humanReadableByteCountSI(File(fileName).length()),
                 String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))
 
             val exif = ExifInterface(fileName)
