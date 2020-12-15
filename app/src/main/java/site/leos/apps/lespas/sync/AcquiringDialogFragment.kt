@@ -82,17 +82,15 @@ class AcquiringDialogFragment: DialogFragment() {
                 dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
                 filename_textview.text = acquiringModel.getCurrentName()
                 current_progress.progress = progress
-            } else if (progress == AcquiringViewModel.ACCESS_RIGHT_EXCEPTION) {
+            } else if (progress < 0 ) {
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                 progress_linearlayout.visibility = View.GONE
                 dialog_title_textview.text = getString(R.string.error_preparing_files)
-                message_textview.text = getString(R.string.access_right_violation)
-                message_textview.visibility = View.VISIBLE
-            } else if (progress == AcquiringViewModel.NO_MEDIA_FILE_FOUND) {
-                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                progress_linearlayout.visibility = View.GONE
-                dialog_title_textview.text = getString(R.string.error_preparing_files)
-                message_textview.text = getString(R.string.no_media_file_found)
+                message_textview.text = getString(when(progress) {
+                    AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
+                    AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
+                    else-> 0
+                })
                 message_textview.visibility = View.VISIBLE
             }
         })
