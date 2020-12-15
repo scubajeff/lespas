@@ -106,7 +106,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             this == "image/jpeg" || this == "image/png" -> {
                                 BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
                                     this.inSampleSize = size
-                                    this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                                    this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                                 })
                             }
                             else-> BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
@@ -123,7 +123,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     val rect = Rect(0, photo.shareId, photo.width, bottom)
                     BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
                         this.inSampleSize = size
-                        this.inPreferredConfig = Bitmap.Config.RGBA_F16
+                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                     }) ?: placeholderBitmap
                 }
                 else -> errorBitmap
