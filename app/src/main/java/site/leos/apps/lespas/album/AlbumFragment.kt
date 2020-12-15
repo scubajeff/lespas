@@ -55,6 +55,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
 
         setHasOptionsMenu(true)
+
+        destinationModel.getDestination().observe (this, { album->
+            // Acquire files
+            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -179,12 +185,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             }
             startActivityForResult(intent, REQUEST_FOR_IMAGES)
         }
-
-        destinationModel.getDestination().observe (viewLifecycleOwner, { album->
-            // Acquire files
-            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
-        })
     }
 
     override fun onResume() {
