@@ -308,13 +308,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // Need to update and show the new album from server in local album list asap, have to do this in the loop
                             if (i == 0) {
                                 if (changedAlbum.cover.isEmpty()) {
-                                    // TODO get first JPEG or PNG file, these two support decodeRegion
+                                    // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
+                                    // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
+                                    var validCover = changedPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
+                                    if (validCover == -1) validCover = 0
+
                                     // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline
                                     // default to show middle part of the photo
-                                    changedAlbum.cover = changedPhotos[0].id
-                                    changedAlbum.coverBaseline = (changedPhotos[0].height - (changedPhotos[0].width * 9 / 21)) / 2
-                                    changedAlbum.coverWidth = changedPhotos[0].width
-                                    changedAlbum.coverHeight = changedPhotos[0].height
+                                    changedAlbum.cover = changedPhotos[validCover].id
+                                    changedAlbum.coverBaseline = (changedPhotos[validCover].height - (changedPhotos[validCover].width * 9 / 21)) / 2
+                                    changedAlbum.coverWidth = changedPhotos[validCover].width
+                                    changedAlbum.coverHeight = changedPhotos[validCover].height
 
                                     // Get cover updated
                                     tempAlbum = changedAlbum.copy(eTag = "", syncProgress = 0f)

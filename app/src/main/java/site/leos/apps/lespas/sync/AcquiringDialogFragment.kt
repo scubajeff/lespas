@@ -213,14 +213,18 @@ class AcquiringDialogFragment: DialogFragment() {
                 if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
                 else {
                     if (album.id == fakeAlbumId) {
-                        // TODO get first JPEG or PNG file, these two support decodeRegion
+                        // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
+                        // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
+                        var validCover = newPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
+                        if (validCover == -1) validCover = 0
+
                         // New album, update cover information but without leaving cover column empty as the sign of local added new album
-                        album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
-                        album.coverWidth = newPhotos[0].width
-                        album.coverHeight = newPhotos[0].height
+                        album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
+                        album.coverWidth = newPhotos[validCover].width
+                        album.coverHeight = newPhotos[validCover].height
 
                         // Create new album first, store cover, e.g. first photo in new album, in property filename
-                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[0].name, System.currentTimeMillis(), 1))
+                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].name, System.currentTimeMillis(), 1))
                     }
 
                     actionRepository.addActions(photoActions)
