@@ -11,6 +11,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.VideoView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.get
@@ -69,7 +72,7 @@ class PhotoSlideFragment : Fragment() {
             { uiModel.toggleOnOff() }
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
-            else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
+            else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -117,7 +120,7 @@ class PhotoSlideFragment : Fragment() {
         private var photos = emptyList<Photo>()
 
         fun interface OnTouchListener { fun onTouch() }
-        fun interface OnLoadImage { fun loadImage(photo: Photo, view: ImageView, type: String) }
+        fun interface OnLoadImage { fun loadImage(photo: Photo, view: View, type: String) }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
@@ -155,8 +158,39 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
+        inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            @SuppressLint("ClickableViewAccessibility")
+            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
+                val root = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
+
+                with(itemView.findViewById<VideoView>(R.id.media)) {
+                    if (photo.height != 0) with(ConstraintSet()) {
+                        clone(root)
+                        setDimensionRatio(R.id.media, "${photo.width}:${photo.height}")
+                        applyTo(root)
+                    }
+                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
+                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
+
+                    var fileName = "$rootPath/${photo.id}"
+                    if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
+                    setVideoPath(fileName)
+
+                    setOnTouchListener { _, event ->
+                        if (event.action == MotionEvent.ACTION_DOWN) {
+                            itemListener.onTouch()
+                            true
+                        } else false
+                    }
+
+                    ViewCompat.setTransitionName(this, photo.id)
+                }
+            }
+        }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return when(viewType) {
+                TYPE_VIDEO-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_video, parent, false))
                 TYPE_ANIMATED-> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
                 else-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
             }
@@ -164,6 +198,7 @@ class PhotoSlideFragment : Fragment() {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
+                is VideoViewHolder-> holder.bindViewItems(photos[position], itemListener)
                 is AnimatedViewHolder-> holder.bindViewItems(photos[position], itemListener)
                 else-> (holder as PhotoViewHolder).bindViewItems(photos[position], itemListener)
             }
@@ -190,6 +225,16 @@ class PhotoSlideFragment : Fragment() {
                     else -> TYPE_PHOTO
                 }
             }
+        }
+
+        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewAttachedToWindow(holder)
+            if (holder is VideoViewHolder) holder.itemView.findViewById<VideoView>(R.id.media).start()
+        }
+
+        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewDetachedFromWindow(holder)
+            if (holder is VideoViewHolder) holder.itemView.findViewById<VideoView>(R.id.media).stopPlayback()
         }
 
         companion object {

@@ -14,7 +14,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!!)) {
+        if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!! || intent.type?.startsWith("video/")!!)) {
             files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {

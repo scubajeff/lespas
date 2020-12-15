@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.graphics.*
 import android.media.ThumbnailUtils
+import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
@@ -90,6 +91,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                     with(photo.mimeType) {
                         when {
+                            this.startsWith("video")-> {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
+                                } else {
+                                    ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Images.Thumbnails.MINI_KIND)
+                                }
+                            }
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
                                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
                                     ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)

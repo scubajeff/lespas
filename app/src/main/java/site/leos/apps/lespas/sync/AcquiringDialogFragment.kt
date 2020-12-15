@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.DialogInterface
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
@@ -170,12 +171,12 @@ class AcquiringDialogFragment: DialogFragment() {
                         val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                         moveToFirst()
                         fileName = getString(columnIndex)
-                        mimeType = contentResolver.getType(uri) ?: ""
+                        mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: ""
                         close()
                     }
 
                     // If it's not image, skip it
-                    if (!(mimeType.startsWith("image/"))) return@forEachIndexed
+                    if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
 
                     // Update progress in UI
                     withContext(Dispatchers.Main) { setProgress(index, fileName) }
@@ -212,6 +213,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
                 else {
                     if (album.id == fakeAlbumId) {
+                        // TODO get first JPEG or PNG file, these two support decodeRegion
                         // New album, update cover information but without leaving cover column empty as the sign of local added new album
                         album.coverBaseline = (newPhotos[0].height - (newPhotos[0].width * 9 / 21)) / 2
                         album.coverWidth = newPhotos[0].width

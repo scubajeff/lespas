@@ -233,7 +233,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                         var remotePhotoId: String
                         sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
-                            if (remotePhoto.contentType.startsWith("image", true)) {
+                            if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
                                 // Accumulate remote photos list
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 remotePhotoIds.add(remotePhotoId)
@@ -308,6 +308,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // Need to update and show the new album from server in local album list asap, have to do this in the loop
                             if (i == 0) {
                                 if (changedAlbum.cover.isEmpty()) {
+                                    // TODO get first JPEG or PNG file, these two support decodeRegion
                                     // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline
                                     // default to show middle part of the photo
                                     changedAlbum.cover = changedPhotos[0].id
