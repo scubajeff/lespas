@@ -22,7 +22,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
-    //private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
+    private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     //private val gridWidth: Int
     private var loadingJob = SupervisorJob()
     private val jobMap = HashMap<Int, Job>()
@@ -124,7 +124,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
                         this.inSampleSize = size
                         this.inPreferredConfig = Bitmap.Config.RGBA_F16
-                    })
+                    }) ?: placeholderBitmap
                 }
                 else -> errorBitmap
             }
