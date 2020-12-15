@@ -5,13 +5,12 @@ import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.os.Build
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.VideoView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
@@ -42,6 +41,7 @@ class PhotoSlideFragment : Fragment() {
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
     private var autoRotate = false
+    private var previousNavBarColor = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,9 +110,34 @@ class PhotoSlideFragment : Fragment() {
         })
     }
 
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
+        requireActivity().window.run {
+            previousNavBarColor = navigationBarColor
+            navigationBarColor = Color.BLACK
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
+                statusBarColor = Color.TRANSPARENT
+                setDecorFitsSystemWindows(false)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        requireActivity().window.navigationBarColor = previousNavBarColor
     }
 
     class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage,

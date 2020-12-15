@@ -43,7 +43,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
-    private var previousNavBarColor = 0
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
@@ -181,30 +180,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
     }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-        window.run {
-            previousNavBarColor = navigationBarColor
-            navigationBarColor = Color.BLACK
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
-                statusBarColor = Color.TRANSPARENT
-                setDecorFitsSystemWindows(false)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-    }
-
     @Suppress("DEPRECATION")
     override fun onDestroy() {
         // BACK TO NORMAL UI
@@ -223,7 +198,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 window.setDecorFitsSystemWindows(true)
                 window.decorView.setOnApplyWindowInsetsListener(null)
             }
-            window.navigationBarColor = previousNavBarColor
             supportActionBar?.show()
         }
 
