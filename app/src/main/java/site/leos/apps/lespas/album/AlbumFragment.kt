@@ -41,6 +41,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var lastScrollPosition = -1
+    private val uris = ArrayList<Uri>()
 
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
@@ -178,6 +179,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             }
             startActivityForResult(intent, REQUEST_FOR_IMAGES)
         }
+
+        destinationModel.getDestination().observe (viewLifecycleOwner, { album->
+            // Acquire files
+            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+        })
     }
 
     override fun onResume() {
@@ -203,22 +210,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        val uris = ArrayList<Uri>()
-
         super.onActivityResult(requestCode, resultCode, intent)
 
         if (resultCode == Activity.RESULT_OK) {
             when(requestCode) {
                 REQUEST_FOR_IMAGES-> {
+                    uris.clear()
                     intent?.clipData?.apply {for (i in 0 until itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
 
                     if (uris.isNotEmpty()) {
-                        destinationModel.getDestination().observe (this, { album->
-                            // Acquire files
-                            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
-                        })
-
                         if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                             DestinationDialogFragment.newInstance().show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                     }
