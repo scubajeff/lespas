@@ -88,6 +88,12 @@ class AcquiringDialogFragment: DialogFragment() {
                 dialog_title_textview.text = getString(R.string.error_preparing_files)
                 message_textview.text = getString(R.string.access_right_violation)
                 message_textview.visibility = View.VISIBLE
+            } else if (progress == AcquiringViewModel.NO_MEDIA_FILE_FOUND) {
+                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                progress_linearlayout.visibility = View.GONE
+                dialog_title_textview.text = getString(R.string.error_preparing_files)
+                message_textview.text = getString(R.string.no_media_file_found)
+                message_textview.visibility = View.VISIBLE
             }
         })
 
@@ -195,7 +201,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     if (date > album.endDate) album.endDate = date
                 }
 
-                if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
+                if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(NO_MEDIA_FILE_FOUND, "") }
                 else {
                     if (album.id == fakeAlbumId) {
                         // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
@@ -233,6 +239,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
         companion object {
             const val ACCESS_RIGHT_EXCEPTION = -100
+            const val NO_MEDIA_FILE_FOUND = -200
         }
     }
 

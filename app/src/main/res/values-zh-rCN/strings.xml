@@ -66,4 +66,5 @@
     <string name="access_right_violation">您使用的分享应用未遵循Android存储访问安全规范，所以Les Pas无法接收到她的分享。请更新您的分享应用或使用其他应用进行操作。</string>
     <string name="error_preparing_files">发生错误</string>
     <string name="background_sync_summary">每六小时检查一次服务器更新</string>
+    <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
 </resources>

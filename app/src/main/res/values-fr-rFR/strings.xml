@@ -66,4 +66,5 @@
     <string name="access_right_violation">L\'application de partage ne suit pas la directive Android Storage Access Guideline, Les Pas ne peuvent donc pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser d\'autres.</string>
     <string name="error_preparing_files">Erreur de préparation des fichiers</string>
     <string name="background_sync_summary">Vérifiez la mise à jour du serveur toutes les 6 heures</string>
+    <string name="no_media_file_found">Aucun fichier image ou vidéo ne peut être trouvé parmi les données partagées.</string>
 </resources>

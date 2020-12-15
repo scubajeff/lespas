@@ -66,4 +66,5 @@
     <string name="access_right_violation">Die Freigabe-App folgt nicht der Android Storage Access Guideline, daher kann Les Pas diese Dateien nicht empfangen. Bitte aktualisieren Sie die Freigabe-App oder verwenden Sie andere.</string>
     <string name="error_preparing_files">Fehler beim Vorbereiten von Dateien</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
+    <string name="no_media_file_found">Unter den freigegebenen Daten kann keine Bild- oder Videodatei gefunden werden.</string>
 </resources>
