@@ -1,0 +1,14 @@
+Les Pas, est une application de galerie gratuite, moderne, légère et rapide. Organisez vos photos, GIF et vidéos dans des albums pour les visualiser et les partager facilement. Grâce à la synchronisation bidirectionnelle intégrée avec votre serveur Nextcloud, vos fichiers restent privés, sûrs et sécurisés.
+
+Caractéristiques :
+- Visualisation simple, belle et rapide des photos et des vidéos
+- Voir les détails de l'image
+- Albums organisés
+- Partager sur les réseaux sociaux
+- Thème inspiré des travaux de Wes Anderson
+- Synchronisation entre votre serveur Nextcloud et plusieurs appareils
+- Gérez librement vos albums et photos sur le serveur Nextcloud et sur vos téléphones
+- Tous les fichiers sauvegardés dans le stockage privé de l'application cessent d'être analysés par des applications malveillantes
+- Entièrement open-source
+
+Traduit avec www.DeepL.com/Translator (version gratuite)
