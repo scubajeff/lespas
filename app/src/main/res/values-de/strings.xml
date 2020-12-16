@@ -67,4 +67,5 @@
     <string name="error_preparing_files">Fehler beim Vorbereiten von Dateien</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="no_media_file_found">Unter den freigegebenen Daten kann keine Bild- oder Videodatei gefunden werden.</string>
+    <string name="tooltip_text_set_as">Eingestellt als</string>
 </resources>

@@ -67,4 +67,5 @@
     <string name="error_preparing_files">发生错误</string>
     <string name="background_sync_summary">每六小时检查一次服务器更新</string>
     <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
+    <string name="tooltip_text_set_as">设置为</string>
 </resources>

@@ -67,4 +67,5 @@
     <string name="error_preparing_files">Erreur de préparation des fichiers</string>
     <string name="background_sync_summary">Vérifiez la mise à jour du serveur toutes les 6 heures</string>
     <string name="no_media_file_found">Aucun fichier image ou vidéo ne peut être trouvé parmi les données partagées.</string>
+    <string name="tooltip_text_set_as">Fixé en tant que</string>
 </resources>

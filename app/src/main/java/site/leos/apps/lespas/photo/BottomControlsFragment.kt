@@ -23,6 +23,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.transition.Fade
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.fragment_bottomcontrols.*
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -151,7 +152,29 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        infoButton.apply {
+        set_as_button.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                with(currentPhoto.getCurrentPhoto().value!!) {
+                    File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
+                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
+                    val mimeType = this.mimeType
+
+                    startActivity(
+                        Intent.createChooser(
+                            Intent().apply {
+                                action = Intent.ACTION_ATTACH_DATA
+                                data = uri
+                                type = mimeType
+                                //clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
+                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            }, null
+                        )
+                    )
+                }
+            }
+        }
+        infoButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)

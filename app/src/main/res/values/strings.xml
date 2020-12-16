@@ -46,6 +46,7 @@
     <!-- PhotoSlide fragment -->
     <string name="tooltip_text_set_cover">Set cover art</string>
     <string name="tooltip_text_share">Share this</string>
+    <string name="tooltip_text_set_as">Set as</string>
     <string name="tooltip_text_info">More info</string>
 
     <!-- CropCover fragment -->
