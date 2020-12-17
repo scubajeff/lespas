@@ -210,6 +210,14 @@ class PhotoSlideFragment : Fragment() {
 
                     ViewCompat.setTransitionName(this, photo.id)
                 }
+
+                // If user touch outside VideoView
+                itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        itemListener.onTouch()
+                        true
+                    } else false
+                }
             }
         }
 
