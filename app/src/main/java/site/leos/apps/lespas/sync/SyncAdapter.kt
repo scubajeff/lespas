@@ -270,6 +270,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
 
+                        // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
+                        // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
+                        var validCover = changedPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
+                        if (validCover == -1) validCover = 0
+
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         changedPhotos.forEachIndexed {i, changedPhoto->
                             // Prepare the image file
@@ -306,14 +311,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             photoRepository.upsertSync(changedPhoto)
 
                             // Need to update and show the new album from server in local album list asap, have to do this in the loop
-                            if (i == 0) {
+                            if (i == validCover) {
                                 if (changedAlbum.cover.isEmpty()) {
-                                    // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
-                                    // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
-                                    var validCover = changedPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
-                                    if (validCover == -1) validCover = 0
-
-                                    // If this is a new album from server, then set it's cover to the first photo in the return list, set cover baseline
+                                    // If this is a new album from server, then set it's cover to the first jpeg/png photo in the return list, set cover baseline
                                     // default to show middle part of the photo
                                     changedAlbum.cover = changedPhotos[validCover].id
                                     changedAlbum.coverBaseline = (changedPhotos[validCover].height - (changedPhotos[validCover].width * 9 / 21)) / 2
