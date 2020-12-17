@@ -12,22 +12,26 @@ import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.text.CharacterIterator
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.text.StringCharacterIterator
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.regex.Pattern
 
 object Tools {
     @SuppressLint("SimpleDateFormat")
-    fun getPhotoParams(pathName: String, mimeType: String): Photo {
+    fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
         val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
         var timeString: String?
         var mMimeType = mimeType
         var width = 0
         var height = 0
-        var tDate = LocalDateTime.now()
+        var tDate = LocalDateTime.MIN
+        val wechatPattern = Pattern.compile("^mmexport[0-9]{10}.*")  // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
 
         // Update dateTaken, width, height fields
         val lastModified = Date(File(pathName).lastModified())
@@ -37,15 +41,27 @@ object Tools {
             with(MediaMetadataRetriever()) {
                 setDataSource(pathName)
 
-                extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let {
-                    Log.e(">>>>>", it)
-                    //tDate = LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'"))
+                // Try get creation date from metadata
+                extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
                     val f = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'").apply { timeZone = SimpleTimeZone(0, "UTC") }
-                    tDate = dateToLocalDateTime(f.parse(it))
-                } ?: run {
-                    // No creation timestamp, use file's last modified timestamp
-                    tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+
+                    try {
+                        f.parse(cDate)?.let { tDate = dateToLocalDateTime(it) }
+                    } catch (e: ParseException) { e.printStackTrace() }
                 }
+
+                // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
+                if (tDate.year == 1904) tDate = LocalDateTime.MIN
+
+                // Could not get creation date from metadata, try guessing from file name
+                if (tDate == LocalDateTime.MIN) {
+                    if (wechatPattern.matcher(fileName).matches()) {
+                        tDate = LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset)
+                    }
+                }
+
+                // If the above fail, set creation date to the same as last modified date
+                if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
 
                 width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
                 height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
@@ -64,7 +80,13 @@ object Tools {
                     timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
                     if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
                     if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-                    if (timeString == null) timeString = dateFormatter.format(lastModified)
+                    if (timeString == null) {
+                        // Could not get creation date from exif, try guessing from file name
+                        timeString = if (wechatPattern.matcher(fileName).matches()) {
+                            (LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset))
+                                .format(DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                        } else dateFormatter.format(lastModified)
+                    }
 
                     val exifRotation = exif.rotationDegrees
                     if (exifRotation != 0) {
