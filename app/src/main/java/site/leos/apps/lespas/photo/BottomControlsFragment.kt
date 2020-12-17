@@ -12,7 +12,6 @@ import android.os.Looper
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -38,9 +37,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var albumId: String
     private lateinit var window: Window
     private lateinit var controls: LinearLayout
-    private lateinit var setCoverButton: ImageButton
-    private lateinit var shareButton: ImageButton
-    private lateinit var infoButton: ImageButton
     private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
@@ -110,16 +106,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             } else toggle()
         })
         currentPhoto.getCurrentPhoto().observe(viewLifecycleOwner, {
-            setCoverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            cover_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            set_as_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
         })
 
         // Controls
         controls = view.findViewById(R.id.controls)
-        setCoverButton = view.findViewById<ImageButton>(R.id.cover_button)
-        shareButton = view.findViewById(R.id.share_button)
-        infoButton = view.findViewById(R.id.info_button)
 
-        setCoverButton.run {
+        cover_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 exitTransition = Fade().apply { duration = 80 }
@@ -130,7 +124,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     .commit()
             }
         }
-        shareButton.run {
+        share_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 with(currentPhoto.getCurrentPhoto().value!!) {
@@ -174,7 +168,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        infoButton.run {
+        info_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
