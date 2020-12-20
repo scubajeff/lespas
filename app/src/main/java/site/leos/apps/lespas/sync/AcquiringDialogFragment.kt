@@ -3,10 +3,12 @@ package site.leos.apps.lespas.sync
 import android.accounts.AccountManager
 import android.app.Application
 import android.content.ContentResolver
+import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -18,6 +20,7 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
+import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import com.google.android.material.color.MaterialColors
@@ -76,7 +79,13 @@ class AcquiringDialogFragment: DialogFragment() {
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                 progress_linearlayout.visibility = View.GONE
                 dialog_title_textview.text = getString(R.string.finished_preparing_files)
-                message_textview.text = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
+                    if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                        note += context?.getString(R.string.mind_network_setting)
+                    }
+                }
+                message_textview.text = note
                 message_textview.visibility = View.VISIBLE
             } else if (progress >= 0) {
                 dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)

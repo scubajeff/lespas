@@ -44,7 +44,7 @@
     <string name="leading_dots_found">Präfix \'.\' nicht erlaubt</string>
     <string name="preparing_files">Vorbereiten von Fotos %1$d von %2$d</string>
     <string name="finished_preparing_files">Vorbereitung der Fotos abgeschlossen</string>
-    <string name="it_takes_time">Sie müssen %1$s Daten an den Server senden. Es kann eine Weile dauern, bis neue Fotos auf dem Server erscheinen. Bitte halten Sie die Netzwerkverbindung stabil.</string>
+    <string name="it_takes_time">Sie müssen %1$s Daten an den Server senden. Es kann eine Weile dauern, bis neue Fotos auf dem Server erscheinen.</string>
     <string name="file_name">Name:</string>
     <string name="shot_at">Erstellt:</string>
     <string name="size">Größe:</string>
@@ -68,4 +68,5 @@
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="no_media_file_found">Unter den freigegebenen Daten kann keine Bild- oder Videodatei gefunden werden.</string>
     <string name="tooltip_text_set_as">Eingestellt als</string>
+    <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas das Mobilfunknetz nutzt.</string>
 </resources>

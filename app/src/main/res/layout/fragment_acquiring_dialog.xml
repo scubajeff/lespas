@@ -53,7 +53,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/small_padding"
             android:singleLine="false"
-            android:maxLines="6"
+            android:maxLines="7"
             style="@style/MaterialAlertDialog.MaterialComponents.Body.Text"
             android:text="@string/it_takes_time"
             android:visibility="gone"/>
