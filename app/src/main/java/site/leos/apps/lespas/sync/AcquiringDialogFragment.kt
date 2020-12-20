@@ -122,6 +122,8 @@ class AcquiringDialogFragment: DialogFragment() {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
+
+        dialog?.setCanceledOnTouchOutside(false)
     }
 
 

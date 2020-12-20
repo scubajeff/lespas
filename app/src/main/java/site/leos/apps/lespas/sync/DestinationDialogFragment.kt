@@ -126,6 +126,8 @@ class DestinationDialogFragment : DialogFragment() {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
         }
+
+        dialog?.setCanceledOnTouchOutside(false)
     }
 
     override fun onCancel(dialog: DialogInterface) {
