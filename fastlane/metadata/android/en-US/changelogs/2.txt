@@ -1,0 +1,2 @@
+* more accurate media creation date
+* bugs fixed

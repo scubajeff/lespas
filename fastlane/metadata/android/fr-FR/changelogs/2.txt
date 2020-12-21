@@ -1,0 +1,2 @@
+* obtenir une date de création des médias plus précise
+* bugs corrigés

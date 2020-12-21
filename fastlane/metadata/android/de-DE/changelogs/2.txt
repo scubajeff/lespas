@@ -1,0 +1,2 @@
+* genaueres Datum der Medienerstellung
+* bugs behoben
