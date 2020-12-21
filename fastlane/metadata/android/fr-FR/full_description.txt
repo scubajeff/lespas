@@ -10,5 +10,3 @@ Caractéristiques :
 - Gérez librement vos albums et photos sur le serveur Nextcloud et sur vos téléphones
 - Tous les fichiers sauvegardés dans le stockage privé de l'application cessent d'être analysés par des applications malveillantes
 - Entièrement open-source
-
-Traduit avec www.DeepL.com/Translator (version gratuite)

@@ -10,5 +10,3 @@ Funktionen:
 - Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
 - Alle Dateien werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden
 - Open-Source
-
-Übersetzt mit www.DeepL.com/Translator (kostenlose Version)
