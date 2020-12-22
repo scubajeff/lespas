@@ -25,4 +25,5 @@ class AlbumRepository(application: Application){
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
+    suspend fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
 }

@@ -27,6 +27,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
@@ -105,7 +106,7 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         albumModel.getAllPhotoInAlbum(albumId).observe(viewLifecycleOwner, { photos->
-            pAdapter.setPhotos(photos)
+            pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         })
     }
@@ -245,8 +246,16 @@ class PhotoSlideFragment : Fragment() {
             return photos[position]
         }
 
-        fun setPhotos(collection: List<Photo>) {
-            photos = collection
+        fun setPhotos(collection: List<Photo>, sortOrder: Int) {
+            photos = when(sortOrder) {
+                Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
+                Album.BY_DATE_TAKEN_DESC-> collection.sortedWith(compareByDescending { it.dateTaken })
+                Album.BY_DATE_MODIFIED_ASC-> collection.sortedWith(compareBy { it.lastModified })
+                Album.BY_DATE_MODIFIED_DESC-> collection.sortedWith(compareByDescending { it.lastModified })
+                Album.BY_NAME_ASC-> collection.sortedWith(compareBy { it.name })
+                Album.BY_NAME_DESC-> collection.sortedWith(compareByDescending { it.name })
+                else-> collection
+            }
             notifyDataSetChanged()
         }
 
@@ -322,8 +331,13 @@ class PhotoSlideFragment : Fragment() {
 
     companion object {
         private const val ALBUM_ID = "ALBUM_ID"
+        private const val SORT_ORDER = "SORT_ORDER"
 
-        fun newInstance(albumId: String) = PhotoSlideFragment().apply { arguments = Bundle().apply { putString(ALBUM_ID, albumId) }}
+        fun newInstance(albumId: String, sortOrder: Int) = PhotoSlideFragment().apply {
+            arguments = Bundle().apply {
+                putString(ALBUM_ID, albumId)
+                putString(SORT_ORDER, sortOrder.toString())
+        }}
     }
 }
 

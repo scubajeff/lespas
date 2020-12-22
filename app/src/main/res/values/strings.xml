@@ -110,6 +110,11 @@
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_rename">Rename Album</string>
+    <string name="item_sortby">Sort by</string>
+    <string name="item_dateasc">Date 🠕</string>
+    <string name="item_datedesc">Date 🠗</string>
+    <string name="item_nameasc">Name 🠕</string>
+    <string name="item_namedesc">Name 🠗</string>
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_select_all">Select all</string>
