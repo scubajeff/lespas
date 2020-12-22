@@ -83,7 +83,7 @@ dependencies {
     // Chris Banes PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'
 
-    implementation 'com.squareup.okhttp3:okhttp:4.1.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
