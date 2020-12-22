@@ -1,0 +1,1 @@
+* mettre à jour okhttp à la dernière version pour corriger un bogue en amont qui fait planter la connexion
