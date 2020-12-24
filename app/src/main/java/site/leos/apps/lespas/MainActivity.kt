@@ -3,6 +3,7 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -12,6 +13,8 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.album.AlbumFragment
@@ -25,11 +28,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+
         super.onCreate(savedInstanceState)
 
-        PreferenceManager.getDefaultSharedPreferences(applicationContext).getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
-            AppCompatDelegate.setDefaultNightMode(it.toInt())
-        }
+        // Set theme according to preference
+        sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
 
         setContentView(R.layout.activity_main)
 
@@ -59,6 +63,10 @@ class MainActivity : AppCompatActivity() {
         actionsPendingModel.allActions.observe(this, { actions ->
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
         })
+
+        // If READ_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
+        if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

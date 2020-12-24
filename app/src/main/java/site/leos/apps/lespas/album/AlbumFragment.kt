@@ -32,7 +32,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener {
+class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener {
     private var actionMode: ActionMode? = null
     private lateinit var mAdapter: AlbumListAdapter
     private lateinit var recyclerView: RecyclerView
@@ -292,12 +292,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
         fab.isEnabled = true
     }
 
-    override fun onPositiveConfirmed() {
-        val albums = mutableListOf<Album>()
-        // Selection key is Album.id
-        for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
-        actionModel.deleteAlbums(albums)
-
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (positive) {
+            val albums = mutableListOf<Album>()
+            // Selection key is Album.id
+            for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
+            actionModel.deleteAlbums(albums)
+        }
         selectionTracker.clearSelection()
     }
 
