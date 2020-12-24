@@ -70,8 +70,8 @@
     <string name="tooltip_text_set_as">设置为</string>
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
     <string name="item_sortby">照片排序</string>
-    <string name="item_dateasc">按日期递增</string>
-    <string name="item_datedesc">按日期递减</string>
-    <string name="item_nameasc">按名字递增</string>
-    <string name="item_namedesc">按名字递减</string>
+    <string name="item_dateasc">按时间顺序</string>
+    <string name="item_datedesc">按时间倒序</string>
+    <string name="item_nameasc">按名称顺序</string>
+    <string name="item_namedesc">按名称倒序</string>
 </resources>

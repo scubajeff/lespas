@@ -70,8 +70,8 @@
     <string name="tooltip_text_set_as">Fixé en tant que</string>
     <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
     <string name="item_sortby">Trier par</string>
-    <string name="item_dateasc">Date 🠕</string>
-    <string name="item_datedesc">Date 🠗</string>
-    <string name="item_nameasc">Nom 🠕</string>
-    <string name="item_namedesc">Nom 🠗</string>
+    <string name="item_dateasc">Date Croissante</string>
+    <string name="item_datedesc">Date Décroissante</string>
+    <string name="item_nameasc">Nom Croissante</string>
+    <string name="item_namedesc">Nom Décroissante</string>
 </resources>

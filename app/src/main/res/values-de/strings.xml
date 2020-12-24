@@ -70,8 +70,8 @@
     <string name="tooltip_text_set_as">Eingestellt als</string>
     <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas das Mobilfunknetz nutzt.</string>
     <string name="item_sortby">Sortieren nach</string>
-    <string name="item_dateasc">Datum 🠕</string>
-    <string name="item_datedesc">Datum 🠗</string>
-    <string name="item_nameasc">Name 🠕</string>
-    <string name="item_namedesc">Name 🠗</string>
+    <string name="item_dateasc">Datum Aufsteigend</string>
+    <string name="item_datedesc">Datum Absteigend</string>
+    <string name="item_nameasc">Name Aufsteigend</string>
+    <string name="item_namedesc">Name Absteigend</string>
 </resources>
