@@ -41,6 +41,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var lastScrollPosition = -1
+    private var isScrolling = false
     private val uris = ArrayList<Uri>()
 
     private val albumsModel: AlbumViewModel by activityViewModels()
@@ -89,8 +90,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
 
         // Register data observer first, try feeding adapter with lastest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
-            mAdapter.setAlbums(albums,)
-            if (lastScrollPosition != -1) {
+            mAdapter.setAlbums(albums)
+            if ((lastScrollPosition != -1) && (!isScrolling)) {
                 (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
             }
         })
@@ -170,7 +171,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnP
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) lastScrollPosition = (layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition()
+                    when(newState) {
+                        RecyclerView.SCROLL_STATE_IDLE-> {
+                            lastScrollPosition = (layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition()
+                            isScrolling = false
+                        }
+                        else-> isScrolling = true
+                    }
                 }
             })
         }

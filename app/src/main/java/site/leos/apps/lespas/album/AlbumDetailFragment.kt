@@ -52,6 +52,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
+    private var isScrolling = false
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
@@ -158,7 +159,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             with(currentPhotoModel) {
                 val cp = getCurrentPosition()
                 val fp = getFirstPosition()
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
+                if (!isScrolling) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
             }
         })
 
@@ -205,12 +206,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        with(currentPhotoModel) {
-                            setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                            setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                            setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                    when(newState) {
+                        RecyclerView.SCROLL_STATE_IDLE-> {
+                            with(currentPhotoModel) {
+                                setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                                setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                                setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                            }
+                            isScrolling = false
                         }
+                        else-> isScrolling = true
                     }
                 }
             })
