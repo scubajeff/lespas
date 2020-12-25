@@ -198,16 +198,17 @@ class AcquiringDialogFragment: DialogFragment() {
 
                     // If no photo with same name exists in album, create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileName)))) {
-                        newPhotos.add(
-                            Tools.getPhotoParams("$appRootFolder/$fileName", mimeType, fileName).copy(id = fileName, albumId = album.id, name = fileName)
-                        )
-                    }
-                    // Pass photo mimeType in Action's fileId property
-                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, mimeType, fileName, System.currentTimeMillis(), 1))
+                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileName", mimeType, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
-                    date = newPhotos.last().dateTaken
-                    if (date < album.startDate) album.startDate = date
-                    if (date > album.endDate) album.endDate = date
+                        // Update album start and end dates accordingly
+                        date = newPhotos.last().dateTaken
+                        if (date < album.startDate) album.startDate = date
+                        if (date > album.endDate) album.endDate = date
+                    }
+
+                    // Pass photo mimeType in Action's fileId property
+                    // TODO if user accidentally add the same photo to album twice, file gets upload twice too. Gonna compare last modification date to avoid this.
+                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, mimeType, fileName, System.currentTimeMillis(), 1))
                 }
 
                 if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(NO_MEDIA_FILE_FOUND, "") }
