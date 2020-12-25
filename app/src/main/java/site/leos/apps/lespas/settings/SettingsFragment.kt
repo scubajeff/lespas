@@ -31,18 +31,18 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.let {
             it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
-                // Request READ_EXTERNAL_STORAGE permission if user want to integrate with Snapseed
-                if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    if (shouldShowRequestPermissionRationale(android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                // Request WRITE_EXTERNAL_STORAGE permission if user want to integrate with Snapseed
+                if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    if (shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.read_storage_permission_rationale), getString(R.string.proceed_request)).let {
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request)).let {
                                 it.setTargetFragment(this, PERMISSION_RATIONALE_REQUEST_CODE)
                                 it.show(parentFragmentManager, CONFIRM_DIALOG)
                             }
                         }
-                    } else requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), READ_STORAGE_PERMISSION_REQUEST)
+                    } else requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
 
-                    // Set Snapseed integration to False if we don't have READ_EXTERNAL_STORAGE permission
+                    // Set Snapseed integration to False if we don't have WRITE_EXTERNAL_STORAGE permission
                     (pref as SwitchPreferenceCompat).isChecked = false
                     false
 
@@ -96,7 +96,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == READ_STORAGE_PERMISSION_REQUEST) {
+        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST) {
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         }
     }
@@ -110,7 +110,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     activity?.finish()
                 }
                 PERMISSION_RATIONALE_REQUEST_CODE -> {
-                    requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE), READ_STORAGE_PERMISSION_REQUEST)
+                    requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
                 }
             }
         } else {
@@ -123,7 +123,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val LOGOUT_CONFIRM_REQUEST_CODE = 0
         private const val PERMISSION_RATIONALE_REQUEST_CODE = 1
-        private const val READ_STORAGE_PERMISSION_REQUEST = 8989
+        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8989
     }
 
 }

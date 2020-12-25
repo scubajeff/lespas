@@ -64,8 +64,8 @@ class MainActivity : AppCompatActivity() {
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
         })
 
-        // If READ_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
-        if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
+        if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
             sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
     }
 

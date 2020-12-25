@@ -73,6 +73,6 @@
     <string name="snapseed_replace_title">Remplacé par Snapseed</string>
     <string name="snapseed_replace_on_summary">Remplacement automatique de la photo originale par l\'édition de Snapseed.</string>
     <string name="snapseed_replace_off_summary">Copiez la sortie de Snapseed sur l\'album. Gérer la duplication par vous-même.</string>
-    <string name="read_storage_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission READ_EXTERNAL_STORAGE d\'accéder à ces fichiers.</string>
+    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission WRITE_EXTERNAL_STORAGE d\'accéder à ces fichiers.</string>
     <string name="proceed_request">Continuer</string>
 </resources>

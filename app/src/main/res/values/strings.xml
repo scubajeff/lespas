@@ -81,7 +81,7 @@
     <string name="snapseed_replace_title">Replaced with Snapseed</string>
     <string name="snapseed_replace_on_summary">Automatically replaced original photo with Snapseed\'s edtition.</string>
     <string name="snapseed_replace_off_summary">Copy Snapseed\'s output to album. Manage duplication by yourself.</string>
-    <string name="read_storage_permission_rationale">Snapseed saves files in \"Snapseed\" folder, Grant READ_EXTERNAL_STORAGE permission to access those files.</string>
+    <string name="storage_access_permission_rationale">Snapseed saves files in \"Snapseed\" folder, Grant WRITE_EXTERNAL_STORAGE permission to access those files.</string>
     <string name="proceed_request">Proceed</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>

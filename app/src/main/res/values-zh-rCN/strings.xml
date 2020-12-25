@@ -73,6 +73,6 @@
     <string name="snapseed_replace_title">使用Snapseed输出</string>
     <string name="snapseed_replace_on_summary">自动采用Snapseed修图结果替换原始照片。</string>
     <string name="snapseed_replace_off_summary">保留原始照片，只拷贝Snapseed修图结果到相册中。</string>
-    <string name="read_storage_permission_rationale">Snapseed将修图结果保存在名为\"Snapseed\"的目录中，请授予READ_EXTERNAL_STORAGE权限以读取这些文件。</string>
+    <string name="storage_access_permission_rationale">Snapseed将修图结果保存在名为\"Snapseed\"的目录中，请授予WRITE_EXTERNAL_STORAGE权限以读取这些文件。</string>
     <string name="proceed_request">去授权</string>
 </resources>
