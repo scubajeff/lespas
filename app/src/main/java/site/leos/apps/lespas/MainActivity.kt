@@ -3,6 +3,7 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
@@ -24,14 +25,14 @@ import java.io.File
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
-    private val actionsPendingModel: ActionViewModel by viewModels()
+    private val actionsModel: ActionViewModel by viewModels()
     private lateinit var toolbar: Toolbar
+    private lateinit var sp: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-
         super.onCreate(savedInstanceState)
 
+        sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         // Set theme according to preference
         sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
 
@@ -60,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
         // Setup observer to fire up SyncAdapter
         ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-        actionsPendingModel.allActions.observe(this, { actions ->
+        actionsModel.allActions.observe(this, { actions ->
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
         })
 

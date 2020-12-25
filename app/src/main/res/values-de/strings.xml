@@ -75,4 +75,5 @@
     <string name="snapseed_replace_off_summary">Kopieren Sie die Ausgabe von Snapseed in ein Album. Verwalten Sie die Vervielfältigung selbst.</string>
     <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung WRITE_EXTERNAL_STORAGE, um auf diese Dateien zuzugreifen.</string>
     <string name="proceed_request">Weiter</string>
+    <string name="snapseed_integration_summary">Hinweis: Bitte lassen Sie Snapseed das JPEG-Ausgabeformat verwenden.</string>
 </resources>

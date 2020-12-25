@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import java.time.LocalDateTime
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val albumRepository = AlbumRepository(application)
@@ -18,4 +19,8 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
     fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(albumId, cover) }
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
+    fun fixCoverId(albumId: String, newCoverId: String) = viewModelScope.launch(Dispatchers.IO) { albumRepository.fixCoverId(albumId, newCoverId) }
+    fun addPhoto(photo: Photo) = viewModelScope.launch(Dispatchers.IO) { photoRepository.insert(photo) }
+    fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) =
+        viewModelScope.launch(Dispatchers.IO) { photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType) }
 }

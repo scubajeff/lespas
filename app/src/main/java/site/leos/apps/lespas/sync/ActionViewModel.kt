@@ -22,6 +22,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     val allActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
     fun addActions(actions: List<Action>) = viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(actions) }
+    fun addAction(actions: Action) = viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(actions) }
 
     fun deleteAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {

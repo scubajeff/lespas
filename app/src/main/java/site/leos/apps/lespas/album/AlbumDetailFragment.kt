@@ -131,7 +131,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
