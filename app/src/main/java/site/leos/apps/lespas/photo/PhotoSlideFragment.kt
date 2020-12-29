@@ -167,21 +167,21 @@ class PhotoSlideFragment : Fragment() {
             val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
 
             if (snapseedFile.exists()) {
-                Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")
+                //Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")
 
                 if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
                     // Replace the original
                     val lastModified = Tools.dateToLocalDateTime(Date(snapseedFile.lastModified()))
                     // Compare file size to to make sure it's a new edition
                     if (snapseedFile.length() != File(appRootFolder, photo.id).length()) {
-                        Log.e(">>>>>>>", "file ${snapseedFile.absolutePath} is a different edition")
+                        //Log.e(">>>>>>>", "file ${snapseedFile.absolutePath} is a different edition")
 
                         val actions = mutableListOf<Action>()
                         // Snapseed use JPEG format for output
                         var newName = photo.name
                         if (photo.mimeType != JPEG) {
                             newName = photo.name.substringBeforeLast('.') + ".jpeg"
-                            Log.e(">>>>>>", "old file ${photo.name} will be deleted, new file $newName will be created on both side")
+                            //Log.e(">>>>>>", "old file ${photo.name} will be deleted, new file $newName will be created on both side")
                         }
 
                         try {
@@ -195,7 +195,7 @@ class PhotoSlideFragment : Fragment() {
                             return@launch
                         }
 
-                        Log.e(">>>>", "${snapseedFile.absolutePath} replaced $appRootFolder/$newName")
+                        //Log.e(">>>>", "${snapseedFile.absolutePath} replaced $appRootFolder/$newName")
 
                         // Invalid image cache
                         imageLoaderModel.invalid(photo)
@@ -230,7 +230,10 @@ class PhotoSlideFragment : Fragment() {
                     }
                 } else {
                     // Copy Snapseed output
-                    val fileName = snapseedFile.name
+
+                    // Append timestamp suffix to make a unique filename
+                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.jpeg"
+
                     try {
                         snapseedFile.inputStream().use { input ->
                             File(appRootFolder, fileName).outputStream().use { output ->
@@ -251,6 +254,7 @@ class PhotoSlideFragment : Fragment() {
 
                     // Scroll to original
                     val newPosition = pAdapter.findPhotoPosition(photo)
+                    Log.e(">>>>>>>", "$oldPosition >>>>> $newPosition")
                     slider.setCurrentItem(newPosition, false)
                     currentPhotoModel.setFirstPosition(currentPhotoModel.getFirstPosition() + newPosition - oldPosition)
                     currentPhotoModel.setLastPosition(currentPhotoModel.getLastPosition() + newPosition - oldPosition)
