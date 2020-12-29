@@ -10,7 +10,6 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.VideoView
@@ -56,6 +55,7 @@ class PhotoSlideFragment : Fragment() {
     private var autoRotate = false
     private var previousNavBarColor = 0
     private lateinit var sp: SharedPreferences
+    private var originalItem: Photo? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -121,7 +121,21 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
+            // TODO stupid hack to test if new photo added by snapseed, since observer get called twice, must be sth. to do with miss fired
+            val c1 = pAdapter.itemCount
             pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
+            val c2 = pAdapter.itemCount
+            if (originalItem != null && c1 != c2) {
+                // Scroll to original after new snapseed output added
+                val oldPosition = currentPhotoModel.getCurrentPosition()
+                val newPosition = pAdapter.findPhotoPosition(originalItem!!) + 1
+                if (newPosition != oldPosition) {
+                    currentPhotoModel.setCurrentPosition(newPosition)
+                    currentPhotoModel.setFirstPosition(currentPhotoModel.getFirstPosition() + newPosition - oldPosition)
+                    currentPhotoModel.setLastPosition(currentPhotoModel.getLastPosition() + newPosition - oldPosition)
+                }
+                originalItem = null
+            }
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         })
     }
@@ -160,8 +174,7 @@ class PhotoSlideFragment : Fragment() {
 
     private fun checkSnapseed() {
         CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
-            val oldPosition = slider.currentItem
-            val photo = pAdapter.getPhotoAt(oldPosition)
+            val photo = pAdapter.getPhotoAt(slider.currentItem)
             //val photo = currentPhotoModel.getCurrentPhoto().value!!
             val snapseedFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Snapseed/${photo.name.substringBeforeLast('.')}-01.jpeg")
             val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
@@ -219,6 +232,7 @@ class PhotoSlideFragment : Fragment() {
                             actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
                         actionModel.addActions(actions)
 
+                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
                         currentPhotoModel.setCurrentPhoto(
                             photo.copy(id = newName, width = options.outWidth, height = options.outHeight, lastModified = lastModified, mimeType = JPEG), null)
 
@@ -244,23 +258,18 @@ class PhotoSlideFragment : Fragment() {
                         e.printStackTrace()
                         return@launch
                     }
-                    Log.e(">>>>", "${snapseedFile.absolutePath} copied to $appRootFolder/$fileName")
+
+                    // Tell observer to relocate the original photo
+                    originalItem = photo
 
                     // Create new photo
                     albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
                     // Upload changes to server, mimetype passed in fileId property
                     actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, JPEG, fileName, System.currentTimeMillis(), 1))
-
-                    // Scroll to original
-                    val newPosition = pAdapter.findPhotoPosition(photo)
-                    Log.e(">>>>>>>", "$oldPosition >>>>> $newPosition")
-                    slider.setCurrentItem(newPosition, false)
-                    currentPhotoModel.setFirstPosition(currentPhotoModel.getFirstPosition() + newPosition - oldPosition)
-                    currentPhotoModel.setLastPosition(currentPhotoModel.getLastPosition() + newPosition - oldPosition)
                 }
 
-                // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid parsing filename suffix
+                // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid tedious filename parsing
                 try {
                     snapseedFile.delete()
                 } catch (e: Exception) { e.printStackTrace() }
