@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             android:singleLine="false"
-            android:maxLines="2"
+            android:maxLines="6"
             style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             tools:text="Message?"/>
 

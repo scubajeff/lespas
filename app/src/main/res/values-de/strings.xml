@@ -69,6 +69,13 @@
     <string name="no_media_file_found">Unter den freigegebenen Daten kann keine Bild- oder Videodatei gefunden werden.</string>
     <string name="tooltip_text_set_as">Eingestellt als</string>
     <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas das Mobilfunknetz nutzt.</string>
+    <string name="snapseed_integration_title">Snapseed-Integration</string>
+    <string name="snapseed_replace_title">Ersetzt durch Snapseed</string>
+    <string name="snapseed_replace_on_summary">Ersetzt das Originalfoto automatisch durch die Bearbeitung von Snapseed.</string>
+    <string name="snapseed_replace_off_summary">Kopieren Sie die Ausgabe von Snapseed in ein Album. Verwalten Sie die Vervielfältigung selbst.</string>
+    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung WRITE_EXTERNAL_STORAGE, um auf diese Dateien zuzugreifen.</string>
+    <string name="proceed_request">Weiter</string>
+    <string name="snapseed_integration_summary">Hinweis: Bitte lassen Sie Snapseed das JPEG-Ausgabeformat verwenden.</string>
     <string name="item_sortby">Sortieren nach</string>
     <string name="item_dateasc">Datum Aufsteigend</string>
     <string name="item_datedesc">Datum Absteigend</string>

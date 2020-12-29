@@ -135,6 +135,10 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun invalid(photo: Photo) {
+        imageCache.snapshot().keys.forEach { key-> if (key.startsWith(photo.id)) imageCache.remove(key) }
+    }
+
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
         loadPhoto(photo, view, type, null)
     }
@@ -145,7 +149,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             var key = "${photo.id}$type"
 
             // suffix 'baseline' in case same photo chosen
-            if (type == TYPE_COVER) key = "$key-${photo.shareId}"
+            if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${photo.shareId}"
 
             try {
                 // Show something first

@@ -14,15 +14,15 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class ConfirmDialogFragment : DialogFragment() {
-    private lateinit var onPositiveConfirmedListener: OnPositiveConfirmedListener
+    private lateinit var onResultListener: OnResultListener
 
-    interface OnPositiveConfirmedListener {
-        fun onPositiveConfirmed()
+    interface OnResultListener {
+        fun onResult(positive: Boolean, requestCode: Int)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (targetFragment is OnPositiveConfirmedListener) onPositiveConfirmedListener = targetFragment as OnPositiveConfirmedListener
+        if (targetFragment is OnResultListener) onResultListener = targetFragment as OnResultListener
         else parentFragmentManager.popBackStack()
     }
 
@@ -37,12 +37,15 @@ class ConfirmDialogFragment : DialogFragment() {
         //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
         background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
         message_textview.text = arguments?.getString(MESSAGE)
-        arguments?.getString(OK_TEXT)?.let { ok_button.text = it }
+        ok_button.text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
         ok_button.setOnClickListener { _->
-            onPositiveConfirmedListener.onPositiveConfirmed()
+            onResultListener.onResult(true, targetRequestCode)
             dismiss()
         }
-        cancel_button.setOnClickListener { _-> dismiss() }
+        cancel_button.setOnClickListener { _->
+            onResultListener.onResult(false, targetRequestCode)
+            dismiss()
+        }
     }
 
     override fun onStart() {
@@ -65,7 +68,7 @@ class ConfirmDialogFragment : DialogFragment() {
         const val MESSAGE = "MESSAGE"
         const val OK_TEXT = "OK_TEXT"
 
-        fun newInstance(message: String, okButtonText: String) =
+        fun newInstance(message: String, okButtonText: String?) =
             ConfirmDialogFragment().apply {
                 arguments = Bundle().apply {
                     putString(MESSAGE, message)

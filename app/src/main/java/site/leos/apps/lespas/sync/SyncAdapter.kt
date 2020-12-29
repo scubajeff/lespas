@@ -87,7 +87,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 // Upload to server and verify
                                 //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
                                 // MIME type is passed in fileId properties
-                                sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", File(localRootFolder, action.fileName), action.fileId)
+                                val localFile = File(localRootFolder, action.fileName)
+                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.fileId)
                                 //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
@@ -247,6 +248,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         //Log.e("<><><>", "coming back now ${remotePhoto.name}")
                                         if (File(localRootFolder, remotePhoto.name).exists()) {
                                             try {
+                                                File(localRootFolder, remotePhotoId).delete()
+                                            } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+                                            try {
                                                 File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
                                                 //Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
@@ -258,7 +262,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
                                             changedAlbum.cover = remotePhotoId
                                         }
-                                    } else changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
+                                    } else
+                                        changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
                                             Tools.dateToLocalDateTime(remotePhoto.modified), 0, 0, remotePhoto.contentType, 0
                                         )
                                     )  // TODO will share status change create new eTag?
@@ -282,6 +287,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 // If image file with 'name' exists, replace the old file with this
                                 try {
                                     File(localRootFolder, changedPhoto.id).delete()
+                                } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
+                                try {
                                     File(localRootFolder, changedPhoto.name).renameTo(File(localRootFolder, changedPhoto.id))
                                     //Log.e("****", "rename file ${changedPhoto.name} to ${changedPhoto.id}")
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}

@@ -3,6 +3,8 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -12,6 +14,8 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.album.AlbumFragment
@@ -23,20 +27,18 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var toolbar: Toolbar
+    private lateinit var sp: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        PreferenceManager.getDefaultSharedPreferences(applicationContext).getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
-            AppCompatDelegate.setDefaultNightMode(it.toInt())
-        }
+        sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Make sure photo's folder existed
         // TODO try clearing the cache folder
-        Executors.newSingleThreadExecutor().execute {
-            File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir()
-        }
+        Executors.newSingleThreadExecutor().execute { File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir() }
 
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -56,10 +58,13 @@ class MainActivity : AppCompatActivity() {
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
 
-            // Observe action table
             actionsPendingModel.allActions.observe(this, { actions ->
                 if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
             })
+
+            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
+            if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
         }
     }
 

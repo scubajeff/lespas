@@ -69,6 +69,13 @@
     <string name="no_media_file_found">Aucun fichier image ou vidéo ne peut être trouvé parmi les données partagées.</string>
     <string name="tooltip_text_set_as">Fixé en tant que</string>
     <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
+    <string name="snapseed_integration_title">L\'intégration de Snapseed</string>
+    <string name="snapseed_replace_title">Remplacé par Snapseed</string>
+    <string name="snapseed_replace_on_summary">Remplacement automatique de la photo originale par l\'édition de Snapseed.</string>
+    <string name="snapseed_replace_off_summary">Copiez la sortie de Snapseed sur l\'album. Gérer la duplication par vous-même.</string>
+    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission WRITE_EXTERNAL_STORAGE d\'accéder à ces fichiers.</string>
+    <string name="proceed_request">Continuer</string>
+    <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
     <string name="item_sortby">Trier par</string>
     <string name="item_dateasc">Date Croissante</string>
     <string name="item_datedesc">Date Décroissante</string>

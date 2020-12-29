@@ -69,6 +69,13 @@
     <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
     <string name="tooltip_text_set_as">设置为</string>
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
+    <string name="snapseed_integration_title">集成Snapseed</string>
+    <string name="snapseed_replace_title">使用Snapseed输出</string>
+    <string name="snapseed_replace_on_summary">自动采用Snapseed修图结果替换原始照片。</string>
+    <string name="snapseed_replace_off_summary">保留原始照片，只拷贝Snapseed修图结果到相册中。</string>
+    <string name="storage_access_permission_rationale">Snapseed将修图结果保存在名为\"Snapseed\"的目录中，请授予WRITE_EXTERNAL_STORAGE权限以读取这些文件。</string>
+    <string name="proceed_request">去授权</string>
+    <string name="snapseed_integration_summary">注意：请设置Snapseed使用JPEG格式输出。</string>
     <string name="item_sortby">照片排序</string>
     <string name="item_dateasc">按时间顺序</string>
     <string name="item_datedesc">按时间倒序</string>

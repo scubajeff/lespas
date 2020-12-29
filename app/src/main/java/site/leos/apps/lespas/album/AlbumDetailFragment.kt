@@ -43,7 +43,7 @@ import java.io.File
 import java.time.Duration
 import java.time.ZoneId
 
-class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnPositiveConfirmedListener, AlbumRenameDialogFragment.OnFinishListener {
+class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var album: Album
     private var actionMode: ActionMode? = null
     private lateinit var stub: View
@@ -131,7 +131,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, album.sortOrder)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album, album.sortOrder)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
@@ -357,12 +357,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         actionMode = null
     }
 
-    override fun onPositiveConfirmed() {
-        val photos = mutableListOf<Photo>()
-        for (i in selectionTracker.selection)
-            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
-
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (positive) {
+            val photos = mutableListOf<Photo>()
+            for (i in selectionTracker.selection)
+                mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+        }
         selectionTracker.clearSelection()
     }
 
