@@ -131,7 +131,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id)).addToBackStack(PhotoSlideFragment::class.simpleName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album.id, album.sortOrder)).addToBackStack(PhotoSlideFragment::class.simpleName)
                     .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album.id), BottomControlsFragment::class.simpleName)
                     .commit()
             },
@@ -245,22 +245,38 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
+        return when(item.itemId) {
             R.id.option_menu_rename-> {
                 if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
                     it.setTargetFragment(this, 0)
                     it.show(parentFragmentManager, RENAME_DIALOG)
                 }
-                return true
+                true
             }
-            R.id.option_menu_settings -> {
+            R.id.option_menu_settings-> {
                 exitTransition = null
                 reenterTransition = null
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
-                return true
+                true
             }
+            R.id.option_menu_sortbydateasc-> {
+                albumModel.setSortOrder(album.id, Album.BY_DATE_TAKEN_ASC)
+                true
+            }
+            R.id.option_menu_sortbydatedesc-> {
+                albumModel.setSortOrder(album.id, Album.BY_DATE_TAKEN_DESC)
+                true
+            }
+            R.id.option_menu_sortbynameasc-> {
+                albumModel.setSortOrder(album.id, Album.BY_NAME_ASC)
+                true
+            }
+            R.id.option_menu_sortbynamedesc-> {
+                albumModel.setSortOrder(album.id, Album.BY_NAME_DESC)
+                true
+            }
+            else-> false
         }
-        return false
     }
 
     // On special Actions of this fragment
@@ -358,6 +374,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdator: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -445,17 +462,37 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
-            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
-            this.photos.addAll(1, album.photos.sortedWith(compareBy { it.dateTaken }))
+            album.album.run { photos.add(Photo(cover, id, "", "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
+            this.photos.addAll(1,
+                when(album.album.sortOrder) {
+                    Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
+                    Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
+                    Album.BY_DATE_MODIFIED_ASC-> album.photos.sortedWith(compareBy { it.lastModified })
+                    Album.BY_DATE_MODIFIED_DESC-> album.photos.sortedWith(compareByDescending { it.lastModified })
+                    Album.BY_NAME_ASC-> album.photos.sortedWith(compareBy { it.name })
+                    Album.BY_NAME_DESC-> album.photos.sortedWith(compareByDescending { it.name })
+                    else-> album.photos
+                }
+            )
+            if (oldSortOrder != album.album.sortOrder) {
+                // sort order changes will change nearly all the position, so no need to use DiffUtil
+                notifyDataSetChanged()
+                oldSortOrder = album.album.sortOrder
+            } else {
+                DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                    override fun getOldListSize() = oldPhotos.size
+                    override fun getNewListSize() = photos.size
+                    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+                        ((oldPhotos[oldItemPosition].id == photos[newItemPosition].id) && (oldPhotos[oldItemPosition].name == photos[newItemPosition].name))
 
-            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun getOldListSize() = oldPhotos.size
-                override fun getNewListSize() = photos.size
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldPhotos[oldItemPosition].id == photos[newItemPosition].id
-                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
-                    if (oldItemPosition == 0) (oldPhotos[oldItemPosition] == photos[newItemPosition]) && oldPhotos.size == photos.size
-                    else oldPhotos[oldItemPosition] == photos[newItemPosition]
-            }).dispatchUpdatesTo(this)
+                    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+                        if (oldItemPosition == 0 && newItemPosition == 0)
+                            //oldPhotos[oldItemPosition].id == photos[newItemPosition].id &&              // cover's photo id, already checked in areItemsTheSame?
+                            oldPhotos[oldItemPosition].shareId == photos[newItemPosition].shareId &&    // cover baseline
+                            oldPhotos.size == photos.size                                               // photo added or deleted, photo count and duration affected
+                        else oldPhotos[oldItemPosition] == photos[newItemPosition]
+                }).dispatchUpdatesTo(this)
+            }
         }
 
         internal fun getPhotoAt(position: Int): Photo {
