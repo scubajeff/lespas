@@ -21,7 +21,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosByDateTakenASC(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder)}
     fun fixCoverId(albumId: String, newCoverId: String) = viewModelScope.launch(Dispatchers.IO) { albumRepository.fixCoverId(albumId, newCoverId) }
-    fun addPhoto(photo: Photo) = viewModelScope.launch(Dispatchers.IO) { photoRepository.insert(photo) }
-    fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) =
-        viewModelScope.launch(Dispatchers.IO) { photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType) }
+    suspend fun addPhoto(photo: Photo) = photoRepository.insert(photo)
+    suspend fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) =
+        photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType)
 }
