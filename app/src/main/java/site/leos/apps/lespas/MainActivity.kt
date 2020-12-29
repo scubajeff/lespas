@@ -25,12 +25,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
         PreferenceManager.getDefaultSharedPreferences(applicationContext).getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
             AppCompatDelegate.setDefaultNightMode(it.toInt())
         }
 
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Make sure photo's folder existed
@@ -42,8 +41,9 @@ class MainActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        val account: Account = AccountManager.get(this).accounts[0]
         if (savedInstanceState == null) {
+            val account: Account = AccountManager.get(this).accounts[0]
+
             // Syncing server changes at startup
             ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
@@ -51,14 +51,16 @@ class MainActivity : AppCompatActivity() {
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
             })
 
-            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
-        }
+            // Setup observer to fire up SyncAdapter
+            ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
 
-        // Setup observer to fire up SyncAdapter
-        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-        actionsPendingModel.allActions.observe(this, { actions ->
-            if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
-        })
+            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+
+            // Observe action table
+            actionsPendingModel.allActions.observe(this, { actions ->
+                if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
+            })
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
