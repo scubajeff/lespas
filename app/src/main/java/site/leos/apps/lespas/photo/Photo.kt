@@ -47,9 +47,9 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumPhotos(albumId: String): List<Photo>
 
-    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
-    abstract fun getAlbumPhotosByDateTakenASCDistinct(albumId: String): Flow<List<Photo>>
-    fun getAlbumPhotosByDateTakenASC(albumId: String) = getAlbumPhotosByDateTakenASCDistinct(albumId).distinctUntilChanged()
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    abstract fun getAlbumPhotosFlowDistinct(albumId: String): Flow<List<Photo>>
+    fun getAlbumPhotosFlow(albumId: String) = getAlbumPhotosFlowDistinct(albumId).distinctUntilChanged()
 
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun deletePhotosByAlbum(albumId: String)

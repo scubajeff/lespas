@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
 
-    fun getAlbumPhotosByDateTakenASC(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosByDateTakenASC(albumId)
+    fun getAlbumPhotosFlow(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosFlow(albumId)
     fun upsertSync(photo: Photo) { photoDao.upsertSync(photo) }
     fun deleteByIdSync(photoId: String) { photoDao.deleteByIdSync(photoId) }
     fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
