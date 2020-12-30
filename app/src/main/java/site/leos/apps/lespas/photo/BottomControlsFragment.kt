@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.Color
@@ -140,7 +141,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                                 putExtra(Intent.EXTRA_STREAM, uri)
                                 clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            }, null
+                            }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
                         )
                     )
                 }
@@ -217,7 +218,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             }
             supportActionBar?.show()
         }
-
         super.onDestroy()
     }
 

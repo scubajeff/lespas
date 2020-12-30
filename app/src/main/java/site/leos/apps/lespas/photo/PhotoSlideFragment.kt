@@ -1,7 +1,7 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
-import android.content.SharedPreferences
+import android.content.*
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.ImageDecoder
@@ -36,6 +36,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.ShareChooserBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -55,6 +56,7 @@ class PhotoSlideFragment : Fragment() {
     private var previousNavBarColor = 0
     private lateinit var sp: SharedPreferences
     private var originalItem: Photo? = null
+    private val snapseedCatcher = ShareChooserBroadcastReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +77,8 @@ class PhotoSlideFragment : Fragment() {
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
+
+        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -156,7 +160,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-        if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) checkSnapseed()
+        if (sp.getBoolean(getString(R.string.snapseed_pref_key), false) && snapseedCatcher.getDest() == "snapseed") checkSnapseed()
         slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
     }
 
@@ -169,6 +173,8 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         requireActivity().window.navigationBarColor = previousNavBarColor
+
+        context?.unregisterReceiver(snapseedCatcher)
     }
 
     private fun checkSnapseed() {
@@ -176,6 +182,9 @@ class PhotoSlideFragment : Fragment() {
             val photo = pAdapter.getPhotoAt(slider.currentItem)
             val snapseedFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Snapseed/${photo.name.substringBeforeLast('.')}-01.jpeg")
             val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+
+            // Clear flag
+            snapseedCatcher.clearFlag()
 
             if (snapseedFile.exists()) {
                 //Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")
@@ -509,6 +518,8 @@ class PhotoSlideFragment : Fragment() {
         private const val ALBUM = "ALBUM"
         private const val SORT_ORDER = "SORT_ORDER"
         private const val JPEG = "image/jpeg"
+
+        const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
         fun newInstance(album: Album, sortOrder: Int) = PhotoSlideFragment().apply {
             arguments = Bundle().apply {
