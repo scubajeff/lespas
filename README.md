@@ -1,3 +1,4 @@
+![Feature graphic](fastlane//metadata/android/en-US/images/featureGraphic.png)
 ## A photo album that saves all your precious memory in the private Nextcloud server
 
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
