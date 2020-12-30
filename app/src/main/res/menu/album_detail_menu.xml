@@ -10,15 +10,19 @@
         <menu>
             <item
                 android:id="@+id/option_menu_sortbydateasc"
+                android:checkable="true"
                 android:title="@string/item_dateasc"/>
             <item
                 android:id="@+id/option_menu_sortbydatedesc"
+                android:checkable="true"
                 android:title="@string/item_datedesc"/>
             <item
                 android:id="@+id/option_menu_sortbynameasc"
+                android:checkable="true"
                 android:title="@string/item_nameasc"/>
             <item
                 android:id="@+id/option_menu_sortbynamedesc"
+                android:checkable="true"
                 android:title="@string/item_namedesc"/>
         </menu>
     </item>

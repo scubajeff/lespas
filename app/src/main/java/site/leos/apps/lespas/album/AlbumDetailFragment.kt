@@ -268,6 +268,22 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         inflater.inflate(R.menu.album_detail_menu, menu)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
+
+        when(album.sortOrder) {
+            Album.BY_DATE_TAKEN_ASC-> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+            Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+            Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+            Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+        }
+
+        super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_rename-> {
