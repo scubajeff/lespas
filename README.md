@@ -7,12 +7,17 @@ Features:
 * Simple, beautiful and fast photos & videos viewing
 * View picture details
 * Organized albums
+* Integrate Snapseed for photo editing
 * Share to social networks
 * Theme design inspired by Wes Anderson's works
 * Synchronization among your Nextcloud server and multiple devices
 * Freely manage albums and photos on Nextcloud server and on your phones
 * All files saved in App's private storage, stop being scanned by malicious apps
 * Open-source
+
+This project build using the following open source software:
+- <a href=https://github.com/thegrizzlylabs/sardine-android>Sardine-android</a>
+- <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
 
 <a href='https://play.google.com/store/apps/details?id=site.leos.apps.lespas'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='75'/></a>
 <a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='75'>
