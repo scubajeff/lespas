@@ -3,7 +3,6 @@ package site.leos.apps.lespas.photo
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
@@ -175,15 +174,16 @@ class PhotoSlideFragment : Fragment() {
     private fun checkSnapseed() {
         CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
             val photo = pAdapter.getPhotoAt(slider.currentItem)
-            //val photo = currentPhotoModel.getCurrentPhoto().value!!
             val snapseedFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Snapseed/${photo.name.substringBeforeLast('.')}-01.jpeg")
             val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
 
             if (snapseedFile.exists()) {
                 //Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")
 
+                /*
                 if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
                     // Replace the original
+
                     val lastModified = Tools.dateToLocalDateTime(Date(snapseedFile.lastModified()))
                     // Compare file size to to make sure it's a new edition
                     if (snapseedFile.length() != File(appRootFolder, photo.id).length()) {
@@ -241,6 +241,49 @@ class PhotoSlideFragment : Fragment() {
                             try {
                                 File(appRootFolder, photo.id).delete()
                             } catch (e: Exception) { e.printStackTrace() }
+                    }
+                */
+                if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                    // Replace the original
+
+                    // Compare file size, make sure it's a different edition
+                    if (snapseedFile.length() != File(appRootFolder, photo.id).length()) {
+                        try {
+                            snapseedFile.inputStream().use { input->
+                                // Name new photo filename after Snapseed's output name
+                                File(appRootFolder, snapseedFile.name).outputStream().use { output->
+                                    input.copyTo(output)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Quit when exception happens during file copy
+                            return@launch
+                        }
+
+                        // Add newPhoto, delete old photo locally
+                        val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = this, albumId = album.id, name = this) }
+                        albumModel.replacePhoto(photo, newPhoto)
+                        // Fix album cover Id if required
+                        if (album.cover == photo.id)
+                            albumModel.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
+                        // Invalid image cache
+                        imageLoaderModel.invalid(photo)
+                        // Delete old image file, TODO: the file might be using by some other process, like uploading to server
+                        try {
+                            File(appRootFolder, photo.id).delete()
+                        } catch (e: Exception) { e.printStackTrace() }
+
+
+                        // Add newPhoto, delete old photo remotely
+                        with(mutableListOf<Action>()) {
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, newPhoto.mimeType, newPhoto.name, System.currentTimeMillis(), 1))
+                            add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
+                            actionModel.addActions(this)
+                        }
+
+                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
+                        currentPhotoModel.setCurrentPhoto(newPhoto, null)
                     }
                 } else {
                     // Copy Snapseed output

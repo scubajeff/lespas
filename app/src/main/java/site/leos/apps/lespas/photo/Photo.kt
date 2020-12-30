@@ -63,6 +63,14 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")
     abstract fun getAllPhotoNameMap(): List<AlbumPhotoName>
 
-    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newId, eTag = :eTag, lastModified = :lastModifiedDate, width = :width, height = :height, mimeType = :mimeType  WHERE id = :oldId")
-    abstract suspend fun updatePhoto(oldId: String, newId: String, eTag: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String)
+    //@Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newId, eTag = :eTag, lastModified = :lastModifiedDate, width = :width, height = :height, mimeType = :mimeType  WHERE id = :oldId")
+    //abstract suspend fun updatePhoto(oldId: String, newId: String, eTag: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String)
+
+    //@Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newName, albumId = :newAlbumId, dateTaken = :newDateTaken, lastModified = :newLastModified, width = :newWidth, height = :newHeight, mimeType = :newMimeType, shareId = :newShareId WHERE id = :oldPhotoId")
+    //abstract suspend fun replacePhoto(oldPhotoId: String, newId: String, newName: String, newAlbumId: String, newDateTaken: LocalDateTime, newLastModified: LocalDateTime, newWidth: Int, newHeight: Int, newMimeType: String, newShareId: Int)
+    @Transaction
+    open suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) {
+        delete(oldPhoto)
+        insert(newPhoto)
+    }
 }

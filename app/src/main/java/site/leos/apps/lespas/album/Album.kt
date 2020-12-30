@@ -90,4 +90,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET sortOrder = :sortOrder WHERE id = :albumId")
     abstract suspend fun setSortOrder(albumId: String, sortOrder: Int)
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId, coverBaseline = :newBaseline, coverWidth = :newWidth, coverHeight = :newHeight WHERE id = :albumId")
+    abstract fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int)
 }

@@ -9,7 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import java.time.LocalDateTime
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val albumRepository = AlbumRepository(application)
@@ -22,6 +21,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder)}
     fun fixCoverId(albumId: String, newCoverId: String) = viewModelScope.launch(Dispatchers.IO) { albumRepository.fixCoverId(albumId, newCoverId) }
     suspend fun addPhoto(photo: Photo) = photoRepository.insert(photo)
-    suspend fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) =
-        photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType)
+    //suspend fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) = photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType)
+    suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoRepository.replacePhoto(oldPhoto, newPhoto) }
+    suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumRepository.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
 }
