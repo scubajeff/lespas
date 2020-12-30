@@ -1,0 +1,5 @@
+* Intergration with Snapseed. Share photo to Snapseed and get result back automatically, no more file operation by yourself;
+* Require EXTERNAL_STORAGE_WRITE permission to integrated with Snapseed;
+* Photo sort order;
+* More clear setting description;
+* Bugs fixed;

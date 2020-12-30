@@ -10,3 +10,8 @@ Funktionen:
 - Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
 - Alle Dateien werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden
 - Open-Source
+
+Dieses Projekt wurde unter Verwendung der folgenden Open-Source-Software erstellt:
+- Sardine-Android https://github.com/thegrizzlylabs/sardine-android
+- PhotoView https://github.com/chrisbanes/PhotoView
+- Android Open Source Project https://source.android.com

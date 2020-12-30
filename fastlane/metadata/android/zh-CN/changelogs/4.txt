@@ -1,0 +1,5 @@
+* 与Snapseed联动，分享图片到Snapseed, 修图结果将自动传回，无需手动进行复杂文件操作；
+* 增加EXTERNAL_STORAGE_WRITE权限需求，以与Snapseed进行联动；
+* 对图片进行排序；
+* 更清晰的设置说明；
+* 错误修复；

@@ -10,3 +10,8 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
 - 支持同时在服务器和手机中管理相册、照片
 - 所有照片及视频都保存在手机应用的私有存储空间，防止不法软件任意扫描剽窃
 - 完全免费、开源
+
+本项目采用了以下开源软件:
+- Sardine-Android https://github.com/thegrizzlylabs/sardine-android
+- PhotoView https://github.com/chrisbanes/PhotoView
+- Android Open Source Project https://source.android.com
