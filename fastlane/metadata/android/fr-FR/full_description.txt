@@ -4,6 +4,7 @@ Caractéristiques :
 - Visualisation simple, belle et rapide des photos et des vidéos
 - Voir les détails de l'image
 - Albums organisés
+- Intégration avec Snapseed pour le montage photo
 - Partager sur les réseaux sociaux
 - Thème inspiré des travaux de Wes Anderson
 - Synchronisation entre votre serveur Nextcloud et plusieurs appareils
