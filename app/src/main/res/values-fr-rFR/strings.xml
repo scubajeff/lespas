@@ -29,8 +29,8 @@
     <string name="sync_header">Synchronisation</string>
     <string name="background_sync_title">Synchroniser périodiquement</string>
     <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
-    <string name="wifionly_summary_on">N\'utilisera pas les réseau données.</string>
-    <string name="wifionly_summary_off">Utilisez les réseau données, en faisant attention lorsque vous avez une grande collection de photos.</string>
+    <string name="wifionly_summary_on">Ne consommera pas de données mobiles.</string>
+    <string name="wifionly_summary_off">Consommez des données mobiles, avec prudence lorsque vous avez une grande collection de photos.</string>
     <string name="other_header">Autres</string>
     <string name="logout_title">Déconnexion-vous</string>
     <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>

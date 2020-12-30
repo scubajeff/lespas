@@ -73,8 +73,8 @@
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi network</string>
     <string name="wifionly_off_title">Sync on all networks</string>
-    <string name="wifionly_summary_on">Will not use mobile data.</string>
-    <string name="wifionly_summary_off">Use mobile data, cautious when you have a large collection of photos.</string>
+    <string name="wifionly_summary_on">Will not consume mobile data.</string>
+    <string name="wifionly_summary_off">Consume mobile data, cautious when you have a large collection of photos.</string>
     <string name="other_header">Others</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
     <string name="snapseed_integration_title">Snapseed integration</string>
