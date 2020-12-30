@@ -1,0 +1,5 @@
+* Intergración con Snapseed. Comparta la foto con Snapseed y obtenga el resultado automáticamente, no más operaciones de archivo por su cuenta;
+* Requiere permiso de EXTERNAL_STORAGE_WRITE para integrarse con Snapseed;
+* Orden de clasificación de las fotos;
+* Una descripción más clara de la configuración;
+* Bugs corregidos;
