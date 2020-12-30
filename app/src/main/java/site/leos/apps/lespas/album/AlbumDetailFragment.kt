@@ -1,12 +1,16 @@
 package site.leos.apps.lespas.album
 
+import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -18,6 +22,7 @@ import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.widget.DiffUtil
@@ -30,14 +35,19 @@ import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.ShareChooserBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.time.Duration
@@ -58,6 +68,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private val actionModel: ActionViewModel by viewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+
+    private lateinit var sp: SharedPreferences
+    private lateinit var sharedPhoto: Photo
+    private val snapseedCatcher = ShareChooserBroadcastReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +105,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         })
 
         setHasOptionsMenu(true)
+
+        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -226,6 +243,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        if (sp.getBoolean(getString(R.string.snapseed_pref_key), false) && snapseedCatcher.getDest() == "snapseed") checkSnapseed()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -237,6 +255,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         super.onDestroyView()
         // TODO right place to do this?
         recyclerView.clearOnScrollListeners()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        context?.unregisterReceiver(snapseedCatcher)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -314,12 +338,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
                 for (uri in uris) clipData.addItem(ClipData.Item(uri))
 
+                sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
                 if (selectionTracker.selection.size() > 1) {
                     startActivity(
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_SEND_MULTIPLE
-                                type = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt()).mimeType
+                                type = sharedPhoto.mimeType
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -332,11 +357,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_SEND
-                                type = "image/*"
+                                type = sharedPhoto.mimeType
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            }, null
+                            }, null, PendingIntent.getBroadcast(context, 1, Intent(CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
                         )
                     )
                 }
@@ -370,6 +395,86 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onRenameFinished(newName: String) {
         if (newName != album.name) {
             actionModel.renameAlbum(album.id, album.name, newName)
+        }
+    }
+
+    private fun checkSnapseed() {
+        CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
+            val snapseedFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Snapseed/${sharedPhoto.name.substringBeforeLast('.')}-01.jpeg")
+            val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+
+            // Clear flag
+            snapseedCatcher.clearFlag()
+
+            if (snapseedFile.exists()) {
+                if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                    // Replace the original
+
+                    // Compare file size, make sure it's a different edition
+                    if (snapseedFile.length() != File(appRootFolder, sharedPhoto.id).length()) {
+                        try {
+                            snapseedFile.inputStream().use { input->
+                                // Name new photo filename after Snapseed's output name
+                                File(appRootFolder, snapseedFile.name).outputStream().use { output->
+                                    input.copyTo(output)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Quit when exception happens during file copy
+                            return@launch
+                        }
+
+                        // Add newPhoto, delete old photo locally
+                        val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", PhotoSlideFragment.JPEG, this).copy(id = this, albumId = album.id, name = this) }
+                        albumModel.replacePhoto(sharedPhoto, newPhoto)
+                        // Fix album cover Id if required
+                        if (album.cover == sharedPhoto.id)
+                            albumModel.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
+                        // Invalid image cache
+                        imageLoaderModel.invalid(sharedPhoto)
+                        // Delete old image file, TODO: the file might be using by some other process, like uploading to server
+                        try {
+                            File(appRootFolder, sharedPhoto.id).delete()
+                        } catch (e: Exception) { e.printStackTrace() }
+
+
+                        // Add newPhoto, delete old photo remotely
+                        with(mutableListOf<Action>()) {
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, newPhoto.mimeType, newPhoto.name, System.currentTimeMillis(), 1))
+                            add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
+                            actionModel.addActions(this)
+                        }
+                    }
+                } else {
+                    // Copy Snapseed output
+
+                    // Append timestamp suffix to make a unique filename
+                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.jpeg"
+
+                    try {
+                        snapseedFile.inputStream().use { input ->
+                            File(appRootFolder, fileName).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        return@launch
+                    }
+
+                    // Create new photo
+                    albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", PhotoSlideFragment.JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
+
+                    // Upload changes to server, mimetype passed in fileId property
+                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, PhotoSlideFragment.JPEG, fileName, System.currentTimeMillis(), 1))
+                }
+
+                // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid tedious filename parsing
+                try {
+                    snapseedFile.delete()
+                } catch (e: Exception) { e.printStackTrace() }
+            }
         }
     }
 
@@ -561,6 +666,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
+        const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 
         fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }

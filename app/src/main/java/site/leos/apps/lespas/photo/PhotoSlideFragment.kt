@@ -517,7 +517,7 @@ class PhotoSlideFragment : Fragment() {
     companion object {
         private const val ALBUM = "ALBUM"
         private const val SORT_ORDER = "SORT_ORDER"
-        private const val JPEG = "image/jpeg"
+        const val JPEG = "image/jpeg"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
