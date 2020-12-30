@@ -42,7 +42,7 @@
         <SwitchPreferenceCompat
             app:key="@string/snapseed_pref_key"
             app:title="@string/snapseed_integration_title"
-            android:summary="@string/snapseed_integration_summary"
+            android:summaryOn="@string/snapseed_integration_summary"
             app:singleLineTitle="false"
             app:defaultValue="false" />
 

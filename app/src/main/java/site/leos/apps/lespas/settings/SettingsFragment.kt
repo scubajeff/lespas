@@ -29,6 +29,14 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
             }
         }
 
+        findPreference<SwitchPreferenceCompat>(getString(R.string.wifionly_pref_key))?.let {
+            it.title = getString(if (it.isChecked) R.string.wifionly_title else R.string.wifionly_off_title)
+            it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
+                it.title = getString(if (it.isChecked) R.string.wifionly_off_title else R.string.wifionly_title)
+                true
+            }
+        }
+
         findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.let {
             it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
                 // Request WRITE_EXTERNAL_STORAGE permission if user want to integrate with Snapseed
@@ -47,6 +55,14 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     false
 
                 } else true
+            }
+        }
+
+        findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_replace_pref_key))?.let {
+            it.title = getString(if (it.isChecked) R.string.snapseed_replace_title else R.string.snapseed_add_title)
+            it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
+                it.title = getString(if (it.isChecked) R.string.snapseed_add_title else R.string.snapseed_replace_title)
+                true
             }
         }
     }
