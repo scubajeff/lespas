@@ -86,9 +86,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             Action.ACTION_ADD_FILES_ON_SERVER -> {
                                 // Upload to server and verify
                                 //Log.e("++++++++", "uploading $resourceRoot/${action.folderName}/${action.fileName}")
-                                // MIME type is passed in fileId properties
+                                // MIME type is passed in folderId property
                                 val localFile = File(localRootFolder, action.fileName)
-                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.fileId)
+                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", localFile, action.folderId)
                                 //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
@@ -233,6 +233,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         var localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                         var remotePhotoId: String
+                        var localImageFileName: String
+
+                        // Create changePhotos list
                         sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
                             if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
                                 // Accumulate remote photos list
@@ -246,16 +249,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         // If there is a row in local Photo table with remote photo's name as it's id, that means it's a local added photo which is now coming back
                                         // from server. Update it's id to the real fileid and also etag now, rename image file name to fileid too.
                                         //Log.e("<><><>", "coming back now ${remotePhoto.name}")
-                                        if (File(localRootFolder, remotePhoto.name).exists()) {
+                                        localImageFileName = localPhotoNames.getOrDefault(remotePhoto.name, remotePhoto.name)
+                                        if (File(localRootFolder, localImageFileName).exists()) {
                                             try {
                                                 File(localRootFolder, remotePhotoId).delete()
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                             try {
-                                                File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                                //Log.e("****", "${remotePhoto.name} coming back as $remotePhotoId")
+                                                File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, remotePhotoId))
+                                                //Log.e("****", "rename ${localImageFileName} to $remotePhotoId")
                                             } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         }
-                                        photoRepository.fixPhotoId(remotePhoto.name, remotePhotoId, remotePhoto.etag, Tools.dateToLocalDateTime(remotePhoto.modified))
+                                        photoRepository.fixPhoto(remotePhoto.name, remotePhotoId, remotePhoto.name, remotePhoto.etag, Tools.dateToLocalDateTime(remotePhoto.modified))
                                         // Taking care the cover
                                         // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
                                         if (changedAlbum.cover == remotePhoto.name) {
@@ -283,14 +287,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         changedPhotos.forEachIndexed {i, changedPhoto->
                             // Prepare the image file
-                            if (File(localRootFolder, changedPhoto.name).exists()) {
+                            localImageFileName = localPhotoNames.getOrDefault(changedPhoto.id, changedPhoto.name)
+                            if (File(localRootFolder, localImageFileName).exists()) {
                                 // If image file with 'name' exists, replace the old file with this
                                 try {
                                     File(localRootFolder, changedPhoto.id).delete()
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
                                 try {
-                                    File(localRootFolder, changedPhoto.name).renameTo(File(localRootFolder, changedPhoto.id))
-                                    //Log.e("****", "rename file ${changedPhoto.name} to ${changedPhoto.id}")
+                                    File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id))
+                                    //Log.e("****", "rename file ${localImageFileName} to ${changedPhoto.id}")
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
                             }
                             else {
@@ -343,7 +348,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Delete those photos not exist on server, happens when user delete photos on the server
                         var deletion = false
-                        localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
+                        //localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         for (localPhoto in localPhotoETags) {
                             if (!remotePhotoIds.contains(localPhoto.key)) {
                                 deletion = true

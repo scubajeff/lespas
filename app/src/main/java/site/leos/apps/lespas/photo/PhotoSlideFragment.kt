@@ -272,6 +272,7 @@ class PhotoSlideFragment : Fragment() {
 
                         // Add newPhoto, delete old photo locally
                         val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = this, albumId = album.id, name = this) }
+                        originalItem = newPhoto
                         albumModel.replacePhoto(photo, newPhoto)
                         // Fix album cover Id if required
                         if (album.cover == photo.id)
@@ -286,7 +287,8 @@ class PhotoSlideFragment : Fragment() {
 
                         // Add newPhoto, delete old photo remotely
                         with(mutableListOf<Action>()) {
-                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, newPhoto.mimeType, newPhoto.name, System.currentTimeMillis(), 1))
+                            // Pass photo mimeType in Action's folderId property
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
                             add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
                             actionModel.addActions(this)
                         }
@@ -298,7 +300,7 @@ class PhotoSlideFragment : Fragment() {
                     // Copy Snapseed output
 
                     // Append timestamp suffix to make a unique filename
-                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.jpeg"
+                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.${snapseedFile.name.substringAfterLast('.')}"
 
                     try {
                         snapseedFile.inputStream().use { input ->
@@ -317,8 +319,8 @@ class PhotoSlideFragment : Fragment() {
                     // Create new photo
                     albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
-                    // Upload changes to server, mimetype passed in fileId property
-                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, JPEG, fileName, System.currentTimeMillis(), 1))
+                    // Upload changes to server, mimetype passed in folderId property
+                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
                 }
 
                 // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid tedious filename parsing

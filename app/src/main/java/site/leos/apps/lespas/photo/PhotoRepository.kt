@@ -14,6 +14,7 @@ class PhotoRepository(application: Application) {
     fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
     fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
     fun changeName(photoId: String, newName: String) = photoDao.changeName(photoId, newName)
+    suspend fun changeName(albumId: String, oldName: String, newName: String) = photoDao.changeName(albumId, oldName, newName)
     suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
     fun getAllPhotoIdsByAlbum(albumId: String): List<PhotoName> = photoDao.getNamesMap(albumId)
     fun deletePhotosByAlbum(albumId: String) = photoDao.deletePhotosByAlbum(albumId)
@@ -21,7 +22,7 @@ class PhotoRepository(application: Application) {
     suspend fun insert(photos: List<Photo>) { photoDao.insert(photos) }
     suspend fun insert(photo: Photo) { photoDao.insert(photo) }
     fun fixNewPhotosAlbumId(oldId: String, newId: String) { photoDao.fixNewPhotosAlbumId(oldId, newId) }
-    fun fixPhotoId(oldId: String, newId: String, eTag: String, lastModified: LocalDateTime) { photoDao.fixPhotoId(oldId, newId, eTag, lastModified) }
+    fun fixPhoto(oldId: String, newId: String, newName: String, eTag: String, lastModified: LocalDateTime) { photoDao.fixPhoto(oldId, newId, newName, eTag, lastModified) }
     fun getAllPhotoNameMap(): List<AlbumPhotoName> = photoDao.getAllPhotoNameMap()
     //suspend fun updatePhoto(oldId: String, newId: String, eTag: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) { photoDao.updatePhoto(oldId, newId, eTag, lastModifiedDate, width, height, mimeType) }
     suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto)

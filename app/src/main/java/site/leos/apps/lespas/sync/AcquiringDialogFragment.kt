@@ -152,6 +152,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
+                var fileId = ""
                 var fileName = ""
                 var mimeType = ""
                 val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
@@ -170,7 +171,8 @@ class AcquiringDialogFragment: DialogFragment() {
                     contentResolver.query(uri, null, null, null, null)?.apply {
                         val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                         moveToFirst()
-                        fileName = getString(columnIndex)
+                        fileId = getString(columnIndex)
+                        fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
                         mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: ""
                         close()
                     }
@@ -179,7 +181,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
 
                     // Update progress in UI
-                    withContext(Dispatchers.Main) { setProgress(index, fileName) }
+                    withContext(Dispatchers.Main) { setProgress(index, fileId) }
 
                     // Copy the file to our private storage
                     try {
@@ -197,18 +199,21 @@ class AcquiringDialogFragment: DialogFragment() {
                     }
 
                     // If no photo with same name exists in album, create new photo
-                    if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileName)))) {
-                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileName", mimeType, fileName).copy(id = fileName, albumId = album.id, name = fileName))
+                    if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileId)))) {
+                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileName", mimeType, fileId).copy(id = fileId, albumId = album.id, name = fileName))
 
                         // Update album start and end dates accordingly
                         date = newPhotos.last().dateTaken
                         if (date < album.startDate) album.startDate = date
                         if (date > album.endDate) album.endDate = date
+                    } else {
+                        // Replacing old photo image, mark down new filename
+                        photoRepository.changeName(album.id, fileId, fileName)
                     }
 
-                    // Pass photo mimeType in Action's fileId property
+                    // Pass photo mimeType in Action's folderId property
                     // TODO if user accidentally add the same photo to album twice, file gets upload twice too. Gonna compare last modification date to avoid this.
-                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, mimeType, fileName, System.currentTimeMillis(), 1))
+                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileName, System.currentTimeMillis(), 1))
                 }
 
                 if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(NO_MEDIA_FILE_FOUND, "") }
@@ -233,7 +238,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     albumRepository.upsert(album)
 
                     // By setting progress to more than 100%, signaling the calling fragment/activity
-                    withContext(Dispatchers.Main) { setProgress(uris.size, fileName) }
+                    withContext(Dispatchers.Main) { setProgress(uris.size, fileId) }
                 }
             }
         }

@@ -457,7 +457,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                         // Add newPhoto, delete old photo remotely
                         with(mutableListOf<Action>()) {
-                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, newPhoto.mimeType, newPhoto.name, System.currentTimeMillis(), 1))
+                            // Pass photo mimeType in Action's folderId property
+                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
                             add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
                             actionModel.addActions(this)
                         }
@@ -466,7 +467,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     // Copy Snapseed output
 
                     // Append timestamp suffix to make a unique filename
-                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.jpeg"
+                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.${snapseedFile.name.substringAfterLast('.')}"
 
                     try {
                         snapseedFile.inputStream().use { input ->
@@ -482,8 +483,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     // Create new photo
                     albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", PhotoSlideFragment.JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
-                    // Upload changes to server, mimetype passed in fileId property
-                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, PhotoSlideFragment.JPEG, fileName, System.currentTimeMillis(), 1))
+                    // Upload changes to server, mimetype passed in folderId property
+                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, PhotoSlideFragment.JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
                 }
 
                 // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid tedious filename parsing
