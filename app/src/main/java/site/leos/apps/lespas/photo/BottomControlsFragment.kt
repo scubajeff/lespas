@@ -302,7 +302,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             if (t.isEmpty()) model_row.visibility = View.GONE else info_camera_model.text = t
             t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
                 (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it  " } ?: "") +
-                (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{ "1/${(1 / it.toFloat()).roundToInt()}s  " } ?: "") +
+                (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{
+                    val exp = it.toFloat()
+                    if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
+                } ?: "") +
                 (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
             if (t.trim().isEmpty()) param_row.visibility = View.GONE else info_parameter.text = t
             t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
