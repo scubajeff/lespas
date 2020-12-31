@@ -491,6 +491,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     snapseedFile.delete()
                 } catch (e: Exception) { e.printStackTrace() }
             }
+
+            // Remove cache copy too
+            try {
+                File(requireContext().cacheDir, sharedPhoto.name).delete()
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 

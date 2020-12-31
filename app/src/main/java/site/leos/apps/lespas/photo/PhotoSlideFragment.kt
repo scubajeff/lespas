@@ -326,6 +326,11 @@ class PhotoSlideFragment : Fragment() {
                     snapseedFile.delete()
                 } catch (e: Exception) { e.printStackTrace() }
             }
+
+            // Remove cache copy too
+            try {
+                File(requireContext().cacheDir, photo.name).delete()
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
