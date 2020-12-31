@@ -159,8 +159,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                         Intent.createChooser(
                             Intent().apply {
                                 action = Intent.ACTION_ATTACH_DATA
-                                data = uri
-                                type = mimeType
+                                setDataAndType(uri, mimeType)
+                                putExtra("mimeType", mimeType)
                                 //clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             }, null
