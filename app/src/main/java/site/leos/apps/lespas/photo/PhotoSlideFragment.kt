@@ -41,6 +41,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
+import java.lang.Thread.sleep
 import java.util.*
 
 class PhotoSlideFragment : Fragment() {
@@ -185,6 +186,13 @@ class PhotoSlideFragment : Fragment() {
 
             // Clear flag
             snapseedCatcher.clearFlag()
+
+            // Wait at most 500ms for Snapseed output file
+            val t = System.currentTimeMillis()
+            while(!snapseedFile.exists()) {
+                sleep(100)
+                if (System.currentTimeMillis() - t > 500) break
+            }
 
             if (snapseedFile.exists()) {
                 //Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")

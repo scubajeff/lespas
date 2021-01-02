@@ -50,6 +50,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
+import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.ZoneId
 
@@ -421,6 +422,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             // Clear flag
             snapseedCatcher.clearFlag()
+
+            // Wait at most 500ms for Snapseed output file
+            val t = System.currentTimeMillis()
+            while(!snapseedFile.exists()) {
+                sleep(100)
+                if (System.currentTimeMillis() - t > 500) break
+            }
 
             if (snapseedFile.exists()) {
                 if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
