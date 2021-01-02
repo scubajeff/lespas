@@ -32,6 +32,7 @@ import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -144,7 +145,7 @@ class PhotoSlideFragment : Fragment() {
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
              */
             pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
-            slider.currentItem = pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!)
+            slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
         })
     }
 
@@ -286,10 +287,9 @@ class PhotoSlideFragment : Fragment() {
                         val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = this, albumId = album.id, name = this) }
                         //originalItem = newPhoto
 
-                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
-                        currentPhotoModel.setCurrentPhoto(newPhoto, null)
-
                         albumModel.replacePhoto(photo, newPhoto)
+                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
+                        withContext(Dispatchers.Main) {currentPhotoModel.setCurrentPhoto(newPhoto, null)}
                         // Fix album cover Id if required
                         if (album.cover == photo.id)
                             albumModel.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
@@ -445,7 +445,13 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        fun findPhotoPosition(photo: Photo): Int = photos.indexOf(photo)
+        fun findPhotoPosition(photo: Photo): Int {
+            photos.forEachIndexed { i, p ->
+                // If photo synced back from server, the id property will be changed from filename to fileId
+                if ((p.id == photo.id) || (p.name == photo.id)) return i
+            }
+            return -1
+        }
 
         fun getPhotoAt(position: Int): Photo = photos[position]
 
@@ -493,25 +499,25 @@ class PhotoSlideFragment : Fragment() {
 
     // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
     class CurrentPhotoViewModel : ViewModel() {
-        // AlbumDetail fragment grid item positions
+        // AlbumDetail fragment grid item positions, this is for AlbumDetailFragment, nothing to do with other fragments
         private var currentPosition = 0
-        fun getCurrentPosition(): Int = currentPosition
-        /*
         private var firstPosition = 0
         private var lastPosition = 1
+        fun getCurrentPosition(): Int = currentPosition
         fun setCurrentPosition(position: Int) { currentPosition = position }
         fun setFirstPosition(position: Int) { firstPosition = position }
         fun getFirstPosition(): Int = firstPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
-         */
-        // Current photo shared with CoverSetting and BottomControl fragments
+
+        // Current photo shared with CoverSetting and BottomControl fragments by PhotoSlider
         private val photo = MutableLiveData<Photo>()
         private val coverApplyStatus = MutableLiveData<Boolean>()
         private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
         fun setCurrentPhoto(newPhoto: Photo, position: Int?) {
-            photo.postValue(newPhoto)
+            //photo.postValue(newPhoto)
+            photo.value = newPhoto
             position?.let { currentPosition = it }
         }
         fun coverApplied(applied: Boolean) {
