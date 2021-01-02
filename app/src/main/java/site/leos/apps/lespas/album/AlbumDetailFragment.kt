@@ -25,7 +25,6 @@ import androidx.fragment.app.viewModels
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.selection.SelectionTracker.Builder
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
@@ -83,13 +82,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         lastSelection = mutableSetOf()
         savedInstanceState?.let {
             lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
-        } ?: run {
+        }
+        /*
+        ?: run {
             with(currentPhotoModel) {
                 setCurrentPosition(0)
                 setFirstPosition(0)
                 setLastPosition(1)
             }
         }
+        */
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
@@ -100,7 +102,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
                 recyclerView.findViewHolderForAdapterPosition(currentPhotoModel.getCurrentPosition())?.let {
-                    sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.photo))
+                   sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.photo))
                 }
             }
         })
@@ -132,9 +134,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         mAdapter = PhotoGridAdapter(
             { view, position ->
                 currentPhotoModel.run {
-                    setCurrentPosition(position)
-                    setFirstPosition((recyclerView.layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                    setLastPosition((recyclerView.layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                    //setCurrentPosition(position)
+                    //setFirstPosition((recyclerView.layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                    //setLastPosition((recyclerView.layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                    setCurrentPhoto(mAdapter.getPhotoAt(position), position)
                 }
 
                 // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
@@ -175,9 +178,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             // Scroll to the correct position
             with(currentPhotoModel) {
-                val cp = getCurrentPosition()
-                val fp = getFirstPosition()
-                if (!isScrolling) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
+                //val cp = getCurrentPosition()
+                //val fp = getFirstPosition()
+                //if (!isScrolling) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(getCurrentPosition())
             }
         })
 
@@ -227,9 +231,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> {
                             with(currentPhotoModel) {
-                                setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                                setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                                setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
+                                //setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                                //setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
+                                //setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
                             }
                             isScrolling = false
                         }
@@ -610,6 +614,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     else-> album.photos
                 }
             )
+            notifyDataSetChanged()
+            /*
             if (oldSortOrder != album.album.sortOrder) {
                 // sort order changes will change nearly all the position, so no need to use DiffUtil
                 notifyDataSetChanged()
@@ -629,7 +635,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         else oldPhotos[oldItemPosition] == photos[newItemPosition]
                 }).dispatchUpdatesTo(this)
             }
+
+             */
         }
+
+        internal fun findPhotoPosition(photo: Photo): Int = photos.indexOf(photo)
 
         internal fun getPhotoAt(position: Int): Photo {
             return photos[position]

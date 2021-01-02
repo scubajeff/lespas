@@ -56,7 +56,7 @@ class PhotoSlideFragment : Fragment() {
     private var autoRotate = false
     private var previousNavBarColor = 0
     private lateinit var sp: SharedPreferences
-    private var originalItem: Photo? = null
+    //private var originalItem: Photo? = null
     private val snapseedCatcher = ShareChooserBroadcastReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,6 +125,7 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
+            /*
             // TODO stupid hack to test if new photo added by snapseed, since observer get called twice, must be sth. to do with miss fired
             val c1 = pAdapter.itemCount
             pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
@@ -141,6 +142,9 @@ class PhotoSlideFragment : Fragment() {
                 originalItem = null
             }
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+             */
+            pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
+            slider.currentItem = pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!)
         })
     }
 
@@ -162,7 +166,7 @@ class PhotoSlideFragment : Fragment() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         if (sp.getBoolean(getString(R.string.snapseed_pref_key), false) && snapseedCatcher.getDest() == "snapseed") checkSnapseed()
-        slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
+        //slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
     }
 
     override fun onPause() {
@@ -280,12 +284,16 @@ class PhotoSlideFragment : Fragment() {
 
                         // Add newPhoto, delete old photo locally
                         val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = this, albumId = album.id, name = this) }
-                        originalItem = newPhoto
+                        //originalItem = newPhoto
+
+                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
+                        currentPhotoModel.setCurrentPhoto(newPhoto, null)
+
                         albumModel.replacePhoto(photo, newPhoto)
                         // Fix album cover Id if required
                         if (album.cover == photo.id)
                             albumModel.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
-                        // Invalid image cache
+                        // Clear image cache for old photo
                         imageLoaderModel.invalid(photo)
                         // Delete old image file, TODO: the file might be using by some other process, like uploading to server
                         try {
@@ -300,9 +308,6 @@ class PhotoSlideFragment : Fragment() {
                             add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
                             actionModel.addActions(this)
                         }
-
-                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
-                        currentPhotoModel.setCurrentPhoto(newPhoto, null)
                     }
                 } else {
                     // Copy Snapseed output
@@ -322,7 +327,7 @@ class PhotoSlideFragment : Fragment() {
                     }
 
                     // Tell observer to relocate the original photo
-                    originalItem = photo
+                    //originalItem = photo
 
                     // Create new photo
                     albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
@@ -490,15 +495,16 @@ class PhotoSlideFragment : Fragment() {
     class CurrentPhotoViewModel : ViewModel() {
         // AlbumDetail fragment grid item positions
         private var currentPosition = 0
+        fun getCurrentPosition(): Int = currentPosition
+        /*
         private var firstPosition = 0
         private var lastPosition = 1
         fun setCurrentPosition(position: Int) { currentPosition = position }
-        fun getCurrentPosition(): Int = currentPosition
         fun setFirstPosition(position: Int) { firstPosition = position }
         fun getFirstPosition(): Int = firstPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
-
+         */
         // Current photo shared with CoverSetting and BottomControl fragments
         private val photo = MutableLiveData<Photo>()
         private val coverApplyStatus = MutableLiveData<Boolean>()
