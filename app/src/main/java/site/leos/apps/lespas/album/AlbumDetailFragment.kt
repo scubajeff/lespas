@@ -602,7 +602,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             val oldPhotos = mutableListOf<Photo>()
             oldPhotos.addAll(0, photos)
             photos.clear()
-            album.album.run { photos.add(Photo(cover, id, "", "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
+            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
             this.photos.addAll(1,
                 when(album.album.sortOrder) {
                     Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
