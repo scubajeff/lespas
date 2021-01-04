@@ -32,4 +32,4 @@ Les Pas use folder to group photos on the server, e.g., each album in Les Pas ap
 ### Why does Les Pas use a lot of storage space?
 Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space (I have 10GB myself) in Android's setting menu.<br> 
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
-**Stop using that "/Pictures" folder in your phone's internal/external storage right now.**
+**For privacy sake, stop using "/Pictures" folder in your phone's internal/external storage.**
