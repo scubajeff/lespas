@@ -16,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.webkit.MimeTypeMap
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
@@ -169,12 +170,28 @@ class AcquiringDialogFragment: DialogFragment() {
 
                     // find out the real name
                     contentResolver.query(uri, null, null, null, null)?.apply {
+                        fileId = ""
                         val columnIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
                         moveToFirst()
-                        fileId = getString(columnIndex)
-                        fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
-                        mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: ""
+                        if (columnIndex != -1) {
+                            try {
+                                fileId = getString(columnIndex)
+                            } catch (e: NullPointerException) {
+                                if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!
+                            }
+                        }
+                        else {
+                            if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!
+                        }
                         close()
+                    } ?: run {
+                        if ("file".equals(uri.scheme, true)) fileId = uri.path!!.substringAfterLast("/")
+                    }
+                    if (fileId.isEmpty()) return@forEachIndexed
+                    fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
+
+                    mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
                     }
 
                     // If it's not image, skip it
