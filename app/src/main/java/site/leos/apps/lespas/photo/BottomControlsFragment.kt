@@ -263,7 +263,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_FULLSCREEN)
 
-        } else window.insetsController?.hide(WindowInsets.Type.systemBars())
+        } else {
+            window.insetsController?.apply {
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                hide(WindowInsets.Type.systemBars())
+            }
+        }
         visible = false
     }
 
