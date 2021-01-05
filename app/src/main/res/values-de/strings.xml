@@ -83,4 +83,5 @@
     <string name="item_namedesc">Name Absteigend</string>
     <string name="wifionly_off_title">Synchronisierung in allen Netzwerken</string>
     <string name="snapseed_add_title">Snapseed-Edition hinzufügen</string>
+    <string name="tooltip_text_more">Mehr</string>
 </resources>

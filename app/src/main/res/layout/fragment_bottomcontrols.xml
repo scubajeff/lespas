@@ -6,35 +6,65 @@
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:background="@drawable/bottom_controls_background">
 
-    <ImageButton
-        android:id="@+id/cover_button"
-        android:src="@drawable/ic_baseline_cover_24"
-        android:tooltipText="@string/tooltip_text_set_cover"
-        android:contentDescription="@string/tooltip_text_set_cover"
-        style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+    <LinearLayout
+        android:id="@+id/more_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="@dimen/small_padding"
+        android:visibility="gone">
 
-    <ImageButton
-        android:id="@+id/share_button"
-        android:src="@drawable/ic_baseline_share_24"
-        android:tooltipText="@string/tooltip_text_share"
-        android:contentDescription="@string/tooltip_text_share"
-        style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+        <ImageButton
+            android:id="@+id/cover_button"
+            android:src="@drawable/ic_baseline_cover_24"
+            android:tooltipText="@string/tooltip_text_set_cover"
+            android:contentDescription="@string/tooltip_text_set_cover"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
-    <ImageButton
-        android:id="@+id/set_as_button"
-        android:src="@drawable/ic_baseline_wallpaper_24"
-        android:tooltipText="@string/tooltip_text_share"
-        android:contentDescription="@string/tooltip_text_share"
-        style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+        <ImageButton
+            android:id="@+id/set_as_button"
+            android:src="@drawable/ic_baseline_wallpaper_24"
+            android:tooltipText="@string/tooltip_text_share"
+            android:contentDescription="@string/tooltip_text_share"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
-    <ImageButton
-        android:id="@+id/info_button"
-        android:src="@drawable/ic_baseline_info_24"
-        android:tooltipText="@string/tooltip_text_info"
-        android:contentDescription="@string/tooltip_text_info"
-        style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+        <ImageButton
+            android:id="@+id/info_button"
+            android:src="@drawable/ic_baseline_info_24"
+            android:tooltipText="@string/tooltip_text_info"
+            android:contentDescription="@string/tooltip_text_info"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
+    </LinearLayout>
+    <LinearLayout
+        android:id="@+id/base_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/share_button"
+            android:src="@drawable/ic_baseline_share_24"
+            android:tooltipText="@string/tooltip_text_share"
+            android:contentDescription="@string/tooltip_text_share"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+
+        <ImageButton
+            android:id="@+id/remove_button"
+            android:src="@drawable/ic_baseline_delete_24"
+            android:tooltipText="@string/action_remove"
+            android:contentDescription="@string/action_remove"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+
+        <ImageButton
+            android:id="@+id/more_button"
+            android:src="@drawable/ic_baseline_more_horiz_24"
+            android:tooltipText="@string/tooltip_text_more"
+            android:contentDescription="@string/tooltip_text_more"
+            style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
+
+    </LinearLayout>
 </LinearLayout>

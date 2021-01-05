@@ -38,6 +38,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var albumId: String
     private lateinit var window: Window
     private lateinit var controls: LinearLayout
+    private lateinit var more_controls: LinearLayout
     private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
@@ -66,6 +67,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 try {
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+                        more_controls.visibility = View.GONE
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -79,6 +81,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 try {
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.navigationBars())) {
+                        more_controls.visibility = View.GONE
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -113,6 +116,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         // Controls
         controls = view.findViewById(R.id.controls)
+        more_controls = view.findViewById(R.id.more_controls)
 
         cover_button.run {
             setOnTouchListener(delayHideTouchListener)
@@ -180,6 +184,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     }
                 }
             }
+        }
+        more_button.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                more_controls.visibility = View.VISIBLE
+            }
+        }
+        remove_button.run {
+            setOnTouchListener(delayHideTouchListener)
+
         }
 
         currentPhoto.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->

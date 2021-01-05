@@ -22,7 +22,7 @@
     <string name="tooltip_text_set_cover">El arte de la cubierta del set</string>
     <string name="tooltip_text_share">Comparte esto</string>
     <string name="tooltip_text_set_as">Fijado como...</string>
-    <string name="tooltip_text_info">Más información</string>
+    <string name="tooltip_text_info">Información</string>
     <string name="toast_cover_applied">Se aplica una nueva cubierta.</string>
     <string name="toast_cover_set_canceled">Canceló el establecimiento de una nueva cubierta.</string>
     <string name="settings_title">Ajustes</string>
@@ -83,4 +83,5 @@
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <string name="selected_count">%1$d seleccionado</string>
+    <string name="tooltip_text_more">Más</string>
 </resources>

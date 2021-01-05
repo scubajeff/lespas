@@ -20,7 +20,7 @@
     <string name="duration_years">Années: %1$d</string>
     <string name="tooltip_text_set_cover">Couverture</string>
     <string name="tooltip_text_share">Partager</string>
-    <string name="tooltip_text_info">Plus d\'informations</string>
+    <string name="tooltip_text_info">Informations</string>
     <string name="toast_cover_applied">Nouvelle couverture mise en place.</string>
     <string name="toast_cover_set_canceled">Annulation de la mise en place d\'une nouvelle couverture.</string>
     <string name="settings_title">Paramètres</string>
@@ -83,4 +83,5 @@
     <string name="item_namedesc">Nom Décroissante</string>
     <string name="wifionly_off_title">Synchronisation sur tous les réseaux</string>
     <string name="snapseed_add_title">Ajouter l\'édition de Snapseed</string>
+    <string name="tooltip_text_more">Plus</string>
 </resources>
