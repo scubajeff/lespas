@@ -190,6 +190,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 more_controls.visibility = View.VISIBLE
+                delayHideTouchListener
             }
         }
         remove_button.run {
