@@ -19,6 +19,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
 
@@ -137,7 +138,11 @@ object Tools {
             }
             width = options.outWidth
             height = options.outHeight
-            tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+            tDate = try {
+                LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+            } catch (e: DateTimeParseException) {
+                dateToLocalDateTime(lastModified)
+            }
         }
 
         return Photo("", "", "", "", tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
