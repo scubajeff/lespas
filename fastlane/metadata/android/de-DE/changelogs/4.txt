@@ -2,4 +2,6 @@
 * Erfordert die EXTERNAL_STORAGE_WRITE-Berechtigung zur Integration mit Snapseed;
 * Foto-Sortierreihenfolge;
 * Eindeutigere Beschreibung der Präferenz;
-* Bugs behoben;
+* Spanische Übersetzung hinzugefügt;
+* Fixe Set As-Funktion;
+* Andere Bugs behoben;

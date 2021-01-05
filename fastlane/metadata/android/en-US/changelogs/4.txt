@@ -2,4 +2,6 @@
 * Require EXTERNAL_STORAGE_WRITE permission to integrated with Snapseed;
 * Photo sort order;
 * More clear setting description;
-* Bugs fixed;
+* Added Spanish translation;
+* Fixed Set As function;
+* Other bugs fixed;

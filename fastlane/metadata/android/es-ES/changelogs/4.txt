@@ -2,4 +2,6 @@
 * Requiere permiso de EXTERNAL_STORAGE_WRITE para integrarse con Snapseed;
 * Orden de clasificación de las fotos;
 * Una descripción más clara de la configuración;
-* Bugs corregidos;
+* Añadida la traducción al español;
+* Fijar como función fija
+* Otros bichos arreglados;

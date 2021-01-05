@@ -2,4 +2,6 @@
 * Nécessite une autorisation EXTERNAL_STORAGE_WRITE pour être intégré à Snapseed ;
 * Ordre de tri des photos ;
 * Description plus claire des préférences ;
-* Bugs réparés ;
+* Ajout d'une traduction en espagnol ;
+* Fixer la fonction Set As ;
+* Autres bugs corrigés ;
