@@ -144,7 +144,7 @@ class PhotoSlideFragment : Fragment() {
             }
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
              */
-            pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
+            pAdapter.setPhotos(photos, album.sortOrder)
             slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
         })
 
@@ -572,16 +572,11 @@ class PhotoSlideFragment : Fragment() {
 
     companion object {
         private const val ALBUM = "ALBUM"
-        private const val SORT_ORDER = "SORT_ORDER"
         const val JPEG = "image/jpeg"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
-        fun newInstance(album: Album, sortOrder: Int) = PhotoSlideFragment().apply {
-            arguments = Bundle().apply {
-                putParcelable(ALBUM, album)
-                putString(SORT_ORDER, sortOrder.toString())
-        }}
+        fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(ALBUM, album) }}
     }
 }
 
