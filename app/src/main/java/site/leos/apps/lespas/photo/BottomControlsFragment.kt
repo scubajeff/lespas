@@ -29,7 +29,7 @@ import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.album.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.Tools
 import java.io.File

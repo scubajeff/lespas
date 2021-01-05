@@ -1,4 +1,4 @@
-package site.leos.apps.lespas.album
+package site.leos.apps.lespas.helper
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -11,7 +11,6 @@ import androidx.fragment.app.DialogFragment
 import com.google.android.material.color.MaterialColors
 import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class ConfirmDialogFragment : DialogFragment() {
     private lateinit var onResultListener: OnResultListener

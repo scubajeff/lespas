@@ -14,7 +14,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 
 class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnResultListener {
