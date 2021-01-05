@@ -24,4 +24,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     //suspend fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) = photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType)
     suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoRepository.replacePhoto(oldPhoto, newPhoto) }
     suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumRepository.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
+    fun removePhoto(photo: Photo) { photoRepository.removePhoto(photo) }
 }

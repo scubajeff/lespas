@@ -13,6 +13,7 @@ import android.os.Looper
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -27,6 +28,8 @@ import kotlinx.android.synthetic.main.fragment_bottomcontrols.*
 import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.Tools
 import java.io.File
@@ -34,29 +37,21 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
-class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
-    private lateinit var albumId: String
+class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener, ConfirmDialogFragment.OnResultListener {
+    private lateinit var album: Album
     private lateinit var window: Window
     private lateinit var controls: LinearLayout
     private lateinit var more_controls: LinearLayout
-    private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+    private lateinit var remove_button: ImageButton
+    private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
-
-    companion object {
-        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
-
-        private const val ALBUM_ID = "ALBUM_ID"
-        private const val INFO_DIALOG = "INFO_DIALOG"
-
-        fun newInstance(albumId: String) = BottomControlsFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
-    }
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        albumId = arguments?.getString(ALBUM_ID)!!
+        album = arguments?.getParcelable<Album>(ALBUM)!!
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
@@ -68,6 +63,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
                         more_controls.visibility = View.GONE
+                        remove_button.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -82,6 +78,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.navigationBars())) {
                         more_controls.visibility = View.GONE
+                        remove_button.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
                         controls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -109,7 +106,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 ignore = false
             } else toggle()
         })
-        currentPhoto.getCurrentPhoto().observe(viewLifecycleOwner, {
+        currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
             cover_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             set_as_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
         })
@@ -117,14 +114,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         // Controls
         controls = view.findViewById(R.id.controls)
         more_controls = view.findViewById(R.id.more_controls)
+        remove_button = view.findViewById(R.id.remove_button)
 
         cover_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
+                hideHandler.post(hideSystemUI)
                 exitTransition = Fade().apply { duration = 80 }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
-                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(albumId))
+                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id))
                     .addToBackStack(CoverSettingFragment::class.simpleName)
                     .commit()
             }
@@ -132,7 +131,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         share_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                with(currentPhoto.getCurrentPhoto().value!!) {
+                hideHandler.post(hideSystemUI)
+                with(currentPhotoModel.getCurrentPhoto().value!!) {
                     File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
                     val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
                     val mimeType = this.mimeType
@@ -154,7 +154,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         set_as_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                with(currentPhoto.getCurrentPhoto().value!!) {
+                hideHandler.post(hideSystemUI)
+                with(currentPhotoModel.getCurrentPhoto().value!!) {
                     File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
                     val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
                     val mimeType = this.mimeType
@@ -178,7 +179,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) {
-                    currentPhoto.getCurrentPhoto().value!!.run {
+                    currentPhotoModel.getCurrentPhoto().value!!.run {
                         InfoDialogFragment.newInstance(id, name, dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)), width.toString(), height.toString()
                         ).show(parentFragmentManager, INFO_DIALOG)
                     }
@@ -193,11 +194,18 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         }
         remove_button.run {
             setOnTouchListener(delayHideTouchListener)
-
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
+                        it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_bottom_toolbar), 0)
+                        it.show(parentFragmentManager, REMOVE_DIALOG)
+                    }
+            }
         }
 
-        currentPhoto.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
-            if (currentPhoto.forReal()) {
+        currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
+            if (currentPhotoModel.forReal()) {
                 Snackbar
                     .make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
@@ -294,6 +302,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         false
     }
 
+    // Remove current photo after confirmation
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (positive) currentPhotoModel.removePhoto()
+    }
+
     class InfoDialogFragment : DialogFragment() {
         override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
             inflater.inflate(R.layout.fragment_info_dialog, container, false)
@@ -364,5 +377,15 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     putString(HEIGHT, photoHeight)
             }}
         }
+    }
+
+    companion object {
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+
+        private const val ALBUM = "ALBUM"
+        private const val INFO_DIALOG = "INFO_DIALOG"
+        private const val REMOVE_DIALOG = "REMOVE_DIALOG"
+
+        fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 }

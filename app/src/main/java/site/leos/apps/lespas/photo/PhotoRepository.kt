@@ -28,4 +28,5 @@ class PhotoRepository(application: Application) {
     suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto)
         //photoDao.replacePhoto(oldPhotoId, newPhoto.id, newPhoto.name, newPhoto.albumId, newPhoto.dateTaken, newPhoto.lastModified, newPhoto.width, newPhoto.height, newPhoto.mimeType, newPhoto.shareId)
     }
+    fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
 }

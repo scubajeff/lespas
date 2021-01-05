@@ -147,6 +147,19 @@ class PhotoSlideFragment : Fragment() {
             pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
             slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
         })
+
+        currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, {
+            it?.run {
+                CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
+                    val nextPhoto = pAdapter.getNextAvailablePhoto(it)
+                    nextPhoto?.run {
+                        withContext(Dispatchers.Main) { currentPhotoModel.setCurrentPhoto(nextPhoto, null) }
+                        albumModel.removePhoto(it)
+                        actionModel.addAction(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, it.id, it.name, System.currentTimeMillis(), 1))
+                    }
+                }
+            }
+        })
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -167,7 +180,6 @@ class PhotoSlideFragment : Fragment() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         if (sp.getBoolean(getString(R.string.snapseed_pref_key), false) && snapseedCatcher.getDest() == "snapseed") checkSnapseed()
-        //slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
     }
 
     override fun onPause() {
@@ -181,6 +193,7 @@ class PhotoSlideFragment : Fragment() {
         requireActivity().window.navigationBarColor = previousNavBarColor
 
         context?.unregisterReceiver(snapseedCatcher)
+        currentPhotoModel.clearRemoveItem()
     }
 
     private fun checkSnapseed() {
@@ -455,6 +468,16 @@ class PhotoSlideFragment : Fragment() {
 
         fun getPhotoAt(position: Int): Photo = photos[position]
 
+        fun getNextAvailablePhoto(photo: Photo): Photo? {
+            with(photos.indexOf(photo)) {
+                return when(this) {
+                    -1-> null
+                    photos.size - 1-> photos[this - 1]
+                    else-> photos[this + 1]
+                }
+            }
+        }
+
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
             photos = when(sortOrder) {
                 Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
@@ -530,6 +553,12 @@ class PhotoSlideFragment : Fragment() {
             forReal = false
             return r
         }
+
+        // For removing photo
+        private val removeItem = MutableLiveData<Photo>()
+        fun removePhoto() { removeItem.value = photo.value }
+        fun getRemoveItem(): LiveData<Photo> { return removeItem }
+        fun clearRemoveItem() { removeItem.value = null }
     }
 
     // Share system ui visibility status with BottomControlsFragment
