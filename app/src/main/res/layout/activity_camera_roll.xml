@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    tools:context=".cameraroll.CameraRollActivity">
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/picture"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/image_list"
+        android:scaleType="fitCenter"
+        tools:src="@drawable/login_background_gradient_2" />
+
+    <TextView
+        android:id="@+id/info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/picture"
+        app:layout_constraintRight_toRightOf="@id/picture"
+        android:layout_margin="@dimen/small_padding"
+        android:padding="@dimen/tiny_padding"
+        android:background="#40000000"
+        android:textColor="@color/color_text_light"
+        android:lines="2"
+        android:textAlignment="textEnd"
+        tools:text="information" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/controls"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/picture"
+        app:layout_constraintBottom_toBottomOf="@id/picture">
+        <ImageButton
+            android:id="@+id/share_button"
+            android:layout_width="@dimen/camera_roll_grid_size"
+            android:layout_height="@dimen/camera_roll_grid_size"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/lespas_button"
+            android:background="#40000000"
+            android:src="@drawable/ic_baseline_share_24" />
+        <ImageButton
+            android:id="@+id/lespas_button"
+            android:layout_width="@dimen/camera_roll_grid_size"
+            android:layout_height="@dimen/camera_roll_grid_size"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/share_button"
+            app:layout_constraintRight_toRightOf="parent"
+            android:background="#40000000"
+            android:tint="@color/color_text_light"
+            android:src="@drawable/ic_footprint" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/image_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/recyclerview_item_cameraroll">
+    </androidx.recyclerview.widget.RecyclerView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
