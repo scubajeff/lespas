@@ -26,5 +26,18 @@
         android:layout_margin="@dimen/small_padding"
         android:padding="@dimen/small_padding"
         android:background="#40000000"
-        android:src="@drawable/ic_baseline_volume_off_24"/>
+        android:src="@drawable/ic_baseline_volume_off_24" />
+
+    <ImageButton
+        android:id="@+id/replay_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/mute_button"
+        app:layout_constraintRight_toRightOf="@id/media"
+        android:layout_marginRight="@dimen/small_padding"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:padding="@dimen/small_padding"
+        android:background="#40000000"
+        android:src="@drawable/ic_baseline_replay_24"
+        android:visibility="gone" />
 </androidx.constraintlayout.widget.ConstraintLayout>

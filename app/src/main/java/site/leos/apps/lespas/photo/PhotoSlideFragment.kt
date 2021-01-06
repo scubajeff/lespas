@@ -413,12 +413,14 @@ class PhotoSlideFragment : Fragment() {
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private lateinit var videoView: VolumeControlVideoView
             private lateinit var muteButton: ImageButton
+            private lateinit var replayButton: ImageButton
 
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
                 val root = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
                 videoView = itemView.findViewById(R.id.media)
                 muteButton = itemView.findViewById(R.id.mute_button)
+                replayButton = itemView.findViewById(R.id.replay_button)
 
                 // Default mute the video playback during late night
                 with(LocalDateTime.now().hour) {
@@ -437,6 +439,7 @@ class PhotoSlideFragment : Fragment() {
                     var fileName = "$rootPath/${photo.id}"
                     if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
                     setVideoPath(fileName)
+                    setOnCompletionListener { replayButton.visibility = View.VISIBLE }
 
                     setOnTouchListener { _, event ->
                         if (event.action == MotionEvent.ACTION_DOWN) {
@@ -449,6 +452,10 @@ class PhotoSlideFragment : Fragment() {
                 }
 
                 muteButton.setOnClickListener { setMute(!videoView.isMute()) }
+                replayButton.setOnClickListener {
+                    it.visibility = View.GONE
+                    videoView.start()
+                }
 
                 // If user touch outside VideoView
                 itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnTouchListener { _, event ->
