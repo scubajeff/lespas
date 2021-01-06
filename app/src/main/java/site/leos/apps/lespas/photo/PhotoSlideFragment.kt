@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.*
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
@@ -40,10 +41,12 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.ShareChooserBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.lang.Thread.sleep
+import java.time.LocalDateTime
 import java.util.*
 
 class PhotoSlideFragment : Fragment() {
@@ -408,11 +411,21 @@ class PhotoSlideFragment : Fragment() {
         }
 
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private lateinit var videoView: VolumeControlVideoView
+            private lateinit var muteButton: ImageButton
+
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
                 val root = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
+                videoView = itemView.findViewById(R.id.media)
+                muteButton = itemView.findViewById(R.id.mute_button)
 
-                with(itemView.findViewById<VideoView>(R.id.media)) {
+                // Default mute the video playback during late night
+                with(LocalDateTime.now().hour) {
+                    if (this > 22 || this < 7) setMute(true)
+                }
+
+                with(videoView) {
                     if (photo.height != 0) with(ConstraintSet()) {
                         clone(root)
                         setDimensionRatio(R.id.media, "${photo.width}:${photo.height}")
@@ -435,12 +448,24 @@ class PhotoSlideFragment : Fragment() {
                     ViewCompat.setTransitionName(this, photo.id)
                 }
 
+                muteButton.setOnClickListener { setMute(!videoView.isMute()) }
+
                 // If user touch outside VideoView
                 itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
                         itemListener.onTouch()
                         true
                     } else false
+                }
+            }
+
+            private fun setMute(mute: Boolean) {
+                if (mute) {
+                    videoView.mute()
+                    muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
+                } else {
+                    videoView.unMute()
+                    muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
                 }
             }
         }

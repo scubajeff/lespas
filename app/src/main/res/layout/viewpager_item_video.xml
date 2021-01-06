@@ -7,7 +7,7 @@
     android:background="@android:color/black"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <VideoView
+    <site.leos.apps.lespas.helper.VolumeControlVideoView
         android:id="@+id/media"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -16,4 +16,15 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageButton
+        android:id="@+id/mute_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="@id/media"
+        app:layout_constraintRight_toRightOf="@id/media"
+        android:layout_margin="@dimen/small_padding"
+        android:padding="@dimen/small_padding"
+        android:background="#40000000"
+        android:src="@drawable/ic_baseline_volume_off_24"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
