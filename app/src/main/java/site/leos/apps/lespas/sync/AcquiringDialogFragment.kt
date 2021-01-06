@@ -88,6 +88,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 }
                 message_textview.text = note
                 message_textview.visibility = View.VISIBLE
+                dialog?.setCanceledOnTouchOutside(true)
             } else if (progress >= 0) {
                 dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
                 filename_textview.text = acquiringModel.getCurrentName()
@@ -102,6 +103,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     else-> 0
                 })
                 message_textview.visibility = View.VISIBLE
+                dialog?.setCanceledOnTouchOutside(true)
             }
         })
 
