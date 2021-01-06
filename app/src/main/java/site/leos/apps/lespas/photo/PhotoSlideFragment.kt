@@ -3,6 +3,7 @@ package site.leos.apps.lespas.photo
 import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
@@ -385,13 +386,15 @@ class PhotoSlideFragment : Fragment() {
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                        // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
+                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
 
-                        var fileName = "$rootPath/${photo.id}"
-                        if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
+                    var fileName = "$rootPath/${photo.id}"
+                    if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName))).apply { if (this is AnimatedImageDrawable) this.start() })
+                    } else {
+                        setImageBitmap(BitmapFactory.decodeFile(fileName))
                     }
                     setOnTouchListener { _, event ->
                         if (event.action == MotionEvent.ACTION_DOWN) {
