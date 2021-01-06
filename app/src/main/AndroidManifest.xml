@@ -13,31 +13,42 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.LesPas">
-
         <activity
             android:name=".LesPas"
             android:launchMode="singleTask"
             android:theme="@style/Theme.LesPas.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity android:name=".MainActivity" android:launchMode="singleTask" />
-
-        <activity android:name=".sync.ShareReceiverActivity"
-            android:theme="@style/Theme.LesPas.Transparent"
-            android:windowSoftInputMode="adjustPan"
+        <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".cameraroll.CameraRollActivity"
+            android:launchMode="singleTask"
             android:excludeFromRecents="true">
+            <intent-filter android:label="@string/app_name"
+                tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".sync.ShareReceiverActivity"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.LesPas.Transparent"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter android:label="@string/app_name">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -51,7 +62,6 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".auth.NCLoginActivity"
             android:launchMode="singleTask"
@@ -70,7 +80,6 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/nc_authenticator" />
         </service>
-
         <service
             android:name=".sync.SyncService"
             android:enabled="true"
@@ -106,12 +115,10 @@
             android:authorities="@string/file_authority"
             android:exported="false"
             android:grantUriPermissions="true">
-
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_path" />
         </provider>
-
-
     </application>
+
 </manifest>
