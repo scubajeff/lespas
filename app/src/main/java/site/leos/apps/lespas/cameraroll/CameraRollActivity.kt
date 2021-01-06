@@ -7,13 +7,16 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.provider.OpenableColumns
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import kotlinx.android.synthetic.main.activity_camera_roll.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -36,9 +39,9 @@ class CameraRollActivity : AppCompatActivity() {
             else
                 picture.setImageURI(it)
 
-            with(getInfo(it)) {
-                if (this.isNotEmpty()) info.text = this
-                else info.visibility = View.GONE
+            CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
+                val photoInfo = getInfo(it)
+                if (photoInfo.isNotEmpty()) withContext(Dispatchers.Main) {info.text = photoInfo }
             }
         } ?: run { finish() }
 
@@ -93,13 +96,19 @@ class CameraRollActivity : AppCompatActivity() {
             close()
         }
         */
+        when(uri.scheme) {
+            "content"-> {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor->
+                    cursor.moveToFirst()
+                    try {
+                        info = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                    } catch(e: Exception) {e.printStackTrace()}
 
-        contentResolver.query(uri, null, null, null, null)?.use { cursor->
-            cursor.moveToFirst()
-            try {
-                info = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
-            } catch(e: Exception) {e.printStackTrace()}
-
+                }
+            }
+            "file"-> {
+                uri.path?.let { info = it.substringAfterLast('/') }
+            }
         }
 
         val options = BitmapFactory.Options().apply {
