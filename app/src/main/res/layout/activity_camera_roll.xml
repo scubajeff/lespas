@@ -45,6 +45,8 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/lespas_button"
             android:background="#40000000"
+            android:padding="28dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_baseline_share_24" />
         <ImageButton
             android:id="@+id/lespas_button"
@@ -54,6 +56,8 @@
             app:layout_constraintLeft_toRightOf="@id/share_button"
             app:layout_constraintRight_toRightOf="parent"
             android:background="#40000000"
+            android:padding="28dp"
+            android:scaleType="fitCenter"
             android:tint="@color/color_text_light"
             android:src="@drawable/ic_footprint" />
     </androidx.constraintlayout.widget.ConstraintLayout>
