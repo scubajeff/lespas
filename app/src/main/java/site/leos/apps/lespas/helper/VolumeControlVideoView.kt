@@ -5,7 +5,12 @@ import android.media.MediaPlayer
 import android.util.AttributeSet
 import android.widget.VideoView
 
-class VolumeControlVideoView(context: Context, attrs: AttributeSet): VideoView(context, attrs), MediaPlayer.OnPreparedListener {
+class VolumeControlVideoView: VideoView, MediaPlayer.OnPreparedListener {
+    constructor(context: Context): super(context)
+    constructor(context: Context, attributeSet: AttributeSet): super(context, attributeSet)
+    constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int): super(context, attributeSet, defStyleAttr)
+    constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int, defStyleRes: Int): super(context, attributeSet, defStyleAttr, defStyleRes)
+
     private lateinit var mPlayer: MediaPlayer
     private var isMute = false
 
