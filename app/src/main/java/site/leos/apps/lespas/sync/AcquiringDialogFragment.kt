@@ -192,6 +192,7 @@ class AcquiringDialogFragment: DialogFragment() {
                     if (fileId.isEmpty()) return@forEachIndexed
                     fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
 
+                    // TODO: Default type set to jpeg
                     mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
                         MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
                     }
