@@ -422,11 +422,6 @@ class PhotoSlideFragment : Fragment() {
                 muteButton = itemView.findViewById(R.id.mute_button)
                 replayButton = itemView.findViewById(R.id.replay_button)
 
-                // Default mute the video playback during late night
-                with(LocalDateTime.now().hour) {
-                    if (this > 22 || this < 7) setMute(true)
-                }
-
                 with(videoView) {
                     if (photo.height != 0) with(ConstraintSet()) {
                         clone(root)
@@ -440,6 +435,11 @@ class PhotoSlideFragment : Fragment() {
                     if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
                     setVideoPath(fileName)
                     setOnCompletionListener { replayButton.visibility = View.VISIBLE }
+                    setOnPreparedListener {
+                        // Default mute the video playback during late night
+                        this.onPrepared(it)
+                        with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
+                    }
 
                     setOnTouchListener { _, event ->
                         if (event.action == MotionEvent.ACTION_DOWN) {
