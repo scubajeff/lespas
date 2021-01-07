@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.drawable.AnimatedImageDrawable
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -15,21 +16,25 @@ import android.os.Looper
 import android.provider.OpenableColumns
 import android.view.View
 import android.webkit.MimeTypeMap
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
+import java.time.LocalDateTime
 
 class CameraRollActivity : AppCompatActivity() {
     private lateinit var controls: ConstraintLayout
@@ -128,21 +133,80 @@ class CameraRollActivity : AppCompatActivity() {
         // Show a waiting sign when it takes more than 350ms to load the media
         Handler(Looper.getMainLooper()).postDelayed(showWaitingSign, 350L)
 
-        // Show some statistic first
-        GlobalScope.launch(Dispatchers.Default) {
-            val photoInfo = getInfo(uri)
-            if (photoInfo.isNotEmpty()) withContext(Dispatchers.Main) { info.text = photoInfo }
-        }
-
         GlobalScope.launch(Dispatchers.Default) {
             val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
             }
 
             if (mimeType.startsWith("video/")) {
-                decodeVideo(uri)
+                withContext(Dispatchers.Main) {
+                    var videoView: VolumeControlVideoView
+                    var muteButton: ImageButton
+                    var replayButton: ImageButton
+
+                    with(layoutInflater.inflate(site.leos.apps.lespas.R.layout.viewpager_item_video, media_container, true)) {
+                        videoView = findViewById(R.id.media)
+                        muteButton = findViewById(R.id.mute_button)
+                        replayButton = findViewById(R.id.replay_button)
+                    }
+                    val root = media_container.findViewById<ConstraintLayout>(R.id.videoview_container)
+
+                    fun setMute(mute: Boolean) {
+                        if (mute) {
+                            videoView.mute()
+                            muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
+                        } else {
+                            videoView.unMute()
+                            muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
+                        }
+                    }
+
+                    var width: Int
+                    var height: Int
+                    with(MediaMetadataRetriever()) {
+                        setDataSource(baseContext, uri)
+                        width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                        height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                        // Swap width and height if rotate 90 or 270 degree
+                        extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let {
+                            if (it == "90" || it == "270") {
+                                height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                                width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            }
+                        }
+                    }
+
+                    if (height != 0) with(ConstraintSet()) {
+                        clone(root)
+                        setDimensionRatio(R.id.media, "${width}:${height}")
+                        applyTo(root)
+                    }
+
+                    with(videoView) {
+                        setVideoURI(uri)
+                        setOnCompletionListener { replayButton.visibility = View.VISIBLE }
+                        setOnPreparedListener {
+                            // Default mute the video playback during late night
+                            this.onPrepared(it)
+                            with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
+                        }
+                        start()
+                    }
+
+                    root.setOnClickListener { toggleControls() }
+                    muteButton.setOnClickListener { setMute(!videoView.isMute()) }
+                    replayButton.setOnClickListener {
+                        it.visibility = View.GONE
+                        videoView.start()
+                    }
+                }
+
                 return@launch
             }
+
+            // Show some statistic first
+            val photoInfo = getInfo(uri)
+            if (photoInfo.isNotEmpty()) withContext(Dispatchers.Main) { info.text = photoInfo }
 
             if (mimeType == "image/gif" || mimeType == "image/webp") {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
