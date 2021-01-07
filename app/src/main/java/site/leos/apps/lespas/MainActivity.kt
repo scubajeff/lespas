@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sp: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        sp = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        sp = PreferenceManager.getDefaultSharedPreferences(this)
         sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
 
         super.onCreate(savedInstanceState)
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             })
 
             // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
-            if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                 sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
         }
     }

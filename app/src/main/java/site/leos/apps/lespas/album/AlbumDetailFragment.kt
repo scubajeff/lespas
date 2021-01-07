@@ -123,7 +123,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
-            layoutManager = GridLayoutManager(activity?.applicationContext, defaultSpanCount).apply {
+            layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
                 spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                     override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
                 }
