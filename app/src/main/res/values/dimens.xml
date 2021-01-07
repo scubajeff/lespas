@@ -9,4 +9,5 @@
     <dimen name="dialog_frame_radius">12dp</dimen>
     <dimen name="destination_list_maximum_height">200dp</dimen>
     <dimen name="camera_roll_grid_size">96dp</dimen>
+    <dimen name="video_player_controls_right_margin">@dimen/big_padding</dimen>
 </resources>
