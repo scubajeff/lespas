@@ -7,6 +7,7 @@
     android:layout_height="@dimen/camera_roll_grid_size"
     android:padding="@dimen/small_padding"
     android:background="@drawable/pencil_sketch"
+    android:backgroundTint="@color/color_primary_variant"
     android:clickable="false">
 
     <TextView
