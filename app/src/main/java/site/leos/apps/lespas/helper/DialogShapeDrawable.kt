@@ -25,9 +25,9 @@ class DialogShapeDrawable : MaterialShapeDrawable() {
 
     companion object {
         const val NO_STROKE = -1
-
-        fun newInstance(context: Context, strokeColor: Int) = MaterialShapeDrawable(
-            ShapeAppearanceModel.builder().setAllCornerSizes(context.resources.getDimension(R.dimen.dialog_frame_radius)).setAllCorners(ConcaveRoundedCornerTreatment()).build()
+        fun newInstance(context: Context, strokeColor: Int) = Companion.newInstance(context, strokeColor, false)
+        fun newInstance(context: Context, strokeColor: Int, smallRadius: Boolean) = MaterialShapeDrawable(
+            ShapeAppearanceModel.builder().setAllCornerSizes(context.resources.getDimension(if (smallRadius) R.dimen.dialog_frame_radius_small else R.dimen.dialog_frame_radius)).setAllCorners(ConcaveRoundedCornerTreatment()).build()
         ).apply {
             fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background, null))
             if (strokeColor != NO_STROKE) { setStroke(4.0f, strokeColor) }

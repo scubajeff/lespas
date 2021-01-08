@@ -5,8 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="@dimen/camera_roll_grid_size"
     android:layout_height="@dimen/camera_roll_grid_size"
-    android:layout_marginEnd="1dp"
-    android:layout_marginTop="1dp"
     android:clickable="true"
     android:foreground="?android:attr/selectableItemBackground">
 

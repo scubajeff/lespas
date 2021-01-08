@@ -3,6 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/option_menu_camera_roll"
+        android:title="@string/item_camera_roll"
+        android:orderInCategory="99"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/option_menu_settings"
         android:title="@string/item_settings"
         android:orderInCategory="100"

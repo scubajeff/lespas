@@ -33,7 +33,8 @@
         app:layout_constraintWidth_percent="0.25"
         android:elevation="2dp"
         android:scaleType="fitCenter"
-        android:src="@drawable/ic_baseline_selected_24" />
+        android:src="@drawable/ic_baseline_selected_24"
+        android:visibility="gone"/>
 
     <ImageView
         android:id="@+id/play_mark"
@@ -46,5 +47,6 @@
         android:paddingRight="@dimen/small_padding"
         android:scaleType="fitCenter"
         android:elevation="2dp"
-        android:src="@drawable/ic_baseline_play_arrow_24" />
+        android:src="@drawable/ic_baseline_play_arrow_24"
+        android:visibility="gone"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

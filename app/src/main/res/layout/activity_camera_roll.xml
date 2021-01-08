@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
     tools:context=".cameraroll.CameraRollActivity">
 
     <ProgressBar
@@ -12,8 +11,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/image_list"
+        app:layout_constraintBottom_toTopOf="@id/photo_list"
         android:indeterminateTint="@color/color_primary"
+        android:elevation="2dp"
         android:visibility="gone" />
 
     <LinearLayout
@@ -21,22 +21,41 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/image_list"
+        app:layout_constraintBottom_toTopOf="@id/photo_list"
+        android:background="@android:color/black"
         android:orientation="vertical" />
 
-    <TextView
-        android:id="@+id/info"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/media_container"
         app:layout_constraintRight_toRightOf="@id/media_container"
         android:layout_margin="@dimen/small_padding"
         android:padding="@dimen/tiny_padding"
-        android:background="#80000000"
-        android:textColor="@color/color_text_light"
-        android:lines="2"
-        android:textAlignment="textEnd"
-        tools:text="information" />
+        android:background="#80000000">
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="320dp"
+            app:layout_constraintBottom_toTopOf="@id/size"
+            app:layout_constraintRight_toRightOf="parent"
+            android:textColor="@color/color_text_light"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textAlignment="textEnd"
+            tools:text="filename.jpg" />
+        <TextView
+            android:id="@+id/size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:textColor="@color/color_text_light"
+            android:lines="1"
+            android:textAlignment="textEnd"
+            tools:text="size x size" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/controls"
@@ -71,11 +90,13 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/image_list"
+        android:id="@+id/photo_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:paddingVertical="@dimen/tiny_padding"
         android:orientation="horizontal"
+        android:background="@color/progressbar_background"
         android:visibility="gone"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/recyclerview_item_cameraroll">

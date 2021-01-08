@@ -84,4 +84,5 @@
     <string name="wifionly_off_title">Synchronisation sur tous les réseaux</string>
     <string name="snapseed_add_title">Ajouter l\'édition de Snapseed</string>
     <string name="tooltip_text_more">Plus</string>
+    <string name="item_camera_roll">Rouleau de Caméra</string>
 </resources>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="@dimen/camera_roll_date_grid_size"
+    android:layout_height="@dimen/camera_roll_grid_size"
+    android:padding="@dimen/small_padding"
+    android:background="@drawable/pencil_sketch"
+    android:clickable="false">
+
+    <TextView
+        android:id="@+id/slash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:clickable="false"
+        android:includeFontPadding="false"
+        android:text="/"/>
+    <TextView
+        android:id="@+id/month"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/slash"
+        app:layout_constraintStart_toStartOf="parent"
+        android:includeFontPadding="false"
+        android:autoSizeTextType="uniform"
+        android:clickable="false"
+        tools:text="12"/>
+    <TextView
+        android:id="@+id/day"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/slash"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:includeFontPadding="false"
+        android:autoSizeTextType="uniform"
+        android:clickable="false"
+        tools:text="25"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -84,4 +84,5 @@
     <string name="wifionly_off_title">使用移动网络同步</string>
     <string name="snapseed_add_title">添加Snapseed输出</string>
     <string name="tooltip_text_more">更多</string>
+    <string name="item_camera_roll">相机相册</string>
 </resources>
