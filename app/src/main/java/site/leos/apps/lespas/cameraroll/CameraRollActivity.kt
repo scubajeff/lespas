@@ -348,6 +348,8 @@ class CameraRollActivity : AppCompatActivity() {
         private var photos = emptyList<CameraPhoto>()
         private var cr: ContentResolver = context.contentResolver
         private var frameDrawable = DialogShapeDrawable.newInstance(context, context.getColor(R.color.color_primary_variant), true)
+        private var loadingJob = SupervisorJob()
+        private val jobMap = HashMap<Int, Job>()
 
         interface OnItemClickListener {
             fun onItemClick(uri: Uri)
@@ -356,10 +358,13 @@ class CameraRollActivity : AppCompatActivity() {
         inner class CameraRollViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(cameraPhoto: CameraPhoto) {
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
-                    GlobalScope.launch(Dispatchers.IO) {
-                        val bmp = BitmapFactory.decodeStream(cr.openInputStream(cameraPhoto.uri!!), null, BitmapFactory.Options().apply { inSampleSize = 4 })
-                        withContext(Dispatchers.Main) { setImageBitmap(bmp) }
+                    val job = GlobalScope.launch(Dispatchers.IO) {
+                        try {
+                            val bmp = BitmapFactory.decodeStream(cr.openInputStream(cameraPhoto.uri!!), null, BitmapFactory.Options().apply { inSampleSize = 4 })
+                            if (isActive) withContext(Dispatchers.Main) { setImageBitmap(bmp) }
+                        } catch (e: Exception) { e.printStackTrace() }
                     }
+                    replacePrevious(System.identityHashCode(this), job)
                     setOnClickListener { itemClickListener.onItemClick(cameraPhoto.uri!!) }
                 }
             }
@@ -367,7 +372,6 @@ class CameraRollActivity : AppCompatActivity() {
 
         inner class DateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(cameraPhoto: CameraPhoto) {
-                //itemView.findViewById<ConstraintLayout>(R.id.background).background = frameDrawable
                 itemView.findViewById<TextView>(R.id.month).text = cameraPhoto.name
                 itemView.findViewById<TextView>(R.id.day).text = cameraPhoto.path
             }
@@ -387,6 +391,11 @@ class CameraRollActivity : AppCompatActivity() {
         override fun getItemViewType(position: Int): Int = photos[position].uri?.let { PHOTO_TYPE } ?: run { DATE_TYPE }
 
         fun setPhotos(photos: List<CameraPhoto>) { this.photos = photos }
+
+        private fun replacePrevious(key: Int, newJob: Job) {
+            jobMap[key]?.cancel()
+            jobMap[key] = newJob
+        }
 
         companion object {
             private const val PHOTO_TYPE = 0
