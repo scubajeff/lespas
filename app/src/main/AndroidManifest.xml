@@ -111,6 +111,7 @@
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_OWNER_CHANGED" />
                 <action android:name="android.accounts.action.ACCOUNT_REMOVED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
