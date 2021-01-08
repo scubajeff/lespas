@@ -23,23 +23,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-    //private val gridWidth: Int
-    private var loadingJob = SupervisorJob()
     private val jobMap = HashMap<Int, Job>()
-
-    /*
-    init {
-        with(DisplayMetrics()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) (application.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.getRealMetrics(this)
-            else application.display?.getRealMetrics(this)
-
-            if (widthPixels > heightPixels) gridWidth = Math.max(widthPixels / 5, heightPixels / 3)
-            else gridWidth = Math.max(heightPixels / 5, widthPixels / 3)
-
-            Log.e("+++++", "gridWidth = $gridWidth")
-        }
-    }
-    */
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
@@ -67,17 +51,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         try {
             bitmap = when (type) {
                 TYPE_GRID -> {
-                    /*
-                    var inSampleSize = 1
-                    if ((photo.height > gridWidth) || (photo.width > gridWidth)) {
-                        val halfHeight = photo.height / 2
-                        val halfWidth = photo.width / 2
-                        while ((halfHeight / inSampleSize >= gridWidth) && (halfWidth / inSampleSize >= gridWidth)) {
-                            inSampleSize *= 2
-                        }
-                    }
-                     */
-
                     val size = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8
                     val rect: Rect
                     rect = if (photo.height > photo.width) {
@@ -181,7 +154,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     override fun onCleared() {
         super.onCleared()
-        loadingJob.cancel("")
+        jobMap.forEach { if (it.value.isActive) it.value.cancel() }
     }
 
     class ImageCache (maxSize: Int) : LruCache<String, Bitmap>(maxSize) {

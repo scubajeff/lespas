@@ -34,7 +34,6 @@ import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -347,8 +346,6 @@ class CameraRollActivity : AppCompatActivity() {
     class CameraRollAdapter(context: Context, private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = emptyList<CameraPhoto>()
         private var cr: ContentResolver = context.contentResolver
-        private var frameDrawable = DialogShapeDrawable.newInstance(context, context.getColor(R.color.color_primary_variant), true)
-        private var loadingJob = SupervisorJob()
         private val jobMap = HashMap<Int, Job>()
 
         interface OnItemClickListener {
@@ -395,6 +392,11 @@ class CameraRollActivity : AppCompatActivity() {
         private fun replacePrevious(key: Int, newJob: Job) {
             jobMap[key]?.cancel()
             jobMap[key] = newJob
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            super.onDetachedFromRecyclerView(recyclerView)
+            jobMap.forEach { if (it.value.isActive) it.value.cancel() }
         }
 
         companion object {
