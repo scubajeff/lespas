@@ -38,6 +38,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.let {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) it.isChecked = false
+
             it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
                 // Request WRITE_EXTERNAL_STORAGE permission if user want to integrate with Snapseed
                 if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
