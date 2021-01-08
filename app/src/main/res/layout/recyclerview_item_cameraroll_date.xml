@@ -7,7 +7,7 @@
     android:layout_height="@dimen/camera_roll_grid_size"
     android:padding="@dimen/small_padding"
     android:background="@drawable/pencil_sketch"
-    android:backgroundTint="@color/color_primary_variant"
+    android:backgroundTint="@color/color_sketch"
     android:clickable="false">
 
     <TextView
@@ -20,7 +20,8 @@
         app:layout_constraintRight_toRightOf="parent"
         android:clickable="false"
         android:includeFontPadding="false"
-        android:text="/"/>
+        android:text="/"
+        tools:ignore="HardcodedText" />
     <TextView
         android:id="@+id/month"
         android:layout_width="wrap_content"
@@ -30,7 +31,8 @@
         android:includeFontPadding="false"
         android:autoSizeTextType="uniform"
         android:clickable="false"
-        tools:text="12"/>
+        tools:text="12"
+        tools:ignore="UnusedAttribute" />
     <TextView
         android:id="@+id/day"
         android:layout_width="wrap_content"
@@ -40,6 +42,7 @@
         android:includeFontPadding="false"
         android:autoSizeTextType="uniform"
         android:clickable="false"
-        tools:text="25"/>
+        tools:text="25"
+        tools:ignore="UnusedAttribute" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
