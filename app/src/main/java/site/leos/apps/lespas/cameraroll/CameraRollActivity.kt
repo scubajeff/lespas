@@ -76,17 +76,18 @@ class CameraRollActivity : AppCompatActivity() {
 
         shareButton.setOnClickListener {
             controls.visibility = View.GONE
-            val uri = intent.data!!
-            startActivity(
-                Intent.createChooser(
-                    Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = contentResolver.getType(uri)
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }, null
+            currentPhoto?.let {
+                startActivity(
+                    Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = contentResolver.getType(it)
+                            putExtra(Intent.EXTRA_STREAM, it)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }, null
+                    )
                 )
-            )
+            }
         }
 
         lespas_button.setOnClickListener {
@@ -95,7 +96,7 @@ class CameraRollActivity : AppCompatActivity() {
             destinationModel.getDestination().observe (this, { album->
                 // Acquire files
                 if (supportFragmentManager.findFragmentByTag(ShareReceiverActivity.TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(arrayListOf(intent.data!!), album).show(supportFragmentManager, ShareReceiverActivity.TAG_ACQUIRING_DIALOG)
+                    AcquiringDialogFragment.newInstance(arrayListOf(currentPhoto!!), album).show(supportFragmentManager, ShareReceiverActivity.TAG_ACQUIRING_DIALOG)
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
