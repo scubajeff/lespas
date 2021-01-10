@@ -114,12 +114,6 @@ class CameraRollActivity : AppCompatActivity() {
         controls.visibility = if (controls.visibility == View.GONE) View.VISIBLE else View.GONE
     }
 
-    private fun getInfo(uri: Uri): String {
-        var info = ""
-
-        return info
-    }
-
     fun showMedia() {
         val uri = currentPhoto
 
@@ -130,9 +124,9 @@ class CameraRollActivity : AppCompatActivity() {
 
             controls.visibility = View.GONE
 
-            GlobalScope.launch(Dispatchers.Default) {
+            GlobalScope.launch(Dispatchers.IO) {
                 val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase(Locale.ROOT)) ?: "image/jpeg"
                 }
 
                 if (mimeType.startsWith("video/")) {
@@ -141,7 +135,7 @@ class CameraRollActivity : AppCompatActivity() {
                         var muteButton: ImageButton
                         var replayButton: ImageButton
 
-                        with(layoutInflater.inflate(site.leos.apps.lespas.R.layout.viewpager_item_video, media_container, true)) {
+                        with(layoutInflater.inflate(R.layout.viewpager_item_video, media_container, true)) {
                             videoView = findViewById(R.id.media)
                             muteButton = findViewById(R.id.mute_button)
                             replayButton = findViewById(R.id.replay_button)
@@ -215,7 +209,7 @@ class CameraRollActivity : AppCompatActivity() {
                 }
                 */
                 var fileName = ""
-                var size = ""
+                val size: String
                 when(uri.scheme) {
                     "content"-> {
                         contentResolver.query(uri, null, null, null, null)?.use { cursor->
@@ -304,7 +298,8 @@ class CameraRollActivity : AppCompatActivity() {
             contentUri,
             arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.Media.DISPLAY_NAME, pathSelection, MediaStore.Images.Media.DATE_ADDED),
             null, null,
-            "${MediaStore.Images.Media.DATE_ADDED} DESC")?.use { cursor->
+            "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        )?.use { cursor->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
             val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -322,7 +317,7 @@ class CameraRollActivity : AppCompatActivity() {
                         currentDate = date
                     }
                     // Insert photo
-                    photos.add(CameraPhoto(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), cursor.getString(nameColumn), cursor.getString(pathColumn)))
+                    photos.add(CameraPhoto(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn)))
                 }
             }
         }
@@ -334,7 +329,7 @@ class CameraRollActivity : AppCompatActivity() {
         }).apply { setPhotos(photos) }
         photoList.visibility = View.VISIBLE
 
-        if (photos.isNotEmpty()) currentPhoto = photos[1].uri
+        if (photos.isNotEmpty()) currentPhoto = ContentUris.withAppendedId(contentUri, photos[1].id!!.toLong())
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -348,6 +343,7 @@ class CameraRollActivity : AppCompatActivity() {
         private var photos = emptyList<CameraPhoto>()
         private var cr: ContentResolver = context.contentResolver
         private val jobMap = HashMap<Int, Job>()
+        private val contentUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
         interface OnItemClickListener {
             fun onItemClick(uri: Uri)
@@ -355,15 +351,16 @@ class CameraRollActivity : AppCompatActivity() {
 
         inner class CameraRollViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(cameraPhoto: CameraPhoto) {
+                val uri = ContentUris.withAppendedId(contentUri, cameraPhoto.id!!.toLong())
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {
-                            val bmp = BitmapFactory.decodeStream(cr.openInputStream(cameraPhoto.uri!!), null, BitmapFactory.Options().apply { inSampleSize = 4 })
+                            val bmp = BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 4 })
                             if (isActive) withContext(Dispatchers.Main) { setImageBitmap(bmp) }
                         } catch (e: Exception) { e.printStackTrace() }
                     }
                     replacePrevious(System.identityHashCode(this), job)
-                    setOnClickListener { itemClickListener.onItemClick(cameraPhoto.uri!!) }
+                    setOnClickListener { itemClickListener.onItemClick(uri) }
                 }
             }
         }
@@ -386,7 +383,7 @@ class CameraRollActivity : AppCompatActivity() {
 
         override fun getItemCount(): Int = photos.size
 
-        override fun getItemViewType(position: Int): Int = photos[position].uri?.let { PHOTO_TYPE } ?: run { DATE_TYPE }
+        override fun getItemViewType(position: Int): Int = photos[position].id?.let { PHOTO_TYPE } ?: run { DATE_TYPE }
 
         fun setPhotos(photos: List<CameraPhoto>) { this.photos = photos }
 
@@ -407,7 +404,7 @@ class CameraRollActivity : AppCompatActivity() {
     }
 
     data class CameraPhoto(
-        val uri: Uri?,
+        val id: String?,
         val name: String,
         val path: String,
     )
