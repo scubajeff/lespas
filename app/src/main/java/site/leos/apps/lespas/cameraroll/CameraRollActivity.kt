@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -296,7 +297,7 @@ class CameraRollActivity : AppCompatActivity() {
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.RELATIVE_PATH else MediaStore.Images.Media.DATA
         contentResolver.query(
             contentUri,
-            arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.Media.DISPLAY_NAME, pathSelection, MediaStore.Images.Media.DATE_ADDED),
+            arrayOf(MediaStore.Images.ImageColumns._ID, MediaStore.Images.Media.DISPLAY_NAME, pathSelection, MediaStore.Images.Media.DATE_ADDED, MediaStore.Images.Media.MIME_TYPE),
             null, null,
             "${MediaStore.Images.Media.DATE_ADDED} DESC"
         )?.use { cursor->
@@ -304,6 +305,7 @@ class CameraRollActivity : AppCompatActivity() {
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
             val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
             val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+            val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MIME_TYPE)
             var currentDate = LocalDate.now().plusDays(1)
             var date: LocalDate
             val defaultOffset = OffsetDateTime.now().offset
@@ -313,11 +315,11 @@ class CameraRollActivity : AppCompatActivity() {
                     // Insert date separator if needed
                     date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
                     if (date != currentDate) {
-                        photos.add(CameraPhoto(null, date.monthValue.toString(), date.dayOfMonth.toString()))
+                        photos.add(CameraPhoto(null, date.monthValue.toString(), date.dayOfMonth.toString(), ""))
                         currentDate = date
                     }
                     // Insert photo
-                    photos.add(CameraPhoto(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn)))
+                    photos.add(CameraPhoto(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn)))
                 }
             }
         }
@@ -355,7 +357,14 @@ class CameraRollActivity : AppCompatActivity() {
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {
-                            val bmp = BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 4 })
+                            var bmp: Bitmap
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                                bmp = MediaStore.Images.Thumbnails.getThumbnail(cr, cameraPhoto.id.toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null)
+                                val rotation = if (cameraPhoto.mimeType == "image/jpeg" || cameraPhoto.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
+                                if (rotation != 0) bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
+                            }
+                            else bmp = cr.loadThumbnail(uri, Size(240, 240), null)
+
                             if (isActive) withContext(Dispatchers.Main) { setImageBitmap(bmp) }
                         } catch (e: Exception) { e.printStackTrace() }
                     }
@@ -407,6 +416,7 @@ class CameraRollActivity : AppCompatActivity() {
         val id: String?,
         val name: String,
         val path: String,
+        val mimeType: String,
     )
 
     companion object {
