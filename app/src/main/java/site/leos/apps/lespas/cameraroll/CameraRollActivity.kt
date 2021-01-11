@@ -50,8 +50,8 @@ class CameraRollActivity : AppCompatActivity() {
     private lateinit var fileSizeTextView: TextView
     private lateinit var progress: ProgressBar
     private lateinit var shareButton: ImageButton
-    private lateinit var photoList: RecyclerView
-    private var currentPhoto: Uri? = null
+    private lateinit var mediaList: RecyclerView
+    private var currentMedia: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,13 +63,13 @@ class CameraRollActivity : AppCompatActivity() {
         controls = findViewById(R.id.controls)
 
         if (intent.getBooleanExtra(BROWSE_GARLLERY, false)) {
-            photoList = findViewById(R.id.photo_list)
+            mediaList = findViewById(R.id.photo_list)
             browseGallery()
-            savedInstanceState?.let { currentPhoto = it.getParcelable(CURRENT_PHOTO)!! }
+            savedInstanceState?.let { currentMedia = it.getParcelable(CURRENT_MEDIA)!! }
             showMedia()
         }
         else intent.data?.let {
-            currentPhoto = it
+            currentMedia = it
             if (hasPermission(it)) showMedia()
         } ?: run { finish() }
 
@@ -77,7 +77,7 @@ class CameraRollActivity : AppCompatActivity() {
 
         shareButton.setOnClickListener {
             controls.visibility = View.GONE
-            currentPhoto?.let {
+            currentMedia?.let {
                 startActivity(
                     Intent.createChooser(
                         Intent().apply {
@@ -97,7 +97,7 @@ class CameraRollActivity : AppCompatActivity() {
             destinationModel.getDestination().observe(this, { album ->
                 // Acquire files
                 if (supportFragmentManager.findFragmentByTag(ShareReceiverActivity.TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(arrayListOf(currentPhoto!!), album).show(supportFragmentManager, ShareReceiverActivity.TAG_ACQUIRING_DIALOG)
+                    AcquiringDialogFragment.newInstance(arrayListOf(currentMedia!!), album).show(supportFragmentManager, ShareReceiverActivity.TAG_ACQUIRING_DIALOG)
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
@@ -108,7 +108,7 @@ class CameraRollActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(CONTROLS_VISIBILITY, controls.visibility)
-        outState.putParcelable(CURRENT_PHOTO, currentPhoto)
+        outState.putParcelable(CURRENT_MEDIA, currentMedia)
     }
 
     private fun toggleControls() {
@@ -116,7 +116,7 @@ class CameraRollActivity : AppCompatActivity() {
     }
 
     fun showMedia() {
-        val uri = currentPhoto
+        val uri = currentMedia
 
         if (uri != null) {
             // Show a waiting sign when it takes more than 350ms to load the media
@@ -324,22 +324,22 @@ class CameraRollActivity : AppCompatActivity() {
                         contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), ""))
                         currentDate = date
                     }
-                    // Insert photo
+                    // Insert media
                     contents.add(CameraMedia(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn)))
                 }
             }
         }
 
-        photoList.adapter = CameraRollAdapter(this, object : CameraRollAdapter.OnItemClickListener {
+        mediaList.adapter = CameraRollAdapter(this, object : CameraRollAdapter.OnItemClickListener {
             override fun onItemClick(uri: Uri) {
                 media_container.removeAllViews()
-                currentPhoto = uri
+                currentMedia = uri
                 showMedia()
             }
-        }).apply { setPhotos(contents) }
-        photoList.visibility = View.VISIBLE
+        }).apply { setMedia(contents) }
+        mediaList.visibility = View.VISIBLE
 
-        if (contents.isNotEmpty()) currentPhoto = ContentUris.withAppendedId(contentUri, contents[1].id!!.toLong())
+        if (contents.isNotEmpty()) currentMedia = ContentUris.withAppendedId(contentUri, contents[1].id!!.toLong())
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -350,7 +350,7 @@ class CameraRollActivity : AppCompatActivity() {
     }
 
     class CameraRollAdapter(context: Context, private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var photos = emptyList<CameraMedia>()
+        private var media = emptyList<CameraMedia>()
         private var cr: ContentResolver = context.contentResolver
         private val jobMap = HashMap<Int, Job>()
         private val contentUri = MediaStore.Files.getContentUri("external")
@@ -360,18 +360,18 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         inner class CameraRollViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(cameraPhoto: CameraMedia) {
-                val uri = ContentUris.withAppendedId(contentUri, cameraPhoto.id!!.toLong())
+            fun bindViewItems(cameraMedia: CameraMedia) {
+                val uri = ContentUris.withAppendedId(contentUri, cameraMedia.id!!.toLong())
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {
                             var bmp: Bitmap
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                                if (cameraPhoto.mimeType.startsWith("video/")) {
-                                    bmp = MediaStore.Video.Thumbnails.getThumbnail(cr, cameraPhoto.id.toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
+                                if (cameraMedia.mimeType.startsWith("video/")) {
+                                    bmp = MediaStore.Video.Thumbnails.getThumbnail(cr, cameraMedia.id.toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
                                 } else {
-                                    bmp = MediaStore.Images.Thumbnails.getThumbnail(cr, cameraPhoto.id.toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null)
-                                    val rotation = if (cameraPhoto.mimeType == "image/jpeg" || cameraPhoto.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
+                                    bmp = MediaStore.Images.Thumbnails.getThumbnail(cr, cameraMedia.id.toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null)
+                                    val rotation = if (cameraMedia.mimeType == "image/jpeg" || cameraMedia.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
                                     if (rotation != 0) bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
                                 }
                             }
@@ -383,31 +383,31 @@ class CameraRollActivity : AppCompatActivity() {
                     replacePrevious(System.identityHashCode(this), job)
                     setOnClickListener { itemClickListener.onItemClick(uri) }
                 }
-                itemView.findViewById<ImageView>(R.id.play_mark).visibility = if (cameraPhoto.mimeType.startsWith("video/")) View.VISIBLE else View.GONE
+                itemView.findViewById<ImageView>(R.id.play_mark).visibility = if (cameraMedia.mimeType.startsWith("video/")) View.VISIBLE else View.GONE
             }
         }
 
         inner class DateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(cameraPhoto: CameraMedia) {
-                itemView.findViewById<TextView>(R.id.month).text = cameraPhoto.name
-                itemView.findViewById<TextView>(R.id.day).text = cameraPhoto.path
+            fun bindViewItems(cameraMedia: CameraMedia) {
+                itemView.findViewById<TextView>(R.id.month).text = cameraMedia.name
+                itemView.findViewById<TextView>(R.id.day).text = cameraMedia.path
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
-            if (viewType == PHOTO_TYPE) CameraRollViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll, parent, false))
+            if (viewType == MEDIA_TYPE) CameraRollViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll, parent, false))
             else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is CameraRollViewHolder) holder.bindViewItems(photos[position])
-            else if (holder is DateViewHolder) holder.bindViewItems(photos[position])
+            if (holder is CameraRollViewHolder) holder.bindViewItems(media[position])
+            else if (holder is DateViewHolder) holder.bindViewItems(media[position])
         }
 
-        override fun getItemCount(): Int = photos.size
+        override fun getItemCount(): Int = media.size
 
-        override fun getItemViewType(position: Int): Int = photos[position].id?.let { PHOTO_TYPE } ?: run { DATE_TYPE }
+        override fun getItemViewType(position: Int): Int = media[position].id?.let { MEDIA_TYPE } ?: run { DATE_TYPE }
 
-        fun setPhotos(photos: List<CameraMedia>) { this.photos = photos }
+        fun setMedia(media: List<CameraMedia>) { this.media = media }
 
         private fun replacePrevious(key: Int, newJob: Job) {
             jobMap[key]?.cancel()
@@ -420,7 +420,7 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         companion object {
-            private const val PHOTO_TYPE = 0
+            private const val MEDIA_TYPE = 0
             private const val DATE_TYPE = 1
         }
     }
@@ -435,7 +435,7 @@ class CameraRollActivity : AppCompatActivity() {
     companion object {
         private const val CONTROLS_VISIBILITY = "CONTROLS_VISIBILITY"
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 6464
-        private const val CURRENT_PHOTO = "CURRENT_PHOTO"
+        private const val CURRENT_MEDIA = "CURRENT_MEDIA"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
     }
