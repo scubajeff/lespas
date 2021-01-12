@@ -205,9 +205,9 @@ class AcquiringDialogFragment: DialogFragment() {
 
                     // Copy the file to our private storage
                     try {
-                        application.contentResolver.openInputStream(uri).use { input ->
+                        application.contentResolver.openInputStream(uri)?.use { input ->
                             File(appRootFolder, fileName).outputStream().use { output ->
-                                totalBytes += input!!.copyTo(output, 8192)
+                                totalBytes += input.copyTo(output, 8192)
                             }
                         }
                     } catch (e:FileNotFoundException) {
