@@ -136,4 +136,7 @@
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>
 
+    <!-- Camera Roll Activity -->
+    <string name="empty_camera_roll">No media found in Camera Roll.</string>
+
 </resources>

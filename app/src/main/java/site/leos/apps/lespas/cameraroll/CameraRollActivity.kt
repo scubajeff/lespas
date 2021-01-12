@@ -20,10 +20,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -309,6 +306,10 @@ class CameraRollActivity : AppCompatActivity() {
                 "($pathSelection LIKE '%DCIM%')"
         contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
         )?.use { cursor->
+            if (cursor.count == 0) {
+                Toast.makeText(this, getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
+                finish()
+            }
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.TITLE)
             val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
@@ -360,7 +361,8 @@ class CameraRollActivity : AppCompatActivity() {
         inner class CameraRollViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(cameraMedia: CameraMedia) {
                 val uri = ContentUris.withAppendedId(contentUri, cameraMedia.id!!.toLong())
-                val thumbnailUri = ContentUris.withAppendedId(if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cameraMedia.id!!.toLong())
+                val thumbnailUri =
+                    ContentUris.withAppendedId(if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cameraMedia.id!!.toLong())
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {

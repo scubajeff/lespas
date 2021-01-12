@@ -87,4 +87,5 @@
     <string name="item_camera_roll">Rouleau de Caméra</string>
     <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
     <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier DCIM</string>
+    <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la rouleau de caméra</string>
 </resources>

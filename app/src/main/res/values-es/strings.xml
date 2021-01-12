@@ -87,4 +87,5 @@
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta DCIM</string>
+    <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
 </resources>
