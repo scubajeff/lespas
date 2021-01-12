@@ -4,13 +4,12 @@ import android.accounts.Account
 import android.accounts.AccountManager
 import android.accounts.AuthenticatorException
 import android.app.Application
-import android.content.AbstractThreadedSyncAdapter
-import android.content.ContentProviderClient
-import android.content.Context
-import android.content.SyncResult
+import android.content.*
 import android.net.ConnectivityManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
@@ -21,6 +20,7 @@ import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.IOException
 import java.io.InterruptedIOException
@@ -36,6 +36,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             val resourceRoot: String
+            var dcimRoot: String
             val localRootFolder: String
             val sardine =  OkHttpSardine()
 
@@ -48,6 +49,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName$this"
                     localRootFolder = "${application.filesDir}$this"
                 }
+                dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
             }
 
             // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -388,6 +390,130 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
             //}
 
+            // Backup camera roll if setting turn on
+            val pref = PreferenceManager.getDefaultSharedPreferences(application)
+            if (pref.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) {
+                // Make sure DCIM base directory is there
+                if (!sardine.exists(dcimRoot)) sardine.createDirectory(dcimRoot)
+
+                // Make sure device subfolder is under DCIM/
+                dcimRoot += "/${getDeviceModel()}"
+                if (!sardine.exists(dcimRoot)) sardine.createDirectory(dcimRoot)
+
+                val cacheFolder = "${application.cacheDir}"
+                var lastTime = pref.getLong(SettingsFragment.LAST_BACKUP, 0L)
+                Log.e(">>>>>", "backup media later than this time $lastTime")
+                val contentUri = MediaStore.Files.getContentUri("external")
+                val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+                val projection = arrayOf(
+                    MediaStore.Files.FileColumns._ID,
+                    pathSelection,
+                    MediaStore.Files.FileColumns.DATE_ADDED,
+                    MediaStore.Files.FileColumns.MEDIA_TYPE,
+                    MediaStore.Files.FileColumns.MIME_TYPE,
+                    MediaStore.Files.FileColumns.DISPLAY_NAME
+                )
+                val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${lastTime})"
+                application.contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
+                )?.use { cursor->
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                    val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+                    val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+                    val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                    val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+
+                    val tempFile = File(cacheFolder, "DCIMTemp")
+                    var relativePath: String
+                    var fileName: String
+
+                    while(cursor.moveToNext()) {
+                        Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
+                        fileName = cursor.getString(nameColumn)
+                        relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBefore("/${fileName}")
+                        Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+                        try {
+                            // Since sardine use File only, need this intermediate temp file
+                            application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.use { input ->
+                                tempFile.outputStream().use { output ->
+                                    input.copyTo(output, 4096)
+                                }
+                            }
+                            Log.e(">>>>>", "$tempFile created")
+
+                            try {
+                                // Upload file
+                                sardine.put("${dcimRoot}/${relativePath}/${fileName}", tempFile, cursor.getString(typeColumn))
+                                Log.e(">>>>>", "$tempFile uploaded")
+                            } catch (e: SardineException) {
+                                Log.e("****SardineException: ", e.stackTraceToString())
+                                when(e.statusCode) {
+                                    404-> {
+                                        // create file in non-existed folder, should create subfolder first
+                                        var subFolder = dcimRoot
+                                        relativePath.split("/").forEach {
+                                            subFolder += "/$it"
+                                            try {
+                                                if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
+                                                Log.e(">>>>", "create subfolder $subFolder")
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                                syncResult.stats.numIoExceptions++
+                                                return
+                                            }
+                                        }
+                                        syncResult.stats.numIoExceptions++
+                                        return
+                                    }
+                                    400, 405, 406, 410-> {
+                                        // target not found, target readonly, target already existed, etc. should be skipped and move onto next media
+                                    }
+                                    401, 403, 407-> {
+                                        syncResult.stats.numAuthExceptions++
+                                        return
+                                    }
+                                    409-> {
+                                        syncResult.stats.numConflictDetectedExceptions++
+                                        return
+                                    }
+                                    423-> {
+                                        // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
+                                        syncResult.stats.numIoExceptions++
+                                        syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
+                                        return
+                                    }
+                                    else-> {
+                                        // Other unhandled error should be retried
+                                        syncResult.stats.numIoExceptions++
+                                        return
+                                    }
+                                }
+                            }
+
+                            // New timestamp when success
+                            lastTime = cursor.getLong(dateColumn) + 1
+
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // TODO retry or not
+                            //syncResult.hasSoftError()
+                        }
+                        finally {
+                            // Delete temp file
+                            try { tempFile.delete() } catch (e: Exception) { e.printStackTrace() }
+                            Log.e(">>>>>>", "$tempFile deleted")
+                        }
+                    }
+                }
+
+                // Save latest timestamp
+                pref.edit().apply {
+                    putLong(SettingsFragment.LAST_BACKUP, lastTime)
+                    apply()
+                    Log.e(">>>>>>>", "new timestamp is $lastTime")
+                }
+            }
+
             // Clear status counters
             syncResult.stats.clear()
         } catch (e: IOException) {
@@ -411,6 +537,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e:Exception) {
             Log.e("****Exception: ", e.stackTraceToString())
         }
+    }
+
+    private fun getDeviceModel(): String {
+        val manufacturer = Build.MANUFACTURER.toLowerCase()
+        var model = Build.MODEL.toLowerCase()
+
+        if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
+
+        return "${manufacturer}_${model}"
     }
 
     companion object {

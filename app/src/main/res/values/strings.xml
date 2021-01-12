@@ -68,6 +68,9 @@
     <string name="theme_dark_values" translatable="false">2</string>
     <string name="theme_auto_values" translatable="false">-1</string>
     <string name="sync_header">Synchronization</string>
+    <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
+    <string name="cameraroll_backup_title">Backup camera roll</string>
+    <string name="cameraroll_backup_summary">New photos and videos will be backup automatically to server under folder DCIM</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check server update every 6 hours</string>

@@ -19,4 +19,18 @@
         android:scaleType="centerCrop"
         tools:src="@drawable/login_background_gradient_2"/>
 
+    <ImageView
+        android:id="@+id/play_mark"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:paddingTop="@dimen/small_padding"
+        android:paddingRight="@dimen/small_padding"
+        android:scaleType="fitCenter"
+        android:elevation="2dp"
+        android:src="@drawable/ic_baseline_play_arrow_24"
+        android:visibility="gone"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

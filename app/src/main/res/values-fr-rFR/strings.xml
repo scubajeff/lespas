@@ -85,4 +85,6 @@
     <string name="snapseed_add_title">Ajouter l\'édition de Snapseed</string>
     <string name="tooltip_text_more">Plus</string>
     <string name="item_camera_roll">Rouleau de Caméra</string>
+    <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
+    <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier DCIM</string>
 </resources>

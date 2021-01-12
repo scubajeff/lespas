@@ -9,10 +9,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreferenceCompat
+import androidx.preference.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -82,15 +79,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
     override fun onPreferenceTreeClick(preference: Preference?): Boolean =
         when (preference?.key) {
             getString(R.string.sync_pref_key) -> {
-                if (preferenceManager.sharedPreferences.getBoolean(preference.key, false))
-                    ContentResolver.addPeriodicSync(
-                        AccountManager.get(context).accounts[0],
-                        getString(R.string.sync_authority),
-                        Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
-                        6 * 60 * 60
-                    )
-                else ContentResolver.removePeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
-
+                toggleAutoSync(preference)
                 true
             }
             getString(R.string.logout_pref_key) -> {
@@ -108,6 +97,25 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     AppCompatDelegate.setDefaultNightMode(it.toInt())
                 }
 
+                true
+            }
+            getString(R.string.cameraroll_backup_pref_key) -> {
+                toggleAutoSync(preference)
+                with(preferenceManager.sharedPreferences.getBoolean(preference.key, false)) {
+                    findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                        it.isChecked = this
+                        it.isEnabled = !this
+                    }
+                    if (this) {
+                        // If backup camera roll turn on for the first time, note down the current timestamp, photos taken later will be backup
+                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                                putLong(LAST_BACKUP, System.currentTimeMillis()/1000)
+                                apply()
+                            }
+                        }
+                    }
+                }
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
@@ -137,11 +145,24 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
     }
 
+    private fun toggleAutoSync(preference: Preference) {
+        if (preferenceManager.sharedPreferences.getBoolean(preference.key, false))
+            ContentResolver.addPeriodicSync(
+                AccountManager.get(context).accounts[0],
+                getString(R.string.sync_authority),
+                Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
+                6 * 60 * 60
+            )
+        else ContentResolver.removePeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
+    }
+
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val LOGOUT_CONFIRM_REQUEST_CODE = 0
         private const val PERMISSION_RATIONALE_REQUEST_CODE = 1
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 8989
+
+        const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
     }
 
 }

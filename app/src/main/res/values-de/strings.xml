@@ -85,4 +85,6 @@
     <string name="snapseed_add_title">Snapseed-Edition hinzufügen</string>
     <string name="tooltip_text_more">Mehr</string>
     <string name="item_camera_roll">Kamerarolle</string>
+    <string name="cameraroll_backup_title">Kamera-Rolle sichern</string>
+    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM gesichert</string>
 </resources>

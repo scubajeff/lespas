@@ -19,6 +19,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/sync_header">
+        <SwitchPreferenceCompat
+            app:key="@string/cameraroll_backup_pref_key"
+            android:title="@string/cameraroll_backup_title"
+            android:summaryOn="@string/cameraroll_backup_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
 
         <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
