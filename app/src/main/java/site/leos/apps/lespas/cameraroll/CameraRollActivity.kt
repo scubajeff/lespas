@@ -360,6 +360,7 @@ class CameraRollActivity : AppCompatActivity() {
         inner class CameraRollViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bindViewItems(cameraMedia: CameraMedia) {
                 val uri = ContentUris.withAppendedId(contentUri, cameraMedia.id!!.toLong())
+                val thumbnailUri = ContentUris.withAppendedId(if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cameraMedia.id!!.toLong())
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {
@@ -373,7 +374,7 @@ class CameraRollActivity : AppCompatActivity() {
                                     if (rotation != 0) bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
                                 }
                             }
-                            else bmp = cr.loadThumbnail(uri, Size(240, 240), null)
+                            else bmp = cr.loadThumbnail(thumbnailUri, Size(240, 240), null)
 
                             if (isActive) withContext(Dispatchers.Main) { setImageBitmap(bmp) }
                         } catch (e: Exception) { e.printStackTrace() }
