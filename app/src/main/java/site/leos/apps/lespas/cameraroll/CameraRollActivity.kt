@@ -305,7 +305,8 @@ class CameraRollActivity : AppCompatActivity() {
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.TITLE
         )
-        val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}"
+        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                "($pathSelection LIKE '%DCIM%')"
         contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
         )?.use { cursor->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
@@ -317,16 +318,13 @@ class CameraRollActivity : AppCompatActivity() {
             var date: LocalDate
             val defaultOffset = OffsetDateTime.now().offset
             while(cursor.moveToNext()) {
-                // Show media under DCIM folder only
-                if (cursor.getString(pathColumn).contains("DCIM", false)) {
-                    date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
-                    if (date != currentDate) {
-                        contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), ""))
-                        currentDate = date
-                    }
-                    // Insert media
-                    contents.add(CameraMedia(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn)))
+                date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
+                if (date != currentDate) {
+                    contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), ""))
+                    currentDate = date
                 }
+                // Insert media
+                contents.add(CameraMedia(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn)))
             }
         }
 
