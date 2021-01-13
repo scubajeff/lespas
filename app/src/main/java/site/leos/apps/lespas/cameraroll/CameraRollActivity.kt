@@ -27,13 +27,13 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.HeaderItemDecoration
 import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -51,12 +51,6 @@ class CameraRollActivity : AppCompatActivity() {
     private lateinit var progress: ProgressBar
     private lateinit var shareButton: ImageButton
     private lateinit var mediaList: RecyclerView
-    private lateinit var mediaListArea: ConstraintLayout
-    private lateinit var currentMonthTextView: TextView
-    private lateinit var currentDayTextView: TextView
-
-    private lateinit var mediaListLayoutManager: LinearLayoutManager
-    var currentHead = 0
 
     private var currentMedia: Uri? = null
 
@@ -68,13 +62,10 @@ class CameraRollActivity : AppCompatActivity() {
         fileNameTextView = findViewById(R.id.name)
         fileSizeTextView = findViewById(R.id.size)
         controls = findViewById(R.id.controls)
-        currentMonthTextView = findViewById(R.id.month)
-        currentDayTextView = findViewById(R.id.day)
 
         if (intent.getBooleanExtra(BROWSE_GARLLERY, false)) {
             mediaList = findViewById(R.id.photo_list)
-            mediaListArea = findViewById(R.id.media_list_area)
-            mediaListLayoutManager = mediaList.layoutManager as LinearLayoutManager
+            findViewById<ConstraintLayout>(R.id.medialist_container).visibility = View.VISIBLE
             browseGallery()
             savedInstanceState?.let { currentMedia = it.getParcelable(CURRENT_MEDIA)!! }
             showMedia()
@@ -364,25 +355,8 @@ class CameraRollActivity : AppCompatActivity() {
                 }
             ).apply { setMedia(contents) }
 
-            mediaListArea.visibility = View.VISIBLE
-
-            it.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    with((recyclerView.adapter as CameraRollAdapter).getItemAtPosition(mediaListLayoutManager.findFirstVisibleItemPosition())) {
-                        currentMonthTextView.text = date.monthValue.toString()
-                        currentDayTextView.text = date.dayOfMonth.toString()
-                    }
-                }
-
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-                        with(mediaListLayoutManager.findFirstVisibleItemPosition()) {
-                            if ((recyclerView.adapter as CameraRollAdapter).getItemAtPosition(this).id == null) recyclerView.smoothSnapToPosition(this + 1)
-                        }
-                    }
-                }
+            it.addItemDecoration(HeaderItemDecoration(it) { itemPosition->
+                (it.adapter as CameraRollAdapter).getItemViewType(itemPosition) == CameraRollAdapter.DATE_TYPE
             })
         }
 
@@ -460,9 +434,7 @@ class CameraRollActivity : AppCompatActivity() {
 
         override fun getItemViewType(position: Int): Int = media[position].id?.let { MEDIA_TYPE } ?: run { DATE_TYPE }
 
-        fun setMedia(media: List<CameraMedia>) { this.media = media.drop(1) }
-
-        fun getItemAtPosition(position: Int): CameraMedia = media[position]
+        fun setMedia(media: List<CameraMedia>) { this.media = media}
 
         private fun replacePrevious(key: Int, newJob: Job) {
             jobMap[key]?.cancel()
