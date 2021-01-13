@@ -28,6 +28,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
@@ -41,6 +42,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.*
+
 
 class CameraRollActivity : AppCompatActivity() {
     private lateinit var controls: ConstraintLayout
@@ -141,6 +143,9 @@ class CameraRollActivity : AppCompatActivity() {
 
                 if (mimeType.startsWith("video/")) {
                     withContext(Dispatchers.Main) {
+                        fileSizeTextView.visibility = View.GONE
+                        fileNameTextView.visibility = View.GONE
+
                         var videoView: VolumeControlVideoView
                         var muteButton: ImageButton
                         var replayButton: ImageButton
@@ -246,6 +251,8 @@ class CameraRollActivity : AppCompatActivity() {
 
                 size = "${options.outWidth} × ${options.outHeight}"
                 if (fileName.isNotEmpty()) withContext(Dispatchers.Main) {
+                    fileNameTextView.visibility = View.VISIBLE
+                    fileSizeTextView.visibility = View.VISIBLE
                     fileNameTextView.text = fileName
                     fileSizeTextView.text = size
                 }
@@ -317,7 +324,8 @@ class CameraRollActivity : AppCompatActivity() {
         )
         val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                 "($pathSelection LIKE '%DCIM%')"
-        contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+        contentResolver.query(
+            contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
         )?.use { cursor->
             if (cursor.count == 0) {
                 Toast.makeText(this, getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
@@ -358,12 +366,21 @@ class CameraRollActivity : AppCompatActivity() {
 
             mediaListArea.visibility = View.VISIBLE
 
-            it.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            it.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
                     with((recyclerView.adapter as CameraRollAdapter).getItemAtPosition(mediaListLayoutManager.findFirstVisibleItemPosition())) {
                         currentMonthTextView.text = date.monthValue.toString()
                         currentDayTextView.text = date.dayOfMonth.toString()
+                    }
+                }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                        with(mediaListLayoutManager.findFirstVisibleItemPosition()) {
+                            if ((recyclerView.adapter as CameraRollAdapter).getItemAtPosition(this).id == null) recyclerView.smoothSnapToPosition(this + 1)
+                        }
                     }
                 }
             })
@@ -394,7 +411,10 @@ class CameraRollActivity : AppCompatActivity() {
             fun bindViewItems(cameraMedia: CameraMedia) {
                 val uri = ContentUris.withAppendedId(contentUri, cameraMedia.id!!.toLong())
                 val thumbnailUri =
-                    ContentUris.withAppendedId(if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cameraMedia.id!!.toLong())
+                    ContentUris.withAppendedId(
+                        if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        cameraMedia.id!!.toLong()
+                    )
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
                         try {
@@ -467,6 +487,18 @@ class CameraRollActivity : AppCompatActivity() {
         val mimeType: String,
         val date: LocalDate,
     )
+
+    fun RecyclerView.smoothSnapToPosition(position: Int, snapMode: Int = LinearSmoothScroller.SNAP_TO_START) {
+        val smoothScroller = object : LinearSmoothScroller(this.context) {
+            override fun getVerticalSnapPreference(): Int = snapMode
+            override fun getHorizontalSnapPreference(): Int = snapMode
+            override fun calculateTimeForScrolling(dx: Int): Int {
+                return 250
+            }
+        }
+        smoothScroller.targetPosition = position
+        layoutManager?.startSmoothScroll(smoothScroller)
+    }
 
     companion object {
         private const val CONTROLS_VISIBILITY = "CONTROLS_VISIBILITY"
