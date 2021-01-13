@@ -3,9 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container_root"
     android:layout_width="@dimen/camera_roll_date_grid_size"
     android:layout_height="@dimen/camera_roll_grid_size"
-    android:paddingVertical="@dimen/small_padding"
     android:paddingLeft="@dimen/small_padding"
     android:clickable="false">
 
@@ -16,15 +16,13 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintDimensionRatio="1:1"
         android:src="@drawable/ic_baseline_calendar_today_24" />
 
     <TextView
         android:id="@+id/slash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/icon"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/month"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:clickable="false"
@@ -35,9 +33,10 @@
         android:id="@+id/month"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@id/slash"
+        app:layout_constraintTop_toBottomOf="@id/icon"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="@dimen/small_padding"
         android:includeFontPadding="false"
         android:autoSizeTextType="uniform"
         android:clickable="false"

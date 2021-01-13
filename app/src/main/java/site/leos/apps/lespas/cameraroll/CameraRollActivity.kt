@@ -27,6 +27,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
@@ -48,6 +49,13 @@ class CameraRollActivity : AppCompatActivity() {
     private lateinit var progress: ProgressBar
     private lateinit var shareButton: ImageButton
     private lateinit var mediaList: RecyclerView
+    private lateinit var mediaListArea: ConstraintLayout
+    private lateinit var currentMonthTextView: TextView
+    private lateinit var currentDayTextView: TextView
+
+    private lateinit var mediaListLayoutManager: LinearLayoutManager
+    var currentHead = 0
+
     private var currentMedia: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,9 +66,13 @@ class CameraRollActivity : AppCompatActivity() {
         fileNameTextView = findViewById(R.id.name)
         fileSizeTextView = findViewById(R.id.size)
         controls = findViewById(R.id.controls)
+        currentMonthTextView = findViewById(R.id.month)
+        currentDayTextView = findViewById(R.id.day)
 
         if (intent.getBooleanExtra(BROWSE_GARLLERY, false)) {
             mediaList = findViewById(R.id.photo_list)
+            mediaListArea = findViewById(R.id.media_list_area)
+            mediaListLayoutManager = mediaList.layoutManager as LinearLayoutManager
             browseGallery()
             savedInstanceState?.let { currentMedia = it.getParcelable(CURRENT_MEDIA)!! }
             showMedia()
@@ -291,6 +303,7 @@ class CameraRollActivity : AppCompatActivity() {
     }
 
     private fun browseGallery() {
+        // Querying MediaStore
         val contents = mutableListOf<CameraMedia>()
         val contentUri = MediaStore.Files.getContentUri("external")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -319,25 +332,44 @@ class CameraRollActivity : AppCompatActivity() {
             var date: LocalDate
             val defaultOffset = OffsetDateTime.now().offset
             while(cursor.moveToNext()) {
+                // Insert date separator if date changes
                 date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
                 if (date != currentDate) {
-                    contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), ""))
+                    contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), "", date))
                     currentDate = date
                 }
+
                 // Insert media
-                contents.add(CameraMedia(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn)))
+                contents.add(CameraMedia(cursor.getString(idColumn), cursor.getString(nameColumn), cursor.getString(pathColumn), cursor.getString(typeColumn), date))
             }
         }
 
-        mediaList.adapter = CameraRollAdapter(this, object : CameraRollAdapter.OnItemClickListener {
-            override fun onItemClick(uri: Uri) {
-                media_container.removeAllViews()
-                currentMedia = uri
-                showMedia()
-            }
-        }).apply { setMedia(contents) }
-        mediaList.visibility = View.VISIBLE
+        // Preparing view
+        mediaList.let {
+            it.adapter = CameraRollAdapter(this,
+                object : CameraRollAdapter.OnItemClickListener {
+                    override fun onItemClick(uri: Uri) {
+                        media_container.removeAllViews()
+                        currentMedia = uri
+                        showMedia()
+                    }
+                }
+            ).apply { setMedia(contents) }
 
+            mediaListArea.visibility = View.VISIBLE
+
+            it.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    with((recyclerView.adapter as CameraRollAdapter).getItemAtPosition(mediaListLayoutManager.findFirstVisibleItemPosition())) {
+                        currentMonthTextView.text = date.monthValue.toString()
+                        currentDayTextView.text = date.dayOfMonth.toString()
+                    }
+                }
+            })
+        }
+
+        // Assign currentMedia so that showMedia() works
         if (contents.isNotEmpty()) currentMedia = ContentUris.withAppendedId(contentUri, contents[1].id!!.toLong())
     }
 
@@ -408,7 +440,9 @@ class CameraRollActivity : AppCompatActivity() {
 
         override fun getItemViewType(position: Int): Int = media[position].id?.let { MEDIA_TYPE } ?: run { DATE_TYPE }
 
-        fun setMedia(media: List<CameraMedia>) { this.media = media }
+        fun setMedia(media: List<CameraMedia>) { this.media = media.drop(1) }
+
+        fun getItemAtPosition(position: Int): CameraMedia = media[position]
 
         private fun replacePrevious(key: Int, newJob: Job) {
             jobMap[key]?.cancel()
@@ -422,7 +456,7 @@ class CameraRollActivity : AppCompatActivity() {
 
         companion object {
             private const val MEDIA_TYPE = 0
-            private const val DATE_TYPE = 1
+            const val DATE_TYPE = 1
         }
     }
 
@@ -431,6 +465,7 @@ class CameraRollActivity : AppCompatActivity() {
         val name: String,
         val path: String,
         val mimeType: String,
+        val date: LocalDate,
     )
 
     companion object {
