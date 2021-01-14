@@ -318,7 +318,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     private fun browseCameraRoll() {
         startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
-            putExtra(CameraRollActivity.BROWSE_GARLLERY, true)
+            action = Intent.ACTION_MAIN
+            //putExtra(CameraRollActivity.BROWSE_GARLLERY, true)
         })
     }
 

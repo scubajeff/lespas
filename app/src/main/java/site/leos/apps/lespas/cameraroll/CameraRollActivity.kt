@@ -63,7 +63,8 @@ class CameraRollActivity : AppCompatActivity() {
         fileSizeTextView = findViewById(R.id.size)
         controls = findViewById(R.id.controls)
 
-        if (intent.getBooleanExtra(BROWSE_GARLLERY, false)) {
+        //if (intent.getBooleanExtra(BROWSE_GARLLERY, false) || intent.action == Intent.ACTION_MAIN) {
+        if (intent.action == Intent.ACTION_MAIN) {
             mediaList = findViewById(R.id.photo_list)
             findViewById<ConstraintLayout>(R.id.medialist_container).visibility = View.VISIBLE
             browseGallery()
@@ -494,6 +495,6 @@ class CameraRollActivity : AppCompatActivity() {
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 6464
         private const val CURRENT_MEDIA = "CURRENT_MEDIA"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
-        const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
+        //const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
     }
 }

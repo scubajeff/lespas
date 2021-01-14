@@ -2,6 +2,7 @@ package site.leos.apps.lespas.settings
 
 import android.accounts.AccountManager
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.preference.*
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -116,6 +118,14 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                         }
                     }
                 }
+                true
+            }
+            getString(R.string.gallery_launcher_pref_key) -> {
+                requireActivity().packageManager.setComponentEnabledSetting(
+                    ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"),
+                    if (preferenceManager.sharedPreferences.getBoolean(preference.key, false)) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
                 true
             }
             else -> super.onPreferenceTreeClick(preference)

@@ -37,7 +37,7 @@
             android:launchMode="singleTask" />
         <activity
             android:name=".cameraroll.CameraRollActivity"
-            android:launchMode="singleTask"
+            android:taskAffinity=""
             android:excludeFromRecents="true">
             <intent-filter android:label="@string/app_name"
                 tools:ignore="AppLinkUrlError">
@@ -48,6 +48,16 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
+        <activity-alias
+            android:name=".Gallery"
+            android:targetActivity=".cameraroll.CameraRollActivity"
+            android:label="@string/gallery_app_name"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".sync.ShareReceiverActivity"
             android:excludeFromRecents="true"

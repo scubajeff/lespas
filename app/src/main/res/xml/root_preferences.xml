@@ -44,6 +44,11 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/other_header">
+        <SwitchPreferenceCompat
+            app:key="@string/gallery_launcher_pref_key"
+            android:title="@string/gallery_launcher_title"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
 
         <SwitchPreferenceCompat
             app:key="@string/snapseed_pref_key"

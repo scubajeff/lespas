@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Les Pas</string>
+    <string name="gallery_app_name">Gallery</string>
 
     <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>
@@ -88,6 +89,8 @@
     <string name="snapseed_add_title">Add Snapseed edition</string>
     <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s edtition.</string>
     <string name="snapseed_replace_off_summary">Add Snapseed\'s edition to album. Manage duplication by yourself.</string>
+    <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
+    <string name="gallery_launcher_title">Gallery launcher icon</string>
     <string name="storage_access_permission_rationale">Snapseed saves files in \"Snapseed\" folder, Grant WRITE_EXTERNAL_STORAGE permission to access those files.</string>
     <string name="proceed_request">Proceed</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
