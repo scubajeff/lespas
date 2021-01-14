@@ -402,7 +402,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 val cacheFolder = "${application.cacheDir}"
                 var lastTime = pref.getLong(SettingsFragment.LAST_BACKUP, 0L)
-                Log.e(">>>>>", "backup media later than this time $lastTime")
+                //Log.e(">>>>>", "backup media later than this time $lastTime")
                 val contentUri = MediaStore.Files.getContentUri("external")
                 val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                 val projection = arrayOf(
@@ -428,10 +428,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     var fileName: String
 
                     while(cursor.moveToNext()) {
-                        Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
+                        //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
                         fileName = cursor.getString(nameColumn)
                         relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBefore("/${fileName}")
-                        Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+                        //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
                         try {
                             // Since sardine use File only, need this intermediate temp file
                             application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.use { input ->
@@ -439,12 +439,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     input.copyTo(output, 4096)
                                 }
                             }
-                            Log.e(">>>>>", "$tempFile created")
+                            //Log.e(">>>>>", "$tempFile created")
 
                             try {
                                 // Upload file
                                 sardine.put("${dcimRoot}/${relativePath}/${fileName}", tempFile, cursor.getString(typeColumn))
-                                Log.e(">>>>>", "$tempFile uploaded")
+                                //Log.e(">>>>>", "$tempFile uploaded")
                             } catch (e: SardineException) {
                                 Log.e("****SardineException: ", e.stackTraceToString())
                                 when(e.statusCode) {
@@ -455,7 +455,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             subFolder += "/$it"
                                             try {
                                                 if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
-                                                Log.e(">>>>", "create subfolder $subFolder")
+                                                //Log.e(">>>>", "create subfolder $subFolder")
                                             } catch (e: Exception) {
                                                 e.printStackTrace()
                                                 syncResult.stats.numIoExceptions++
@@ -501,7 +501,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         finally {
                             // Delete temp file
                             try { tempFile.delete() } catch (e: Exception) { e.printStackTrace() }
-                            Log.e(">>>>>>", "$tempFile deleted")
+                            //Log.e(">>>>>>", "$tempFile deleted")
                         }
                     }
                 }
@@ -510,7 +510,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 pref.edit().apply {
                     putLong(SettingsFragment.LAST_BACKUP, lastTime)
                     apply()
-                    Log.e(">>>>>>>", "new timestamp is $lastTime")
+                    //Log.e(">>>>>>>", "new timestamp is $lastTime")
                 }
             }
 
