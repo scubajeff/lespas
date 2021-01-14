@@ -27,7 +27,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
-import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
@@ -42,6 +41,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.*
+import kotlin.math.roundToInt
 
 
 class CameraRollActivity : AppCompatActivity() {
@@ -315,8 +315,7 @@ class CameraRollActivity : AppCompatActivity() {
         )
         val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                 "($pathSelection LIKE '%DCIM%')"
-        contentResolver.query(
-            contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+        contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
         )?.use { cursor->
             if (cursor.count == 0) {
                 Toast.makeText(this, getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
@@ -358,6 +357,36 @@ class CameraRollActivity : AppCompatActivity() {
             it.addItemDecoration(HeaderItemDecoration(it) { itemPosition->
                 (it.adapter as CameraRollAdapter).getItemViewType(itemPosition) == CameraRollAdapter.DATE_TYPE
             })
+
+            it.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                var toRight = true
+                val separatorWidth = resources.getDimension(R.dimen.camera_roll_date_grid_size).roundToInt()
+                val mediaGridWidth = resources.getDimension(R.dimen.camera_roll_grid_size).roundToInt()
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    toRight = dx < 0
+                }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        // if date separator is approaching the header, perform snapping
+                        recyclerView.findChildViewUnder(separatorWidth.toFloat(), 0f)?.apply {
+                            if (width == separatorWidth) snapTo(this, recyclerView)
+                            else recyclerView.findChildViewUnder(separatorWidth.toFloat()+mediaGridWidth/3, 0f)?.apply {
+                                if (width == separatorWidth) snapTo(this, recyclerView)
+                            }
+                        }
+                    }
+                }
+
+                private fun snapTo(view: View, recyclerView: RecyclerView) {
+                    // Snap to this View if scrolling to left, or it's previous one if scrolling to right
+                    if (toRight) recyclerView.smoothScrollBy(view.left - separatorWidth - mediaGridWidth, 0, null, 500)
+                    else recyclerView.smoothScrollBy(view.left, 0, null, 250)
+                }
+            })
         }
 
         // Assign currentMedia so that showMedia() works
@@ -387,7 +416,7 @@ class CameraRollActivity : AppCompatActivity() {
                 val thumbnailUri =
                     ContentUris.withAppendedId(
                         if (cameraMedia.mimeType.startsWith("image/")) MediaStore.Images.Media.EXTERNAL_CONTENT_URI else MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                        cameraMedia.id!!.toLong()
+                        cameraMedia.id.toLong()
                     )
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     val job = GlobalScope.launch(Dispatchers.IO) {
@@ -459,18 +488,6 @@ class CameraRollActivity : AppCompatActivity() {
         val mimeType: String,
         val date: LocalDate,
     )
-
-    fun RecyclerView.smoothSnapToPosition(position: Int, snapMode: Int = LinearSmoothScroller.SNAP_TO_START) {
-        val smoothScroller = object : LinearSmoothScroller(this.context) {
-            override fun getVerticalSnapPreference(): Int = snapMode
-            override fun getHorizontalSnapPreference(): Int = snapMode
-            override fun calculateTimeForScrolling(dx: Int): Int {
-                return 250
-            }
-        }
-        smoothScroller.targetPosition = position
-        layoutManager?.startSmoothScroll(smoothScroller)
-    }
 
     companion object {
         private const val CONTROLS_VISIBILITY = "CONTROLS_VISIBILITY"
