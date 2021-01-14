@@ -51,6 +51,8 @@ class CameraRollActivity : AppCompatActivity() {
     private lateinit var progress: ProgressBar
     private lateinit var shareButton: ImageButton
     private lateinit var mediaList: RecyclerView
+    private var stopPosition = 0
+    private var videoMuted = false
 
     private var currentMedia: Uri? = null
 
@@ -68,7 +70,11 @@ class CameraRollActivity : AppCompatActivity() {
             mediaList = findViewById(R.id.photo_list)
             findViewById<ConstraintLayout>(R.id.medialist_container).visibility = View.VISIBLE
             browseGallery()
-            savedInstanceState?.let { currentMedia = it.getParcelable(CURRENT_MEDIA)!! }
+            savedInstanceState?.apply {
+                currentMedia = getParcelable(CURRENT_MEDIA)!!
+                stopPosition = getInt(STOP_POSITION)
+                videoMuted = getBoolean(MUTE_STATUS)
+            }
             showMedia()
         }
         else intent.data?.let {
@@ -108,9 +114,31 @@ class CameraRollActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        media_container.findViewById<View>(R.id.media)?.let {
+            if (it is VolumeControlVideoView) {
+                if (videoMuted) it.mute() else it.unMute()
+                it.setSeekOnPrepare(stopPosition)
+            }
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        media_container.findViewById<View>(R.id.media)?.let {
+            if (it is VolumeControlVideoView) {
+                stopPosition = it.currentPosition
+                videoMuted = it.isMute()
+            }
+        }
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(CONTROLS_VISIBILITY, controls.visibility)
+        outState.putInt(STOP_POSITION, stopPosition)
+        outState.putBoolean(MUTE_STATUS, videoMuted)
         outState.putParcelable(CURRENT_MEDIA, currentMedia)
     }
 
@@ -128,82 +156,89 @@ class CameraRollActivity : AppCompatActivity() {
 
             controls.visibility = View.GONE
 
-            GlobalScope.launch(Dispatchers.IO) {
-                val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase(Locale.ROOT)) ?: "image/jpeg"
+            val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase(Locale.ROOT)) ?: "image/jpeg"
+            }
+
+            if (mimeType.startsWith("video/")) {
+                fileSizeTextView.visibility = View.GONE
+                fileNameTextView.visibility = View.GONE
+
+                var videoView: VolumeControlVideoView
+                var muteButton: ImageButton
+                var replayButton: ImageButton
+
+                with(layoutInflater.inflate(R.layout.viewpager_item_video, media_container, true)) {
+                    videoView = findViewById(R.id.media)
+                    muteButton = findViewById(R.id.mute_button)
+                    replayButton = findViewById(R.id.replay_button)
                 }
+                val root = media_container.findViewById<ConstraintLayout>(R.id.videoview_container)
 
-                if (mimeType.startsWith("video/")) {
-                    withContext(Dispatchers.Main) {
-                        fileSizeTextView.visibility = View.GONE
-                        fileNameTextView.visibility = View.GONE
-
-                        var videoView: VolumeControlVideoView
-                        var muteButton: ImageButton
-                        var replayButton: ImageButton
-
-                        with(layoutInflater.inflate(R.layout.viewpager_item_video, media_container, true)) {
-                            videoView = findViewById(R.id.media)
-                            muteButton = findViewById(R.id.mute_button)
-                            replayButton = findViewById(R.id.replay_button)
-                        }
-                        val root = media_container.findViewById<ConstraintLayout>(R.id.videoview_container)
-
-                        fun setMute(mute: Boolean) {
-                            if (mute) {
-                                videoView.mute()
-                                muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
-                            } else {
-                                videoView.unMute()
-                                muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
-                            }
-                        }
-
-                        var width: Int
-                        var height: Int
-                        with(MediaMetadataRetriever()) {
-                            setDataSource(baseContext, uri)
-                            width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                            height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                            // Swap width and height if rotate 90 or 270 degree
-                            extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let {
-                                if (it == "90" || it == "270") {
-                                    height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                                    width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                                }
-                            }
-                        }
-
-                        if (height != 0) with(ConstraintSet()) {
-                            clone(root)
-                            setDimensionRatio(R.id.media, "${width}:${height}")
-                            applyTo(root)
-                        }
-
-                        with(videoView) {
-                            setVideoURI(uri)
-                            setOnCompletionListener { replayButton.visibility = View.VISIBLE }
-                            setOnPreparedListener {
-                                // Default mute the video playback during late night
-                                this.onPrepared(it)
-                                with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
-                            }
-                            start()
-                        }
-
-                        root.setOnClickListener { toggleControls() }
-                        muteButton.setOnClickListener { setMute(!videoView.isMute()) }
-                        replayButton.setOnClickListener {
-                            it.visibility = View.GONE
-                            videoView.start()
-                        }
-
-                        handler.removeCallbacks(showWaitingSign)
-                        progress.visibility = View.GONE
+                fun setMute(mute: Boolean) {
+                    if (mute) {
+                        videoView.mute()
+                        muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
+                    } else {
+                        videoView.unMute()
+                        muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
                     }
-
-                    return@launch
                 }
+
+                var width: Int
+                var height: Int
+                with(MediaMetadataRetriever()) {
+                    setDataSource(baseContext, uri)
+                    width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                    height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                    // Swap width and height if rotate 90 or 270 degree
+                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let {
+                        if (it == "90" || it == "270") {
+                            height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                            width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                        }
+                    }
+                }
+
+                if (height != 0) with(ConstraintSet()) {
+                    clone(root)
+                    setDimensionRatio(R.id.media, "${width}:${height}")
+                    applyTo(root)
+                }
+
+                with(videoView) {
+                    setVideoURI(uri)
+                    setOnPreparedListener {
+                        // Call parent onPrepared!!
+                        this.onPrepared(it)
+
+                        // Default mute the video playback during late night
+                        with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
+
+                        // Restart playing after seek to last stop position
+                        it.setOnSeekCompleteListener {
+                            mp-> mp.start()
+                            // Set mute icon
+                            setMute(videoView.isMute())
+                        }
+                    }
+                    setOnCompletionListener { replayButton.visibility = View.VISIBLE }
+                }
+
+                root.setOnClickListener { toggleControls() }
+                muteButton.setOnClickListener { setMute(!videoView.isMute()) }
+                replayButton.setOnClickListener {
+                    it.visibility = View.GONE
+                    videoView.start()
+                }
+
+                handler.removeCallbacks(showWaitingSign)
+                progress.visibility = View.GONE
+
+                return
+            }
+
+            GlobalScope.launch(Dispatchers.IO) {
 
                 // Show some statistic first
                 /*
@@ -494,6 +529,8 @@ class CameraRollActivity : AppCompatActivity() {
         private const val CONTROLS_VISIBILITY = "CONTROLS_VISIBILITY"
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 6464
         private const val CURRENT_MEDIA = "CURRENT_MEDIA"
+        private const val STOP_POSITION = "STOP_POSITION"
+        private const val MUTE_STATUS = "MUTE_STATUS"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         //const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
     }

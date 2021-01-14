@@ -14,7 +14,6 @@ import android.os.Environment
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -65,6 +64,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var sp: SharedPreferences
     //private var originalItem: Photo? = null
     private val snapseedCatcher = ShareChooserBroadcastReceiver()
+    private var videoStopPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,7 +96,11 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             "${requireContext().filesDir}${resources.getString(R.string.lespas_base_folder_name)}",
-            { uiModel.toggleOnOff() }
+            { uiModel.toggleOnOff() },
+            { newPosition->
+                if (newPosition > 0) videoStopPosition = newPosition
+                videoStopPosition
+            },
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
             else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
@@ -166,6 +170,8 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         })
+
+        savedInstanceState?.apply { videoStopPosition = getInt(STOP_POSITION) }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -185,6 +191,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
         if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
             sp.getBoolean(getString(R.string.snapseed_pref_key), false) &&
             snapseedCatcher.getDest() == "snapseed")
@@ -194,6 +201,18 @@ class PhotoSlideFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        with(slider[0].findViewById<View>(R.id.media)) {
+            if (this is VolumeControlVideoView) {
+                // Save stop position to VideoView's seekWhenPrepare property and local property for later use in onSaveInstanceState
+                videoStopPosition = currentPosition
+                this.setSeekOnPrepare(currentPosition)
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STOP_POSITION, videoStopPosition)
     }
 
     override fun onDestroy() {
@@ -371,14 +390,16 @@ class PhotoSlideFragment : Fragment() {
         }
     }
 
-    class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage,) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val stopPositionHolder: StopPositionHolder, private val imageLoader: OnLoadImage
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = emptyList<Photo>()
 
         fun interface OnTouchListener { fun onTouch() }
+        fun interface StopPositionHolder { fun setAndGet(newStopPosition: Int): Int }
         fun interface OnLoadImage { fun loadImage(photo: Photo, view: View, type: String) }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
+            fun bindViewItems(photo: Photo) {
                 itemView.findViewById<PhotoView>(R.id.media).apply {
                     imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
                     setOnPhotoTapListener { _, _, _ -> itemListener.onTouch() }
@@ -392,7 +413,7 @@ class PhotoSlideFragment : Fragment() {
 
         inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             @SuppressLint("ClickableViewAccessibility")
-            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
+            fun bindViewItems(photo: Photo) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
                     // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
                     imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
@@ -421,29 +442,37 @@ class PhotoSlideFragment : Fragment() {
             private lateinit var replayButton: ImageButton
 
             @SuppressLint("ClickableViewAccessibility")
-            fun bindViewItems(photo: Photo, itemListener: OnTouchListener) {
+            fun bindViewItems(video: Photo) {
                 val root = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
                 videoView = itemView.findViewById(R.id.media)
                 muteButton = itemView.findViewById(R.id.mute_button)
                 replayButton = itemView.findViewById(R.id.replay_button)
 
                 with(videoView) {
-                    if (photo.height != 0) with(ConstraintSet()) {
+                    if (video.height != 0) with(ConstraintSet()) {
                         clone(root)
-                        setDimensionRatio(R.id.media, "${photo.width}:${photo.height}")
+                        setDimensionRatio(R.id.media, "${video.width}:${video.height}")
                         applyTo(root)
                     }
                     // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                    imageLoader.loadImage(video, this, ImageLoaderViewModel.TYPE_FULL)
 
-                    var fileName = "$rootPath/${photo.id}"
-                    if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
+                    var fileName = "$rootPath/${video.id}"
+                    if (!(File(fileName).exists())) fileName = "$rootPath/${video.name}"
                     setVideoPath(fileName)
-                    setOnCompletionListener { replayButton.visibility = View.VISIBLE }
+                    setOnCompletionListener {
+                        replayButton.visibility = View.VISIBLE
+                        setSeekOnPrepare(0)
+                        stopPositionHolder.setAndGet(0)
+                    }
                     setOnPreparedListener {
-                        // Default mute the video playback during late night
+                        // Call parent onPrepared!!
                         this.onPrepared(it)
+
+                        // Default mute the video playback during late night
                         with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
+                        // Restart playing after seek to last stop position
+                        it.setOnSeekCompleteListener { mp-> mp.start() }
                     }
 
                     setOnTouchListener { _, event ->
@@ -453,7 +482,7 @@ class PhotoSlideFragment : Fragment() {
                         } else false
                     }
 
-                    ViewCompat.setTransitionName(this, photo.id)
+                    ViewCompat.setTransitionName(this, video.id)
                 }
 
                 muteButton.setOnClickListener { setMute(!videoView.isMute()) }
@@ -492,9 +521,9 @@ class PhotoSlideFragment : Fragment() {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
-                is VideoViewHolder-> holder.bindViewItems(photos[position], itemListener)
-                is AnimatedViewHolder-> holder.bindViewItems(photos[position], itemListener)
-                else-> (holder as PhotoViewHolder).bindViewItems(photos[position], itemListener)
+                is VideoViewHolder-> holder.bindViewItems(photos[position])
+                is AnimatedViewHolder-> holder.bindViewItems(photos[position])
+                else-> (holder as PhotoViewHolder).bindViewItems(photos[position])
             }
         }
 
@@ -545,12 +574,27 @@ class PhotoSlideFragment : Fragment() {
 
         override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
             super.onViewAttachedToWindow(holder)
-            if (holder is VideoViewHolder) holder.itemView.findViewById<VideoView>(R.id.media).start()
+            if (holder is VideoViewHolder) {
+                // Restore playback position when View got recreated, like screen rotated
+                holder.itemView.findViewById<VolumeControlVideoView>(R.id.media).apply {
+                    // If view's seeWhenPrepare property value is 0, means new view created, then need to set last stop position (saved by saveInstanceState()) as seekWhenPrepare
+                    if (getSeekOnPrepare() == 0) setSeekOnPrepare(stopPositionHolder.setAndGet(-1))
+                }
+            }
         }
 
         override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
             super.onViewDetachedFromWindow(holder)
-            if (holder is VideoViewHolder) holder.itemView.findViewById<VideoView>(R.id.media).stopPlayback()
+            if (holder is VideoViewHolder) {
+                holder.itemView.findViewById<VolumeControlVideoView>(R.id.media).apply {
+                    // Save playback position when being swiped, when swap between recent apps, onViewDetachedFromWindow might be called with wrong currentPosition as 0, so test it's value first
+                    if (currentPosition > 0) {
+                        setSeekOnPrepare(currentPosition)
+                        stopPositionHolder.setAndGet(currentPosition)
+                    }
+                    stopPlayback()
+                }
+            }
         }
 
         companion object {
@@ -612,6 +656,8 @@ class PhotoSlideFragment : Fragment() {
 
     companion object {
         private const val ALBUM = "ALBUM"
+        private const val STOP_POSITION = "STOP_POSITION"
+        private const val MUTE_STATE = "MUTE_STATE"
         const val JPEG = "image/jpeg"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"

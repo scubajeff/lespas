@@ -11,22 +11,32 @@ class VolumeControlVideoView: VideoView, MediaPlayer.OnPreparedListener {
     constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int): super(context, attributeSet, defStyleAttr)
     constructor(context: Context, attributeSet: AttributeSet, defStyleAttr: Int, defStyleRes: Int): super(context, attributeSet, defStyleAttr, defStyleRes)
 
-    private lateinit var mPlayer: MediaPlayer
+    private var mPlayer: MediaPlayer? = null
     private var isMute = false
+    // Video restart position
+    private var seekWhenPrepare = 0
 
     init { setOnPreparedListener(this) }
 
-    override fun onPrepared(mp: MediaPlayer) { mPlayer = mp }
+    override fun onPrepared(mp: MediaPlayer) {
+        mPlayer = mp
+
+        // Go to last stop position, video will be started in implementation's onSeekCompleteListener
+        mp.seekTo(seekWhenPrepare)
+    }
 
     fun mute() {
-        mPlayer.setVolume(0f, 0f)
+        try { mPlayer?.setVolume(0f, 0f) } catch (e:IllegalStateException) { e.printStackTrace() }
         isMute = true
     }
 
     fun unMute() {
-        mPlayer.setVolume(1f, 1f)
+        try { mPlayer?.setVolume(1f, 1f) } catch (e:IllegalStateException) { e.printStackTrace() }
         isMute = false
     }
 
     fun isMute(): Boolean = isMute
+
+    fun setSeekOnPrepare(position: Int) { this.seekWhenPrepare = position }
+    fun getSeekOnPrepare(): Int = seekWhenPrepare
 }
