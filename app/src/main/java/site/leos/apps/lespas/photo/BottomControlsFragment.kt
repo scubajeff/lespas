@@ -180,7 +180,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) {
                     currentPhotoModel.getCurrentPhoto().value!!.run {
-                        InfoDialogFragment.newInstance(id, name, dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)), width.toString(), height.toString()
+                        InfoDialogFragment.newInstance(id, name, dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)), width.toString(), height.toString(), eTag
                         ).show(parentFragmentManager, INFO_DIALOG)
                     }
                 }
@@ -321,28 +321,38 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
             ok_button.setOnClickListener { dismiss() }
 
-            val fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}"
-            info_filename.text = arguments?.getString(NAME)
-            info_shotat.text = arguments?.getString(DATE)
-            info_size.text = String.format("%s, %s",
-                Tools.humanReadableByteCountSI(File(fileName).length()),
-                String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT)))
+            try {
+                val fileName: String
+                if (arguments?.getString(ETAG)?.isNotEmpty()!!) {
+                    fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}"
+                    info_filename.text = arguments?.getString(NAME)
+                } else {
+                    fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(NAME)}"
+                    info_filename.text = arguments?.getString(ID)
+                }
+                info_shotat.text = arguments?.getString(DATE)
+                info_size.text = String.format(
+                    "%s, %s",
+                    Tools.humanReadableByteCountSI(File(fileName).length()),
+                    String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT))
+                )
 
-            val exif = ExifInterface(fileName)
-            var t = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-            if (t.isEmpty()) mfg_row.visibility = View.GONE else info_camera_mfg.text = t
-            t = (exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let{ "\n${it.trim()}" } ?: "")
-            if (t.isEmpty()) model_row.visibility = View.GONE else info_camera_model.text = t
-            t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
-                (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let{ "f$it  " } ?: "") +
-                (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let{
-                    val exp = it.toFloat()
-                    if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
-                } ?: "") +
-                (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
-            if (t.trim().isEmpty()) param_row.visibility = View.GONE else info_parameter.text = t
-            t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
-            if (t.isEmpty()) artist_row.visibility = View.GONE else info_artist.text = t
+                val exif = ExifInterface(fileName)
+                var t = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
+                if (t.isEmpty()) mfg_row.visibility = View.GONE else info_camera_mfg.text = t
+                t = (exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let { "\n${it.trim()}" } ?: "")
+                if (t.isEmpty()) model_row.visibility = View.GONE else info_camera_model.text = t
+                t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
+                        (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f$it  " } ?: "") +
+                        (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let {
+                            val exp = it.toFloat()
+                            if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
+                        } ?: "") +
+                        (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
+                if (t.trim().isEmpty()) param_row.visibility = View.GONE else info_parameter.text = t
+                t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
+                if (t.isEmpty()) artist_row.visibility = View.GONE else info_artist.text = t
+            } catch (e:Exception) { e.printStackTrace() }
         }
 
         override fun onStart() {
@@ -368,14 +378,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             const val DATE = "DATE"
             const val WIDTH = "WIDTH"
             const val HEIGHT = "HEIGHT"
+            const val ETAG = "ETAG"
 
-            fun newInstance(photoId: String, photoName: String, photoDate: String, photoWidth: String, photoHeight: String) = InfoDialogFragment().apply {
+            fun newInstance(photoId: String, photoName: String, photoDate: String, photoWidth: String, photoHeight: String, eTag: String) = InfoDialogFragment().apply {
                 arguments = Bundle().apply {
                     putString(ID, photoId)
                     putString(NAME, photoName)
                     putString(DATE, photoDate)
                     putString(WIDTH, photoWidth)
                     putString(HEIGHT, photoHeight)
+                    putString(ETAG, eTag)
             }}
         }
     }
