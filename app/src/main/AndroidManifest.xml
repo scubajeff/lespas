@@ -52,7 +52,8 @@
             android:name=".Gallery"
             android:targetActivity=".cameraroll.CameraRollActivity"
             android:label="@string/gallery_app_name"
-            android:enabled="false">
+            android:enabled="false"
+            android:icon="@mipmap/ic_launcher_gallery">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
