@@ -22,7 +22,6 @@
         <SwitchPreferenceCompat
             app:key="@string/cameraroll_backup_pref_key"
             android:title="@string/cameraroll_backup_title"
-            android:summaryOn="@string/cameraroll_backup_summary"
             app:singleLineTitle="false"
             app:defaultValue="false" />
 

@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
+import android.os.Build
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
@@ -162,5 +163,14 @@ object Tools {
             ci.next()
         }
         return java.lang.String.format("%d%cB", bytes/1000, ci.current())
+    }
+
+    fun getDeviceModel(): String {
+        val manufacturer = Build.MANUFACTURER.toLowerCase()
+        var model = Build.MODEL.toLowerCase()
+
+        if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
+
+        return "${manufacturer}_${model}"
     }
 }

@@ -86,7 +86,7 @@
     <string name="tooltip_text_more">Mehr</string>
     <string name="item_camera_roll">Kamerarolle</string>
     <string name="cameraroll_backup_title">Kamera-Rolle sichern</string>
-    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM gesichert</string>
+    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM/%1$s gesichert</string>
     <string name="empty_camera_roll">Keine Medien in der Kamerarolle gefunden</string>
     <string name="gallery_app_name">Galerie</string>
     <string name="gallery_launcher_title">Symbol für Galerie-Startprogramm</string>

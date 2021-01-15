@@ -86,7 +86,7 @@
     <string name="tooltip_text_more">更多</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
-    <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM目录下。</string>
+    <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%1$s目录下。</string>
     <string name="empty_camera_roll">相机相册空空如也。</string>
     <string name="gallery_launcher_title">“相册”启动图标</string>
     <string name="gallery_app_name">相册</string>

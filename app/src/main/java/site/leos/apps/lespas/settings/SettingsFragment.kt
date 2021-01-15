@@ -14,6 +14,7 @@ import androidx.preference.*
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.SyncAdapter
 
 class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnResultListener {
@@ -66,6 +67,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                 true
             }
         }
+
+        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
     }
 
     override fun onResume() {

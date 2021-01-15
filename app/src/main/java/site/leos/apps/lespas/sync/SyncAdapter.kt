@@ -397,7 +397,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (!sardine.exists(dcimRoot)) sardine.createDirectory(dcimRoot)
 
                 // Make sure device subfolder is under DCIM/
-                dcimRoot += "/${getDeviceModel()}"
+                dcimRoot += "/${Tools.getDeviceModel()}"
                 if (!sardine.exists(dcimRoot)) sardine.createDirectory(dcimRoot)
 
                 val cacheFolder = "${application.cacheDir}"
@@ -537,15 +537,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e:Exception) {
             Log.e("****Exception: ", e.stackTraceToString())
         }
-    }
-
-    private fun getDeviceModel(): String {
-        val manufacturer = Build.MANUFACTURER.toLowerCase()
-        var model = Build.MODEL.toLowerCase()
-
-        if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
-
-        return "${manufacturer}_${model}"
     }
 
     companion object {
