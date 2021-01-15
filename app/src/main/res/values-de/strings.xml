@@ -11,7 +11,7 @@
     <string name="host_not_valid">Server nicht gültig.</string>
     <string name="unknown_host">Server nicht gefunden.</string>
     <string name="network_error">Netzwerkfehler, versuchen Sie es erneut.</string>
-    <string name="fab_add_album">Album hinzufügen</string>
+    <string name="fab_add_photos">Fotos hinzufügen</string>
     <string name="confirm_delete">Sind Sie sicher, dass Sie löschen wollen?</string>
     <string name="rename_to">Ändern Sie den Albumnamen in</string>
     <string name="total_photo">Fotos: %1$d</string>

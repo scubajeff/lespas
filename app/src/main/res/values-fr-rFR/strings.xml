@@ -10,7 +10,7 @@
     <string name="host_not_valid">Adresse non valide.</string>
     <string name="unknown_host">Serveur non trouvé.</string>
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
-    <string name="fab_add_album">Ajouter un album</string>
+    <string name="fab_add_photos">Ajouter des photos</string>
     <string name="confirm_delete">Êtes-vous sûr de supprimer?</string>
     <string name="rename_to">Changer le nom de l\'album en</string>
     <string name="total_photo">Photos: %1$d</string>

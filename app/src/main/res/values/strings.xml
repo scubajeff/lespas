@@ -32,7 +32,7 @@
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->
-    <string name="fab_add_album">Add Album</string>
+    <string name="fab_add_photos">Add photos</string>
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure to delete?</string>
