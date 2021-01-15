@@ -443,8 +443,8 @@ class CameraRollActivity : AppCompatActivity() {
 
                 private fun snapTo(view: View, recyclerView: RecyclerView) {
                     // Snap to this View if scrolling to left, or it's previous one if scrolling to right
-                    if (toRight) recyclerView.smoothScrollBy(view.left - separatorWidth - mediaGridWidth, 0, null, 500)
-                    else recyclerView.smoothScrollBy(view.left, 0, null, 250)
+                    if (toRight) recyclerView.smoothScrollBy(view.left - separatorWidth - mediaGridWidth, 0, null, 1000)
+                    else recyclerView.smoothScrollBy(view.left, 0, null, 500)
                 }
             })
         }
