@@ -503,10 +503,10 @@ class PhotoSlideFragment : Fragment() {
             private fun setMute(mute: Boolean) {
                 if (mute) {
                     videoView.mute()
-                    muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
+                    muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
                 } else {
                     videoView.unMute()
-                    muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
+                    muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
                 }
             }
         }
