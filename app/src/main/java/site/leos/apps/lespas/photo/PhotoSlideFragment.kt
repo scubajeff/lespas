@@ -462,8 +462,8 @@ class PhotoSlideFragment : Fragment() {
                     setVideoPath(fileName)
                     setOnCompletionListener {
                         replayButton.visibility = View.VISIBLE
+                        this.stopPlayback()
                         setSeekOnPrepare(0)
-                        stopPositionHolder.setAndGet(0)
                     }
                     setOnPreparedListener {
                         // Call parent onPrepared!!

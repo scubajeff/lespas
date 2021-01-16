@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -222,7 +223,12 @@ class CameraRollActivity : AppCompatActivity() {
                             setMute(videoView.isMute())
                         }
                     }
-                    setOnCompletionListener { replayButton.visibility = View.VISIBLE }
+                    setOnCompletionListener {
+                        Log.e(">>>>", "onCompeleted")
+                        replayButton.visibility = View.VISIBLE
+                        this.stopPlayback()
+                        setSeekOnPrepare(0)
+                    }
                 }
 
                 root.setOnClickListener { toggleControls() }
