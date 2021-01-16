@@ -28,6 +28,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.android.synthetic.main.activity_camera_roll.*
@@ -413,11 +414,13 @@ class CameraRollActivity : AppCompatActivity() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        // if date separator is approaching the header, perform snapping
-                        recyclerView.findChildViewUnder(separatorWidth.toFloat(), 0f)?.apply {
-                            if (width == separatorWidth) snapTo(this, recyclerView)
-                            else recyclerView.findChildViewUnder(separatorWidth.toFloat()+mediaGridWidth/3, 0f)?.apply {
+                        if ((recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition() < recyclerView.adapter?.itemCount!! - 1) {
+                            // if date separator is approaching the header, perform snapping
+                            recyclerView.findChildViewUnder(separatorWidth.toFloat(), 0f)?.apply {
                                 if (width == separatorWidth) snapTo(this, recyclerView)
+                                else recyclerView.findChildViewUnder(separatorWidth.toFloat() + mediaGridWidth / 3, 0f)?.apply {
+                                    if (width == separatorWidth) snapTo(this, recyclerView)
+                                }
                             }
                         }
                     }
