@@ -440,6 +440,7 @@ class PhotoSlideFragment : Fragment() {
             private lateinit var videoView: VolumeControlVideoView
             private lateinit var muteButton: ImageButton
             private lateinit var replayButton: ImageButton
+            private lateinit var fileName: String
 
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(video: Photo) {
@@ -457,7 +458,7 @@ class PhotoSlideFragment : Fragment() {
                     // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
                     imageLoader.loadImage(video, this, ImageLoaderViewModel.TYPE_FULL)
 
-                    var fileName = "$rootPath/${video.id}"
+                    fileName = "$rootPath/${video.id}"
                     if (!(File(fileName).exists())) fileName = "$rootPath/${video.name}"
                     setVideoPath(fileName)
                     setOnCompletionListener {
@@ -488,6 +489,7 @@ class PhotoSlideFragment : Fragment() {
                 muteButton.setOnClickListener { setMute(!videoView.isMute()) }
                 replayButton.setOnClickListener {
                     it.visibility = View.GONE
+                    videoView.setVideoPath(fileName)
                     videoView.start()
                 }
 

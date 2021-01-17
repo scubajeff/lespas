@@ -236,6 +236,7 @@ class CameraRollActivity : AppCompatActivity() {
                 muteButton.setOnClickListener { setMute(!videoView.isMute()) }
                 replayButton.setOnClickListener {
                     it.visibility = View.GONE
+                    videoView.setVideoURI(currentMedia!!)
                     videoView.start()
                 }
 
