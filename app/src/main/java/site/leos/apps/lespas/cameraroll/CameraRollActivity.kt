@@ -15,7 +15,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -114,6 +113,17 @@ class CameraRollActivity : AppCompatActivity() {
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                 DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
+
+        remove_button.setOnClickListener {
+            if (intent.action == Intent.ACTION_MAIN) {
+                controls.visibility = View.GONE
+
+                if (mediaList.adapter?.itemCount == 2) {
+                    // Last item in camera roll, handle it here for easy finishing activity sake
+                    deleteAndFinish(currentMedia!!)
+                } else (mediaList.adapter as CameraRollAdapter).removeMedia(currentMedia!!)
+            } else deleteAndFinish(currentMedia!!)
+        }
     }
 
     override fun onResume() {
@@ -142,6 +152,11 @@ class CameraRollActivity : AppCompatActivity() {
         outState.putInt(STOP_POSITION, stopPosition)
         outState.putBoolean(MUTE_STATUS, videoMuted)
         outState.putParcelable(CURRENT_MEDIA, currentMedia)
+    }
+
+    private fun deleteAndFinish(uri: Uri) {
+        contentResolver.delete(uri, null, null)
+        finish()
     }
 
     private fun toggleControls() {
@@ -225,7 +240,6 @@ class CameraRollActivity : AppCompatActivity() {
                         }
                     }
                     setOnCompletionListener {
-                        Log.e(">>>>", "onCompeleted")
                         replayButton.visibility = View.VISIBLE
                         this.stopPlayback()
                         setSeekOnPrepare(0)
@@ -447,7 +461,8 @@ class CameraRollActivity : AppCompatActivity() {
     }
 
     class CameraRollAdapter(context: Context, private val itemClickListener: OnItemClickListener): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var media = emptyList<CameraMedia>()
+        //private var media = emptyList<CameraMedia>()
+        private var media = mutableListOf<CameraMedia>()
         private var cr: ContentResolver = context.contentResolver
         private val jobMap = HashMap<Int, Job>()
         private val contentUri = MediaStore.Files.getContentUri("external")
@@ -482,7 +497,7 @@ class CameraRollActivity : AppCompatActivity() {
                             if (isActive) withContext(Dispatchers.Main) { setImageBitmap(bmp) }
                         } catch (e: Exception) { e.printStackTrace() }
                     }
-                    replacePrevious(System.identityHashCode(this), job)
+                    replacePreviousJob(System.identityHashCode(this), job)
                     setOnClickListener { itemClickListener.onItemClick(uri) }
                 }
                 itemView.findViewById<ImageView>(R.id.play_mark).visibility = if (cameraMedia.mimeType.startsWith("video/")) View.VISIBLE else View.GONE
@@ -509,9 +524,56 @@ class CameraRollActivity : AppCompatActivity() {
 
         override fun getItemViewType(position: Int): Int = media[position].id?.let { MEDIA_TYPE } ?: run { DATE_TYPE }
 
-        fun setMedia(media: List<CameraMedia>) { this.media = media}
+        fun setMedia(media: List<CameraMedia>) { this.media.addAll(0, media) }
 
-        private fun replacePrevious(key: Int, newJob: Job) {
+        fun removeMedia(uri: Uri) {
+            val index = media.indexOfFirst { it.id == uri.lastPathSegment }
+            val nextUri: Uri
+            var last1inDate = false
+
+            if (index < media.lastIndex) {
+                // Not the last 1 in list, find next 1 to the right
+                //if (media[index + 1].id != null)
+                if (getItemViewType(index + 1) == MEDIA_TYPE)
+                    // Next 1 in list is a photo
+                    nextUri = ContentUris.withAppendedId(contentUri, media[index + 1].id!!.toLong())
+                else {
+                    // Next 1 in list is date separator, get next to next 1
+                    nextUri = ContentUris.withAppendedId(contentUri, media[index + 2].id!!.toLong())
+                    // If previous 1 and next 1 are all date separators, this one is the only one left in this date, should also remove it's date separator
+                    //last1inDate = (media[index - 1].id == null)
+                    last1inDate = (getItemViewType(index - 1) == DATE_TYPE)
+                }
+            } else {
+                // Last 1 in list, should find next 1 to the left
+                // The case of only one left in list is handled in button's onclicklistener for easy finishing the activity
+                //if (media[index - 1].id != null)
+                if (getItemViewType(index - 1) == MEDIA_TYPE)
+                    // Previous 1 in list is a photo
+                    nextUri = ContentUris.withAppendedId(contentUri, media[index - 1].id!!.toLong())
+                else {
+                    // Previous 1 in list is date separator
+                    nextUri = ContentUris.withAppendedId(contentUri, media[index - 2].id!!.toLong())
+                    // Since this is the last 1, that means it's the only 1 in this date
+                    last1inDate = true
+                }
+            }
+
+            // Removing
+            if (cr.delete(uri, null, null) == 1) {
+                media.removeAt(index)
+                notifyItemRemoved(index)
+                if (last1inDate) {
+                    media.removeAt(index - 1)
+                    notifyItemRemoved(index - 1)
+                }
+
+                // Show next media
+                itemClickListener.onItemClick(nextUri)
+            }
+        }
+
+        private fun replacePreviousJob(key: Int, newJob: Job) {
             jobMap[key]?.cancel()
             jobMap[key] = newJob
         }

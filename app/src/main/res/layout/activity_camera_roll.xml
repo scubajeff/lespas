@@ -65,25 +65,36 @@
         app:layout_constraintTop_toTopOf="@id/media_container"
         app:layout_constraintBottom_toBottomOf="@id/media_container">
         <ImageButton
-            android:id="@+id/share_button"
-            android:layout_width="@dimen/camera_roll_grid_size"
-            android:layout_height="@dimen/camera_roll_grid_size"
+            android:id="@+id/remove_button"
+            android:layout_width="@dimen/camera_roll_control_button_size"
+            android:layout_height="@dimen/camera_roll_control_button_size"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/share_button"
+            android:background="#80000000"
+            android:padding="@dimen/camera_roll_control_button_padding"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_baseline_delete_24" />
+        <ImageButton
+            android:id="@+id/share_button"
+            android:layout_width="@dimen/camera_roll_control_button_size"
+            android:layout_height="@dimen/camera_roll_control_button_size"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/remove_button"
             app:layout_constraintRight_toLeftOf="@id/lespas_button"
             android:background="#80000000"
-            android:padding="28dp"
+            android:padding="@dimen/camera_roll_control_button_padding"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_baseline_share_24" />
         <ImageButton
             android:id="@+id/lespas_button"
-            android:layout_width="@dimen/camera_roll_grid_size"
-            android:layout_height="@dimen/camera_roll_grid_size"
+            android:layout_width="@dimen/camera_roll_control_button_size"
+            android:layout_height="@dimen/camera_roll_control_button_size"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toRightOf="@id/share_button"
             app:layout_constraintRight_toRightOf="parent"
             android:background="#80000000"
-            android:padding="28dp"
+            android:padding="@dimen/camera_roll_control_button_padding"
             android:scaleType="fitCenter"
             android:tint="@color/color_text_light"
             android:src="@drawable/ic_footprint" />
