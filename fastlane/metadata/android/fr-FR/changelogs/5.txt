@@ -1,0 +1,8 @@
+* La caméra de sauvegarde automatique peut-elle rouler vers le serveur Nextcloud
+* Fonction de défilement de l'appareil photo, à la fois dans l'application Les Pas ou lancé dans le lanceur
+* Peut être défini comme visionneur par défaut du système pour les images et les vidéos prises en charge
+* Ajout d'une fonction de mise en sourdine et de relecture des fichiers vidéo
+* Lecture de la vidéo en mode "Auto mute" de 22h00 à 7h00
+* Reprendre la lecture vidéo lorsqu'elle est interrompue
+* Correction d'un plantage lors de l'affichage des informations détaillées d'un fichier multimédia qui n'a pas encore été téléchargé
+* Autres bugs corrigés ;

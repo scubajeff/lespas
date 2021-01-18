@@ -1,0 +1,8 @@
+* Puede hacer una copia de seguridad automática del rodaje de la cámara en el servidor de Nextcloud
+* Navegar por la función de rollo de cámara, tanto en la aplicación Les Pas como en el lanzador
+* Se puede configurar como visor predeterminado del sistema para el archivo de imagen y vídeo soportado
+* Añadida la función de silencio y reproducción a los archivos de vídeo
+* Video auto silenciado reproduciéndose durante las 22:00 a las 7:00
+* Reanudar la reproducción del video cuando se interrumpe
+* Corregido el fallo al ver la información detallada del archivo de medios que aún no se ha subido
+* Otros bichos arreglados;

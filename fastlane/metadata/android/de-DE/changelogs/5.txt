@@ -1,0 +1,8 @@
+* Kann die Kamerarolle automatisch auf dem Nextcloud-Server sichern
+* Funktion zum Durchsuchen der Kamerarolle, sowohl in der Les Pas-App als auch beim Start im Launcher
+* Kann als System-Standard-Viewer für unterstützte Bild- und Videodateien eingestellt werden
+* Stummschaltungs- und Wiederholungsfunktion für Videodateien hinzugefügt
+* Automatische Stummschaltung der Videowiedergabe zwischen 22:00 und 7:00 Uhr
+* Fortsetzen der Videowiedergabe bei Unterbrechung
+* Absturz beim Anzeigen von Detailinformationen einer noch nicht hochgeladenen Mediendatei behoben
+* Andere Fehler behoben;
