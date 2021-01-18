@@ -3,6 +3,6 @@
 * Can be set as system default viewer for supported image and video file
 * Added mute and replay function to video files
 * Auto mute video playing during 22:00 to 7:00
-* Resume video playback when interrupted
+* Resume video playback after interrupted
 * Fixed crash when viewing detail information of media file which is not yet uploaded
 * Other bugs fixed;
