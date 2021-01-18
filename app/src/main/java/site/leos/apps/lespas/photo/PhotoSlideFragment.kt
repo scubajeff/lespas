@@ -471,7 +471,7 @@ class PhotoSlideFragment : Fragment() {
                         this.onPrepared(it)
 
                         // Default mute the video playback during late night
-                        with(LocalDateTime.now().hour) { if (this > 22 || this < 7) setMute(true) }
+                        with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) setMute(true) }
                         // Restart playing after seek to last stop position
                         it.setOnSeekCompleteListener { mp-> mp.start() }
                     }
