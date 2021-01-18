@@ -37,7 +37,6 @@ import site.leos.apps.lespas.helper.HeaderItemDecoration
 import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -106,8 +105,8 @@ class CameraRollActivity : AppCompatActivity() {
             val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
             destinationModel.getDestination().observe(this, { album ->
                 // Acquire files
-                if (supportFragmentManager.findFragmentByTag(ShareReceiverActivity.TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(arrayListOf(currentMedia!!), album).show(supportFragmentManager, ShareReceiverActivity.TAG_ACQUIRING_DIALOG)
+                if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                    AcquiringDialogFragment.newInstance(arrayListOf(currentMedia!!), album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
@@ -604,6 +603,7 @@ class CameraRollActivity : AppCompatActivity() {
         private const val STOP_POSITION = "STOP_POSITION"
         private const val MUTE_STATUS = "MUTE_STATUS"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
+        const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         //const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
     }
 }
