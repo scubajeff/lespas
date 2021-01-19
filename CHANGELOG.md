@@ -1,3 +1,6 @@
+## Version 1.4.1
+* fixed crashes when sharing photo, setting photo as wallpaper and setting photo as album cover, when the photo is not yet synced to server
+
 ## Version 1.4
 * Can auto backup camera roll to Nextcloud server
 * Browse camera roll function, both in Les Pas app or launched in launcher
