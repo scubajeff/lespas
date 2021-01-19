@@ -1,0 +1,1 @@
+* correction de plantages lors du partage d'une photo, du paramétrage de la photo comme fond d'écran et du paramétrage de la photo comme couverture d'album, lorsque la photo n'est pas encore synchronisée avec le serveur

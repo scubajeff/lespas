@@ -1,0 +1,1 @@
+* se bloquea cuando se comparte una foto, se establece la foto como fondo de pantalla y se establece la foto como portada del álbum, cuando la foto aún no se ha sincronizado con el servidor

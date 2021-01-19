@@ -1,0 +1,1 @@
+* Abstürze bei der Freigabe von Fotos, beim Einstellen von Fotos als Hintergrundbild und beim Einstellen von Fotos als Albumcover behoben, wenn das Foto noch nicht mit dem Server synchronisiert ist
