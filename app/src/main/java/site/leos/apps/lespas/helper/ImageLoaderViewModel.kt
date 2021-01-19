@@ -15,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import kotlin.math.min
 
@@ -24,6 +25,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     private val jobMap = HashMap<Int, Job>()
+
+    private val photoRepository = PhotoRepository(application)
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
@@ -41,11 +44,17 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
         var bitmap: Bitmap? = null
-        var fileName = "$rootPath/${photo.id}"
+        var fileName = "${rootPath}/${photo.id}"
 
         if (!(File(fileName).exists())) {
-            fileName = "$rootPath/${photo.name}"
-            if (!(File(fileName).exists())) return errorBitmap
+            fileName = "${rootPath}/${photo.name}"
+            if (!(File(fileName).exists())) {
+                if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
+                    fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
+                    if (!File(fileName).exists()) return errorBitmap
+                }
+                else return errorBitmap
+            }
         }
 
         try {

@@ -396,7 +396,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             this.covers.apply {
                 clear()
                 albums.forEach { album ->
-                    this.add(Photo(album.cover, album.id, "", "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
+                    this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                 }
             }
             DiffUtil.calculateDiff(object : DiffUtil.Callback() {

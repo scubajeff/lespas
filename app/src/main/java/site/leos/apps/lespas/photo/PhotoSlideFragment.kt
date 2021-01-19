@@ -166,6 +166,15 @@ class PhotoSlideFragment : Fragment() {
                         withContext(Dispatchers.Main) { currentPhotoModel.setCurrentPhoto(nextPhoto, null) }
                         albumModel.removePhoto(it)
                         actionModel.addAction(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, it.id, it.name, System.currentTimeMillis(), 1))
+
+                        // Remove image file
+                        val rootPath = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+                        try {
+                            File(rootPath, it.id).delete()
+                        } catch(e: Exception) { e.printStackTrace() }
+                        try {
+                            File(rootPath, it.name).delete()
+                        } catch(e: Exception) { e.printStackTrace() }
                     }
                 }
             }

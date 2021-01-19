@@ -133,21 +133,32 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
-                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
-                    val mimeType = this.mimeType
+                    val privateName: String
+                    val publicName: String
+                    if (eTag.isNotEmpty()) {
+                        privateName = id
+                        publicName = name
+                    } else {
+                        privateName = name
+                        publicName = id
+                    }
+                    try {
+                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", privateName).copyTo(File(requireActivity().cacheDir, publicName), true, 4096)
+                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, publicName))
+                        val mimeType = this.mimeType
 
-                    startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = mimeType
-                                putExtra(Intent.EXTRA_STREAM, uri)
-                                clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
+                        startActivity(
+                            Intent.createChooser(
+                                Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = mimeType
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
+                            )
                         )
-                    )
+                    } catch(e: Exception) { e.printStackTrace() }
                 }
             }
         }
@@ -156,21 +167,32 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", id).copyTo(File(requireActivity().cacheDir, name), true, 4096)
-                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
-                    val mimeType = this.mimeType
+                    val privateName: String
+                    val publicName: String
+                    if (eTag.isNotEmpty()) {
+                        privateName = id
+                        publicName = name
+                    } else {
+                        privateName = name
+                        publicName = id
+                    }
+                    try {
+                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", privateName).copyTo(File(requireActivity().cacheDir, publicName), true, 4096)
+                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, publicName))
+                        val mimeType = this.mimeType
 
-                    startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_ATTACH_DATA
-                                setDataAndType(uri, mimeType)
-                                putExtra("mimeType", mimeType)
-                                //clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            }, null
+                        startActivity(
+                            Intent.createChooser(
+                                Intent().apply {
+                                    action = Intent.ACTION_ATTACH_DATA
+                                    setDataAndType(uri, mimeType)
+                                    putExtra("mimeType", mimeType)
+                                    //clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                }, null
+                            )
                         )
-                    )
+                    } catch(e: Exception) { e.printStackTrace() }
                 }
             }
         }

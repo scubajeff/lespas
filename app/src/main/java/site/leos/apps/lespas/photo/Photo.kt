@@ -76,4 +76,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
         delete(oldPhoto)
         insert(newPhoto)
     }
+
+    @Query("SELECT name FROM ${Photo.TABLE_NAME} WHERE id = :id")
+    abstract fun getName(id: String): String
 }
