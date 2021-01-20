@@ -354,8 +354,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                 for (i in selectionTracker.selection) {
                     with(mAdapter.getPhotoAt(i.toInt())) {
-                        File(filePath, id).copyTo(File(cachePath, name), true, 4096)
-                        uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
+                        val privateName: String
+                        val publicName: String
+                        if (eTag.isNotEmpty()) {
+                            privateName = id
+                            publicName = name
+                        } else {
+                            privateName = name
+                            publicName = id
+                        }
+                        File(filePath, privateName).copyTo(File(cachePath, publicName), true, 4096)
+                        uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, publicName)))
                     }
                 }
 
