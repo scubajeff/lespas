@@ -34,6 +34,7 @@ import kotlinx.android.synthetic.main.activity_camera_roll.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.HeaderItemDecoration
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -272,13 +273,15 @@ class CameraRollActivity : AppCompatActivity() {
                 }
                 */
                 var fileName = ""
-                val size: String
+                var fileSize: Long? = 0L
+                var size: String
                 when(uri.scheme) {
                     "content" -> {
                         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                             cursor.moveToFirst()
                             try {
                                 fileName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                                fileSize = cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE)).toLongOrNull()
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
@@ -297,12 +300,9 @@ class CameraRollActivity : AppCompatActivity() {
                     BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, this)
                 }
 
-                size = "${options.outWidth} × ${options.outHeight}"
                 if (fileName.isNotEmpty()) withContext(Dispatchers.Main) {
                     fileNameTextView.visibility = View.VISIBLE
-                    fileSizeTextView.visibility = View.VISIBLE
                     fileNameTextView.text = fileName
-                    fileSizeTextView.text = size
                 }
 
                 if (mimeType == "image/gif" || mimeType == "image/webp") {
@@ -322,6 +322,13 @@ class CameraRollActivity : AppCompatActivity() {
                 }
 
                 val rotation = if (mimeType == "image/jpeg" || mimeType == "image/tiff") ExifInterface(contentResolver.openInputStream(uri)!!).rotationDegrees else 0
+                size = if (rotation == 90 || rotation == 270) "${options.outHeight} × ${options.outWidth}" else "${options.outWidth} × ${options.outHeight}"
+                size += fileSize?.let { "  ${Tools.humanReadableByteCountSI(fileSize!!)}" }
+                if (size.isNotEmpty()) withContext(Dispatchers.Main) {
+                    fileSizeTextView.visibility = View.VISIBLE
+                    fileSizeTextView.text = size
+                }
+
                 var bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri)!!)
                 if (rotation != 0) bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
 
