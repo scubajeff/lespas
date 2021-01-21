@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -159,7 +160,12 @@ class PhotoSlideFragment : Fragment() {
         })
 
         currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, {
-             actionModel.deletePhotos(listOf(it), album.name)
+            it?.run {
+                pAdapter.getNextAvailablePhoto(it)?.let { nextPhoto->
+                    currentPhotoModel.setCurrentPhoto(nextPhoto, null)
+                    actionModel.deletePhotos(listOf(it), album.name)
+                }
+            }
         })
 
         savedInstanceState?.apply { videoStopPosition = getInt(STOP_POSITION) }
