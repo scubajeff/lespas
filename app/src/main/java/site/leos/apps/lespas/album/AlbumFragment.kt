@@ -79,7 +79,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(null).commit()
+                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(AlbumDetailFragment::class.simpleName).commit()
             }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
 
