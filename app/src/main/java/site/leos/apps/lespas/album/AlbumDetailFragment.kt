@@ -62,6 +62,7 @@ import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.*
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var album: Album
@@ -236,8 +237,24 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             // Get scroll position after scroll idle
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                private val hideDateIndicator = Runnable {
+                    TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 500 })
+                    dateIndicator.visibility = View.GONE
+                }
+
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
+
+                    // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
+                    hideHandler.removeCallbacksAndMessages(null)
+                    dateIndicator.apply {
+                        if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
+                            text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase(Locale.ROOT)
+                        else
+                            text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        visibility = View.VISIBLE
+                    }
+
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> {
                             with(currentPhotoModel) {
@@ -246,20 +263,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                                 setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
                             }
                             isScrolling = false
-                            if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed({
-                                TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 500 })
-                                dateIndicator.visibility = View.GONE
-                            }, 1000)
-                        }
-                        RecyclerView.SCROLL_STATE_DRAGGING-> {
-                            dateIndicator.apply {
-                                if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
-                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase()
-                                else
-                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                                visibility = View.VISIBLE
-                            }
-                            isScrolling = true
+
+                            // Hide the date indicator after showing it for 1 minute
+                            if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
                         }
                         else-> isScrolling = true
                     }

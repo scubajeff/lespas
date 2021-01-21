@@ -18,7 +18,7 @@
 
     <style name="DateIndicatorShape">
         <item name="cornerFamilyTopLeft">cut</item>
-        <item name="cornerSizeTopLeft">21dp</item>
+        <item name="cornerSizeTopLeft">19dp</item>
     </style>
 
 
