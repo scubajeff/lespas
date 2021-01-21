@@ -75,7 +75,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var isScrolling = false
-    private val hideHandler = Handler(Looper.getMainLooper())
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
@@ -237,6 +236,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
             // Get scroll position after scroll idle
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                private val hideHandler = Handler(Looper.getMainLooper())
                 private val hideDateIndicator = Runnable {
                     TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 500 })
                     dateIndicator.visibility = View.GONE
@@ -246,13 +246,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     super.onScrollStateChanged(recyclerView, newState)
 
                     // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
-                    hideHandler.removeCallbacksAndMessages(null)
-                    dateIndicator.apply {
-                        if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
-                            text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase(Locale.ROOT)
-                        else
-                            text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        visibility = View.VISIBLE
+                    ((layoutManager as GridLayoutManager)).run {
+                        if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
+                            hideHandler.removeCallbacksAndMessages(null)
+                            dateIndicator.apply {
+                                if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
+                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase(Locale.ROOT)
+                                else
+                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                visibility = View.VISIBLE
+                            }
+                        }
                     }
 
                     when(newState) {
