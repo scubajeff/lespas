@@ -10,6 +10,7 @@ Features:
 * Simple, beautiful and fast photos & videos viewing
 * View picture details
 * Organized albums
+* Manage your phone's camera roll and auto backup to server
 * Integrate Snapseed for photo editing
 * Share to social networks
 * Theme design inspired by Wes Anderson's works

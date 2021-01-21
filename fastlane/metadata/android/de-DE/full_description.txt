@@ -4,6 +4,7 @@ Funktionen:
 - Einfaches, schönes und schnelles Betrachten von Fotos und Videos
 - Ansicht von Bilddetails
 - Organisierte Alben
+- Verwalten der Kamerarolle Ihres Telefons und automatische Sicherung auf dem Server
 - Integration mit Snapseed zur Fotobearbeitung
 - Teilen in sozialen Netzwerken
 - Themendesign inspiriert von den Werken von Wes Anderson

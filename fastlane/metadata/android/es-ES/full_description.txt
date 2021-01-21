@@ -4,6 +4,7 @@ Características:
 - Visualización de fotos y vídeos sencilla, bonita y rápida
 - Ver detalles de la foto
 - Álbumes organizados
+- Administra el rollo de cámara de tu teléfono y la copia de seguridad automática al servidor
 - Integrar con Snapseed para la edición de fotos
 - Compartir a las redes sociales
 - Diseño temático inspirado en las obras de Wes Anderson

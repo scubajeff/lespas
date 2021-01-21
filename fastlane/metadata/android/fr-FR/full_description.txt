@@ -4,6 +4,7 @@ Caractéristiques :
 - Visualisation simple, belle et rapide des photos et des vidéos
 - Voir les détails de l'image
 - Albums organisés
+- Gérer le rouleau de l'appareil photo de votre téléphone portable et la sauvegarde automatique sur le serveur
 - Intégration avec Snapseed pour le montage photo
 - Partager sur les réseaux sociaux
 - Thème inspiré des travaux de Wes Anderson
