@@ -19,8 +19,30 @@
             android:paddingLeft="1dp"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="@integer/photo_grid_span_count"
-            tools:listitem="@layout/recyclerview_item_photo"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
+            tools:ignore="RtlHardcoded,RtlSymmetry"
+            tools:layout_editor_absoluteX="16dp"
+            tools:layout_editor_absoluteY="-32dp"
+            tools:listitem="@layout/recyclerview_item_photo" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/date_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="@dimen/tiny_padding"
+            android:minHeight="2dp"
+            android:minWidth="0dp"
+            android:paddingStart="28dp"
+            android:backgroundTint="@color/color_error"
+            android:includeFontPadding="false"
+            android:clickable="false"
+            android:textSize="11sp"
+            android:textColor="@color/color_text_dark"
+            app:shapeAppearance="@style/DateIndicatorShape"
+            android:visibility="gone"
+            tools:text="1999.12.31"
+            tools:ignore="RtlSymmetry" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

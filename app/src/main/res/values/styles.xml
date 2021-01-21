@@ -16,4 +16,10 @@
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
 
+    <style name="DateIndicatorShape">
+        <item name="cornerFamilyTopLeft">cut</item>
+        <item name="cornerSizeTopLeft">21dp</item>
+    </style>
+
+
 </resources>

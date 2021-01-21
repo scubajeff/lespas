@@ -12,6 +12,8 @@ import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -30,8 +32,12 @@ import androidx.recyclerview.selection.SelectionTracker.Builder
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.transition.Fade
+import androidx.transition.TransitionManager
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
+import kotlinx.android.synthetic.main.fragment_albumdetail.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
@@ -55,17 +61,20 @@ import java.io.File
 import java.lang.Thread.sleep
 import java.time.Duration
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener, AlbumRenameDialogFragment.OnFinishListener {
     private lateinit var album: Album
     private var actionMode: ActionMode? = null
     private lateinit var stub: View
     private lateinit var recyclerView: RecyclerView
+    private lateinit var dateIndicator: MaterialButton
     private lateinit var mAdapter: PhotoGridAdapter
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
     private var isScrolling = false
+    private val hideHandler = Handler(Looper.getMainLooper())
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
@@ -119,6 +128,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
         stub = vg.findViewById(R.id.stub)
+        dateIndicator = vg.findViewById(R.id.date_indicator)
         recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
             // Stop item from blinking when notifying changes
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
@@ -236,6 +246,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                                 setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
                             }
                             isScrolling = false
+                            if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed({
+                                TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 500 })
+                                dateIndicator.visibility = View.GONE
+                            }, 1000)
+                        }
+                        RecyclerView.SCROLL_STATE_DRAGGING-> {
+                            dateIndicator.apply {
+                                if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
+                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase()
+                                else
+                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                visibility = View.VISIBLE
+                            }
+                            isScrolling = true
                         }
                         else-> isScrolling = true
                     }
@@ -675,6 +699,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         override fun getItemId(position: Int): Long = position.toLong()
+
+        fun getItemByPosition(position: Int): Photo = photos[position]
 
         override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
             super.onViewAttachedToWindow(holder)
