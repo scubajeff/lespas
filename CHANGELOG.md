@@ -1,3 +1,6 @@
+## Version 1.4.2
+* Bugs fixed and other enhancements
+
 ## Version 1.4
 * Can auto backup camera roll to Nextcloud server
 * Browse camera roll function, both in Les Pas app or launched in launcher
