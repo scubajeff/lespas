@@ -39,6 +39,7 @@
             android:clickable="false"
             android:textSize="11sp"
             android:textColor="@color/color_text_dark"
+            android:textAllCaps="false"
             app:shapeAppearance="@style/DateIndicatorShape"
             android:visibility="gone"
             tools:text="1999.12.31"

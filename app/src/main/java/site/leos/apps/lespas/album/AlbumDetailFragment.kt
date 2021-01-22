@@ -250,10 +250,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                             hideHandler.removeCallbacksAndMessages(null)
                             dateIndicator.apply {
-                                if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
-                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1).toUpperCase(Locale.ROOT)
+                                text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
+                                    mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1)
                                 else
-                                    text = mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                    mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
                                 visibility = View.VISIBLE
                             }
                         }
