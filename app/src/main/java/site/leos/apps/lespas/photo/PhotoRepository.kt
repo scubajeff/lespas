@@ -30,4 +30,5 @@ class PhotoRepository(application: Application) {
     }
     fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
+    suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
 }

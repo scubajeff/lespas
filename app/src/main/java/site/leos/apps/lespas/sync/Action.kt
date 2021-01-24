@@ -26,6 +26,8 @@ data class Action (
        const val ACTION_ADD_DIRECTORY_ON_SERVER = 4
        const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
        const val ACTION_RENAME_DIRECTORY = 6
+       const val ACTION_RENAME_FILE = 7
+       const val ACTION_UPDATE_FILE = 8
    }
 }
 

@@ -4,13 +4,18 @@ import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -30,26 +35,20 @@ import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import androidx.work.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.android.synthetic.main.recyclerview_item_photo.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.ShareChooserBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VolumeControlVideoView
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
-import java.lang.Thread.sleep
 import java.time.LocalDateTime
-import java.util.*
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -63,14 +62,17 @@ class PhotoSlideFragment : Fragment() {
     private var autoRotate = false
     private var previousNavBarColor = 0
     private lateinit var sp: SharedPreferences
+
     //private var originalItem: Photo? = null
-    private val snapseedCatcher = ShareChooserBroadcastReceiver()
+    private lateinit var snapseedCatcher: BroadcastReceiver
+    private lateinit var snapseedOutputObserver: ContentObserver
+
     private var videoStopPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable<Album>(ALBUM)!!
+        album = arguments?.getParcelable(KEY_ALBUM)!!
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -87,7 +89,60 @@ class PhotoSlideFragment : Fragment() {
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
+        // Broadcast receiver listening on share destination
+        snapseedCatcher = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                    // Shared to Snapseed. Register content observer if we have storage permission and integration with snapseed option is on
+                    if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                        requireActivity().contentResolver.unregisterContentObserver(snapseedOutputObserver)
+                        requireActivity().contentResolver.registerContentObserver(
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            true,
+                            snapseedOutputObserver
+                        )
+                    }
+                }
+            }
+        }
         context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+
+        // Content observer looking for Snapseed output
+        snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            private var lastId = ""
+            private lateinit var snapseedWork: WorkRequest
+
+            override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
+                super.onChange(selfChange, uri, flags)
+
+                if (uri?.lastPathSegment!! != lastId) {
+                    lastId = uri.lastPathSegment!!
+
+                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(KEY_IMAGE_URI to uri.toString(), KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, KEY_ALBUM to album.id)).build()
+                    WorkManager.getInstance(requireContext()).enqueue(snapseedWork)
+
+                    WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWork.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                        if (workInfo != null && workInfo.state.isFinished) {
+                            if (workInfo.outputData.getBoolean(KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
+                            /*
+                            workInfo.outputData.getString(KEY_NEW_PHOTO_ID)?.also {
+                                if (it.isNotEmpty()) {
+                                    CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
+                                        val newPhoto = albumModel.getPhotoById(it)
+                                        withContext(Dispatchers.Main) {currentPhotoModel.setCurrentPhoto(newPhoto, null)
+                                        Log.e(">>>>", "new photo set as current photo")}
+                                    }
+                                }
+                            }
+                             */
+                        }
+                    })
+                }
+
+                requireContext().contentResolver.unregisterContentObserver(this)
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -188,11 +243,6 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
-        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-            sp.getBoolean(getString(R.string.snapseed_pref_key), false) &&
-            snapseedCatcher.getDest() == "snapseed")
-                checkSnapseed()
     }
 
     override fun onPause() {
@@ -217,10 +267,137 @@ class PhotoSlideFragment : Fragment() {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         requireActivity().window.navigationBarColor = previousNavBarColor
 
-        context?.unregisterReceiver(snapseedCatcher)
+        requireContext().apply {
+            unregisterReceiver(snapseedCatcher)
+            contentResolver.unregisterContentObserver(snapseedOutputObserver)
+        }
+
         currentPhotoModel.clearRemoveItem()
     }
 
+    class SnapseedResultWorker(private val context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
+        @Suppress("DEPRECATION")
+        private val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        private val appRootFolder = "${context.filesDir}${context.getString(R.string.lespas_base_folder_name)}"
+
+        override suspend fun doWork(): Result {
+            var imagePath = ""
+            var imageName = ""
+            val photoDao = LespasDatabase.getDatabase(context).photoDao()
+            val albumDao = LespasDatabase.getDatabase(context).albumDao()
+            val actionDao = LespasDatabase.getDatabase(context).actionDao()
+            val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
+            val sharedPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
+            val album = albumDao.getAlbumById(inputData.keyValueMap[KEY_ALBUM] as String)
+            val outputInvalidCache: Pair<String, Boolean>
+
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                cursor.moveToFirst()
+                imagePath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
+                imageName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+            }
+            if (imagePath.contains("Snapseed/")) {
+                // If this is under Snapseed's folder
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.snapseed_replace_pref_key), false)) {
+                    /* Replace the original */
+
+                    // Copy new file to our private storage area
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            // Name new photo filename after Snapseed's output name
+                            File(appRootFolder, sharedPhoto.id).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Quit when exception happens during file copy
+                        return Result.failure()
+                    }
+                    // Make a copy of this file after imageName so that when new eTag synced back from server, SyncAdapter can use this to replace the file named after id, kind of stupid but...
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            // Name new photo filename after Snapseed's output name
+                            File(appRootFolder, imageName).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Quit when exception happens during file copy
+                        return Result.failure()
+                    }
+                    // Remove file named after old photo name if any
+                    try {
+                        File(appRootFolder, sharedPhoto.name).delete()
+                    } catch (e: Exception) { e.printStackTrace() }
+
+                    // Update local database
+                    val newPhoto = with(imageName) {
+                        Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = sharedPhoto.id, albumId = album.id, name = this, eTag = sharedPhoto.eTag, shareId = sharedPhoto.shareId)
+                    }
+                    //photoDao.replacePhoto(sharedPhoto, newPhoto)
+                    photoDao.update(newPhoto)
+
+                    // Update server
+                    with(mutableListOf<Action>()) {
+                        // Rename file to new filename on server
+                        add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, sharedPhoto.name, imageName, System.currentTimeMillis(), 1))
+                        // Upload new photo to server. Photo mimeType passed in folderId property
+                        add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
+                        //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
+                        actionDao.insert(this)
+                    }
+
+                    // Invalid image cache to show new image
+                    outputInvalidCache = KEY_INVALID_OLD_PHOTO_CACHE to true
+                }
+                else {
+                    /* Copy Snapseed output */
+
+                    // Append content uri _id as suffix to make a unique filename
+                    val fileName = "${imageName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${imageName.substringAfterLast('.')}"
+
+                    // Copy file to our private storage area
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            File(appRootFolder, fileName).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        return Result.failure()
+                    }
+
+                    // Create new photo in local database
+                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
+
+                    // Upload changes to server, mimetype passed in folderId property
+                    actionDao.insert(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
+
+                    // No need to invalid original image
+                    outputInvalidCache = KEY_INVALID_OLD_PHOTO_CACHE to false
+                }
+
+                // Remove cache copy
+                try {
+                    File(context.cacheDir, sharedPhoto.name).delete()
+                } catch (e: Exception) { e.printStackTrace() }
+
+                // Remove snapseed output
+                context.contentResolver.delete(uri, null, null)
+                return Result.success(workDataOf(outputInvalidCache))
+            }
+
+            return Result.failure()
+        }
+    }
+
+    /*
     private fun checkSnapseed() {
         CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
             val photo = pAdapter.getPhotoAt(slider.currentItem)
@@ -386,6 +563,7 @@ class PhotoSlideFragment : Fragment() {
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
+     */
 
     class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val stopPositionHolder: StopPositionHolder, private val imageLoader: OnLoadImage
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -646,22 +824,26 @@ class PhotoSlideFragment : Fragment() {
 
     // Share system ui visibility status with BottomControlsFragment
     class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData<Boolean>(true)
+        private val showUI = MutableLiveData(true)
 
+        @Suppress("unused")
         fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
         fun status(): LiveData<Boolean> { return showUI }
     }
 
     companion object {
-        private const val ALBUM = "ALBUM"
         private const val STOP_POSITION = "STOP_POSITION"
-        private const val MUTE_STATE = "MUTE_STATE"
         const val JPEG = "image/jpeg"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
-        fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(ALBUM, album) }}
+        const val KEY_IMAGE_URI = "IMAGE_URI"
+        const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
+        const val KEY_ALBUM = "ALBUM"
+        const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
+
+        fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(KEY_ALBUM, album) }}
     }
 }
 

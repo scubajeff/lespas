@@ -94,6 +94,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
+                            Action.ACTION_UPDATE_FILE -> {
+                                // MIME type is passed in folderId property
+                                val localFile = File(localRootFolder, action.fileName)
+                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
+                            }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                                 with("$resourceRoot/${Uri.encode(action.folderName)}") {
                                     try {
@@ -121,9 +126,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 TODO()
                             }
                             Action.ACTION_RENAME_DIRECTORY -> {
-                                // Action's filename field is the new directory name
+                                // Action's folderName property is the old name, fileName property is the new name
                                 sardine.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
                                 //albumRepository.changeName(action.folderId, action.fileName)
+                            }
+                            Action.ACTION_RENAME_FILE -> {
+                                // Action's fileId property is the old name, fileName property is the new name
+                                sardine.move("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
                             }
                         }
                     } catch (e: SardineException) {

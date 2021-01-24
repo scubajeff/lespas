@@ -81,5 +81,5 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun getName(id: String): String
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
-    abstract fun getPhotoById(photoId: String): Photo
+    abstract suspend fun getPhotoById(photoId: String): Photo
 }
