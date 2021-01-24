@@ -124,7 +124,13 @@ class PhotoSlideFragment : Fragment() {
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWork.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null && workInfo.state.isFinished) {
-                            if (workInfo.outputData.getBoolean(KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
+                            if (workInfo.outputData.getBoolean(KEY_INVALID_OLD_PHOTO_CACHE, false)) {
+                                with(pAdapter.getPhotoAt(slider.currentItem)) {
+                                    imageLoaderModel.invalid(this)
+                                    // TODO what if the database is not updated yet, pAdapter.getPhotoAt will return old information
+                                    currentPhotoModel.setCurrentPhoto(this, null)
+                                }
+                            }
                             /*
                             workInfo.outputData.getString(KEY_NEW_PHOTO_ID)?.also {
                                 if (it.isNotEmpty()) {
@@ -344,7 +350,7 @@ class PhotoSlideFragment : Fragment() {
                     // Update server
                     with(mutableListOf<Action>()) {
                         // Rename file to new filename on server
-                        add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, sharedPhoto.name, imageName, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, sharedPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                         // Upload new photo to server. Photo mimeType passed in folderId property
                         add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
                         //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
