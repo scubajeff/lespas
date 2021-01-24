@@ -20,9 +20,18 @@ android {
         archivesBaseName = "LesPas-v$versionName"
         resValue "string", "sync_authority", "${applicationId}.StubProvider"
         resValue "string", "file_authority", "${applicationId}.fileProvider"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.incremental":"true"]
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            ext.enableCrashlytics = false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
