@@ -112,7 +112,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
 
         // Controls
-        controls = view.findViewById(R.id.controls)
+        controls = view.findViewById(R.id.base_controls)
         more_controls = view.findViewById(R.id.more_controls)
         remove_button = view.findViewById(R.id.remove_button)
 
@@ -230,9 +230,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
             if (currentPhotoModel.forReal()) {
                 Snackbar
-                    .make(controls, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+                    .make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-                    .setAnchorView(controls)
+                    //.setAnchorView(window.decorView.rootView)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
                     .setTextColor(resources.getColor(R.color.color_text_light, null))
                     .show()
