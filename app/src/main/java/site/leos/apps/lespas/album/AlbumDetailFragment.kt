@@ -10,7 +10,6 @@ import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
-import android.provider.OpenableColumns
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -36,17 +35,16 @@ import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
-import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.time.Duration
@@ -140,12 +138,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 if (uri?.lastPathSegment!! != lastId) {
                     lastId = uri.lastPathSegment!!
 
-                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(KEY_IMAGE_URI to uri.toString(), KEY_SHARED_PHOTO to sharedPhoto.id, KEY_ALBUM to album.id)).build()
+                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
+                        workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     WorkManager.getInstance(requireContext()).enqueue(snapseedWork)
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWork.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null && workInfo.state.isFinished) {
-                            if (workInfo.outputData.getBoolean(KEY_INVALID_SHAREDPHOTO, false)) imageLoaderModel.invalid(sharedPhoto)
+                            if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
+                                imageLoaderModel.invalid(sharedPhoto)
+                                mAdapter.refreshPhoto(sharedPhoto)
+                            }
                         }
                     })
                 }
@@ -471,108 +473,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
     }
 
-    class SnapseedResultWorker(private val context: Context, workerParams: WorkerParameters) : CoroutineWorker(context, workerParams) {
-        @Suppress("DEPRECATION")
-        private val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        private val appRootFolder = "${context.filesDir}${context.getString(R.string.lespas_base_folder_name)}"
-
-        override suspend fun doWork(): Result {
-            var imagePath = ""
-            var imageName = ""
-            val photoDao = LespasDatabase.getDatabase(context).photoDao()
-            val albumDao = LespasDatabase.getDatabase(context).albumDao()
-            val actionDao = LespasDatabase.getDatabase(context).actionDao()
-            val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
-            val sharedPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
-            val album = albumDao.getAlbumById(inputData.keyValueMap[KEY_ALBUM] as String)
-            val output: Data
-
-            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                cursor.moveToFirst()
-                imagePath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
-                imageName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-            }
-            if (imagePath.contains("Snapseed/")) {
-                // If this is under Snapseed's folder
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.snapseed_replace_pref_key), false)) {
-                    // Replace the original
-                    try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            // Name new photo filename after Snapseed's output name
-                            File(appRootFolder, imageName).outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        // Quit when exception happens during file copy
-                        return Result.failure()
-                    }
-                    val newPhoto = with(imageName) { Tools.getPhotoParams("$appRootFolder/$this", PhotoSlideFragment.JPEG, this).copy(id = this, albumId = album.id, name = this) }
-                    photoDao.replacePhoto(sharedPhoto, newPhoto)
-                    // Fix album cover Id if required
-                    if (album.cover == sharedPhoto.id)
-                        albumDao.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
-                    // Invalid image cache
-                    output = workDataOf(KEY_INVALID_SHAREDPHOTO to true)
-                    // Delete old image file, TODO: the file might be using by some other process, like uploading to server
-                    try {
-                        File(appRootFolder, if (sharedPhoto.eTag.isEmpty()) sharedPhoto.id else sharedPhoto.name).delete()
-                    } catch (e: Exception) { e.printStackTrace() }
-
-
-                    // Add newPhoto, delete old photo remotely
-                    with(mutableListOf<Action>()) {
-                        // Pass photo mimeType in Action's folderId property
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
-                        actionDao.insert(this)
-                    }
-                }
-                else {
-                    // Copy Snapseed output
-
-                    // Append content uri _id as suffix to make a unique filename
-                    val fileName = "${imageName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${imageName.substringAfterLast('.')}"
-
-                    try {
-                        @Suppress("BlockingMethodInNonBlockingContext")
-                        context.contentResolver.openInputStream(uri)?.use { input ->
-                            File(appRootFolder, fileName).outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        return Result.failure()
-                    }
-
-                    // Create new photo
-                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", PhotoSlideFragment.JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
-
-                    // Upload changes to server, mimetype passed in folderId property
-                    actionDao.insert(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, PhotoSlideFragment.JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
-                    output = workDataOf(KEY_INVALID_SHAREDPHOTO to false)
-                }
-
-                // Remove cache copy
-                try {
-                    File(context.cacheDir, sharedPhoto.name).delete()
-                } catch (e: Exception) { e.printStackTrace() }
-
-                // Remove snapseed output
-                context.contentResolver.delete(uri, null, null)
-                return Result.success(output)
-            }
-
-            return Result.failure()
-        }
-    }
-
     // Adpater for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdater: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -598,7 +500,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             fun bindViewItem() {
                 with(itemView) {
                     photos.firstOrNull()?.let {
-                        imageLoader.loadImage(it, findViewById<ImageView>(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
+                        imageLoader.loadImage(it, findViewById(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
                     }
 
                     findViewById<TextView>(R.id.title).text = photos[0].name
@@ -722,6 +624,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         override fun getItemId(position: Int): Long = position.toLong()
 
+        fun refreshPhoto(sharedPhoto: Photo) {
+            notifyItemChanged(photos.indexOfLast { it.id == sharedPhoto.id })
+            if (sharedPhoto.id == photos[0].id) notifyItemChanged(0)
+        }
+
         override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
             super.onViewAttachedToWindow(holder)
             if (holder is CoverViewHolder) {
@@ -766,10 +673,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 
-        const val KEY_IMAGE_URI = "IMAGE_URI"
-        const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
         const val KEY_ALBUM = "ALBUM"
-        const val KEY_INVALID_SHAREDPHOTO = "INVALID_SHAREDPHOTO"
 
         fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(KEY_ALBUM, album) }}
     }
