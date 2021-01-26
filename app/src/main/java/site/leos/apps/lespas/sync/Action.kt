@@ -44,4 +44,8 @@ abstract class ActionDao: BaseDao<Action>() {
 
     @Query("SELECT COUNT(*) FROM ${Action.TABLE_NAME}")
     abstract fun getPendingTotal(): Int
+
+    @Query("UPDATE ${Action.TABLE_NAME} SET fileName = :coverId WHERE folderId = :albumId AND action = ${Action.ACTION_ADD_DIRECTORY_ON_SERVER}")
+    // cover id is stored in fileName property
+    abstract suspend fun updateCover(albumId: String, coverId: String)
 }

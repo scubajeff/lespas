@@ -97,4 +97,6 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
         // TODO how to properly inform user that name already existed?
     }
+
+    fun updateCover(albumId: String, coverId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateCover(albumId, coverId) }}
 }

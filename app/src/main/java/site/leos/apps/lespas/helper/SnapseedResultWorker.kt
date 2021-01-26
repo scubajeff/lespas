@@ -41,20 +41,24 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 /* Replace the original */
 
                 // Copy new file to our private storage area
-                try {
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    context.contentResolver.openInputStream(uri)?.use { input ->
-                        // Name new photo filename after Snapseed's output name
-                        File(appRootFolder, sharedPhoto.id).outputStream().use { output ->
-                            input.copyTo(output)
+                if (sharedPhoto.eTag.isNotEmpty()) {
+                    // if it's already uploaded, make a copy with id as name, so that new content will show on phone immediately
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            // Name new photo filename after Snapseed's output name
+                            File(appRootFolder, sharedPhoto.id).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Quit when exception happens during file copy
+                        return Result.failure()
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    // Quit when exception happens during file copy
-                    return Result.failure()
                 }
-                // Make a copy of this file after imageName so that when new eTag synced back from server, SyncAdapter can use this to replace the file named after id, kind of stupid but...
+                // Make a copy of this file after imageName, e.g. the photo name, so that when new eTag synced back from server, file will not need to be downloaded
+                // If we share this photo to Snapseed again, the share function will use this new name, then snapseed will append another "-01" to the result filename
                 try {
                     @Suppress("BlockingMethodInNonBlockingContext")
                     context.contentResolver.openInputStream(uri)?.use { input ->
@@ -68,15 +72,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Quit when exception happens during file copy
                     return Result.failure()
                 }
-                // Remove file named after old photo name if any
+                // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any
                 try {
                     File(appRootFolder, sharedPhoto.name).delete()
                 } catch (e: Exception) { e.printStackTrace() }
 
                 // Update local database
-                val newPhoto = with(imageName) {
-                    Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = sharedPhoto.id, albumId = album.id, name = this, eTag = sharedPhoto.eTag, shareId = sharedPhoto.shareId)
-                }
+                val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(id = sharedPhoto.id, albumId = album.id, name = imageName, eTag = sharedPhoto.eTag, shareId = sharedPhoto.shareId)
                 photoDao.update(newPhoto)
 
                 // Update server
@@ -84,7 +86,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Rename file to new filename on server
                     add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, sharedPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                     // Upload new photo to server. Photo mimeType passed in folderId property
-                    add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
+                    add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
                     //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
                     actionDao.insert(this)
                 }
@@ -95,7 +97,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
             else {
                 /* Copy Snapseed output */
 
-                // Append content uri _id as suffix to make a unique filename
+                // Append content uri _id as suffix to make a unique filename, this will be use as both fileId and filename
                 val fileName = "${imageName.substringBeforeLast('.')}_${uri.lastPathSegment!!}.${imageName.substringAfterLast('.')}"
 
                 // Copy file to our private storage area
