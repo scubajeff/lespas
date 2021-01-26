@@ -4,13 +4,17 @@ import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.database.ContentObserver
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.provider.MediaStore
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -30,26 +34,22 @@ import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkRequest
+import androidx.work.workDataOf
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.android.synthetic.main.recyclerview_item_photo.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.ShareChooserBroadcastReceiver
+import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VolumeControlVideoView
-import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
-import java.lang.Thread.sleep
 import java.time.LocalDateTime
-import java.util.*
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -63,14 +63,16 @@ class PhotoSlideFragment : Fragment() {
     private var autoRotate = false
     private var previousNavBarColor = 0
     private lateinit var sp: SharedPreferences
-    //private var originalItem: Photo? = null
-    private val snapseedCatcher = ShareChooserBroadcastReceiver()
+
+    private lateinit var snapseedCatcher: BroadcastReceiver
+    private lateinit var snapseedOutputObserver: ContentObserver
+
     private var videoStopPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable<Album>(ALBUM)!!
+        album = arguments?.getParcelable(KEY_ALBUM)!!
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -87,7 +89,59 @@ class PhotoSlideFragment : Fragment() {
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
+        // Broadcast receiver listening on share destination
+        snapseedCatcher = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                    // Shared to Snapseed. Register content observer if we have storage permission and integration with snapseed option is on
+                    if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                        requireActivity().contentResolver.unregisterContentObserver(snapseedOutputObserver)
+                        requireActivity().contentResolver.registerContentObserver(
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                            true,
+                            snapseedOutputObserver
+                        )
+                    }
+                }
+            }
+        }
         context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+
+        // Content observer looking for Snapseed output
+        snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            private var lastId = ""
+            private lateinit var snapseedWorker: WorkRequest
+
+            override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
+                super.onChange(selfChange, uri, flags)
+
+                // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
+                if (uri?.lastPathSegment!! != lastId) {
+                    lastId = uri.lastPathSegment!!
+
+                    snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
+                        workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
+                    WorkManager.getInstance(requireContext()).enqueue(snapseedWorker)
+
+                    WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWorker.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                        if (workInfo != null && workInfo.state.isFinished) {
+                            if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
+                                with(pAdapter.getPhotoAt(slider.currentItem)) {
+                                    // Invalid cache and update current photo model value to show new photo
+                                    imageLoaderModel.invalid(this)
+                                    // TODO what if the database is not updated yet, pAdapter.getPhotoAt will return old information
+                                    currentPhotoModel.setCurrentPhoto(this, null)
+                                    pAdapter.refreshPhoto(this)
+                                }
+                            }
+                        }
+                    })
+                }
+
+                requireContext().contentResolver.unregisterContentObserver(this)
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -137,24 +191,6 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
-            /*
-            // TODO stupid hack to test if new photo added by snapseed, since observer get called twice, must be sth. to do with miss fired
-            val c1 = pAdapter.itemCount
-            pAdapter.setPhotos(photos, arguments?.getString(SORT_ORDER)!!.toInt())
-            val c2 = pAdapter.itemCount
-            if (originalItem != null && c1 != c2) {
-                // Scroll to original after new snapseed output added
-                val oldPosition = currentPhotoModel.getCurrentPosition()
-                val newPosition = pAdapter.findPhotoPosition(originalItem!!) + 1
-                if (newPosition != oldPosition) {
-                    currentPhotoModel.setCurrentPosition(newPosition)
-                    currentPhotoModel.setFirstPosition(currentPhotoModel.getFirstPosition() + newPosition - oldPosition)
-                    currentPhotoModel.setLastPosition(currentPhotoModel.getLastPosition() + newPosition - oldPosition)
-                }
-                originalItem = null
-            }
-            slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
-             */
             pAdapter.setPhotos(photos, album.sortOrder)
             slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
         })
@@ -188,11 +224,6 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
-        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-            sp.getBoolean(getString(R.string.snapseed_pref_key), false) &&
-            snapseedCatcher.getDest() == "snapseed")
-                checkSnapseed()
     }
 
     override fun onPause() {
@@ -217,174 +248,12 @@ class PhotoSlideFragment : Fragment() {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         requireActivity().window.navigationBarColor = previousNavBarColor
 
-        context?.unregisterReceiver(snapseedCatcher)
-        currentPhotoModel.clearRemoveItem()
-    }
-
-    private fun checkSnapseed() {
-        CoroutineScope(Dispatchers.Default).launch(Dispatchers.IO) {
-            val photo = pAdapter.getPhotoAt(slider.currentItem)
-            val snapseedFile = File("${Environment.getExternalStorageDirectory().absolutePath}/Snapseed/${photo.name.substringBeforeLast('.')}-01.jpeg")
-            val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
-
-            // Clear flag
-            snapseedCatcher.clearFlag()
-
-            // Wait at most 500ms for Snapseed output file
-            val t = System.currentTimeMillis()
-            while(!snapseedFile.exists()) {
-                sleep(100)
-                if (System.currentTimeMillis() - t > 500) break
-            }
-
-            if (snapseedFile.exists()) {
-                //Log.e(">>>>>>", "file ${snapseedFile.absolutePath} exist")
-
-                /*
-                if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
-                    // Replace the original
-
-                    val lastModified = Tools.dateToLocalDateTime(Date(snapseedFile.lastModified()))
-                    // Compare file size to to make sure it's a new edition
-                    if (snapseedFile.length() != File(appRootFolder, photo.id).length()) {
-                        //Log.e(">>>>>>>", "file ${snapseedFile.absolutePath} is a different edition")
-
-                        val actions = mutableListOf<Action>()
-                        // Snapseed use JPEG format for output
-                        var newName = photo.name
-                        if (photo.mimeType != JPEG) {
-                            newName = photo.name.substringBeforeLast('.') + ".jpeg"
-                            //Log.e(">>>>>>", "old file ${photo.name} will be deleted, new file $newName will be created on both side")
-                        }
-
-                        try {
-                            snapseedFile.inputStream().use { input ->
-                                File(appRootFolder, newName).outputStream().use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            return@launch
-                        }
-
-                        //Log.e(">>>>", "${snapseedFile.absolutePath} replaced $appRootFolder/$newName")
-
-                        // Invalid image cache
-                        imageLoaderModel.invalid(photo)
-
-                        // Get image width and height, in case Snapseed crop it
-                        val options = BitmapFactory.Options().apply {
-                            inJustDecodeBounds = true
-                            BitmapFactory.decodeFile("$appRootFolder/$newName", this)
-                        }
-
-                        // Replace photo id with photo name, and empty eTag, make it like it's a newly acquired photo and follow that process to sync with server
-                        albumModel.updatePhoto(photo.id, newName, lastModified, options.outWidth, options.outHeight, JPEG)
-                        // Fix album cover Id if required
-                        // TODO cover baseline, width, height might need to change if user crop the photo in Snapseed
-                        if (album.cover == photo.id) albumModel.fixCoverId(album.id, newName)
-
-                        // Upload changes to server, mimetype passed in fileId property
-                        actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, album.id, album.name, JPEG, newName, System.currentTimeMillis(), 1))
-                        // If the original photo is not JPEG, we need to delete the original on server side. e.g. new edition will be a new file rather than update
-                        if (photo.mimeType != JPEG)
-                            actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
-                        actionModel.addActions(actions)
-
-                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
-                        currentPhotoModel.setCurrentPhoto(
-                            photo.copy(id = newName, width = options.outWidth, height = options.outHeight, lastModified = lastModified, mimeType = JPEG), null)
-
-                        // New file with new fileId will be sync from server, remove old file on local
-                        if (photo.mimeType != JPEG)
-                            try {
-                                File(appRootFolder, photo.id).delete()
-                            } catch (e: Exception) { e.printStackTrace() }
-                    }
-                */
-                if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
-                    // Replace the original
-
-                    // Compare file size, make sure it's a different edition
-                    if (snapseedFile.length() != File(appRootFolder, photo.id).length()) {
-                        try {
-                            snapseedFile.inputStream().use { input->
-                                // Name new photo filename after Snapseed's output name
-                                File(appRootFolder, snapseedFile.name).outputStream().use { output->
-                                    input.copyTo(output)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Quit when exception happens during file copy
-                            return@launch
-                        }
-
-                        // Add newPhoto, delete old photo locally
-                        val newPhoto = with(snapseedFile.name) { Tools.getPhotoParams("$appRootFolder/$this", JPEG, this).copy(id = this, albumId = album.id, name = this) }
-                        //originalItem = newPhoto
-
-                        albumModel.replacePhoto(photo, newPhoto)
-                        // Fix currentPhotoModel data, since viewpager2 won't scroll when setting current item to the same item as before
-                        withContext(Dispatchers.Main) {currentPhotoModel.setCurrentPhoto(newPhoto, null)}
-                        // Fix album cover Id if required
-                        if (album.cover == photo.id)
-                            albumModel.replaceCover(album.id, newPhoto.id, newPhoto.width, newPhoto.height, (album.coverBaseline.toFloat() * newPhoto.height / album.coverHeight).toInt())
-                        // Clear image cache for old photo
-                        imageLoaderModel.invalid(photo)
-                        // Delete old image file, TODO: the file might be using by some other process, like uploading to server
-                        try {
-                            File(appRootFolder, photo.id).delete()
-                        } catch (e: Exception) { e.printStackTrace() }
-
-
-                        // Add newPhoto, delete old photo remotely
-                        with(mutableListOf<Action>()) {
-                            // Pass photo mimeType in Action's folderId property
-                            add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
-                            add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, photo.id, photo.name, System.currentTimeMillis(), 1))
-                            actionModel.addActions(this)
-                        }
-                    }
-                } else {
-                    // Copy Snapseed output
-
-                    // Append timestamp suffix to make a unique filename
-                    val fileName = "${snapseedFile.name.substringBeforeLast('.')}_${System.currentTimeMillis()}.${snapseedFile.name.substringAfterLast('.')}"
-
-                    try {
-                        snapseedFile.inputStream().use { input ->
-                            File(appRootFolder, fileName).outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        return@launch
-                    }
-
-                    // Tell observer to relocate the original photo
-                    //originalItem = photo
-
-                    // Create new photo
-                    albumModel.addPhoto(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
-
-                    // Upload changes to server, mimetype passed in folderId property
-                    actionModel.addAction(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
-                }
-
-                // Repeat editing of same source will generate multiple files with sequential suffix, remove Snapseed output to avoid tedious filename parsing
-                try {
-                    snapseedFile.delete()
-                } catch (e: Exception) { e.printStackTrace() }
-            }
-
-            // Remove cache copy too
-            try {
-                File(requireContext().cacheDir, photo.name).delete()
-            } catch (e: Exception) { e.printStackTrace() }
+        requireContext().apply {
+            unregisterReceiver(snapseedCatcher)
+            contentResolver.unregisterContentObserver(snapseedOutputObserver)
         }
+
+        currentPhotoModel.clearRemoveItem()
     }
 
     class PhotoSlideAdapter(private val rootPath: String, private val itemListener: OnTouchListener, private val stopPositionHolder: StopPositionHolder, private val imageLoader: OnLoadImage
@@ -546,6 +415,10 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
+        fun refreshPhoto(photo: Photo) {
+            notifyItemChanged(findPhotoPosition(photo))
+        }
+
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
             photos = when(sortOrder) {
                 Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
@@ -646,56 +519,21 @@ class PhotoSlideFragment : Fragment() {
 
     // Share system ui visibility status with BottomControlsFragment
     class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData<Boolean>(true)
+        private val showUI = MutableLiveData(true)
 
+        @Suppress("unused")
         fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
         fun status(): LiveData<Boolean> { return showUI }
     }
 
     companion object {
-        private const val ALBUM = "ALBUM"
         private const val STOP_POSITION = "STOP_POSITION"
-        private const val MUTE_STATE = "MUTE_STATE"
-        const val JPEG = "image/jpeg"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
-        fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(ALBUM, album) }}
+        const val KEY_ALBUM = "ALBUM"
+
+        fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(KEY_ALBUM, album) }}
     }
 }
-
-/*
-    class MyPhotoImageView @JvmOverloads constructor(context: Context, attributeSet: AttributeSet? = null, defStyle: Int = 0
-    ) : AppCompatImageView(context, attributeSet, defStyle) {
-        init {
-            super.setClickable(true)
-            super.setOnTouchListener { v, event ->
-                mScaleDetector.onTouchEvent(event)
-                true
-            }
-        }
-        private var mScaleFactor = 1f
-        private val scaleListener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-            override fun onScale(detector: ScaleGestureDetector): Boolean {
-                mScaleFactor *= detector.scaleFactor
-                mScaleFactor = Math.max(0.1f, Math.min(mScaleFactor, 5.0f))
-                scaleX = mScaleFactor
-                scaleY = mScaleFactor
-                invalidate()
-                return true
-            }
-        }
-        private val mScaleDetector = ScaleGestureDetector(context, scaleListener)
-
-        override fun onDraw(canvas: Canvas?) {
-            super.onDraw(canvas)
-
-            canvas?.apply {
-                save()
-                scale(mScaleFactor, mScaleFactor)
-                restore()
-            }
-        }
-    }
-*/

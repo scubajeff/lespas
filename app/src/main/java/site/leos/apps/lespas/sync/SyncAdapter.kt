@@ -26,6 +26,7 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
+import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.xml.namespace.QName
 
@@ -94,6 +95,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 //Log.e("****", "Uploaded ${action.fileName}")
                                 // TODO shall we update local database here or leave it to next SYNC_REMOTE_CHANGES round?
                             }
+                            Action.ACTION_UPDATE_FILE -> {
+                                // MIME type is passed in folderId property
+                                val localFile = File(localRootFolder, action.fileName)
+                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
+                            }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                                 with("$resourceRoot/${Uri.encode(action.folderName)}") {
                                     try {
@@ -121,9 +127,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 TODO()
                             }
                             Action.ACTION_RENAME_DIRECTORY -> {
-                                // Action's filename field is the new directory name
+                                // Action's folderName property is the old name, fileName property is the new name
                                 sardine.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
                                 //albumRepository.changeName(action.folderId, action.fileName)
+                            }
+                            Action.ACTION_RENAME_FILE -> {
+                                // Action's fileId property is the old name, fileName property is the new name
+                                sardine.move("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
                             }
                         }
                     } catch (e: SardineException) {
@@ -232,47 +242,56 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     for (changedAlbum in changedAlbums) {
                         tempAlbum = changedAlbum.copy(eTag = "")
 
-                        var localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
+                        val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                         val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
+                        val localPhotoNamesReverse = localPhotoNames.entries.stream().collect(Collectors.toMap({ it.value }) { it.key })
                         var remotePhotoId: String
                         var localImageFileName: String
 
                         // Create changePhotos list
                         sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
                             if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
-                                // Accumulate remote photos list
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
+                                // Accumulate remote photos list
                                 remotePhotoIds.add(remotePhotoId)
 
                                 if (localPhotoETags[remotePhotoId] != remotePhoto.etag) { // Also matches newly created photo id from server, e.g. no such remotePhotoId in local table
                                     //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
 
-                                    if (localPhotoETags.containsKey(remotePhoto.name)) {
-                                        // If there is a row in local Photo table with remote photo's name as it's id, that means it's a local added photo which is now coming back
-                                        // from server. Update it's id to the real fileid and also etag now, rename image file name to fileid too.
+                                    //if (localPhotoETags.containsKey(remotePhoto.name)) {
+                                    if (File(localRootFolder, remotePhoto.name).exists()) {
+                                        // If there is local file with remote photo's name, that means it's a local added photo which is now coming back from server.
                                         //Log.e("<><><>", "coming back now ${remotePhoto.name}")
-                                        localImageFileName = localPhotoNames.getOrDefault(remotePhoto.name, remotePhoto.name)
-                                        if (File(localRootFolder, localImageFileName).exists()) {
-                                            try {
-                                                File(localRootFolder, remotePhotoId).delete()
-                                            } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
-                                            try {
-                                                File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, remotePhotoId))
-                                                //Log.e("****", "rename ${localImageFileName} to $remotePhotoId")
-                                            } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+                                        // Rename image file name to fileid
+                                        try {
+                                            // If this file has already being uploaded,
+                                            File(localRootFolder, remotePhotoId).delete()
+                                        } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+                                        try {
+                                            File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
+                                            //Log.e("****", "rename ${remotePhoto.name} to $remotePhotoId")
+                                        } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+
+                                        localPhotoNamesReverse[remotePhoto.name]?.apply {
+                                            // Update it's id to the real fileId and also eTag now
+                                            photoRepository.fixPhoto(this, remotePhotoId, remotePhoto.name, remotePhoto.etag, Tools.dateToLocalDateTime(remotePhoto.modified))
+                                            // Taking care the cover
+                                            // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
+                                            if (changedAlbum.cover == this) {
+                                                //Log.e("=======", "fixing cover from ${changedAlbum.cover} to $remotePhotoId")
+                                                albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
+                                                changedAlbum.cover = remotePhotoId
+                                            }
                                         }
-                                        photoRepository.fixPhoto(remotePhoto.name, remotePhotoId, remotePhoto.name, remotePhoto.etag, Tools.dateToLocalDateTime(remotePhoto.modified))
-                                        // Taking care the cover
-                                        // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
-                                        if (changedAlbum.cover == remotePhoto.name) {
-                                            albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
-                                            changedAlbum.cover = remotePhotoId
-                                        }
-                                    } else
-                                        changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(),
-                                            Tools.dateToLocalDateTime(remotePhoto.modified), 0, 0, remotePhoto.contentType, 0
+                                    } else {
+                                        // Either a new photo created on server or an existing photo updated on server
+                                        // TODO will share status change create new eTag?
+                                        changedPhotos.add(
+                                            Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.etag, LocalDateTime.now(), Tools.dateToLocalDateTime(remotePhoto.modified), 0, 0,
+                                                remotePhoto.contentType, 0
+                                            )
                                         )
-                                    )  // TODO will share status change create new eTag?
+                                    }
                                 } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                                     // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
                                     // file again from server
@@ -297,7 +316,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
                                 try {
                                     File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id))
-                                    //Log.e("****", "rename file ${localImageFileName} to ${changedPhoto.id}")
+                                    Log.e("****", "rename file $localImageFileName to ${changedPhoto.id}")
                                 } catch(e: Exception) { Log.e("****Exception: ", e.stackTraceToString())}
                             }
                             else {
@@ -357,8 +376,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 photoRepository.deleteByIdSync(localPhoto.key)
                                 try {
                                     File(localRootFolder, localPhoto.key).delete()
+                                    //Log.e("****", "Deleted photo: ${localPhoto.key}")
                                 } catch (e: Exception) { e.printStackTrace() }
-                                //Log.e("****", "Deleted photo: ${localPhoto.key}")
                             }
                         }
 

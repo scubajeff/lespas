@@ -15,4 +15,5 @@ class ActionRepository(application: Application){
     suspend fun addActions(actions: List<Action>) = actionDao.insert(actions)
     suspend fun addActions(action: Action) = actionDao.insert(action)
     fun addAction(action: Action) = actionDao.insertSync(action)
+    suspend fun updateCover(albumId: String, coverId: String) { actionDao.updateCover(albumId, coverId) }
 }

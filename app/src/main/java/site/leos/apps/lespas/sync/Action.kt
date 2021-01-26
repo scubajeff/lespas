@@ -26,6 +26,8 @@ data class Action (
        const val ACTION_ADD_DIRECTORY_ON_SERVER = 4
        const val ACTION_MODIFY_ALBUM_ON_SERVER = 5
        const val ACTION_RENAME_DIRECTORY = 6
+       const val ACTION_RENAME_FILE = 7
+       const val ACTION_UPDATE_FILE = 8
    }
 }
 
@@ -42,4 +44,8 @@ abstract class ActionDao: BaseDao<Action>() {
 
     @Query("SELECT COUNT(*) FROM ${Action.TABLE_NAME}")
     abstract fun getPendingTotal(): Int
+
+    @Query("UPDATE ${Action.TABLE_NAME} SET fileName = :coverId WHERE folderId = :albumId AND action = ${Action.ACTION_ADD_DIRECTORY_ON_SERVER}")
+    // cover id is stored in fileName property
+    abstract suspend fun updateCover(albumId: String, coverId: String)
 }

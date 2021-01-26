@@ -20,9 +20,18 @@ android {
         archivesBaseName = "LesPas-v$versionName"
         resValue "string", "sync_authority", "${applicationId}.StubProvider"
         resValue "string", "file_authority", "${applicationId}.fileProvider"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.incremental":"true"]
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            ext.enableCrashlytics = false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -63,6 +72,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0"
 
     // Kotlin components
+    implementation 'androidx.work:work-runtime-ktx:2.4.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.21"
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1'
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1'

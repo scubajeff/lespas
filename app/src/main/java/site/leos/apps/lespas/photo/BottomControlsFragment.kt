@@ -133,18 +133,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    val privateName: String
-                    val publicName: String
-                    if (eTag.isNotEmpty()) {
-                        privateName = id
-                        publicName = name
-                    } else {
-                        privateName = name
-                        publicName = id
-                    }
+                    // Not yet uploaded file local file name is stored in property "name"
+                    val localFileName = if (eTag.isNotEmpty()) id else name
+
                     try {
-                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", privateName).copyTo(File(requireActivity().cacheDir, publicName), true, 4096)
-                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, publicName))
+                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", localFileName).copyTo(File(requireActivity().cacheDir, name), true, 4096)
+                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
                         val mimeType = this.mimeType
 
                         startActivity(

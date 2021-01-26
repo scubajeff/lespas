@@ -14,7 +14,7 @@ class PhotoRepository(application: Application) {
     fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
     fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
     fun changeName(photoId: String, newName: String) = photoDao.changeName(photoId, newName)
-    suspend fun changeName(albumId: String, oldName: String, newName: String) = photoDao.changeName(albumId, oldName, newName)
+    //suspend fun changeName(albumId: String, oldName: String, newName: String) = photoDao.changeName(albumId, oldName, newName)
     suspend fun deletePhotos(photos: List<Photo>) { photoDao.delete(photos)}
     fun getAllPhotoIdsByAlbum(albumId: String): List<PhotoName> = photoDao.getNamesMap(albumId)
     fun deletePhotosByAlbum(albumId: String) = photoDao.deletePhotosByAlbum(albumId)
@@ -30,4 +30,5 @@ class PhotoRepository(application: Application) {
     }
     fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
+    suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
 }

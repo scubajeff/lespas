@@ -92,7 +92,7 @@ class DestinationDialogFragment : DialogFragment() {
                     else {
                         // Return with album id field empty, calling party will know this is a new album
                         destinationModel.setDestination(Album("", name,
-                            LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))
+                            LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
                         dismiss()
                     }
                     true

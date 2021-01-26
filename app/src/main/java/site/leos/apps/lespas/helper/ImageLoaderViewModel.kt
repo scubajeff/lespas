@@ -49,6 +49,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         if (!(File(fileName).exists())) {
             fileName = "${rootPath}/${photo.name}"
             if (!(File(fileName).exists())) {
+                // Under some situation, cover photo is created from Album record in runtime, therefore does not contain name property value
                 if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
                     fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
                     if (!File(fileName).exists()) return errorBitmap

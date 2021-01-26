@@ -90,4 +90,5 @@
     <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
     <string name="gallery_app_name">Galería</string>
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
+    <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
 </resources>

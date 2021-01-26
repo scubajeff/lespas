@@ -57,6 +57,7 @@ class AcquiringDialogFragment: DialogFragment() {
         super.onCreate(savedInstanceState)
         total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
     }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.fragment_acquiring_dialog, container, false)
 
@@ -100,6 +101,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 message_textview.text = getString(when(progress) {
                     AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
                     AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
+                    AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
                     else-> 0
                 })
                 message_textview.visibility = View.VISIBLE
@@ -156,8 +158,6 @@ class AcquiringDialogFragment: DialogFragment() {
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileId = ""
-                var fileName = ""
-                var mimeType = ""
                 val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
@@ -190,50 +190,53 @@ class AcquiringDialogFragment: DialogFragment() {
                         if ("file".equals(uri.scheme, true)) fileId = uri.path!!.substringAfterLast("/")
                     }
                     if (fileId.isEmpty()) return@forEachIndexed
-                    fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
-
-                    // TODO: Default type set to jpeg
-                    mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
-                    }
-
-                    // If it's not image, skip it
-                    if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
-
-                    // Update progress in UI
-                    withContext(Dispatchers.Main) { setProgress(index, fileId) }
-
-                    // Copy the file to our private storage
-                    try {
-                        application.contentResolver.openInputStream(uri)?.use { input ->
-                            File(appRootFolder, fileName).outputStream().use { output ->
-                                totalBytes += input.copyTo(output, 8192)
-                            }
-                        }
-                    } catch (e:FileNotFoundException) {
-                        withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
-                        return@launch
-                    } catch (e:Exception) {
-                        e.printStackTrace()
-                        return@launch
-                    }
 
                     // If no photo with same name exists in album, create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileId)))) {
-                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileName", mimeType, fileId).copy(id = fileId, albumId = album.id, name = fileName))
+                        //val fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
+
+                        // TODO: Default type set to jpeg
+                        val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
+                        }
+
+                        // If it's not image, skip it
+                        if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
+
+                        // Update progress in UI
+                        withContext(Dispatchers.Main) { setProgress(index, fileId) }
+
+                        // Copy the file to our private storage
+                        try {
+                            application.contentResolver.openInputStream(uri)?.use { input ->
+                                File(appRootFolder, fileId).outputStream().use { output ->
+                                    totalBytes += input.copyTo(output, 8192)
+                                }
+                            }
+                        } catch (e:FileNotFoundException) {
+                            // without access right to uri, will throw FileNotFoundException
+                            withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
+                            return@launch   // TODO shall we loop to next file?
+                        } catch (e:Exception) {
+                            e.printStackTrace()
+                            return@launch
+                        }
+
+                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId).copy(id = fileId, albumId = album.id, name = fileId))
 
                         // Update album start and end dates accordingly
                         date = newPhotos.last().dateTaken
                         if (date < album.startDate) album.startDate = date
                         if (date > album.endDate) album.endDate = date
-                    } else {
-                        // Replacing old photo image, mark down new filename
-                        photoRepository.changeName(album.id, fileId, fileName)
-                    }
 
-                    // Pass photo mimeType in Action's folderId property
-                    // TODO if user accidentally add the same photo to album twice, file gets upload twice too. Gonna compare last modification date to avoid this.
-                    photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileName, System.currentTimeMillis(), 1))
+                        // Pass photo mimeType in Action's folderId property
+                        photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                    } else {
+                        // TODO show special error message when there are just some duplicate in uris
+                        //photoRepository.changeName(album.id, fileId, fileName)
+                        if (uris.size == 1) withContext(Dispatchers.Main) { setProgress(SAME_FILE_EXISTED, "") }
+                        return@launch
+                    }
                 }
 
                 if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(NO_MEDIA_FILE_FOUND, "") }
@@ -244,13 +247,14 @@ class AcquiringDialogFragment: DialogFragment() {
                         var validCover = newPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
                         if (validCover == -1) validCover = 0
 
-                        // New album, update cover information but without leaving cover column empty as the sign of local added new album
+                        // New album, update cover information but leaving cover column empty as the sign of local added new album
                         album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
                         album.coverWidth = newPhotos[validCover].width
                         album.coverHeight = newPhotos[validCover].height
+                        album.cover = newPhotos[validCover].id
 
                         // Create new album first, store cover, e.g. first photo in new album, in property filename
-                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].name, System.currentTimeMillis(), 1))
+                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                     }
 
                     actionRepository.addActions(photoActions)
@@ -275,6 +279,7 @@ class AcquiringDialogFragment: DialogFragment() {
         companion object {
             const val ACCESS_RIGHT_EXCEPTION = -100
             const val NO_MEDIA_FILE_FOUND = -200
+            const val SAME_FILE_EXISTED = -300
         }
     }
 
