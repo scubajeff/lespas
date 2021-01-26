@@ -139,8 +139,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             private var lastId = ""
             private lateinit var snapseedWork: WorkRequest
 
-            override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
-                super.onChange(selfChange, uri, flags)
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                super.onChange(selfChange, uri)
 
                 if (uri?.lastPathSegment!! != lastId) {
                     lastId = uri.lastPathSegment!!

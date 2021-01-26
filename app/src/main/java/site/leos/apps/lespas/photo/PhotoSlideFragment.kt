@@ -113,8 +113,8 @@ class PhotoSlideFragment : Fragment() {
             private var lastId = ""
             private lateinit var snapseedWorker: WorkRequest
 
-            override fun onChange(selfChange: Boolean, uri: Uri?, flags: Int) {
-                super.onChange(selfChange, uri, flags)
+            override fun onChange(selfChange: Boolean, uri: Uri?) {
+                super.onChange(selfChange, uri)
 
                 // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
                 if (uri?.lastPathSegment!! != lastId) {
