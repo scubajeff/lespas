@@ -249,6 +249,7 @@ class AcquiringDialogFragment: DialogFragment() {
                         album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
                         album.coverWidth = newPhotos[validCover].width
                         album.coverHeight = newPhotos[validCover].height
+                        album.cover = newPhotos[validCover].id
 
                         // Create new album first, store cover, e.g. first photo in new album, in property filename
                         actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
