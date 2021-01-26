@@ -90,4 +90,5 @@
     <string name="empty_camera_roll">Keine Medien in der Kamerarolle gefunden</string>
     <string name="gallery_app_name">Galerie</string>
     <string name="gallery_launcher_title">Symbol für Galerie-Startprogramm</string>
+    <string name="same_file_found">Dieselbe Mediendatei war bereits vorhanden.</string>
 </resources>

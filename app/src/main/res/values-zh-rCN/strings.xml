@@ -90,4 +90,5 @@
     <string name="empty_camera_roll">相机相册空空如也。</string>
     <string name="gallery_launcher_title">“相册”启动图标</string>
     <string name="gallery_app_name">相册</string>
+    <string name="same_file_found">同名文件已存在。</string>
 </resources>

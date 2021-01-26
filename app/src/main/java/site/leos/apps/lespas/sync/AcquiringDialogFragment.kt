@@ -101,6 +101,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 message_textview.text = getString(when(progress) {
                     AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
                     AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
+                    AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
                     else-> 0
                 })
                 message_textview.visibility = View.VISIBLE
@@ -231,9 +232,10 @@ class AcquiringDialogFragment: DialogFragment() {
                         // Pass photo mimeType in Action's folderId property
                         photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
                     } else {
-                        // TODO if first one not uploaded yet, and also not changed, reject adding new one; if old one changed, then it's filename must changed too, could add this one
-                        // TODO or show special error message
+                        // TODO show special error message when there are just some duplicate in uris
                         //photoRepository.changeName(album.id, fileId, fileName)
+                        if (uris.size == 1) withContext(Dispatchers.Main) { setProgress(SAME_FILE_EXISTED, "") }
+                        return@launch
                     }
                 }
 
@@ -277,6 +279,7 @@ class AcquiringDialogFragment: DialogFragment() {
         companion object {
             const val ACCESS_RIGHT_EXCEPTION = -100
             const val NO_MEDIA_FILE_FOUND = -200
+            const val SAME_FILE_EXISTED = -300
         }
     }
 

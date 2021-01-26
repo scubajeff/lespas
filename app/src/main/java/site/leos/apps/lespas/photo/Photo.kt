@@ -44,8 +44,8 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("UPDATE ${Photo.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)
 
-    @Query("UPDATE ${Photo.TABLE_NAME} SET name = :newName WHERE albumId = :albumId AND name = :oldName")
-    abstract suspend fun changeName(albumId: String, oldName: String, newName: String)
+    //@Query("UPDATE ${Photo.TABLE_NAME} SET name = :newName WHERE albumId = :albumId AND name = :oldName")
+    //abstract suspend fun changeName(albumId: String, oldName: String, newName: String)
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumPhotos(albumId: String): List<Photo>
