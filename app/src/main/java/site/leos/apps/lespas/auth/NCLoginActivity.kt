@@ -347,6 +347,6 @@ class NCLoginActivity : AppCompatActivity() {
 
     companion object {
         private const val WEBVIEW_VISIBLE = "WEBVIEW_VISIBLE"
-        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIREQUEST"
+        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
     }
 }
