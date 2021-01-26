@@ -163,7 +163,8 @@ class CoverSettingFragment : Fragment() {
 
         applyButton.setOnClickListener {
             currentPhoto.getCurrentPhoto().value!!.run {
-                val baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
+                var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
+                if (baseLine < 0) baseLine = 0
                 ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
                 // If album has not been uploaded yet, update the cover id in action table too
                 ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(albumId, id)
