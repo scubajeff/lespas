@@ -269,7 +269,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
                                         try {
                                             File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                            Log.e("****", "rename ${remotePhoto.name} to $remotePhotoId")
+                                            //Log.e("****", "rename ${remotePhoto.name} to $remotePhotoId")
                                         } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
 
                                         localPhotoNamesReverse[remotePhoto.name]?.apply {
