@@ -73,7 +73,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
-    private lateinit var sp: SharedPreferences
     private lateinit var sharedPhoto: Photo
 
     private lateinit var snapseedCatcher: BroadcastReceiver
@@ -113,21 +112,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         setHasOptionsMenu(true)
 
-        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
-
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Shared to Snapseed. Register content observer if we have storage permission and integration with snapseed option is on
-                    if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                        sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
-                        requireActivity().contentResolver.unregisterContentObserver(snapseedOutputObserver)
-                        requireActivity().contentResolver.registerContentObserver(
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                            true,
-                            snapseedOutputObserver
-                        )
+                    if (ContextCompat.checkSelfPermission(context!!, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                        context.contentResolver.apply {
+                            unregisterContentObserver(snapseedOutputObserver)
+                            registerContentObserver(
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                true,
+                                snapseedOutputObserver
+                            )
+                        }
                     }
                 }
             }
