@@ -197,7 +197,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
                         // TODO: Default type set to jpeg
                         val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase()) ?: "image/jpeg"
+                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase(Locale.getDefault())) ?: "image/jpeg"
                         }
 
                         // If it's not image, skip it

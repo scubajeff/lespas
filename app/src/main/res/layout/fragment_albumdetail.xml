@@ -37,7 +37,7 @@
             android:backgroundTint="@color/color_error"
             android:includeFontPadding="false"
             android:clickable="false"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textColor="@color/color_text_dark"
             android:textAllCaps="false"
             app:shapeAppearance="@style/DateIndicatorShape"

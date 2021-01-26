@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/videoview_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -26,7 +27,8 @@
         android:layout_marginTop="@dimen/extra_padding"
         android:padding="@dimen/small_padding"
         android:background="#40000000"
-        android:src="@drawable/ic_baseline_volume_on_24" />
+        android:src="@drawable/ic_baseline_volume_on_24"
+        tools:ignore="RtlHardcoded" />
 
     <ImageButton
         android:id="@+id/replay_button"
@@ -39,5 +41,6 @@
         android:padding="@dimen/small_padding"
         android:background="#40000000"
         android:src="@drawable/ic_baseline_replay_24"
-        android:visibility="gone" />
+        android:visibility="gone"
+        tools:ignore="RtlHardcoded" />
 </androidx.constraintlayout.widget.ConstraintLayout>

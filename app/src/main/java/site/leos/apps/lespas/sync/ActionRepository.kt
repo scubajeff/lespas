@@ -10,8 +10,8 @@ class ActionRepository(application: Application){
     fun deleteSync(action: Action) = actionDao.deleteSync(action)
     fun pendingActionsFlow(): Flow<List<Action>> = actionDao.pendingActionsFlow()
     fun getAllPendingActions(): List<Action> = actionDao.getAllPendingActions()
-    fun hasPendingActions(): Boolean = actionDao.getPendingTotal() > 0
-    fun deleteAllActions() = actionDao.deleteAllSync()
+    //fun hasPendingActions(): Boolean = actionDao.getPendingTotal() > 0
+    //fun deleteAllActions() = actionDao.deleteAllSync()
     suspend fun addActions(actions: List<Action>) = actionDao.insert(actions)
     suspend fun addActions(action: Action) = actionDao.insert(action)
     fun addAction(action: Action) = actionDao.insertSync(action)

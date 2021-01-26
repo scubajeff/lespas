@@ -74,7 +74,8 @@
             android:background="#80000000"
             android:padding="@dimen/camera_roll_control_button_padding"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_baseline_delete_24" />
+            android:src="@drawable/ic_baseline_delete_24"
+            android:contentDescription="@string/action_remove" />
         <ImageButton
             android:id="@+id/share_button"
             android:layout_width="@dimen/camera_roll_control_button_size"
@@ -85,7 +86,8 @@
             android:background="#80000000"
             android:padding="@dimen/camera_roll_control_button_padding"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_baseline_share_24" />
+            android:src="@drawable/ic_baseline_share_24"
+            android:contentDescription="@string/action_share" />
         <ImageButton
             android:id="@+id/lespas_button"
             android:layout_width="@dimen/camera_roll_control_button_size"

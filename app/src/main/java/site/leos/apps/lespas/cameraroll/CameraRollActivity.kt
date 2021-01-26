@@ -368,6 +368,7 @@ class CameraRollActivity : AppCompatActivity() {
         // Querying MediaStore
         val contents = mutableListOf<CameraMedia>()
         val contentUri = MediaStore.Files.getContentUri("external")
+        @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
@@ -491,8 +492,10 @@ class CameraRollActivity : AppCompatActivity() {
                             var bmp: Bitmap
                             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                                 if (cameraMedia.mimeType.startsWith("video/")) {
+                                    @Suppress("DEPRECATION")
                                     bmp = MediaStore.Video.Thumbnails.getThumbnail(cr, cameraMedia.id.toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
                                 } else {
+                                    @Suppress("DEPRECATION")
                                     bmp = MediaStore.Images.Thumbnails.getThumbnail(cr, cameraMedia.id.toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null)
                                     val rotation = if (cameraMedia.mimeType == "image/jpeg" || cameraMedia.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
                                     if (rotation != 0) bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)

@@ -428,9 +428,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                 for (i in selectionTracker.selection) {
                     with(mAdapter.getPhotoAt(i.toInt())) {
-                        val privateName: String
-                        if (eTag.isNotEmpty()) privateName = id else privateName = name
-                        File(filePath, privateName).copyTo(File(cachePath, name), true, 4096)
+                        // Not yet uploaded file local file name is stored in property "name"
+                        File(filePath, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
                         uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
                     }
                 }

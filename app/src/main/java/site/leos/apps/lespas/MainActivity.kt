@@ -46,18 +46,17 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             val account: Account = AccountManager.get(this).accounts[0]
 
-            // Syncing server changes at startup
+            // Syncing server changes at startup and set it to run when receiving network tickle
             ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
             })
-
-            // Setup observer to fire up SyncAdapter
             ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
 
             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
 
+            // Setup observer to fire up SyncAdapter
             actionsPendingModel.allActions.observe(this, { actions ->
                 if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES) })
             })

@@ -25,10 +25,8 @@ class PhotoRepository(application: Application) {
     fun fixPhoto(oldId: String, newId: String, newName: String, eTag: String, lastModified: LocalDateTime) { photoDao.fixPhoto(oldId, newId, newName, eTag, lastModified) }
     fun getAllPhotoNameMap(): List<AlbumPhotoName> = photoDao.getAllPhotoNameMap()
     //suspend fun updatePhoto(oldId: String, newId: String, eTag: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) { photoDao.updatePhoto(oldId, newId, eTag, lastModifiedDate, width, height, mimeType) }
-    suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto)
-        //photoDao.replacePhoto(oldPhotoId, newPhoto.id, newPhoto.name, newPhoto.albumId, newPhoto.dateTaken, newPhoto.lastModified, newPhoto.width, newPhoto.height, newPhoto.mimeType, newPhoto.shareId)
-    }
-    fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
+    //suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto) }
+    //fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
-    suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
+    //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
 }

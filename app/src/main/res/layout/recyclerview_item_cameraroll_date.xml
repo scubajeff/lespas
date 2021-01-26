@@ -7,7 +7,8 @@
     android:layout_height="@dimen/camera_roll_grid_size"
     android:paddingLeft="@dimen/small_padding"
     android:background="@color/color_background"
-    android:clickable="false">
+    android:clickable="false"
+    tools:ignore="RtlHardcoded,RtlSymmetry">
 
     <ImageView
         android:id="@+id/icon"
@@ -16,7 +17,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:src="@drawable/ic_baseline_calendar_today_24" />
+        android:src="@drawable/ic_baseline_calendar_today_24"
+        tools:ignore="ContentDescription" />
 
     <TextView
         android:id="@+id/slash"

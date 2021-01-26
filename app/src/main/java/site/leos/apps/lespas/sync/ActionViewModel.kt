@@ -21,8 +21,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val localRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
 
     val allActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
-    suspend fun addActions(actions: List<Action>) = actionRepository.addActions(actions)
-    suspend fun addAction(actions: Action) = actionRepository.addActions(actions)
+    //suspend fun addActions(actions: List<Action>) = actionRepository.addActions(actions)
+    //suspend fun addAction(actions: Action) = actionRepository.addActions(actions)
 
     fun deleteAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {

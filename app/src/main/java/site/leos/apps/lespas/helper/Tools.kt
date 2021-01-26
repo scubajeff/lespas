@@ -117,13 +117,13 @@ object Tools {
                     }
                 }
                 "image/gif"-> {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/agif"
                     }
                 }
                 "image/webp"-> {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/awebp mimetype for animated WebP
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
                     }
@@ -166,8 +166,8 @@ object Tools {
     }
 
     fun getDeviceModel(): String {
-        val manufacturer = Build.MANUFACTURER.toLowerCase()
-        var model = Build.MODEL.toLowerCase()
+        val manufacturer = Build.MANUFACTURER.toLowerCase(Locale.getDefault())
+        var model = Build.MODEL.toLowerCase(Locale.getDefault())
 
         if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
 

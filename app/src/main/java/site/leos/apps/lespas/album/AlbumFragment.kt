@@ -329,7 +329,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         private var oldAlbums = mutableListOf<Album>()
         private var covers = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
-        private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
+        //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         fun interface OnItemClickListener {
             fun onItemClick(album: Album, imageView: ImageView)

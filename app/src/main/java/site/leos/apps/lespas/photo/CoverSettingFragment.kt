@@ -69,6 +69,7 @@ class CoverSettingFragment : Fragment() {
 
         DisplayMetrics().run {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                @Suppress("DEPRECATION")
                 requireActivity().windowManager.defaultDisplay.getRealMetrics(this)
             } else {
                 requireActivity().display?.getRealMetrics(this)

@@ -45,9 +45,9 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                 if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     if (shouldShowRequestPermissionRationale(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request)).let {
-                                it.setTargetFragment(this, PERMISSION_RATIONALE_REQUEST_CODE)
-                                it.show(parentFragmentManager, CONFIRM_DIALOG)
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request)).let { fragment->
+                                fragment.setTargetFragment(this, PERMISSION_RATIONALE_REQUEST_CODE)
+                                fragment.show(parentFragmentManager, CONFIRM_DIALOG)
                             }
                         }
                     } else requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
