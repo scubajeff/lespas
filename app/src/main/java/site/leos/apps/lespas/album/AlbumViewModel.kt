@@ -19,6 +19,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(albumId, cover) }
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder)}
+    fun isAlbumExisted(name: String) = albumRepository.isAlbumExisted(name)
     //fun fixCoverId(albumId: String, newCoverId: String) = viewModelScope.launch(Dispatchers.IO) { albumRepository.fixCoverId(albumId, newCoverId) }
     //suspend fun addPhoto(photo: Photo) = photoRepository.insert(photo)
     //suspend fun updatePhoto(oldId: String, newId: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) = photoRepository.updatePhoto(oldId, newId, "", lastModifiedDate, width, height, mimeType)

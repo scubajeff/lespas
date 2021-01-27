@@ -216,7 +216,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // TODO right place to do this?
         recyclerView.clearOnScrollListeners()
     }
 
@@ -246,7 +245,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
-                // TODO get permission
                 if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
                 } else browseCameraRoll()

@@ -47,7 +47,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
 
-    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -57,6 +56,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         this.window = requireActivity().window
 
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
+        @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
                 try {

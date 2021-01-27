@@ -129,7 +129,7 @@ class PhotoSlideFragment : Fragment() {
                                 with(pAdapter.getPhotoAt(slider.currentItem)) {
                                     // Invalid cache and update current photo model value to show new photo
                                     imageLoaderModel.invalid(this)
-                                    // TODO what if the database is not updated yet, pAdapter.getPhotoAt will return old information
+                                    // TODO what if the adapter is not updated yet, pAdapter.getPhotoAt will return old information
                                     currentPhotoModel.setCurrentPhoto(this, null)
                                     pAdapter.refreshPhoto(this)
                                 }
