@@ -91,4 +91,5 @@
     <string name="gallery_app_name">Galería</string>
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
+    <string name="name_existed">No se puede cambiar el nombre a \'%1$s\', existe el mismo nombre.</string>
 </resources>

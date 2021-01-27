@@ -37,6 +37,7 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure to delete?</string>
     <string name="yes_delete">Yes, delete</string>
+    <string name="name_existed">"Can not rename to '%1$s', same name existed."</string>
     <string name="rename_to">Change album name to</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Days: %1$d</string>

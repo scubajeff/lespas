@@ -90,12 +90,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun renameAlbum(albumId: String, oldName: String, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (!albumRepository.isAlbumExisted(newName)) {
-                actionRepository.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
-                albumRepository.changeName(albumId, newName)
-            }
+            albumRepository.changeName(albumId, newName)
+            actionRepository.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
         }
-        // TODO how to properly inform user that name already existed?
     }
 
     fun updateCover(albumId: String, coverId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateCover(albumId, coverId) }}

@@ -39,6 +39,10 @@ import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.*
 import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -413,7 +417,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         return when(item?.itemId) {
             R.id.remove -> {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
-                    it.setTargetFragment(this, 0)
+                    it.setTargetFragment(this, DELETE_REQUEST_CODE)
                     it.show(parentFragmentManager, CONFIRM_DIALOG)
                 }
 
@@ -482,17 +486,30 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onResult(positive: Boolean, requestCode: Int) {
         if (positive) {
-            val photos = mutableListOf<Photo>()
-            for (i in selectionTracker.selection)
-                mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+            if (requestCode == DELETE_REQUEST_CODE) {
+                val photos = mutableListOf<Photo>()
+                for (i in selectionTracker.selection)
+                    mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+            }
         }
         selectionTracker.clearSelection()
     }
 
     override fun onRenameFinished(newName: String) {
         if (newName != album.name) {
-            actionModel.renameAlbum(album.id, album.name, newName)
+            CoroutineScope(Dispatchers.Main).launch(Dispatchers.IO) {
+                if (albumModel.isAlbumExisted(newName)) {
+                    withContext(Dispatchers.Main) {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok)).let {
+                            it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_root), RENAME_REQUEST_CODE)
+                            it.show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
+                    }
+                } else {
+                    actionModel.renameAlbum(album.id, album.name, newName)
+                }
+            }
         }
     }
 
@@ -695,6 +712,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
+
+        private const val DELETE_REQUEST_CODE = 0
+        private const val RENAME_REQUEST_CODE = 1
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 
