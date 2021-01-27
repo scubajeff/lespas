@@ -47,7 +47,7 @@ data class AlbumWithPhotos(
     var photos: List<Photo>
 )
 
-data class Cover(val id: String, val baseLine: Int, val width: Int, val height: Int)
+data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
 data class IDandCover(val id: String, val cover: String)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
@@ -74,6 +74,9 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height WHERE id = :albumId")
     abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
+
+    @Query("SELECT cover, coverBaseline, coverWidth, coverHeight FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    abstract fun getCover(albumId: String): Cover
 
     @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
     abstract fun isAlbumExisted(name: String): Boolean

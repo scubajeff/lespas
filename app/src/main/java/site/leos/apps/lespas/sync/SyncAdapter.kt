@@ -364,6 +364,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
 
+                        // User might change cover already, update it here
+                        with(albumRepository.getCover(changedAlbum.id)) {
+                            changedAlbum.cover = this.cover
+                            changedAlbum.coverBaseline = this.coverBaseline
+                            changedAlbum.coverWidth = this.coverWidth
+                            changedAlbum.coverHeight = this.coverHeight
+                        }
                         // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                         albumRepository.upsertSync(changedAlbum)
 

@@ -17,7 +17,8 @@ class AlbumRepository(application: Application){
     suspend fun update(album: Album){ albumDao.update(album) }
     fun deleteByIdSync(albumId: String) { albumDao.deleteByIdSync(albumId) }
     fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
-    suspend fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.id, cover.baseLine, cover.width, cover.height) }
+    suspend fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight) }
+    fun getCover(albumId: String): Cover = albumDao.getCover(albumId)
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
     fun getAllAlbumIds(): List<IDandCover> = albumDao.getAllIdAndCover()
