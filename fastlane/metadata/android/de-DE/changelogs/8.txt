@@ -1,0 +1,2 @@
+* Behebung eines schwerwiegenden Fehlers, der die Synchronisierung über das Mobilfunknetz verursachte, obwohl "Nur im WiFi-Netzwerk synchronisieren" eingeschaltet ist
+* Verschiedene Synchronisierungsfehler behoben, die mit der Snapseed-Integrationsfunktion eingeführt wurden

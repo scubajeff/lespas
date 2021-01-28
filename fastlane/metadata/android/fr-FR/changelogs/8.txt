@@ -1,0 +1,2 @@
+* Correction d'un bogue grave qui provoquait une synchronisation sur le réseau mobile alors que "Synchroniser uniquement sur le réseau WiFi" est activé
+* Correction de divers bogues de synchronisation introduits avec la fonction d'intégration de Snapseed

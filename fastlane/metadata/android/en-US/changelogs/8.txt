@@ -1,0 +1,2 @@
+* fixed a serious bug that cause syncing on mobile network even though "Sync only on WiFi network" is on
+* fixed various syncing bugs introduced along with Snapseed integration feature

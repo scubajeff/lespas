@@ -1,0 +1,2 @@
+* se ha corregido un grave error que provocaba la sincronización en la red móvil aunque la opción "Sincronización sólo en la red WiFi" estuviera activada
+* se han corregido varios errores de sincronización introducidos junto con la función de integración de Snapseed
