@@ -39,6 +39,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val resourceRoot: String
             var dcimRoot: String
             val localRootFolder: String
+            val sp = PreferenceManager.getDefaultSharedPreferences(application)
+            val wifionlyKey = application.getString(R.string.wifionly_pref_key)
             val sardine =  OkHttpSardine()
 
             // Initialize sardine library
@@ -51,6 +53,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     localRootFolder = "${application.filesDir}$this"
                 }
                 dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
+            }
+
+            // Check network type
+            if (sp.getBoolean(wifionlyKey, true)) {
+                if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                    syncResult.hasSoftError()
+                    return
+                }
             }
 
             // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -68,7 +78,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 //Log.e("**********", "sync local changes")
                 actionRepository.getAllPendingActions().forEach { action ->
                     // Check network type on every loop, so that user is able to stop sync right in the middle
-                    if (PreferenceManager.getDefaultSharedPreferences(application).getBoolean(application.getString(R.string.wifionly_pref_key), true)) {
+                    if (sp.getBoolean(wifionlyKey, true)) {
                         if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
                             syncResult.hasSoftError()
                             return
@@ -240,6 +250,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     var tempAlbum: Album
 
                     for (changedAlbum in changedAlbums) {
+                        // Check network type on every loop, so that user is able to stop sync right in the middle
+                        if (sp.getBoolean(wifionlyKey, true)) {
+                            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                                syncResult.hasSoftError()
+                                return
+                            }
+                        }
+
                         tempAlbum = changedAlbum.copy(eTag = "")
 
                         val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
@@ -307,6 +325,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Fetch changed photo files, extract EXIF info, update Photo table
                         changedPhotos.forEachIndexed {i, changedPhoto->
+                            // Check network type on every loop, so that user is able to stop sync right in the middle
+                            if (sp.getBoolean(wifionlyKey, true)) {
+                                if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                                    syncResult.hasSoftError()
+                                    return
+                                }
+                            }
+
                             // Prepare the image file
                             localImageFileName = localPhotoNames.getOrDefault(changedPhoto.id, changedPhoto.name)
                             if (File(localRootFolder, localImageFileName).exists()) {
@@ -454,6 +480,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     var fileName: String
 
                     while(cursor.moveToNext()) {
+                        // Check network type on every loop, so that user is able to stop sync right in the middle
+                        if (sp.getBoolean(wifionlyKey, true)) {
+                            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                                syncResult.hasSoftError()
+                                return
+                            }
+                        }
+
                         //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
                         fileName = cursor.getString(nameColumn)
                         relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBefore("/${fileName}")
