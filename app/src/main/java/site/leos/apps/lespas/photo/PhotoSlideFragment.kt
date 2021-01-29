@@ -127,11 +127,11 @@ class PhotoSlideFragment : Fragment() {
                         if (workInfo != null && workInfo.state.isFinished) {
                             if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
                                 with(pAdapter.getPhotoAt(slider.currentItem)) {
-                                    // Invalid cache and update current photo model value to show new photo
+                                    // Invalid cache, notify adapter change, and update current photo model value to show new photo
                                     imageLoaderModel.invalid(this)
+                                    pAdapter.refreshPhoto(this)
                                     // TODO what if the adapter is not updated yet, pAdapter.getPhotoAt will return old information
                                     currentPhotoModel.setCurrentPhoto(this, null)
-                                    pAdapter.refreshPhoto(this)
                                 }
                             }
                         }
