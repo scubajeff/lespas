@@ -28,7 +28,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
         val album = albumDao.getAlbumById(inputData.keyValueMap[KEY_ALBUM] as String)
-        val outputInvalidCache: Pair<String, Boolean>
 
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             cursor.moveToFirst()
@@ -90,6 +89,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
                     id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                 photoDao.update(newPhoto)
+                // Invalid image cache to show new image
+                setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
                 // Update server
                 with(mutableListOf<Action>()) {
@@ -100,9 +101,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
                     actionDao.insert(this)
                 }
-
-                // Invalid image cache to show new image
-                outputInvalidCache = KEY_INVALID_OLD_PHOTO_CACHE to true
             }
             else {
                 /* Copy Snapseed output */
@@ -128,9 +126,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                 // Upload changes to server, mimetype passed in folderId property
                 actionDao.insert(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
-
-                // No need to invalid original image
-                outputInvalidCache = KEY_INVALID_OLD_PHOTO_CACHE to false
             }
 
             // Remove cache copy
@@ -140,7 +135,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
             // Remove snapseed output
             context.contentResolver.delete(uri, null, null)
-            return Result.success(workDataOf(outputInvalidCache))
+            return Result.success()
         }
 
         return Result.failure()

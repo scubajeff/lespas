@@ -124,6 +124,10 @@ class PhotoSlideFragment : Fragment() {
                     WorkManager.getInstance(requireContext()).enqueue(snapseedWorker)
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWorker.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                        if (workInfo != null) {
+                            if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
+                        }
+                        /*
                         if (workInfo != null && workInfo.state.isFinished) {
                             if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
                                 with(pAdapter.getPhotoAt(slider.currentItem)) {
@@ -135,6 +139,7 @@ class PhotoSlideFragment : Fragment() {
                                 }
                             }
                         }
+                         */
                     })
                 }
 
@@ -191,7 +196,8 @@ class PhotoSlideFragment : Fragment() {
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos, album.sortOrder)
-            slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
+            //slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
+            slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhotoId()), false)
         })
 
         currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, {
@@ -394,10 +400,10 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        fun findPhotoPosition(photo: Photo): Int {
+        fun findPhotoPosition(photoId: String): Int {
             photos.forEachIndexed { i, p ->
                 // If photo synced back from server, the id property will be changed from filename to fileId
-                if ((p.id == photo.id) || (p.name == photo.id)) return i
+                if ((p.id == photoId) || (p.name == photoId)) return i
             }
             return -1
         }
@@ -415,10 +421,11 @@ class PhotoSlideFragment : Fragment() {
         }
 
         fun refreshPhoto(photo: Photo) {
-            notifyItemChanged(findPhotoPosition(photo))
+            notifyItemChanged(findPhotoPosition(photo.id))
         }
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
+            //val oldPhotos = photos
             photos = when(sortOrder) {
                 Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
                 Album.BY_DATE_TAKEN_DESC-> collection.sortedWith(compareByDescending { it.dateTaken })
@@ -428,6 +435,14 @@ class PhotoSlideFragment : Fragment() {
                 Album.BY_NAME_DESC-> collection.sortedWith(compareByDescending { it.name })
                 else-> collection
             }
+            /*
+            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                override fun getOldListSize(): Int = oldPhotos.size
+                override fun getNewListSize(): Int = photos.size
+                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldPhotos[oldItemPosition].name == photos[newItemPosition].name
+                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldPhotos[oldItemPosition] == photos[newItemPosition]
+            }).dispatchUpdatesTo(this)
+             */
             notifyDataSetChanged()
         }
 
@@ -493,6 +508,7 @@ class PhotoSlideFragment : Fragment() {
         private val coverApplyStatus = MutableLiveData<Boolean>()
         private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
+        fun getCurrentPhotoId(): String { return photo.value?.id!! }
         fun setCurrentPhoto(newPhoto: Photo, position: Int?) {
             //photo.postValue(newPhoto)
             photo.value = newPhoto

@@ -153,12 +153,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     WorkManager.getInstance(requireContext()).enqueue(snapseedWork)
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWork.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                        if (workInfo != null) {
+                            if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
+                        }
+                        /*
                         if (workInfo != null && workInfo.state.isFinished) {
                             if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
                                 imageLoaderModel.invalid(sharedPhoto)
                                 mAdapter.refreshPhoto(sharedPhoto)
                             }
                         }
+                         */
                     })
                 }
 
