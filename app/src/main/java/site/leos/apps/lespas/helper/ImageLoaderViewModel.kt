@@ -138,7 +138,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 // Show something first
                 //view.setImageBitmap(placeholderBitmap)
                 //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
-                bitmap = imageCache.get(key) ?: decodeBitmap(photo, type)
+                bitmap = imageCache.get(key)
+                // Give error another chance
+                if (bitmap == null || bitmap == errorBitmap) bitmap = decodeBitmap(photo, type)
                 if (bitmap == null) bitmap = errorBitmap
                 else imageCache.put(key, bitmap)
 
