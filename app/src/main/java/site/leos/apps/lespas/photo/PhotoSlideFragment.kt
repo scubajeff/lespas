@@ -125,7 +125,11 @@ class PhotoSlideFragment : Fragment() {
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWorker.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null) {
-                            if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
+                            //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
+                            workInfo.progress.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
+                                imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem).id)
+                                currentPhotoModel.setCurrentPhotoName(this)
+                            }
                         }
                         /*
                         if (workInfo != null && workInfo.state.isFinished) {
@@ -197,7 +201,10 @@ class PhotoSlideFragment : Fragment() {
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos, album.sortOrder)
             //slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
-            slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhotoId()), false)
+            currentPhotoModel.getCurrentPhotoId()?.let {
+                //imageLoaderModel.invalid(it)
+                slider.setCurrentItem(pAdapter.findPhotoPosition(it), false)
+            }
         })
 
         currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, {
@@ -508,7 +515,11 @@ class PhotoSlideFragment : Fragment() {
         private val coverApplyStatus = MutableLiveData<Boolean>()
         private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
         fun getCurrentPhoto(): LiveData<Photo> { return photo }
-        fun getCurrentPhotoId(): String { return photo.value?.id!! }
+        fun getCurrentPhotoId(): String? = photo.value?.id
+        fun setCurrentPhotoName(newName: String) {
+            photo.value?.name = newName
+            photo.value?.eTag = ""
+        }
         fun setCurrentPhoto(newPhoto: Photo, position: Int?) {
             //photo.postValue(newPhoto)
             photo.value = newPhoto

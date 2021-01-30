@@ -154,7 +154,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                     WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWork.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null) {
-                            if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
+                            //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
+                            workInfo.progress.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.let {
+                                imageLoaderModel.invalid(sharedPhoto.id)
+                                mAdapter.refreshPhoto(sharedPhoto)
+                            }
                         }
                         /*
                         if (workInfo != null && workInfo.state.isFinished) {
@@ -429,14 +433,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
             R.id.share -> {
                 val uris = arrayListOf<Uri>()
-                val filePath = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+                val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
                 val cachePath = requireActivity().cacheDir
                 val authority = getString(R.string.file_authority)
 
                 for (i in selectionTracker.selection) {
                     with(mAdapter.getPhotoAt(i.toInt())) {
-                        // Not yet uploaded file local file name is stored in property "name"
-                        File(filePath, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
+                        // Synced file is named after id, not yet synced file is named after file's name
+                        File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
                         uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
                     }
                 }

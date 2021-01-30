@@ -118,8 +118,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
-    fun invalid(photo: Photo) {
-        imageCache.snapshot().keys.forEach { key-> if (key.startsWith(photo.id)) imageCache.remove(key) }
+    fun invalid(photoId: String) {
+        imageCache.snapshot().keys.forEach { key-> if (key.startsWith(photoId)) imageCache.remove(key) }
     }
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {

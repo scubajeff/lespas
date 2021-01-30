@@ -136,9 +136,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
                     try {
-                        // Not yet uploaded file local file name is stored in property "name"
-                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", if (eTag.isNotEmpty()) id else name).copyTo(File(requireActivity().cacheDir, name), true, 4096)
-                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, name))
+                        // Synced file is named after id, not yet synced file is named after file's name
+                        File("${context.filesDir}${getString(R.string.lespas_base_folder_name)}", if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
+                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
                         val mimeType = this.mimeType
 
                         startActivity(
@@ -147,7 +147,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                                     action = Intent.ACTION_SEND
                                     type = mimeType
                                     putExtra(Intent.EXTRA_STREAM, uri)
-                                    clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
+                                    clipData = ClipData.newUri(context.contentResolver, "", uri)
                                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
                             )
@@ -161,18 +161,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    val privateName: String
-                    val publicName: String
-                    if (eTag.isNotEmpty()) {
-                        privateName = id
-                        publicName = name
-                    } else {
-                        privateName = name
-                        publicName = id
-                    }
                     try {
-                        File("${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}", privateName).copyTo(File(requireActivity().cacheDir, publicName), true, 4096)
-                        val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), File(requireActivity().cacheDir, publicName))
+                        File("${context.filesDir}${getString(R.string.lespas_base_folder_name)}", if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
+                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
                         val mimeType = this.mimeType
 
                         startActivity(
@@ -339,13 +330,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
             try {
                 val fileName: String
-                if (arguments?.getString(ETAG)?.isNotEmpty()!!) {
-                    fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(ID)}"
-                    info_filename.text = arguments?.getString(NAME)
-                } else {
-                    fileName = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}/${arguments?.getString(NAME)}"
-                    info_filename.text = arguments?.getString(ID)
-                }
+                val appRootFolder = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}"
+                fileName = "${appRootFolder}/${arguments?.getString(if (arguments?.getString(ETAG)?.isNotEmpty()!!) ID else NAME)}"
+                info_filename.text = arguments?.getString(NAME)
                 info_shotat.text = arguments?.getString(DATE)
                 info_size.text = String.format(
                     "%s, %s",

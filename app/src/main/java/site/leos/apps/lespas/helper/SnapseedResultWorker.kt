@@ -87,10 +87,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                 // Update local database
                 val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
-                    id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
+                    //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
+                    // Mark sync status by setting eTag to empty
+                    id = originalPhoto.id, albumId = album.id, name = imageName, eTag = "", shareId = originalPhoto.shareId)
                 photoDao.update(newPhoto)
-                // Invalid image cache to show new image
-                setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
+                // Invalid image cache to show new image and change CurrentPhotoModel's filename
+                //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
+                setProgress(workDataOf( KEY_NEW_PHOTO_NAME to imageName))
 
                 // Update server
                 with(mutableListOf<Action>()) {
@@ -148,5 +151,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
         const val KEY_ALBUM = "ALBUM"
         const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
+        const val KEY_NEW_PHOTO_NAME = "NEW_PHOTO_NAME"
     }
 }
