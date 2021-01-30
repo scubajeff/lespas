@@ -68,6 +68,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                         visible = true
                     } else {
                         controls.visibility = View.GONE
+                        more_controls.visibility = View.GONE
                         visible = false
                     }
                 } catch (e: UninitializedPropertyAccessException) {}
@@ -83,6 +84,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                         visible = true
                     } else {
                         controls.visibility = View.GONE
+                        more_controls.visibility = View.GONE
                         visible = false
                     }
                 } catch (e: UninitializedPropertyAccessException) {}
