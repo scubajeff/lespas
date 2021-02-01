@@ -31,8 +31,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
             albums.forEach {album->
-                val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(album.id)
+                //val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(album.id)
+                val allPhoto = photoRepository.getAlbumPhotos(album.id)
                 photoRepository.deletePhotosByAlbum(album.id)
+                /*
                 allPhotoIds.forEach {
                     try {
                         File(localRootFolder, it.id).delete()
@@ -40,6 +42,12 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                     try {
                         File(localRootFolder, it.name).delete()
                     } catch(e: Exception) { e.printStackTrace() }
+                }
+
+                 */
+                allPhoto.forEach { photo ->
+                    if (photo.eTag.isEmpty()) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
+                    else try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
                 }
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
             }
@@ -57,12 +65,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val timestamp = System.currentTimeMillis()
 
             photos.forEach {photo ->
-                try {
-                    File(localRootFolder, photo.id).delete()
-                } catch (e: Exception) { e.printStackTrace() }
-                try {
-                    File(localRootFolder, photo.name).delete()
-                } catch (e: Exception) { e.printStackTrace() }
+                if (photo.eTag.isEmpty()) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
+                else try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
 
                 // For a synced photo, id can not be the same as name (sort of, in very rare case, filename can be the same as it's future fileid on server, if this ever happens,
                 // the only problem is that it would reappear after next sync, e.g. can only be deleted on server. This can be solved with adding another column in Photo table)
@@ -80,6 +84,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             } else {
                 // All photos under this album removed, delete album
                 albumRepository.deleteByIdSync(photos[0].albumId)
+                // Delete folder instead of deleting photos 1 by 1
                 actions.clear()
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, photos[0].albumId, albumName, "", "", timestamp, 1))
             }

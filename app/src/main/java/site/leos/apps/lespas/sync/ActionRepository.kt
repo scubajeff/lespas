@@ -16,4 +16,5 @@ class ActionRepository(application: Application){
     suspend fun addActions(action: Action) = actionDao.insert(action)
     fun addAction(action: Action) = actionDao.insertSync(action)
     suspend fun updateCover(albumId: String, coverId: String) { actionDao.updateCover(albumId, coverId) }
+    suspend fun safeToRemoveFile(photoName: String): Boolean = !actionDao.fileInUse(photoName)
 }
