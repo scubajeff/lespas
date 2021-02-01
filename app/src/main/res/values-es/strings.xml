@@ -58,7 +58,8 @@
     <string name="name_too_long">El nombre es demasiado largo.</string>
     <string name="album_existed">El álbum ya existía</string>
     <string name="leading_dots_found">El prefijo \'.\' no está permitido</string>
-    <string name="preparing_files">Preparando fotos %1$d de %2$d</string>
+    <string name="preparing_files">Preparando fotos</string>
+    <string name="preparing_files_progress">Preparando fotos %1$d de %2$d</string>
     <string name="finished_preparing_files">La preparación de las fotos ha terminado</string>
     <string name="it_takes_time">Necesita enviar los datos de %1$s al servidor. Puede que pase un tiempo antes de que aparezcan nuevas fotos en el servidor.</string>
     <string name="mind_network_setting">Tenga en cuenta que la configuración actual de la sincronización impide a Les Pas utilizar la red de telefonía móvil.</string>

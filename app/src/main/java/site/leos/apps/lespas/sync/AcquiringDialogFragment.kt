@@ -91,7 +91,7 @@ class AcquiringDialogFragment: DialogFragment() {
                 message_textview.visibility = View.VISIBLE
                 dialog?.setCanceledOnTouchOutside(true)
             } else if (progress >= 0) {
-                dialog_title_textview.text = getString(R.string.preparing_files, progress + 1, total)
+                dialog_title_textview.text = getString(R.string.preparing_files_progress, progress + 1, total)
                 filename_textview.text = acquiringModel.getCurrentName()
                 current_progress.progress = progress
             } else if (progress < 0 ) {
