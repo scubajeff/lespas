@@ -135,6 +135,17 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         imageCache.snapshot().keys.forEach { key-> if (key.startsWith(photoId)) imageCache.remove(key) }
     }
 
+    fun reloadPhoto(photo: Photo) {
+        viewModelScope.launch(Dispatchers.IO) {
+            imageCache.snapshot().keys.forEach { key->
+                if (key.startsWith(photo.id)) {
+                    imageCache.put(key, decodeBitmap(photo, key.substringAfter(photo.id).substringBefore('-')))
+                    // TODO recycle old bitmap?
+                }
+            }
+        }
+    }
+
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
         loadPhoto(photo, view, type, null)
     }

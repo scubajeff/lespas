@@ -156,6 +156,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         if (workInfo != null) {
                             //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
                             workInfo.progress.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.let {
+                                //sharedPhoto.name = it
+                                //sharedPhoto.eTag = ""
+                                //imageLoaderModel.reloadPhoto(sharedPhoto)
+                                //recyclerView.findViewHolderForAdapterPosition(mAdapter.findPhotoPosition(sharedPhoto))?.itemView?.findViewById<ImageView>(R.id.photo)?.invalidate()
+                                //mAdapter.refreshPhoto(sharedPhoto)
                                 imageLoaderModel.invalid(sharedPhoto.id)
                                 mAdapter.refreshPhoto(sharedPhoto)
                             }
