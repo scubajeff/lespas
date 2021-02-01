@@ -44,6 +44,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
         var bitmap: Bitmap? = null
+        /*
         var fileName = "${rootPath}/${photo.id}"
 
         if (!(File(fileName).exists())) {
@@ -57,6 +58,18 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 else return errorBitmap
             }
         }
+
+         */
+
+        var fileName: String
+        if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
+            // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property
+            fileName = "${rootPath}/${photo.id}"
+            if (!(File(fileName).exists())) {
+                fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
+                if (!File(fileName).exists()) return errorBitmap
+            }
+        } else fileName = "${rootPath}/${if (photo.eTag.isNotEmpty()) photo.id else photo.name}"
 
         try {
             bitmap = when (type) {
