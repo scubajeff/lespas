@@ -93,4 +93,8 @@
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="name_existed">No se puede cambiar el nombre a \'%1$s\', existe el mismo nombre.</string>
+    <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>
+    <string name="verify_ssl_certificate_message">El certificado del servidor %1$s NO PUEDE ser verificado, ¿desea confiar en este servidor y continuar?</string>
+    <string name="accept_certificate">Confía en ello.</string>
+    <string name="certificate_error">Error en el certificado del sitio.</string>
 </resources>
