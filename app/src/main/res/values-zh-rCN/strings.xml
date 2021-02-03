@@ -93,4 +93,8 @@
     <string name="gallery_app_name">相册</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="name_existed">相册\'%1$s\'已存在，无法改名。</string>
+    <string name="verify_ssl_certificate_title">SSL证书验证失败</string>
+    <string name="verify_ssl_certificate_message">服务器%1$s的证书无法通过验证，是否信任该服务器并继续？</string>
+    <string name="accept_certificate">信任</string>
+    <string name="certificate_error">安全证书验证失败。</string>
 </resources>

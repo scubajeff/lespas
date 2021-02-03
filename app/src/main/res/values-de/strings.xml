@@ -93,4 +93,8 @@
     <string name="gallery_launcher_title">Symbol für Galerie-Startprogramm</string>
     <string name="same_file_found">Dieselbe Mediendatei war bereits vorhanden.</string>
     <string name="name_existed">Kann nicht in \'%1$s\' umbenannt werden, gleicher Name existiert.</string>
+    <string name="verify_ssl_certificate_title">Schlechtes SSL-Zertifikat</string>
+    <string name="verify_ssl_certificate_message">Das Zertifikat von Server %1$s kann NICHT verifiziert werden, wollen Sie diesem Server vertrauen und fortfahren?</string>
+    <string name="accept_certificate">Vertrauen Sie darauf!</string>
+    <string name="certificate_error">Fehler im Site-Zertifikat.</string>
 </resources>

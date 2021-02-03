@@ -18,11 +18,16 @@
     <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
     <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
     <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
+    <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
+    <string name="verify_ssl_certificate_title">Bad SSL Certificate</string>
+    <string name="verify_ssl_certificate_message">Server %1$s\'s certificate CAN NOT be verified, do you want to trust this server and continue?</string>
+    <string name="accept_certificate">Trust it!</string>
 
     <string name="host_address_validation_error">Host not valid.</string>
     <string name="host_not_valid">Address not valid.</string>
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
+    <string name="certificate_error">Site certificate error.</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
     <string name="lespas_base_folder_name" translatable="false">/lespas</string>
