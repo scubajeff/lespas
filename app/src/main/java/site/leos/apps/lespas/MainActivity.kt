@@ -67,6 +67,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
+        if (AccountManager.get(this).accounts.isEmpty()) finishAndRemoveTask()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             // Response to "up" affordance pressed in fragments

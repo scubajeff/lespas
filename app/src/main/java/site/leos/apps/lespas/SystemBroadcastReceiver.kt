@@ -14,6 +14,18 @@ import site.leos.apps.lespas.sync.SyncAdapter
 class SystemBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val accounts = AccountManager.get(context).getAccountsByType(context.getString(R.string.account_type_nc))
+
+        if (intent.action == AccountManager.ACTION_ACCOUNT_REMOVED) {
+            // TODO API level 26 required
+            intent.extras?.apply {
+                // When our account has been removed, delete all user data
+                // TODO supporting multiple NC account by checking KEY_ACCOUNT_NAME
+                if (getString(AccountManager.KEY_ACCOUNT_TYPE, "") == context.getString(R.string.account_type_nc))
+                    (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
+            }
+            return
+        }
+
         if (accounts.isNotEmpty()) {
             when(intent.action) {
                 // When phone owner changed, delete all user data, remove accounts
@@ -22,18 +34,11 @@ class SystemBroadcastReceiver : BroadcastReceiver() {
                     (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
                 }
 
-                // When our account has been removed, delete all user data
-                AccountManager.ACTION_ACCOUNT_REMOVED -> {
-                    if ((intent.extras?.getString(AccountManager.KEY_ACCOUNT_TYPE, "") == context.getString(R.string.account_type_nc)) &&
-                        (intent.extras?.getString(AccountManager.KEY_ACCOUNT_NAME, "") == accounts[0].name))
-                        (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
-                }
-
                 Intent.ACTION_BOOT_COMPLETED -> {
                     // Turn on periodic sync after bootup
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.sync_pref_key), false))
                         ContentResolver.addPeriodicSync(
-                            AccountManager.get(context).accounts[0],
+                            accounts[0],
                             context.getString(R.string.sync_authority),
                             Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
                             6 * 60 * 60
