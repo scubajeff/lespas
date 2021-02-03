@@ -35,3 +35,6 @@ Les Pas store photos in it's app private storage, so if you have a large collect
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
 **For privacy sake, stop using "/Pictures" folder in your phone's internal/external storage.**<br><br>
 Since Les Pas use app's private storage to stop photos, if you reinstall the app, albums/photos need to be downloaded again from server.
+
+### About server using self-signed certificate
+You need to install your certificates in your phone first. A quick search on instructions points to <a href=https://aboutssl.org/how-to-create-and-import-self-signed-certificate-to-android-device/>here</a> and <a href=https://proxyman.io/blog/2020/09/Install-And-Trust-Self-Signed-Certificate-On-Android-11.html>here</a>.

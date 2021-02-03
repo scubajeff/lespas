@@ -1,3 +1,7 @@
+## Version 1.4.4
+* support server using self-signed certificate
+* bugs fixed
+
 ## Version 1.4.3
 * fixed a serious bug that cause syncing on mobile network even though "Sync only on WiFi network" is on (a nice user just lost money because of this bug, it's really terrible)
 * fixed various syncing bugs introduced along with Snapseed integration feature

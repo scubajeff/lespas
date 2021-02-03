@@ -13,8 +13,8 @@ android {
         applicationId "site.leos.apps.lespas"
         minSdkVersion 25
         targetSdkVersion 29
-        versionCode 8
-        versionName "1.4.3"
+        versionCode 9
+        versionName "1.4.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         archivesBaseName = "LesPas-v$versionName"
@@ -72,7 +72,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0"
 
     // Kotlin components
-    implementation 'androidx.work:work-runtime-ktx:2.4.0'
+    implementation 'androidx.work:work-runtime-ktx:2.5.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.21"
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1'
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1'
@@ -81,7 +81,7 @@ dependencies {
     implementation "com.google.android.material:material:1.2.1"
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation "androidx.cardview:cardview:1.0.0"
-    implementation "androidx.recyclerview:recyclerview-selection:1.0.0"
+    implementation "androidx.recyclerview:recyclerview-selection:1.1.0"
     implementation "androidx.viewpager2:viewpager2:1.0.0"
     implementation 'androidx.preference:preference-ktx:1.1.1'
 

@@ -1,0 +1,2 @@
+* Unterstützung von Servern mit selbstsigniertem Zertifikat
+* Bugs behoben

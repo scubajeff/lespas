@@ -1,0 +1,2 @@
+* serveur d'assistance utilisant un certificat auto-signé
+* Bugs corrigés

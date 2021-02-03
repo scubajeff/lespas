@@ -1,0 +1,2 @@
+* support server using self-signed certificate
+* bugs fixed

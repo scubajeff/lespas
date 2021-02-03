@@ -1,0 +1,2 @@
+* soporte del servidor con certificado autofirmado
+* se han corregido los errores
