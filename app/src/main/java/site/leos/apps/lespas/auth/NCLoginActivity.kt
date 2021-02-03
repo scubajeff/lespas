@@ -29,6 +29,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.getDrawableOrThrow
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
@@ -302,8 +303,9 @@ class NCLoginActivity : AppCompatActivity() {
                         authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(NEXTCLOUD_OCSAPI_HEADER, "true") })
                     }
                     998 -> {
-                        AlertDialog.Builder(hostInputText.context)
-                            .setIcon(android.R.drawable.ic_dialog_alert)
+                        // Use
+                        AlertDialog.Builder(hostInputText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                            .setIcon(ContextCompat.getDrawable(hostInputText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(getColor(android.R.color.holo_red_dark))})
                             .setTitle(getString(R.string.verify_ssl_certificate_title))
                             .setCancelable(false)
                             .setMessage(getString(R.string.verify_ssl_certificate_message, hostUrl.substringAfterLast("://").substringBefore('/')))
@@ -320,9 +322,7 @@ class NCLoginActivity : AppCompatActivity() {
                             .setNegativeButton(android.R.string.cancel) { _, _ ->  showError(1001)}
                             .create().show()
                     }
-                    else -> {
-                        showError(result)
-                    }
+                    else -> showError(result)
                 }
             }
         }
