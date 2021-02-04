@@ -161,8 +161,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                                 //imageLoaderModel.reloadPhoto(sharedPhoto)
                                 //recyclerView.findViewHolderForAdapterPosition(mAdapter.findPhotoPosition(sharedPhoto))?.itemView?.findViewById<ImageView>(R.id.photo)?.invalidate()
                                 //mAdapter.refreshPhoto(sharedPhoto)
-                                imageLoaderModel.invalid(sharedPhoto.id)
-                                mAdapter.refreshPhoto(sharedPhoto)
+                                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                                    imageLoaderModel.invalid(sharedPhoto.id)
+                                    mAdapter.refreshPhoto(sharedPhoto)
+                                }
                             }
                         }
                         /*
