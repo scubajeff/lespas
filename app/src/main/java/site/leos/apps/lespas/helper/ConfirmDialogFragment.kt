@@ -21,7 +21,8 @@ class ConfirmDialogFragment : DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (targetFragment is OnResultListener) onResultListener = targetFragment as OnResultListener
+        if (activity is OnResultListener) onResultListener = activity as OnResultListener
+        else if (targetFragment is OnResultListener) onResultListener = targetFragment as OnResultListener
         else parentFragmentManager.popBackStack()
     }
 
@@ -67,12 +68,11 @@ class ConfirmDialogFragment : DialogFragment() {
         const val MESSAGE = "MESSAGE"
         const val OK_TEXT = "OK_TEXT"
 
-        fun newInstance(message: String, okButtonText: String?) =
-            ConfirmDialogFragment().apply {
-                arguments = Bundle().apply {
-                    putString(MESSAGE, message)
-                    putString(OK_TEXT, okButtonText)
-                }
+        fun newInstance(message: String, okButtonText: String?) = ConfirmDialogFragment().apply {
+            arguments = Bundle().apply {
+                putString(MESSAGE, message)
+                putString(OK_TEXT, okButtonText)
             }
+        }
     }
 }

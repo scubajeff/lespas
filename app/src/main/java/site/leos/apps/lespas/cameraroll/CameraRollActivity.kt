@@ -30,9 +30,11 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
+import kotlinx.android.synthetic.*
 import kotlinx.android.synthetic.main.activity_camera_roll.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.HeaderItemDecoration
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.VolumeControlVideoView
@@ -45,7 +47,7 @@ import java.util.*
 import kotlin.math.roundToInt
 
 
-class CameraRollActivity : AppCompatActivity() {
+class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
     private lateinit var controls: ConstraintLayout
     private lateinit var fileNameTextView: TextView
     private lateinit var fileSizeTextView: TextView
@@ -115,14 +117,8 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         remove_button.setOnClickListener {
-            if (intent.action == Intent.ACTION_MAIN) {
-                controls.visibility = View.GONE
-
-                if (mediaList.adapter?.itemCount == 2) {
-                    // Last item in camera roll, handle it here for easy finishing activity sake
-                    deleteAndFinish(currentMedia!!)
-                } else (mediaList.adapter as CameraRollAdapter).removeMedia(currentMedia!!)
-            } else deleteAndFinish(currentMedia!!)
+            if (supportFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
+                ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(supportFragmentManager, CONFIRM_DIALOG)
         }
     }
 
@@ -152,6 +148,19 @@ class CameraRollActivity : AppCompatActivity() {
         outState.putInt(STOP_POSITION, stopPosition)
         outState.putBoolean(MUTE_STATUS, videoMuted)
         outState.putParcelable(CURRENT_MEDIA, currentMedia)
+    }
+
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        controls.visibility = View.GONE
+        if (positive) {
+            if (intent.action == Intent.ACTION_MAIN) {
+
+                if (mediaList.adapter?.itemCount == 2) {
+                    // Last item in camera roll, handle it here for easy finishing activity sake
+                    deleteAndFinish(currentMedia!!)
+                } else (mediaList.adapter as CameraRollAdapter).removeMedia(currentMedia!!)
+            } else deleteAndFinish(currentMedia!!)
+        }
     }
 
     private fun deleteAndFinish(uri: Uri) {
@@ -615,5 +624,7 @@ class CameraRollActivity : AppCompatActivity() {
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         //const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"
+
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
     }
 }
