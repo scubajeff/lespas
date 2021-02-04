@@ -125,8 +125,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exitTransition = Fade().apply { duration = 80 }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
-                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id))
-                    .addToBackStack(CoverSettingFragment::class.simpleName)
+                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id), CoverSettingFragment::class.java.canonicalName)
+                    .addToBackStack(null)
                     .commit()
             }
         }

@@ -66,12 +66,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
                 AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
         })
-    }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val view = inflater.inflate(R.layout.fragment_album, container, false)
-        recyclerView = view.findViewById(R.id.albumlist)
-        fab = view.findViewById(R.id.fab)
         mAdapter = AlbumListAdapter(
             { album, imageView ->
                 exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
@@ -79,10 +74,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album)).addToBackStack(AlbumDetailFragment::class.simpleName).commit()
+                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
+    }
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val view = inflater.inflate(R.layout.fragment_album, container, false)
+        recyclerView = view.findViewById(R.id.albumlist)
+        fab = view.findViewById(R.id.fab)
         return view
     }
 

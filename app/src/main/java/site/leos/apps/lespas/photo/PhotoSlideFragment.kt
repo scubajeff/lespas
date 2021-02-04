@@ -157,12 +157,6 @@ class PhotoSlideFragment : Fragment() {
                 requireContext().contentResolver.unregisterContentObserver(this)
             }
         }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
-
-        postponeEnterTransition()
 
         pAdapter = PhotoSlideAdapter(
             "${requireContext().filesDir}${resources.getString(R.string.lespas_base_folder_name)}",
@@ -174,6 +168,14 @@ class PhotoSlideFragment : Fragment() {
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
             else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
+
+        savedInstanceState?.apply { videoStopPosition = getInt(STOP_POSITION) }
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
+
+        postponeEnterTransition()
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -222,8 +224,6 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         })
-
-        savedInstanceState?.apply { videoStopPosition = getInt(STOP_POSITION) }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {

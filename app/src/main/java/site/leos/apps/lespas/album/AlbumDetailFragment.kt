@@ -179,26 +179,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 requireContext().contentResolver.unregisterContentObserver(this)
             }
         }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // View might not be destroy at all, reuse it here
-        val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
-
-        stub = vg.findViewById(R.id.stub)
-        dateIndicator = vg.findViewById(R.id.date_indicator)
-        recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
-            // Stop item from blinking when notifying changes
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
-
-            // Special span size to show cover at the top of the grid
-            val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
-            layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
-                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                    override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
-                }
-            }
-        }
 
         mAdapter = PhotoGridAdapter(
             { view, position ->
@@ -221,12 +201,32 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album)).addToBackStack(PhotoSlideFragment::class.simpleName)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.simpleName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName).addToBackStack(null)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.java.canonicalName)
                     .commit()
             },
             { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
         ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // View might not be destroy at all, reuse it here
+        val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
+
+        stub = vg.findViewById(R.id.stub)
+        dateIndicator = vg.findViewById(R.id.date_indicator)
+        recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
+            // Stop item from blinking when notifying changes
+            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+
+            // Special span size to show cover at the top of the grid
+            val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
+            layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
+                }
+            }
+        }
 
         return vg
     }
@@ -532,6 +532,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private lateinit var selectionTracker: SelectionTracker<Long>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
+        //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
 
         init {
             setHasStableIds(true)
@@ -612,11 +613,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
-            val oldPhotos = mutableListOf<Photo>()
-            oldPhotos.addAll(0, photos)
+            //val oldPhotos = mutableListOf<Photo>().apply { addAll(0, photos) }
             photos.clear()
             album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
-            this.photos.addAll(1,
+            photos.addAll(1,
                 when(album.album.sortOrder) {
                     Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
                     Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
@@ -638,7 +638,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     override fun getOldListSize() = oldPhotos.size
                     override fun getNewListSize() = photos.size
                     override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-                        ((oldPhotos[oldItemPosition].id == photos[newItemPosition].id) && (oldPhotos[oldItemPosition].name == photos[newItemPosition].name))
+                        if (oldItemPosition == 0 && newItemPosition == 0) true
+                        //else ((oldPhotos[oldItemPosition].id == photos[newItemPosition].id) && (oldPhotos[oldItemPosition].name == photos[newItemPosition].name))
+                        else oldPhotos[oldItemPosition].name == photos[newItemPosition].name
 
                     override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
                         if (oldItemPosition == 0 && newItemPosition == 0)
