@@ -127,15 +127,13 @@ class PhotoSlideFragment : Fragment() {
                         if (workInfo != null) {
                             //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
                             workInfo.progress.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
-                                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
-                                    pAdapter.getPhotoAt(slider.currentItem).let {
-                                        //it.eTag = ""
-                                        //it.name = this
-                                        //imageLoaderModel.reloadPhoto(it)
-                                        imageLoaderModel.invalid(it.id)
-                                        //slider[0].findViewById<PhotoView>(R.id.media)?.invalidate()
-                                        pAdapter.refreshPhoto(it)
-                                    }
+                                pAdapter.getPhotoAt(slider.currentItem).let {
+                                    //it.eTag = ""
+                                    //it.name = this
+                                    //imageLoaderModel.reloadPhoto(it)
+                                    imageLoaderModel.invalid(it.id)
+                                    //slider[0].findViewById<PhotoView>(R.id.media)?.invalidate()
+                                    pAdapter.refreshPhoto(it)
                                 }
                                 currentPhotoModel.setCurrentPhotoName(this)
                             }
