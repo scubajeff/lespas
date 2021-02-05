@@ -30,6 +30,7 @@ import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
+import javax.net.ssl.SSLPeerUnverifiedException
 import javax.xml.namespace.QName
 
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
@@ -595,6 +596,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             syncResult.stats.numIoExceptions++
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: SSLHandshakeException) {
+            syncResult.stats.numIoExceptions++
+            Log.e("****Exception: ", e.stackTraceToString())
+        } catch (e: SSLPeerUnverifiedException) {
             syncResult.stats.numIoExceptions++
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: AuthenticatorException) {
