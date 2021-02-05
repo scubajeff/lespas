@@ -597,9 +597,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: SSLHandshakeException) {
             syncResult.stats.numIoExceptions++
+            syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: SSLPeerUnverifiedException) {
             syncResult.stats.numIoExceptions++
+            syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
