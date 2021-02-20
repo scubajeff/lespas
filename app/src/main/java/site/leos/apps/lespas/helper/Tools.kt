@@ -25,8 +25,12 @@ import java.util.*
 import java.util.regex.Pattern
 
 object Tools {
-    @SuppressLint("SimpleDateFormat")
     fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
+        return getPhotoParams(pathName, mimeType, fileName, false)
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    fun getPhotoParams(pathName: String, mimeType: String, fileName: String, updateCreationDate: Boolean): Photo {
         val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
         var timeString: String?
         var mMimeType = mimeType
@@ -78,16 +82,23 @@ object Tools {
         } else {
             when(mimeType) {
                 "image/jpeg", "image/tiff"-> {
+                    var saveExif = false
                     val exif = ExifInterface(pathName)
                     timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-                    if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-                    if (timeString == null) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-                    if (timeString == null) {
+                    if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
+                    //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
+                    if (isUnknown(timeString)) {
                         // Could not get creation date from exif, try guessing from file name
                         timeString = if (wechatPattern.matcher(fileName).matches()) {
                             (LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset))
                                 .format(DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
                         } else dateFormatter.format(lastModified)
+
+                        if (updateCreationDate) {
+                            exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
+                            exif.resetOrientation()
+                            saveExif = true
+                        }
                     }
 
                     val exifRotation = exif.rotationDegrees
@@ -108,10 +119,14 @@ object Tools {
                         val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
                         exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
                         exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
+                        saveExif = true
+                    }
+
+                    if (saveExif) {
                         try {
                             exif.saveAttributes()
                         } catch (e: Exception) {
-                            // TODO: If EXIF.saveAttributes throw exception, it's OK, we don't need these updated data which already saved in our table
+                            // TODO: If EXIF.saveAttributes throw exception
                             Log.e("****Exception", e.stackTraceToString())
                         }
                     }
@@ -172,5 +187,9 @@ object Tools {
         if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
 
         return "${manufacturer}_${model}"
+    }
+
+    private fun isUnknown(date: String?): Boolean {
+        return (date == null || date.isEmpty() || date == "    :  :     :  :  ")
     }
 }

@@ -222,7 +222,7 @@ class AcquiringDialogFragment: DialogFragment() {
                             return@launch
                         }
 
-                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId).copy(id = fileId, albumId = album.id, name = fileId))
+                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId, true).copy(id = fileId, albumId = album.id, name = fileId))
 
                         // Update album start and end dates accordingly
                         date = newPhotos.last().dateTaken
