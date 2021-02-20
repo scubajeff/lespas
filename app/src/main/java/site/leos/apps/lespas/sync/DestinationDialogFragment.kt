@@ -131,6 +131,11 @@ class DestinationDialogFragment : DialogFragment() {
         dialog?.setCanceledOnTouchOutside(false)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        destination_recyclerview.adapter = null
+    }
+
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
 

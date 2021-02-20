@@ -350,6 +350,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onDestroyView() {
         super.onDestroyView()
         recyclerView.clearOnScrollListeners()
+        recyclerView.adapter = null
     }
 
     override fun onDestroy() {
