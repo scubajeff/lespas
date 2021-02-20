@@ -68,7 +68,14 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
             }
         }
 
-        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
+        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+            summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
+            // Make sure SYNC preference acts accordingly
+            if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                it.isChecked = true
+                it.isEnabled = false
+            }
+        }
     }
 
     override fun onResume() {
