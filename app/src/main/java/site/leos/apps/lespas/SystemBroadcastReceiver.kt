@@ -36,13 +36,15 @@ class SystemBroadcastReceiver : BroadcastReceiver() {
 
                 Intent.ACTION_BOOT_COMPLETED -> {
                     // Turn on periodic sync after bootup
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.sync_pref_key), false))
-                        ContentResolver.addPeriodicSync(
-                            accounts[0],
-                            context.getString(R.string.sync_authority),
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.sync_pref_key), false)) {
+                        ContentResolver.addPeriodicSync(accounts[0], context.getString(R.string.sync_authority),
                             Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
                             6 * 60 * 60
                         )
+                    }
+
+                    // Clear cache
+                    context.cacheDir.deleteRecursively()
                 }
             }
         }
