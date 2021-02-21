@@ -15,7 +15,6 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
@@ -40,9 +39,9 @@ import kotlin.math.roundToInt
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener, ConfirmDialogFragment.OnResultListener {
     private lateinit var album: Album
     private lateinit var window: Window
-    private lateinit var controls: LinearLayout
-    private lateinit var more_controls: LinearLayout
-    private lateinit var remove_button: ImageButton
+    private lateinit var baseControls: LinearLayout
+    private lateinit var moreControls: LinearLayout
+    private lateinit var removeButton: ImageButton
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
@@ -60,15 +59,15 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
                 try {
-                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                    TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                        more_controls.visibility = View.GONE
-                        remove_button.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
-                        controls.visibility = View.VISIBLE
+                        moreControls.visibility = View.GONE
+                        removeButton.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
+                        baseControls.visibility = View.VISIBLE
                         visible = true
                     } else {
-                        controls.visibility = View.GONE
-                        more_controls.visibility = View.GONE
+                        baseControls.visibility = View.GONE
+                        moreControls.visibility = View.GONE
                         visible = false
                     }
                 } catch (e: UninitializedPropertyAccessException) {}
@@ -76,15 +75,15 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         } else {
             window.decorView.setOnApplyWindowInsetsListener { _, insets ->
                 try {
-                    TransitionManager.beginDelayedTransition(controls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                    TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.navigationBars())) {
-                        more_controls.visibility = View.GONE
-                        remove_button.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
-                        controls.visibility = View.VISIBLE
+                        moreControls.visibility = View.GONE
+                        removeButton.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
+                        baseControls.visibility = View.VISIBLE
                         visible = true
                     } else {
-                        controls.visibility = View.GONE
-                        more_controls.visibility = View.GONE
+                        baseControls.visibility = View.GONE
+                        moreControls.visibility = View.GONE
                         visible = false
                     }
                 } catch (e: UninitializedPropertyAccessException) {}
@@ -114,9 +113,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
 
         // Controls
-        controls = view.findViewById(R.id.base_controls)
-        more_controls = view.findViewById(R.id.more_controls)
-        remove_button = view.findViewById(R.id.remove_button)
+        baseControls = view.findViewById(R.id.base_controls)
+        moreControls = view.findViewById(R.id.more_controls)
+        removeButton = view.findViewById(R.id.remove_button)
 
         cover_button.run {
             setOnTouchListener(delayHideTouchListener)
@@ -196,11 +195,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         more_button.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                more_controls.visibility = View.VISIBLE
+                moreControls.visibility = View.VISIBLE
                 delayHideTouchListener
             }
         }
-        remove_button.run {
+        removeButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -233,20 +232,19 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         // BACK TO NORMAL UI
         hideHandler.removeCallbacksAndMessages(null)
 
-        (requireActivity() as AppCompatActivity).run {
+        requireActivity().window.run {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-                window.decorView.setOnSystemUiVisibilityChangeListener(null)
+                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                decorView.setOnSystemUiVisibilityChangeListener(null)
             } else {
-                window.insetsController?.apply {
+                insetsController?.apply {
                     show(WindowInsets.Type.systemBars())
                     systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
                 }
-                window.statusBarColor = resources.getColor(R.color.color_primary)
-                window.setDecorFitsSystemWindows(true)
-                window.decorView.setOnApplyWindowInsetsListener(null)
+                statusBarColor = resources.getColor(R.color.color_primary)
+                setDecorFitsSystemWindows(true)
+                decorView.setOnApplyWindowInsetsListener(null)
             }
-            supportActionBar?.show()
         }
         super.onDestroy()
     }

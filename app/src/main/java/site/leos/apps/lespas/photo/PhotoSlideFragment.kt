@@ -228,12 +228,13 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        // Setup basic UI here because BottomControlsFragment might be replaced by CoverSettingFragment
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
         requireActivity().window.run {
             previousNavBarColor = navigationBarColor
             navigationBarColor = Color.BLACK
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_SWIPE
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 statusBarColor = Color.TRANSPARENT
                 setDecorFitsSystemWindows(false)
             }
@@ -266,6 +267,7 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         requireActivity().window.navigationBarColor = previousNavBarColor
+        (requireActivity() as AppCompatActivity).supportActionBar!!.show()
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
@@ -555,7 +557,7 @@ class PhotoSlideFragment : Fragment() {
         private val showUI = MutableLiveData(true)
 
         @Suppress("unused")
-        fun hideUI() { showUI.value = false }
+        //fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
         fun status(): LiveData<Boolean> { return showUI }
     }
