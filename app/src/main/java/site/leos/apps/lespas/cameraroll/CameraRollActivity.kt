@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -339,6 +340,12 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                 }
 
                 var bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri)!!)
+                // TODO hardcoded size
+                if (bitmap.allocationByteCount > 100000000) {
+                    options.inJustDecodeBounds = false
+                    options.inSampleSize = 2
+                    bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri)!!, null, options)
+                }
                 if (rotation != 0) bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
 
                 val picture: PhotoView
@@ -379,17 +386,18 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         val contentUri = MediaStore.Files.getContentUri("external")
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val dateSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.DATE_TAKEN else MediaStore.Files.FileColumns.DATE_ADDED
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             pathSelection,
-            MediaStore.Files.FileColumns.DATE_ADDED,
+            dateSelection,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.MIME_TYPE,
-            MediaStore.Files.FileColumns.TITLE
+            MediaStore.Files.FileColumns.TITLE,
         )
         val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                 "($pathSelection LIKE '%DCIM%')"
-        contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} DESC"
+        contentResolver.query(contentUri, projection, selection, null, "${dateSelection} DESC"
         )?.use { cursor->
             if (cursor.count == 0) {
                 Toast.makeText(this, getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
@@ -398,13 +406,14 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.TITLE)
             val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+            val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
             val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
             var currentDate = LocalDate.now().plusDays(1)
             var date: LocalDate
             val defaultOffset = OffsetDateTime.now().offset
             while(cursor.moveToNext()) {
                 // Insert date separator if date changes
+                    Log.e(">>>>>", "${cursor.getLong(dateColumn)}")
                 date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
                 if (date != currentDate) {
                     contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), "", date))

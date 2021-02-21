@@ -75,8 +75,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             bitmap = when (type) {
                 TYPE_GRID -> {
                     val size = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8
-                    val rect: Rect
-                    rect = if (photo.height > photo.width) {
+                    val rect: Rect = if (photo.height > photo.width) {
                         val top = (photo.height - photo.width) / 2
                         val bottom = top + photo.width
                         Rect(0, top, photo.width, bottom)
@@ -110,7 +109,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_FULL -> {
-                    BitmapFactory.decodeFile(fileName)
+                    var bmp = BitmapFactory.decodeFile(fileName)
+                    // If image is too large
+                    // TODO hardcoded size
+                    if (bmp.allocationByteCount > 100000000) {
+                        bmp.recycle()
+                        bmp = BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { inSampleSize = 2 })
+                    }
+                    bmp
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
                     val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
