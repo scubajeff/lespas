@@ -60,6 +60,8 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
 
     private var currentMedia: Uri? = null
 
+    private val handler = Handler(Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_camera_roll)
@@ -178,7 +180,7 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
 
         if (uri != null) {
             // Show a waiting sign when it takes more than 350ms to load the media
-            val handler = Handler(Looper.getMainLooper())
+            handler.removeCallbacks(hideBriefing)
             handler.postDelayed(showWaitingSign, 350L)
 
             controls.visibility = View.GONE
@@ -311,8 +313,8 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                 }
 
                 if (fileName.isNotEmpty()) withContext(Dispatchers.Main) {
-                    fileNameTextView.visibility = View.VISIBLE
                     fileNameTextView.text = fileName
+                    fileNameTextView.visibility = View.VISIBLE
                 }
 
                 if (mimeType == "image/gif" || mimeType == "image/webp") {
@@ -335,8 +337,8 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                 size = if (rotation == 90 || rotation == 270) "${options.outHeight} × ${options.outWidth}" else "${options.outWidth} × ${options.outHeight}"
                 size += fileSize?.let { "  ${Tools.humanReadableByteCountSI(fileSize!!)}" }
                 if (size.isNotEmpty()) withContext(Dispatchers.Main) {
-                    fileSizeTextView.visibility = View.VISIBLE
                     fileSizeTextView.text = size
+                    fileSizeTextView.visibility = View.VISIBLE
                 }
 
                 var bitmap = BitmapFactory.decodeStream(contentResolver.openInputStream(uri)!!)
@@ -351,7 +353,11 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                 val picture: PhotoView
                 withContext(Dispatchers.Main) {
                     picture = layoutInflater.inflate(R.layout.viewpager_item_photo, media_container).findViewById(R.id.media)
-                    handler.removeCallbacks(showWaitingSign)
+                    handler.apply {
+                        removeCallbacks(showWaitingSign)
+                        removeCallbacks(hideBriefing)
+                        postDelayed(hideBriefing, 5000L)
+                    }
                     progress.visibility = View.GONE
                     picture.setImageBitmap(bitmap)
                 }
@@ -368,6 +374,11 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
 
     private val showWaitingSign = Runnable {
         progress.visibility = View.VISIBLE
+    }
+
+    private val hideBriefing = Runnable {
+        fileSizeTextView.visibility = View.GONE
+        fileNameTextView.visibility = View.GONE
     }
 
     private fun hasPermission(uri: Uri): Boolean {
