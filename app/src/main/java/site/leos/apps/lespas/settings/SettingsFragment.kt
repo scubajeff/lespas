@@ -131,11 +131,18 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                 true
             }
             getString(R.string.gallery_launcher_pref_key) -> {
-                requireActivity().packageManager.setComponentEnabledSetting(
-                    ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"),
-                    if (preferenceManager.sharedPreferences.getBoolean(preference.key, false)) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                    PackageManager.DONT_KILL_APP
-                )
+                requireActivity().packageManager.apply {
+                    setComponentEnabledSetting(
+                        ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"),
+                        if (preferenceManager.sharedPreferences.getBoolean(preference.key, false)) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                    setComponentEnabledSetting(
+                        ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.LesPas"),
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                }
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
