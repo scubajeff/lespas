@@ -15,7 +15,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -424,7 +423,6 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
             val defaultOffset = OffsetDateTime.now().offset
             while(cursor.moveToNext()) {
                 // Insert date separator if date changes
-                    Log.e(">>>>>", "${cursor.getLong(dateColumn)}")
                 date = LocalDateTime.ofEpochSecond(cursor.getLong(dateColumn), 0, defaultOffset).toLocalDate()
                 if (date != currentDate) {
                     contents.add(CameraMedia(null, date.monthValue.toString(), date.dayOfMonth.toString(), "", date))
