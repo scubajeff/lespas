@@ -1,3 +1,8 @@
+## Version 1.4.5
+* fixed bug when viewing super high resolution photo
+* fixed bug when processing photo creation date information from EXIF
+* other improvements and bugs fixed
+
 ## Version 1.4.4
 * support server using self-signed certificate
 * bugs fixed

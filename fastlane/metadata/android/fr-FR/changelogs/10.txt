@@ -1,0 +1,3 @@
+* Correction d'un bug lors de l'affichage d'une photo en super haute résolution
+* correction d'un bogue lors du traitement des informations relatives à la date de création des photos à partir de l'EXIF
+* autres améliorations et corrections de bogues

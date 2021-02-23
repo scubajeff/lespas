@@ -1,0 +1,3 @@
+* Se ha corregido un error en la visualización de fotos de alta resolución.
+* Se ha corregido un error al procesar la información de la fecha de creación de la foto a partir de EXIF
+* Otras mejoras y errores corregidos
