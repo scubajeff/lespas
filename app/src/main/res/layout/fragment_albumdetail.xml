@@ -53,4 +53,14 @@
         android:layout_height="?attr/actionBarSize"
         app:layout_constraintTop_toTopOf="parent"
         android:background="@android:color/transparent" />
+
+    <androidx.core.widget.ContentLoadingProgressBar
+        android:id="@+id/loading_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/stub"
+        app:layout_constraintBottom_toBottomOf="@id/stub"
+        android:indeterminate="true"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:visibility="gone" />
 </androidx.constraintlayout.widget.ConstraintLayout>

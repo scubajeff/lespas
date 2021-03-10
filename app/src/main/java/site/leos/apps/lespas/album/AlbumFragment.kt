@@ -28,6 +28,7 @@ import site.leos.apps.lespas.cameraroll.CameraRollActivity
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -92,7 +93,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        // Register data observer first, try feeding adapter with lastest data asap
+        // Register data observer first, try feeding adapter with latest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             mAdapter.setAlbums(albums)
             if ((lastScrollPosition != -1) && (!isScrolling)) {
@@ -251,10 +252,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 } else browseCameraRoll()
                 return true
             }
-            R.id.option_menu_settings -> {
+            R.id.option_menu_settings-> {
                 exitTransition = null
                 reenterTransition = null
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
+                return true
+            }
+            R.id.option_menu_search-> {
+                exitTransition = null
+                reenterTransition = null
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(true), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
         }
@@ -318,7 +325,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     private fun browseCameraRoll() {
         startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
             action = Intent.ACTION_MAIN
-            //putExtra(CameraRollActivity.BROWSE_GARLLERY, true)
+            //putExtra(CameraRollActivity.BROWSE_GALLERY, true)
         })
     }
 

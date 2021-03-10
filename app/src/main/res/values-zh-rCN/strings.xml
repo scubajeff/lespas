@@ -90,11 +90,19 @@
     <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%1$s目录下。</string>
     <string name="empty_camera_roll">相机相册空空如也。</string>
     <string name="gallery_launcher_title">“相册”启动图标</string>
-    <string name="gallery_app_name">相册</string>
+    <string name="gallery_app_name">相机相册</string>
     <string name="same_file_found">同名文件已存在。</string>
     <string name="name_existed">相册\'%1$s\'已存在，无法改名。</string>
     <string name="verify_ssl_certificate_title">SSL证书验证失败</string>
     <string name="verify_ssl_certificate_message">服务器%1$s的证书无法通过验证，是否信任该服务器并继续？</string>
     <string name="accept_certificate">信任</string>
     <string name="certificate_error">安全证书验证失败。</string>
+    <string name="item_search">搜索</string>
+    <string name="object_unknown">未知</string>
+    <string name="object_animal">动物</string>
+    <string name="object_plant">花草树木</string>
+    <string name="object_food">食物</string>
+    <string name="object_vehicle">车船</string>
+    <string name="tooltips_search_album">在相册中搜索</string>
+    <string name="tooltips_search_cameraroll">在相机相册中搜索</string>
 </resources>

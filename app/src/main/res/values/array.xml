@@ -13,4 +13,19 @@
         <item>@string/theme_auto_values</item>
     </string-array>
 
+    <string-array name="objects">
+        <item>@string/object_unknown</item>
+        <item>@string/object_animal</item>
+        <item>@string/object_plant</item>
+        <item>@string/object_food</item>
+        <item>@string/object_vehicle</item>
+    </string-array>
+
+    <integer-array name="object_drawable_ids">
+        <item>@drawable/ic_baseline_animal_24</item>
+        <item>@drawable/ic_baseline_animal_24</item>
+        <item>@drawable/ic_baseline_plant_24</item>
+        <item>@drawable/ic_baseline_food_24</item>
+        <item>@drawable/ic_baseline_vehicle_24</item>
+    </integer-array>
 </resources>

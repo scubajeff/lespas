@@ -82,4 +82,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract suspend fun getPhotoById(photoId: String): Photo
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE (mimeType LIKE '%image/%')  ORDER BY dateTaken DESC")
+    abstract fun getAllImage(): List<Photo>
 }

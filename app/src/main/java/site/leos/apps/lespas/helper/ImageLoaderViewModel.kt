@@ -2,6 +2,7 @@ package site.leos.apps.lespas.helper
 
 import android.app.ActivityManager
 import android.app.Application
+import android.content.ContentUris
 import android.content.Context
 import android.graphics.*
 import android.media.ThumbnailUtils
@@ -21,6 +22,8 @@ import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
+    private val externalStorageUri = MediaStore.Files.getContentUri("external")
+    private val contentResolver = application.contentResolver
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
@@ -61,15 +64,19 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
          */
 
-        var fileName: String
-        if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
-            // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property
-            fileName = "${rootPath}/${photo.id}"
-            if (!(File(fileName).exists())) {
-                fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
-                if (!File(fileName).exists()) return errorBitmap
-            }
-        } else fileName = "${rootPath}/${if (photo.eTag.isNotEmpty()) photo.id else photo.name}"
+        var fileName = ""
+        var uri = externalStorageUri
+        if (photo.albumId == FROM_CAMERA_ROLL) uri = ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())
+        else {
+            if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
+                // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property
+                fileName = "${rootPath}/${photo.id}"
+                if (!(File(fileName).exists())) {
+                    fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
+                    if (!File(fileName).exists()) return errorBitmap
+                }
+            } else fileName = "${rootPath}/${if (photo.eTag.isNotEmpty()) photo.id else photo.name}"
+        }
 
         try {
             bitmap = when (type) {
@@ -94,15 +101,28 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                 }
                             }
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
-                                    ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
-                                else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
+                                if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = size })
+                                else {
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
+                                    else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { inSampleSize = size })
+                                }
                             }
                             this == "image/jpeg" || this == "image/png" -> {
-                                BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
-                                    this.inSampleSize = size
-                                    this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                                })
+                                if (photo.albumId == FROM_CAMERA_ROLL) {
+                                    val bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, BitmapFactory.Options().apply {
+                                        this.inSampleSize = size
+                                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                                    })
+
+                                    // Property shareId contain photo rotation information
+                                    if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(photo.shareId.toFloat()) }, true)
+                                    else bmp
+                                }
+                                else
+                                    BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
+                                        this.inSampleSize = size
+                                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                                    })
                             }
                             else-> BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
                         }
@@ -208,5 +228,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
+
+        const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
     }
 }

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal">
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/search_destination_toogle_group"
+        android:layout_width="116dp"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_marginRight="@dimen/extra_padding"
+        android:paddingVertical="12dp"
+        android:paddingRight="@dimen/big_padding"
+        android:orientation="horizontal"
+        android:layout_centerInParent="true"
+        app:selectionRequired="true"
+        app:singleSelection="true"
+        app:checkedButton="@id/search_album">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/search_album"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            style="?attr/materialButtonOutlinedStyle"
+            app:strokeColor="@color/search_destination_switch_text"
+            android:tooltipText="@string/tooltips_search_album"
+            app:icon="@drawable/ic_baseline_photo_album_24"
+            app:iconSize="18dp"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/search_destination_switch_text" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/search_cameraroll"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            style="?attr/materialButtonOutlinedStyle"
+            app:strokeColor="@color/search_destination_switch_text"
+            android:tooltipText="@string/tooltips_search_cameraroll"
+            app:icon="@drawable/ic_baseline_camera_roll_24"
+            app:iconSize="18dp"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/search_destination_switch_text" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+</RelativeLayout>

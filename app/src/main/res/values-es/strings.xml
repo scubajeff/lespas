@@ -97,4 +97,12 @@
     <string name="verify_ssl_certificate_message">El certificado del servidor %1$s NO PUEDE ser verificado, ¿desea confiar en este servidor y continuar?</string>
     <string name="accept_certificate">Confía en ello.</string>
     <string name="certificate_error">Error en el certificado del sitio.</string>
+    <string name="item_search">Buscar</string>
+    <string name="object_unknown">DESCONOCIDO</string>
+    <string name="object_animal">Animal</string>
+    <string name="object_plant">Planta</string>
+    <string name="object_food">Alimentos</string>
+    <string name="object_vehicle">Vehículo</string>
+    <string name="tooltips_search_album">En álbumes</string>
+    <string name="tooltips_search_cameraroll">En el rollo de la cámara</string>
 </resources>

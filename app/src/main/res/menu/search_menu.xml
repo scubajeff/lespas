@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/option_menu_search_destination"
+        android:title=""
+        app:showAsAction="always"
+        app:actionLayout="@layout/menuitem_search_destination_switch" />
+</menu>

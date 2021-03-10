@@ -135,6 +135,7 @@
 
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
+    <string name="item_search">Search</string>
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_sortby">Sort by</string>
@@ -150,4 +151,15 @@
     <!-- Camera Roll Activity -->
     <string name="empty_camera_roll">No media found in Camera Roll.</string>
 
+    <!-- Search Fragment -->
+    <string name="tooltips_search_album">Search in albums</string>
+    <string name="tooltips_search_cameraroll">Search in camera roll</string>
+
+    <!-- Image Recognition -->
+    <!-- Object label -->
+    <string name="object_unknown">UNKNOWN</string>
+    <string name="object_animal">Animal</string>
+    <string name="object_plant">Plant</string>
+    <string name="object_food">Food</string>
+    <string name="object_vehicle">Vehicle</string>
 </resources>

@@ -20,4 +20,6 @@
     <color name="color_sketch">#C15733</color>
 
     <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
+
+    <color name="ic_launcher_background">@color/color_background</color>
 </resources>
