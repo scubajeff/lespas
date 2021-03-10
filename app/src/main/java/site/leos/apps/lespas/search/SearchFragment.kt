@@ -16,6 +16,7 @@ import site.leos.apps.lespas.R
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var destinationToggleGroup: MaterialButtonToggleGroup
+    private var lastSelection = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +34,8 @@ class SearchFragment : Fragment() {
         }
         categoryAdapter.submitList(categories)
         objectDrawableIds.recycle()
+
+        savedInstanceState?.apply { lastSelection = getInt(LAST_SELECTION) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -56,10 +59,25 @@ class SearchFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        lastSelection = destinationToggleGroup.checkedButtonId
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(LAST_SELECTION, destinationToggleGroup.checkedButtonId)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_menu, menu)
         destinationToggleGroup = menu.findItem(R.id.option_menu_search_destination).actionView.findViewById(R.id.search_destination_toogle_group)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        if (lastSelection != 0) destinationToggleGroup.check(lastSelection)
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
@@ -97,6 +115,7 @@ class SearchFragment : Fragment() {
 
     companion object {
         const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val LAST_SELECTION = "LAST_SELECTION"
 
         @JvmStatic
         fun newInstance(searchCollection: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) }}
