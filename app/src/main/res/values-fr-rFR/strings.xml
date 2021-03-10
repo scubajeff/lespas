@@ -105,4 +105,6 @@
     <string name="object_vehicle">Véhicule</string>
     <string name="tooltips_search_album">Dans les albums</string>
     <string name="tooltips_search_cameraroll">Dans les rouleaux de caméra</string>
+    <string name="title_in_album">%1$s dans les albums</string>
+    <string name="title_in_cameraroll">%1$s dans la galerie</string>
 </resources>

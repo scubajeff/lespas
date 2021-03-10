@@ -105,4 +105,6 @@
     <string name="object_vehicle">车船</string>
     <string name="tooltips_search_album">在相册中搜索</string>
     <string name="tooltips_search_cameraroll">在相机相册中搜索</string>
+    <string name="title_in_album">相册中的%1$s</string>
+    <string name="title_in_cameraroll">相机相册中的%1$s</string>
 </resources>

@@ -155,6 +155,10 @@
     <string name="tooltips_search_album">Search in albums</string>
     <string name="tooltips_search_cameraroll">Search in camera roll</string>
 
+    <!-- Search Result Fragment -->
+    <string name="title_in_album">%1$s in albums</string>
+    <string name="title_in_cameraroll">%1$s in camera roll</string>
+
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="object_unknown">UNKNOWN</string>

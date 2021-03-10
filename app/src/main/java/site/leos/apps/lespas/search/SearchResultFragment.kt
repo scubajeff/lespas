@@ -45,6 +45,7 @@ class SearchResultFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
 
         searchResultAdapter = SearchResultAdapter(
             { result ->
@@ -62,8 +63,6 @@ class SearchResultFragment : Fragment() {
             // Get album's name for display
             Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
         }
-
-        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -89,7 +88,7 @@ class SearchResultFragment : Fragment() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
-            title = arguments?.getString(CATEGORY_LABEL)
+            arguments?.let { title = getString(if (it.getBoolean(SEARCH_COLLECTION)) R.string.title_in_album else R.string.title_in_cameraroll, it.getString(CATEGORY_LABEL)) }
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
