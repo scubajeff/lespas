@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -38,6 +39,7 @@ import java.time.*
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
         AdhocAdhocSearchViewModelFactory(requireActivity().application, arguments?.getString(CATEGORY_ID)!!, arguments?.getBoolean(SEARCH_COLLECTION)!!)
     }
@@ -48,9 +50,21 @@ class SearchResultFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         searchResultAdapter = SearchResultAdapter(
-            { photo ->  },
+            { result ->
+                if (arguments?.getBoolean(SEARCH_COLLECTION)!!) {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        val album = albumModel.getThisAlbum(result.photo.albumId)[0]
+                        withContext(Dispatchers.Main) {
+                            parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        }
+                    }
+                }
+            },
             { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) }
-        )
+        ).apply {
+            // Get album's name for display
+            Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -102,7 +116,7 @@ class SearchResultFragment : Fragment() {
                 BufferedReader(InputStreamReader(app.assets.open("label_mobile_ssd_coco_90.txt"))).use {
                     var line = it.readLine()
                     while(line != null) {
-                        line.split(',').apply { labelIndex.add(Pair(this[0],this[1].toFloat())) }
+                        line.split(',').apply { labelIndex.add(Pair(this[0], this[1].toFloat())) }
                         line = it.readLine()
                     }
                 }
@@ -122,7 +136,14 @@ class SearchResultFragment : Fragment() {
                         photo.width = option.outWidth
                         photo.height = option.outHeight
 
-                        photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(app.contentResolver.openInputStream(ContentUris.withAppendedId(externalStorageUri, photo.id.toLong()))!!).rotationDegrees else 0
+                        photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(
+                            app.contentResolver.openInputStream(
+                                ContentUris.withAppendedId(
+                                    externalStorageUri,
+                                    photo.id.toLong()
+                                )
+                            )!!
+                        ).rotationDegrees else 0
                     }
 
                     size = 1
@@ -131,7 +152,10 @@ class SearchResultFragment : Fragment() {
 
                     val bitmap =
                         if (searchCollection) BitmapFactory.decodeFile("$rootPath/${photo.id}", BitmapFactory.Options().apply { inSampleSize = size })
-                        else BitmapFactory.decodeStream(app.contentResolver.openInputStream(ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())), null, BitmapFactory.Options().apply { inSampleSize = size })
+                        else BitmapFactory.decodeStream(
+                            app.contentResolver.openInputStream(ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())),
+                            null,
+                            BitmapFactory.Options().apply { inSampleSize = size })
 
                     bitmap?.let {
                         with(od.recognizeImage(Bitmap.createScaledBitmap(bitmap, 300, 300, true))) {
@@ -189,8 +213,10 @@ class SearchResultFragment : Fragment() {
         }
     }
 
-    class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader:(Photo, ImageView, String) -> Unit)
+    class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit)
         : ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
+        private val albumNames = HashMap<String, String>()
+
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             @SuppressLint("SetTextI18n")
             fun bind(item: Result) {
@@ -198,9 +224,11 @@ class SearchResultFragment : Fragment() {
                     imageLoader(item.photo, this, ImageLoaderViewModel.TYPE_GRID)
                     setOnClickListener { clickListener(item) }
                 }
-                itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                albumNames[item.photo.albumId]?.let { itemView.findViewById<TextView>(R.id.label).text = it }
             }
         }
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
             ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_search_result, parent, false))
 
@@ -210,6 +238,10 @@ class SearchResultFragment : Fragment() {
 
         override fun submitList(list: List<Result>?) {
             super.submitList(list?.toMutableList())
+        }
+
+        fun setAlbumNameList(list: List<IDandName>) {
+            for (album in list) { albumNames[album.id] = album.name }
         }
     }
 
@@ -223,7 +255,7 @@ class SearchResultFragment : Fragment() {
         }
     }
 
-    data class Result (
+    data class Result(
         val photo: Photo,
         val subLabel: String,
         val similarity: Float,

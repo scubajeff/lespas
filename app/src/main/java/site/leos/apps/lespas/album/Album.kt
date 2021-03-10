@@ -49,6 +49,7 @@ data class AlbumWithPhotos(
 
 data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
 data class IDandCover(val id: String, val cover: String)
+data class IDandName(val id: String, val name: String)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
 @Dao
@@ -99,4 +100,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId, coverBaseline = :newBaseline, coverWidth = :newWidth, coverHeight = :newHeight WHERE id = :albumId")
     abstract fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int)
+
+    @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
+    abstract fun getAllAlbumName(): List<IDandName>
 }

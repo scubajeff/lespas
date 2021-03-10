@@ -27,4 +27,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     //suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumRepository.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
     //fun removePhoto(photo: Photo) { photoRepository.removePhoto(photo) }
     //suspend fun getPhotoById(photoId: String): Photo = photoRepository.getPhotoById(photoId)
+    fun getAllAlbumName(): List<IDandName> = albumRepository.getAllAlbumName()
+    fun getThisAlbum(albumId: String) = albumRepository.getThisAlbum(albumId)
 }

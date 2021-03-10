@@ -251,6 +251,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 val fp = getFirstPosition()
                 if (!isScrolling) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
             }
+
+            // Scroll to designated photo at first run
+            savedInstanceState ?: run {
+                arguments?.getString(KEY_SCROLL_TO)?.apply {
+                    if (this.isNotEmpty()) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(mAdapter.findPhotoPosition(this))
+                }
+            }
         })
 
         with(recyclerView) {
@@ -655,6 +662,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
              */
         }
 
+        internal fun findPhotoPosition(photoId: String): Int {
+            for ((i, photo) in photos.withIndex()) {
+                if (photo.id == photoId) return i
+            }
+            return 0
+        }
+
         internal fun findPhotoPosition(photo: Photo): Int = photos.indexOf(photo)
 
         internal fun getPhotoAt(position: Int): Photo {
@@ -735,7 +749,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 
         const val KEY_ALBUM = "ALBUM"
+        const val KEY_SCROLL_TO = "KEY_SCROLL_TO"   // SearchResultFragment use this for scrolling to designed photo
 
-        fun newInstance(album: Album) = AlbumDetailFragment().apply { arguments = Bundle().apply{ putParcelable(KEY_ALBUM, album) }}
+        fun newInstance(album: Album, photoId: String) = AlbumDetailFragment().apply {
+            arguments = Bundle().apply{
+                putParcelable(KEY_ALBUM, album)
+                putString(KEY_SCROLL_TO, photoId)
+            }
+        }
     }
 }
