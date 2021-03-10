@@ -29,7 +29,7 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
     // contains the number of detected boxes
     private var numDetections = FloatArray(1) { 0f }
 
-    private val imgData = ByteBuffer.allocateDirect(1 * INPUT_SIZE * INPUT_SIZE * 3 * 1).apply { order(ByteOrder.nativeOrder()) }
+    private val imgData = ByteBuffer.allocateDirect(1 * INPUT_SIZE * INPUT_SIZE * 3 * if (IS_MODEL_QUANTIZED) 1 else 4).apply { order(ByteOrder.nativeOrder()) }
 
     private var odInterpreter: Interpreter? = TensorUtils.loadInterpreter(assetManager, MODEL_OBJECT_DETECT, NUM_THREADS)
 
@@ -45,10 +45,16 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
             for (j in 0 until INPUT_SIZE) {
                 val pixelValue: Int = pixels[i * INPUT_SIZE + j]
 
-                // Quantized model
-                imgData.put(((pixelValue shr 16) and 0xFF).toByte())
-                imgData.put(((pixelValue shr 8) and 0xFF).toByte())
-                imgData.put((pixelValue and 0xFF).toByte())
+                if (IS_MODEL_QUANTIZED) {
+                    // Quantized model
+                    imgData.put(((pixelValue shr 16) and 0xFF).toByte())
+                    imgData.put(((pixelValue shr 8) and 0xFF).toByte())
+                    imgData.put((pixelValue and 0xFF).toByte())
+                } else {
+                    imgData.putFloat((((pixelValue shr 16) and 0xFF) - IMAGE_MEAN) / IMAGE_STD)
+                    imgData.putFloat((((pixelValue shr 8) and 0xFF) - IMAGE_MEAN) / IMAGE_STD)
+                    imgData.putFloat(((pixelValue and 0xFF) - IMAGE_MEAN) / IMAGE_STD)
+                }
             }
         }
 
@@ -106,6 +112,13 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
 
         // Config values.
         private const val INPUT_SIZE: Int = 300
+
+        // Is model quantized or not
+        private const val IS_MODEL_QUANTIZED = true
+
+        // For float model
+        private const val IMAGE_MEAN = 127.5f
+        private const val IMAGE_STD = 127.5f
 
         private const val MODEL_OBJECT_DETECT = "objectdetect.tflite"
     }
