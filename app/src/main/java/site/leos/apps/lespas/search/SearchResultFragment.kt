@@ -9,13 +9,10 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.ContentLoadingProgressBar
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -44,7 +41,7 @@ class SearchResultFragment : Fragment() {
         AdhocAdhocSearchViewModelFactory(requireActivity().application, arguments?.getString(CATEGORY_ID)!!, arguments?.getBoolean(SEARCH_COLLECTION)!!)
     }
 
-    private lateinit var loadingProgressBar: ContentLoadingProgressBar
+    private lateinit var loadingIndicator: MenuItem
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +62,8 @@ class SearchResultFragment : Fragment() {
             // Get album's name for display
             Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
         }
+
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -77,10 +76,13 @@ class SearchResultFragment : Fragment() {
             adapter = searchResultAdapter
         }
 
-        loadingProgressBar = view.findViewById<ContentLoadingProgressBar>(R.id.loading_progress).apply { visibility = View.VISIBLE }
-
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
-        adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished -> if (finished) loadingProgressBar.visibility = View.GONE })
+        adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished ->
+            if (finished) loadingIndicator.apply {
+                isVisible = false
+                isEnabled = false
+            }
+        })
     }
 
     override fun onResume() {
@@ -91,6 +93,12 @@ class SearchResultFragment : Fragment() {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.search_result_menu, menu)
+        loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
     }
 
     @Suppress("UNCHECKED_CAST")

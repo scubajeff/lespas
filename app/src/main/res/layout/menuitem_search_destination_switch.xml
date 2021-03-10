@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal">
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/search_destination_toogle_group"
         android:layout_width="116dp"
         android:layout_height="?attr/actionBarSize"
-        android:layout_marginRight="@dimen/extra_padding"
         android:paddingVertical="12dp"
         android:paddingRight="@dimen/big_padding"
         android:orientation="horizontal"
         android:layout_centerInParent="true"
         app:selectionRequired="true"
         app:singleSelection="true"
-        app:checkedButton="@id/search_album">
+        app:checkedButton="@id/search_album"
+        tools:ignore="RtlHardcoded,RtlSymmetry">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/search_album"
             android:layout_width="0dp"
@@ -33,7 +35,8 @@
             app:iconSize="18dp"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
-            app:iconTint="@color/search_destination_switch_text" />
+            app:iconTint="@color/search_destination_switch_text"
+            tools:ignore="UnusedAttribute" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/search_cameraroll"
             android:layout_width="0dp"
@@ -50,6 +53,7 @@
             app:iconSize="18dp"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
-            app:iconTint="@color/search_destination_switch_text" />
+            app:iconTint="@color/search_destination_switch_text"
+            tools:ignore="UnusedAttribute" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 </RelativeLayout>
