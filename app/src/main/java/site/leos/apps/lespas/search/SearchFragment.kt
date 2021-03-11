@@ -15,7 +15,7 @@ import site.leos.apps.lespas.R
 
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
-    private lateinit var destinationToggleGroup: MaterialButtonToggleGroup
+    private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +23,10 @@ class SearchFragment : Fragment() {
         setHasOptionsMenu(true)
 
         categoryAdapter = CategoryAdapter { category ->
-            parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName)
+                .addToBackStack(null)
+                .commit()
         }
 
         val objectLabels = resources.getStringArray(R.array.objects)
@@ -61,12 +64,12 @@ class SearchFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        lastSelection = destinationToggleGroup.checkedButtonId
+        lastSelection = destinationToggleGroup?.checkedButtonId!!
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(LAST_SELECTION, destinationToggleGroup.checkedButtonId)
+        outState.putInt(LAST_SELECTION, destinationToggleGroup?.checkedButtonId!!)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -77,7 +80,7 @@ class SearchFragment : Fragment() {
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
-        if (lastSelection != 0) destinationToggleGroup.check(lastSelection)
+        if (lastSelection != 0) destinationToggleGroup?.check(lastSelection)
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
