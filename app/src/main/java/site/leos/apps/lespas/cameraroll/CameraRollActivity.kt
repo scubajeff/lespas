@@ -74,7 +74,7 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         if (intent.action == Intent.ACTION_MAIN) {
             mediaList = findViewById(R.id.photo_list)
             findViewById<ConstraintLayout>(R.id.medialist_container).visibility = View.VISIBLE
-            browseGallery()
+            browseGallery(intent.getStringExtra(EXTRA_SCROLL_TO))
             savedInstanceState?.apply {
                 currentMedia = getParcelable(CURRENT_MEDIA)!!
                 stopPosition = getInt(STOP_POSITION)
@@ -390,7 +390,7 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         return true
     }
 
-    private fun browseGallery() {
+    private fun browseGallery(scrollToID: String?) {
         // Querying MediaStore
         val contents = mutableListOf<CameraMedia>()
         val contentUri = MediaStore.Files.getContentUri("external")
@@ -407,6 +407,8 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         )
         val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                 "($pathSelection LIKE '%DCIM%')"
+        var scrollPosition = 1
+
         contentResolver.query(contentUri, projection, selection, null, "${dateSelection} DESC"
         )?.use { cursor->
             if (cursor.count == 0) {
@@ -481,10 +483,15 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                     else recyclerView.smoothScrollBy(view.left, 0, null, 500)
                 }
             })
+
+            scrollToID?.apply {
+                scrollPosition = (it.adapter as CameraRollAdapter).findMediaPosition(this)
+                (it.layoutManager as LinearLayoutManager).scrollToPosition(scrollPosition - 1)
+            }
         }
 
         // Assign currentMedia so that showMedia() works
-        if (contents.isNotEmpty()) currentMedia = ContentUris.withAppendedId(contentUri, contents[1].id!!.toLong())
+        if (contents.isNotEmpty()) currentMedia = ContentUris.withAppendedId(contentUri, contents[scrollPosition].id!!.toLong())
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -561,6 +568,11 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         override fun getItemViewType(position: Int): Int = media[position].id?.let { MEDIA_TYPE } ?: run { DATE_TYPE }
 
         fun setMedia(media: List<CameraMedia>) { this.media.addAll(0, media) }
+
+        fun findMediaPosition(id: String): Int {
+            for ((i, item) in media.withIndex()) { if (item.id == id) return i }
+            return 0
+        }
 
         fun removeMedia(uri: Uri) {
             val index = media.indexOfFirst { it.id == uri.lastPathSegment }
@@ -639,6 +651,7 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
         private const val CURRENT_MEDIA = "CURRENT_MEDIA"
         private const val STOP_POSITION = "STOP_POSITION"
         private const val MUTE_STATUS = "MUTE_STATUS"
+        const val EXTRA_SCROLL_TO = "EXTRA_SCROLL_TO"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         //const val BROWSE_GARLLERY = "site.leos.apps.lespas.BROWSE_GARLLERY"

@@ -61,8 +61,9 @@ class SearchResultFragment : Fragment() {
                 }
                 else {
                     startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
-                        action = Intent.ACTION_VIEW
-                        data = ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), result.photo.id.toLong())
+                        action = Intent.ACTION_MAIN
+                        putExtra(CameraRollActivity.EXTRA_SCROLL_TO, result.photo.id)
+                        //data = ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), result.photo.id.toLong())
                     })
                 }
             },
@@ -265,8 +266,8 @@ class SearchResultFragment : Fragment() {
                     imageLoader(item.photo, this, ImageLoaderViewModel.TYPE_GRID)
                     setOnClickListener { clickListener(item) }
                 }
-                //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
-                albumNames[item.photo.albumId]?.let { itemView.findViewById<TextView>(R.id.label).text = it }
+                itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                //albumNames[item.photo.albumId]?.let { itemView.findViewById<TextView>(R.id.label).text = it }
             }
         }
 
