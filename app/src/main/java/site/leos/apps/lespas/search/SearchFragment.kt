@@ -1,10 +1,12 @@
 package site.leos.apps.lespas.search
 
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
@@ -76,12 +78,29 @@ class SearchFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_menu, menu)
         destinationToggleGroup = menu.findItem(R.id.option_menu_search_destination).actionView.findViewById(R.id.search_destination_toogle_group)
+
+        destinationToggleGroup?.apply {
+            clearOnButtonCheckedListeners()
+            addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (isChecked && checkedId == R.id.search_cameraroll) {
+                    if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                        this.check(R.id.search_album)
+                    }
+                }
+            }
+        }
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         if (lastSelection != 0) destinationToggleGroup?.check(lastSelection)
     }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) destinationToggleGroup?.check(R.id.search_cameraroll)
+    }
+
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -117,6 +136,8 @@ class SearchFragment : Fragment() {
     )
 
     companion object {
+        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8900
+
         const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
