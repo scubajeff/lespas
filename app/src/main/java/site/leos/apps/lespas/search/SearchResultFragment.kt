@@ -118,7 +118,7 @@ class SearchResultFragment : Fragment() {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchCollection) as T
     }
 
-    class AdhocSearchViewModel(private val app: Application, private val categoryId: String, private val searchCollection: Boolean): AndroidViewModel(app) {
+    class AdhocSearchViewModel(private val app: Application, private val categoryId: String, private val searchInAlbums: Boolean): AndroidViewModel(app) {
         private val finished = MutableLiveData(false)
         private val resultList = mutableListOf<Result>()
         private val result = MutableLiveData<List<Result>>()
@@ -128,11 +128,20 @@ class SearchResultFragment : Fragment() {
         init {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
-                val photos = if (searchCollection) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
+                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
                 val od = ObjectDetectionModel(app.assets)
-                val labelIndex = arrayListOf<Pair<String, Float>>()
+                val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
+                var photoUri = externalStorageUri
+                var length: Int
+                var size: Int
+                val sizeOption = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                    inSampleSize = 1
+                }
+                val option = BitmapFactory.Options()
 
                 // Load object index and positive threshold
+                val labelIndex = arrayListOf<Pair<String, Float>>()
                 BufferedReader(InputStreamReader(app.assets.open("label_mobile_ssd_coco_90.txt"))).use {
                     var line = it.readLine()
                     while(line != null) {
@@ -141,42 +150,30 @@ class SearchResultFragment : Fragment() {
                     }
                 }
 
-                var length: Int
-                var size: Int
-                val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
-                val option = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                    inSampleSize = 1
-                }
                 for(photo in photos) {
                     if (!isActive) return@launch
 
-                    if (!searchCollection) {
-                        BitmapFactory.decodeStream(app.contentResolver.openInputStream(ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())), null, option)
-                        photo.width = option.outWidth
-                        photo.height = option.outHeight
+                    if (!searchInAlbums) {
+                        photoUri = ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())
+                        // Get photo size
+                        BitmapFactory.decodeStream(app.contentResolver.openInputStream(photoUri), null, sizeOption)
+                        photo.width = sizeOption.outWidth
+                        photo.height = sizeOption.outHeight
 
-                        photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(
-                            app.contentResolver.openInputStream(
-                                ContentUris.withAppendedId(
-                                    externalStorageUri,
-                                    photo.id.toLong()
-                                )
-                            )!!
-                        ).rotationDegrees else 0
+                        // Get photo orientation
+                        photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(app.contentResolver.openInputStream(photoUri)!!).rotationDegrees else 0
                     }
 
+                    // Decode file with dimension just above 300
                     size = 1
                     length = Integer.min(photo.width, photo.height)
                     while(length / size > 600) { size *= 2 }
-
+                    option.inSampleSize = size
                     val bitmap =
-                        if (searchCollection) BitmapFactory.decodeFile("$rootPath/${photo.id}", BitmapFactory.Options().apply { inSampleSize = size })
-                        else BitmapFactory.decodeStream(
-                            app.contentResolver.openInputStream(ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())),
-                            null,
-                            BitmapFactory.Options().apply { inSampleSize = size })
+                        if (searchInAlbums) BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
+                        else BitmapFactory.decodeStream(app.contentResolver.openInputStream(photoUri),null, option)
 
+                    // Inference
                     bitmap?.let {
                         with(od.recognizeImage(Bitmap.createScaledBitmap(bitmap, 300, 300, true))) {
                             if (this.isNotEmpty()) with(this[0]) {
@@ -184,17 +181,41 @@ class SearchResultFragment : Fragment() {
                                 if (found.first == categoryId && this.confidence > found.second) {
                                     resultList.add(Result(photo, this.title, this.confidence))
                                     result.postValue(resultList)
+                                } else {
+                                    // Special inference
+                                    if (categoryId == CATEGORY_PLANT) {
+                                        if ((this.title == "51" || this.title == "52" || this.title == "54") && this.confidence < found.second && this.confidence > 0.3) {
+                                            // "banana 51", "apple 52", "orange 54", could well be plant
+                                            resultList.add(Result(photo, this.title, this.confidence))
+                                            result.postValue(resultList)
+                                        }
+                                        if ((this.title == "56" || this.title == "22" || this.title == "55") && this.confidence < 0.45 && this.confidence > 0.24) {
+                                            // Low confidence "carrot 56", "bear 22", "broccoli 55" could be plant
+                                            resultList.add(Result(photo, this.title, this.confidence))
+                                            result.postValue(resultList)
+                                        }
+                                        /* too much false positive
+                                        if ((this.title == "15") && this.confidence < 0.5 && this.confidence > 0.36) {
+                                            // "bird 15" with confidence range of 0.35~0.5 could be plant
+                                            resultList.add(Result(photo, this.title, this.confidence))
+                                            result.postValue(resultList)
+                                        }
+                                         */
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                // Inform caller that search is finished
                 finished.postValue(true)
             }
         }
 
         override fun onCleared() {
+            // Stop search coroutine
             job?.cancel()
+
             super.onCleared()
         }
 
@@ -285,6 +306,11 @@ class SearchResultFragment : Fragment() {
         private const val CATEGORY_TYPE = "CATEGORY_TYPE"
         private const val CATEGORY_ID = "CATEGORY_ID"
         private const val CATEGORY_LABEL = "CATEGORY_LABEL"
+
+        private const val CATEGORY_ANIMAL = "1"
+        private const val CATEGORY_PLANT = "2"
+        private const val CATEGORY_FOOD = "3"
+        private const val CATEGORY_VEHICLE = "4"
 
         @JvmStatic
         fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, searchCollection: Boolean) = SearchResultFragment().apply {
