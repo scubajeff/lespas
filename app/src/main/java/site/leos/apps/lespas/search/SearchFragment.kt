@@ -66,12 +66,12 @@ class SearchFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        lastSelection = destinationToggleGroup?.checkedButtonId!!
+        destinationToggleGroup?.let { lastSelection = it.checkedButtonId }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(LAST_SELECTION, destinationToggleGroup?.checkedButtonId!!)
+        destinationToggleGroup?.let { outState.putInt(LAST_SELECTION, it.checkedButtonId) }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
