@@ -41,7 +41,7 @@ class SearchResultFragment : Fragment() {
         AdhocAdhocSearchViewModelFactory(requireActivity().application, arguments?.getString(CATEGORY_ID)!!, arguments?.getBoolean(SEARCH_COLLECTION)!!)
     }
 
-    private lateinit var loadingIndicator: MenuItem
+    private var loadingIndicator: MenuItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +77,7 @@ class SearchResultFragment : Fragment() {
 
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
         adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished ->
-            if (finished) loadingIndicator.apply {
+            if (finished) loadingIndicator?.apply {
                 isVisible = false
                 isEnabled = false
             }
@@ -98,6 +98,11 @@ class SearchResultFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_result_menu, menu)
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+
+        if (adhocSearchViewModel.isFinished().value!!) loadingIndicator?.apply {
+            isVisible = false
+            isEnabled = false
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
