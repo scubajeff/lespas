@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -24,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
+import site.leos.apps.lespas.cameraroll.CameraRollActivity
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -56,6 +58,12 @@ class SearchResultFragment : Fragment() {
                             parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
                     }
+                }
+                else {
+                    startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
+                        action = Intent.ACTION_VIEW
+                        data = ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), result.photo.id.toLong())
+                    })
                 }
             },
             { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) }
