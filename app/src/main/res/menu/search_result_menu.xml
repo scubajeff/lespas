@@ -7,5 +7,5 @@
         android:id="@+id/option_menu_search_progress"
         android:title=""
         app:showAsAction="always"
-        app:actionLayout="@layout/menuitem_progress" />
+        app:actionLayout="@layout/menuitem_search_progress" />
 </menu>
