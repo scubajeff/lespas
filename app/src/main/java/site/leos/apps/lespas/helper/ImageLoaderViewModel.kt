@@ -2,10 +2,10 @@ package site.leos.apps.lespas.helper
 
 import android.app.ActivityManager
 import android.app.Application
-import android.content.ContentUris
 import android.content.Context
 import android.graphics.*
 import android.media.ThumbnailUtils
+import android.net.Uri
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
@@ -22,7 +22,6 @@ import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
-    private val externalStorageUri = MediaStore.Files.getContentUri("external")
     private val contentResolver = application.contentResolver
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
@@ -65,8 +64,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
          */
 
         var fileName = ""
-        var uri = externalStorageUri
-        if (photo.albumId == FROM_CAMERA_ROLL) uri = ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())
+        var uri = Uri.EMPTY
+        if (photo.albumId == FROM_CAMERA_ROLL) uri = Uri.parse(photo.id)
         else {
             if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
                 // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property

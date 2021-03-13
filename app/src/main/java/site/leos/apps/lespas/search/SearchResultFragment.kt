@@ -7,6 +7,7 @@ import android.content.ContentUris
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -123,7 +124,6 @@ class SearchResultFragment : Fragment() {
         private val finished = MutableLiveData(false)
         private val resultList = mutableListOf<Result>()
         private val result = MutableLiveData<List<Result>>()
-        private val externalStorageUri = MediaStore.Files.getContentUri("external")
         private var job: Job? = null
 
         init {
@@ -132,7 +132,7 @@ class SearchResultFragment : Fragment() {
                 val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
-                var photoUri = externalStorageUri
+                var photoUri = Uri.EMPTY
                 var length: Int
                 var size: Int
                 val sizeOption = BitmapFactory.Options().apply {
@@ -155,7 +155,7 @@ class SearchResultFragment : Fragment() {
                     if (!isActive) return@launch
 
                     if (!searchInAlbums) {
-                        photoUri = ContentUris.withAppendedId(externalStorageUri, photo.id.toLong())
+                        photoUri = Uri.parse(photo.id)
                         // Get photo size
                         BitmapFactory.decodeStream(app.contentResolver.openInputStream(photoUri), null, sizeOption)
                         photo.width = sizeOption.outWidth
@@ -225,6 +225,7 @@ class SearchResultFragment : Fragment() {
 
         private fun getCameraCollection(contentResolver: ContentResolver): List<Photo> {
             val photos = mutableListOf<Photo>()
+            val externalStorageUri = MediaStore.Files.getContentUri("external")
 
             @Suppress("DEPRECATION")
             val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -248,15 +249,15 @@ class SearchResultFragment : Fragment() {
 
                 while(cursor.moveToNext()) {
                     date = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
-                    photos.add(Photo(cursor.getString(idColumn), ImageLoaderViewModel.FROM_CAMERA_ROLL, cursor.getString(nameColumn), "", date, date, 0, 0, cursor.getString(typeColumn), 0))
+                    photos.add(Photo(ContentUris.withAppendedId(externalStorageUri, cursor.getLong(idColumn)).toString(), ImageLoaderViewModel.FROM_CAMERA_ROLL, cursor.getString(nameColumn), "", date, date, 0, 0, cursor.getString(typeColumn), 0))
                 }
             }
             return photos
         }
     }
 
-    class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit)
-        : ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
+    class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
