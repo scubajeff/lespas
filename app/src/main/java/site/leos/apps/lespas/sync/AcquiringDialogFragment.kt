@@ -18,6 +18,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.MimeTypeMap
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
@@ -49,6 +50,7 @@ import java.util.*
 
 class AcquiringDialogFragment: DialogFragment() {
     private var total = -1
+    private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val acquiringModel: AcquiringViewModel by viewModels {
         AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(URIS)!!, arguments?.getParcelable(ALBUM)!!)
     }
@@ -133,13 +135,16 @@ class AcquiringDialogFragment: DialogFragment() {
 
 
     override fun onCancel(dialog: DialogInterface) {
-        super.onCancel(dialog)
+        destinationViewModel.resetDestination()
 
+        super.onCancel(dialog)
         // If called by ShareReceiverActivity, quit immediately, otherwise return normally
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
     override fun onDismiss(dialog: DialogInterface) {
+        destinationViewModel.resetDestination()
+
         super.onDismiss(dialog)
         // If called by ShareReceiverActivity, quit immediately, otherwise return normally
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()

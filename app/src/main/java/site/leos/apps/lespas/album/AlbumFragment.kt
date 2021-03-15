@@ -64,8 +64,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
         destinationModel.getDestination().observe (this, { album->
             // Acquire files
-            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            album?.apply {
+                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                    AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            }
         })
 
         mAdapter = AlbumListAdapter(

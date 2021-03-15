@@ -109,9 +109,11 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
             controls.visibility = View.GONE
             val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
             destinationModel.getDestination().observe(this, { album ->
-                // Acquire files
-                if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(arrayListOf(currentMedia!!), album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                album?.apply {
+                    // Acquire files
+                    if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                        AcquiringDialogFragment.newInstance(arrayListOf(currentMedia!!), album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)

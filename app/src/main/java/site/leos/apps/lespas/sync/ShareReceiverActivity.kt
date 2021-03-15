@@ -26,9 +26,11 @@ class ShareReceiverActivity: AppCompatActivity() {
 
         if (files.isNotEmpty()) {
             destinationModel.getDestination().observe (this, { album->
-                // Acquire files
-                if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(files, album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                album?.apply {
+                    // Acquire files
+                    if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                        AcquiringDialogFragment.newInstance(files, album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)

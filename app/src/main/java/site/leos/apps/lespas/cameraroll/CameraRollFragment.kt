@@ -204,9 +204,11 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         })
 
         destinationModel.getDestination().observe(viewLifecycleOwner, Observer { album ->
-            // Acquire files
-            if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                AcquiringDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            album?.apply {
+                // Acquire files
+                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
+                    AcquiringDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            }
         })
 
     }
