@@ -46,23 +46,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
         var bitmap: Bitmap? = null
-        /*
-        var fileName = "${rootPath}/${photo.id}"
-
-        if (!(File(fileName).exists())) {
-            fileName = "${rootPath}/${photo.name}"
-            if (!(File(fileName).exists())) {
-                // Under some situation, cover photo is created from Album record in runtime, therefore does not contain name property value
-                if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
-                    fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
-                    if (!File(fileName).exists()) return errorBitmap
-                }
-                else return errorBitmap
-            }
-        }
-
-         */
-
         var fileName = ""
         var uri = Uri.EMPTY
         if (photo.albumId == FROM_CAMERA_ROLL) uri = Uri.parse(photo.id)
@@ -93,10 +76,19 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     with(photo.mimeType) {
                         when {
                             this.startsWith("video")-> {
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
-                                } else {
-                                    ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Images.Thumbnails.MINI_KIND)
+                                if (photo.albumId == FROM_CAMERA_ROLL) {
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                        contentResolver.loadThumbnail(uri, Size(384, 384), null)
+                                    } else {
+                                        MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
+                                    }
+                                }
+                                else {
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                        ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
+                                    } else {
+                                        ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND)
+                                    }
                                 }
                             }
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
@@ -128,12 +120,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_FULL -> {
-                    var bmp = BitmapFactory.decodeFile(fileName)
+                    var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
                     // If image is too large
                     // TODO hardcoded size
                     if (bmp.allocationByteCount > 100000000) {
                         bmp.recycle()
-                        bmp = BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { inSampleSize = 2 })
+                        val option = BitmapFactory.Options().apply { inSampleSize = 2 }
+                        bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
                     }
                     bmp
                 }
