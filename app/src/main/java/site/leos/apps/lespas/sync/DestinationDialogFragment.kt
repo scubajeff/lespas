@@ -26,7 +26,6 @@ import kotlinx.android.synthetic.main.fragment_destination_dialog.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.cameraroll.CameraRollActivity
 import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -65,7 +64,8 @@ class DestinationDialogFragment : DialogFragment() {
         )
         albumNameModel.allAlbumsByEndDate.observe(this, { albums ->
             albumAdapter.setDestinations(albums)
-            albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == CameraRollActivity.TAG_DESTINATION_DIALOG)
+            //albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == CameraRollActivity.TAG_DESTINATION_DIALOG)
+            albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
         })
     }
 

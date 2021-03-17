@@ -6,14 +6,15 @@
     android:layout_width="@dimen/camera_roll_date_grid_size"
     android:layout_height="@dimen/camera_roll_grid_size"
     android:paddingLeft="@dimen/small_padding"
+    android:paddingTop="@dimen/tiny_padding"
     android:background="@color/color_background"
     android:clickable="false"
     tools:ignore="RtlHardcoded,RtlSymmetry">
 
     <ImageView
         android:id="@+id/icon"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"

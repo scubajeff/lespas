@@ -91,6 +91,9 @@ dependencies {
     implementation "androidx.viewpager2:viewpager2:1.0.0"
     implementation 'androidx.preference:preference-ktx:1.1.1'
 
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.13.2'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.13.2'
+
     // Sardine Android WebDAV
     implementation ('com.thegrizzlylabs.sardine-android:sardine-android:0.6') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'

@@ -2,20 +2,14 @@ package site.leos.apps.lespas.search
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.ContentResolver
-import android.content.ContentUris
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -26,8 +20,9 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
-import site.leos.apps.lespas.cameraroll.CameraRollActivity
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.search.SearchFragment.Companion.SEARCH_COLLECTION
@@ -60,13 +55,7 @@ class SearchResultFragment : Fragment() {
                         }
                     }
                 }
-                else {
-                    startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
-                        action = Intent.ACTION_MAIN
-                        putExtra(CameraRollActivity.EXTRA_SCROLL_TO, result.photo.id)
-                        //data = ContentUris.withAppendedId(MediaStore.Files.getContentUri("external"), result.photo.id.toLong())
-                    })
-                }
+                else parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(result.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) }
         ).apply {
@@ -129,16 +118,12 @@ class SearchResultFragment : Fragment() {
         init {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
-                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
+                //val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
+                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
-                var photoUri = Uri.EMPTY
                 var length: Int
                 var size: Int
-                val sizeOption = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                    inSampleSize = 1
-                }
                 val option = BitmapFactory.Options()
 
                 // Load object index and positive threshold
@@ -154,17 +139,6 @@ class SearchResultFragment : Fragment() {
                 for(photo in photos) {
                     if (!isActive) return@launch
 
-                    if (!searchInAlbums) {
-                        photoUri = Uri.parse(photo.id)
-                        // Get photo size
-                        BitmapFactory.decodeStream(app.contentResolver.openInputStream(photoUri), null, sizeOption)
-                        photo.width = sizeOption.outWidth
-                        photo.height = sizeOption.outHeight
-
-                        // Get photo orientation
-                        photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(app.contentResolver.openInputStream(photoUri)!!).rotationDegrees else 0
-                    }
-
                     // Decode file with dimension just above 300
                     size = 1
                     length = Integer.min(photo.width, photo.height)
@@ -172,7 +146,7 @@ class SearchResultFragment : Fragment() {
                     option.inSampleSize = size
                     val bitmap =
                         if (searchInAlbums) BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
-                        else BitmapFactory.decodeStream(app.contentResolver.openInputStream(photoUri),null, option)
+                        else BitmapFactory.decodeStream(app.contentResolver.openInputStream(Uri.parse(photo.id)),null, option)
 
                     // Inference
                     bitmap?.let {
@@ -222,38 +196,6 @@ class SearchResultFragment : Fragment() {
 
         fun isFinished(): LiveData<Boolean> = finished
         fun getResultList(): LiveData<List<Result>> = result
-
-        private fun getCameraCollection(contentResolver: ContentResolver): List<Photo> {
-            val photos = mutableListOf<Photo>()
-            val externalStorageUri = MediaStore.Files.getContentUri("external")
-
-            @Suppress("DEPRECATION")
-            val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-            val dateSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.DATE_TAKEN else MediaStore.Files.FileColumns.DATE_ADDED
-            val projection = arrayOf(
-                MediaStore.Files.FileColumns._ID,
-                pathSelection,
-                dateSelection,
-                MediaStore.Files.FileColumns.MEDIA_TYPE,
-                MediaStore.Files.FileColumns.MIME_TYPE,
-                MediaStore.Files.FileColumns.TITLE,
-            )
-            val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} AND $pathSelection LIKE '%DCIM%'"
-            contentResolver.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
-                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-                val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.TITLE)
-                val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
-                val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
-                val defaultZone = ZoneId.systemDefault()
-                var date: LocalDateTime
-
-                while(cursor.moveToNext()) {
-                    date = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
-                    photos.add(Photo(ContentUris.withAppendedId(externalStorageUri, cursor.getLong(idColumn)).toString(), ImageLoaderViewModel.FROM_CAMERA_ROLL, cursor.getString(nameColumn), "", date, date, 0, 0, cursor.getString(typeColumn), 0))
-                }
-            }
-            return photos
-        }
     }
 
     class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit

@@ -7,10 +7,13 @@
     android:layout_height="match_parent"
     tools:context=".cameraroll.CameraRollFragment">
 
-    <androidx.viewpager2.widget.ViewPager2
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/media_pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/viewpager_item_photo" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/control_container"
@@ -18,8 +21,27 @@
         android:layout_height="0dp"
         android:paddingVertical="@dimen/small_padding"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:background="@color/color_background"
+        android:background="@drawable/camera_roll_control_background"
         android:visibility="gone">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/quick_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toTopOf="parent"
+            android:paddingRight="@dimen/big_padding"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/recyclerview_item_cameraroll">
+        </androidx.recyclerview.widget.RecyclerView>
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1.5dp"
+            app:layout_constraintTop_toBottomOf="@id/quick_scroll"
+            android:layout_margin="@dimen/big_padding"
+            android:background="@drawable/divider"/>
 
         <TextView
             android:id="@+id/name"
@@ -28,6 +50,7 @@
             app:layout_constraintBottom_toTopOf="@id/size"
             app:layout_constraintLeft_toLeftOf="@id/size"
             app:layout_constraintRight_toRightOf="@id/size"
+            android:textColor="@color/color_on_primary_invert"
             android:autoSizeTextType="uniform"
             android:singleLine="true"
             android:ellipsize="middle"
@@ -41,16 +64,17 @@
             app:layout_constraintRight_toLeftOf="@id/remove_button"
             android:layout_marginHorizontal="@dimen/big_padding"
             android:textSize="16sp"
+            android:textColor="@color/color_on_primary_invert"
             android:lines="1"
-            tools:text="size x size" />
+            tools:text="2MB" />
 
         <ImageButton
             android:id="@+id/remove_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="@id/lespas_button"
             app:layout_constraintRight_toLeftOf="@id/share_button"
-            android:layout_marginRight="@dimen/extra_padding"
+            android:layout_marginRight="@dimen/big_padding"
             android:padding="8dp"
             android:background="@android:color/transparent"
             android:tint="@color/color_on_primary_invert"
@@ -60,11 +84,11 @@
             tools:ignore="RtlHardcoded" />
         <ImageButton
             android:id="@+id/share_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="@id/lespas_button"
             app:layout_constraintRight_toLeftOf="@id/lespas_button"
-            android:layout_marginRight="@dimen/extra_padding"
+            android:layout_marginRight="@dimen/big_padding"
             android:padding="8dp"
             android:background="@android:color/transparent"
             android:tint="@color/color_on_primary_invert"
@@ -74,28 +98,19 @@
             tools:ignore="RtlHardcoded" />
         <ImageButton
             android:id="@+id/lespas_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            app:layout_constraintBottom_toTopOf="@id/quick_scroll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/divider"
             app:layout_constraintRight_toRightOf="parent"
             android:layout_marginRight="@dimen/big_padding"
-            android:layout_marginBottom="@dimen/big_padding"
+            android:layout_marginTop="@dimen/small_padding"
             android:padding="8dp"
             android:background="@android:color/transparent"
             android:tint="@color/color_on_primary_invert"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_footprint"
+            android:src="@drawable/ic_baseline_footprint_24"
             tools:ignore="ContentDescription,RtlHardcoded" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/quick_scroll"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/recyclerview_item_cameraroll">
-        </androidx.recyclerview.widget.RecyclerView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

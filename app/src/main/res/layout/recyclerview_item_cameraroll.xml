@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="@dimen/camera_roll_grid_size"
     android:layout_height="@dimen/camera_roll_grid_size"
-    android:clickable="true"
+    android:layout_marginRight="1dp"
     android:foreground="?android:attr/selectableItemBackground">
 
     <ImageView

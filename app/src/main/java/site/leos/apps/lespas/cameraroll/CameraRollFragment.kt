@@ -2,17 +2,19 @@ package site.leos.apps.lespas.cameraroll
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.ContentUris
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.transition.Slide
 import android.transition.TransitionManager
+import android.util.Log
 import android.view.*
+import android.webkit.MimeTypeMap
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,67 +23,70 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.ViewCompat
-import androidx.core.view.get
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.*
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.exoplayer2.*
+import com.google.android.exoplayer2.ui.PlayerView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.lang.Integer.min
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
+import java.util.*
 import kotlin.math.roundToInt
 
 class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var controlViewGroup: ConstraintLayout
-    private lateinit var mediaPager: ViewPager2
+    private lateinit var mediaPager: RecyclerView
     private lateinit var quickScroll: RecyclerView
+    private lateinit var divider: View
     private lateinit var nameTextView: TextView
     private lateinit var sizeTextView: TextView
+    private lateinit var shareButton: ImageButton
+    private var savedStatusBarColor = 0
+    private var savedNavigationBarColor = 0
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val camerarollModel: CamerarollViewModel by viewModels { CamerarollViewModelFactory(requireActivity().application) }
+    private val camerarollModel: CamerarollViewModel by viewModels { CamerarollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
 
     private lateinit var mediaPagerAdapter: MediaPagerAdapter
     private lateinit var quickScrollAdapter: QuickScrollAdapter
 
-    private var initialPosition = arguments?.getString(KEY_SCROLL_TO) ?: ""
-    private var videoStopPosition = 0
+    private lateinit var startWithThisMedia: String
+    private var videoStopPosition = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
+            requireContext(),
             { toggleControlView(controlViewGroup.visibility == View.GONE) },
+            { videoControlVisible-> toggleControlView(videoControlVisible) },
             {photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) },
-            { newPosition->
-                if (newPosition > 0) videoStopPosition = newPosition
-                videoStopPosition
-            }
         )
 
         quickScrollAdapter = QuickScrollAdapter(
-            { photo ->  mediaPager.setCurrentItem(mediaPagerAdapter.findMediaPosition(photo), false) },
+            { photo -> mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))},
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
         )
 
-        savedInstanceState?.apply { videoStopPosition = getInt(STOP_POSITION) }
+        savedInstanceState?.apply {
+            mediaPagerAdapter.setSavedStopPosition(getLong(STOP_POSITION))
+            videoStopPosition = getLong(STOP_POSITION)
+        }
+
+        startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -90,11 +95,15 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        view.setBackgroundColor(Color.BLACK)
+
         controlViewGroup = view.findViewById(R.id.control_container)
         nameTextView = view.findViewById(R.id.name)
         sizeTextView = view.findViewById(R.id.size)
+        shareButton = view.findViewById(R.id.share_button)
+        divider = view.findViewById(R.id.divider)
 
-        view.findViewById<ImageButton>(R.id.share_button).setOnClickListener {
+        shareButton.setOnClickListener {
             toggleControlView(false)
 
             val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
@@ -160,31 +169,37 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             })
         }
 
-        mediaPager = view.findViewById<ViewPager2>(R.id.media_pager).apply {
+        mediaPager = view.findViewById<RecyclerView>(R.id.media_pager).apply {
             adapter = mediaPagerAdapter
 
-            registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
-                override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-                    super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-                    toggleControlView(false)
+            // Snap like a ViewPager
+            PagerSnapHelper().attachToRecyclerView(this)
+
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    // scrollToPosition called
+                    if (dx == 0 && dy == 0) newPositionSet()
                 }
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
 
-                override fun onPageSelected(position: Int) {
-                    super.onPageSelected(position)
-
-                    camerarollModel.setCurrentMediaIndex(position)
-                    with(mediaPagerAdapter.getMediaAtPosition(position)) {
-                        nameTextView.text = name
-                        sizeTextView.text = eTag
-
-                        var pos = quickScrollAdapter.findMediaPosition(this)
-                        if (pos == 1) pos = 0
-                        quickScroll.scrollToPosition(pos)
+                    when(newState) {
+                        RecyclerView.SCROLL_STATE_IDLE-> { newPositionSet() }
+                        RecyclerView.SCROLL_STATE_DRAGGING-> { toggleControlView(false) }
                     }
                 }
             })
         }
 
+        // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
+        (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
+            isAccessible = true
+            set(mediaPager, (get(mediaPager) as Int) * 4)
+        }
+
+        // Observing media list update
         camerarollModel.getMediaList().observe(viewLifecycleOwner, Observer {
             if (it.size == 0) {
                 Toast.makeText(requireContext(), getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
@@ -192,17 +207,18 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             }
 
             // Set initial position if passed in arguments
-            if (initialPosition.isNotEmpty()) {
-                camerarollModel.setCurrentMedia(initialPosition)
-                initialPosition = ""
+            if (startWithThisMedia.isNotEmpty()) {
+                camerarollModel.setCurrentMediaIndex(it.indexOfFirst { it.id == startWithThisMedia })
+                startWithThisMedia = ""
             }
 
             // Populate list and scroll to correct position
             (mediaPager.adapter as MediaPagerAdapter).submitList(it)
-            mediaPager.setCurrentItem(camerarollModel.getCurrentMediaIndex(), false)
+            mediaPager.scrollToPosition(camerarollModel.getCurrentMediaIndex())
             (quickScroll.adapter as QuickScrollAdapter).submitList(it)
         })
 
+        // Acquiring new medias
         destinationModel.getDestination().observe(viewLifecycleOwner, Observer { album ->
             album?.apply {
                 // Acquire files
@@ -218,126 +234,155 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
     }
 
+    override fun onStart() {
+        super.onStart()
+        mediaPagerAdapter.initializePlayer()
+    }
+
+    override fun onResume() {
+        Log.e(">>>>>", "onResume $videoStopPosition")
+        super.onResume()
+        (requireActivity() as AppCompatActivity).window.run {
+            savedStatusBarColor = statusBarColor
+            savedNavigationBarColor = navigationBarColor
+            statusBarColor = Color.BLACK
+            navigationBarColor = Color.TRANSPARENT
+        }
+
+        with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
+            if (this is MediaPagerAdapter.VideoViewHolder) {
+                this.resume()
+            }
+        }
+    }
+
     override fun onPause() {
+        Log.e(">>>>>", "onPause")
         super.onPause()
-        with(mediaPager[0].findViewById<View>(R.id.media)) {
-            if (this is VolumeControlVideoView) {
-                // Save stop position to VideoView's seekWhenPrepare property and local property for later use in onSaveInstanceState
-                videoStopPosition = currentPosition
-                this.setSeekOnPrepare(currentPosition)
+        with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
+            if (this is MediaPagerAdapter.VideoViewHolder) {
+                videoStopPosition = this.pause()
             }
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(STOP_POSITION, videoStopPosition)
+        outState.putLong(STOP_POSITION, videoStopPosition)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mediaPagerAdapter.cleanUp()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        (requireActivity() as AppCompatActivity).supportActionBar!!.show()
+        (requireActivity() as AppCompatActivity).run {
+            supportActionBar!!.show()
+            window.statusBarColor = savedStatusBarColor
+            window.navigationBarColor = savedNavigationBarColor
+        }
     }
 
+    // From ConfirmDialogFragment
     override fun onResult(positive: Boolean, requestCode: Int) {
         if (positive) camerarollModel.removeCurrentMedia()
     }
 
     private fun toggleControlView(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = 80 })
+        TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = 120 })
         controlViewGroup.visibility = if (show) View.VISIBLE else View.GONE
+
+        if (mediaPagerAdapter.itemCount == 1) {
+            // Disable quick scroll if there is only one media
+            quickScroll.visibility = View.GONE
+            divider.visibility = View.GONE
+            // Disable share function if scheme of the uri shared with us is "file", this only happened when viewing a single file
+            if (mediaPagerAdapter.getMediaAtPosition(0).id.startsWith("file")) shareButton.isEnabled = false
+        }
+    }
+
+    private fun newPositionSet() {
+        (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().apply {
+            camerarollModel.setCurrentMediaIndex(this)
+
+            with(mediaPagerAdapter.getMediaAtPosition(this)) {
+                nameTextView.text = name
+                sizeTextView.text = Tools.humanReadableByteCountSI(eTag.toLong())
+
+                var pos = quickScrollAdapter.findMediaPosition(this)
+                if (pos == 1) pos = 0   // Show date separator for first item
+                quickScroll.scrollToPosition(pos)
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
-    class CamerarollViewModelFactory(private val application: Application): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = CamerarollViewModel(application) as T
+    class CamerarollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T = CamerarollViewModel(application, fileUri) as T
     }
 
-    class CamerarollViewModel(application: Application): AndroidViewModel(application) {
+    class CamerarollViewModel(application: Application, fileUri: String?): AndroidViewModel(application) {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var currentMediaIndex = 0
         private val cr = application.contentResolver
 
         init {
-            val medias = mutableListOf<Photo>()
-            val externalStorageUri = MediaStore.Files.getContentUri("external")
+            var medias = mutableListOf<Photo>()
 
-            @Suppress("DEPRECATION")
-            val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-            val dateSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.MediaColumns.DATE_TAKEN else MediaStore.Files.FileColumns.DATE_ADDED
-            //val dateSelection = MediaStore.Files.FileColumns.DATE_ADDED
-            val projection = arrayOf(
-                MediaStore.Files.FileColumns._ID,
-                pathSelection,
-                dateSelection,
-                MediaStore.Files.FileColumns.MEDIA_TYPE,
-                MediaStore.Files.FileColumns.MIME_TYPE,
-                MediaStore.Files.FileColumns.DISPLAY_NAME,
-                MediaStore.Files.FileColumns.SIZE,
-            )
-            val selection =
-                "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+            fileUri?.apply {
+                val uri = Uri.parse(this)
+                val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
 
-            cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC"
-            )?.use { cursor ->
-                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-                val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-                //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-                val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
-                val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
-                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-                val defaultZone = ZoneId.systemDefault()
-                var date: LocalDateTime
-                var mediaUri: Uri
-                val sizeOption = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true
-                    inSampleSize = 1
+                photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).toLowerCase(Locale.ROOT)) ?: "image/jpeg"
                 }
-                var mimeType: String
-                var orientation = 0
-                var width = 0
-                var height = 0
-
-                while (cursor.moveToNext()) {
-                    // DATE_TAKEN in Q and above has nano adjustment
-                    date = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn).let { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) it / 1000 else it}), defaultZone)
-                    mediaUri = ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong())
-                    mimeType = cursor.getString(typeColumn)
-
-                    // Get media dimension and orientation
-                    if (mimeType.startsWith("image/", true)) {
-                        BitmapFactory.decodeStream(cr.openInputStream(mediaUri), null, sizeOption)
-                        width = sizeOption.outWidth
-                        height = sizeOption.outHeight
-                        orientation = if (mimeType == "image/jpeg" || mimeType == "image/tiff") ExifInterface(cr.openInputStream(mediaUri)!!).rotationDegrees else 0
-                    } else if (mimeType.startsWith("video/", true)) {
-                        with(MediaMetadataRetriever()) {
-                            setDataSource(application, mediaUri)
-                            width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                            height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                            // Swap width and height if rotate 90 or 270 degree
-                            orientation = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toInt().apply {
-                                if (this == 90 || this == 270) {
-                                    height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                                    width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                                }
-                            } ?: 0
+                when(uri.scheme) {
+                    "content"-> {
+                        cr.query(uri, null, null, null, null)?.use { cursor->
+                            cursor.moveToFirst()
+                            cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
+                            // Store file size in property eTag
+                            cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE))?.let { photo.eTag = it }
                         }
                     }
-
-                    // Insert media
-                    medias.add(Photo(mediaUri.toString(), ImageLoaderViewModel.FROM_CAMERA_ROLL, cursor.getString(nameColumn), Tools.humanReadableByteCountSI(cursor.getLong(sizeColumn)), date, date, width, height, mimeType, orientation))
+                    "file"-> uri.path?.let { photo.name = it.substringAfterLast('/') }
                 }
-            }
+
+                if (photo.mimeType.startsWith("video/")) {
+                    MediaMetadataRetriever().run {
+                        setDataSource(application, uri)
+                        photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                        photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                        release()
+                    }
+                }
+                else {
+                    // Store orientation in property shareId
+                    photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
+
+                    BitmapFactory.Options().run {
+                        inJustDecodeBounds = true
+                        BitmapFactory.decodeStream(cr.openInputStream(uri), null, this)
+                        photo.width = outWidth
+                        photo.height = outHeight
+                    }
+                }
+
+                medias.add(photo)
+
+            } ?: run { medias = Tools.getCameraRoll(cr) }
 
             mediaList.postValue(medias)
         }
 
         fun setCurrentMediaIndex(position: Int) { currentMediaIndex = position }
         fun getCurrentMediaIndex(): Int = currentMediaIndex
-        fun setCurrentMedia(media: Photo) { currentMediaIndex = mediaList.value!!.indexOf(media) }
-        fun setCurrentMedia(id: String) { currentMediaIndex = mediaList.value!!.indexOfFirst { it.id == id }}
+        //fun setCurrentMedia(media: Photo) { currentMediaIndex = mediaList.value!!.indexOf(media) }
+        //fun setCurrentMedia(id: String) { currentMediaIndex = mediaList.value!!.indexOfFirst { it.id == id }}
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
+        //fun getMediaListSize(): Int = mediaList.value!!.size
 
         fun removeCurrentMedia() {
             val newList = mediaList.value?.toMutableList()
@@ -352,63 +397,22 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 mediaList.postValue(newList)
             }
         }
-        /*
-        fun removeCurrentMedia() {
-            val newList = mediaList.value?.toMutableList()
-
-            newList?.apply {
-                //val itemToDelete = this.indexOf(currentMedia!!)
-                val itemToDelete = currentMediaIndex
-                val itemToShow: Int
-                var last1inDate = false
-
-                if (itemToDelete < this.lastIndex) {
-                    // Not the last 1 in list, find next 1 to the right
-                    if (this[itemToDelete + 1].id.isNotEmpty())
-                        // Next 1 in list is a photo
-                        itemToShow = itemToDelete + 1
-                    else {
-                        // Next 1 in list is date separator, get next to next 1
-                        itemToShow = itemToDelete + 2
-                        // If previous 1 and next 1 are all date separators, this one is the only one left in this date, should also remove it's date separator
-                        last1inDate = (this[itemToDelete - 1].id.isEmpty())
-                    }
-                } else {
-                    // Last 1 in list, should find previous 1
-                    if (this[itemToDelete - 1].id.isNotEmpty())
-                        // Previous 1 in list is a photo
-                        itemToShow = itemToDelete - 1
-                    else {
-                        // Previous 1 in list is date separator
-                        itemToShow = itemToDelete - 2
-                        // Since this is the last 1, that means it's the only 1 in this date
-                        last1inDate = true
-                    }
-                }
-
-                removeAt(itemToDelete)
-                if (last1inDate) removeAt(itemToDelete - 1)
-
-                // itemToShow will be -1 in case of deleting last photo in list
-
-                ///if (itemToShow > 0) currentMedia.postValue(newList[itemToShow])
-                mediaList.postValue(newList)
-            }
-        }
-
-         */
     }
 
-    class MediaPagerAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val stopPosition: (Int) -> Int
+    class MediaPagerAdapter(private val ctx: Context, private val photoClickListener: (Photo) -> Unit, private val videoClickListener: (Boolean) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+        private lateinit var exoPlayer: SimpleExoPlayer
+        private var currentVolume = 0f
+        private var oldVideoViewHolder: VideoViewHolder? = null
+        private var savedStopPosition = FAKE_POSITION
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bind(photo: Photo) {
                 itemView.findViewById<PhotoView>(R.id.media).apply {
                     imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
 
-                    setOnPhotoTapListener { _, _, _ ->  clickListener(photo) }
-                    setOnOutsidePhotoTapListener { clickListener(photo) }
+                    setOnPhotoTapListener { _, _, _ ->  photoClickListener(photo) }
+                    setOnOutsidePhotoTapListener { photoClickListener(photo) }
 
                     maximumScale = 5.0f
                     mediumScale = 2.5f
@@ -419,72 +423,104 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
 
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private lateinit var videoView: VolumeControlVideoView
+            private lateinit var videoView: PlayerView
             private lateinit var muteButton: ImageButton
-            private lateinit var replayButton: ImageButton
+            private var videoId = ""
+            private var stopPosition = 0L
 
             @SuppressLint("ClickableViewAccessibility")
             fun bind(video: Photo) {
-                val root = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
-                videoView = itemView.findViewById(R.id.media)
-                muteButton = itemView.findViewById(R.id.mute_button)
-                replayButton = itemView.findViewById(R.id.replay_button)
+                if (savedStopPosition != FAKE_POSITION) {
+                    stopPosition = savedStopPosition
+                    savedStopPosition = FAKE_POSITION
+                }
+                muteButton = itemView.findViewById(R.id.exo_mute)
+                videoView = itemView.findViewById(R.id.player_view)
+                videoId = video.id
+
+                itemView.findViewById<ConstraintLayout>(R.id.videoview_container).let {
+                    // Fix view aspect ratio
+                    if (video.height != 0) with(ConstraintSet()) {
+                        clone(it)
+                        setDimensionRatio(R.id.media, "${video.width}:${video.height}")
+                        applyTo(it)
+                    }
+
+                    // TODO If user touch outside VideoView, how to sync video player control view
+                    //it.setOnClickListener { clickListener(video) }
+                }
 
                 with(videoView) {
-                    if (video.height != 0) with(ConstraintSet()) {
-                        clone(root)
-                        setDimensionRatio(R.id.media, "${video.width}:${video.height}")
-                        applyTo(root)
+                    setControllerVisibilityListener {
+                        videoClickListener(it == View.VISIBLE)
                     }
-                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    //imageLoader(video, this, ImageLoaderViewModel.TYPE_FULL)
+                    //setOnClickListener { videoClickListener(muteButton.visibility == View.VISIBLE) }
 
-                    setVideoURI(Uri.parse(video.id))
-                    setOnCompletionListener {
-                        replayButton.visibility = View.VISIBLE
-                        this.stopPlayback()
-                        setSeekOnPrepare(0)
-                    }
-                    setOnPreparedListener {
-                        // Call parent onPrepared!!
-                        this.onPrepared(it)
-
-                        // Default mute the video playback during late night
-                        with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) setMute(true) }
-                        // Restart playing after seek to last stop position
-                        it.setOnSeekCompleteListener { mp-> mp.start() }
-                    }
-
-                    setOnClickListener {
-                        clickListener(video)
-                    }
-
-                    ViewCompat.setTransitionName(this, video.id)
+                    //ViewCompat.setTransitionName(this, video.id)
                 }
 
-                muteButton.setOnClickListener { setMute(!videoView.isMute()) }
-                replayButton.setOnClickListener {
-                    it.visibility = View.GONE
-                    videoView.setVideoURI(Uri.parse(video.id))
-                    videoView.start()
-                }
+                muteButton.setOnClickListener { toggleMute() }
+            }
 
-                // If user touch outside VideoView
-                itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_DOWN) {
-                        clickListener(video)
-                        true
-                    } else false
+            fun setStopPosition(position: Long) {
+                Log.e(">>>","set stop position $position")
+                stopPosition = position }
+
+            // This step is important to reset the SurfaceView that ExoPlayer attached to, avoiding video playing with a black screen
+            fun resetVideoViewPlayer() { videoView.player = null }
+
+            fun resume() {
+                Log.e(">>>>", "resume playback at $stopPosition")
+                exoPlayer.apply {
+                    // Stop playing old video if swipe from it. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
+                    if (isPlaying) {
+                        playWhenReady = false
+                        stop()
+                        oldVideoViewHolder?.apply {
+                            if (this != this@VideoViewHolder) {
+                                setStopPosition(currentPosition)
+                            }
+                        }
+                    }
+                    playWhenReady = true
+                    setMediaItem(MediaItem.fromUri(videoId), stopPosition)
+                    prepare()
+                    oldVideoViewHolder?.resetVideoViewPlayer()
+                    videoView.player = exoPlayer
+                    oldVideoViewHolder = this@VideoViewHolder
+
+                    // Maintain mute status indicator
+                    muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
                 }
             }
 
-            private fun setMute(mute: Boolean) {
-                if (mute) {
-                    videoView.mute()
-                    muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
-                } else {
-                    videoView.unMute()
-                    muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
+            fun pause(): Long {
+                Log.e(">>>>", "pause playback")
+                // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
+                if (oldVideoViewHolder == this) {
+                    exoPlayer.apply {
+                        playWhenReady = false
+                        stop()
+                        setStopPosition(currentPosition)
+                    }
+                }
+
+                return stopPosition
+            }
+
+            private fun mute() {
+                currentVolume = exoPlayer.volume
+                exoPlayer.volume = 0f
+                muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
+            }
+
+            private fun toggleMute() {
+                exoPlayer.apply {
+                    if (volume == 0f) {
+                        volume = currentVolume
+                        muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
+                    }
+                    else mute()
                 }
             }
         }
@@ -492,7 +528,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return when(viewType) {
                 TYPE_PHOTO-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
-                else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_video, parent, false))
+                else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
             }
         }
 
@@ -500,6 +536,22 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             when(holder) {
                 is PhotoViewHolder-> holder.bind(currentList[position])
                 else-> (holder as VideoViewHolder).bind(currentList[position])
+            }
+        }
+
+        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewAttachedToWindow(holder)
+            //Log.e(">>>>>", "onViewAttachedToWindow $holder")
+            if (holder is VideoViewHolder) {
+                holder.resume()
+            }
+        }
+
+        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewDetachedFromWindow(holder)
+            //Log.e(">>>>>", "onViewDetachedFromWindow $holder")
+            if (holder is VideoViewHolder) {
+                holder.pause()
             }
         }
 
@@ -518,35 +570,39 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         fun getMediaAtPosition(position: Int): Photo = currentList[position]
         fun findMediaPosition(photo: Photo): Int = currentList.indexOf(photo)
+        fun setSavedStopPosition(position: Long) { savedStopPosition = position }
 
-        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewAttachedToWindow(holder)
-            if (holder is PhotoSlideFragment.PhotoSlideAdapter.VideoViewHolder) {
-                // Restore playback position when View got recreated, like screen rotated
-                holder.itemView.findViewById<VolumeControlVideoView>(R.id.media).apply {
-                    // If view's seeWhenPrepare property value is 0, means new view created, then need to set last stop position (saved by saveInstanceState()) as seekWhenPrepare
-                    if (getSeekOnPrepare() == 0) setSeekOnPrepare(stopPosition(-1))
-                }
-            }
-        }
+        fun initializePlayer() {
+            //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
+            exoPlayer = SimpleExoPlayer.Builder(ctx).build()
+            exoPlayer.addListener(object: Player.EventListener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    super.onPlaybackStateChanged(state)
 
-        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewDetachedFromWindow(holder)
-            if (holder is PhotoSlideFragment.PhotoSlideAdapter.VideoViewHolder) {
-                holder.itemView.findViewById<VolumeControlVideoView>(R.id.media).apply {
-                    // Save playback position when being swiped, when swap between recent apps, onViewDetachedFromWindow might be called with wrong currentPosition as 0, so test it's value first
-                    if (currentPosition > 0) {
-                        setSeekOnPrepare(currentPosition)
-                        stopPosition(currentPosition)
+                    if (state == Player.STATE_ENDED) {
+                        exoPlayer.playWhenReady = false
+                        exoPlayer.seekTo(0L)
+                        oldVideoViewHolder?.setStopPosition(0L)
                     }
-                    stopPlayback()
+                }
+            })
+
+            // Default mute the video playback during late night
+            with(LocalDateTime.now().hour) {
+                if (this >= 22 || this < 7) {
+                    currentVolume = exoPlayer.volume
+                    exoPlayer.volume = 0f
                 }
             }
         }
+
+        fun cleanUp() { exoPlayer.release() }
 
         companion object {
             private const val TYPE_PHOTO = 0
             private const val TYPE_VIDEO = 2
+
+            private const val FAKE_POSITION = -1L
         }
     }
 
@@ -615,16 +671,21 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     companion object {
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
+        private const val KEY_URI = "KEY_URI"
 
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
-
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_MEDIA_REQUEST_CODE = 3399
 
         private const val STOP_POSITION = "STOP_POSITION"
 
         @JvmStatic
-        fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
+        fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply {
+        Log.e(">>>>>", "SCROLL_TO $scrollTo")
+            putString(KEY_SCROLL_TO, scrollTo) }}
+
+        @JvmStatic
+        fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}
     }
 }

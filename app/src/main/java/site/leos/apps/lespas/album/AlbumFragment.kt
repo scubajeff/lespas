@@ -12,7 +12,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
@@ -25,6 +24,7 @@ import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollActivity
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
@@ -249,9 +249,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
+                /*
                 if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
                 } else browseCameraRoll()
+
+                 */
+
+                parentFragmentManager.beginTransaction()
+                    //.replace(R.id.container_camera_gallery, CameraGalleryFragment(), CameraGalleryFragment::class.java.canonicalName)
+                    //.replace(R.id.container_root, CameraMediaFragment(), CameraMediaFragment::class.java.canonicalName)
+                    .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName)
+                    .addToBackStack(null)
+                    .commit()
                 return true
             }
             R.id.option_menu_settings-> {

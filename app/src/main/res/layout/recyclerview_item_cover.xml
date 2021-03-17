@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingRight="1dp"
+    android:paddingBottom="1dp"
     tools:ignore="RtlHardcoded,RtlSymmetry">
 
     <ImageView

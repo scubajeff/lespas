@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageButton
+        android:id="@+id/exo_mute"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:layout_marginRight="@dimen/video_player_controls_right_margin"
+        android:padding="@dimen/small_padding"
+        android:background="#40000000"
+        android:src="@drawable/ic_baseline_volume_on_24"
+        tools:ignore="RtlHardcoded" />
+
+    <ImageButton android:id="@id/exo_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/exo_mute"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:layout_marginRight="@dimen/video_player_controls_right_margin"
+        android:padding="@dimen/small_padding"
+        android:background="#40000000"
+        android:src="@drawable/ic_baseline_play_arrow_24"
+        tools:ignore="RtlHardcoded" />
+
+    <ImageButton android:id="@id/exo_pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/exo_mute"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:layout_marginRight="@dimen/video_player_controls_right_margin"
+        android:padding="@dimen/small_padding"
+        android:background="#40000000"
+        android:src="@drawable/ic_baseline_pause_24"
+        tools:ignore="RtlHardcoded" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

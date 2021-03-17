@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
+import android.content.ContentResolver
+import android.content.ContentUris
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
@@ -8,6 +10,7 @@ import android.graphics.Matrix
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
@@ -16,6 +19,7 @@ import java.text.CharacterIterator
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.text.StringCharacterIterator
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -187,6 +191,84 @@ object Tools {
         if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
 
         return "${manufacturer}_${model}"
+    }
+
+    fun getCameraRoll(cr: ContentResolver): MutableList<Photo> {
+        val medias = mutableListOf<Photo>()
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+
+        @Suppress("DEPRECATION")
+        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val dateSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.MediaColumns.DATE_TAKEN else MediaStore.Files.FileColumns.DATE_ADDED
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            pathSelection,
+            dateSelection,
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.SIZE,
+            MediaStore.Files.FileColumns.WIDTH,
+            MediaStore.Files.FileColumns.HEIGHT,
+            "orientation",  // MediaStore.Files.FileColumns.ORIENTATION,
+        )
+        val selection =
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+
+        cr.query(
+            externalStorageUri, projection, selection, null, "$dateSelection DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
+            val nameColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            //val pathColumn = cursor.getColumnIndex(pathSelection)
+            val dateColumn = cursor.getColumnIndex(dateSelection)
+            val typeColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
+            val sizeColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
+            val widthColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.WIDTH)
+            val heightColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT)
+            val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION
+            val defaultZone = ZoneId.systemDefault()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                while (cursor.moveToNext()) {
+                    // Insert media
+                    medias.add(
+                        Photo(
+                            ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
+                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                            cursor.getString(nameColumn),
+                            cursor.getString(sizeColumn),
+                            LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone),     // DATE_TAKEN in Q and above has nano adjustment
+                            LocalDateTime.MIN,
+                            cursor.getInt(widthColumn),
+                            cursor.getInt(heightColumn),
+                            cursor.getString(typeColumn),
+                            cursor.getInt(orientationColumn)
+                        )
+                    )
+                }
+            } else {
+                while (cursor.moveToNext()) {
+                    // Insert media
+                    medias.add(
+                        Photo(
+                            ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
+                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                            cursor.getString(nameColumn),
+                            cursor.getString(sizeColumn),
+                            LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone),
+                            LocalDateTime.MIN,
+                            cursor.getInt(widthColumn),
+                            cursor.getInt(heightColumn),
+                            cursor.getString(typeColumn),
+                            cursor.getInt(orientationColumn)
+                        )
+                    )
+                }
+            }
+        }
+
+        return medias
     }
 
     private fun isUnknown(date: String?): Boolean {

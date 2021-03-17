@@ -7,7 +7,6 @@ import android.graphics.*
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.provider.MediaStore
-import android.util.Log
 import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
@@ -24,7 +23,7 @@ import kotlin.math.min
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
     private val contentResolver = application.contentResolver
-    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
+    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     private val jobMap = HashMap<Int, Job>()
@@ -77,20 +76,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     with(photo.mimeType) {
                         when {
                             this.startsWith("video")-> {
-                                if (photo.albumId == FROM_CAMERA_ROLL) {
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                        contentResolver.loadThumbnail(uri, Size(384, 384), null)
-                                    } else {
-                                        MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
-                                    }
-                                }
-                                else {
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                                        ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
-                                    } else {
-                                        ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND)
-                                    }
-                                }
+                                getVideoThumbnail(photo, fileName)
                             }
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
                                 if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = size })
@@ -112,23 +98,26 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_FULL -> {
-                    var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
-
-                    Log.e(">>>>>", "${photo.id} ${bmp.width}")
-                    // If image is too large
-                    // TODO hardcoded size
-                    if (bmp.allocationByteCount > 100000000) {
-                        bmp.recycle()
-                        val option = BitmapFactory.Options().apply { inSampleSize = 2 }
-                        bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
+                    if (photo.mimeType.startsWith("video")) {
+                        getVideoThumbnail(photo, fileName)
                     }
+                    else {
+                        var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
 
-                    // TODO determine rotation before buildversion < P
-                    if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
-                        bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                        // If image is too large
+                        // TODO hardcoded size
+                        if (bmp.allocationByteCount > 100000000) {
+                            bmp.recycle()
+                            val option = BitmapFactory.Options().apply { inSampleSize = 2 }
+                            bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
+                        }
+
+                        // TODO determine rotation before buildversion < P
+                        if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
+                            bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                        }
+                        bmp
                     }
-
-                    bmp
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
                     val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
@@ -153,6 +142,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         imageCache.snapshot().keys.forEach { key-> if (key.startsWith(photoId)) imageCache.remove(key) }
     }
 
+    /*
     fun reloadPhoto(photo: Photo) {
         viewModelScope.launch(Dispatchers.IO) {
             imageCache.snapshot().keys.forEach { key->
@@ -164,13 +154,18 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+     */
+
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
         loadPhoto(photo, view, type, null)
     }
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String, callBack: LoadCompleteListener?) {
+        val jobKey = System.identityHashCode(view)
+
         val job = viewModelScope.launch(Dispatchers.IO) {
-            var bitmap: Bitmap?
+            //var bitmap: Bitmap?
+            var bitmap: Bitmap? = null
             var key = "${photo.id}$type"
 
             // suffix 'baseline' in case same photo chosen
@@ -193,7 +188,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     bitmap = decodeBitmap(photo, type)
                 }
                 if (bitmap == null) bitmap = errorBitmap
-                else imageCache.put(key, bitmap)
+                else if (type != TYPE_FULL) imageCache.put(key, bitmap)
+
+                //Log.e(">>>", "${bitmap.allocationByteCount} aa ${imageCache.putCount()} ${imageCache.snapshot().size}")
 
                 // If we are still active at this moment, set the imageview
                 if (isActive) {
@@ -204,10 +201,12 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             } finally {
                 callBack?.onLoadComplete()
             }
+        }.apply {
+            invokeOnCompletion { jobMap.remove(jobKey) }
         }
 
         // Replacing previous job
-        replacePrevious(System.identityHashCode(view), job)
+        replacePrevious(jobKey, job)
     }
 
     private fun replacePrevious(key: Int, newJob: Job) {
@@ -224,9 +223,29 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
                     else this
                 }
-
             }
         } catch(e: Exception) {
+            e.printStackTrace()
+            null
+        }
+
+    private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap? =
+        try {
+            if (photo.albumId == FROM_CAMERA_ROLL) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    contentResolver.loadThumbnail(Uri.parse(photo.id), Size(384, 384), null)
+                } else {
+                    MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
+                }
+            }
+            else {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
+                } else {
+                    ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND)
+                }
+            }
+        } catch (e: Exception) {
             e.printStackTrace()
             null
         }
