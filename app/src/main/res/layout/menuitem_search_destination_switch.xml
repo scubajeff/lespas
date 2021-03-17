@@ -31,7 +31,7 @@
             style="?attr/materialButtonOutlinedStyle"
             app:strokeColor="@color/search_destination_switch_text"
             android:tooltipText="@string/tooltips_search_album"
-            app:icon="@drawable/ic_baseline_photo_album_24"
+            app:icon="@drawable/ic_baseline_footprint_24"
             app:iconSize="18dp"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
