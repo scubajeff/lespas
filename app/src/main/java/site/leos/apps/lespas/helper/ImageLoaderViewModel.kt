@@ -99,16 +99,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                 }
                             }
                             this == "image/jpeg" || this == "image/png" -> {
-                                if (photo.albumId == FROM_CAMERA_ROLL) {
-                                    val bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, BitmapFactory.Options().apply {
-                                        this.inSampleSize = size
-                                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                                    })
-
-                                    // Property shareId contain photo rotation information
-                                    if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(photo.shareId.toFloat()) }, true)
-                                    else bmp
-                                }
+                                if (photo.albumId == FROM_CAMERA_ROLL) getImageThumbnail(photo)
                                 else
                                     BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
                                         this.inSampleSize = size
@@ -128,6 +119,12 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         val option = BitmapFactory.Options().apply { inSampleSize = 2 }
                         bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
                     }
+
+                    // TODO determine rotation before buildversion < P
+                    if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
+                        bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                    }
+
                     bmp
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
@@ -182,7 +179,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 //view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
                 bitmap = imageCache.get(key)
                 // Give error another chance
-                if (bitmap == null || bitmap == errorBitmap) bitmap = decodeBitmap(photo, type)
+                if (bitmap == null || bitmap == errorBitmap) {
+                    if (type == TYPE_FULL && photo.albumId == FROM_CAMERA_ROLL && !Tools.isMediaPlayable(photo.mimeType)) {
+                        // Load thumbnail for external storage file
+                        getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) { view.setImageBitmap(it) }} }
+                    }
+                    bitmap = decodeBitmap(photo, type)
+                }
                 if (bitmap == null) bitmap = errorBitmap
                 else imageCache.put(key, bitmap)
 
@@ -205,6 +208,16 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         jobMap[key]?.cancel()
         jobMap[key] = newJob
     }
+
+    private fun getImageThumbnail(photo: Photo): Bitmap? =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            contentResolver.loadThumbnail(Uri.parse(photo.id), Size(1080, 1920), null)
+        } else {
+            MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                else this
+            }
+        }
 
     override fun onCleared() {
         super.onCleared()
