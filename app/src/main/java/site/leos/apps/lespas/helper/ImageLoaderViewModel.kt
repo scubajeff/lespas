@@ -7,6 +7,7 @@ import android.graphics.*
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
@@ -112,6 +113,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 TYPE_FULL -> {
                     var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
+
+                    Log.e(">>>>>", "${photo.id} ${bmp.width}")
                     // If image is too large
                     // TODO hardcoded size
                     if (bmp.allocationByteCount > 100000000) {
@@ -182,7 +185,10 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 if (bitmap == null || bitmap == errorBitmap) {
                     if (type == TYPE_FULL && photo.albumId == FROM_CAMERA_ROLL && !Tools.isMediaPlayable(photo.mimeType)) {
                         // Load thumbnail for external storage file
-                        getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) { view.setImageBitmap(it) }} }
+                        getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) {
+                            view.setImageBitmap(it)
+                            callBack?.onLoadComplete()
+                        }}}
                     }
                     bitmap = decodeBitmap(photo, type)
                 }
@@ -210,13 +216,19 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     private fun getImageThumbnail(photo: Photo): Bitmap? =
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            contentResolver.loadThumbnail(Uri.parse(photo.id), Size(1080, 1920), null)
-        } else {
-            MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
-                else this
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                contentResolver.loadThumbnail(Uri.parse(photo.id), Size(1080, 1920), null)
+            } else {
+                MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                    if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                    else this
+                }
+
             }
+        } catch(e: Exception) {
+            e.printStackTrace()
+            null
         }
 
     override fun onCleared() {
