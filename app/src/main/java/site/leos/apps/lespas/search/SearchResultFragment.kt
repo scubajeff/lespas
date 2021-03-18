@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -30,6 +31,9 @@ import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.*
+import java.time.format.TextStyle
+import java.util.*
+import kotlin.collections.HashMap
 
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
@@ -209,8 +213,14 @@ class SearchResultFragment : Fragment() {
                     imageLoader(item.photo, this, ImageLoaderViewModel.TYPE_GRID)
                     setOnClickListener { clickListener(item) }
                 }
-                itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
-                //albumNames[item.photo.albumId]?.let { itemView.findViewById<TextView>(R.id.label).text = it }
+                //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                itemView.findViewById<TextView>(R.id.label).text = if (item.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                    albumNames[item.photo.albumId]
+                } else {
+                    item.photo.dateTaken.run {
+                        "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${this.year}/${this.monthValue}/${this.dayOfMonth}"
+                    }
+                }
             }
         }
 
