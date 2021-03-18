@@ -41,6 +41,9 @@ import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.lang.Integer.min
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -97,7 +100,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         view.setBackgroundColor(Color.BLACK)
 
-        controlViewGroup = view.findViewById(R.id.control_container)
+        controlViewGroup = view.findViewById<ConstraintLayout>(R.id.control_container).apply {
+            // Prevent touch event passing to media pager underneath this
+            setOnTouchListener { _, _ -> true }
+        }
         nameTextView = view.findViewById(R.id.name)
         sizeTextView = view.findViewById(R.id.size)
         shareButton = view.findViewById(R.id.share_button)
@@ -303,13 +309,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun newPositionSet() {
         (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().apply {
             camerarollModel.setCurrentMediaIndex(this)
 
             with(mediaPagerAdapter.getMediaAtPosition(this)) {
                 nameTextView.text = name
-                sizeTextView.text = Tools.humanReadableByteCountSI(eTag.toLong())
+                sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
 
                 var pos = quickScrollAdapter.findMediaPosition(this)
                 if (pos == 1) pos = 0   // Show date separator for first item

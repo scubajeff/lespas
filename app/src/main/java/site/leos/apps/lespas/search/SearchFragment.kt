@@ -9,16 +9,25 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.AlbumViewModel
 
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
+
+    private val albumViewModel: AlbumViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +90,10 @@ class SearchFragment : Fragment() {
 
         destinationToggleGroup?.apply {
             clearOnButtonCheckedListeners()
+            lifecycleScope.launch(Dispatchers.IO) {
+                if (albumViewModel.getAllAlbumName().isEmpty())
+                    withContext(Dispatchers.Main) { destinationToggleGroup?.findViewById<MaterialButton>(R.id.search_album)?.isEnabled = false }
+            }
             addOnButtonCheckedListener { _, checkedId, isChecked ->
                 if (isChecked && checkedId == R.id.search_cameraroll) {
                     if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
