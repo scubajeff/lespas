@@ -297,7 +297,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     private fun toggleControlView(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = 120 })
+        TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() })
         controlViewGroup.visibility = if (show) View.VISIBLE else View.GONE
 
         if (mediaPagerAdapter.itemCount == 1) {
@@ -458,17 +458,15 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 }
 
                 with(videoView) {
-                    setControllerVisibilityListener {
-                        videoClickListener(it == View.VISIBLE)
-                    }
+                    setControllerVisibilityListener { videoClickListener(it == View.VISIBLE) }
                     //setOnClickListener { videoClickListener(muteButton.visibility == View.VISIBLE) }
-
                     //ViewCompat.setTransitionName(this, video.id)
                 }
 
                 muteButton.setOnClickListener { toggleMute() }
             }
 
+            fun hideControllers() { videoView.hideController() }
             fun setStopPosition(position: Long) {
                 Log.e(">>>","set stop position $position")
                 stopPosition = position }
@@ -591,6 +589,11 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                         exoPlayer.seekTo(0L)
                         oldVideoViewHolder?.setStopPosition(0L)
                     }
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    super.onIsPlayingChanged(isPlaying)
+                    if (isPlaying) oldVideoViewHolder?.hideControllers()
                 }
             })
 

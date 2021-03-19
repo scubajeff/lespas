@@ -52,6 +52,7 @@
             app:layout_constraintRight_toRightOf="@id/size"
             android:textColor="@color/color_on_primary_invert"
             android:autoSizeTextType="uniform"
+            android:textSize="14sp"
             android:singleLine="true"
             android:ellipsize="middle"
             tools:text="filename.jpg" />
@@ -63,7 +64,8 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/remove_button"
             android:layout_marginHorizontal="@dimen/big_padding"
-            android:textSize="16sp"
+            android:autoSizeTextType="uniform"
+            android:textSize="14sp"
             android:textColor="@color/color_on_primary_invert"
             android:lines="1"
             tools:text="2MB" />

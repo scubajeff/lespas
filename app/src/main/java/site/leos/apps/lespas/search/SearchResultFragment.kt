@@ -214,13 +214,9 @@ class SearchResultFragment : Fragment() {
                     setOnClickListener { clickListener(item) }
                 }
                 //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
-                itemView.findViewById<TextView>(R.id.label).text = if (item.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
-                    albumNames[item.photo.albumId]
-                } else {
-                    item.photo.dateTaken.run {
-                        "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${this.year}/${this.monthValue}/${this.dayOfMonth}"
-                    }
-                }
+                itemView.findViewById<TextView>(R.id.label).text =
+                    if (item.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[item.photo.albumId]
+                    else item.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())} ${this.year}/${this.monthValue}/${this.dayOfMonth}" }
             }
         }
 
