@@ -50,7 +50,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                                 fragment.show(parentFragmentManager, CONFIRM_DIALOG)
                             }
                         }
-                    } else requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                    } else requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
 
                     // Set Snapseed integration to False if we don't have WRITE_EXTERNAL_STORAGE permission
                     (pref as SwitchPreferenceCompat).isChecked = false
@@ -69,6 +69,44 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                isChecked = false
+                toggleAutoSync(false)
+            }
+
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
+                if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST_FOR_BACKUP)
+
+                    (pref as SwitchPreferenceCompat).isChecked = false
+                    toggleAutoSync(false)
+                    false
+                }
+                else {
+                    if ((pref as SwitchPreferenceCompat).isChecked) {
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                            it.isChecked = false
+                            it.isEnabled = true
+                        }
+                    }
+                    else {
+                        // Check and disable periodic sync setting if user enable camera roll backup
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                            it.isChecked = true
+                            it.isEnabled = false
+                        }
+                        // Note down the current timestamp, photos taken later on will be backup
+                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                                putLong(LAST_BACKUP, System.currentTimeMillis()/1000)
+                                apply()
+                            }
+                        }
+                    }
+                    toggleAutoSync(!((pref as SwitchPreferenceCompat).isChecked))
+                    true
+                }
+            }
             summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
             // Make sure SYNC preference acts accordingly
             if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
@@ -91,7 +129,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
     override fun onPreferenceTreeClick(preference: Preference?): Boolean =
         when (preference?.key) {
             getString(R.string.sync_pref_key) -> {
-                toggleAutoSync(preference)
+                toggleAutoSync(preference.sharedPreferences.getBoolean(preference.key, false))
                 true
             }
             getString(R.string.logout_pref_key) -> {
@@ -109,25 +147,6 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     AppCompatDelegate.setDefaultNightMode(it.toInt())
                 }
 
-                true
-            }
-            getString(R.string.cameraroll_backup_pref_key) -> {
-                toggleAutoSync(preference)
-                with(preferenceManager.sharedPreferences.getBoolean(preference.key, false)) {
-                    findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                        it.isChecked = this
-                        it.isEnabled = !this
-                    }
-                    if (this) {
-                        // If backup camera roll turn on for the first time, note down the current timestamp, photos taken later will be backup
-                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
-                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
-                                putLong(LAST_BACKUP, System.currentTimeMillis()/1000)
-                                apply()
-                            }
-                        }
-                    }
-                }
                 true
             }
             getString(R.string.gallery_launcher_pref_key) -> {
@@ -149,8 +168,28 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST) {
-            findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        when(requestCode) {
+            WRITE_STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED-> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            WRITE_STORAGE_PERMISSION_REQUEST_FOR_BACKUP-> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+                        isChecked = true
+                        // Check and disable periodic sync setting if user enable camera roll backup
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                            it.isChecked = true
+                            it.isEnabled = false
+                        }
+                        // Note down the current timestamp, photos taken later on will be backup
+                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                                putLong(LAST_BACKUP, System.currentTimeMillis()/1000)
+                                apply()
+                            }
+                        }
+                        toggleAutoSync(true)
+                    }
+                }
+            }
         }
     }
 
@@ -163,7 +202,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     activity?.finish()
                 }
                 PERMISSION_RATIONALE_REQUEST_CODE -> {
-                    requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                    requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
                 }
             }
         } else {
@@ -172,8 +211,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
     }
 
-    private fun toggleAutoSync(preference: Preference) {
-        if (preferenceManager.sharedPreferences.getBoolean(preference.key, false))
+    private fun toggleAutoSync(on: Boolean) {
+        if (on)
             ContentResolver.addPeriodicSync(
                 AccountManager.get(context).accounts[0],
                 getString(R.string.sync_authority),
@@ -187,7 +226,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val LOGOUT_CONFIRM_REQUEST_CODE = 0
         private const val PERMISSION_RATIONALE_REQUEST_CODE = 1
-        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8989
+        private const val WRITE_STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED = 8989
+        private const val WRITE_STORAGE_PERMISSION_REQUEST_FOR_BACKUP = 9090
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
     }
