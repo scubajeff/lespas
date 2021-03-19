@@ -85,10 +85,10 @@
     <string name="wifionly_off_title">Synchronisierung in allen Netzwerken</string>
     <string name="snapseed_add_title">Snapseed-Edition hinzufügen</string>
     <string name="tooltip_text_more">Mehr</string>
-    <string name="item_camera_roll">Kamerarolle</string>
-    <string name="cameraroll_backup_title">Kamera-Rolle sichern</string>
+    <string name="item_camera_roll">Filmrolle</string>
+    <string name="cameraroll_backup_title">Filmrolle sichern</string>
     <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM/%1$s gesichert</string>
-    <string name="empty_camera_roll">Keine Medien in der Kamerarolle gefunden</string>
+    <string name="empty_camera_roll">Keine Medien in der Filmrolle gefunden</string>
     <string name="gallery_app_name">Galerie</string>
     <string name="gallery_launcher_title">Symbol für Galerie-Startprogramm</string>
     <string name="same_file_found">Dieselbe Mediendatei war bereits vorhanden.</string>
@@ -104,7 +104,7 @@
     <string name="object_food">Lebensmittel</string>
     <string name="object_vehicle">Fahrzeug</string>
     <string name="tooltips_search_album">In Album</string>
-    <string name="tooltips_search_cameraroll">In der Kamerarolle</string>
+    <string name="tooltips_search_cameraroll">In der Filmrolle</string>
     <string name="title_in_album">%1$s in Album</string>
-    <string name="title_in_cameraroll">%1$s in de Kamerarolle</string>
+    <string name="title_in_cameraroll">%1$s in de Filmrolle</string>
 </resources>
