@@ -98,9 +98,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_FULL -> {
-                    if (photo.mimeType.startsWith("video")) {
-                        getVideoThumbnail(photo, fileName)
-                    }
+                    if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     else {
                         var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
 
@@ -239,6 +237,12 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             else {
+                /*
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) MediaMetadataRetriever().run {
+                    setDataSource(fileName)
+                    getFrameAtIndex(0)
+                }
+                 */
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                     ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
                 } else {
