@@ -21,5 +21,6 @@
 
     <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
 
-    <color name="ic_launcher_background">@color/color_background</color>
+    <color name="ic_launcher_background">#EFE8D8</color>
+    <color name="ic_launcher_gallery_background">#2B8E7E</color>
 </resources>
