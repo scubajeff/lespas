@@ -2,6 +2,4 @@
 <resources>
     <dimen name="camera_roll_grid_size">160dp</dimen>
     <dimen name="camera_roll_date_grid_size">64dp</dimen>
-    <dimen name="camera_roll_control_button_size">112dp</dimen>
-    <dimen name="camera_roll_control_button_padding">20dp</dimen>
 </resources>
