@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.media.MediaMetadataRetriever
@@ -12,7 +13,6 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.transition.Slide
 import android.transition.TransitionManager
-import android.util.Log
 import android.view.*
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
@@ -22,6 +22,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
@@ -33,6 +34,7 @@ import androidx.recyclerview.widget.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerView
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
@@ -205,24 +207,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             set(mediaPager, (get(mediaPager) as Int) * 4)
         }
 
-        // Observing media list update
-        camerarollModel.getMediaList().observe(viewLifecycleOwner, Observer {
-            if (it.size == 0) {
-                Toast.makeText(requireContext(), getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
-                parentFragmentManager.popBackStack()
+        savedInstanceState?.let {
+            observeCameraRoll()
+        } ?: run {
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
             }
-
-            // Set initial position if passed in arguments
-            if (startWithThisMedia.isNotEmpty()) {
-                camerarollModel.setCurrentMediaIndex(it.indexOfFirst { it.id == startWithThisMedia })
-                startWithThisMedia = ""
-            }
-
-            // Populate list and scroll to correct position
-            (mediaPager.adapter as MediaPagerAdapter).submitList(it)
-            mediaPager.scrollToPosition(camerarollModel.getCurrentMediaIndex())
-            (quickScroll.adapter as QuickScrollAdapter).submitList(it)
-        })
+            else observeCameraRoll()
+        }
 
         // Acquiring new medias
         destinationModel.getDestination().observe(viewLifecycleOwner, Observer { album ->
@@ -246,7 +238,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onResume() {
-        Log.e(">>>>>", "onResume $videoStopPosition")
+        //Log.e(">>>>>", "onResume $videoStopPosition")
         super.onResume()
         (requireActivity() as AppCompatActivity).window.run {
             savedStatusBarColor = statusBarColor
@@ -263,7 +255,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onPause() {
-        Log.e(">>>>>", "onPause")
+        //Log.e(">>>>>", "onPause")
         super.onPause()
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
             if (this is MediaPagerAdapter.VideoViewHolder) {
@@ -291,9 +283,37 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) observeCameraRoll()
+            else if (requireActivity() is MainActivity) parentFragmentManager.popBackStack() else requireActivity().finish()
+        }
+    }
+
     // From ConfirmDialogFragment
     override fun onResult(positive: Boolean, requestCode: Int) {
         if (positive) camerarollModel.removeCurrentMedia()
+    }
+
+    private fun observeCameraRoll() {
+        // Observing media list update
+        camerarollModel.getMediaList().observe(viewLifecycleOwner, Observer {
+            if (it.size == 0) {
+                Toast.makeText(requireContext(), getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
+                parentFragmentManager.popBackStack()
+            }
+
+            // Set initial position if passed in arguments
+            if (startWithThisMedia.isNotEmpty()) {
+                camerarollModel.setCurrentMediaIndex(it.indexOfFirst { it.id == startWithThisMedia })
+                startWithThisMedia = ""
+            }
+
+            // Populate list and scroll to correct position
+            (mediaPager.adapter as MediaPagerAdapter).submitList(it)
+            mediaPager.scrollToPosition(camerarollModel.getCurrentMediaIndex())
+            (quickScroll.adapter as QuickScrollAdapter).submitList(it)
+        })
     }
 
     private fun toggleControlView(show: Boolean) {
@@ -468,14 +488,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
             fun hideControllers() { videoView.hideController() }
             fun setStopPosition(position: Long) {
-                Log.e(">>>","set stop position $position")
+                //Log.e(">>>","set stop position $position")
                 stopPosition = position }
 
             // This step is important to reset the SurfaceView that ExoPlayer attached to, avoiding video playing with a black screen
             fun resetVideoViewPlayer() { videoView.player = null }
 
             fun resume() {
-                Log.e(">>>>", "resume playback at $stopPosition")
+                //Log.e(">>>>", "resume playback at $stopPosition")
                 exoPlayer.apply {
                     // Stop playing old video if swipe from it. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                     if (isPlaying) {
@@ -500,7 +520,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             }
 
             fun pause(): Long {
-                Log.e(">>>>", "pause playback")
+                //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
                     exoPlayer.apply {
@@ -688,12 +708,12 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_MEDIA_REQUEST_CODE = 3399
 
+        private const val WRITE_STORAGE_PERMISSION_REQUEST = 6464
+
         private const val STOP_POSITION = "STOP_POSITION"
 
         @JvmStatic
-        fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply {
-        Log.e(">>>>>", "SCROLL_TO $scrollTo")
-            putString(KEY_SCROLL_TO, scrollTo) }}
+        fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
 
         @JvmStatic
         fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}
