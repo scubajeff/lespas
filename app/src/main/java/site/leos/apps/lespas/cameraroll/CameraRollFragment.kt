@@ -104,7 +104,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         controlViewGroup = view.findViewById<ConstraintLayout>(R.id.control_container).apply {
             // Prevent touch event passing to media pager underneath this
-            setOnTouchListener { _, _ -> true }
+            setOnTouchListener { _, _ ->
+                this.performClick()
+                true
+            }
         }
         nameTextView = view.findViewById(R.id.name)
         sizeTextView = view.findViewById(R.id.size)
@@ -414,14 +417,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         fun removeCurrentMedia() {
             val newList = mediaList.value?.toMutableList()
 
-            newList?.apply {
+            newList?.run {
                 cr.delete(Uri.parse(this[currentMediaIndex].id), null, null)
                 removeAt(currentMediaIndex)
 
                 // Move index to the end of the new list if item to removed is at the end of the list
                 currentMediaIndex = min(currentMediaIndex, size-1)
 
-                mediaList.postValue(newList)
+                mediaList.postValue(this)
             }
         }
     }
