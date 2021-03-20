@@ -214,8 +214,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun getImageThumbnail(photo: Photo): Bitmap? =
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                contentResolver.loadThumbnail(Uri.parse(photo.id), Size(1080, 1920), null)
+            // Although Google document says that loadThumbnail was added in Q, but it won't work until R
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                contentResolver.loadThumbnail(Uri.parse(photo.id), Size(384, 384), null)
             } else {
                 MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
                     if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
