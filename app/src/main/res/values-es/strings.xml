@@ -107,4 +107,6 @@
     <string name="tooltips_search_cameraroll">En el rollo de la cámara</string>
     <string name="title_in_album">%1$s en álbumes</string>
     <string name="title_in_cameraroll">%1$s en galería</string>
+    <string name="condition_to_perform_search">Debe haber al menos un álbum existente O un permiso de acceso al almacenamiento concedido para realizar la función de búsqueda.</string>
+    <string name="button_text_leave">Salir</string>
 </resources>

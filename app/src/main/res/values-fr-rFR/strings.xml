@@ -107,4 +107,6 @@
     <string name="tooltips_search_cameraroll">Dans les rouleaux de caméra</string>
     <string name="title_in_album">%1$s dans les albums</string>
     <string name="title_in_cameraroll">%1$s dans la galerie</string>
+    <string name="button_text_leave">Sortie</string>
+    <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
 </resources>

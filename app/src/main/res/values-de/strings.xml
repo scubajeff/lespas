@@ -107,4 +107,6 @@
     <string name="tooltips_search_cameraroll">In der Filmrolle</string>
     <string name="title_in_album">%1$s in Album</string>
     <string name="title_in_cameraroll">%1$s in de Filmrolle</string>
+    <string name="condition_to_perform_search">Es sollte mindestens ein Album vorhanden sein ODER eine Speicherzugriffsberechtigung erteilt werden, um die Suchfunktion auszuführen.</string>
+    <string name="button_text_leave">Beenden</string>
 </resources>

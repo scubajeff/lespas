@@ -7,9 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.DialogFragment
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
-import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : DialogFragment() {
@@ -33,25 +36,36 @@ class ConfirmDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        view.findViewById<LinearLayout>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
-        message_textview.text = arguments?.getString(MESSAGE)
-        ok_button.text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
-        ok_button.setOnClickListener { _->
-            onResultListener.onResult(true, targetRequestCode)
-            dismiss()
+        view.findViewById<ConstraintLayout>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        view.findViewById<TextView>(R.id.message_textview).text = arguments?.getString(MESSAGE)
+        view.findViewById<MaterialButton>(R.id.ok_button).apply {
+            text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
+            setOnClickListener { _->
+                onResultListener.onResult(true, targetRequestCode)
+                dismiss()
+            }
         }
-        cancel_button.setOnClickListener { _->
-            onResultListener.onResult(false, targetRequestCode)
-            dismiss()
+        view.findViewById<MaterialButton>(R.id.cancel_button).apply {
+            arguments?.getBoolean(CANCELABLE)?.let {
+                if (it) setOnClickListener { _->
+                    onResultListener.onResult(false, targetRequestCode)
+                    dismiss()
+                }
+                else {
+                    requireDialog().setCanceledOnTouchOutside(false)
+                    isEnabled = false
+                    visibility = View.GONE
+                }
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
 
-        dialog!!.window!!.apply {
+        requireDialog().window?.apply {
             // Set dialog width to a fixed ration of screen width
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
@@ -67,11 +81,17 @@ class ConfirmDialogFragment : DialogFragment() {
     companion object {
         const val MESSAGE = "MESSAGE"
         const val OK_TEXT = "OK_TEXT"
+        const val CANCELABLE = "CANCELABLE"
 
-        fun newInstance(message: String, okButtonText: String?) = ConfirmDialogFragment().apply {
+        @JvmStatic
+        fun newInstance(message: String, okButtonText: String?) = newInstance(message, okButtonText, true)
+
+        @JvmStatic
+        fun newInstance(message: String, okButtonText: String?, cancelable: Boolean) = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(OK_TEXT, okButtonText)
+                putBoolean(CANCELABLE, cancelable)
             }
         }
     }

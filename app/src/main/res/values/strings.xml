@@ -154,6 +154,8 @@
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>
     <string name="tooltips_search_cameraroll">Search in camera roll</string>
+    <string name="condition_to_perform_search">There should be at least an album existed OR storage access permission granted to perform search function.</string>
+    <string name="button_text_leave">Leave</string>
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>

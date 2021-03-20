@@ -21,11 +21,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 
-class SearchFragment : Fragment() {
+class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
+    private var noAlbum = false
 
     private val albumViewModel: AlbumViewModel by activityViewModels()
 
@@ -92,7 +94,13 @@ class SearchFragment : Fragment() {
             clearOnButtonCheckedListeners()
             lifecycleScope.launch(Dispatchers.IO) {
                 if (albumViewModel.getAllAlbumName().isEmpty())
-                    withContext(Dispatchers.Main) { destinationToggleGroup?.findViewById<MaterialButton>(R.id.search_album)?.isEnabled = false }
+                    noAlbum = true
+                    withContext(Dispatchers.Main) {
+                        destinationToggleGroup?.findViewById<MaterialButton>(R.id.search_album)?.isEnabled = false
+                        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                        }
+                    }
             }
             addOnButtonCheckedListener { _, checkedId, isChecked ->
                 if (isChecked && checkedId == R.id.search_cameraroll) {
@@ -112,8 +120,18 @@ class SearchFragment : Fragment() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) destinationToggleGroup?.check(R.id.search_cameraroll)
+        else if (noAlbum)
+            parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
+                ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).let {
+                    it.setTargetFragment(this@SearchFragment, LEAVE_REQUEST_CODE)
+                    it.show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+            }
     }
 
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (positive && requestCode == LEAVE_REQUEST_CODE) parentFragmentManager.popBackStack()
+    }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -149,10 +167,12 @@ class SearchFragment : Fragment() {
     )
 
     companion object {
-        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8900
-
         const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
         private const val LAST_SELECTION = "LAST_SELECTION"
+
+        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8900
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val LEAVE_REQUEST_CODE = 1
 
         @JvmStatic
         fun newInstance(searchCollection: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) }}
