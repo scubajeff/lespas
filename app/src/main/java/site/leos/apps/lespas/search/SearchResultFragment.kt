@@ -37,6 +37,7 @@ import kotlin.collections.HashMap
 
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
+    private lateinit var searchResultRecyclerView: RecyclerView
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
@@ -74,9 +75,40 @@ class SearchResultFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<RecyclerView>(R.id.photogrid).apply {
-            adapter = searchResultAdapter
-        }
+        searchResultRecyclerView = view.findViewById(R.id.photogrid)
+
+        searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            init {
+                toggleEmptyView()
+            }
+
+            private fun toggleEmptyView() {
+                if (searchResultAdapter.itemCount == 0) {
+                    searchResultRecyclerView.visibility = View.GONE
+                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.VISIBLE
+                } else {
+                    searchResultRecyclerView.visibility = View.VISIBLE
+                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.GONE
+                }
+            }
+
+            override fun onChanged() {
+                super.onChanged()
+                toggleEmptyView()
+            }
+
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+                toggleEmptyView()
+            }
+
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                super.onItemRangeRemoved(positionStart, itemCount)
+                toggleEmptyView()
+            }
+        })
+
+        searchResultRecyclerView.adapter = searchResultAdapter
 
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
         adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished ->
