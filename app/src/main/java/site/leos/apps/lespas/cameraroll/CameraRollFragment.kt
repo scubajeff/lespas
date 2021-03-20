@@ -247,7 +247,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             savedStatusBarColor = statusBarColor
             savedNavigationBarColor = navigationBarColor
             statusBarColor = Color.BLACK
-            navigationBarColor = Color.TRANSPARENT
+            navigationBarColor = Color.BLACK
         }
 
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
