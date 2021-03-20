@@ -14,11 +14,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -27,13 +26,16 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
-    private var noAlbum = false
+    private var noAlbum = false         // Flag indicating if we have exsting albums or not
+    private var onMenuCreation = true   // Flag indicating showing Snackbar when clicking search album button
 
     private val albumViewModel: AlbumViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+
+        lifecycleScope.launch(Dispatchers.IO) { noAlbum = albumViewModel.getAllAlbumName().isEmpty() }
 
         categoryAdapter = CategoryAdapter { category ->
             parentFragmentManager.beginTransaction()
@@ -68,6 +70,8 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     override fun onResume() {
         super.onResume()
 
+        onMenuCreation = true
+
         (activity as? AppCompatActivity)?.supportActionBar?.run {
             title = getString(R.string.item_search)
             setDisplayHomeAsUpEnabled(true)
@@ -92,24 +96,26 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         destinationToggleGroup?.apply {
             clearOnButtonCheckedListeners()
-            lifecycleScope.launch(Dispatchers.IO) {
-                if (albumViewModel.getAllAlbumName().isEmpty())
-                    noAlbum = true
-                    withContext(Dispatchers.Main) {
-                        destinationToggleGroup?.findViewById<MaterialButton>(R.id.search_album)?.isEnabled = false
+            addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (isChecked) when(checkedId) {
+                    R.id.search_cameraroll-> {
                         if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                             requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                            if (!noAlbum) this.check(R.id.search_album)
                         }
                     }
-            }
-            addOnButtonCheckedListener { _, checkedId, isChecked ->
-                if (isChecked && checkedId == R.id.search_cameraroll) {
-                    if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
-                        this.check(R.id.search_album)
+                    R.id.search_album-> {
+                        if (noAlbum) {
+                            if (!onMenuCreation) Snackbar.make(destinationToggleGroup!!, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
+                            this.check(R.id.search_cameraroll)
+                        }
+                        onMenuCreation = false
                     }
                 }
             }
+
+            // This will trigger all the button state setting in above addOnButtonCheckedListener
+            check(R.id.search_album)
         }
     }
 

@@ -109,4 +109,5 @@
     <string name="title_in_cameraroll">%1$s in de Filmrolle</string>
     <string name="condition_to_perform_search">Es sollte mindestens ein Album vorhanden sein ODER eine Speicherzugriffsberechtigung erteilt werden, um die Suchfunktion auszuführen.</string>
     <string name="button_text_leave">Beenden</string>
+    <string name="need_albums">Bitte erstellen Sie zunächst ein Album.</string>
 </resources>

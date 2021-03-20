@@ -17,7 +17,6 @@
         android:layout_centerInParent="true"
         app:selectionRequired="true"
         app:singleSelection="true"
-        app:checkedButton="@id/search_album"
         tools:ignore="RtlHardcoded,RtlSymmetry">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/search_album"

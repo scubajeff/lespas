@@ -109,4 +109,5 @@
     <string name="title_in_cameraroll">%1$s dans la galerie</string>
     <string name="button_text_leave">Sortie</string>
     <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
+    <string name="need_albums">Veuillez d\'abord créer un album.</string>
 </resources>

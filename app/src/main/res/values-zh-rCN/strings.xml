@@ -109,4 +109,5 @@
     <string name="title_in_cameraroll">相机相册中的%1$s</string>
     <string name="button_text_leave">退出</string>
     <string name="condition_to_perform_search">需要存在有相册或授予了存储访问权限，才能使用图片搜索功能。</string>
+    <string name="need_albums">请先创建相册。</string>
 </resources>
