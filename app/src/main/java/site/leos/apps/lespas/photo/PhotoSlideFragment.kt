@@ -646,6 +646,7 @@ class PhotoSlideFragment : Fragment() {
 
         const val KEY_ALBUM = "ALBUM"
 
+        @JvmStatic
         fun newInstance(album: Album) = PhotoSlideFragment().apply { arguments = Bundle().apply { putParcelable(KEY_ALBUM, album) }}
     }
 }

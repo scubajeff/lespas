@@ -381,6 +381,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             const val HEIGHT = "HEIGHT"
             const val ETAG = "ETAG"
 
+            @JvmStatic
             fun newInstance(photoId: String, photoName: String, photoDate: String, photoWidth: String, photoHeight: String, eTag: String) = InfoDialogFragment().apply {
                 arguments = Bundle().apply {
                     putString(ID, photoId)
@@ -400,6 +401,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
 
+        @JvmStatic
         fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}
     }
 }

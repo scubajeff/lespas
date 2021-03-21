@@ -227,6 +227,7 @@ class DestinationDialogFragment : DialogFragment() {
     }
 
     companion object {
+        @JvmStatic
         fun newInstance() = DestinationDialogFragment()
     }
 }

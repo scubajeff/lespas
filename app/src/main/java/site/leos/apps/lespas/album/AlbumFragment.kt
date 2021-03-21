@@ -459,6 +459,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         private const val SELECTION = "SELECTION"
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 89
 
+        @JvmStatic
         fun newInstance() = AlbumFragment()
     }
 }

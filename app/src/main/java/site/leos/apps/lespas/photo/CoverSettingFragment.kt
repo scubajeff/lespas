@@ -273,6 +273,8 @@ class CoverSettingFragment : Fragment() {
         private const val DH = "DH"
 
         private const val ALBUM_ID = "ALBUM_ID"
+
+        @JvmStatic
         fun newInstance(albumId: String) = CoverSettingFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
     }
 }

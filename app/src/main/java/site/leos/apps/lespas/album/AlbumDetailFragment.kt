@@ -751,6 +751,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         const val KEY_ALBUM = "ALBUM"
         const val KEY_SCROLL_TO = "KEY_SCROLL_TO"   // SearchResultFragment use this for scrolling to designed photo
 
+        @JvmStatic
         fun newInstance(album: Album, photoId: String) = AlbumDetailFragment().apply {
             arguments = Bundle().apply{
                 putParcelable(KEY_ALBUM, album)

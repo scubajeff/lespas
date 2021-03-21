@@ -78,6 +78,8 @@ class AlbumRenameDialogFragment: DialogFragment() {
 
     companion object {
         const val OLD_NAME = "OLD_NAME"
+
+        @JvmStatic
         fun newInstance(albumName: String) = AlbumRenameDialogFragment().apply {arguments = Bundle().apply { putString(OLD_NAME, albumName) }}
     }
 }

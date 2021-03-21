@@ -296,6 +296,7 @@ class AcquiringDialogFragment: DialogFragment() {
         const val URIS = "URIS"
         const val ALBUM = "ALBUM"
 
+        @JvmStatic
         fun newInstance(uris: ArrayList<Uri>, album: Album) = AcquiringDialogFragment().apply {
             arguments = Bundle().apply {
                 putParcelableArrayList(URIS, uris)
