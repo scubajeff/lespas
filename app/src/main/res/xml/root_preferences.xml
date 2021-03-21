@@ -71,5 +71,7 @@
             app:singleLineTitle="false" />
     </PreferenceCategory>
 
-
+    <PreferenceCategory>
+        <site.leos.apps.lespas.settings.AboutPreference />
+    </PreferenceCategory>
 </PreferenceScreen>

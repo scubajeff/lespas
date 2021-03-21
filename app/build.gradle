@@ -20,6 +20,7 @@ android {
         archivesBaseName = "LesPas-v$versionName"
         resValue "string", "sync_authority", "${applicationId}.StubProvider"
         resValue "string", "file_authority", "${applicationId}.fileProvider"
+        resValue "string", "lespas_version", "v${versionName}"
 
         javaCompileOptions {
             annotationProcessorOptions {
