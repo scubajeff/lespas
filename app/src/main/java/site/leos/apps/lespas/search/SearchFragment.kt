@@ -9,33 +9,26 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 
 class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
-    private var noAlbum = false         // Flag indicating if we have exsting albums or not
-    private var onMenuCreation = true   // Flag indicating showing Snackbar when clicking search album button
-
-    private val albumViewModel: AlbumViewModel by activityViewModels()
+    // Flag indicating if we have exsting albums or not
+    private var noAlbum = true
+    // Flag indicating showing Snackbar when clicking search album button
+    private var onMenuCreation = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-
-        lifecycleScope.launch(Dispatchers.IO) { noAlbum = albumViewModel.getAllAlbumName().isEmpty() }
 
         categoryAdapter = CategoryAdapter { category ->
             parentFragmentManager.beginTransaction()
@@ -54,6 +47,8 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         objectDrawableIds.recycle()
 
         savedInstanceState?.apply { lastSelection = getInt(LAST_SELECTION) }
+
+        noAlbum = arguments?.getBoolean(NO_ALBUM) == true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -173,7 +168,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     )
 
     companion object {
-        const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val NO_ALBUM = "NO_ALBUM"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
         private const val WRITE_STORAGE_PERMISSION_REQUEST = 8900
@@ -181,6 +176,6 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private const val LEAVE_REQUEST_CODE = 1
 
         @JvmStatic
-        fun newInstance(searchCollection: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) }}
+        fun newInstance(noAlbum: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(NO_ALBUM, noAlbum) }}
     }
 }

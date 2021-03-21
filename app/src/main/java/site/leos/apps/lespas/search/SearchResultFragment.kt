@@ -26,7 +26,6 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.search.SearchFragment.Companion.SEARCH_COLLECTION
 import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -285,6 +284,8 @@ class SearchResultFragment : Fragment() {
     )
 
     companion object {
+        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+
         private const val CATEGORY_TYPE = "CATEGORY_TYPE"
         private const val CATEGORY_ID = "CATEGORY_ID"
         private const val CATEGORY_LABEL = "CATEGORY_LABEL"
