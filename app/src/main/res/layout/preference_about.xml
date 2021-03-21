@@ -4,9 +4,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:paddingBottom="@dimen/big_padding"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ImageView
+        android:id="@+id/logo"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:layout_gravity="center"
@@ -14,10 +16,12 @@
         app:tint="@color/color_on_primary_invert" />
 
     <TextView
+        android:id="@+id/version"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/tiny_padding"
         android:layout_gravity="center"
-        android:text="@string/lespas_version" />
+        android:text="@string/lespas_version"
+        android:visibility="invisible"/>
 
 </LinearLayout>
