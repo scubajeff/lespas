@@ -10,6 +10,8 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.SharedElementCallback
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -18,7 +20,10 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.transition.MaterialElevationScale
+import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import kotlinx.coroutines.*
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
@@ -37,6 +42,7 @@ import kotlin.collections.HashMap
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
+    private lateinit var stub: View
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
@@ -50,16 +56,32 @@ class SearchResultFragment : Fragment() {
         setHasOptionsMenu(true)
 
         searchResultAdapter = SearchResultAdapter(
-            { result ->
+            { result, imageView ->
                 if (arguments?.getBoolean(SEARCH_COLLECTION)!!) {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val album = albumModel.getThisAlbum(result.photo.albumId)[0]
                         withContext(Dispatchers.Main) {
-                            parentFragmentManager.beginTransaction().replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+                            parentFragmentManager.beginTransaction().setReorderingAllowed(true).replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
                         }
                     }
                 }
-                else parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(result.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                else {
+                    // Adjusting the shared element mapping
+                    setExitSharedElementCallback(object : SharedElementCallback() {
+                        override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                            sharedElements?.put(names?.get(0)!!, imageView)
+                        }
+                    })
+                    // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
+                    stub.background = (activity as MainActivity).getToolbarViewContent()
+                    exitTransition = MaterialElevationScale(false).apply {
+                        duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                        excludeTarget(R.id.stub, true)
+                    }
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                }
             },
             { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) }
         ).apply {
@@ -75,6 +97,7 @@ class SearchResultFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         searchResultRecyclerView = view.findViewById(R.id.photogrid)
+        stub = view.findViewById(R.id.stub)
 
         searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -233,7 +256,7 @@ class SearchResultFragment : Fragment() {
         fun getResultList(): LiveData<List<Result>> = result
     }
 
-    class SearchResultAdapter(private val clickListener: (Result) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -242,7 +265,8 @@ class SearchResultFragment : Fragment() {
             fun bind(item: Result) {
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
                     imageLoader(item.photo, this, ImageLoaderViewModel.TYPE_GRID)
-                    setOnClickListener { clickListener(item) }
+                    setOnClickListener { clickListener(item, this) }
+                    ViewCompat.setTransitionName(this, item.photo.id)
                 }
                 //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 itemView.findViewById<TextView>(R.id.label).text =

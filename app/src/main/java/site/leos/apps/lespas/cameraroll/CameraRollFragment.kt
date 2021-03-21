@@ -21,6 +21,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.exifinterface.media.ExifInterface
@@ -34,6 +35,7 @@ import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
@@ -78,7 +80,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             requireContext(),
             { toggleControlView(controlViewGroup.visibility == View.GONE) },
             { videoControlVisible-> toggleControlView(videoControlVisible) },
-            {photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) },
+            {photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
         )
 
         quickScrollAdapter = QuickScrollAdapter(
@@ -92,6 +94,17 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
+
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+        }
+
+        // Adjusting the shared element mapping
+        setEnterSharedElementCallback(object : SharedElementCallback() {
+            override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                sharedElements?.put(names?.get(0)!!, mediaPager.findViewHolderForAdapterPosition(camerarollModel.getCurrentMediaIndex())?.itemView?.findViewById(R.id.media)!!)}
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -99,6 +112,8 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
 
         view.setBackgroundColor(Color.BLACK)
 
