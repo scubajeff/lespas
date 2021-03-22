@@ -1,26 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingBottom="@dimen/big_padding"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:paddingVertical="@dimen/big_padding"
+    android:gravity="center"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    tools:ignore="UseCompoundDrawables">
 
     <ImageView
         android:id="@+id/logo"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="center"
-        android:src="@drawable/ic_footprint"
-        app:tint="@color/color_on_primary_invert" />
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:src="@drawable/ic_logo"
+        tools:ignore="ContentDescription" />
 
     <TextView
-        android:id="@+id/version"
+        android:id="@+id/lespas_version"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/tiny_padding"
-        android:layout_gravity="center"
         android:text="@string/lespas_version"
         android:visibility="invisible"/>
 
