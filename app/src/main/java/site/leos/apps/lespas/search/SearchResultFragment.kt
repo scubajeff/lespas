@@ -35,6 +35,8 @@ import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.*
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
 import kotlin.collections.HashMap
@@ -274,7 +276,7 @@ class SearchResultFragment : Fragment() {
                 //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 itemView.findViewById<TextView>(R.id.label).text =
                     if (item.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[item.photo.albumId]
-                    else item.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.year}/${this.monthValue}/${this.dayOfMonth}" }
+                    else item.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
             }
         }
 

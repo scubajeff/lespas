@@ -34,9 +34,9 @@
         android:elevation="2dp"
         android:ellipsize="middle"
         android:singleLine="true"
-        style="@style/TextAppearance.MaterialComponents.Subtitle2"
+        style="@style/TextAppearance.MaterialComponents.Body2"
+        android:textSize="12sp"
         android:textColor="@color/color_text_light"
-        android:textAlignment="textEnd"
-        tools:text="food %35"/>
+        android:textAlignment="textEnd" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
