@@ -623,9 +623,9 @@ class PhotoSlideFragment : Fragment() {
         }
 
         // For removing photo
-        private val removeItem = MutableLiveData<Photo>()
+        private val removeItem = MutableLiveData<Photo?>()
         fun removePhoto() { removeItem.value = photo.value }
-        fun getRemoveItem(): LiveData<Photo> { return removeItem }
+        fun getRemoveItem(): LiveData<Photo?> { return removeItem }
         fun clearRemoveItem() { removeItem.value = null }
     }
 

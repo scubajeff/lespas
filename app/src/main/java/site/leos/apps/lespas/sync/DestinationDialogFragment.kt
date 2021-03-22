@@ -216,12 +216,12 @@ class DestinationDialogFragment : DialogFragment() {
     }
 
     class DestinationViewModel: ViewModel() {
-        private var destination = MutableLiveData<Album>()
+        private var destination = MutableLiveData<Album?>()
         private var inEditing = false
 
         fun resetDestination() { destination.value = null }
         fun setDestination(newDestination: Album) { this.destination.value = newDestination }
-        fun getDestination(): LiveData<Album> = destination
+        fun getDestination(): LiveData<Album?> = destination
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
     }
