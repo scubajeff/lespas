@@ -1,0 +1,5 @@
+* Revisión de la gestión del rollo de la cámara, se han corregido varios errores
+* Uso de ExoPlayer para la reproducción de vídeo
+* Solicitar permiso de acceso al almacenamiento antes de activar la copia de seguridad automática del rollo de la cámara
+* Otras mejoras y errores corregidos
+* Por último, pero no menos importante, la vista previa de la función de búsqueda de fotos, puede buscar en sus álbumes o en el rollo de la cámara de su teléfono para el objeto de los animales, plantas, alimentos y vehículos

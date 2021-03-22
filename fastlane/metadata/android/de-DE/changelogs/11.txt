@@ -1,0 +1,5 @@
+* Überarbeitung der Kamerarollen-Verwaltung, diverse Bugs behoben
+* ExoPlayer für die Videowiedergabe verwenden
+* Abfrage der Speicherzugriffsberechtigung vor Aktivierung der automatischen Sicherung der Filmrolle
+* Weitere Verbesserungen und behobene Bugs
+* Last but not least, Vorschau der Fotosuchfunktion, Sie können in Ihren Alben oder der Filmrolle Ihres Telefons nach Objekten von Tieren, Pflanzen, Lebensmitteln und Fahrzeugen suchen

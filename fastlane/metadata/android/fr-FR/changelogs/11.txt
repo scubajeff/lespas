@@ -1,0 +1,5 @@
+* Révision de la gestion du rouleau d'appareil photo, correction de divers bogues
+* Utilisation d'ExoPlayer pour la lecture des vidéos
+* Demande l'autorisation d'accès au stockage avant d'activer la sauvegarde automatique de la liste d'appareils photo.
+* Autres améliorations et corrections de bogues
+* Enfin, prévisualisation de la fonction de recherche de photos, vous pouvez rechercher dans vos albums ou dans la liste d'appareils photo des objets tels que des animaux, des plantes, des aliments et des véhicules.

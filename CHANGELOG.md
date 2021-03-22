@@ -1,6 +1,14 @@
+
+## Version 1.4.6
+* Overhaul camera roll management, fixed various bugs
+* Use ExoPlayer for video playing
+* Request storage access permission before enabling camera roll auto backup
+* Other improvements and bugs fixed
+* Last but not least, preview of photo search function, you can search in your albums or your phone's camera roll for object of animal, plant, food and vehicle
+
 ## Version 1.4.5
-* fixed bug when viewing super high resolution photo
 * fixed bug when processing photo creation date information from EXIF
+* fixed bug when viewing super high resolution photo
 * other improvements and bugs fixed
 
 ## Version 1.4.4

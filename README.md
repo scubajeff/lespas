@@ -11,11 +11,12 @@ Features:
 * View picture details
 * Organized albums
 * Manage your phone's camera roll and auto backup to server
+* Search for photos by objects
 * Integrate Snapseed for photo editing
 * Share to social networks
 * Theme design inspired by Wes Anderson's works
 * Synchronization among your Nextcloud server and multiple devices
-* Freely manage albums and photos on Nextcloud server and on your phones
+* Manage albums and photos on Nextcloud server and also on your phones
 * All files saved in App's private storage, stop being scanned by malicious apps
 * Open-source
 
