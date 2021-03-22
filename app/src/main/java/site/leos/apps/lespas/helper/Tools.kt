@@ -199,7 +199,7 @@ object Tools {
 
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val dateSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.MediaColumns.DATE_TAKEN else MediaStore.Files.FileColumns.DATE_ADDED
+        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             pathSelection,
@@ -229,42 +229,22 @@ object Tools {
             val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION
             val defaultZone = ZoneId.systemDefault()
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                while (cursor.moveToNext()) {
-                    // Insert media
-                    medias.add(
-                        Photo(
-                            ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
-                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                            cursor.getString(nameColumn),
-                            cursor.getString(sizeColumn),
-                            LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone),     // DATE_TAKEN in Q and above has nano adjustment
-                            LocalDateTime.MIN,
-                            cursor.getInt(widthColumn),
-                            cursor.getInt(heightColumn),
-                            cursor.getString(typeColumn),
-                            cursor.getInt(orientationColumn)
-                        )
+            while (cursor.moveToNext()) {
+                // Insert media
+                medias.add(
+                    Photo(
+                        ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
+                        ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                        cursor.getString(nameColumn),
+                        cursor.getString(sizeColumn),
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone),     // DATE_TAKEN has nano adjustment
+                        LocalDateTime.MIN,
+                        cursor.getInt(widthColumn),
+                        cursor.getInt(heightColumn),
+                        cursor.getString(typeColumn),
+                        cursor.getInt(orientationColumn)
                     )
-                }
-            } else {
-                while (cursor.moveToNext()) {
-                    // Insert media
-                    medias.add(
-                        Photo(
-                            ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
-                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                            cursor.getString(nameColumn),
-                            cursor.getString(sizeColumn),
-                            LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone),
-                            LocalDateTime.MIN,
-                            cursor.getInt(widthColumn),
-                            cursor.getInt(heightColumn),
-                            cursor.getString(typeColumn),
-                            cursor.getInt(orientationColumn)
-                        )
-                    )
-                }
+                )
             }
         }
 
