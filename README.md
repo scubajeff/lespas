@@ -25,6 +25,7 @@ This project build using the following open source software:
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
 - <a href=https://www.tensorflow.org>TensorFlow</a>
 
+<a id="faq"></a>
 ## Faq
 ### Why organzied by album?
 I believe when someone start searching his/her memory for a moment in the past, it's hard for him/her to recall the exact date or exact location, but rather easy to remember what was happening during that period of time, like kid's birthday or family trip to Paris. So organized photos by events is probably the best way for most people, therefore grouping photos by event into an album is the best choice.
