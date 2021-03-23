@@ -23,6 +23,7 @@ Features:
 This project build using the following open source software:
 - <a href=https://github.com/thegrizzlylabs/sardine-android>Sardine-android</a>
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
+- <a href=https://www.tensorflow.org>TensorFlow</a>
 
 ## Faq
 ### Why organzied by album?
