@@ -400,12 +400,27 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                         setDataSource(application, uri)
                         photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
                         photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                        photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
                         release()
                     }
                 }
                 else {
-                    // Store orientation in property shareId
-                    photo.shareId = if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") ExifInterface(cr.openInputStream(uri)!!).rotationDegrees else 0
+                    if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") {
+                        val exif = ExifInterface(cr.openInputStream(uri)!!)
+
+                        // Get date
+                        photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
+                            try {
+                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                            } catch (e:Exception) {
+                                e.printStackTrace()
+                                LocalDateTime.now()
+                            }
+                        } ?: LocalDateTime.now()
+
+                        // Store orientation in property shareId
+                        photo.shareId = exif.rotationDegrees
+                    }
 
                     BitmapFactory.Options().run {
                         inJustDecodeBounds = true

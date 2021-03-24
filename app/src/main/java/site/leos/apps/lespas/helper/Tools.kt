@@ -51,6 +51,8 @@ object Tools {
             with(MediaMetadataRetriever()) {
                 setDataSource(pathName)
 
+                tDate = getVideoFileDate(this, fileName)
+                /*
                 // Try get creation date from metadata
                 extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
                     val f = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'").apply { timeZone = SimpleTimeZone(0, "UTC") }
@@ -70,6 +72,8 @@ object Tools {
                     }
                 }
 
+                 */
+
                 // If the above fail, set creation date to the same as last modified date
                 if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
 
@@ -88,6 +92,19 @@ object Tools {
                 "image/jpeg", "image/tiff"-> {
                     var saveExif = false
                     val exif = ExifInterface(pathName)
+
+                    timeString = getImageFileDate(exif, fileName)
+                    if (isUnknown(timeString)) {
+                        timeString = dateFormatter.format(lastModified)
+
+                        if (updateCreationDate) {
+                            exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
+                            exif.resetOrientation()
+                            saveExif = true
+                        }
+                    }
+
+                    /*
                     timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
                     if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
                     //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
@@ -104,6 +121,8 @@ object Tools {
                             saveExif = true
                         }
                     }
+
+                     */
 
                     val exifRotation = exif.rotationDegrees
                     if (exifRotation != 0) {
@@ -167,6 +186,56 @@ object Tools {
 
         return Photo("", "", "", "", tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
     }
+
+    @SuppressLint("SimpleDateFormat")
+    fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime {
+        var ldt: LocalDateTime = LocalDateTime.MIN
+
+        // Try get creation date from metadata
+        extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
+            val f = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'").apply { timeZone = SimpleTimeZone(0, "UTC") }
+
+            try {
+                f.parse(cDate)?.let { ldt = dateToLocalDateTime(it) }
+            } catch (e: ParseException) { e.printStackTrace() }
+        }
+
+        // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
+        if (ldt.year == 1904) ldt = LocalDateTime.MIN
+
+        // Could not get creation date from metadata, try guessing from file name
+        if (ldt == LocalDateTime.MIN) {
+            if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
+                ldt = LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset)
+            }
+        }
+
+        return ldt
+    }
+
+    fun getImageFileDate(exifInterface: ExifInterface, fileName: String): String? {
+        var timeString: String?
+
+        timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+        if (isUnknown(timeString)) timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
+        //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
+        if (isUnknown(timeString)) {
+            // Could not get creation date from exif, try guessing from file name
+            timeString = if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
+                (LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset))
+                    .format(DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+            } else null
+        }
+
+        return timeString
+    }
+
+    private fun isUnknown(date: String?): Boolean {
+        return (date == null || date.isEmpty() || date == "    :  :     :  :  ")
+    }
+
+    // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
+    private val wechatPattern = "^mmexport[0-9]{10}.*"
 
     fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
 
@@ -249,9 +318,5 @@ object Tools {
         }
 
         return medias
-    }
-
-    private fun isUnknown(date: String?): Boolean {
-        return (date == null || date.isEmpty() || date == "    :  :     :  :  ")
     }
 }
