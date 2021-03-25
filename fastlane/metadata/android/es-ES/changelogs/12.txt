@@ -1,0 +1,3 @@
+* Corregida la fecha errónea mostrada al ver un solo archivo de imagen
+* Corregida la carga de miniaturas de medios en Android 10 y superior
+* Otras mejoras y errores corregidos

@@ -1,0 +1,3 @@
+* Correction de l'affichage d'une date erronée lors de l'affichage d'un fichier image unique.
+* Correction du chargement des vignettes des médias sous Android 10 et plus.
+* Autres améliorations et bogues corrigés

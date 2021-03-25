@@ -1,0 +1,3 @@
+* Falsche Datumsanzeige beim Betrachten einzelner Bilddateien behoben
+* Behobenes Laden von Medien-Miniaturbildern in Android 10 und höher
+* Weitere Verbesserungen und Bugs behoben

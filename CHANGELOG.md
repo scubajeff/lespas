@@ -1,4 +1,9 @@
 
+## Version 1.4.7
+* Fixed wrong date displayed when viewing single image file
+* Fixed media thumbnail loading in Android 10 and above
+* Other improvements and bugs fixed
+
 ## Version 1.4.6
 * Overhaul camera roll management, fixed various bugs
 * Use ExoPlayer for video playing
