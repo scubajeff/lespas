@@ -182,7 +182,7 @@ class SearchResultFragment : Fragment() {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
                 //val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
-                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver)
+                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver, true)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
                 var length: Int

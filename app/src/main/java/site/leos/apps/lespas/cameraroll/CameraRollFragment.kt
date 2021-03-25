@@ -432,7 +432,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
                 medias.add(photo)
 
-            } ?: run { medias = Tools.getCameraRoll(cr) }
+            } ?: run { medias = Tools.getCameraRoll(cr, false) }
 
             mediaList.postValue(medias)
         }

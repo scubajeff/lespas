@@ -263,7 +263,7 @@ object Tools {
         return "${manufacturer}_${model}"
     }
 
-    fun getCameraRoll(cr: ContentResolver): MutableList<Photo> {
+    fun getCameraRoll(cr: ContentResolver, imageOnly: Boolean): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
@@ -282,8 +282,8 @@ object Tools {
             MediaStore.Files.FileColumns.HEIGHT,
             "orientation",  // MediaStore.Files.FileColumns.ORIENTATION,
         )
-        val selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+        val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%DCIM%')"
+            else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
 
         cr.query(
             externalStorageUri, projection, selection, null, "$dateSelection DESC"
