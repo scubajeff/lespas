@@ -110,9 +110,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
                         }
 
-                        // TODO determine rotation before buildversion < P
                         if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
-                            bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                            bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true)
                         }
                         bmp
                     }
@@ -214,12 +213,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun getImageThumbnail(photo: Photo): Bitmap? =
         try {
-            // Although Google document says that loadThumbnail was added in Q, but it won't work until R
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                contentResolver.loadThumbnail(Uri.parse(photo.id), Size(384, 384), null)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, Uri.parse(photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8)}
+                // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
+                //contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width/8, photo.height/8), null)
             } else {
                 MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                    if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true)
+                    if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(photo.shareId.toFloat()) }, true)
                     else this
                 }
             }
@@ -231,10 +231,17 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap? =
         try {
             if (photo.albumId == FROM_CAMERA_ROLL) {
+                val photoId = photo.id.substringAfterLast('/').toLong()
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    contentResolver.loadThumbnail(Uri.parse(photo.id), Size(384, 384), null)
+                    try {
+                        contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width, photo.height), null)
+                    } catch (e: ArithmeticException) {
+                        // Some Android Q Rom, like AEX for EMUI 9, throw this exception
+                        e.printStackTrace()
+                        MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
+                    }
                 } else {
-                    MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Video.Thumbnails.MINI_KIND, null)
+                    MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
                 }
             }
             else {
@@ -245,7 +252,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
                  */
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(384, 384), null)
+                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(photo.width, photo.height), null)
                 } else {
                     ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND)
                 }

@@ -9,6 +9,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
@@ -297,12 +298,16 @@ object Tools {
             val heightColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT)
             val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION
             val defaultZone = ZoneId.systemDefault()
+            var externalUri: Uri
+            var mimeType: String
 
             while (cursor.moveToNext()) {
                 // Insert media
+                mimeType = cursor.getString(typeColumn)
+                externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 medias.add(
                     Photo(
-                        ContentUris.withAppendedId(externalStorageUri, cursor.getString(idColumn).toLong()).toString(),
+                        ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
                         ImageLoaderViewModel.FROM_CAMERA_ROLL,
                         cursor.getString(nameColumn),
                         cursor.getString(sizeColumn),
@@ -310,7 +315,7 @@ object Tools {
                         LocalDateTime.MIN,
                         cursor.getInt(widthColumn),
                         cursor.getInt(heightColumn),
-                        cursor.getString(typeColumn),
+                        mimeType,
                         cursor.getInt(orientationColumn)
                     )
                 )
