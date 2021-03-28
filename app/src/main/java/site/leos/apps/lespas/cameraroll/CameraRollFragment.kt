@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.transition.Slide
@@ -62,6 +63,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var shareButton: ImageButton
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
+    private var savedNavigationBarDividerColor = 0
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -264,6 +266,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             savedNavigationBarColor = navigationBarColor
             statusBarColor = Color.BLACK
             navigationBarColor = Color.BLACK
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                savedNavigationBarDividerColor = navigationBarDividerColor
+                navigationBarDividerColor = Color.BLACK
+            }
         }
 
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
@@ -299,6 +305,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             supportActionBar!!.show()
             window.statusBarColor = savedStatusBarColor
             window.navigationBarColor = savedNavigationBarColor
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.navigationBarDividerColor = savedNavigationBarDividerColor
         }
     }
 
