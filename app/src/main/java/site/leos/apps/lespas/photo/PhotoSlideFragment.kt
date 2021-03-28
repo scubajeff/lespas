@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -420,6 +421,9 @@ class PhotoSlideFragment : Fragment() {
 
                     // Maintain mute status indicator
                     muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+
+                    // Keep screen on
+                    (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
             }
 
@@ -433,6 +437,9 @@ class PhotoSlideFragment : Fragment() {
                         setStopPosition(currentPosition)
                     }
                 }
+
+                // Resume auto screen off
+                (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
                 return stopPosition
             }
@@ -551,6 +558,9 @@ class PhotoSlideFragment : Fragment() {
                         exoPlayer.playWhenReady = false
                         exoPlayer.seekTo(0L)
                         oldVideoViewHolder?.setStopPosition(0L)
+
+                        // Resume auto screen off
+                        (oldVideoViewHolder?.itemView?.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     }
                 }
 
