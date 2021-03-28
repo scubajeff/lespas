@@ -190,28 +190,30 @@ object Tools {
 
     @SuppressLint("SimpleDateFormat")
     fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime {
-        var ldt: LocalDateTime = LocalDateTime.MIN
+        var videoDate: LocalDateTime = LocalDateTime.MIN
 
         // Try get creation date from metadata
         extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
             val f = SimpleDateFormat("yyyyMMdd'T'HHmmss.SSS'Z'").apply { timeZone = SimpleTimeZone(0, "UTC") }
 
             try {
-                f.parse(cDate)?.let { ldt = dateToLocalDateTime(it) }
+                f.parse(cDate)?.let { videoDate = dateToLocalDateTime(it) }
             } catch (e: ParseException) { e.printStackTrace() }
         }
 
         // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
-        if (ldt.year == 1904) ldt = LocalDateTime.MIN
+        if (videoDate.year == 1904) videoDate = LocalDateTime.MIN
 
         // Could not get creation date from metadata, try guessing from file name
-        if (ldt == LocalDateTime.MIN) {
+        if (videoDate == LocalDateTime.MIN) {
             if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
-                ldt = LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset)
+                videoDate = LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset)
             }
         }
 
-        return ldt
+        if (videoDate == LocalDateTime.MIN) videoDate = LocalDateTime.now()
+
+        return videoDate
     }
 
     fun getImageFileDate(exifInterface: ExifInterface, fileName: String): String? {
