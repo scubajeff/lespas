@@ -572,6 +572,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                         stop()
                         setStopPosition(currentPosition)
                     }
+                    hideControllers()
                 }
 
                 // Resume auto screen off

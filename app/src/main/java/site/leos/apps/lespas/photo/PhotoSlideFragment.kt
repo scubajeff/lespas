@@ -436,6 +436,7 @@ class PhotoSlideFragment : Fragment() {
                         stop()
                         setStopPosition(currentPosition)
                     }
+                    hideControllers()
                 }
 
                 // Resume auto screen off
