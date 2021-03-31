@@ -4,12 +4,15 @@ import android.content.res.AssetManager
 import android.graphics.Bitmap
 import android.graphics.RectF
 import org.tensorflow.lite.Interpreter
+import site.leos.apps.lespas.search.Classification
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.min
 
 
-class ObjectDetectionModel(assetManager: AssetManager): Detector {
+class ObjectDetectionModel(assetManager: AssetManager) {
     // Pre-allocated buffers.
     private val pixels = IntArray(INPUT_SIZE * INPUT_SIZE)
 
@@ -33,7 +36,20 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
 
     private var odInterpreter: Interpreter? = TensorUtils.loadInterpreter(assetManager, MODEL_OBJECT_DETECT, NUM_THREADS)
 
-    override fun recognizeImage(bitmap: Bitmap): List<Detector.Recognition> {
+    // object label
+    private val labelIndex = arrayListOf<Pair<String, Float>>()
+
+    init {
+        BufferedReader(InputStreamReader(assetManager.open("label_mobile_ssd_coco_90.txt"))).use {
+            var line = it.readLine()
+            while (line != null) {
+                line.split(',').apply { labelIndex.add(Pair(this[0], this[1].toFloat())) }
+                line = it.readLine()
+            }
+        }
+    }
+
+    fun recognizeImage(bitmap: Bitmap): List<Classification> {
         // Log this method so that it can be analyzed with systrace.
         //Trace.beginSection("recognizeImage")
         //Trace.beginSection("preprocessBitmap")
@@ -83,25 +99,56 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
         // For example, your model's NUM_DETECTIONS = 20, but sometimes it only outputs 16 predictions
         // If you don't use the output's numDetections, you'll get nonsensical data
         val numDetectionsOutput: Int = min(NUM_DETECTIONS, numDetections[0].toInt()) // cast from float to integer, use min for safety
-        val recognitions: ArrayList<Detector.Recognition> = ArrayList(numDetectionsOutput)
+        val recognitions: ArrayList<Classification> = ArrayList(numDetectionsOutput)
         for (i in 0 until numDetectionsOutput) {
-            val detection = RectF(
+            val objectIndex = outputClasses[0][i].toInt()
+            val objectConfidence = outputScores[0][i]
+            val location = RectF(
                 outputLocations[0][i][1] * INPUT_SIZE,
                 outputLocations[0][i][0] * INPUT_SIZE,
                 outputLocations[0][i][3] * INPUT_SIZE,
                 outputLocations[0][i][2] * INPUT_SIZE
             )
+            /*
             //recognitions.add(Detector.Recognition("" + i, labels[outputClasses[0][i].toInt()], outputScores[0][i], detection))
-            recognitions.add(Detector.Recognition("" + i, outputClasses[0][i].toInt().toString(), outputScores[0][i], detection))
+            recognitions.add(Recognition(outputClasses[0][i].toInt(), outputScores[0][i], detection))
+             */
+            val found = labelIndex[objectIndex]
+            var foundObject = Classification("", Classification.TYPE_UNKNOWN, Classification.OBJECT_UNKNOWN.toString(), 0, 0f, RectF())
+            if (objectConfidence > found.second) {
+                foundObject = Classification("", Classification.TYPE_OBJECT, found.first, objectIndex, objectConfidence, location)
+            } else {
+                if ((objectIndex == 51 || objectIndex == 52 || objectIndex == 54) && objectConfidence > 0.3) {
+                    // "banana 51", "apple 52", "orange 54", could well be plant
+                    foundObject = Classification("", Classification.TYPE_OBJECT, Classification.OBJECT_PLANT.toString(), objectIndex, objectConfidence, location)
+                }
+                if ((objectIndex == 56 || objectIndex == 22 || objectIndex == 55) && objectConfidence < 0.45 && objectConfidence > 0.24) {
+                    // Low confidence "carrot 56", "bear 22", "broccoli 55" could be plant
+                    foundObject = Classification("", Classification.TYPE_OBJECT, Classification.OBJECT_PLANT.toString(), objectIndex, objectConfidence, location)
+                }
+                /* too much false positive
+                if ((this.title == "15") && this.confidence < 0.5 && this.confidence > 0.36) {
+                    // "bird 15" with confidence range of 0.35~0.5 could be plant
+                }
+                 */
+            }
+
+            recognitions.add(foundObject)
         }
         //Trace.endSection() // "recognizeImage"
         return recognitions
     }
 
-    override fun close() {
+    fun close() {
         odInterpreter?.close()
         odInterpreter = null
     }
+
+    data class Recognition (
+        val objectIndex: Int,
+        val confidence: Float,
+        val location: RectF
+    )
 
     companion object {
         // Only return this many results.

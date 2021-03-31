@@ -14,7 +14,14 @@ data class Classification (
     companion object {
         const val TABLE_NAME = "classifications"
 
+        const val TYPE_UNKNOWN = -1
         const val TYPE_FACE = 0
         const val TYPE_OBJECT = 1
+
+        const val OBJECT_UNKNOWN = 0
+        const val OBJECT_ANIMAL = 1
+        const val OBJECT_PLANT = 2
+        const val OBJECT_FOOD = 3
+        const val OBJECT_VEHICLE = 4
     }
 }

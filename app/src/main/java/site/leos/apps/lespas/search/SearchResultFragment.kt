@@ -31,8 +31,6 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.tflite.ObjectDetectionModel
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -180,23 +178,12 @@ class SearchResultFragment : Fragment() {
         init {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
-                //val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else getCameraCollection(app.contentResolver)
                 val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver, true)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
                 var length: Int
                 var size: Int
                 val option = BitmapFactory.Options()
-
-                // Load object index and positive threshold
-                val labelIndex = arrayListOf<Pair<String, Float>>()
-                BufferedReader(InputStreamReader(app.assets.open("label_mobile_ssd_coco_90.txt"))).use {
-                    var line = it.readLine()
-                    while(line != null) {
-                        line.split(',').apply { labelIndex.add(Pair(this[0], this[1].toFloat())) }
-                        line = it.readLine()
-                    }
-                }
 
                 for(photo in photos) {
                     if (!isActive) return@launch
@@ -214,31 +201,9 @@ class SearchResultFragment : Fragment() {
                     bitmap?.let {
                         with(od.recognizeImage(it)) {
                             if (this.isNotEmpty()) with(this[0]) {
-                                val found = labelIndex[this.title.toInt()]
-                                if (found.first == categoryId && this.confidence > found.second) {
-                                    resultList.add(Result(photo, this.title, this.confidence))
+                                if (this.classId == categoryId) {
+                                    resultList.add(Result(photo, this.objectIndex, this.similarity))
                                     result.postValue(resultList)
-                                } else {
-                                    // Special inference
-                                    if (categoryId == CATEGORY_PLANT) {
-                                        if ((this.title == "51" || this.title == "52" || this.title == "54") && this.confidence < found.second && this.confidence > 0.3) {
-                                            // "banana 51", "apple 52", "orange 54", could well be plant
-                                            resultList.add(Result(photo, this.title, this.confidence))
-                                            result.postValue(resultList)
-                                        }
-                                        if ((this.title == "56" || this.title == "22" || this.title == "55") && this.confidence < 0.45 && this.confidence > 0.24) {
-                                            // Low confidence "carrot 56", "bear 22", "broccoli 55" could be plant
-                                            resultList.add(Result(photo, this.title, this.confidence))
-                                            result.postValue(resultList)
-                                        }
-                                        /* too much false positive
-                                        if ((this.title == "15") && this.confidence < 0.5 && this.confidence > 0.36) {
-                                            // "bird 15" with confidence range of 0.35~0.5 could be plant
-                                            resultList.add(Result(photo, this.title, this.confidence))
-                                            result.postValue(resultList)
-                                        }
-                                         */
-                                    }
                                 }
                             }
                         }
@@ -307,7 +272,7 @@ class SearchResultFragment : Fragment() {
 
     data class Result(
         val photo: Photo,
-        val subLabel: String,
+        val subLabelIndex: Int,
         val similarity: Float,
     )
 
@@ -317,11 +282,6 @@ class SearchResultFragment : Fragment() {
         private const val CATEGORY_TYPE = "CATEGORY_TYPE"
         private const val CATEGORY_ID = "CATEGORY_ID"
         private const val CATEGORY_LABEL = "CATEGORY_LABEL"
-
-        private const val CATEGORY_ANIMAL = "1"
-        private const val CATEGORY_PLANT = "2"
-        private const val CATEGORY_FOOD = "3"
-        private const val CATEGORY_VEHICLE = "4"
 
         @JvmStatic
         fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, searchCollection: Boolean) = SearchResultFragment().apply {
