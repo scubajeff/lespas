@@ -211,6 +211,8 @@ class SearchResultFragment : Fragment() {
                 }
                 // Inform caller that search is finished
                 finished.postValue(true)
+
+                od.close()
             }
         }
 
