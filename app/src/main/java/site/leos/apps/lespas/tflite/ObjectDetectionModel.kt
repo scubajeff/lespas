@@ -39,7 +39,7 @@ class ObjectDetectionModel(assetManager: AssetManager): Detector {
         //Trace.beginSection("preprocessBitmap")
 
         // Preprocess the image data from 0-255 int to normalized float based on the provided parameters.
-        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
+        Bitmap.createScaledBitmap(bitmap, INPUT_SIZE, INPUT_SIZE, true).getPixels(pixels, 0, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE)
         imgData.rewind()
         for (i in 0 until INPUT_SIZE) {
             for (j in 0 until INPUT_SIZE) {

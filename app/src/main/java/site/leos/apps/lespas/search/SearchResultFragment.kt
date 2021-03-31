@@ -2,7 +2,6 @@ package site.leos.apps.lespas.search
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -213,7 +212,7 @@ class SearchResultFragment : Fragment() {
 
                     // Inference
                     bitmap?.let {
-                        with(od.recognizeImage(Bitmap.createScaledBitmap(bitmap, 300, 300, true))) {
+                        with(od.recognizeImage(it)) {
                             if (this.isNotEmpty()) with(this[0]) {
                                 val found = labelIndex[this.title.toInt()]
                                 if (found.first == categoryId && this.confidence > found.second) {
