@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
-    android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
     android:orientation="vertical"
     android:background="@drawable/bottom_controls_background">
 
@@ -42,6 +41,7 @@
         android:id="@+id/base_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
         android:orientation="horizontal">
 
         <ImageButton
