@@ -1,6 +1,6 @@
 package site.leos.apps.lespas.search
 
-import android.graphics.Rect
+import android.graphics.RectF
 
 data class Classification (
     val photoId: String,        // Photo ID in photo table
@@ -8,8 +8,9 @@ data class Classification (
     //val date: LocalDateTime,    // Photo taken date
     val type: Int,              // Face or object
     val classId: String,        // For object, it's object's id; for face, it's face's id
+    val objectIndex: Int,       // object index in label file
     val similarity: Float,      // For object, the higher the more similar; for face, the lower the more similar
-    val location: Rect,         // Face or object location in photo
+    val location: RectF,        // Face or object location in photo
 ) {
     companion object {
         const val TABLE_NAME = "classifications"
