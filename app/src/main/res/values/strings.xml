@@ -40,9 +40,9 @@
     <string name="fab_add_photos">Add photos</string>
 
     <!-- AlbumDetail fragment -->
-    <string name="confirm_delete">Are you sure to delete?</string>
+    <string name="confirm_delete">Are you sure you want to delete?</string>
     <string name="yes_delete">Yes, delete</string>
-    <string name="name_existed">"Can not rename to '%1$s', same name existed."</string>
+    <string name="name_existed">"Can not rename to '%1$s', name already exists."</string>
     <string name="rename_to">Change album name to</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Days: %1$d</string>
@@ -59,13 +59,13 @@
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">New cover applied.</string>
-    <string name="toast_cover_set_canceled">Cancelled setting new cover.</string>
+    <string name="toast_cover_set_canceled">Canceled setting new cover.</string>
 
     <!-- Setting fragment -->
     <string name="settings_title">Settings</string>
     <string name="view_header">View</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
-    <string name="auto_rotate_title">Rotate screen by photo aspect ratio</string>
+    <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
     <string name="auto_theme_title">App theme</string>
     <string name="theme_light_entries">Light theme</string>
@@ -76,53 +76,53 @@
     <string name="theme_auto_values" translatable="false">-1</string>
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
-    <string name="cameraroll_backup_title">Backup camera roll</string>
-    <string name="cameraroll_backup_summary">New photos and videos will be backup automatically to server under folder DCIM/%1$s</string>
+    <string name="cameraroll_backup_title">Backup Camera Roll</string>
+    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder DCIM/%1$s</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
-    <string name="background_sync_summary">Check server update every 6 hours</string>
+    <string name="background_sync_summary">Check for server changes every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
-    <string name="wifionly_title">Sync only on WiFi network</string>
+    <string name="wifionly_title">Sync only on WiFi</string>
     <string name="wifionly_off_title">Sync on all networks</string>
     <string name="wifionly_summary_on">Will not consume mobile data.</string>
-    <string name="wifionly_summary_off">Consume mobile data, cautious when you have a large collection of photos.</string>
-    <string name="other_header">Others</string>
+    <string name="wifionly_summary_off">Consumes mobile data – caution is advised when you have a large collection of photos.</string>
+    <string name="other_header">Miscellaneous</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
     <string name="snapseed_integration_title">Snapseed integration</string>
-    <string name="snapseed_integration_summary">Note: Please let Snapseed use JPEG output format</string>
+    <string name="snapseed_integration_summary">Note: please let Snapseed use JPEG output format</string>
     <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
     <string name="snapseed_replace_title">Replace original</string>
-    <string name="snapseed_add_title">Add Snapseed edition</string>
-    <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s edtition.</string>
-    <string name="snapseed_replace_off_summary">Add Snapseed\'s edition to album. Manage duplication by yourself.</string>
+    <string name="snapseed_add_title">Add Snapseed version</string>
+    <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s version.</string>
+    <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
     <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Gallery launcher icon</string>
-    <string name="storage_access_permission_rationale">Snapseed saves files in \"Snapseed\" folder, Grant WRITE_EXTERNAL_STORAGE permission to access those files.</string>
+    <string name="storage_access_permission_rationale">Snapseed saves files in the \"Snapseed\" folder. Grant WRITE_EXTERNAL_STORAGE permission to access those files.</string>
     <string name="proceed_request">Proceed</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
-    <string name="logout_dialog_msg">Logout account %1$s?</string>
-    <string name="yes_logout">Yes, logout</string>
+    <string name="logout_dialog_msg">Log out of account %1$s?</string>
+    <string name="yes_logout">Yes, log out</string>
 
     <!-- Destination DialogFragment -->
     <string name="choose_destination">Add to album</string>
     <string name="create_new_album">Create new album</string>
-    <string name="invalid_character_found">"Path separator '\\' '/' not allowed"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
+    <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>
-    <string name="album_existed">Album already existed</string>
+    <string name="album_existed">Album already exists</string>
     <string name="leading_dots_found">Prefix \'.\' not allowed</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photo</string>
-    <string name="preparing_files_progress">Preparing photos %1$d of %2$d</string>
+    <string name="preparing_files_progress">Preparing photo %1$d of %2$d</string>
     <string name="finished_preparing_files">Preparing photos finished</string>
-    <string name="it_takes_time">Need to send %1$s data to server. It might take a while before new photos show up in server.</string>
-    <string name="mind_network_setting">Please note that current sync setting prevent Les Pas from using mobile network.</string>
+    <string name="it_takes_time">Need to send %1$s of data to server. It might take a while before new photos show up on the server.</string>
+    <string name="mind_network_setting">Please note that the current sync setting prevents Les Pas from using a mobile network.</string>
     <string name="error_preparing_files">Error preparing files</string>
-    <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use others.</string>
-    <string name="no_media_file_found">None of image or video files can be found among shared data.</string>
-    <string name="same_file_found">Same media file existed already.</string>
+    <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use a different one.</string>
+    <string name="no_media_file_found">No image or video files found among shared data.</string>
+    <string name="same_file_found">Same media file alreday exists.</string>
 
     <!-- Info DialogFragment -->
     <string name="file_name">Name:</string>
@@ -153,14 +153,14 @@
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>
-    <string name="tooltips_search_cameraroll">Search in camera roll</string>
-    <string name="condition_to_perform_search">There should be at least an album existed OR storage access permission granted to perform search function.</string>
+    <string name="tooltips_search_cameraroll">Search in Camera Roll</string>
+    <string name="condition_to_perform_search">There must be at least one existing album OR storage access permission in order to search.</string>
     <string name="button_text_leave">Leave</string>
     <string name="need_albums">Please create an album first.</string>
 
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>
-    <string name="title_in_cameraroll">%1$s in camera roll</string>
+    <string name="title_in_cameraroll">%1$s in Camera Roll</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->
