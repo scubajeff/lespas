@@ -1,10 +1,10 @@
 package site.leos.apps.lespas.cameraroll
 
+import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -32,6 +32,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.*
@@ -44,6 +45,8 @@ import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.ShareReceiverActivity
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.lang.Integer.min
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -75,6 +78,8 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var startWithThisMedia: String
     private var videoStopPosition = 0L
 
+    private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -90,6 +95,17 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             { photo -> mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))},
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
         )
+
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
+            if (it) camerarollModel.removeCurrentMedia()
+
+            // Immediately sync with server after adding photo to local album
+            ContentResolver.requestSync(AccountManager.get(requireContext()).accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        }
 
         savedInstanceState?.apply {
             mediaPagerAdapter.setSavedStopPosition(getLong(STOP_POSITION))
@@ -141,13 +157,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 type = mediaToShare.mimeType
                 putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
             }, null))
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
             toggleControlView(false)
 
             if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                DestinationDialogFragment.newInstance().show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                DestinationDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
         }
         view.findViewById<ImageButton>(R.id.remove_button).setOnClickListener {
             toggleControlView(false)
@@ -242,10 +259,11 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             album?.apply {
                 // Acquire files
                 if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                    AcquiringDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), album, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
         })
 
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -297,6 +315,12 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     override fun onStop() {
         super.onStop()
         mediaPagerAdapter.cleanUp()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
     }
 
     override fun onDestroy() {
@@ -360,13 +384,15 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().apply {
             camerarollModel.setCurrentMediaIndex(this)
 
-            with(mediaPagerAdapter.getMediaAtPosition(this)) {
-                nameTextView.text = name
-                sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
+            if (this >= 0) {
+                with(mediaPagerAdapter.getMediaAtPosition(this)) {
+                    nameTextView.text = name
+                    sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
 
-                var pos = quickScrollAdapter.findMediaPosition(this)
-                if (pos == 1) pos = 0   // Show date separator for first item
-                quickScroll.scrollToPosition(pos)
+                    var pos = quickScrollAdapter.findMediaPosition(this)
+                    if (pos == 1) pos = 0   // Show date separator for first item
+                    quickScroll.scrollToPosition(pos)
+                }
             }
         }
     }
@@ -460,7 +486,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 removeAt(currentMediaIndex)
 
                 // Move index to the end of the new list if item to removed is at the end of the list
-                currentMediaIndex = min(currentMediaIndex, size-1)
+                currentMediaIndex = if (size > 0) min(currentMediaIndex, size-1) else 0
 
                 mediaList.postValue(this)
             }

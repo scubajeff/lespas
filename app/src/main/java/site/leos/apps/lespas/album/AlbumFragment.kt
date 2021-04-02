@@ -66,7 +66,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             // Acquire files
             album?.apply {
                 if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(uris, album).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                    AcquiringDialogFragment.newInstance(uris, album, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
         })
 
@@ -234,7 +234,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
                     if (uris.isNotEmpty()) {
                         if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                            DestinationDialogFragment.newInstance().show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                            DestinationDialogFragment.newInstance(uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                     }
                 }
             }
