@@ -212,13 +212,18 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
     }
 
     private fun toggleAutoSync(on: Boolean) {
-        if (on)
-            ContentResolver.addPeriodicSync(
-                AccountManager.get(context).accounts[0],
-                getString(R.string.sync_authority),
-                Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },
-                6 * 60 * 60
-            )
+        if (on) {
+            ContentResolver.setSyncAutomatically(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), true)
+            ContentResolver.addPeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) },6 * 3600L)
+            /*
+            ContentResolver.requestSync(SyncRequest.Builder()
+                .setSyncAdapter(AccountManager.get(context).accounts[0], getString(R.string.sync_authority))
+                .setExtras(Bundle().apply { putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES) })
+                .syncPeriodic(6 * 3600L, 20 * 60L)
+                .build())
+
+             */
+        }
         else ContentResolver.removePeriodicSync(AccountManager.get(context).accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
     }
 
