@@ -183,9 +183,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         }}}
                     }
                     bitmap = decodeBitmap(photo, type)
+                    if (bitmap == null) bitmap = errorBitmap
+                    else if (type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
-                if (bitmap == null) bitmap = errorBitmap
-                else if (type != TYPE_FULL) imageCache.put(key, bitmap)
 
                 //Log.e(">>>", "${bitmap.allocationByteCount} aa ${imageCache.putCount()} ${imageCache.snapshot().size}")
 
@@ -199,12 +199,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 callBack?.onLoadComplete()
             }
         }.apply {
-            invokeOnCompletion { jobMap.remove(jobKey) }
+            //invokeOnCompletion { jobMap.remove(jobKey) }
         }
 
         // Replacing previous job
         replacePrevious(jobKey, job)
     }
+
+    fun cancelLoading(view: ImageView) { jobMap[System.identityHashCode(view)]?.cancel() }
 
     private fun replacePrevious(key: Int, newJob: Job) {
         jobMap[key]?.cancel()
