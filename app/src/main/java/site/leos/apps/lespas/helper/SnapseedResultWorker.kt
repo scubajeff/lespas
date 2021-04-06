@@ -137,7 +137,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
             } catch (e: Exception) { e.printStackTrace() }
 
             // Remove snapseed output
-            context.contentResolver.delete(uri, null, null)
+            try {
+                context.contentResolver.delete(uri, null, null)
+            } catch (e: Exception) { e.printStackTrace() }
             return Result.success()
         }
 
