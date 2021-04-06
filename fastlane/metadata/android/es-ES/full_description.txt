@@ -5,11 +5,12 @@ Características:
 - Ver detalles de la foto
 - Álbumes organizados
 - Administra el rollo de cámara de tu teléfono y la copia de seguridad automática al servidor
+- Sincronización entre su servidor Nextcloud y múltiples dispositivos
+- Gestiona libremente los álbumes y las fotos en el servidor de Nextcloud y en tus teléfonos
+- Buscar fotos por objetos
 - Integrar con Snapseed para la edición de fotos
 - Compartir a las redes sociales
 - Diseño temático inspirado en las obras de Wes Anderson
-- Sincronización entre su servidor Nextcloud y múltiples dispositivos
-- Gestiona libremente los álbumes y las fotos en el servidor de Nextcloud y en tus teléfonos
 - Todos los archivos guardados en el almacenamiento privado de la aplicación, dejan de ser escaneados por aplicaciones maliciosas
 - Código abierto
 
@@ -17,3 +18,4 @@ Este proyecto se construye utilizando el siguiente software de código abierto:
 - Sardine-Android https://github.com/thegrizzlylabs/sardine-android
 - PhotoView https://github.com/chrisbanes/PhotoView
 - Proyecto de código abierto para Android https://source.android.com
+- TensorFlow https://www.tensorflow.org

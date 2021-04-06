@@ -4,12 +4,13 @@ Funktionen:
 - Einfaches, schönes und schnelles Betrachten von Fotos und Videos
 - Ansicht von Bilddetails
 - Organisierte Alben
-- Verwalten der Kamerarolle Ihres Telefons und automatische Sicherung auf dem Server
+- Verwalten der Filmrolle Ihres Telefons und automatische Sicherung auf dem Server
+- Synchronisation zwischen Ihrem Nextcloud-Server und mehreren Geräten
+- Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
+- Suche nach Fotos nach Objekten
 - Integration mit Snapseed zur Fotobearbeitung
 - Teilen in sozialen Netzwerken
 - Themendesign inspiriert von den Werken von Wes Anderson
-- Synchronisation zwischen Ihrem Nextcloud-Server und mehreren Geräten
-- Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
 - Alle Dateien werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden
 - Open-Source
 
@@ -17,3 +18,4 @@ Dieses Projekt wurde unter Verwendung der folgenden Open-Source-Software erstell
 - Sardine-Android https://github.com/thegrizzlylabs/sardine-android
 - PhotoView https://github.com/chrisbanes/PhotoView
 - Android Open Source Project https://source.android.com
+- TensorFlow https://www.tensorflow.org
