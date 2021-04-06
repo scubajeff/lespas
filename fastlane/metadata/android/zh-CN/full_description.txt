@@ -5,11 +5,12 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
 - 查看照片详情
 - 按相册整理图片视频
 - 自动备份手机的相机相册到Nextcloud服务器
+- 与Nextcloud服务器双向同步，支持多设备同步
+- 支持同时在服务器和手机中管理相册、照片
+- 人工智能辅助搜索图片
 - 与Snapseed修图软件联动
 - 分享至社交网络
 - 视觉设计来源于Wes Anderson的电影
-- 与Nextcloud服务器双向同步，支持多设备同步
-- 支持同时在服务器和手机中管理相册、照片
 - 所有照片及视频都保存在手机应用的私有存储空间，防止不法软件任意扫描剽窃
 - 完全免费、开源
 
@@ -17,3 +18,4 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
 - Sardine-Android https://github.com/thegrizzlylabs/sardine-android
 - PhotoView https://github.com/chrisbanes/PhotoView
 - Android Open Source Project https://source.android.com
+- TensorFlow https://www.tensorflow.org
