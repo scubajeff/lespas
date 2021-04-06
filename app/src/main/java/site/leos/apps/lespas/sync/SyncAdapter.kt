@@ -172,7 +172,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             423-> {
                                 // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
+                                syncResult.stats.numIoExceptions++
                                 syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
+                                return
+                            }
+                            in 500..600 -> {
+                                // Server error, backoff 5 minutes
+                                syncResult.stats.numIoExceptions++
+                                syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 300
                                 return
                             }
                             else-> {
@@ -550,6 +557,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
                                         syncResult.stats.numIoExceptions++
                                         syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
+                                        return
+                                    }
+                                    in 500..600 -> {
+                                        // Server error, backoff 5 minutes
+                                        syncResult.stats.numIoExceptions++
+                                        syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 300
                                         return
                                     }
                                     else-> {
