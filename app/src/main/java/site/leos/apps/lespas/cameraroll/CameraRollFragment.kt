@@ -12,6 +12,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.transition.Slide
 import android.transition.TransitionManager
@@ -152,7 +153,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         view.findViewById<ImageButton>(R.id.remove_button).setOnClickListener {
             toggleControlView(false)
 
-            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                startIntentSenderForResult(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri())).intentSender, DELETE_MEDIA_REQUEST_CODE, null, 0, 0, 0, null)
+            }
+            else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let{
                 it.setTargetFragment(this, DELETE_MEDIA_REQUEST_CODE)
                 it.show(parentFragmentManager, CONFIRM_DIALOG)
             }
@@ -231,8 +235,9 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         savedInstanceState?.let {
             observeCameraRoll()
         } ?: run {
-            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST)
             }
             else observeCameraRoll()
         }
@@ -310,13 +315,23 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST) {
+        if (requestCode == STORAGE_PERMISSION_REQUEST) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) observeCameraRoll()
             else if (requireActivity() is MainActivity) parentFragmentManager.popBackStack() else requireActivity().finish()
         }
     }
 
-    // From ConfirmDialogFragment
+    // On Android 11 and above, result of media deletion request from Android
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == DELETE_MEDIA_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                camerarollModel.removeCurrentMedia()
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    // From ConfirmDialogFragment for media deletion
     override fun onResult(positive: Boolean, requestCode: Int) {
         if (positive) camerarollModel.removeCurrentMedia()
     }
@@ -452,11 +467,13 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
         //fun getMediaListSize(): Int = mediaList.value!!.size
 
+        fun getCurrentMediaUri(): Uri = Uri.parse(mediaList.value?.get(currentMediaIndex)!!.id)
+
         fun removeCurrentMedia() {
             val newList = mediaList.value?.toMutableList()
 
             newList?.run {
-                cr.delete(Uri.parse(this[currentMediaIndex].id), null, null)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) cr.delete(Uri.parse(this[currentMediaIndex].id), null, null)
                 removeAt(currentMediaIndex)
 
                 // Move index to the end of the new list if item to removed is at the end of the list
@@ -759,7 +776,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_MEDIA_REQUEST_CODE = 3399
 
-        private const val WRITE_STORAGE_PERMISSION_REQUEST = 6464
+        private const val STORAGE_PERMISSION_REQUEST = 6464
 
         private const val STOP_POSITION = "STOP_POSITION"
 
