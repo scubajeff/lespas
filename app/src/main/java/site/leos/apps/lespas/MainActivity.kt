@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.viewModels
@@ -64,8 +65,8 @@ class MainActivity : AppCompatActivity() {
                 })
             })
 
-            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and Camera Roll backup
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
+            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
+            if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
                 putBoolean(getString(R.string.snapseed_pref_key), false)
                 putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
             }

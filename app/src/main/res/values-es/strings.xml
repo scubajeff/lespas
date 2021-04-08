@@ -46,7 +46,7 @@
     <string name="snapseed_add_title">Añadir la edición Snapseed</string>
     <string name="snapseed_replace_on_summary">Reemplaza automáticamente la foto original por la edición de Snapseed.</string>
     <string name="snapseed_replace_off_summary">Añade la edición de Snapseed al álbum. Gestiona la duplicación por ti mismo.</string>
-    <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso a WRITE_EXTERNAL_STORAGE para acceder a esos archivos.</string>
+    <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso para acceder a esos archivos.</string>
     <string name="proceed_request">Proceda</string>
     <string name="logout_title">Cierre de sesión</string>
     <string name="logout_dialog_msg">¿Desconexión de la cuenta %1$s?</string>

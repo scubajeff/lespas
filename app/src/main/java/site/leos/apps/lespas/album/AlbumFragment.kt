@@ -2,7 +2,6 @@ package site.leos.apps.lespas.album
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
@@ -23,7 +22,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.cameraroll.CameraRollActivity
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -249,13 +247,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
-                /*
-                if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
-                } else browseCameraRoll()
-
-                 */
-
                 parentFragmentManager.beginTransaction()
                     //.replace(R.id.container_camera_gallery, CameraGalleryFragment(), CameraGalleryFragment::class.java.canonicalName)
                     //.replace(R.id.container_root, CameraMediaFragment(), CameraMediaFragment::class.java.canonicalName)
@@ -328,17 +319,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             actionModel.deleteAlbums(albums)
         }
         selectionTracker.clearSelection()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) browseCameraRoll()
-    }
-
-    private fun browseCameraRoll() {
-        startActivity(Intent(requireContext(), CameraRollActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            //putExtra(CameraRollActivity.BROWSE_GALLERY, true)
-        })
     }
 
     // List adapter for Albums' recyclerView
@@ -457,7 +437,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SCROLL_POSITION = "SCROLL_POSITION"
         private const val SELECTION = "SELECTION"
-        private const val WRITE_STORAGE_PERMISSION_REQUEST = 89
 
         @JvmStatic
         fun newInstance() = AlbumFragment()

@@ -74,7 +74,7 @@
     <string name="snapseed_replace_title">Original ersetzen</string>
     <string name="snapseed_replace_on_summary">Ersetzt das Originalfoto automatisch durch die bearbeitete Version von Snapseed.</string>
     <string name="snapseed_replace_off_summary">Originalfoto und geänderte Version speichern. Duplikate müssen selbst verwaltet werden.</string>
-    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung WRITE_EXTERNAL_STORAGE, um auf diese Dateien zuzugreifen.</string>
+    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung, um auf diese Dateien zuzugreifen.</string>
     <string name="proceed_request">Weiter</string>
     <string name="snapseed_integration_summary">Hinweis: Bitte lassen Sie Snapseed das JPEG-Ausgabeformat verwenden.</string>
     <string name="item_sortby">Sortieren nach</string>
