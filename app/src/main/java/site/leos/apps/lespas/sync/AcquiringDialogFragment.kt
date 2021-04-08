@@ -1,10 +1,7 @@
 package site.leos.apps.lespas.sync
 
-import android.accounts.AccountManager
 import android.app.Application
-import android.content.ContentResolver
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -22,6 +19,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
@@ -34,6 +32,7 @@ import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
@@ -51,13 +50,13 @@ import java.util.*
 class AcquiringDialogFragment: DialogFragment() {
     private var total = -1
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val acquiringModel: AcquiringViewModel by viewModels {
-        AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(URIS)!!, arguments?.getParcelable(ALBUM)!!)
-    }
+    private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
+
+    private var finished = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        total = arguments?.getParcelableArrayList<Uri>(URIS)!!.size
+        total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -72,13 +71,7 @@ class AcquiringDialogFragment: DialogFragment() {
 
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
             if (progress >= total) {
-                if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) {
-                    // Request sync immediately if called from ShareReceiverActivity, since the viewmodel observing Action table might not be running at this moments
-                    ContentResolver.requestSync(AccountManager.get(requireContext()).accounts[0], getString(R.string.sync_authority), Bundle().apply {
-                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                    })
-                }
+                finished = true
 
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
                 progress_linearlayout.visibility = View.GONE
@@ -134,20 +127,23 @@ class AcquiringDialogFragment: DialogFragment() {
     }
 
 
-    override fun onCancel(dialog: DialogInterface) {
+    override fun onDestroy() {
+        LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(Intent().apply {
+            action = BROADCAST_REMOVE_ORIGINAL
+            putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
+        })
+
+        // Dirty hack to stop DestinationViewModel from emitting livedata again
         destinationViewModel.resetDestination()
 
-        super.onCancel(dialog)
+        super.onDestroy()
+
         // If called by ShareReceiverActivity, quit immediately, otherwise return normally
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
-    override fun onDismiss(dialog: DialogInterface) {
-        destinationViewModel.resetDestination()
-
-        super.onDismiss(dialog)
-        // If called by ShareReceiverActivity, quit immediately, otherwise return normally
-        if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
+    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
     }
 
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {
@@ -288,19 +284,20 @@ class AcquiringDialogFragment: DialogFragment() {
         }
     }
 
-    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
-    }
-
     companion object {
-        const val URIS = "URIS"
-        const val ALBUM = "ALBUM"
+        const val KEY_URIS = "KEY_URIS"
+        const val KEY_ALBUM = "KEY_ALBUM"
+        const val KEY_REMOVE_ORIGINAL = "KEY_REMOVE_ORIGINAL"
+
+        const val BROADCAST_REMOVE_ORIGINAL = "${BuildConfig.APPLICATION_ID}.BROADCAST_REMOVE_ORIGINAL"
+        const val BROADCAST_REMOVE_ORIGINAL_EXTRA = "${BuildConfig.APPLICATION_ID}.BROADCAST_REMOVE_ORIGINAL_EXTRA"
 
         @JvmStatic
-        fun newInstance(uris: ArrayList<Uri>, album: Album) = AcquiringDialogFragment().apply {
+        fun newInstance(uris: ArrayList<Uri>, album: Album, removeOriginal: Boolean) = AcquiringDialogFragment().apply {
             arguments = Bundle().apply {
-                putParcelableArrayList(URIS, uris)
-                putParcelable(ALBUM, album)
+                putParcelableArrayList(KEY_URIS, uris)
+                putParcelable(KEY_ALBUM, album)
+                putBoolean(KEY_REMOVE_ORIGINAL, removeOriginal)
             }
         }
     }

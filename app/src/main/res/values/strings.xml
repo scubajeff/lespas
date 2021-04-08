@@ -105,8 +105,10 @@
     <string name="yes_logout">Yes, log out</string>
 
     <!-- Destination DialogFragment -->
-    <string name="choose_destination">Add to album</string>
+    <string name="copy_files">Copy</string>
+    <string name="move_files">Move</string>
     <string name="create_new_album">Create new album</string>
+    <string name="to_album">To Album:</string>
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>

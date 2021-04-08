@@ -1,42 +1,65 @@
 package site.leos.apps.lespas.sync
 
 import android.content.DialogInterface
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
 import android.os.Bundle
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.widget.FrameLayout
 import android.widget.ImageView
-import androidx.appcompat.widget.AppCompatImageView
-import androidx.appcompat.widget.AppCompatTextView
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
-import kotlinx.android.synthetic.main.fragment_destination_dialog.*
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime
+import java.util.*
 
 class DestinationDialogFragment : DialogFragment() {
     private lateinit var albumAdapter: DestinationAdapter
+    private lateinit var clipDataAdapter: ClipDataAdapter
     private val albumNameModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private lateinit var rootLayout: ConstraintLayout
+    private lateinit var clipDataRecyclerView: RecyclerView
+    private lateinit var destinationRecyclerView: RecyclerView
+    private lateinit var copyOrMoveToggleGroup: MaterialButtonToggleGroup
+    private lateinit var newAlbumTextInputLayout: TextInputLayout
+    private lateinit var newAlbumTitleTextInputEditText: TextInputEditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,25 +69,44 @@ class DestinationDialogFragment : DialogFragment() {
                 if (album.id.isEmpty()) {
                     destinationModel.setEditMode(true)
 
-                    TransitionManager.beginDelayedTransition(root, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                    dialog_title_textview.text = getString(R.string.create_new_album)
-                    destination_recyclerview.visibility = View.GONE
-                    new_album_textinputlayout.apply {
-                        visibility = View.VISIBLE
-                        requestFocus()
-                    }
+                    TransitionManager.beginDelayedTransition(rootLayout, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                    showNewAlbumEditText()
                 }
                 // User choose an existing album
                 else {
+                    destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                     destinationModel.setDestination(album)
                     dismiss()
                 }
             },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) }
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) },
+            { view -> imageLoaderModel.cancelLoading(view) }
         )
+        clipDataAdapter = ClipDataAdapter { uri, view ->
+            lifecycleScope.launch(Dispatchers.IO) {
+                val cr = requireContext().contentResolver
+                val bitmap: Bitmap =
+                    if ((cr.getType(uri) ?: "image/*").startsWith("image"))
+                        BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 8 }) ?: Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_imagefile_24)
+                    else
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            try {
+                                cr.loadThumbnail(uri, Size(64, 64), null)
+                            } catch (e: Exception) {
+                                // Some Android Q Rom, like AEX for EMUI 9, throw exception
+                                e.printStackTrace()
+                                Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_videofile_24)
+                            }
+                        } else Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_videofile_24)
+
+                withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+            }
+        }
+
+        clipDataAdapter.submitList(arguments?.getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList())
+
         albumNameModel.allAlbumsByEndDate.observe(this, { albums ->
-            albumAdapter.setDestinations(albums)
-            //albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG || tag == CameraRollActivity.TAG_DESTINATION_DIALOG)
+            albumAdapter.setDestinations(albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)))
             albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
         })
     }
@@ -76,20 +118,34 @@ class DestinationDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        //root.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        root.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
-        destination_recyclerview.adapter = albumAdapter
-        name_textinputedittext.run {
+        rootLayout = view.findViewById(R.id.root)
+        clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
+        destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
+        copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
+        newAlbumTextInputLayout = view.findViewById(R.id.new_album_textinputlayout)
+        newAlbumTitleTextInputEditText = view.findViewById(R.id.name_textinputedittext)
+
+        view.findViewById<FrameLayout>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        rootLayout.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        clipDataRecyclerView.adapter = clipDataAdapter
+        destinationRecyclerView.adapter = albumAdapter
+
+        view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
+        savedInstanceState?.let {
+            it.getInt(COPY_OR_MOVE).apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
+        }
+
+        newAlbumTitleTextInputEditText.run {
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     // Validate the name
-                    val name = name_textinputedittext.text.toString().trim()    // Trim the leading and trailing blank
+                    val name = this.text.toString().trim()    // Trim the leading and trailing blank
 
                     if (error != null)
                     else if (name.isEmpty())
-                    else if (isAlbumExisted(name)) name_textinputedittext.error = getString(R.string.album_existed)
+                    else if (isAlbumExisted(name)) this.error = getString(R.string.album_existed)
                     else {
+                        destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                         // Return with album id field empty, calling party will know this is a new album
                         destinationModel.setDestination(Album("", name,
                             LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
@@ -102,14 +158,7 @@ class DestinationDialogFragment : DialogFragment() {
         }
 
         // Maintain current mode after screen rotation
-        if (destinationModel.isEditing()) {
-            dialog_title_textview.text = getString(R.string.create_new_album)
-            destination_recyclerview.visibility = View.GONE
-            new_album_textinputlayout.apply {
-                visibility = View.VISIBLE
-                requestFocus()
-            }
-        }
+        if (destinationModel.isEditing()) showNewAlbumEditText()
     }
 
     override fun onStart() {
@@ -131,9 +180,18 @@ class DestinationDialogFragment : DialogFragment() {
         dialog?.setCanceledOnTouchOutside(false)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(COPY_OR_MOVE, copyOrMoveToggleGroup.checkedButtonId)
+    }
+
     override fun onDestroyView() {
+        destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
+
+        destinationRecyclerView.adapter = null
+        clipDataRecyclerView.adapter = null
+
         super.onDestroyView()
-        destination_recyclerview.adapter = null
     }
 
     override fun onCancel(dialog: DialogInterface) {
@@ -146,48 +204,47 @@ class DestinationDialogFragment : DialogFragment() {
         if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) activity?.finish()
     }
 
+    private fun showNewAlbumEditText() {
+        destinationRecyclerView.visibility = View.GONE
+        //removeOriginalCheckBox.visibility = View.GONE
+        newAlbumTextInputLayout.apply {
+            visibility = View.VISIBLE
+            requestFocus()
+        }
+    }
+
     private fun isAlbumExisted(name: String): Boolean {
         var existed = false
         albumNameModel.allAlbumsByEndDate.value!!.forEach { if (it.name == name) existed = true }
         return existed
     }
 
-    class DestinationAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
+    class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Photo, ImageView, String)-> Unit, private val cancelLoading: (ImageView)-> Unit): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
         private var destinations = emptyList<Album>()
         private var covers = mutableListOf<Photo>()
         private var coverType: String = ImageLoaderViewModel.TYPE_SMALL_COVER
 
-        fun interface OnItemClickListener {
-            fun onItemClick(album: Album)
-        }
-
-        fun interface OnLoadImage {
-            fun loadImage(photo: Photo, view: ImageView, type: String)
-        }
-
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(position: Int, clickListener: OnItemClickListener) {
+            fun bindViewItems(album: Album) {
                 with(itemView) {
-                    if (position == destinations.size) {
-                        findViewById<AppCompatImageView>(R.id.cover).apply {
-                            setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSurface))
+                    if (album.id.isEmpty()) {
+                        findViewById<ImageView>(R.id.cover).apply {
+                            cancelLoading(this)
                             setImageResource(R.drawable.ic_baseline_add_24)
+                            setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSurface))
                             scaleType = ImageView.ScaleType.FIT_CENTER
                         }
-                        findViewById<AppCompatTextView>(R.id.name).text = resources.getString(R.string.create_new_album)
-                        setOnClickListener { clickListener.onItemClick(
-                            Album("", "",
-                                LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)
-                        )}
+                        findViewById<TextView>(R.id.name).text = resources.getString(R.string.create_new_album)
+                        setOnClickListener { itemClickListener(album) }
                     } else {
-                        findViewById<AppCompatImageView>(R.id.cover).apply {
+                        findViewById<ImageView>(R.id.cover).apply {
+                            imageLoader(covers[adapterPosition], this, coverType)
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             //setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
                             setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSurface))
-                            imageLoader.loadImage(covers[position], this, coverType)
                         }
-                        findViewById<AppCompatTextView>(R.id.name).text = destinations[position].name
-                        setOnClickListener { clickListener.onItemClick(destinations[position]) }
+                        findViewById<TextView>(R.id.name).text = album.name
+                        setOnClickListener { itemClickListener(album) }
                     }
                 }
             }
@@ -198,10 +255,10 @@ class DestinationDialogFragment : DialogFragment() {
         }
 
         override fun onBindViewHolder(holder: DestViewHolder, position: Int) {
-            holder.bindViewItems(position, itemClickListener)
+            holder.bindViewItems(destinations[position])
         }
 
-        override fun getItemCount(): Int = destinations.size + 1
+        override fun getItemCount(): Int = destinations.size
 
         fun setDestinations(destinations: List<Album>) {
             this.destinations = destinations
@@ -215,52 +272,54 @@ class DestinationDialogFragment : DialogFragment() {
         }
     }
 
+    class ClipDataAdapter(private val loadClipData: (Uri, ImageView)-> Unit): ListAdapter<Uri, RecyclerView.ViewHolder>(ClipDataDiffCallback()) {
+        inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            fun bind(uri: Uri) {
+                with(itemView.findViewById<ImageView>(R.id.media)) {
+                    loadClipData(uri, this)
+                }
+            }
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+            MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_clipdata, parent, false))
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            (holder as MediaViewHolder).bind(currentList[position])
+        }
+    }
+
+    class ClipDataDiffCallback: DiffUtil.ItemCallback<Uri>() {
+        override fun areItemsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem.equals(newItem)
+        override fun areContentsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem.equals(newItem)
+    }
+
     class DestinationViewModel: ViewModel() {
         private var destination = MutableLiveData<Album?>()
         private var inEditing = false
+        private var removeOriginal = false
 
         fun resetDestination() { destination.value = null }
         fun setDestination(newDestination: Album) { this.destination.value = newDestination }
         fun getDestination(): LiveData<Album?> = destination
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
+        fun setRemoveOriginal(remove: Boolean) { removeOriginal = remove }
+        fun shouldRemoveOriginal() = removeOriginal
     }
 
     companion object {
+        const val KEY_URIS = "KEY_URIS"
+        const val KEY_CAN_WRITE = "KEY_CAN_WRITE"
+
+        private const val COPY_OR_MOVE = "COPY_OR_MOVE"
+
         @JvmStatic
-        fun newInstance() = DestinationDialogFragment()
+        fun newInstance(uris: ArrayList<Uri>, canWrite: Boolean) = DestinationDialogFragment().apply {
+            arguments = Bundle().apply {
+                putParcelableArrayList(KEY_URIS, uris)
+                putBoolean(KEY_CAN_WRITE, canWrite)
+            }
+        }
     }
 }
-/*
-                    // User want to create a new album, present them a edittext to get the name
-                    // Fade out destination listview
-                    destination_recyclerview.run {
-                        alpha = 1f
-                        translationY = 0f
-                        animate().alpha(0f).translationY(-100f).setDuration(500).setInterpolator(AccelerateInterpolator())
-                            .setListener(object : AnimatorListenerAdapter() {
-                                override fun onAnimationEnd(animation: Animator?) {
-                                    super.onAnimationEnd(animation)
-                                    new_album_textinputlayout.run {
-                                        // Hold the edittext space first
-                                        visibility = View.VISIBLE
-                                        alpha = 0f
-                                    }
-                                    destination_recyclerview.visibility = View.GONE
-                                    dialog_title_textview.text = getString(R.string.create_new_album)
-
-                                    // Fade in new album edittext
-                                    new_album_textinputlayout.run {
-                                        animate().alpha(1f).setDuration(200).setInterpolator(DecelerateInterpolator())
-                                            .setListener(object : AnimatorListenerAdapter() {
-                                                override fun onAnimationEnd(animation: Animator?) {
-                                                    super.onAnimationEnd(animation)
-                                                    new_album_textinputlayout.requestFocus()
-                                                }
-                                            })
-                                    }
-                                }
-                        })
-                    }
-
- */

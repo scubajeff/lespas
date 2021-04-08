@@ -3,16 +3,15 @@ package site.leos.apps.lespas.helper
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
-import android.graphics.Matrix
+import android.content.Context
+import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
@@ -325,5 +324,15 @@ object Tools {
         }
 
         return medias
+    }
+
+    fun getBitmapFromVector(context: Context, vectorResource: Int): Bitmap {
+        val vectorDrawable = ContextCompat.getDrawable(context, vectorResource)!!
+        val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).run {
+            vectorDrawable.setBounds(0, 0, width, height)
+            vectorDrawable.draw(this)
+        }
+        return bitmap
     }
 }

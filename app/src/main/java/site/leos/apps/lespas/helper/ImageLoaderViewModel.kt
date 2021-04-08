@@ -10,11 +10,11 @@ import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.Tools.getBitmapFromVector
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
@@ -32,16 +32,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
-    }
-
-    private fun getBitmapFromVector(application: Application, vectorResource: Int): Bitmap {
-        val vectorDrawable = ContextCompat.getDrawable(application, vectorResource)!!
-        val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).run {
-            vectorDrawable.setBounds(0, 0, width, height)
-            vectorDrawable.draw(this)
-        }
-        return bitmap
     }
 
     private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
@@ -183,9 +173,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         }}}
                     }
                     bitmap = decodeBitmap(photo, type)
+                    if (bitmap == null) bitmap = errorBitmap
+                    else if (type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
-                if (bitmap == null) bitmap = errorBitmap
-                else if (type != TYPE_FULL) imageCache.put(key, bitmap)
 
                 //Log.e(">>>", "${bitmap.allocationByteCount} aa ${imageCache.putCount()} ${imageCache.snapshot().size}")
 
@@ -199,12 +189,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 callBack?.onLoadComplete()
             }
         }.apply {
-            invokeOnCompletion { jobMap.remove(jobKey) }
+            //invokeOnCompletion { jobMap.remove(jobKey) }
         }
 
         // Replacing previous job
         replacePrevious(jobKey, job)
     }
+
+    fun cancelLoading(view: ImageView) { jobMap[System.identityHashCode(view)]?.cancel() }
 
     private fun replacePrevious(key: Int, newJob: Job) {
         jobMap[key]?.cancel()

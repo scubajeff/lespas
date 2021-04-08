@@ -1,11 +1,14 @@
 package site.leos.apps.lespas.sync
 
+import android.accounts.AccountManager
+import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import site.leos.apps.lespas.R
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
@@ -29,12 +32,12 @@ class ShareReceiverActivity: AppCompatActivity() {
                 album?.apply {
                     // Acquire files
                     if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                        AcquiringDialogFragment.newInstance(files, album).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
+                        AcquiringDialogFragment.newInstance(files, album, destinationModel.shouldRemoveOriginal()).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             })
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                DestinationDialogFragment.newInstance().show(supportFragmentManager, TAG_DESTINATION_DIALOG)
+                DestinationDialogFragment.newInstance(files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false)).show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
         else {
             finish()
@@ -51,8 +54,23 @@ class ShareReceiverActivity: AppCompatActivity() {
         overridePendingTransition(0, 0)
     }
 
+    override fun onDestroy() {
+        if (!intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
+            // Request sync immediately if called from other apps
+            ContentResolver.requestSync(AccountManager.get(this).accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        }
+
+        super.onDestroy()
+    }
+
     companion object {
         const val TAG_DESTINATION_DIALOG = "UPLOAD_ACTIVITY_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "UPLOAD_ACTIVITY_ACQUIRING_DIALOG"
+
+        const val KEY_SHOW_REMOVE_OPTION = "KEY_SHOW_REMOVE_OPTION"
     }
 }
