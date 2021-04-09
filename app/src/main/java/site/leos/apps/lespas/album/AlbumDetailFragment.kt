@@ -231,7 +231,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             sharedSelection.clear()
         }
 
-        savedInstanceState?.let { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
+        savedInstanceState ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
