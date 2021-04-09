@@ -34,7 +34,7 @@
     <string name="other_header">Autres</string>
     <string name="logout_title">Déconnexion-vous</string>
     <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
-    <string name="choose_destination">Ajouter à l\'album</string>
+    <string name="copy_files">Copier</string>
     <string name="create_new_album">Créer un nouvel album</string>
     <string name="invalid_character_found">Le séparateur de chemin \"\\\" \"/\" n\'est pas autorisé</string>
     <string name="invalid_name_found">Nom non autorisé</string>
@@ -74,7 +74,7 @@
     <string name="snapseed_replace_title">Remplacer l\'original</string>
     <string name="snapseed_replace_on_summary">Remplacement automatique de la photo originale par l\'édition de Snapseed.</string>
     <string name="snapseed_replace_off_summary">Ajoutez l\'édition de Snapseed à l\'album. Gérer la duplication par vous-même.</string>
-    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission WRITE_EXTERNAL_STORAGE d\'accéder à ces fichiers.</string>
+    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission d\'accéder à ces fichiers.</string>
     <string name="proceed_request">Continuer</string>
     <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
     <string name="item_sortby">Trier par</string>
@@ -110,4 +110,6 @@
     <string name="button_text_leave">Sortie</string>
     <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
     <string name="need_albums">Veuillez d\'abord créer un album.</string>
+    <string name="to_album">À l\'album :</string>
+    <string name="move_files">Déplacer</string>
 </resources>

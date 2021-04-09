@@ -136,10 +136,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 File(context.cacheDir, originalPhoto.name).delete()
             } catch (e: Exception) { e.printStackTrace() }
 
-            // Remove snapseed output
-            try {
+            // Remove snapseed output if running on Android Q or lower
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) try {
                 context.contentResolver.delete(uri, null, null)
             } catch (e: Exception) { e.printStackTrace() }
+
             return Result.success()
         }
 

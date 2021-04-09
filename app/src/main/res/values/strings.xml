@@ -97,7 +97,7 @@
     <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
     <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Gallery launcher icon</string>
-    <string name="storage_access_permission_rationale">Snapseed saves files in the \"Snapseed\" folder. Grant WRITE_EXTERNAL_STORAGE permission to access those files.</string>
+    <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="proceed_request">Proceed</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
@@ -105,8 +105,10 @@
     <string name="yes_logout">Yes, log out</string>
 
     <!-- Destination DialogFragment -->
-    <string name="choose_destination">Add to album</string>
+    <string name="copy_files">Copy</string>
+    <string name="move_files">Move</string>
     <string name="create_new_album">Create new album</string>
+    <string name="to_album">To Album:</string>
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>

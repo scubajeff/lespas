@@ -21,7 +21,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.selection.SelectionTracker.Builder
@@ -45,15 +45,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.SnapseedResultWorker
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.time.Duration
 import java.time.ZoneId
@@ -73,7 +72,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private var isScrolling = false
 
     private val albumModel: AlbumViewModel by activityViewModels()
-    private val actionModel: ActionViewModel by viewModels()
+    private val actionModel: ActionViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
@@ -82,6 +81,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
 
+    private lateinit var sharedSelection: MutableSet<Long>
+
+    private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -89,8 +92,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         // Must be restore here
         lastSelection = mutableSetOf()
+        sharedSelection = mutableSetOf()
         savedInstanceState?.let {
             lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
+            sharedSelection = it.getLongArray(SHARED_SELECTION)?.toMutableSet()!!
         }
         ?: run {
             with(currentPhotoModel) {
@@ -121,12 +126,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Shared to Snapseed. Register content observer if we have storage permission and integration with snapseed option is on
-                    if (ContextCompat.checkSelfPermission(context!!, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    if (ContextCompat.checkSelfPermission(context!!, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
                         PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
                             registerContentObserver(
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 true,
                                 snapseedOutputObserver
                             )
@@ -145,6 +150,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
 
+                // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
                 if (uri?.lastPathSegment!! != lastId) {
                     lastId = uri.lastPathSegment!!
 
@@ -207,6 +213,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             },
             { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
         ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }
+
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
+            if (it) {
+                val photos = mutableListOf<Photo>()
+                for (i in sharedSelection) {
+                    mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                }
+                if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                sharedSelection.clear()
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -341,6 +358,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
             })
         }
+
+        LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
     }
 
     override fun onResume() {
@@ -352,12 +371,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLongArray(SELECTION, lastSelection.toLongArray())
+        outState.putLongArray(SHARED_SELECTION, sharedSelection.toLongArray())
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         recyclerView.clearOnScrollListeners()
         recyclerView.adapter = null
+
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
     }
 
     override fun onDestroy() {
@@ -450,7 +472,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 val cachePath = requireActivity().cacheDir
                 val authority = getString(R.string.file_authority)
 
+                sharedSelection.clear()
                 for (i in selectionTracker.selection) {
+                    sharedSelection.add(i.toLong())
                     with(mAdapter.getPhotoAt(i.toInt())) {
                         // Synced file is named after id, not yet synced file is named after file's name
                         File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
@@ -459,7 +483,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
 
                 val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-                for (uri in uris) clipData.addItem(ClipData.Item(uri))
+                for (i in 1 until uris.size)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                    else clipData.addItem(ClipData.Item(uris[i]))
 
                 sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
                 if (selectionTracker.selection.size() > 1) {
@@ -471,6 +497,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                             }, null
                         )
                     )
@@ -484,6 +511,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
                                 this.clipData = clipData
                                 flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                             }, null, PendingIntent.getBroadcast(context, 1, Intent(CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
                         )
                     )
@@ -742,6 +770,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
+        private const val SHARED_SELECTION = "SHARED_SELECTION"
 
         private const val DELETE_REQUEST_CODE = 0
         private const val RENAME_REQUEST_CODE = 1

@@ -35,7 +35,7 @@
     <string name="other_header">Anderes</string>
     <string name="logout_title">Abmelden</string>
     <string name="logout_dialog_msg">Vom Konto %1$s abmelden?</string>
-    <string name="choose_destination">Zu Album hinzufügen</string>
+    <string name="copy_files">Kopieren</string>
     <string name="create_new_album">Neues Album</string>
     <string name="invalid_character_found">Pfad-Trennzeichen \'\\\' \'/\' im Namen nicht erlaubt</string>
     <string name="invalid_name_found">Name nicht erlaubt</string>
@@ -74,7 +74,7 @@
     <string name="snapseed_replace_title">Original ersetzen</string>
     <string name="snapseed_replace_on_summary">Ersetzt das Originalfoto automatisch durch die bearbeitete Version von Snapseed.</string>
     <string name="snapseed_replace_off_summary">Originalfoto und geänderte Version speichern. Duplikate müssen selbst verwaltet werden.</string>
-    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung WRITE_EXTERNAL_STORAGE, um auf diese Dateien zuzugreifen.</string>
+    <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung, um auf diese Dateien zuzugreifen.</string>
     <string name="proceed_request">Weiter</string>
     <string name="snapseed_integration_summary">Hinweis: Bitte lassen Sie Snapseed das JPEG-Ausgabeformat verwenden.</string>
     <string name="item_sortby">Sortieren nach</string>
@@ -110,4 +110,6 @@
     <string name="condition_to_perform_search">Es muss mindestens ein Album vorhanden sein ODER eine Les Pas muss auf lokale Dateien zugreifen dürfen, um die Suchfunktion zu nutzen.</string>
     <string name="button_text_leave">Beenden</string>
     <string name="need_albums">Bitte erstellen Sie zuerst ein Album.</string>
+    <string name="to_album">Zum Album:</string>
+    <string name="move_files">Dateien</string>
 </resources>

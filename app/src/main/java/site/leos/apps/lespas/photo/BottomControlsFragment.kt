@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
@@ -20,6 +21,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.transition.Fade
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
@@ -30,7 +32,10 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -45,6 +50,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
+
+    private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +98,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 insets
             }
         }
+
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it) currentPhotoModel.removePhoto() }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -148,6 +157,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                                     putExtra(Intent.EXTRA_STREAM, uri)
                                     clipData = ClipData.newUri(context.contentResolver, "", uri)
                                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                                 }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
                             )
                         )
@@ -225,6 +235,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 exitTransition = null
             }
         })
+
+        LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
     }
 
     @Suppress("DEPRECATION")

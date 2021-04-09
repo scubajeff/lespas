@@ -2,6 +2,7 @@ package site.leos.apps.lespas.search
 
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -94,8 +95,9 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             addOnButtonCheckedListener { _, checkedId, isChecked ->
                 if (isChecked) when(checkedId) {
                     R.id.search_cameraroll-> {
-                        if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_STORAGE_PERMISSION_REQUEST)
+                        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST)
                             if (!noAlbum) this.check(R.id.search_album)
                         }
                     }
@@ -120,7 +122,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) destinationToggleGroup?.check(R.id.search_cameraroll)
+        if (requestCode == STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) destinationToggleGroup?.check(R.id.search_cameraroll)
         else if (noAlbum)
             parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
                 ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).let {
@@ -171,7 +173,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private const val NO_ALBUM = "NO_ALBUM"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
-        private const val WRITE_STORAGE_PERMISSION_REQUEST = 8900
+        private const val STORAGE_PERMISSION_REQUEST = 8900
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val LEAVE_REQUEST_CODE = 1
 

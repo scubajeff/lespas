@@ -46,12 +46,12 @@
     <string name="snapseed_add_title">Añadir la edición Snapseed</string>
     <string name="snapseed_replace_on_summary">Reemplaza automáticamente la foto original por la edición de Snapseed.</string>
     <string name="snapseed_replace_off_summary">Añade la edición de Snapseed al álbum. Gestiona la duplicación por ti mismo.</string>
-    <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso a WRITE_EXTERNAL_STORAGE para acceder a esos archivos.</string>
+    <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso para acceder a esos archivos.</string>
     <string name="proceed_request">Proceda</string>
     <string name="logout_title">Cierre de sesión</string>
     <string name="logout_dialog_msg">¿Desconexión de la cuenta %1$s?</string>
     <string name="yes_logout">Sí, cierre de sesión</string>
-    <string name="choose_destination">Añadir al álbum</string>
+    <string name="copy_files">Copiar</string>
     <string name="create_new_album">Crear un nuevo álbum</string>
     <string name="invalid_character_found">El separador de caminos \'\\\' \'/\' no está permitido</string>
     <string name="invalid_name_found">Nombre no permitido</string>
@@ -110,4 +110,6 @@
     <string name="condition_to_perform_search">Debe haber al menos un álbum existente O un permiso de acceso al almacenamiento concedido para realizar la función de búsqueda.</string>
     <string name="button_text_leave">Salir</string>
     <string name="need_albums">Por favor, cree primero un álbum.</string>
+    <string name="to_album">Al álbum:</string>
+    <string name="move_files">Mover</string>
 </resources>
