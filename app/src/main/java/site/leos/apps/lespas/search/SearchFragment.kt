@@ -36,6 +36,8 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 .replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName)
                 .addToBackStack(null)
                 .commit()
+        }.apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
         val objectLabels = resources.getStringArray(R.array.objects)

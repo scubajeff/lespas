@@ -218,11 +218,17 @@ class PhotoSlideFragment : Fragment() {
             }
         })
 
-        currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, {
-            it?.run {
-                pAdapter.getNextAvailablePhoto(it)?.let { nextPhoto->
-                    currentPhotoModel.setCurrentPhoto(nextPhoto, null)
-                    actionModel.deletePhotos(listOf(it), album.name)
+        currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, { deleteItem->
+            deleteItem?.run {
+                pAdapter.getNextAvailablePhoto(deleteItem).apply {
+                    this.first?.let { photo->
+                        currentPhotoModel.setCurrentPhoto(photo, this.second)
+                        actionModel.deletePhotos(listOf(deleteItem), album.name)
+                    }
+                    ?: run {
+                        // TODO this seems never happen since user can't delete cover, so there is at least 1 photo in an album
+                        parentFragmentManager.popBackStack()
+                    }
                 }
             }
         })
@@ -488,12 +494,12 @@ class PhotoSlideFragment : Fragment() {
 
         fun getPhotoAt(position: Int): Photo = photos[position]
 
-        fun getNextAvailablePhoto(photo: Photo): Photo? {
+        fun getNextAvailablePhoto(photo: Photo): Pair<Photo?, Int> {
             with(photos.indexOf(photo)) {
                 return when(this) {
-                    -1-> null
-                    photos.size - 1-> photos[this - 1]
-                    else-> photos[this + 1]
+                    -1-> Pair(null, -1)
+                    photos.size - 1-> if (this > 0) Pair(photos[this - 1], this - 1) else Pair(null, -1)
+                    else-> Pair(photos[this + 1], this)
                 }
             }
         }
@@ -598,12 +604,12 @@ class PhotoSlideFragment : Fragment() {
     class CurrentPhotoViewModel : ViewModel() {
         // AlbumDetail fragment grid item positions, this is for AlbumDetailFragment, nothing to do with other fragments
         private var currentPosition = 0
-        private var firstPosition = 0
-        private var lastPosition = 1
+        //private var firstPosition = 0
+        private var lastPosition = 0
         fun getCurrentPosition(): Int = currentPosition
         fun setCurrentPosition(position: Int) { currentPosition = position }
-        fun setFirstPosition(position: Int) { firstPosition = position }
-        fun getFirstPosition(): Int = firstPosition
+        //fun setFirstPosition(position: Int) { firstPosition = position }
+        //fun getFirstPosition(): Int = firstPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
 
@@ -617,10 +623,10 @@ class PhotoSlideFragment : Fragment() {
             photo.value?.name = newName
             photo.value?.eTag = ""
         }
-        fun setCurrentPhoto(newPhoto: Photo, position: Int?) {
+        fun setCurrentPhoto(newPhoto: Photo, position: Int) {
             //photo.postValue(newPhoto)
             photo.value = newPhoto
-            position?.let { currentPosition = it }
+            currentPosition = position
         }
         fun coverApplied(applied: Boolean) {
             coverApplyStatus.value = applied

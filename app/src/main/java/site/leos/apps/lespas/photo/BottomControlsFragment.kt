@@ -69,7 +69,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
                         moreControls.visibility = View.GONE
-                        removeButton.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
                         baseControls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -85,7 +84,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.navigationBars())) {
                         moreControls.visibility = View.GONE
-                        removeButton.isEnabled = currentPhotoModel.getCurrentPhoto().value!!.id != album.cover
                         baseControls.visibility = View.VISIBLE
                         visible = true
                     } else {
@@ -119,6 +117,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
             cover_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             set_as_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            removeButton.isEnabled = it.id != album.cover
         })
 
         // Controls

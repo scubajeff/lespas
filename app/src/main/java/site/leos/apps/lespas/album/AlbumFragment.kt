@@ -43,8 +43,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
-    private var lastScrollPosition = -1
-    private var isScrolling = false
     private val uris = ArrayList<Uri>()
 
     private val albumsModel: AlbumViewModel by activityViewModels()
@@ -55,7 +53,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lastScrollPosition = savedInstanceState?.getInt(SCROLL_POSITION) ?: -1
         lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
 
         setHasOptionsMenu(true)
@@ -77,7 +74,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                     .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
-        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
+        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -96,9 +95,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         // Register data observer first, try feeding adapter with latest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             mAdapter.setAlbums(albums)
-            if ((lastScrollPosition != -1) && (!isScrolling)) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(lastScrollPosition)
-            }
         })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -171,20 +167,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
             // Restore selection state
             if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
-
-            // Get scroll position after scroll idle
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    when(newState) {
-                        RecyclerView.SCROLL_STATE_IDLE-> {
-                            lastScrollPosition = (layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition()
-                            isScrolling = false
-                        }
-                        else-> isScrolling = true
-                    }
-                }
-            })
         }
 
 
@@ -211,7 +193,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(SCROLL_POSITION, lastScrollPosition)
         outState.putLongArray(SELECTION, lastSelection.toLongArray())
     }
 

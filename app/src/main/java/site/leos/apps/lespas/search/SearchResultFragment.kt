@@ -89,6 +89,7 @@ class SearchResultFragment : Fragment() {
         ).apply {
             // Get album's name for display
             Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
     }
 

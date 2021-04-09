@@ -90,12 +90,16 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             { toggleControlView(controlViewGroup.visibility == View.GONE) },
             { videoControlVisible-> toggleControlView(videoControlVisible) },
             {photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
-        )
+        ).apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        }
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo -> mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))},
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
-        )
+        ).apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) camerarollModel.removeCurrentMedia()

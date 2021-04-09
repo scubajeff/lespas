@@ -81,7 +81,9 @@ class DestinationDialogFragment : DialogFragment() {
             },
             { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) },
             { view -> imageLoaderModel.cancelLoading(view) }
-        )
+        ).apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        }
         clipDataAdapter = ClipDataAdapter { uri, view ->
             lifecycleScope.launch(Dispatchers.IO) {
                 val cr = requireContext().contentResolver
@@ -101,6 +103,8 @@ class DestinationDialogFragment : DialogFragment() {
 
                 withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
             }
+        }.apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
         clipDataAdapter.submitList(arguments?.getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList())
