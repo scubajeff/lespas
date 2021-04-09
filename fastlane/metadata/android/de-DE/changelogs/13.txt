@@ -1,0 +1,5 @@
+* Überarbeitung des Dialogs zum Hinzufügen von Mediendateien, jetzt können Sie "Verschieben" statt "Kopieren" wählen, wenn Sie Dateien aus der Filmrolle oder einem anderen Les Pas Album freigeben.
+* Vollständige Einhaltung der Android-Richtlinie für begrenzten Speicherplatz
+* Robustere Synchronisation
+* Aktualisierte deutsche Übersetzung dank Github-Benutzer @BettaGeorge
+* Weitere Verbesserungen und behobene Bugs

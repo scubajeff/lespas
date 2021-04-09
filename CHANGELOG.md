@@ -1,4 +1,11 @@
 
+## Version 1.4.8
+* Revamp adding media file dialog, now you can choose move instead of copy when sharing files from Camera Roll or another Les Pas album
+* Fully comply to Android's scoped storage guideline
+* More robust synchronization
+* Updated German translation thanks to Github user @BettaGeorge
+* Other improvements and bugs fixed
+
 ## Version 1.4.7
 * Fixed wrong date displayed when viewing single image file
 * Fixed media thumbnail loading in Android 10 and above

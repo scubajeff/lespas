@@ -1,0 +1,5 @@
+* Réorganisation de la boîte de dialogue d'ajout de fichiers multimédias. Vous pouvez désormais choisir de déplacer plutôt que de copier les fichiers depuis Camera Roll ou un autre album Les Pas.
+* Conformité totale avec les directives d'Android en matière de stockage.
+* Synchronisation plus robuste
+* Mise à jour de la traduction allemande grâce à l'utilisateur Github @BettaGeorge
+* Autres améliorations et corrections de bugs

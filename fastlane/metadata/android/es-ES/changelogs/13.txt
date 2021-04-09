@@ -1,0 +1,5 @@
+* Renueva el diálogo para añadir archivos multimedia, ahora puedes elegir mover en lugar de copiar cuando compartes archivos desde Camera Roll u otro álbum de Les Pas
+* Cumple totalmente con la directriz de almacenamiento de alcance de Android
+* Sincronización más robusta
+* Traducción al alemán actualizada gracias al usuario de Github @BettaGeorge
+* Otras mejoras y errores corregidos

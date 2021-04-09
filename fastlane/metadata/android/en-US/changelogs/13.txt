@@ -1,0 +1,5 @@
+* Revamp adding media file dialog, now you can choose move instead of copy when sharing files from Camera Roll or another Les Pas album
+* Fully comply to Android's scoped storage guideline
+* More robust synchronization
+* Updated German translation thanks to Github user @BettaGeorge
+* Other improvements and bugs fixed
