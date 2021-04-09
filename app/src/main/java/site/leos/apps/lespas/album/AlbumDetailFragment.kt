@@ -227,8 +227,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
                 }
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
-                sharedSelection.clear()
             }
+            sharedSelection.clear()
         }
 
         savedInstanceState?.let { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
