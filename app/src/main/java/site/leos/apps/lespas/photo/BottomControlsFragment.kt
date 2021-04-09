@@ -99,7 +99,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             }
         }
 
-        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it) currentPhotoModel.removePhoto() }
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && currentPhotoModel.getCurrentPhotoId() != album.cover) currentPhotoModel.removePhoto() }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
