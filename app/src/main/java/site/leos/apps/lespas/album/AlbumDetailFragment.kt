@@ -69,7 +69,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
-    //private var isScrolling = false
     private var scrollTo = ""
 
     private val albumModel: AlbumViewModel by activityViewModels()
@@ -98,16 +97,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
             sharedSelection = it.getLongArray(SHARED_SELECTION)?.toMutableSet()!!
         }
-        /*
-        ?: run {
-            with(currentPhotoModel) {
-                setCurrentPosition(0)
-                setFirstPosition(0)
-                setLastPosition(1)
-            }
-        }
-
-         */
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
@@ -194,8 +183,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             { view, position ->
                 currentPhotoModel.run {
                     setCurrentPhoto(mAdapter.getPhotoAt(position), position)
-                    //setCurrentPosition(position)
-                    //setFirstPosition((recyclerView.layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
                     setLastPosition(position)
                 }
 
@@ -270,16 +257,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             mAdapter.setAlbum(it)
             (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
-            /*
-            // Scroll to the correct position
-            with(currentPhotoModel) {
-                val cp = getCurrentPosition()
-                val fp = getFirstPosition()
-                if (!isScrolling) (recyclerView.layoutManager as GridLayoutManager).scrollToPosition( if ((cp > getLastPosition()) || (cp < fp)) cp else fp )
-            }
-
-             */
-
+            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
             if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
                 (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
                 currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
@@ -358,20 +336,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> {
-                            /*
-                            with(currentPhotoModel) {
-                                setCurrentPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                                setFirstPosition((layoutManager as GridLayoutManager).findFirstCompletelyVisibleItemPosition())
-                                setLastPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition())
-                            }
-                            isScrolling = false
-
-                             */
-
                             // Hide the date indicator after showing it for 1 minute
                             if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
                         }
-                        //else-> isScrolling = true
                     }
                 }
             })

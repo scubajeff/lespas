@@ -604,12 +604,8 @@ class PhotoSlideFragment : Fragment() {
     class CurrentPhotoViewModel : ViewModel() {
         // AlbumDetail fragment grid item positions, this is for AlbumDetailFragment, nothing to do with other fragments
         private var currentPosition = 0
-        //private var firstPosition = 0
         private var lastPosition = 0
         fun getCurrentPosition(): Int = currentPosition
-        fun setCurrentPosition(position: Int) { currentPosition = position }
-        //fun setFirstPosition(position: Int) { firstPosition = position }
-        //fun getFirstPosition(): Int = firstPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
 
