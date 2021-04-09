@@ -14,6 +14,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.MimeTypeMap
+import android.widget.TextView
+import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -24,11 +27,6 @@ import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import com.google.android.material.color.MaterialColors
-import kotlinx.android.synthetic.main.fragment_acquiring_dialog.*
-import kotlinx.android.synthetic.main.fragment_acquiring_dialog.background
-import kotlinx.android.synthetic.main.fragment_acquiring_dialog.message_textview
-import kotlinx.android.synthetic.main.fragment_acquiring_dialog.shape_background
-import kotlinx.android.synthetic.main.fragment_confirm_dialog.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +50,13 @@ class AcquiringDialogFragment: DialogFragment() {
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
 
+    private lateinit var progressLinearLayout: LinearLayoutCompat
+    private lateinit var dialogTitleTextView: TextView
+    private lateinit var messageTextView: TextView
+    private lateinit var fileNameTextView: TextView
+    private lateinit var background: LinearLayoutCompat
+    private lateinit var contentLoadingProgressBar: ContentLoadingProgressBar
+
     private var finished = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,46 +70,52 @@ class AcquiringDialogFragment: DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        view.findViewById<LinearLayoutCompat>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        view.findViewById<LinearLayoutCompat>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+
+        progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
+        dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
+        messageTextView = view.findViewById(R.id.message_textview)
+        fileNameTextView = view.findViewById(R.id.filename_textview)
+        contentLoadingProgressBar = view.findViewById(R.id.current_progress)
 
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
             if (progress >= total) {
                 finished = true
 
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                progress_linearlayout.visibility = View.GONE
-                dialog_title_textview.text = getString(R.string.finished_preparing_files)
+                progressLinearLayout.visibility = View.GONE
+                dialogTitleTextView.text = getString(R.string.finished_preparing_files)
                 var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
                     if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
                         note += context?.getString(R.string.mind_network_setting)
                     }
                 }
-                message_textview.text = note
-                message_textview.visibility = View.VISIBLE
+                messageTextView.text = note
+                messageTextView.visibility = View.VISIBLE
                 dialog?.setCanceledOnTouchOutside(true)
             } else if (progress >= 0) {
-                dialog_title_textview.text = getString(R.string.preparing_files_progress, progress + 1, total)
-                filename_textview.text = acquiringModel.getCurrentName()
-                current_progress.progress = progress
+                dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
+                fileNameTextView.text = acquiringModel.getCurrentName()
+                contentLoadingProgressBar.progress = progress
             } else if (progress < 0 ) {
                 TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                progress_linearlayout.visibility = View.GONE
-                dialog_title_textview.text = getString(R.string.error_preparing_files)
-                message_textview.text = getString(when(progress) {
+                progressLinearLayout.visibility = View.GONE
+                dialogTitleTextView.text = getString(R.string.error_preparing_files)
+                messageTextView.text = getString(when(progress) {
                     AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
                     AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
                     AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
                     else-> 0
                 })
-                message_textview.visibility = View.VISIBLE
+                messageTextView.visibility = View.VISIBLE
                 dialog?.setCanceledOnTouchOutside(true)
             }
         })
 
-        current_progress.max = total
+        contentLoadingProgressBar.max = total
     }
 
     override fun onStart() {

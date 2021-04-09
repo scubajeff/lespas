@@ -2,9 +2,9 @@ package site.leos.apps.lespas.album
 
 import android.os.Parcelable
 import androidx.room.*
-import kotlinx.android.parcel.Parcelize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.BaseDao
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime

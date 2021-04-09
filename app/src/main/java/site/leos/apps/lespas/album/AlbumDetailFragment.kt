@@ -34,11 +34,6 @@ import androidx.work.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
-import kotlinx.android.synthetic.main.fragment_albumdetail.view.*
-import kotlinx.android.synthetic.main.recyclerview_item_album.view.*
-import kotlinx.android.synthetic.main.recyclerview_item_cover.view.*
-import kotlinx.android.synthetic.main.recyclerview_item_photo.*
-import kotlinx.android.synthetic.main.recyclerview_item_photo.view.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

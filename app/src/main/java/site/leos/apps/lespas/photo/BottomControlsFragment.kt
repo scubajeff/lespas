@@ -16,6 +16,10 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.TableRow
+import android.widget.TextView
+import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
@@ -23,10 +27,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.transition.Fade
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.fragment_bottomcontrols.*
-import kotlinx.android.synthetic.main.fragment_info_dialog.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -47,6 +50,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var baseControls: LinearLayout
     private lateinit var moreControls: LinearLayout
     private lateinit var removeButton: ImageButton
+    private lateinit var coverButton: ImageButton
+    private lateinit var setAsButton: ImageButton
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
     private var ignore = true
@@ -56,7 +61,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable<Album>(ALBUM)!!
+        album = arguments?.getParcelable(ALBUM)!!
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
@@ -115,8 +120,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             } else toggle()
         })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
-            cover_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
-            set_as_button.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            coverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            setAsButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             removeButton.isEnabled = it.id != album.cover
         })
 
@@ -124,8 +129,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         baseControls = view.findViewById(R.id.base_controls)
         moreControls = view.findViewById(R.id.more_controls)
         removeButton = view.findViewById(R.id.remove_button)
+        coverButton = view.findViewById(R.id.cover_button)
+        setAsButton = view.findViewById(R.id.set_as_button)
 
-        cover_button.run {
+        coverButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -137,7 +144,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     .commit()
             }
         }
-        share_button.run {
+        view.findViewById<ImageButton>(R.id.share_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -164,7 +171,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        set_as_button.run {
+        setAsButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -189,7 +196,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        info_button.run {
+        view.findViewById<ImageButton>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -201,7 +208,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        more_button.run {
+        view.findViewById<ImageButton>(R.id.more_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 moreControls.visibility = View.VISIBLE
@@ -337,19 +344,19 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
 
-            shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+            view.findViewById<LinearLayoutCompat>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
             //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-            background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+            view.findViewById<ConstraintLayout>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
 
-            ok_button.setOnClickListener { dismiss() }
+            view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
 
             try {
                 val fileName: String
                 val appRootFolder = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}"
                 fileName = "${appRootFolder}/${arguments?.getString(if (arguments?.getString(ETAG)?.isNotEmpty()!!) ID else NAME)}"
-                info_filename.text = arguments?.getString(NAME)
-                info_shotat.text = arguments?.getString(DATE)
-                info_size.text = String.format(
+                view.findViewById<TextView>(R.id.info_filename).text = arguments?.getString(NAME)
+                view.findViewById<TextView>(R.id.info_shotat).text = arguments?.getString(DATE)
+                view.findViewById<TextView>(R.id.info_size).text = String.format(
                     "%s, %s",
                     Tools.humanReadableByteCountSI(File(fileName).length()),
                     String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT))
@@ -357,9 +364,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
                 val exif = ExifInterface(fileName)
                 var t = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-                if (t.isEmpty()) mfg_row.visibility = View.GONE else info_camera_mfg.text = t
+                if (t.isEmpty()) view.findViewById<TableRow>(R.id.mfg_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_camera_mfg).text = t
                 t = (exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let { "\n${it.trim()}" } ?: "")
-                if (t.isEmpty()) model_row.visibility = View.GONE else info_camera_model.text = t
+                if (t.isEmpty()) view.findViewById<TableRow>(R.id.model_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_camera_model).text = t
                 t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
                         (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f$it  " } ?: "") +
                         (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let {
@@ -367,9 +374,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                             if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
                         } ?: "") +
                         (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
-                if (t.trim().isEmpty()) param_row.visibility = View.GONE else info_parameter.text = t
+                if (t.trim().isEmpty()) view.findViewById<TableRow>(R.id.param_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_parameter).text = t
                 t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
-                if (t.isEmpty()) artist_row.visibility = View.GONE else info_artist.text = t
+                if (t.isEmpty()) view.findViewById<TableRow>(R.id.artist_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_artist).text = t
             } catch (e:Exception) { e.printStackTrace() }
         }
 

@@ -8,15 +8,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
+import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.color.MaterialColors
-import kotlinx.android.synthetic.main.fragment_albumrename_dialog.*
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.DialogShapeDrawable
 
 class AlbumRenameDialogFragment: DialogFragment() {
+    private lateinit var renameTextInputLayout: TextInputLayout
     private lateinit var onFinishListener: OnFinishListener
 
     interface OnFinishListener {
@@ -34,7 +38,9 @@ class AlbumRenameDialogFragment: DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        rename_textinputedittext.run {
+        renameTextInputLayout = view.findViewById(R.id.rename_textinputlayout)
+
+        view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
             if (savedInstanceState == null) setText(arguments?.getString(OLD_NAME), TextView.BufferType.EDITABLE)
 
             addTextChangedListener(AlbumNameValidator(this, context))
@@ -53,9 +59,9 @@ class AlbumRenameDialogFragment: DialogFragment() {
                 } else false
             }
         }
-        shape_background.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        view.findViewById<FrameLayout>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        background.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        view.findViewById<ConstraintLayout>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
     }
 
     override fun onStart() {
@@ -72,7 +78,7 @@ class AlbumRenameDialogFragment: DialogFragment() {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
 
-            rename_textinputlayout.requestFocus()
+            renameTextInputLayout.requestFocus()
         }
     }
 
