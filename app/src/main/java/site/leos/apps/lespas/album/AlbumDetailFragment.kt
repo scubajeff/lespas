@@ -244,7 +244,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
 
-        // Register data observer first, try feeding adapter with lastest data asap
+        // Register data observer first, try feeding adapter with latest data asap
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
             // Cover might changed, photo might be deleted, so get updates from latest here
             this.album = it.album
@@ -542,7 +542,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
     }
 
-    // Adpater for photo grid
+    // Adapter for photo grid
     class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdater: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<Long>
@@ -591,7 +591,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
-                override fun getPosition(): Int = adapterPosition
+                override fun getPosition(): Int = bindingAdapterPosition
                 override fun getSelectionKey(): Long = itemId
                 //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
             }
@@ -615,7 +615,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                         ViewCompat.setTransitionName(this, photo.id)
 
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(this, adapterPosition) }
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(this, bindingAdapterPosition) }
                     }
 
                     it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(photo.mimeType)) View.VISIBLE else View.GONE
@@ -623,7 +623,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
-                override fun getPosition(): Int = adapterPosition
+                override fun getPosition(): Int = bindingAdapterPosition
                 override fun getSelectionKey(): Long = itemId
             }
         }
@@ -676,8 +676,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
             return 0
         }
-
-        internal fun findPhotoPosition(photo: Photo): Int = photos.indexOf(photo)
 
         internal fun getPhotoAt(position: Int): Photo {
             return photos[position]
