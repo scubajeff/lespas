@@ -72,8 +72,10 @@ class AcquiringDialogFragment: DialogFragment() {
 
         view.findViewById<LinearLayoutCompat>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
         //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        view.findViewById<LinearLayoutCompat>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
 
+        background = view.findViewById<LinearLayoutCompat>(R.id.background).apply {
+            background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        }
         progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
         dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
         messageTextView = view.findViewById(R.id.message_textview)
@@ -191,11 +193,11 @@ class AcquiringDialogFragment: DialogFragment() {
                             try {
                                 fileId = getString(columnIndex)
                             } catch (e: NullPointerException) {
-                                if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!
+                                if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/')
                             }
                         }
                         else {
-                            if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!
+                            if ("twidere.share".equals(uri.authority, true)) fileId = uri.path!!.substringAfterLast('/')
                         }
                         close()
                     } ?: run {
