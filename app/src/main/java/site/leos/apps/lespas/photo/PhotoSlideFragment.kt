@@ -224,6 +224,9 @@ class PhotoSlideFragment : Fragment() {
                     this.first?.let { photo->
                         currentPhotoModel.setCurrentPhoto(photo, this.second)
                         actionModel.deletePhotos(listOf(deleteItem), album.name)
+                        slider.beginFakeDrag()
+                        slider.fakeDragBy(-1f)
+                        slider.endFakeDrag()
                     }
                     ?: run {
                         // TODO this seems never happen since user can't delete cover, so there is at least 1 photo in an album
