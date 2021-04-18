@@ -18,7 +18,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
     override suspend fun doWork(): Result {
         @Suppress("DEPRECATION")
         val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val appRootFolder = "${context.filesDir}${context.getString(R.string.lespas_base_folder_name)}"
+        val appRootFolder = Tools.getLocalRoot(context)
 
         var imagePath = ""
         var imageName = ""

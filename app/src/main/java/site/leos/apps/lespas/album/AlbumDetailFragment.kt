@@ -449,7 +449,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
             R.id.share -> {
                 val uris = arrayListOf<Uri>()
-                val appRootFolder = "${requireActivity().filesDir}${getString(R.string.lespas_base_folder_name)}"
+                val appRootFolder = Tools.getLocalRoot(requireContext())
                 val cachePath = requireActivity().cacheDir
                 val authority = getString(R.string.file_authority)
 

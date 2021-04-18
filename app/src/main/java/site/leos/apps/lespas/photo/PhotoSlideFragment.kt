@@ -159,7 +159,7 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             requireContext(),
-            "${requireContext().filesDir}${resources.getString(R.string.lespas_base_folder_name)}",
+            Tools.getLocalRoot(requireContext()),
             { uiModel.toggleOnOff() },
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()

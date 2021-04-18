@@ -146,7 +146,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
                     try {
                         // Synced file is named after id, not yet synced file is named after file's name
-                        File("${context.filesDir}${getString(R.string.lespas_base_folder_name)}", if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
+                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
                         val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
                         val mimeType = this.mimeType
 
@@ -172,7 +172,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
                     try {
-                        File("${context.filesDir}${getString(R.string.lespas_base_folder_name)}", if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
+                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
                         val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
                         val mimeType = this.mimeType
 
@@ -340,7 +340,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
             try {
                 val fileName: String
-                val appRootFolder = "${requireActivity().filesDir}${resources.getString(R.string.lespas_base_folder_name)}"
+                val appRootFolder = Tools.getLocalRoot(requireContext())
                 fileName = "${appRootFolder}/${arguments?.getString(if (arguments?.getString(ETAG)?.isNotEmpty()!!) ID else NAME)}"
                 view.findViewById<TextView>(R.id.info_filename).text = arguments?.getString(NAME)
                 view.findViewById<TextView>(R.id.info_shotat).text = arguments?.getString(DATE)

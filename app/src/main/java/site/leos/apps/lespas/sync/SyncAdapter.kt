@@ -60,8 +60,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 sardine.setCredentials(userName, peekAuthToken(account, serverRoot), true)
                 application.getString(R.string.lespas_base_folder_name).run {
                     resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName$this"
-                    localRootFolder = "${application.filesDir}$this"
                 }
+                localRootFolder = Tools.getLocalRoot(application)
+
                 dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
             }
 

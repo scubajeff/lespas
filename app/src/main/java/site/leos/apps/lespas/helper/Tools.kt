@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
+import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.text.*
@@ -331,5 +332,9 @@ object Tools {
             vectorDrawable.draw(this)
         }
         return bitmap
+    }
+
+    fun getLocalRoot(context: Context): String {
+        return "${context.filesDir}/${context.getString(R.string.lespas_base_folder_name)}"
     }
 }

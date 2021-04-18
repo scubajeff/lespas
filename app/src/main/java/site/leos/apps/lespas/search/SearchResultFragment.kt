@@ -180,7 +180,7 @@ class SearchResultFragment : Fragment() {
             job = viewModelScope.launch(Dispatchers.IO) {
                 val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver, true)
                 val od = ObjectDetectionModel(app.assets)
-                val rootPath = "${app.filesDir}${app.getString(R.string.lespas_base_folder_name)}"
+                val rootPath = Tools.getLocalRoot(app)
                 var length: Int
                 var size: Int
                 val option = BitmapFactory.Options()

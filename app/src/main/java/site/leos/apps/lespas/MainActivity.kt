@@ -20,6 +20,7 @@ import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.album.AlbumFragment
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
@@ -39,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         // Make sure photo's folder existed
         // TODO try clearing the cache folder
-        Executors.newSingleThreadExecutor().execute { File(application.filesDir, getString(R.string.lespas_base_folder_name)).mkdir() }
+        Executors.newSingleThreadExecutor().execute { File(Tools.getLocalRoot(applicationContext)).mkdir() }
 
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)

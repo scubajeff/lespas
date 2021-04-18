@@ -144,7 +144,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         init {
             viewModelScope.launch(Dispatchers.IO) {
                 var fileId = ""
-                val appRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
+                val appRootFolder = Tools.getLocalRoot(application)
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
                 val fakeAlbumId = System.currentTimeMillis().toString()

@@ -7,9 +7,9 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
@@ -18,7 +18,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val actionRepository = ActionRepository(application)
     private val albumRepository = AlbumRepository(application)
     private val photoRepository = PhotoRepository(application)
-    private val localRootFolder = "${application.filesDir}${application.getString(R.string.lespas_base_folder_name)}"
+    private val localRootFolder = Tools.getLocalRoot(application)
 
     val allActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
     //suspend fun addActions(actions: List<Action>) = actionRepository.addActions(actions)
