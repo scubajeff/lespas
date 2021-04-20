@@ -15,10 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
-import java.text.CharacterIterator
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.text.StringCharacterIterator
+import java.text.*
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -252,7 +249,7 @@ object Tools {
             bytes /= 1000
             ci.next()
         }
-        return java.lang.String.format("%d%cB", bytes/1000, ci.current())
+        return java.lang.String.format("%s%cB", DecimalFormat("###.#").format(bytes/1000.0), ci.current())
     }
 
     fun getDeviceModel(): String {
