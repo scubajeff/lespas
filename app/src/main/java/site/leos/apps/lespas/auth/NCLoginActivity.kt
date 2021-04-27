@@ -278,7 +278,7 @@ class NCLoginActivity : AppCompatActivity() {
         val hostUrl = "https://" + hostInputText.text.toString().trim()
         var result: Int
 
-        if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]").matcher(hostUrl).matches()) {
+        if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\\[\\]]*[-a-zA-Z0-9\\]+&@#/%=~_|]").matcher(hostUrl).matches()) {
             hostInputText.error = getString(R.string.host_address_validation_error)
         } else {
             // Clean up the input area
