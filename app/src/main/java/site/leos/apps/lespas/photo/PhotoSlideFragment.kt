@@ -33,10 +33,7 @@ import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkRequest
-import androidx.work.workDataOf
+import androidx.work.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
@@ -111,8 +108,9 @@ class PhotoSlideFragment : Fragment() {
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            private val workerName = "${PhotoSlideFragment::class.java.canonicalName}.SNAPSEED_WORKER"
             private var lastId = ""
-            private lateinit var snapseedWorker: WorkRequest
+            private lateinit var snapseedWorker: OneTimeWorkRequest
 
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 super.onChange(selfChange, uri)
@@ -123,12 +121,12 @@ class PhotoSlideFragment : Fragment() {
 
                     snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
-                    WorkManager.getInstance(requireContext()).enqueue(snapseedWorker)
+                    WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
-                    WorkManager.getInstance(requireContext()).getWorkInfoByIdLiveData(snapseedWorker.id).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null) {
                             //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
-                            workInfo.progress.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
+                            workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
                                 pAdapter.getPhotoAt(slider.currentItem).let {
                                     //it.eTag = ""
                                     //it.name = this
