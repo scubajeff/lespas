@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="fullscreen_controls_bottom_margin">0dp</dimen>
     <dimen name="destination_list_maximum_height">128dp</dimen>
     <dimen name="video_player_controls_right_margin">36dp</dimen>
 </resources>

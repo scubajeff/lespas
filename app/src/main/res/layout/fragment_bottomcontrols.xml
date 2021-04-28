@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bottom_controls_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:orientation="vertical"
-    android:background="@drawable/bottom_controls_background">
+    android:background="#B3404040"
+    android:clipToPadding="false"
+    android:visibility="gone">
 
     <LinearLayout
         android:id="@+id/more_controls"
@@ -41,7 +44,6 @@
         android:id="@+id/base_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="@dimen/fullscreen_controls_bottom_margin"
         android:orientation="horizontal">
 
         <ImageButton

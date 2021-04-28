@@ -21,6 +21,7 @@ import android.widget.TextView
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
+import androidx.core.view.updatePadding
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
@@ -47,7 +48,7 @@ import kotlin.math.roundToInt
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener, ConfirmDialogFragment.OnResultListener {
     private lateinit var album: Album
     private lateinit var window: Window
-    private lateinit var baseControls: LinearLayout
+    private lateinit var controlsContainer: LinearLayout
     private lateinit var moreControls: LinearLayout
     private lateinit var removeButton: ImageButton
     private lateinit var coverButton: ImageButton
@@ -71,31 +72,31 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
                 try {
-                    TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                    TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                        moreControls.visibility = View.GONE
-                        baseControls.visibility = View.VISIBLE
+                        controlsContainer.updatePadding(bottom = window.decorView.rootWindowInsets.stableInsetBottom)
+                        controlsContainer.visibility = View.VISIBLE
                         visible = true
                     } else {
-                        baseControls.visibility = View.GONE
-                        moreControls.visibility = View.GONE
+                        controlsContainer.visibility = View.GONE
                         visible = false
                     }
-                } catch (e: UninitializedPropertyAccessException) {}
+                    moreControls.visibility = View.GONE
+                } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
             }
         } else {
             window.decorView.setOnApplyWindowInsetsListener { _, insets ->
                 try {
-                    TransitionManager.beginDelayedTransition(baseControls, Slide(Gravity.BOTTOM).apply { duration = 80 })
+                    TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
                     if (insets.isVisible(WindowInsets.Type.navigationBars())) {
-                        moreControls.visibility = View.GONE
-                        baseControls.visibility = View.VISIBLE
+                        controlsContainer.updatePadding(bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom)
+                        controlsContainer.visibility = View.VISIBLE
                         visible = true
                     } else {
-                        baseControls.visibility = View.GONE
-                        moreControls.visibility = View.GONE
+                        controlsContainer.visibility = View.GONE
                         visible = false
                     }
+                    moreControls.visibility = View.GONE
                 } catch (e: UninitializedPropertyAccessException) {}
 
                 insets
@@ -126,7 +127,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
 
         // Controls
-        baseControls = view.findViewById(R.id.base_controls)
+        controlsContainer = view.findViewById(R.id.bottom_controls_container)
         moreControls = view.findViewById(R.id.more_controls)
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)

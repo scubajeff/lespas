@@ -23,7 +23,6 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.get
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -80,7 +79,7 @@ class PhotoSlideFragment : Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                sharedElements?.put(names?.get(0)!!, slider[0].findViewById(R.id.media))}
+                sharedElements?.put(names?.get(0)!!, slider.getChildAt(0).findViewById(R.id.media))}
         })
 
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
@@ -241,7 +240,7 @@ class PhotoSlideFragment : Fragment() {
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
         requireActivity().window.run {
             previousNavBarColor = navigationBarColor
-            navigationBarColor = Color.BLACK
+            navigationBarColor = Color.TRANSPARENT
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 statusBarColor = Color.TRANSPARENT
@@ -258,7 +257,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-        (slider[0] as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
+        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is PhotoSlideAdapter.VideoViewHolder) this.resume()
         }
     }
@@ -266,7 +265,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-        (slider[0] as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
+        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is PhotoSlideAdapter.VideoViewHolder) videoStopPosition = this.pause()
         }
 
