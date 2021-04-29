@@ -3,21 +3,15 @@ package site.leos.apps.lespas.sync
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
 import android.webkit.MimeTypeMap
 import android.widget.TextView
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.ContentLoadingProgressBar
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
@@ -26,7 +20,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
-import com.google.android.material.color.MaterialColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,7 +27,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
-import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
@@ -45,7 +38,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 
-class AcquiringDialogFragment: DialogFragment() {
+class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
     private var total = -1
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
@@ -64,18 +57,10 @@ class AcquiringDialogFragment: DialogFragment() {
         total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_acquiring_dialog, container, false)
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<LinearLayoutCompat>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-
-        background = view.findViewById<LinearLayoutCompat>(R.id.background).apply {
-            background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
-        }
+        background = view.findViewById<LinearLayoutCompat>(R.id.background)
         progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
         dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
         messageTextView = view.findViewById(R.id.message_textview)
@@ -122,19 +107,6 @@ class AcquiringDialogFragment: DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-
-        dialog!!.window!!.apply {
-            // Set dialog width to a fixed ration of screen width
-            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-            attributes.apply {
-                dimAmount = 0.6f
-                flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            }
-
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
-        }
 
         dialog?.setCanceledOnTouchOutside(false)
     }

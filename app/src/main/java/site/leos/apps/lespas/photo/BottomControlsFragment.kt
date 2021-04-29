@@ -5,8 +5,6 @@ import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -18,24 +16,20 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TableRow
 import android.widget.TextView
-import androidx.appcompat.widget.LinearLayoutCompat
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
 import androidx.core.view.updatePadding
 import androidx.exifinterface.media.ExifInterface
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.transition.Fade
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
@@ -338,16 +332,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (positive) currentPhotoModel.removePhoto()
     }
 
-    class InfoDialogFragment : DialogFragment() {
-        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-            inflater.inflate(R.layout.fragment_info_dialog, container, false)
-
+    class InfoDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
-
-            view.findViewById<LinearLayoutCompat>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-            //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-            view.findViewById<ConstraintLayout>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
 
             view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
 
@@ -379,23 +366,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
                 if (t.isEmpty()) view.findViewById<TableRow>(R.id.artist_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_artist).text = t
             } catch (e:Exception) { e.printStackTrace() }
-        }
-
-        override fun onStart() {
-            super.onStart()
-
-            dialog!!.window!!.apply {
-                // Set dialog width to a fixed ration of screen width
-                val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-                setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-                attributes.apply {
-                    dimAmount = 0.6f
-                    flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-                }
-
-                setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
-            }
         }
 
         companion object {

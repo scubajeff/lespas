@@ -3,21 +3,16 @@ package site.leos.apps.lespas.sync
 import android.content.DialogInterface
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
@@ -41,14 +36,14 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.AlbumNameValidator
-import site.leos.apps.lespas.helper.DialogShapeDrawable
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime
 import java.util.*
 
-class DestinationDialogFragment : DialogFragment() {
+class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destination_dialog) {
     private lateinit var albumAdapter: DestinationAdapter
     private lateinit var clipDataAdapter: ClipDataAdapter
     private val albumNameModel: AlbumViewModel by viewModels()
@@ -115,22 +110,16 @@ class DestinationDialogFragment : DialogFragment() {
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_destination_dialog, container, false)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rootLayout = view.findViewById(R.id.root)
+        rootLayout = view.findViewById(R.id.background)
         clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
         copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
         newAlbumTextInputLayout = view.findViewById(R.id.new_album_textinputlayout)
         newAlbumTitleTextInputEditText = view.findViewById(R.id.name_textinputedittext)
 
-        view.findViewById<FrameLayout>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        rootLayout.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
         clipDataRecyclerView.adapter = clipDataAdapter
         destinationRecyclerView.adapter = albumAdapter
 
@@ -167,19 +156,6 @@ class DestinationDialogFragment : DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-
-        dialog!!.window!!.apply {
-            // Set dialog width to a fixed ration of screen width
-            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-            attributes.apply {
-                dimAmount = 0.6f
-                flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            }
-
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
-        }
 
         dialog?.setCanceledOnTouchOutside(false)
     }

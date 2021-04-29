@@ -8,11 +8,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.fragment.app.DialogFragment
+import com.google.android.material.color.MaterialColors
 import site.leos.apps.lespas.R
 
 open class LesPasDialogFragment(private val layoutId: Int): DialogFragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(layoutId, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.findViewById<ViewGroup>(R.id.shape_background)?.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        view.findViewById<ViewGroup>(R.id.background)?.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+    }
 
     override fun onStart() {
         super.onStart()

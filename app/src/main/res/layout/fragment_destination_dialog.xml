@@ -9,7 +9,7 @@
     android:padding="@dimen/tiny_padding">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/root"
+        android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="@dimen/big_padding">

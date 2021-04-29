@@ -1,25 +1,15 @@
 package site.leos.apps.lespas.album
 
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
-import android.widget.FrameLayout
-import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.DialogFragment
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.AlbumNameValidator
-import site.leos.apps.lespas.helper.DialogShapeDrawable
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 
-class AlbumRenameDialogFragment: DialogFragment() {
+class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumrename_dialog) {
     private lateinit var renameTextInputLayout: TextInputLayout
     private lateinit var onFinishListener: OnFinishListener
 
@@ -32,16 +22,15 @@ class AlbumRenameDialogFragment: DialogFragment() {
         onFinishListener = targetFragment as OnFinishListener
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.fragment_albumrename_dialog, container, false)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        renameTextInputLayout = view.findViewById(R.id.rename_textinputlayout)
+        renameTextInputLayout = view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).apply {
+            requestFocus()
+        }
 
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
-            if (savedInstanceState == null) setText(arguments?.getString(OLD_NAME), TextView.BufferType.EDITABLE)
+            // Use append to move cursor to the end of text
+            if (savedInstanceState == null) append(arguments?.getString(OLD_NAME))
 
             addTextChangedListener(AlbumNameValidator(this, context))
 
@@ -58,27 +47,6 @@ class AlbumRenameDialogFragment: DialogFragment() {
                     true
                 } else false
             }
-        }
-        view.findViewById<FrameLayout>(R.id.shape_background).background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        //background.background = DialogShapeDrawable.newInstance(requireContext(), resources.getColor(R.color.color_primary_variant, null))
-        view.findViewById<ConstraintLayout>(R.id.background).background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        dialog!!.window!!.apply {
-            // Set dialog width to a fixed ration of screen width
-            val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
-            setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-            attributes.apply {
-                dimAmount = 0.6f
-                flags or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            }
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
-
-            renameTextInputLayout.requestFocus()
         }
     }
 
