@@ -29,7 +29,8 @@ open class LesPasDialogFragment(private val layoutId: Int): DialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        dialog!!.window!!.apply {
+
+        requireDialog().window!!.apply {
             // Set dialog width to a fixed ration of screen width
             val width = (resources.displayMetrics.widthPixels * resources.getInteger(R.integer.dialog_width_ratio) / 100)
             setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
@@ -61,7 +62,7 @@ open class LesPasDialogFragment(private val layoutId: Int): DialogFragment() {
             const val NO_STROKE = -1
 
             @JvmStatic
-            fun newInstance(context: Context, strokeColor: Int) = Companion.newInstance(context, strokeColor, false)
+            fun newInstance(context: Context, strokeColor: Int) = newInstance(context, strokeColor, false)
 
             @JvmStatic
             fun newInstance(context: Context, strokeColor: Int, smallRadius: Boolean) = MaterialShapeDrawable(
