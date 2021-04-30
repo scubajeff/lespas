@@ -3,11 +3,13 @@ package site.leos.apps.lespas.helper
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
+import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dialog) {
     private lateinit var onResultListener: OnResultListener
+    private var requestCodeFromActivity = -1
 
     interface OnResultListener {
         fun onResult(positive: Boolean, requestCode: Int)
@@ -15,9 +17,13 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (activity is OnResultListener) onResultListener = activity as OnResultListener
-        else if (targetFragment is OnResultListener) onResultListener = targetFragment as OnResultListener
-        else parentFragmentManager.popBackStack()
+        when {
+            targetFragment is OnResultListener -> onResultListener = targetFragment as OnResultListener
+            activity is OnResultListener -> onResultListener = activity as OnResultListener
+            else -> parentFragmentManager.popBackStack()
+        }
+
+        isCancelable = arguments?.getBoolean(CANCELABLE) ?: true
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -27,23 +33,26 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         view.findViewById<MaterialButton>(R.id.ok_button).apply {
             text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
             setOnClickListener { _->
-                onResultListener.onResult(true, targetRequestCode)
+                onResultListener.onResult(true, if (onResultListener is Fragment) targetRequestCode else requestCodeFromActivity)
                 dismiss()
             }
         }
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
-            arguments?.getBoolean(CANCELABLE)?.let {
+            isCancelable.let {
                 if (it) setOnClickListener { _->
-                    onResultListener.onResult(false, targetRequestCode)
+                    onResultListener.onResult(false, if (onResultListener is Fragment) targetRequestCode else requestCodeFromActivity)
                     dismiss()
                 }
                 else {
-                    requireDialog().setCanceledOnTouchOutside(false)
                     isEnabled = false
                     visibility = View.GONE
                 }
             }
         }
+    }
+
+    fun setRequestCode(requestCode: Int) {
+        requestCodeFromActivity = requestCode
     }
 
     companion object {
