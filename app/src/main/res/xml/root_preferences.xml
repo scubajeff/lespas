@@ -30,7 +30,7 @@
             app:title="@string/background_sync_title"
             app:summaryOn="@string/background_sync_summary"
             app:singleLineTitle="false"
-            app:defaultValue="false" />
+            app:defaultValue="false"/>
 
         <SwitchPreferenceCompat
             app:key="@string/wifionly_pref_key"
@@ -40,6 +40,18 @@
             app:singleLineTitle="false"
             app:defaultValue="true" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/storage_header">
+        <Preference
+            app:key="@string/transfer_pref_key"
+            app:title="@string/transfer_to_external"
+            app:singleLineTitle="false"
+            app:defaultValue="true"/>
+        <Preference
+            app:key="@string/storage_statistic_pref_key"
+            app:title="@string/storage_statistic_title"
+            app:singleLineTitle="false" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/other_header">

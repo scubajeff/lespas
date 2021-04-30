@@ -112,4 +112,19 @@
     <string name="need_albums">Bitte erstellen Sie zuerst ein Album.</string>
     <string name="to_album">Zum Album:</string>
     <string name="move_files">Dateien</string>
+    <string name="storage_header">Speicherung</string>
+    <string name="transfer_to_internal">" Alben auf den internen Speicher übertragen"</string>
+    <string name="transfer_to_external">Alben auf externe SD-Karte übertragen</string>
+    <string name="external_storage_not_writable">Kann nicht mehr auf die externe SD-Karte schreiben.</string>
+    <string name="confirm_transferring_message">%1$s? Wenn Sie fortfahren, nehmen Sie bitte KEINE Änderungen an den Alben vor, bevor der Übertragungsvorgang abgeschlossen ist.</string>
+    <string name="not_enough_space_message">Nicht genügend Speicherplatz in %2$s vorhanden, um %1$s Fotos zu übertragen.</string>
+    <string name="is_syncing_message">Les Pas wird mit dem Server synchronisiert, es ist nicht sicher, den Speicher jetzt zu übertragen, bitte versuchen Sie es ein paar Minuten später erneut.</string>
+    <string name="yes_transfer">Weiter</string>
+    <string name="storage_statistic_title">Statistik</string>
+    <string name="statistic_db_message">%1$,d Fotos in %2$,d Alben</string>
+    <string name="statistic_storage_message">%1$s verwendet in %2$s</string>
+    <string name="internal_storage">interner Speicher</string>
+    <string name="external_storage">externe SD-Karte</string>
+    <string name="statistic_free_space_message">%1$s verfügbar in %2$s</string>
+    <string name="need_to_restart">Speicherübertragung beendet. Sie müssen Les Pas jetzt neu starten.</string>
 </resources>

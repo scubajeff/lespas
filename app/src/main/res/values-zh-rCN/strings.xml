@@ -112,4 +112,19 @@
     <string name="need_albums">请先创建相册。</string>
     <string name="to_album">至相册：</string>
     <string name="move_files">移动</string>
+    <string name="storage_header">存储</string>
+    <string name="transfer_to_internal">将照片迁移至内部存储</string>
+    <string name="transfer_to_external">将照片迁移至外置存储卡</string>
+    <string name="external_storage_not_writable">SD卡暂时无法读写。</string>
+    <string name="confirm_transferring_message">%1$s？ 照片迁移过程中，请不要对相册做任何更动。</string>
+    <string name="not_enough_space_message">%2$s没有足够剩余空间用于存放%1$s的照片。</string>
+    <string name="is_syncing_message">Les Pas正在与服务器同步，请稍后再尝试数据迁移。</string>
+    <string name="yes_transfer">同意迁移</string>
+    <string name="storage_statistic_title">使用统计</string>
+    <string name="statistic_db_message">共有%1$,d张照片分布在%2$,d个相册中</string>
+    <string name="statistic_storage_message">占用%1$s%2$s空间</string>
+    <string name="internal_storage">内部存储</string>
+    <string name="external_storage">外置存储卡</string>
+    <string name="statistic_free_space_message">%2$s剩余%1$s空间</string>
+    <string name="need_to_restart">照片迁移工作已结束，现在需要重启Les Pas应用。</string>
 </resources>

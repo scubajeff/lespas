@@ -85,4 +85,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE (mimeType LIKE '%image/%')  ORDER BY dateTaken DESC")
     abstract fun getAllImage(): List<Photo>
+
+    @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME}")
+    abstract suspend fun getPhotoTotal(): Int
 }

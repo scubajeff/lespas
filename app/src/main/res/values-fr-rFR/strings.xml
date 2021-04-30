@@ -112,4 +112,19 @@
     <string name="need_albums">Veuillez d\'abord créer un album.</string>
     <string name="to_album">À l\'album :</string>
     <string name="move_files">Déplacer</string>
+    <string name="storage_header">Stockage</string>
+    <string name="transfer_to_internal">Transfert d\'albums vers le stockage interne</string>
+    <string name="transfer_to_external">Transfert d\'albums vers une carte SD externe</string>
+    <string name="external_storage_not_writable">Ne peux pas écrire sur la carte SD externe maintenant.</string>
+    <string name="confirm_transferring_message">%1$s ? Si vous procédez, veuillez NE PAS faire de mise à jour des albums avant la fin du processus de transfert.</string>
+    <string name="not_enough_space_message">Il ne reste pas assez d\'espace dans %2$s pour transférer %1$s photos.</string>
+    <string name="is_syncing_message">Les Pas est en train de se synchroniser avec le serveur, il n\'est pas sûr de transférer du stockage maintenant, veuillez réessayer quelques minutes plus tard.</string>
+    <string name="yes_transfer">Allez-y</string>
+    <string name="storage_statistic_title">Statistiques</string>
+    <string name="statistic_db_message">%1$,d photos en %2$,d albums</string>
+    <string name="statistic_storage_message">%1$s utilisé dans %2$s</string>
+    <string name="internal_storage">stockage interne</string>
+    <string name="external_storage">carte SD externe</string>
+    <string name="statistic_free_space_message">%1$s disponible en %2$s</string>
+    <string name="need_to_restart">Le transfert de stockage est terminé. Vous devez maintenant redémarrer Les Pas.</string>
 </resources>

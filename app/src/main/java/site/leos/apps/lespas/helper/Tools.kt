@@ -13,9 +13,13 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
+import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.text.*
 import java.time.Instant
 import java.time.LocalDateTime
@@ -335,6 +339,18 @@ object Tools {
     }
 
     fun getLocalRoot(context: Context): String {
-        return "${context.filesDir}/${context.getString(R.string.lespas_base_folder_name)}"
+        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}/${context.getString(R.string.lespas_base_folder_name)}"
+    }
+
+    fun getStorageSize(context: Context): Long {
+        var totalBytes = 0L
+        val path = getLocalRoot(context)
+
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) { File(path).listFiles()?.forEach { file -> totalBytes += file.length() }}
+            else { totalBytes = Files.walk(Paths.get(path)).mapToLong { p -> p.toFile().length() }.sum() }
+        } catch (e: Exception) { e.printStackTrace() }
+
+        return totalBytes
     }
 }

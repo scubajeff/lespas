@@ -103,4 +103,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
     abstract fun getAllAlbumName(): List<IDandName>
+
+    @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME}")
+    abstract suspend fun getAlbumTotal(): Int
 }

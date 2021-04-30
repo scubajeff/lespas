@@ -3,6 +3,7 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -19,14 +20,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
+import androidx.work.WorkManager
 import site.leos.apps.lespas.album.AlbumFragment
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var toolbar: Toolbar
     private lateinit var sp: SharedPreferences
@@ -104,5 +108,33 @@ class MainActivity : AppCompatActivity() {
 
     fun getToolbarViewContent(): Drawable {
         return BitmapDrawable(resources, toolbar.drawToBitmap(Bitmap.Config.ARGB_8888))
+    }
+
+    fun observeTransferWorker() {
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(TransferStorageWorker.WORKER_NAME).observe(this, { workInfos->
+            try {
+                workInfos?.get(0)?.apply {
+                    if (state.isFinished) {
+                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), null, false).let {
+                            it.setRequestCode(CONFIRM_RESTART_REQUEST_CODE)
+                            it.show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
+                        }
+                    }
+                }
+            } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
+        })
+    }
+
+    companion object {
+        private const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
+        private const val CONFIRM_RESTART_REQUEST_CODE = 5354
+    }
+
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (requestCode == CONFIRM_RESTART_REQUEST_CODE) {
+            WorkManager.getInstance(this).pruneWork()
+            navigateUpTo(Intent(this, MainActivity::class.java))
+            startActivity(intent)
+        }
     }
 }

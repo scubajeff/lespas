@@ -28,5 +28,6 @@ class AlbumRepository(application: Application){
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
     suspend fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumName(): List<IDandName> = albumDao.getAllAlbumName()
+    suspend fun getAlbumTotal(): Int = albumDao.getAlbumTotal()
     //suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumDao.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
 }
