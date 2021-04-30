@@ -1,0 +1,3 @@
+* Soporte de almacenamiento de archivos multimedia en la tarjeta SD externa
+* permitir la dirección del servidor IPv6
+* Otras mejoras y errores corregidos

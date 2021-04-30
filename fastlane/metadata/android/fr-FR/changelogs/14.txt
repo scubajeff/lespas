@@ -1,0 +1,3 @@
+* Prise en charge du stockage de fichiers multimédia sur une carte SD externe
+* autorise l'adresse du serveur IPv6
+* Autres améliorations et corrections de bugs

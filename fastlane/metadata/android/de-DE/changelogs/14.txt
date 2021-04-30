@@ -1,0 +1,3 @@
+* Unterstützung der Speicherung von Mediendateien auf einer externen SD-Karte
+* IPv6-Server-Adresse zulassen
+* Weitere Verbesserungen und behobene Bugs

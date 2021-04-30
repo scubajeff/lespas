@@ -1,3 +1,7 @@
+## Version 1.5.0
+* support storing media files in external SD card
+* allow IPv6 server address
+* Other improvements and bugs fixed
 
 ## Version 1.4.8
 * Revamp adding media file dialog, now you can choose move instead of copy when sharing files from Camera Roll or another Les Pas album

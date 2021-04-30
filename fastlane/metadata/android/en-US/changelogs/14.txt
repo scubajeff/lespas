@@ -1,0 +1,3 @@
+* support storing media files in external SD card
+* allow IPv6 server address
+* Other improvements and bugs fixed
