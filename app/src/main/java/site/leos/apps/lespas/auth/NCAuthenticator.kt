@@ -72,7 +72,7 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
 
             Bundle().apply {
                 putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_BAD_REQUEST)
-                putString(AccountManager.KEY_ERROR_MESSAGE, mContext?.getString(R.string.error_only_one_account))
+                putString(AccountManager.KEY_ERROR_MESSAGE, mContext.getString(R.string.error_only_one_account))
             }
         }
     }

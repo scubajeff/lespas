@@ -258,8 +258,8 @@ object Tools {
     }
 
     fun getDeviceModel(): String {
-        val manufacturer = Build.MANUFACTURER.toLowerCase(Locale.getDefault())
-        var model = Build.MODEL.toLowerCase(Locale.getDefault())
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        var model = Build.MODEL.lowercase()
 
         if (model.startsWith(manufacturer)) model = model.substring(manufacturer.length).trim()
 

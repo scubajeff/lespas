@@ -164,7 +164,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                             }
                         }
                     }
-                    toggleAutoSync(!((pref as SwitchPreferenceCompat).isChecked))
+                    toggleAutoSync(!(pref.isChecked))
                     true
                 }
             }

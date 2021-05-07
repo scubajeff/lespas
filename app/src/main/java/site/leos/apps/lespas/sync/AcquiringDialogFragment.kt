@@ -183,7 +183,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                         // TODO: Default type set to jpeg
                         val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).toLowerCase(Locale.getDefault())) ?: "image/jpeg"
+                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase()) ?: "image/jpeg"
                         }
 
                         // If it's not image, skip it

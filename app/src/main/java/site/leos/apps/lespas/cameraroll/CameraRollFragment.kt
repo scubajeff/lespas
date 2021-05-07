@@ -434,7 +434,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
 
                 photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).toLowerCase(Locale.ROOT)) ?: "image/jpeg"
+                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: "image/jpeg"
                 }
                 when(uri.scheme) {
                     "content"-> {

@@ -43,11 +43,9 @@ import site.leos.apps.lespas.R
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.UnknownHostException
-import java.util.*
 import java.util.regex.Pattern
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLPeerUnverifiedException
-import kotlin.collections.HashMap
 
 class NCLoginActivity : AppCompatActivity() {
     private lateinit var welcomePage: LinearLayout
@@ -223,7 +221,7 @@ class NCLoginActivity : AppCompatActivity() {
     private fun getDeviceName(): String {
         val manufacturer = Build.MANUFACTURER
         val model = Build.MODEL
-        return if (model.toLowerCase(Locale.ROOT).startsWith(manufacturer.toLowerCase(Locale.ROOT))) model else "$manufacturer $model"
+        return if (model.lowercase().startsWith(manufacturer.lowercase())) model else "$manufacturer $model"
     }
 
     private fun saveTokenAndFinish(path: String) {
