@@ -270,8 +270,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     }
 
     class ClipDataDiffCallback: DiffUtil.ItemCallback<Uri>() {
-        override fun areItemsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem.equals(newItem)
-        override fun areContentsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem.equals(newItem)
+        override fun areItemsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: Uri, newItem: Uri): Boolean = oldItem == newItem
     }
 
     class DestinationViewModel: ViewModel() {

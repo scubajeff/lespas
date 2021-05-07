@@ -10,7 +10,7 @@ class SyncService : Service() {
             sSyncAdapter = sSyncAdapter ?: SyncAdapter(application, true)
         }
     }
-    override fun onBind(intent: Intent?): IBinder? {
+    override fun onBind(intent: Intent?): IBinder {
         return sSyncAdapter?.syncAdapterBinder ?: throw IllegalStateException()
     }
 

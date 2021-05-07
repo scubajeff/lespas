@@ -239,7 +239,7 @@ object Tools {
     }
 
     // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
-    private val wechatPattern = "^mmexport[0-9]{10}.*"
+    private const val wechatPattern = "^mmexport[0-9]{10}.*"
 
     fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
 

@@ -32,14 +32,14 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         view.findViewById<TextView>(R.id.message_textview).text = arguments?.getString(MESSAGE)
         view.findViewById<MaterialButton>(R.id.ok_button).apply {
             text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
-            setOnClickListener { _->
+            setOnClickListener {
                 onResultListener.onResult(true, if (onResultListener is Fragment) targetRequestCode else requestCodeFromActivity)
                 dismiss()
             }
         }
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
             isCancelable.let {
-                if (it) setOnClickListener { _->
+                if (it) setOnClickListener {
                     onResultListener.onResult(false, if (onResultListener is Fragment) targetRequestCode else requestCodeFromActivity)
                     dismiss()
                 }

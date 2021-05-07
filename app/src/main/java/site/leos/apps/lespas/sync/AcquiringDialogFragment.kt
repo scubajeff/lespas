@@ -60,7 +60,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        background = view.findViewById<LinearLayoutCompat>(R.id.background)
+        background = view.findViewById(R.id.background)
         progressLinearLayout = view.findViewById(R.id.progress_linearlayout)
         dialogTitleTextView = view.findViewById(R.id.dialog_title_textview)
         messageTextView = view.findViewById(R.id.message_textview)

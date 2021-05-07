@@ -245,7 +245,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             R.id.option_menu_search-> {
                 exitTransition = null
                 reenterTransition = null
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0, ), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 ), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
         }
