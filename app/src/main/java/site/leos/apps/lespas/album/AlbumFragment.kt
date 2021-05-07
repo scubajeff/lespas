@@ -323,7 +323,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 itemView.apply {
                     this.isActivated = isActivated
                     findViewById<ImageView>(R.id.coverart).let {coverImageview ->
-                        imageLoader.loadImage(covers[adapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
+                        imageLoader.loadImage(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         /*
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
@@ -352,8 +352,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             }
 
             fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
-                override fun getPosition(): Int = adapterPosition
-                override fun getSelectionKey(): Long = getItemId(adapterPosition)
+                override fun getPosition(): Int = bindingAdapterPosition
+                override fun getSelectionKey(): Long = getItemId(bindingAdapterPosition)
             }
         }
 
