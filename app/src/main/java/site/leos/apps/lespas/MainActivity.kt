@@ -3,6 +3,7 @@ package site.leos.apps.lespas
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -11,6 +12,8 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.storage.StorageManager
 import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +28,7 @@ import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
+import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
@@ -52,28 +56,36 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         if (savedInstanceState == null) {
             val account: Account = AccountManager.get(this).accounts[0]
 
-            // Syncing server changes at startup and set it to run when receiving network tickle
-            ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
-            })
-            ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-
-            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
-
-            // Setup observer to fire up SyncAdapter
-            actionsPendingModel.allActions.observe(this, { actions ->
-                if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
+            if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
+                // We need external SD mounted writable
+                if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false).let {
+                    it.setRequestCode(CONFIRM_REQUIRE_SD_REQUEST_CODE)
+                    it.show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
+                }
+            } else {
+                // Syncing server changes at startup and set it to run when receiving network tickle
+                ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                     putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
                 })
-            })
+                ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
 
-            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration
-            if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
-                putBoolean(getString(R.string.snapseed_pref_key), false)
-                putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+
+                // Setup observer to fire up SyncAdapter
+                actionsPendingModel.allActions.observe(this, { actions ->
+                    if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                    })
+                })
+
+                // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
+                if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED                ) sp.edit {
+                    putBoolean(getString(R.string.snapseed_pref_key), false)
+                    putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                }
             }
         }
     }
@@ -92,6 +104,17 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         }
 
         return true
+    }
+
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        when(requestCode) {
+            CONFIRM_RESTART_REQUEST_CODE-> {
+                WorkManager.getInstance(this).pruneWork()
+                navigateUpTo(Intent(this, MainActivity::class.java))
+                startActivity(intent)
+            }
+            CONFIRM_REQUIRE_SD_REQUEST_CODE-> finish()
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -128,13 +151,7 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
     companion object {
         private const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         private const val CONFIRM_RESTART_REQUEST_CODE = 5354
-    }
-
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (requestCode == CONFIRM_RESTART_REQUEST_CODE) {
-            WorkManager.getInstance(this).pruneWork()
-            navigateUpTo(Intent(this, MainActivity::class.java))
-            startActivity(intent)
-        }
+        private const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
+        private const val CONFIRM_REQUIRE_SD_REQUEST_CODE = 5453
     }
 }

@@ -4,6 +4,7 @@
 
     <!-- MainActivity -->
     <string name="need_to_restart">Storage transfer has finished. You need to restart Les Pas now.</string>
+    <string name="sd_card_not_ready">SD card is either not mounted or is read-only.</string>
 
     <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>

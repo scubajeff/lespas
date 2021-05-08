@@ -127,4 +127,5 @@
     <string name="external_storage">carte SD externe</string>
     <string name="statistic_free_space_message">%1$s disponible en %2$s</string>
     <string name="need_to_restart">Le transfert de stockage est terminé. Vous devez maintenant redémarrer Les Pas.</string>
+    <string name="sd_card_not_ready">La carte SD n\'est pas montée ou est en lecture seule.</string>
 </resources>

@@ -127,4 +127,5 @@
     <string name="external_storage">外置存储卡</string>
     <string name="statistic_free_space_message">%2$s剩余%1$s空间</string>
     <string name="need_to_restart">照片迁移工作已结束，现在需要重启Les Pas应用。</string>
+    <string name="sd_card_not_ready">外置存储卡未挂载或只读。</string>
 </resources>

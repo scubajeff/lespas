@@ -127,4 +127,5 @@
     <string name="external_storage">externe SD-Karte</string>
     <string name="statistic_free_space_message">%1$s verfügbar in %2$s</string>
     <string name="need_to_restart">Speicherübertragung beendet. Sie müssen Les Pas jetzt neu starten.</string>
+    <string name="sd_card_not_ready">SD-Karte ist entweder nicht eingebunden oder schreibgeschützt.</string>
 </resources>
