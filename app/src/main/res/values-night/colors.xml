@@ -9,8 +9,6 @@
     <color name="color_on_secondary">#F9F7E8</color>
     <color name="color_background">#1F3B34</color>
     <color name="color_surface">#26564E</color>
-    <color name="color_text_secondary">#A7BBC3</color>
-    <color name="color_sketch">#A7BBC3</color>
 
     <color name="album_item_selected_background">#89937A</color>
 </resources>
