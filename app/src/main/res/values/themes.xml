@@ -28,9 +28,6 @@
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionModeOverlay">true</item>
 
-        <!-- Setting screen -->
-        <item name="preferenceTheme">@style/Theme.LesPas.PreferenceThemeOverlay</item>
-
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
     </style>
@@ -51,10 +48,6 @@
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:windowEnterAnimation">@null</item>
         <item name="android:windowExitAnimation">@null</item>
-    </style>
-
-    <style name="Theme.LesPas.PreferenceThemeOverlay" parent="@style/PreferenceThemeOverlay">
-        <item name="android:layout">@layout/fragment_settings</item>
     </style>
 
     <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.MaterialComponents.ActionBar">

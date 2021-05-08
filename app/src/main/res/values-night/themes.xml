@@ -23,9 +23,6 @@
         <item name="windowActionBarOverlay">true</item>
         <item name="windowActionModeOverlay">true</item>
 
-        <!-- Setting screen -->
-        <item name="preferenceTheme">@style/Theme.LesPas.PreferenceThemeOverlay</item>
-
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
     </style>
