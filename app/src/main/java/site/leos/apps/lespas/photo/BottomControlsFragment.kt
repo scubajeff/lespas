@@ -61,38 +61,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
 
-        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         @Suppress("DEPRECATION")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-                try {
-                    TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                    if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
-                        controlsContainer.updatePadding(bottom = window.decorView.rootWindowInsets.stableInsetBottom)
-                        controlsContainer.visibility = View.VISIBLE
-                        visible = true
-                    } else {
-                        controlsContainer.visibility = View.GONE
-                        visible = false
-                    }
-                    moreControls.visibility = View.GONE
-                } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
+                followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
             }
         } else {
             window.decorView.setOnApplyWindowInsetsListener { _, insets ->
-                try {
-                    TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
-                    if (insets.isVisible(WindowInsets.Type.navigationBars())) {
-                        controlsContainer.updatePadding(bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom)
-                        controlsContainer.visibility = View.VISIBLE
-                        visible = true
-                    } else {
-                        controlsContainer.visibility = View.GONE
-                        visible = false
-                    }
-                    moreControls.visibility = View.GONE
-                } catch (e: UninitializedPropertyAccessException) {}
-
+                followSystemBar(insets.isVisible(WindowInsets.Type.navigationBars()), insets.getInsets(WindowInsets.Type.navigationBars()).bottom)
                 insets
             }
         }
@@ -104,7 +80,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         return inflater.inflate(R.layout.fragment_bottomcontrols, container, false)
     }
 
-    @SuppressLint("ClickableViewAccessibility")
+    @SuppressLint("ClickableViewAccessibility", "ShowToast")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -224,8 +200,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
             if (currentPhotoModel.forReal()) {
-                Snackbar
-                    .make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+                Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
                     //.setAnchorView(window.decorView.rootView)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
@@ -272,6 +247,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         else hideHandler.removeCallbacks(hideSystemUI)
+    }
+
+    // Remove current photo after confirmation
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (positive) currentPhotoModel.removePhoto()
     }
 
     // Hide/Show controls, status bar, navigation bar
@@ -327,9 +307,20 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         false
     }
 
-    // Remove current photo after confirmation
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) currentPhotoModel.removePhoto()
+    private fun followSystemBar(show: Boolean, bottomPadding: Int) {
+        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
+        try {
+            TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
+            if (show) {
+                controlsContainer.updatePadding(bottom = bottomPadding)
+                controlsContainer.visibility = View.VISIBLE
+                visible = true
+            } else {
+                controlsContainer.visibility = View.GONE
+                visible = false
+            }
+            moreControls.visibility = View.GONE
+        } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
     }
 
     class InfoDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
