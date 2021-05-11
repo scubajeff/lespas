@@ -1,0 +1,2 @@
+* new Japanese translation
+* other improvements and bugs fixed
