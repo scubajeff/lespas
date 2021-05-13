@@ -6,6 +6,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.BounceInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.doOnAttach
@@ -26,17 +27,24 @@ class AboutPreference (context: Context, attributeSet: AttributeSet): Preference
                 val versionText = itemView.findViewById<TextView>(R.id.lespas_version)
                 itemView.findViewById<ImageView>(R.id.logo).apply {
                     versionText.visibility = View.INVISIBLE
+/*
                     alpha = 0.3f
                     pivotX = 70f
                     pivotY = 50f
                     scaleX = 4f
                     scaleY = 4f
                     animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(500).setInterpolator(AccelerateDecelerateInterpolator()).setListener(object: AnimatorListenerAdapter() {
+*/
+                    scaleX = 0.3f
+                    scaleY = 0.3f
+                    pivotX = 50f
+                    pivotY = 100f
+                    animate().scaleX(1f).scaleY(1f).setDuration(700).setInterpolator(BounceInterpolator()).setListener(object: AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator?) {
                             super.onAnimationEnd(animation)
                             versionText.apply {
                                 alpha = 0.5f
-                                animate().alpha(1f).setDuration(200).setInterpolator(AccelerateDecelerateInterpolator()).setListener(object: AnimatorListenerAdapter() {
+                                animate().alpha(1f).setDuration(50).setInterpolator(AccelerateDecelerateInterpolator()).setListener(object: AnimatorListenerAdapter() {
                                     override fun onAnimationEnd(animation: Animator?) {
                                         super.onAnimationEnd(animation)
                                         visibility = View.VISIBLE
