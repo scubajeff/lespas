@@ -86,7 +86,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         uiToggle.status().observe(viewLifecycleOwner, {
             if (ignore) {
-                hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+                hideHandler.postDelayed(hideSystemUI, INITIAL_AUTO_HIDE_DELAY_MILLIS)
                 ignore = false
             } else toggle()
         })
@@ -255,7 +255,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     // Hide/Show controls, status bar, navigation bar
-    private var visible: Boolean = false
+    private var visible: Boolean = true
     private val hideHandler = Handler(Looper.getMainLooper())
 
     private fun toggle() {
@@ -382,6 +382,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+        private const val INITIAL_AUTO_HIDE_DELAY_MILLIS = 1600L
 
         private const val ALBUM = "ALBUM"
         private const val INFO_DIALOG = "INFO_DIALOG"

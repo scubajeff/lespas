@@ -646,8 +646,6 @@ class PhotoSlideFragment : Fragment() {
     class UIViewModel : ViewModel() {
         private val showUI = MutableLiveData(true)
 
-        @Suppress("unused")
-        //fun hideUI() { showUI.value = false }
         fun toggleOnOff() { showUI.value = !showUI.value!! }
         fun status(): LiveData<Boolean> { return showUI }
     }
