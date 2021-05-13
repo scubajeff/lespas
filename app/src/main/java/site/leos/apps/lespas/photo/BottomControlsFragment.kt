@@ -49,7 +49,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var setAsButton: ImageButton
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
-    //private var ignore = true
+    private var ignore = true
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -84,16 +84,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        uiToggle.status().observe(viewLifecycleOwner, { toggle() })
-/*
         uiToggle.status().observe(viewLifecycleOwner, {
             if (ignore) {
-                //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-                hideHandler.post(hideSystemUI)
+                hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
                 ignore = false
             } else toggle()
         })
-*/
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
             coverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             setAsButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
@@ -259,7 +255,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     // Hide/Show controls, status bar, navigation bar
-    private var visible: Boolean = true
+    private var visible: Boolean = false
     private val hideHandler = Handler(Looper.getMainLooper())
 
     private fun toggle() {
