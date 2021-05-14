@@ -83,11 +83,13 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     @SuppressLint("ClickableViewAccessibility", "ShowToast")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        ignore = true
 
         uiToggle.status().observe(viewLifecycleOwner, {
             if (ignore) {
-                hideHandler.postDelayed(hideSystemUI, INITIAL_AUTO_HIDE_DELAY_MILLIS)
+                //hideHandler.postDelayed(hideSystemUI, INITIAL_AUTO_HIDE_DELAY_MILLIS)
                 ignore = false
+                visible = false
             } else toggle()
         })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
@@ -263,9 +265,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         hideHandler.post(if (visible) hideSystemUI else showSystemUI)
     }
 
-    @Suppress("DEPRECATION")
     private val hideSystemUI = Runnable {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
                     // Set the content to appear under the system bars so that the
                     // content doesn't resize when the system bars hide and show.
@@ -275,7 +277,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     // Hide the nav bar and status bar
                     or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_FULLSCREEN)
-
         } else {
             window.insetsController?.apply {
                 systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
