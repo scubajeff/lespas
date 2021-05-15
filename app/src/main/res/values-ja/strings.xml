@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Les Pas</string>
-    <string name="verify_ssl_certificate_message">Server %1$の証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
+    <string name="verify_ssl_certificate_message">Server %1$sの証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
     <string name="gallery_app_name">カメラアルバム</string>
     <string name="need_to_restart">写真の移行が完了したので、Les Pasアプリを再起動する必要があります。</string>
     <string name="sd_card_not_ready">外部メモリーカードがマウントされていないか、読み取り専用になっている。</string>
