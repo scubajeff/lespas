@@ -1,0 +1,3 @@
+* Ajout d'une traduction en chinois traditionnel
+* correction de la traduction japonaise qui empêchait la construction de gradle
+* autres améliorations et corrections de bogues

@@ -1,0 +1,3 @@
+* add Traditional Chinese translation
+* fix Japanese translation which prevent gradle from building
+* other improvements and bugs fixed

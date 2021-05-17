@@ -1,0 +1,3 @@
+* Traditionelle chinesische Übersetzung hinzufügen
+* Behebung der japanischen Übersetzung, die das Erstellen von gradle verhindert
+* andere Verbesserungen und Bugs behoben

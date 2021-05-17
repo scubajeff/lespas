@@ -1,3 +1,8 @@
+## Version 1.5.2
+* add Traditional Chinese translation
+* fix Japanese translation which prevent gradle from building
+* other improvements and bugs fixed
+
 ## Version 1.5.1
 * new Japanese translation
 * other improvements and bugs fixed
