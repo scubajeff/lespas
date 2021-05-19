@@ -19,9 +19,9 @@ import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
-    private val _shareByMe = MutableStateFlow<List<ShareByMe>?>(emptyList())
-    private val _shareWithMe = MutableStateFlow<List<ShareWithMe>?>(emptyList())
-    private val _sharees = MutableStateFlow<List<Sharee>?>(emptyList())
+    private val _shareByMe = MutableStateFlow<List<ShareByMe>?>(null)
+    private val _shareWithMe = MutableStateFlow<List<ShareWithMe>?>(null)
+    private val _sharees = MutableStateFlow<List<Sharee>?>(null)
     val shareByMe: StateFlow<List<ShareByMe>?> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>?> = _shareWithMe
     val sharees: StateFlow<List<Sharee>?> = _sharees
