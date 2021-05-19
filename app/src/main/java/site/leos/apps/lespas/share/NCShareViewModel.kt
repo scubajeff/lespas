@@ -69,8 +69,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 var shareType: Int
                 var sharee: Recipient
                 response?.body?.string()?.apply {
-                    if (JSONObject(this).getJSONObject("ocs").getInt("statuscode") != 200) return null
-
+                    if (JSONObject(this).getJSONObject("ocs").getJSONObject("meta").getInt("statuscode") != 200) return null
                     val data = JSONObject(this).getJSONObject("ocs").getJSONArray("data")
                     for (i in 0 until data.length()) {
                         data.getJSONObject(i).apply {
@@ -124,7 +123,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Parsing result
                 var shareType: Int
                 response?.body?.string()?.apply {
-                    if (JSONObject(this).getJSONObject("ocs").getInt("statuscode") != 200) return null
+                    if (JSONObject(this).getJSONObject("ocs").getJSONObject("meta").getInt("statuscode") != 200) return null
 
                     val data = JSONObject(this).getJSONObject("ocs").getJSONArray("data")
                     for (i in 0 until data.length()) {
@@ -166,7 +165,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Parsing result
                 response?.body?.string()?.apply {
-                    if (JSONObject(this).getJSONObject("ocs").getInt("statuscode") != 200) return null
+                    if (JSONObject(this).getJSONObject("ocs").getJSONObject("meta").getInt("statuscode") != 200) return null
 
                     val data = JSONObject(this).getJSONObject("ocs").getJSONObject("data")
                     val users = data.getJSONArray("users")
