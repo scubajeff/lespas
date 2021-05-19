@@ -183,6 +183,7 @@
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_select_all">Select all</string>
+    <string name="action_publish">Publish</string>
     <string name="selected_count">%1$d selected</string>
 
     <!-- Camera Roll Activity -->

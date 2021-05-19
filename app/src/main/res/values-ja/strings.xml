@@ -129,4 +129,5 @@
     <string name="object_food">フード</string>
     <string name="object_vehicle">車と船</string>
     <string name="published_to">送信先： %1$s</string>
+    <string name="action_publish">パブリッシュ</string>
 </resources>

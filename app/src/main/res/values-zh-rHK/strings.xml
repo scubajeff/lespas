@@ -129,4 +129,5 @@
     <string name="need_to_restart">照片遷移工作已結束，現在需要重啟Les Pas應用。</string>
     <string name="sd_card_not_ready">外置存儲卡未掛載或只讀。</string>
     <string name="published_to">已發送俾：%1$s</string>
+    <string name="action_publish">發布</string>
 </resources>

@@ -129,4 +129,5 @@
     <string name="need_to_restart">Speicherübertragung beendet. Sie müssen Les Pas jetzt neu starten.</string>
     <string name="sd_card_not_ready">SD-Karte ist entweder nicht eingebunden oder schreibgeschützt.</string>
     <string name="published_to">Veröffentlicht in: %1$s</string>
+    <string name="action_publish">Veröffentlichen</string>
 </resources>
