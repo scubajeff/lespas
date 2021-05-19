@@ -1,7 +1,9 @@
 package site.leos.apps.lespas.album
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
@@ -11,13 +13,17 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
@@ -28,6 +34,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.share.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -45,6 +52,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     private lateinit var lastSelection: MutableSet<Long>
     private val uris = ArrayList<Uri>()
 
+    private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -95,6 +103,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         // Register data observer first, try feeding adapter with latest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
             mAdapter.setAlbums(albums)
+        })
+
+        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, {
+            it?.let { mAdapter.setRecipients(it) }
         })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
@@ -304,11 +316,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     // List adapter for Albums' recyclerView
     class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
+        private lateinit var ctx: Context
         private var albums = emptyList<Album>()
-        private var oldAlbums = mutableListOf<Album>()
         private var covers = mutableListOf<Photo>()
+        private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
+        private lateinit var recipientChipBackgroundColor: ColorStateList
+        private lateinit var recipientChipTextColor: ColorStateList
 
         fun interface OnItemClickListener {
             fun onItemClick(album: Album, imageView: ImageView)
@@ -348,6 +363,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                         album.startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
+
+                    val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
+                    recipients.find { it.fileId == album.id }?.let {
+                        for (recipient in it.with) {
+                            chipGroup.addView(Chip(ctx).apply {
+                                text = recipient.name
+                                textAlignment = View.TEXT_ALIGNMENT_CENTER
+                                setTextColor(recipientChipTextColor)
+                                textSize = 9f
+                                setChipMinHeightResource(R.dimen.recipient_chip_min_height)
+                                chipStartPadding = 0f
+                                chipEndPadding = 0f
+                                chipBackgroundColor = recipientChipBackgroundColor
+                                isClickable = false
+                                //setEnsureMinTouchTargetSize(true)
+                            })
+                        }
+                    }
                 }
             }
 
@@ -358,8 +391,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  {
-            val itemView = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false)
-            return AlbumViewHolder(itemView)
+            ctx = parent.context
+            recipientChipBackgroundColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(ctx.getColor(R.color.color_primary), 0x60))
+            recipientChipTextColor = ColorStateList.valueOf(ctx.getColor(R.color.color_chip_text))
+
+            return AlbumViewHolder(LayoutInflater.from(ctx).inflate(R.layout.recyclerview_item_album, parent,false))
         }
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
@@ -367,10 +403,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         }
 
         internal fun setAlbums(albums: List<Album>) {
-            oldAlbums.let {
-                it.clear()
-                it.addAll(0, this.albums)
-            }
+            val oldAlbums = mutableListOf<Album>()
+            oldAlbums.addAll(0, this.albums)
+
             this.albums = albums
             this.covers.apply {
                 clear()
@@ -384,6 +419,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition].id == albums[newItemPosition].id
                 override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition] == albums[newItemPosition]
             }).dispatchUpdatesTo(this)
+        }
+
+        internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
+            this.recipients = recipients
+
+            for (recipient in recipients) { notifyItemChanged(albums.indexOfFirst { it.id == recipient.fileId }) }
         }
 
         internal fun getItemBySelectionKey(key: Long): Album = (albums.find { it.id.toLong() == key })!!

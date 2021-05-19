@@ -128,4 +128,5 @@
     <string name="statistic_free_space_message">%1$s disponible en %2$s</string>
     <string name="need_to_restart">La transferencia de almacenamiento ha terminado. Ahora debe reiniciar Les Pas.</string>
     <string name="sd_card_not_ready">La tarjeta SD no está montada o es de sólo lectura.</string>
+    <string name="published_to">Publicado en: %1$s</string>
 </resources>

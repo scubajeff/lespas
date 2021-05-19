@@ -15,7 +15,7 @@
     <string name="total_photo">%1$d张照片</string>
     <string name="duration_days">行程%1$d天</string>
     <string name="duration_weeks">行程%1$d周</string>
-    <string name="duration_months">行程%1$d月</string>
+    <string name="duration_months">行程%1$d个月</string>
     <string name="duration_years">行程%1$d年</string>
     <string name="tooltip_text_set_cover">设置相册封面</string>
     <string name="tooltip_text_share">分享</string>
@@ -128,4 +128,5 @@
     <string name="statistic_free_space_message">%2$s剩余%1$s空间</string>
     <string name="need_to_restart">照片迁移工作已结束，现在需要重启Les Pas应用。</string>
     <string name="sd_card_not_ready">外置存储卡未挂载或只读。</string>
+    <string name="published_to">已发送给：%1$s</string>
 </resources>

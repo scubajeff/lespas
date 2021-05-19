@@ -21,6 +21,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.asLiveData
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
@@ -45,6 +46,7 @@ import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.share.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
@@ -66,6 +68,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var lastSelection: MutableSet<Long>
     private var scrollTo = ""
 
+    private val publishModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
@@ -263,6 +266,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             if (scrollTo.isNotEmpty()) {
                 (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(mAdapter.findPhotoPosition(scrollTo))
                 scrollTo = ""
+            }
+        })
+
+        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, {
+            it?.find { it.fileId == album.id }?.let { recipient->
+                mAdapter.setRecipient(recipient)
             }
         })
 
@@ -550,6 +559,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
+        private var recipient: NCShareViewModel.ShareByMe? = null
+        private var recipientText = ""
 
         init {
             setHasStableIds(true)
@@ -588,6 +599,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     }
 
                     findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
+
+                    recipient?.with?.let {
+                        var names = it[0].name
+                        for (i in 1 until it.size) names += ", ${it[i].name}"
+                        findViewById<TextView>(R.id.recipients).apply {
+                            text = String.format(recipientText, names)
+                            visibility = View.VISIBLE
+                        }
+                    } ?: run {
+                        findViewById<TextView>(R.id.recipients).visibility = View.GONE
+                    }
                 }
             }
 
@@ -671,6 +693,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
              */
         }
 
+        internal fun setRecipient(recipient: NCShareViewModel.ShareByMe) {
+            this.recipient = recipient
+            notifyItemChanged(0)
+        }
+
         internal fun findPhotoPosition(photoId: String): Int {
             for ((i, photo) in photos.withIndex()) {
                 if (photo.id == photoId) return i
@@ -683,6 +710,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            recipientText = parent.context.getString(R.string.published_to)
             return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
                     else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
 

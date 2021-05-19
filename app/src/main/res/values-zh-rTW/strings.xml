@@ -10,12 +10,12 @@
     <string name="unknown_host">找不到該伺服器</string>
     <string name="network_error">網絡異常，請稍後重試</string>
     <string name="fab_add_photos">添加照片</string>
-    <string name="confirm_delete">您確定執行該項操作嗎？</string>
+    <string name="confirm_delete">您確定執行此項操作嗎？</string>
     <string name="rename_to">更改相冊名</string>
     <string name="total_photo">%1$d張照片</string>
     <string name="duration_days">行程%1$d天</string>
     <string name="duration_weeks">行程%1$d周</string>
-    <string name="duration_months">行程%1$d月</string>
+    <string name="duration_months">行程%1$d個月</string>
     <string name="duration_years">行程%1$d年</string>
     <string name="tooltip_text_set_cover">設置相冊封面</string>
     <string name="tooltip_text_share">分享</string>
@@ -128,4 +128,5 @@
     <string name="statistic_free_space_message">%2$s剩餘%1$s空間</string>
     <string name="need_to_restart">照片遷移工作已結束，現在需要重啟Les Pas應用。</string>
     <string name="sd_card_not_ready">外置存儲卡未掛載或只讀。</string>
+    <string name="published_to">已發送給：%1$s</string>
 </resources>

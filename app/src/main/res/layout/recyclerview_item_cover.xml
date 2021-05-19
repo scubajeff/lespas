@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="H,21:9"
-        android:paddingTop="@dimen/big_padding"
+        android:paddingVertical="@dimen/big_padding"
         android:background="@drawable/cover_label_background">
 
         <TextView
@@ -36,7 +36,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintBottom_toTopOf="@id/divider"
             android:layout_marginHorizontal="@dimen/extra_padding"
-            android:layout_marginBottom="@dimen/mini_padding"
+            android:layout_marginTop="@dimen/small_padding"
             android:lines="1"
             android:ellipsize="end"
             style="@style/TextAppearance.MaterialComponents.Headline5"
@@ -47,11 +47,10 @@
             android:id="@+id/divider"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/recipients"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             android:paddingHorizontal="@dimen/big_padding"
-            android:layout_marginBottom="@dimen/big_padding"
             android:text="|"
             android:textColor="@color/color_text_light"
             style="@style/TextAppearance.MaterialComponents.Body2"
@@ -78,8 +77,19 @@
             app:layout_constraintBaseline_toBaselineOf="@id/divider"
             app:layout_constraintLeft_toRightOf="@id/divider"
             app:layout_constraintRight_toRightOf="parent"
-            style="@style/TextAppearance.AppCompat.Body1"
+            style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
             tools:text="subtitle" />
+
+        <TextView
+            android:id="@+id/recipients"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            style="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="@color/color_text_light"
+            tools:text="Published to: " />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -128,4 +128,5 @@
     <string name="object_plant">花や植物や木</string>
     <string name="object_food">フード</string>
     <string name="object_vehicle">車と船</string>
+    <string name="published_to">送信先： %1$s</string>
 </resources>
