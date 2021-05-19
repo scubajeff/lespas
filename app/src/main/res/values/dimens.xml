@@ -5,7 +5,6 @@
     <dimen name="small_padding">8dp</dimen>
     <dimen name="tiny_padding">4dp</dimen>
     <dimen name="mini_padding">2dp</dimen>
-    <dimen name="recipient_chip_min_height">14dp</dimen>
     <dimen name="dialog_frame_radius">12dp</dimen>
     <dimen name="dialog_frame_radius_small">4dp</dimen>
     <dimen name="destination_list_maximum_height">200dp</dimen>

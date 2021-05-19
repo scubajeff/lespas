@@ -3,7 +3,6 @@ package site.leos.apps.lespas.album
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
@@ -13,7 +12,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
@@ -322,8 +320,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
-        private lateinit var recipientChipBackgroundColor: ColorStateList
-        private lateinit var recipientChipTextColor: ColorStateList
 
         fun interface OnItemClickListener {
             fun onItemClick(album: Album, imageView: ImageView)
@@ -366,20 +362,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
                     val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
                     recipients.find { it.fileId == album.id }?.let {
-                        for (recipient in it.with) {
-                            chipGroup.addView(Chip(ctx).apply {
-                                text = recipient.name
-                                textAlignment = View.TEXT_ALIGNMENT_CENTER
-                                setTextColor(recipientChipTextColor)
-                                textSize = 9f
-                                setChipMinHeightResource(R.dimen.recipient_chip_min_height)
-                                chipStartPadding = 0f
-                                chipEndPadding = 0f
-                                chipBackgroundColor = recipientChipBackgroundColor
-                                isClickable = false
-                                //setEnsureMinTouchTargetSize(true)
-                            })
-                        }
+                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.chip_recipient, null) as Chip).apply { text = recipient.name })
                     }
                 }
             }
@@ -392,9 +375,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  {
             ctx = parent.context
-            recipientChipBackgroundColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(ctx.getColor(R.color.color_primary), 0x60))
-            recipientChipTextColor = ColorStateList.valueOf(ctx.getColor(R.color.color_chip_text))
-
             return AlbumViewHolder(LayoutInflater.from(ctx).inflate(R.layout.recyclerview_item_album, parent,false))
         }
 

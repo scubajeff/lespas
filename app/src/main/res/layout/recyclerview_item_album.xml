@@ -73,11 +73,10 @@
                 android:layout_height="wrap_content"
                 app:layout_constraintLeft_toRightOf="@id/duration"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 android:paddingLeft="@dimen/small_padding"
                 android:paddingVertical="0dp"
-                android:gravity="end|bottom"
+                android:gravity="right"
                 tools:ignore="RtlHardcoded,RtlSymmetry">
 
                 <com.google.android.material.chip.ChipGroup
