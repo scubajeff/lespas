@@ -165,19 +165,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Parsing result
                 response?.body?.string()?.apply {
-                    if (JSONObject(this).getJSONObject("ocs").getJSONObject("meta").getInt("statuscode") != 200) return null
+                    if (JSONObject(this).getJSONObject("ocs").getJSONObject("meta").getInt("statuscode") != 100) return null
 
                     val data = JSONObject(this).getJSONObject("ocs").getJSONObject("data")
                     val users = data.getJSONArray("users")
                     for (i in 0 until users.length()) {
-                        users.getJSONObject(i).getJSONObject("value").apply {
-                            result.add(Sharee(getString("shareWith"), SHARE_TYPE_USER))
+                        users.getJSONObject(i).apply {
+                            result.add(Sharee(getString("shareWithDisplayNameUnique"), getString("label"), SHARE_TYPE_USER))
                         }
                     }
                     val groups = data.getJSONArray("groups")
                     for (i in 0 until groups.length()) {
-                        groups.getJSONObject(i).getJSONObject("value").apply {
-                            result.add(Sharee(getString("shareWith"), SHARE_TYPE_GROUP))
+                        groups.getJSONObject(i).apply {
+                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_GROUP))
                         }
                     }
                 }
@@ -197,6 +197,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     data class Sharee(
         var name: String,
+        var label: String,
         var type: Int,
     )
 
