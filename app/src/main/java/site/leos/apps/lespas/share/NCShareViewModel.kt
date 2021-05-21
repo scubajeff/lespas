@@ -51,9 +51,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            flow<List<ShareByMe>?> { emit(getShareBy()) }.collect { _shareByMe.value = it }
-            flow<List<ShareWithMe>?> { emit(getShareWith()) }.collect { _shareWithMe.value = it }
-            flow<List<Sharee>?> { emit(getSharees()) }.collect { _sharees.value = it }
+            _shareByMe.value = getShareBy()
+            _shareWithMe.value = getShareWith()
+            _sharees.value = getSharees()
+            //flow<List<ShareByMe>?> { emit(getShareBy()) }.collect { _shareByMe.value = it }
+            //flow<List<ShareWithMe>?> { emit(getShareWith()) }.collect { _shareWithMe.value = it }
+            //flow<List<Sharee>?> { emit(getSharees()) }.collect { _sharees.value = it }
         }
     }
 
