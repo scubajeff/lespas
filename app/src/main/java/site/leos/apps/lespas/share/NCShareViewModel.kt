@@ -2,6 +2,7 @@ package site.leos.apps.lespas.share
 
 import android.accounts.AccountManager
 import android.app.Application
+import android.os.Parcelable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okio.IOException
 import org.json.JSONException
@@ -82,7 +84,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 // Only interested in shares of subfolders under lespas/
 
                                 //sharee = Recipient(getString("id"), shareType, getString("recipient"), getInt("permissions"), SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(getString("time").substring(0, 19)).toInstant().epochSecond)
-                                sharee = Recipient(getString("id"), shareType, getString("recipient"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond)
+                                sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
 
                                 @Suppress("SimpleRedundantLet")
                                 result.find { share-> share.fileId == getString("file_id") }?.let { item->
@@ -195,33 +197,36 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
+    @Parcelize
     data class Sharee(
         var name: String,
         var label: String,
         var type: Int,
-    )
+    ): Parcelable
 
+    @Parcelize
     data class Recipient(
         var shareId: String,
-        var type: Int,
-        var name: String,
         var permission: Int,
         var sharedTime: Long,
-    )
+        var sharee: Sharee,
+    ): Parcelable
 
+    @Parcelize
     data class ShareByMe(
         var fileId: String,
         var folderName: String,
         var with: MutableList<Recipient>,
-    )
+    ): Parcelable
 
+    @Parcelize
     data class ShareWithMe(
         var fileId: String,
         var albumName: String,
         var shareBy: String,
         var permission: Int,
         var sharedTime: Long,
-    )
+    ): Parcelable
 
     companion object {
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
@@ -229,9 +234,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val SHARE_LISTING_URL = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_URL = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
 
-        private const val SHARE_TYPE_USER = 0
+        const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"
-        private const val SHARE_TYPE_GROUP = 1
+        const val SHARE_TYPE_GROUP = 1
         private const val SHARE_TYPE_GROUP_STRING = "group"
 
         private const val PERMISSION_CAN_READ = 1
