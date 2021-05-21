@@ -8,8 +8,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
@@ -38,25 +36,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
 
-            val interceptor = try {
+            try {
                 Interceptor { chain -> chain.proceed(chain.request().newBuilder().addHeader("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
             } catch (e: java.io.IOException) {
                 e.printStackTrace()
                 null
-            }
-
-            interceptor?.let {
-                httpClient = OkHttpClient.Builder().addInterceptor(it).build()
-            }
+            }?.let { httpClient = OkHttpClient.Builder().addInterceptor(it).build() }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
             _shareByMe.value = getShareBy()
             _shareWithMe.value = getShareWith()
             _sharees.value = getSharees()
-            //flow<List<ShareByMe>?> { emit(getShareBy()) }.collect { _shareByMe.value = it }
-            //flow<List<ShareWithMe>?> { emit(getShareWith()) }.collect { _shareWithMe.value = it }
-            //flow<List<Sharee>?> { emit(getSharees()) }.collect { _sharees.value = it }
         }
     }
 
@@ -86,7 +77,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             if (shareType >= 0 && getString("owner") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
                                 // Only interested in shares of subfolders under lespas/
 
-                                //sharee = Recipient(getString("id"), shareType, getString("recipient"), getInt("permissions"), SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(getString("time").substring(0, 19)).toInstant().epochSecond)
                                 sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
 
                                 @Suppress("SimpleRedundantLet")
@@ -101,15 +91,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            } finally {
-                response?.close()
             }
+            catch (e: IOException) { e.printStackTrace() }
+            catch (e: IllegalStateException) { e.printStackTrace() }
+            catch (e: JSONException) { e.printStackTrace() }
+            finally { response?.close() }
         }
 
         return result
@@ -144,15 +130,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            } finally {
-                response?.close()
             }
+            catch (e: IOException) { e.printStackTrace() }
+            catch (e: IllegalStateException) { e.printStackTrace() }
+            catch (e: JSONException) { e.printStackTrace() }
+            finally { response?.close() }
         }
 
         return result
@@ -186,18 +168,78 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            } finally {
-                response?.close()
             }
+            catch (e: IOException) { e.printStackTrace() }
+            catch (e: IllegalStateException) { e.printStackTrace() }
+            catch (e: JSONException) { e.printStackTrace() }
+            finally { response?.close() }
         }
 
         return result
+    }
+
+    private fun createShares(albums: List<ShareByMe>) {
+        var response: Response? = null
+
+        httpClient?.let { httpClient->
+            for (album in albums) {
+                for (recipient in album.with) {
+                    try {
+                        response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_URL").addHeader(NEXTCLOUD_OCSAPI_HEADER, "true")
+                            .post(
+                                FormBody.Builder()
+                                    .add("path", "/lespas/${album.folderName}")
+                                    .add("shareWith", recipient.sharee.name)
+                                    .add("shareType", recipient.sharee.type.toString())
+                                    .add("permissions", recipient.permission.toString())
+                                    .build()
+                            )
+                            .build()
+                        ).execute()
+                    }
+                    catch (e: java.io.IOException) { e.printStackTrace() }
+                    catch (e: IllegalStateException) { e.printStackTrace() }
+                    finally { response?.close() }
+                }
+            }
+        }
+    }
+
+    private fun deleteShares(recipients: List<Recipient>) {
+        var response: Response? = null
+
+        httpClient?.let { httpClient->
+            for (recipient in recipients) {
+                try {
+                    response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_URL/${recipient.shareId}").delete().addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute()
+                }
+                catch (e: java.io.IOException) { e.printStackTrace() }
+                catch (e: IllegalStateException) { e.printStackTrace() }
+                finally { response?.close() }
+            }
+        }
+    }
+
+    fun publish(albums: List<ShareByMe>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            createShares(albums)
+            _shareByMe.value = getShareBy()
+        }
+    }
+
+    fun unPublish(recipients: List<Recipient>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteShares(recipients)
+            _shareByMe.value = getShareBy()
+        }
+    }
+
+    fun updatePublish(albums: ShareByMe, removeRecipients: List<Recipient>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (albums.with.isNotEmpty()) createShares(listOf(albums))
+            if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
+            _shareByMe.value = getShareBy()
+        }
     }
 
     @Parcelize
@@ -233,16 +275,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     companion object {
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
-        //private const val SHARE_BASE_URL = "/ocs/v2.php/apps/files_sharing/api/v1"
         private const val SHARE_LISTING_URL = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_URL = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
+        private const val PUBLISH_URL = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"
         const val SHARE_TYPE_GROUP = 1
         private const val SHARE_TYPE_GROUP_STRING = "group"
 
-        private const val PERMISSION_CAN_READ = 1
+        const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
         private const val PERMISSION_CAN_DELETE = 8
