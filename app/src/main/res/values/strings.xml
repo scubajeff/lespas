@@ -170,11 +170,19 @@
     <string name="parameter">Param.:</string>
     <string name="artist">Artist:</string>
 
+    <!-- Album Publish DialogFragment -->
+    <string name="publish_album">Publish to:</string>
+    <string name="publish_button_text">Publish</string>
+<!--
+    <string name="permission_to_edit">Allow recipient updating album</string>
+-->
+
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_search">Search</string>
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
+    <string name="item_publish">Publish Album</string>
     <string name="item_sortby">Sort by</string>
     <string name="item_dateasc">Date Ascending</string>
     <string name="item_datedesc">Date Descending</string>
@@ -183,7 +191,6 @@
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_select_all">Select all</string>
-    <string name="action_publish">Publish</string>
     <string name="selected_count">%1$d selected</string>
 
     <!-- Camera Roll Activity -->

@@ -33,7 +33,7 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_publish"
-        android:title="@string/action_publish"
+        android:title="@string/item_publish"
         android:orderInCategory="11"
         app:showAsAction="never" />
     <item

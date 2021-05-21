@@ -129,5 +129,7 @@
     <string name="need_to_restart">Le transfert de stockage est terminé. Vous devez maintenant redémarrer Les Pas.</string>
     <string name="sd_card_not_ready">La carte SD n\'est pas montée ou est en lecture seule.</string>
     <string name="published_to">Publié à : %1$s</string>
-    <string name="action_publish">Publier</string>
+    <string name="item_publish">Publier l\'album</string>
+    <string name="publish_album">Publier vers :</string>
+    <string name="publish_button_text">Publier</string>
 </resources>

@@ -129,5 +129,7 @@
     <string name="need_to_restart">La transferencia de almacenamiento ha terminado. Ahora debe reiniciar Les Pas.</string>
     <string name="sd_card_not_ready">La tarjeta SD no está montada o es de sólo lectura.</string>
     <string name="published_to">Publicado en: %1$s</string>
-    <string name="action_publish">Publicar</string>
+    <string name="item_publish">Publicar álbum</string>
+    <string name="publish_album">Publicar en:</string>
+    <string name="publish_button_text">Publicar</string>
 </resources>

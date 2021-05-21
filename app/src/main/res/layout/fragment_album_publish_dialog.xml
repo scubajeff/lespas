@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shape_background"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/tiny_padding">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/big_padding">
+
+        <TextView
+            android:id="@+id/dialog_title_textview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            android:padding="@dimen/small_padding"
+            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+            android:text="@string/publish_album" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/recipient_chips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/dialog_title_textview"
+            android:padding="@dimen/small_padding" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/recipient_textinputlayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/recipient_chips"
+            android:padding="@dimen/small_padding"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+            app:boxStrokeColor="?attr/colorSecondaryVariant">
+
+            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+                android:id="@+id/recipient_textinputedittext"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+<!-- TODO: support write
+        <CheckBox
+            android:id="@+id/write_permission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/recipient_textinputlayout"
+            android:text="@string/permission_to_edit" />
+-->
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ok_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/recipient_textinputlayout"
+            app:layout_constraintRight_toRightOf="parent"
+            android:layout_marginTop="@dimen/big_padding"
+            android:layout_marginRight="@dimen/extra_padding"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:text="@string/publish_button_text"
+            tools:ignore="RtlHardcoded" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@id/ok_button"
+            app:layout_constraintRight_toLeftOf="@id/ok_button"
+            android:layout_marginTop="@dimen/big_padding"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:text="@android:string/cancel"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

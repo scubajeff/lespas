@@ -68,7 +68,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var lastSelection: MutableSet<Long>
     private var scrollTo = ""
 
-    private val publishModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
@@ -83,10 +82,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
+    private val publishModel: NCShareViewModel by activityViewModels()
+    private lateinit var sharedByMe: NCShareViewModel.ShareByMe
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         album = arguments?.getParcelable(KEY_ALBUM)!!
+        sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
 
         // Must be restore here
         lastSelection = mutableSetOf()
@@ -270,8 +273,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         })
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, {
-            it?.find { it.fileId == album.id }?.let { recipient->
-                mAdapter.setRecipient(recipient)
+            it?.find { it.fileId == album.id }?.let { share->
+                sharedByMe = share
+                mAdapter.setRecipient(share)
             }
         })
 
@@ -433,6 +437,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 albumModel.setSortOrder(album.id, Album.BY_NAME_DESC)
                 true
             }
+            R.id.option_menu_publish-> {
+                // Get meaningful label for each recipient
+                publishModel.sharees.value?.let { sharees->
+                    sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
+                }
+                if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).let {
+                    it.setTargetFragment(this, 0)
+                    it.show(parentFragmentManager, PUBLISH_DIALOG)
+                }
+                true
+            }
             else-> false
         }
     }
@@ -444,10 +459,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        menu?.removeItem(R.id.publish)
-        return true
-    }
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
@@ -562,7 +574,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
-        private var recipient: NCShareViewModel.ShareByMe? = null
+        private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
 
         init {
@@ -603,16 +615,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
                     findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
 
-                    recipient?.with?.let {
-                        var names = it[0].name
-                        for (i in 1 until it.size) names += ", ${it[i].name}"
+                    if (recipients.size > 0) {
+                        var names = recipients[0].sharee.name
+                        for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.name}"
                         findViewById<TextView>(R.id.recipients).apply {
                             text = String.format(recipientText, names)
                             visibility = View.VISIBLE
                         }
-                    } ?: run {
-                        findViewById<TextView>(R.id.recipients).visibility = View.GONE
-                    }
+                    } else findViewById<TextView>(R.id.recipients).visibility = View.GONE
                 }
             }
 
@@ -696,10 +706,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
              */
         }
 
-        internal fun setRecipient(recipient: NCShareViewModel.ShareByMe) {
-            this.recipient = recipient
+        internal fun setRecipient(share: NCShareViewModel.ShareByMe) {
+            this.recipients = share.with
             notifyItemChanged(0)
         }
+
+        //internal fun getRecipient(): List<NCShareViewModel.Recipient> = recipients
 
         internal fun findPhotoPosition(photoId: String): Int {
             for ((i, photo) in photos.withIndex()) {
@@ -778,6 +790,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     companion object {
         private const val RENAME_DIALOG = "RENAME_DIALOG"
+        private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
         private const val SHARED_SELECTION = "SHARED_SELECTION"
@@ -792,7 +805,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         @JvmStatic
         fun newInstance(album: Album, photoId: String) = AlbumDetailFragment().apply {
-            arguments = Bundle().apply{
+            arguments = Bundle().apply {
                 putParcelable(KEY_ALBUM, album)
                 putString(KEY_SCROLL_TO, photoId)
             }

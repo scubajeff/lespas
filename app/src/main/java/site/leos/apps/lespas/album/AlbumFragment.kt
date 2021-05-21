@@ -362,7 +362,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
                     val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
                     recipients.find { it.fileId == album.id }?.let {
-                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.chip_recipient, null) as Chip).apply { text = recipient.name })
+                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.chip_recipient_label, null) as Chip).apply { text = recipient.sharee.name })
                     }
                 }
             }
