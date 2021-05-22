@@ -403,6 +403,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
         }
 
+        // Disable publish function when this is a newly created album which does not exist on server yet
+        if (album.eTag.isEmpty()) menu.findItem(R.id.option_menu_publish).isEnabled = false
+
         super.onPrepareOptionsMenu(menu)
     }
 
