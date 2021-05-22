@@ -25,7 +25,8 @@
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="H,21:9"
-        android:paddingVertical="@dimen/big_padding"
+        android:paddingTop="@dimen/big_padding"
+        android:paddingBottom="@dimen/small_padding"
         android:background="@drawable/cover_label_background">
 
         <TextView
