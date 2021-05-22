@@ -85,6 +85,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private val publishModel: NCShareViewModel by activityViewModels()
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
 
+    private var sortOrderChanged = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -97,6 +99,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         savedInstanceState?.let {
             lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
             sharedSelection = it.getLongArray(SHARED_SELECTION)?.toMutableSet()!!
+            sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -366,23 +369,28 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         super.onSaveInstanceState(outState)
         outState.putLongArray(SELECTION, lastSelection.toLongArray())
         outState.putLongArray(SHARED_SELECTION, sharedSelection.toLongArray())
+        outState.putBoolean(SORT_ORDER_CHANGED, sortOrderChanged)
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         recyclerView.clearOnScrollListeners()
         recyclerView.adapter = null
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+
+        super.onDestroyView()
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        // Time to update album meta file if sort order changed in this session
+        if (sortOrderChanged) actionModel.updateMeta(album.id)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
             contentResolver.unregisterContentObserver(snapseedOutputObserver)
         }
+
+        super.onDestroy()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -425,19 +433,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 true
             }
             R.id.option_menu_sortbydateasc-> {
-                albumModel.setSortOrder(album.id, Album.BY_DATE_TAKEN_ASC)
+                updateSortOrder(Album.BY_DATE_TAKEN_ASC)
                 true
             }
             R.id.option_menu_sortbydatedesc-> {
-                albumModel.setSortOrder(album.id, Album.BY_DATE_TAKEN_DESC)
+                updateSortOrder(Album.BY_DATE_TAKEN_DESC)
                 true
             }
             R.id.option_menu_sortbynameasc-> {
-                albumModel.setSortOrder(album.id, Album.BY_NAME_ASC)
+                updateSortOrder(Album.BY_NAME_ASC)
                 true
             }
             R.id.option_menu_sortbynamedesc-> {
-                albumModel.setSortOrder(album.id, Album.BY_NAME_DESC)
+                updateSortOrder(Album.BY_NAME_DESC)
                 true
             }
             R.id.option_menu_publish-> {
@@ -568,6 +576,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 }
             }
         }
+    }
+
+    private fun updateSortOrder(newOrder: Int) {
+        albumModel.setSortOrder(album.id, newOrder)
+        sortOrderChanged = true
     }
 
     // Adapter for photo grid
@@ -797,6 +810,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
         private const val SHARED_SELECTION = "SHARED_SELECTION"
+        private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"
 
         private const val DELETE_REQUEST_CODE = 0
         private const val RENAME_REQUEST_CODE = 1

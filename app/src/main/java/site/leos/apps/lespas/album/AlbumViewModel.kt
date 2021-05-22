@@ -9,16 +9,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.sync.ActionRepository
 
 class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val albumRepository = AlbumRepository(application)
     private val photoRepository = PhotoRepository(application)
+    private val actionRepository = ActionRepository(application)
 
     val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
     fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
-    fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setCover(albumId, cover) }
+    fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) {
+        albumRepository.setCover(albumId, cover)
+        actionRepository.updateMeta(albumId)
+    }
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
-    fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder)}
+    fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
     fun isAlbumExisted(name: String) = albumRepository.isAlbumExisted(name)
     //fun fixCoverId(albumId: String, newCoverId: String) = viewModelScope.launch(Dispatchers.IO) { albumRepository.fixCoverId(albumId, newCoverId) }
     //suspend fun addPhoto(photo: Photo) = photoRepository.insert(photo)

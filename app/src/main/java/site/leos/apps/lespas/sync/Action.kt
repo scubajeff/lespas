@@ -28,6 +28,7 @@ data class Action (
        const val ACTION_RENAME_DIRECTORY = 6
        const val ACTION_RENAME_FILE = 7
        const val ACTION_UPDATE_FILE = 8
+       const val ACTION_UPDATE_ALBUM_META = 9
    }
 }
 
@@ -51,4 +52,6 @@ abstract class ActionDao: BaseDao<Action>() {
 
     @Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
     abstract suspend fun fileInUse(photoName: String): Boolean
+
+    suspend fun updateMeta(albumId: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", "", System.currentTimeMillis(), 1)) }
 }

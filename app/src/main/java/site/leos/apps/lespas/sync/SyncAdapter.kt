@@ -19,11 +19,13 @@ import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
+import java.io.FileWriter
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
@@ -139,8 +141,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
                                         // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
                                         // mind that we purposely leave the eTag column empty
+                                        // If sardine.list failed, an exception will be caught, action item remains in database, therefore ACTION_ADD_DIRECTORY_ON_SERVER will be processed again
                                         photoRepository.fixNewPhotosAlbumId(action.folderId, it)
                                         albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
+
+                                        // Create and sync album meta file
+                                        albumRepository.getThisAlbum(it)[0].apply {
+                                            if (createMetaFile(id, Cover(cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
+                                                // If local meta json file created successfully
+                                                val metaFilename = "${id}.json"
+                                                val localFile = File(localRootFolder, metaFilename)
+                                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFilename)}", localFile, "application/json")
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -155,6 +168,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             Action.ACTION_RENAME_FILE -> {
                                 // Action's fileId property is the old name, fileName property is the new name
                                 sardine.move("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+                            }
+                            Action.ACTION_UPDATE_ALBUM_META -> {
+                                albumRepository.getThisAlbum(action.folderId)[0].apply {
+                                    if (createMetaFile(id, Cover(cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
+                                        // If local meta json file created successfully
+                                        val metaFilename = "${id}.json"
+                                        val localFile = File(localRootFolder, metaFilename)
+                                        if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFilename)}", localFile, "application/json")
+                                    }
+                                }
                             }
                         }
                     } catch (e: SardineException) {
@@ -238,6 +261,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             changedAlbums.add(Album(remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
                                 Tools.dateToLocalDateTime(remoteAlbum.modified), Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0, 1f)
                             )
+                            // TODO parse lespas.json for cover
                         }
                     }
                 }
@@ -286,6 +310,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Create changePhotos list
                         sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
+                            // TODO grab lespas.json too
                             if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 // Accumulate remote photos list
@@ -626,6 +651,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e:Exception) {
             Log.e("****Exception: ", e.stackTraceToString())
         }
+    }
+
+    private fun createMetaFile(albumId: String, cover: Cover, sortOrder: Int): Boolean {
+        try {
+            FileWriter("${Tools.getLocalRoot(application)}/${albumId}.json").apply {
+                write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
+                close()
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return false
+        }
+
+        return true
     }
 
     companion object {
