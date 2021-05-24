@@ -27,7 +27,6 @@
         app:layout_constraintDimensionRatio="H,21:9"
         android:paddingTop="@dimen/big_padding"
         android:paddingBottom="@dimen/small_padding"
-        android:paddingHorizontal="@dimen/big_padding"
         android:background="@drawable/cover_label_background">
 
         <TextView
@@ -40,7 +39,7 @@
             android:layout_marginHorizontal="@dimen/extra_padding"
             android:layout_marginTop="@dimen/small_padding"
             android:lines="1"
-            android:ellipsize="marquee"
+            android:ellipsize="end"
             style="@style/TextAppearance.MaterialComponents.Headline5"
             android:textColor="@color/color_text_light"
             tools:text="Title" />
@@ -70,7 +69,7 @@
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
             android:textAlignment="textEnd"
-            tools:text="duration" />
+            tools:text="subtitle" />
 
         <TextView
             android:id="@+id/total"
@@ -81,7 +80,7 @@
             app:layout_constraintRight_toRightOf="parent"
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
-            tools:text="total" />
+            tools:text="subtitle" />
 
         <TextView
             android:id="@+id/recipients"
@@ -90,8 +89,6 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            android:lines="1"
-            android:ellipsize="marquee"
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
             tools:text="Published to: " />
