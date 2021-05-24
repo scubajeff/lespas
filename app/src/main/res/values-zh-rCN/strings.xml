@@ -128,7 +128,7 @@
     <string name="statistic_free_space_message">%2$s剩余%1$s空间</string>
     <string name="need_to_restart">照片迁移工作已结束，现在需要重启Les Pas应用。</string>
     <string name="sd_card_not_ready">外置存储卡未挂载或只读。</string>
-    <string name="published_to">已发送给：%1$s</string>
+    <string name="published_to">已发布给：%1$s</string>
     <string name="item_publish">发布相册</string>
     <string name="publish_album">发布给：</string>
     <string name="publish_button_text">发布</string>
