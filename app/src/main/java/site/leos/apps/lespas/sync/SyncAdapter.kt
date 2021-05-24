@@ -246,7 +246,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbumId, remoteAlbum.name)
                             }
                         } else {
-                            // No hit at local, a new album from server
+                            // No hit on local, a new album from server, make sure the cover property is set to "", a sign shows it's a new album
                             changedAlbums.add(Album(remoteAlbumId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0,
                                 Tools.dateToLocalDateTime(remoteAlbum.modified), Album.BY_DATE_TAKEN_ASC, remoteAlbum.etag, 0, 1f)
                             )
@@ -295,9 +295,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         val localPhotoNamesReverse = localPhotoNames.entries.stream().collect(Collectors.toMap({ it.value }) { it.key })
                         var remotePhotoId: String
                         var localImageFileName: String
+                        val metaFileName = "${changedAlbum.id}.json"
+                        // Holder for cover data of newly created album only
+                        //var cover = Cover("", 0, 0, 0)
 
                         // Create changePhotos list
-                        sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1).forEach { remotePhoto ->
+                        val remotePhotoList = sardine.list("$resourceRoot/${Uri.encode(changedAlbum.name)}", FOLDER_CONTENT_DEPTH, NC_PROPFIND_PROP).drop(1)
+                        remotePhotoList.forEach { remotePhoto ->
                             if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
                                 remotePhotoId = remotePhoto.customProps[OC_UNIQUE_ID]!!
                                 // Accumulate remote photos list
@@ -335,9 +339,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                     if (createMetaFile(id, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
                                                         // If local meta json file created successfully
                                                         try {
-                                                            val metaFilename = "${id}.json"
-                                                            val localFile = File(localRootFolder, metaFilename)
-                                                            sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFilename)}", localFile, "application/json")
+                                                            val localFile = File(localRootFolder, metaFileName)
+                                                            sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFileName)}", localFile, "application/json")
                                                         } catch (e: Exception) { e.printStackTrace() }
                                                     }
                                                 }
@@ -359,12 +362,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
 
-                        // Holder for cover data of newly created album only
-                        var cover = Cover("", 0, 0, 0)
-                        // photo list is ready, we can download cover for new album
+                        // Syncing meta
                         if (changedAlbum.cover.isEmpty()) {
                             // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
-                            val metaFileName = "${changedAlbum.id}.json"
                             try {
                                 sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(metaFileName)}").use { input ->
                                     File("$localRootFolder/${metaFileName}").outputStream().use { output ->
@@ -375,7 +375,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                                 FileReader("$localRootFolder/${metaFileName}").use {
                                     val meta = JSONObject(it.readText()).getJSONObject("lespas")
-                                    meta.getJSONObject("cover").apply { cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height")) }
+                                    //meta.getJSONObject("cover").apply { cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height")) }
+                                    meta.getJSONObject("cover").apply {
+                                        changedAlbum.cover = getString("id")
+                                        changedAlbum.coverBaseline = getInt("baseline")
+                                        changedAlbum.coverWidth = getInt("width")
+                                        changedAlbum.coverHeight = getInt("height")
+                                    }
                                     changedAlbum.sortOrder = meta.getInt("sort")
                                 }
                             }
@@ -385,9 +391,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             catch (e: Exception) { e.printStackTrace() }
 
                             // Find the cover in photo lists
-                            val coverPhoto = if (cover.cover.isNotEmpty()) {
+                            val coverPhoto = if (changedAlbum.cover.isNotEmpty()) {
                                 // meta file is ready
-                                changedPhotos.find { it.id == cover.cover }!!
+                                changedPhotos.find { it.id == changedAlbum.cover }!!
                             } else {
                                 // no meta file, should be a album created on server
                                 // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder API
@@ -407,6 +413,49 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                             }
 */
+                        } else {
+                            // Try to sync meta changes from other devices if this album existed on local device
+                            remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->
+                                //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant().toEpochMilli()}")
+                                //Log.e(">>>>>", "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
+                                if (remoteMeta.modified.toInstant().toEpochMilli() - File("$localRootFolder/${metaFileName}").lastModified() > 180000) {
+                                    // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices
+                                    // TODO more proper way to do this
+                                    try {
+                                        // Download the updated meta file
+                                        sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(metaFileName)}").use { input ->
+                                            File("$localRootFolder/${metaFileName}").outputStream().use { output ->
+
+                                                input.copyTo(output, 8192)
+                                                //Log.e("****", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
+                                            }
+                                        }
+                                        // Store meta info in meta data holder
+                                        FileReader("$localRootFolder/${metaFileName}").use {
+                                            val meta = JSONObject(it.readText()).getJSONObject("lespas")
+
+                                            //meta.getJSONObject("cover").apply { cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height")) }
+                                            meta.getJSONObject("cover").apply {
+                                                changedAlbum.cover = getString("id")
+                                                changedAlbum.coverBaseline = getInt("baseline")
+                                                changedAlbum.coverWidth = getInt("width")
+                                                changedAlbum.coverHeight = getInt("height")
+                                            }
+                                            changedAlbum.sortOrder = meta.getInt("sort")
+                                        }
+                                    }
+                                    catch (e: SardineException) { Log.e("****SardineException: ", e.stackTraceToString()) }
+                                    catch (e: FileNotFoundException) { Log.e("****FileNotFoundException: meta file not exist", e.stackTraceToString())}
+                                    catch (e: JSONException) { Log.e("****JSONException: error parsing meta information", e.stackTraceToString())}
+                                    catch (e: Exception) { e.printStackTrace() }
+
+                                    // If the new cover is new or updated somewhere else, move it to the top of download list
+                                    changedPhotos.find { it.id == changedAlbum.cover }?.let { newCover->
+                                        changedPhotos.remove(newCover)
+                                        changedPhotos.add(0, newCover)
+                                    }
+                                }
+                            }
                         }
 
                         // Fetch changed photo files, extract EXIF info, update Photo table
@@ -479,38 +528,52 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
                             }
 */
-                            // Time to show this newly created album in AlbumFragment
+                            // Time to show updated album in AlbumFragment
+                            // If it's a new album without meta file, create default cover because width and height information are ready now
                             with(changedAlbum) {
-                                if (this.cover.isEmpty()) {
-                                    if (cover.cover.isNotEmpty()) {
-                                        // This new album has meta file
-                                        this.cover = cover.cover
-                                        coverBaseline = cover.coverBaseline
-                                        coverWidth = cover.coverWidth
-                                        coverHeight = cover.coverHeight
-                                    } else {
-                                        // Default cover for album without meta file
+/*
+                                if (cover.cover.isNotEmpty()) {
+                                    // Meta for new album or new meta for existing album
+                                    this.cover = cover.cover
+                                    coverBaseline = cover.coverBaseline
+                                    coverWidth = cover.coverWidth
+                                    coverHeight = cover.coverHeight
+                                } else {
+                                    if (this.cover.isEmpty()) {
+                                        // Default cover for new album without meta file
                                         this.cover = changedPhoto.id
                                         coverBaseline = (changedPhoto.height - (changedPhoto.width * 9 / 21)) / 2
                                         coverWidth = changedPhoto.width
                                         coverHeight = changedPhoto.height
                                     }
-
-                                    albumRepository.upsertSync(this.copy(eTag="", syncProgress = 0f))
+                                }
+*/
+                                if (cover.isEmpty()) {
+                                    this.cover = changedPhoto.id
+                                    coverBaseline = (changedPhoto.height - (changedPhoto.width * 9 / 21)) / 2
+                                    coverWidth = changedPhoto.width
+                                    coverHeight = changedPhoto.height
                                 }
                             }
 
-                            // Update sync status. AlbumFragment will show changes to user
-                            albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
+                            if (i == 0) {
+                                // eTag property should be "", means it's syncing
+                                albumRepository.upsertSync(changedAlbum.copy(eTag = "", syncProgress = 0f))
+                            } else {
+                                // Update sync status. AlbumFragment will show changes to user
+                                albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
+                            }
                         }
 
-                        // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
-                        with(albumRepository.getMeta(changedAlbum.id)) {
-                            changedAlbum.sortOrder = this.sortOrder
-                            changedAlbum.cover = this.cover
-                            changedAlbum.coverBaseline = this.coverBaseline
-                            changedAlbum.coverWidth = this.coverWidth
-                            changedAlbum.coverHeight = this.coverHeight
+                        // TODO: The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
+                        if (changedPhotos.isNotEmpty()) {
+                            with(albumRepository.getMeta(changedAlbum.id)) {
+                                changedAlbum.sortOrder = this.sortOrder
+                                changedAlbum.cover = this.cover
+                                changedAlbum.coverBaseline = this.coverBaseline
+                                changedAlbum.coverWidth = this.coverWidth
+                                changedAlbum.coverHeight = this.coverHeight
+                            }
                         }
 
                         // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
