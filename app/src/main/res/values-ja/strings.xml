@@ -128,7 +128,7 @@
     <string name="object_plant">花や植物や木</string>
     <string name="object_food">フード</string>
     <string name="object_vehicle">車と船</string>
-    <string name="published_to">送信先： %1$s</string>
+    <string name="published_to">に公開されています： %1$s</string>
     <string name="item_publish">アルバム公開</string>
     <string name="publish_album">に公開します</string>
     <string name="publish_button_text">公開</string>
