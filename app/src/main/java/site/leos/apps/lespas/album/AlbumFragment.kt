@@ -18,9 +18,9 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
+import androidx.work.*
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -30,7 +30,6 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -38,7 +37,6 @@ import site.leos.apps.lespas.share.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -102,18 +100,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         // Register data observer first, try feeding adapter with latest data asap
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums ->
-            mAdapter.setAlbums(albums)
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> mAdapter.setAlbums(albums) })
 
-            // Create album meta file if needed, album must be synced
-            lifecycleScope.launch {
-                for (album in albums) if (album.eTag.isNotEmpty() && !File(Tools.getLocalRoot(requireContext()), "${album.id}.json").exists()) actionModel.updateMeta(album.id)
-            }
-        })
-
-        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, {
-            it?.let { mAdapter.setRecipients(it) }
-        })
+        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { it?.let { mAdapter.setRecipients(it) }})
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {

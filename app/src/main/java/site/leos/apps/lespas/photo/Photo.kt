@@ -88,4 +88,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME}")
     abstract suspend fun getPhotoTotal(): Int
+
+    @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
+    abstract fun getETag(photoId: String): String
 }

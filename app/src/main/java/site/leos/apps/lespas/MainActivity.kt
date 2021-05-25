@@ -23,8 +23,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
-import androidx.work.WorkManager
+import androidx.work.*
 import site.leos.apps.lespas.album.AlbumFragment
+import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
@@ -36,6 +37,7 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
     private val actionsPendingModel: ActionViewModel by viewModels()
+    private val albumViewModel: AlbumViewModel by viewModels()
     private lateinit var toolbar: Toolbar
     private lateinit var sp: SharedPreferences
 
@@ -87,6 +89,9 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                 }
             }
+
+            // Create album meta file for all synced albums if needed
+            WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
         }
     }
 
@@ -146,6 +151,26 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                 }
             } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
         })
+    }
+
+    // TODO no need to do this after several release updates later?
+    class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
+        override suspend fun doWork(): Result {
+            val actionDao = LespasDatabase.getDatabase(context).actionDao()
+            val albumDao = LespasDatabase.getDatabase(context).albumDao()
+            val photoDao = LespasDatabase.getDatabase(context).photoDao()
+
+            for (album in albumDao.getAllSyncedAlbum())
+                if (!File(Tools.getLocalRoot(context), "${album.id}.json").exists()) {
+                    if (photoDao.getETag(album.cover).isNotEmpty()) actionDao.updateMeta(album.id)
+                }
+
+            return Result.success()
+        }
+
+        companion object {
+            const val WORKER_NAME = "${BuildConfig.APPLICATION_ID}.META_FILE_MAINTENANCE_WORKER"
+        }
     }
 
     companion object {

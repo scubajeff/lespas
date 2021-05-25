@@ -107,4 +107,7 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME}")
     abstract suspend fun getAlbumTotal(): Int
+
+    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != ''")
+    abstract fun getAllSyncedAlbum(): List<IDandCover>
 }
