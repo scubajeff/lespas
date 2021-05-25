@@ -256,7 +256,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with cover column empty
-                val localAlbumIdAndCover = albumRepository.getAllAlbumIds()
+                val localAlbumIdAndCover = albumRepository.getAllAlbumIdAndCover()
                 for (local in localAlbumIdAndCover) {
                     if (!remoteAlbumIds.contains(local.id) && local.cover.isNotEmpty()) {
                         albumRepository.deleteByIdSync(local.id)
