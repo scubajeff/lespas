@@ -31,25 +31,19 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
             albums.forEach {album->
-                //val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(album.id)
+                // Delete album's photo from database and disk
                 val allPhoto = photoRepository.getAlbumPhotos(album.id)
                 photoRepository.deletePhotosByAlbum(album.id)
-                /*
-                allPhotoIds.forEach {
-                    try {
-                        File(localRootFolder, it.id).delete()
-                    } catch(e: Exception) { e.printStackTrace() }
-                    try {
-                        File(localRootFolder, it.name).delete()
-                    } catch(e: Exception) { e.printStackTrace() }
-                }
-
-                 */
                 allPhoto.forEach { photo ->
                     if (photo.eTag.isEmpty()) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
                     else try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
                 }
+
+                // Remove local meta file
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
+
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
+
             }
             actionRepository.addActions(actions)
         }
