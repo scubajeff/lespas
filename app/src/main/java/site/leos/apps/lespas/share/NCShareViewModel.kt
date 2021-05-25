@@ -41,7 +41,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
-            }?.let { httpClient = OkHttpClient.Builder().addInterceptor(it).build() }
+            }?.let {
+                val builder = OkHttpClient.Builder()
+                if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
+                httpClient = builder.cache(Cache(application.cacheDir, 500L * 1024L * 1024L)).addInterceptor(it).build()
+            }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
