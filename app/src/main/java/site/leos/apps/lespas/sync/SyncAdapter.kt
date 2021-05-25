@@ -26,7 +26,10 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
-import java.io.*
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
 import java.util.stream.Collectors
@@ -36,16 +39,16 @@ import javax.xml.namespace.QName
 
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
 ) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
+    lateinit var sardine: Sardine
+    lateinit var resourceRoot: String
+    lateinit var localRootFolder: String
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
-            val resourceRoot: String
             var dcimRoot: String
-            val localRootFolder: String
             val sp = PreferenceManager.getDefaultSharedPreferences(application)
             val wifionlyKey = application.getString(R.string.wifionly_pref_key)
-            val sardine: Sardine
 
             // Initialize sardine library
             AccountManager.get(application).run {
@@ -160,12 +163,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             Action.ACTION_UPDATE_ALBUM_META -> {
                                 albumRepository.getThisAlbum(action.folderId)[0].apply {
-                                    if (createMetaFile(id, Cover(cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
-                                        // If local meta json file created successfully
-                                        val metaFilename = "${id}.json"
-                                        val localFile = File(localRootFolder, metaFilename)
-                                        sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFilename)}", localFile, "application/json")
-                                    }
+                                    if (updateMetaFile(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
+                                        // Touch file to avoid re-download
+                                        try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
+                                    } else throw IOException()
                                 }
                             }
                         }
@@ -335,15 +336,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                 changedAlbum.cover = remotePhotoId
 
                                                 // cover's fileId is ready, create and sync album meta file
-                                                changedAlbum.apply {
-                                                    if (createMetaFile(id, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
-                                                        // If local meta json file created successfully
-                                                        try {
-                                                            val localFile = File(localRootFolder, metaFileName)
-                                                            sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFileName)}", localFile, "application/json")
-                                                        } catch (e: Exception) { e.printStackTrace() }
-                                                    }
-                                                }
+                                                changedAlbum.apply { updateMetaFile(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), sortOrder) }
                                             }
                                         }
                                     } else {
@@ -365,6 +358,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // Syncing meta
                         if (changedAlbum.cover.isEmpty()) {
                             // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
+/*
                             try {
                                 sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(metaFileName)}").use { input ->
                                     File("$localRootFolder/${metaFileName}").outputStream().use { output ->
@@ -389,6 +383,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             catch (e: FileNotFoundException) { Log.e("****FileNotFoundException: meta file not exist", e.stackTraceToString())}
                             catch (e: JSONException) { Log.e("****JSONException: error parsing meta information", e.stackTraceToString())}
                             catch (e: Exception) { e.printStackTrace() }
+*/
+                            downloadMetaFile(changedAlbum)?.apply {
+                                changedAlbum.cover = cover
+                                changedAlbum.coverBaseline = baseline
+                                changedAlbum.coverWidth = width
+                                changedAlbum.coverHeight = height
+                                changedAlbum.sortOrder = sortOrder
+                            }
 
                             // Find the cover in photo lists
                             val coverPhoto = if (changedAlbum.cover.isNotEmpty()) {
@@ -421,6 +423,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 if (remoteMeta.modified.toInstant().toEpochMilli() - File("$localRootFolder/${metaFileName}").lastModified() > 180000) {
                                     // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices
                                     // TODO more proper way to do this
+/*
                                     try {
                                         // Download the updated meta file
                                         sardine.get("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(metaFileName)}").use { input ->
@@ -448,6 +451,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     catch (e: FileNotFoundException) { Log.e("****FileNotFoundException: meta file not exist", e.stackTraceToString())}
                                     catch (e: JSONException) { Log.e("****JSONException: error parsing meta information", e.stackTraceToString())}
                                     catch (e: Exception) { e.printStackTrace() }
+*/
+                                    downloadMetaFile(changedAlbum)?.apply {
+                                        changedAlbum.cover = cover
+                                        changedAlbum.coverBaseline = baseline
+                                        changedAlbum.coverWidth = width
+                                        changedAlbum.coverHeight = height
+                                        changedAlbum.sortOrder = sortOrder
+                                    }
 
                                     // If the new cover is new or updated somewhere else, move it to the top of download list
                                     changedPhotos.find { it.id == changedAlbum.cover }?.let { newCover->
@@ -608,16 +619,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         coverHeight = photosLeft[0].height
 
                                         // Update cover meta
-                                        if (createMetaFile(id, Cover(this.cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
-                                            // If local meta json file created successfully
-                                            try {
-                                                val metaFilename = "${id}.json"
-                                                val localFile = File(localRootFolder, metaFilename)
-                                                sardine.put("$resourceRoot/${Uri.encode(name)}/${Uri.encode(metaFilename)}", localFile, "application/json")
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                            }
-                                        }
+                                        updateMetaFile(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), sortOrder)
                                     }
                                     albumRepository.updateSync(this)
                                 }
@@ -803,19 +805,61 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun createMetaFile(albumId: String, cover: Cover, sortOrder: Int): Boolean {
+    private fun updateMetaFile(albumId: String, albumName: String, cover: Cover, sortOrder: Int): Boolean {
         try {
-            FileWriter("${Tools.getLocalRoot(application)}/${albumId}.json").apply {
-                write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
-                close()
+            val metaFileName = "${albumId}.json"
+            val localFile = File(localRootFolder, metaFileName)
+
+            //FileWriter("$localRootFolder/metaFileName").apply {
+            localFile.writer().use {
+                it.write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
             }
-        } catch (e: IOException) {
+
+            // If local meta json file created successfully
+            sardine.put("$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", localFile, "application/json")
+
+        } catch (e: Exception) {
             e.printStackTrace()
             return false
         }
 
         return true
     }
+
+    private fun downloadMetaFile(album: Album): Meta? {
+        var result: Meta? = null
+
+        try {
+            val metaFileName = "${album.id}.json"
+
+            // Download the updated meta file
+            sardine.get("$resourceRoot/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}").reader().use { input ->
+                File(localRootFolder, metaFileName).writer().use { output ->
+                    val content = input.readText()
+                    output.write(content)
+
+                    // Store meta info in meta data holder
+                    val meta = JSONObject(content).getJSONObject("lespas")
+                    meta.getJSONObject("cover").apply { result = Meta(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), meta.getInt("sort")) }
+                    //Log.e("****", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
+                }
+            }
+        }
+        catch (e: SardineException) { Log.e("****SardineException: ", e.stackTraceToString()) }
+        catch (e: FileNotFoundException) { Log.e("****FileNotFoundException: meta file not exist", e.stackTraceToString())}
+        catch (e: JSONException) { Log.e("****JSONException: error parsing meta information", e.stackTraceToString())}
+        catch (e: Exception) { e.printStackTrace() }
+
+        return result
+    }
+
+    data class Meta (
+        val cover: String,
+        val baseline: Int,
+        val width: Int,
+        val height: Int,
+        val sortOrder: Int,
+    )
 
     companion object {
         const val ACTION = "ACTION"
