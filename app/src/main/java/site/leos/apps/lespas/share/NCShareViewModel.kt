@@ -38,7 +38,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             try {
                 Interceptor { chain -> chain.proceed(chain.request().newBuilder().addHeader("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
-            } catch (e: java.io.IOException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
                 null
             }?.let { httpClient = OkHttpClient.Builder().addInterceptor(it).build() }
