@@ -275,11 +275,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         })
 
-        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, {
-            it?.find { it.fileId == album.id }?.let { share->
-                sharedByMe = share
-                mAdapter.setRecipient(share)
-            }
+        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
+            sharedByMe = shares?.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+            mAdapter.setRecipient(sharedByMe)
         })
 
         with(recyclerView) {
