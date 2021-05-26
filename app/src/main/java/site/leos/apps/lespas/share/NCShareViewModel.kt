@@ -2,16 +2,18 @@ package site.leos.apps.lespas.share
 
 import android.accounts.AccountManager
 import android.app.Application
-import android.net.Uri
+import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.Rect
 import android.os.Parcelable
+import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.thegrizzlylabs.sardineandroid.Sardine
-import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okio.IOException
@@ -23,6 +25,8 @@ import site.leos.apps.lespas.album.Cover
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
+import java.util.concurrent.TimeUnit
+import kotlin.math.min
 
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
@@ -35,7 +39,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val baseUrl: String
     private val userName: String
     private var httpClient: OkHttpClient? = null
-    private var sardine: Sardine? = null
+    //private var sardine: Sardine? = null
     private lateinit var resourceRoot: String
     private val localRootFolder = "${application.cacheDir}${application.getString(R.string.lespas_base_folder_name)}"
 
@@ -48,19 +52,32 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val account = accounts[0]
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
-
+            resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
+/*
             try {
-                Interceptor { chain -> chain.proceed(chain.request().newBuilder().addHeader("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
+                Interceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
             }?.let {
                 val builder = OkHttpClient.Builder()
                 if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
+                builder.addNetworkInterceptor { chain->
+                    chain.proceed(chain.request()).newBuilder().header("Cache-Control", CacheControl.Builder().maxAge(2, TimeUnit.DAYS).build().toString()).build()
+                }
                 httpClient = builder.cache(Cache(File(localRootFolder), 500L * 1024L * 1024L)).addInterceptor(it).build()
-                sardine = OkHttpSardine(httpClient)
+                //sardine = OkHttpSardine(httpClient)
                 resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             }
+*/
+            try {
+                val builder = OkHttpClient.Builder()
+                if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
+                httpClient = builder.cache(Cache(File(localRootFolder), 500L * 1024L * 1024L))
+                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().header("Cache-Control", CacheControl.Builder().maxAge(2, TimeUnit.DAYS).build().toString()).build() }
+                    .addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
+                    .build()
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -70,7 +87,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun httpGet(url: String): JSONObject?  {
+    private fun ocsGet(url: String): JSONObject?  {
         var result: JSONObject? = null
 
         httpClient?.apply {
@@ -88,7 +105,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            httpGet("$baseUrl$SHARE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_URL")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -131,7 +148,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var meta: JSONObject
 
         try {
-            httpGet("$baseUrl$SHARE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_URL")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -150,13 +167,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             for (share in result) {
                 share.sharePath = getSharePath(share.shareId) ?: ""
-                sardine?.get("$resourceRoot/${Uri.encode(share.sharePath, "@#&=*+-_.,:!?()/~'%")}/${share.albumId}.json")?.reader().use {
-                    meta = JSONObject(it?.readText() ?: "").getJSONObject("lespas")
-                    meta.getJSONObject("cover").apply {
-                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                        share.coverFileName = getString("filename")
+                httpClient?.apply {
+                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                        meta = JSONObject(it.body?.string() ?: "").getJSONObject("lespas")
+                        meta.getJSONObject("cover").apply {
+                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                            share.coverFileName = getString("filename")
+                        }
+                        share.sortOrder = meta.getInt("sort")
                     }
-                    share.sortOrder = meta.getInt("sort")
                 }
             }
 
@@ -173,7 +192,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val result = mutableListOf<Sharee>()
 
         try {
-            httpGet("$baseUrl$SHAREE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHAREE_LISTING_URL")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 100) return null
                 val data = getJSONObject("data")
                 val users = data.getJSONArray("users")
@@ -245,7 +264,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var path: String? = null
 
         try {
-            httpGet("$baseUrl$PUBLISH_URL/${shareId}?format=json")?.apply {
+            ocsGet("$baseUrl$PUBLISH_URL/${shareId}?format=json")?.apply {
                 path = getJSONArray("data").getJSONObject(0).getString("path")
             }
         }
@@ -278,19 +297,43 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+/*
     fun getPhoto(share: ShareWithMe, callBack: LoadCompleteListener?) {
         viewModelScope.launch(Dispatchers.IO) {
             // TODO real disk cache
             val localCache = File("$localRootFolder/${share.cover.cover}")
-            if (!localCache.exists()) {
-                sardine?.get("$resourceRoot${Uri.encode("${share.sharePath}/${share.coverFileName}", "@#&=*+-_.,:!?()/~'%")}")!!.use { input ->
-                    localCache.outputStream().use { output ->
-                        input.copyTo(output, 8192)
+            try {
+                if (!localCache.exists()) {
+                    httpClient?.apply {
+                        newCall(Request.Builder().url("$resourceRoot${share.sharePath}/${share.coverFileName}").get().build()).execute().body?.byteStream()?.use { input ->
+                            localCache.outputStream().use { output ->
+                                input.copyTo(output, 8192)
+                            }
+                        }
                     }
                 }
-            }
+            } catch (e: Exception) { e.printStackTrace() }
 
             callBack?.onLoadComplete()
+        }
+    }
+*/
+
+    fun getPhoto(share: ShareWithMe, view: ImageView) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val bottom = min(share.cover.coverBaseline + (share.cover.coverWidth.toFloat() * 9 / 21).toInt(), share.cover.coverHeight)
+            val rect = Rect(0, share.cover.coverBaseline, share.cover.coverWidth, bottom)
+            try {
+                httpClient?.apply {
+                    newCall(Request.Builder().url("$resourceRoot${share.sharePath}/${share.coverFileName}").get().build()).execute().use {
+                        BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, BitmapFactory.Options().apply { inSampleSize = 4 })?.let { bitmap ->
+                            withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+                        } ?: run {
+                            // TODO bitmap placeholder
+                        }
+                    }
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 

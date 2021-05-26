@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
@@ -16,8 +15,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.photo.Photo
-import java.time.LocalDateTime
 
 class ShareFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
@@ -31,12 +28,7 @@ class ShareFragment: Fragment() {
 
         shareListAdapter = ShareListAdapter(
             {shareWithMe ->  },
-            { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
-                shareModel.getPhoto(share) {
-                    val photo = Photo(share.cover.cover, share.albumId, "", "", LocalDateTime.MIN, LocalDateTime.MIN, share.cover.coverWidth, share.cover.coverHeight, "image/jpeg", share.cover.coverBaseline)
-                    imageLoaderViewModel.loadPhoto(photo, view as ImageView, ImageLoaderViewModel.TYPE_COVER, true, null)
-                }
-            }
+            { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView -> shareModel.getPhoto(share, view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
