@@ -2,9 +2,12 @@ package site.leos.apps.lespas.share
 
 import android.accounts.AccountManager
 import android.app.Application
+import android.net.Uri
 import android.os.Parcelable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.thegrizzlylabs.sardineandroid.Sardine
+import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,20 +18,30 @@ import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.Cover
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
-    private val _shareByMe = MutableStateFlow<List<ShareByMe>?>(null)
-    private val _shareWithMe = MutableStateFlow<List<ShareWithMe>?>(null)
-    private val _sharees = MutableStateFlow<List<Sharee>?>(null)
-    val shareByMe: StateFlow<List<ShareByMe>?> = _shareByMe
-    val shareWithMe: StateFlow<List<ShareWithMe>?> = _shareWithMe
-    val sharees: StateFlow<List<Sharee>?> = _sharees
+    private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
+    private val _shareWithMe = MutableStateFlow<List<ShareWithMe>>(arrayListOf())
+    private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
+    val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
+    val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
+    val sharees: StateFlow<List<Sharee>> = _sharees
 
     private val baseUrl: String
     private val userName: String
     private var httpClient: OkHttpClient? = null
+    private var sardine: Sardine? = null
+    private lateinit var resourceRoot: String
+    private val localRootFolder = "${application.cacheDir}${application.getString(R.string.lespas_base_folder_name)}"
+
+    fun interface LoadCompleteListener{
+        fun onLoadComplete()
+    }
 
     init {
         AccountManager.get(application).run {
@@ -44,7 +57,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }?.let {
                 val builder = OkHttpClient.Builder()
                 if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
-                httpClient = builder.cache(Cache(application.cacheDir, 500L * 1024L * 1024L)).addInterceptor(it).build()
+                httpClient = builder.cache(Cache(File(localRootFolder), 500L * 1024L * 1024L)).addInterceptor(it).build()
+                sardine = OkHttpSardine(httpClient)
+                resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             }
         }
 
@@ -67,14 +82,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    private fun getShareByMe(): MutableList<ShareByMe>? {
+    private fun getShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
         var shareType: Int
         var sharee: Recipient
 
         try {
             httpGet("$baseUrl$SHARE_LISTING_URL")?.apply {
-                if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -100,21 +115,24 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 }
             }
+
+            return result
         }
         catch (e: IOException) { e.printStackTrace() }
         catch (e: IllegalStateException) { e.printStackTrace() }
         catch (e: JSONException) { e.printStackTrace() }
 
-        return result
+        return arrayListOf()
     }
 
-    private fun getShareWithMe(): MutableList<ShareWithMe>? {
+    private fun getShareWithMe(): MutableList<ShareWithMe> {
         val result = mutableListOf<ShareWithMe>()
         var shareType: Int
+        var meta: JSONObject
 
         try {
             httpGet("$baseUrl$SHARE_LISTING_URL")?.apply {
-                if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -124,26 +142,39 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             else-> -1
                         }
                         if (shareType >= 0 && getString("recipient") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
-                            result.add(ShareWithMe(getString("file_id"), getString("name"), getString("owner"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond))
+                            result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), getString("owner"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
                         }
                     }
                 }
             }
+
+            for (share in result) {
+                share.sharePath = getSharePath(share.shareId) ?: ""
+                sardine?.get("$resourceRoot/${Uri.encode(share.sharePath, "@#&=*+-_.,:!?()/~'%")}/${share.albumId}.json")?.reader().use {
+                    meta = JSONObject(it?.readText() ?: "").getJSONObject("lespas")
+                    meta.getJSONObject("cover").apply {
+                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                        share.coverFileName = getString("filename")
+                    }
+                    share.sortOrder = meta.getInt("sort")
+                }
+            }
+
+            return result
         }
         catch (e: IOException) { e.printStackTrace() }
         catch (e: IllegalStateException) { e.printStackTrace() }
         catch (e: JSONException) { e.printStackTrace() }
 
-        return result
+        return arrayListOf()
     }
 
-    private fun getSharees(): MutableList<Sharee>? {
+    private fun getSharees(): MutableList<Sharee> {
         val result = mutableListOf<Sharee>()
 
         try {
             httpGet("$baseUrl$SHAREE_LISTING_URL")?.apply {
-                if (getJSONObject("meta").getInt("statuscode") != 100) return null
-
+                //if (getJSONObject("meta").getInt("statuscode") != 100) return null
                 val data = getJSONObject("data")
                 val users = data.getJSONArray("users")
                 for (i in 0 until users.length()) {
@@ -158,12 +189,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 }
             }
+
+            return result
         }
         catch (e: IOException) { e.printStackTrace() }
         catch (e: IllegalStateException) { e.printStackTrace() }
         catch (e: JSONException) { e.printStackTrace() }
 
-        return result
+        return arrayListOf()
     }
 
     private fun createShares(albums: List<ShareByMe>) {
@@ -241,7 +274,23 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         viewModelScope.launch(Dispatchers.IO) {
             if (albums.with.isNotEmpty()) createShares(listOf(albums))
             if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
-            _shareByMe.value = getShareByMe()
+            if (albums.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = getShareByMe()
+        }
+    }
+
+    fun getPhoto(share: ShareWithMe, callBack: LoadCompleteListener?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // TODO real disk cache
+            val localCache = File("$localRootFolder/${share.cover.cover}")
+            if (!localCache.exists()) {
+                sardine?.get("$resourceRoot${Uri.encode("${share.sharePath}/${share.coverFileName}", "@#&=*+-_.,:!?()/~'%")}")!!.use { input ->
+                    localCache.outputStream().use { output ->
+                        input.copyTo(output, 8192)
+                    }
+                }
+            }
+
+            callBack?.onLoadComplete()
         }
     }
 
@@ -269,11 +318,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     @Parcelize
     data class ShareWithMe(
-        var fileId: String,
+        var shareId: String,
+        var sharePath: String,
+        var albumId: String,
         var albumName: String,
         var shareBy: String,
         var permission: Int,
         var sharedTime: Long,
+        var cover: Cover,
+        var coverFileName: String,
+        var sortOrder: Int,
     ): Parcelable
 
     companion object {

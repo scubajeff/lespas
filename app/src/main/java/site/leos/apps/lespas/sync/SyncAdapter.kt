@@ -163,7 +163,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             Action.ACTION_UPDATE_ALBUM_META -> {
                                 albumRepository.getThisAlbum(action.folderId)[0].apply {
-                                    if (updateMetaFile(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), sortOrder)) {
+                                    if (updateMetaFile(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                                         // Touch file to avoid re-download
                                         try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                                     } else throw IOException()
@@ -336,7 +336,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                 changedAlbum.cover = remotePhotoId
 
                                                 // cover's fileId is ready, create and sync album meta file
-                                                changedAlbum.apply { updateMetaFile(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), sortOrder) }
+                                                changedAlbum.apply { updateMetaFile(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), remotePhoto.name, sortOrder) }
                                             }
                                         }
                                     } else {
@@ -619,7 +619,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         coverHeight = photosLeft[0].height
 
                                         // Update cover meta
-                                        updateMetaFile(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), sortOrder)
+                                        updateMetaFile(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), photosLeft[0].name, sortOrder)
                                     }
                                     albumRepository.updateSync(this)
                                 }
@@ -805,14 +805,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun updateMetaFile(albumId: String, albumName: String, cover: Cover, sortOrder: Int): Boolean {
+    private fun updateMetaFile(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
         try {
             val metaFileName = "${albumId}.json"
             val localFile = File(localRootFolder, metaFileName)
 
             //FileWriter("$localRootFolder/metaFileName").apply {
             localFile.writer().use {
-                it.write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
+                it.write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
             }
 
             // If local meta json file created successfully

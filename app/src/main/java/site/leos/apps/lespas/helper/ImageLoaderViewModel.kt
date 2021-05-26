@@ -22,6 +22,7 @@ import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
     private val rootPath = Tools.getLocalRoot(application)
+    private val remoteCachePath = "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}"
     private val contentResolver = application.contentResolver
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
@@ -34,13 +35,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         fun onLoadComplete()
     }
 
-    private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
+    private fun decodeBitmap(photo: Photo, type: String, remote: Boolean): Bitmap? {
         var bitmap: Bitmap? = null
         var fileName = ""
         var uri = Uri.EMPTY
         if (photo.albumId == FROM_CAMERA_ROLL) uri = Uri.parse(photo.id)
         else {
-            if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
+            if (remote) fileName = "${remoteCachePath}/${photo.id}"
+            else if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
                 // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property
                 fileName = "${rootPath}/${photo.id}"
                 if (!(File(fileName).exists())) {
@@ -144,10 +146,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
      */
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String) {
-        loadPhoto(photo, view, type, null)
+        loadPhoto(photo, view, type, false, null)
     }
 
     fun loadPhoto(photo: Photo, view: ImageView, type: String, callBack: LoadCompleteListener?) {
+        loadPhoto(photo, view, type, false, callBack)
+    }
+
+    fun loadPhoto(photo: Photo, view: ImageView, type: String, remote: Boolean, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(Dispatchers.IO) {
@@ -172,7 +178,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             callBack?.onLoadComplete()
                         }}}
                     }
-                    bitmap = decodeBitmap(photo, type)
+                    bitmap = decodeBitmap(photo, type, remote)
                     if (bitmap == null) bitmap = errorBitmap
                     else if (type != TYPE_FULL) imageCache.put(key, bitmap)
                 }

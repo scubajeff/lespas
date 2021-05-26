@@ -34,6 +34,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.share.NCShareViewModel
+import site.leos.apps.lespas.share.ShareFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -56,6 +57,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+
+    private var optionMenu: MenuItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,7 +105,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         // Register data observer first, try feeding adapter with latest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> mAdapter.setAlbums(albums) })
 
-        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { it?.let { mAdapter.setRecipients(it) }})
+        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { it.let { mAdapter.setRecipients(it) }})
+        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { it.let { if (it.isNotEmpty()) optionMenu?.isEnabled = true }})
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -231,6 +235,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         inflater.inflate(R.menu.album_menu, menu)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+
+        optionMenu = menu.findItem(R.id.option_menu_received_shares).apply { isEnabled = publishViewModel.shareWithMe.value.isNotEmpty() }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
@@ -254,8 +264,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 ), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
+            R.id.option_menu_received_shares-> {
+                exitTransition = null
+                reenterTransition = null
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, ShareFragment(), ShareFragment::class.java.canonicalName).addToBackStack(null).commit()
+                return true
+            }
+            else-> {
+                return false
+            }
         }
-        return false
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {

@@ -276,7 +276,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         })
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
-            sharedByMe = shares?.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
             mAdapter.setRecipient(sharedByMe)
         })
 
@@ -381,7 +381,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onDestroy() {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateMeta(album.id)
+        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateMeta(album)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
@@ -448,7 +448,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
             R.id.option_menu_publish-> {
                 // Get meaningful label for each recipient
-                publishModel.sharees.value?.let { sharees->
+                publishModel.sharees.value.let { sharees->
                     sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
                 }
                 if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).let {

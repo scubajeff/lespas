@@ -3,11 +3,18 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/option_menu_received_shares"
+        android:title="@string/item_received_shares"
+        android:orderInCategory="97"
+        android:icon="@drawable/ic_baseline_shared_with_me_24"
+        android:enabled="false"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/option_menu_search"
         android:title="@string/item_search"
         android:orderInCategory="98"
         android:icon="@drawable/ic_baseline_image_search_24"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_camera_roll"
         android:title="@string/item_camera_roll"

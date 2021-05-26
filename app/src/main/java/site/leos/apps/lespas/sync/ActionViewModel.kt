@@ -96,5 +96,5 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun updateCover(albumId: String, coverId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateCover(albumId, coverId) }}
 
-    fun updateMeta(albumId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateMeta(albumId) }}
+    fun updateMeta(album: Album) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateMeta(album) }}
 }

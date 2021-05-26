@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
 
             for (album in albumDao.getAllSyncedAlbum())
                 if (!File(Tools.getLocalRoot(context), "${album.id}.json").exists()) {
-                    if (photoDao.getETag(album.cover).isNotEmpty()) actionDao.updateMeta(album.id)
+                    if (photoDao.getETag(album.cover).isNotEmpty()) actionDao.updateMeta(album.id, photoDao.getName(album.cover))
                 }
 
             return Result.success()

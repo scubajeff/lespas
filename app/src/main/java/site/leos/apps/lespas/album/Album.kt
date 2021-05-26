@@ -47,7 +47,8 @@ data class AlbumWithPhotos(
     var photos: List<Photo>
 )
 
-data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
+@Parcelize
+data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int): Parcelable
 data class IDandCover(val id: String, val cover: String)
 data class IDandName(val id: String, val name: String)
 data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
@@ -75,7 +76,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun changeName(id: String, newName: String)
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height WHERE id = :albumId")
-    abstract suspend fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
+    abstract fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
 
     @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getMeta(albumId: String): Meta

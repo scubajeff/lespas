@@ -105,7 +105,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
         // Fill sharees to auto complete selection
         shareeJob = lifecycleScope.launch { publishModel.sharees.collect {
-            it?.let {
+            it.let {
                 allSharees = it
                 autoCompleteTextView.setAdapter(RecipientAutoCompleteAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, it))
             }

@@ -21,7 +21,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun setCover(albumId: String, cover: Cover) = viewModelScope.launch(Dispatchers.IO) {
         albumRepository.setCover(albumId, cover)
         // TODO don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-        if (!cover.cover.contains('.')) actionRepository.updateMeta(albumId)
+        if (!cover.cover.contains('.')) actionRepository.updateMeta(albumId, cover.cover)
     }
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
