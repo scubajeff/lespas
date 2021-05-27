@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
-class ShareFragment: Fragment() {
+class ShareListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
     private val imageLoaderViewModel: ImageLoaderViewModel by activityViewModels()
 
@@ -34,7 +34,7 @@ class ShareFragment: Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_share, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_share_list, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

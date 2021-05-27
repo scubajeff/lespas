@@ -34,7 +34,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.share.NCShareViewModel
-import site.leos.apps.lespas.share.ShareFragment
+import site.leos.apps.lespas.share.ShareListFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -267,7 +267,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             R.id.option_menu_received_shares-> {
                 exitTransition = null
                 reenterTransition = null
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, ShareFragment(), ShareFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, ShareListFragment(), ShareListFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             else-> {
