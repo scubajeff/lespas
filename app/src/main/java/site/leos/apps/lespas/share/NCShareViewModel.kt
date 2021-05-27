@@ -40,7 +40,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val userName: String
     private var httpClient: OkHttpClient? = null
     //private var sardine: Sardine? = null
-    private lateinit var resourceRoot: String
+    private val resourceRoot: String
     private val localRootFolder = "${application.cacheDir}${application.getString(R.string.lespas_base_folder_name)}"
 
     fun interface LoadCompleteListener{
@@ -53,23 +53,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
-/*
-            try {
-                Interceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }?.let {
-                val builder = OkHttpClient.Builder()
-                if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
-                builder.addNetworkInterceptor { chain->
-                    chain.proceed(chain.request()).newBuilder().header("Cache-Control", CacheControl.Builder().maxAge(2, TimeUnit.DAYS).build().toString()).build()
-                }
-                httpClient = builder.cache(Cache(File(localRootFolder), 500L * 1024L * 1024L)).addInterceptor(it).build()
-                //sardine = OkHttpSardine(httpClient)
-                resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
-            }
-*/
             try {
                 val builder = OkHttpClient.Builder()
                 if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
@@ -81,8 +64,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            _shareByMe.value = getShareByMe()
-            _shareWithMe.value = getShareWithMe()
+            getShareList()
             _sharees.value = getSharees()
         }
     }
@@ -99,13 +81,72 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
+    private fun getShareList() {
+        val sharesBy = mutableListOf<ShareByMe>()
+        val sharesWith = mutableListOf<ShareWithMe>()
+        var shareType: Int
+        var sharee: Recipient
+
+        try {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+                //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                val data = getJSONArray("data")
+                for (i in 0 until data.length()) {
+                    data.getJSONObject(i).apply {
+                        shareType = when(getString("type")) {
+                            SHARE_TYPE_USER_STRING-> SHARE_TYPE_USER
+                            SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
+                            else-> -1
+                        }
+                        if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
+                            // Only interested in shares of subfolders under lespas/
+                            if (getString("owner") == userName) {
+                                sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
+
+                                @Suppress("SimpleRedundantLet")
+                                sharesBy.find { share -> share.fileId == getString("file_id") }?.let { item ->
+                                    // If this folder existed in result, add new sharee only
+                                    item.with.add(sharee)
+                                } ?: run {
+                                    // Create new share by me item
+                                    sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
+                                }
+                            } else if (getString("recipient") == userName) {
+                                sharesWith.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), getString("owner"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (share in sharesWith) {
+                share.sharePath = getSharePath(share.shareId) ?: ""
+                httpClient?.apply {
+                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
+                            meta.getJSONObject("cover").apply {
+                                share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                share.coverFileName = getString("filename")
+                            }
+                            share.sortOrder = meta.getInt("sort")
+                        }
+                    }
+                }
+            }
+
+            _shareByMe.value = sharesBy
+            _shareWithMe.value = sharesWith
+        }
+        catch (e: Exception) { e.printStackTrace() }
+    }
+
     private fun getShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
         var shareType: Int
         var sharee: Recipient
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -145,10 +186,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun getShareWithMe(): MutableList<ShareWithMe> {
         val result = mutableListOf<ShareWithMe>()
         var shareType: Int
-        var meta: JSONObject
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -169,12 +209,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 share.sharePath = getSharePath(share.shareId) ?: ""
                 httpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                        meta = JSONObject(it.body?.string() ?: "").getJSONObject("lespas")
-                        meta.getJSONObject("cover").apply {
-                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                            share.coverFileName = getString("filename")
+                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
+                            meta.getJSONObject("cover").apply {
+                                share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                share.coverFileName = getString("filename")
+                            }
+                            share.sortOrder = meta.getInt("sort")
                         }
-                        share.sortOrder = meta.getInt("sort")
                     }
                 }
             }
@@ -192,7 +233,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val result = mutableListOf<Sharee>()
 
         try {
-            ocsGet("$baseUrl$SHAREE_LISTING_URL")?.apply {
+            ocsGet("$baseUrl$SHAREE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 100) return null
                 val data = getJSONObject("data")
                 val users = data.getJSONArray("users")
@@ -225,7 +266,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             for (album in albums) {
                 for (recipient in album.with) {
                     try {
-                        response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_URL").addHeader(NEXTCLOUD_OCSAPI_HEADER, "true")
+                        response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_ENDPOINT").addHeader(NEXTCLOUD_OCSAPI_HEADER, "true")
                             .post(
                                 FormBody.Builder()
                                     .add("path", "/lespas/${album.folderName}")
@@ -251,7 +292,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         httpClient?.let { httpClient->
             for (recipient in recipients) {
                 try {
-                    response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_URL/${recipient.shareId}").delete().addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute()
+                    response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_ENDPOINT/${recipient.shareId}").delete().addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute()
                 }
                 catch (e: java.io.IOException) { e.printStackTrace() }
                 catch (e: IllegalStateException) { e.printStackTrace() }
@@ -264,7 +305,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var path: String? = null
 
         try {
-            ocsGet("$baseUrl$PUBLISH_URL/${shareId}?format=json")?.apply {
+            ocsGet("$baseUrl$PUBLISH_ENDPOINT/${shareId}?format=json")?.apply {
                 path = getJSONArray("data").getJSONObject(0).getString("path")
             }
         }
@@ -375,9 +416,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     companion object {
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
-        private const val SHARE_LISTING_URL = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
-        private const val SHAREE_LISTING_URL = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
-        private const val PUBLISH_URL = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
+        private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
+        private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
+        private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"
