@@ -28,7 +28,13 @@ class ShareListFragment: Fragment() {
 
         shareListAdapter = ShareListAdapter(
             {shareWithMe ->  },
-            { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView -> shareModel.getPhoto(share, view) }
+            { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
+                shareModel.getPhoto(
+                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline),
+                    view,
+                    ImageLoaderViewModel.TYPE_COVER
+                )
+            }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
