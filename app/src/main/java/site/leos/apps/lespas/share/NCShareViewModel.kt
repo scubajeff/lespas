@@ -135,7 +135,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
 
             _shareByMe.value = sharesBy
-            _shareWithMe.value = sharesWith
+            _shareWithMe.value = sharesWith.apply { sort() }
         }
         catch (e: Exception) { e.printStackTrace() }
     }
@@ -379,14 +379,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     @Parcelize
-    data class Sharee(
+    data class Sharee (
         var name: String,
         var label: String,
         var type: Int,
     ): Parcelable
 
     @Parcelize
-    data class Recipient(
+    data class Recipient (
         var shareId: String,
         var permission: Int,
         var sharedTime: Long,
@@ -394,14 +394,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     ): Parcelable
 
     @Parcelize
-    data class ShareByMe(
+    data class ShareByMe (
         var fileId: String,
         var folderName: String,
         var with: MutableList<Recipient>,
     ): Parcelable
 
     @Parcelize
-    data class ShareWithMe(
+    data class ShareWithMe (
         var shareId: String,
         var sharePath: String,
         var albumId: String,
@@ -412,7 +412,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var cover: Cover,
         var coverFileName: String,
         var sortOrder: Int,
-    ): Parcelable
+    ): Parcelable, Comparable<ShareWithMe> {
+        override fun compareTo(other: ShareWithMe): Int = (other.sharedTime - this.sharedTime).toInt()
+    }
 
     companion object {
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
