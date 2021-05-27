@@ -132,4 +132,5 @@
     <string name="item_publish">Publicar álbum</string>
     <string name="publish_album">Publicar en:</string>
     <string name="publish_button_text">Publicar</string>
+    <string name="sharelist_fragment_title">Publicación de los amigos</string>
 </resources>

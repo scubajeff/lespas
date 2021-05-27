@@ -180,7 +180,6 @@
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_search">Search</string>
-    <string name="item_received_shares">Received</string>
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
@@ -207,6 +206,9 @@
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>
     <string name="title_in_cameraroll">%1$s in Camera Roll</string>
+
+    <!-- Share List Fragment -->
+    <string name="sharelist_fragment_title">"Friend's publications"</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

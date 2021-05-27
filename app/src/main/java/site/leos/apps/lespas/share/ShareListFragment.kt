@@ -56,6 +56,7 @@ class ShareListFragment: Fragment() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
+            title = getString(R.string.sharelist_fragment_title)
             setDisplayHomeAsUpEnabled(true)
         }
     }

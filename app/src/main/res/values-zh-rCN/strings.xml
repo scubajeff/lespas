@@ -132,4 +132,5 @@
     <string name="item_publish">发布相册</string>
     <string name="publish_album">发布给：</string>
     <string name="publish_button_text">发布</string>
+    <string name="sharelist_fragment_title">亲友分享</string>
 </resources>

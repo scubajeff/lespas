@@ -132,4 +132,5 @@
     <string name="item_publish">發布相冊</string>
     <string name="publish_album">發布給：</string>
     <string name="publish_button_text">發布</string>
+    <string name="sharelist_fragment_title">親友分享</string>
 </resources>
