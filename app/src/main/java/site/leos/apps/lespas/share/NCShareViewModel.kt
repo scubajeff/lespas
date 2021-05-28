@@ -15,6 +15,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.thegrizzlylabs.sardineandroid.Sardine
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
+import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -365,12 +366,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
         withContext(Dispatchers.IO) {
-            sardine?.list("$resourceRoot${share.sharePath}", SyncAdapter.FOLDER_CONTENT_DEPTH, SyncAdapter.NC_PROPFIND_PROP)?.drop(1)!!.forEach { photo->
-                // TODO show video file
-                //if (photo.contentType.startsWith("image/") || photo.contentType.startsWith("video/"))
-                if (photo.contentType.startsWith("image/"))
-                    result.add(RemotePhoto(photo.customProps[SyncAdapter.OC_UNIQUE_ID]!!, "${share.sharePath}/${photo.name}", photo.contentType, 0, 0, 0, photo.modified.toInstant().epochSecond))
-            }
+            try {
+                sardine?.list("$resourceRoot${share.sharePath}", SyncAdapter.FOLDER_CONTENT_DEPTH, SyncAdapter.NC_PROPFIND_PROP)?.drop(1)!!.forEach { photo ->
+                    // TODO show video file
+                    //if (photo.contentType.startsWith("image/") || photo.contentType.startsWith("video/"))
+                    if (photo.contentType.startsWith("image/"))
+                        result.add(RemotePhoto(photo.customProps[SyncAdapter.OC_UNIQUE_ID]!!, "${share.sharePath}/${photo.name}", photo.contentType, 0, 0, 0, photo.modified.toInstant().epochSecond))
+                }
 
                 when (share.sortOrder) {
                     Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
