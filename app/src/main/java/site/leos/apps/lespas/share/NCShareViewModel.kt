@@ -412,7 +412,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     cachedHttpClient?.apply {
                         newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().use {
                             val option = BitmapFactory.Options().apply {
-                                inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                                //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                             }
                             when (type) {
                                 ImageLoaderViewModel.TYPE_COVER -> {
