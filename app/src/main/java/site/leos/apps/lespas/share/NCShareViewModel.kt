@@ -73,7 +73,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
                     addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
                 }
-                httpClient = builder.build()
+                httpClient = builder.cache(diskCache)
+                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=300").build() }
+                    .build()
                 cachedHttpClient = builder.cache(diskCache)
                     .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=864000").build() }
                     .build()
@@ -87,12 +89,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun ocsGet(url: String): JSONObject?  {
+    private fun ocsGet(url: String): JSONObject? = ocsGet(url, false)
+    private fun ocsGet(url: String, ignoreCache: Boolean): JSONObject?  {
         var result: JSONObject? = null
 
         httpClient?.apply {
-            newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use {
-                result = it.body?.string()?.let { response -> JSONObject(response).getJSONObject("ocs") }
+            Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").apply {
+                if (ignoreCache) cacheControl(CacheControl.FORCE_NETWORK)
+                newCall(build()).execute().use {
+                    result = it.body?.string()?.let { response -> JSONObject(response).getJSONObject("ocs") }
+                }
             }
         }
 
@@ -158,13 +164,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         catch (e: Exception) { e.printStackTrace() }
     }
 
-    private fun getShareByMe(): MutableList<ShareByMe> {
+    private fun updateShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
         var shareType: Int
         var sharee: Recipient
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT", true)?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -337,14 +343,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun publish(albums: List<ShareByMe>) {
         viewModelScope.launch(Dispatchers.IO) {
             createShares(albums)
-            _shareByMe.value = getShareByMe()
+            _shareByMe.value = updateShareByMe()
         }
     }
 
     fun unPublish(recipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteShares(recipients)
-            _shareByMe.value = getShareByMe()
+            _shareByMe.value = updateShareByMe()
         }
     }
 
@@ -352,7 +358,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         viewModelScope.launch(Dispatchers.IO) {
             if (albums.with.isNotEmpty()) createShares(listOf(albums))
             if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
-            if (albums.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = getShareByMe()
+            if (albums.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
         }
     }
 
@@ -366,12 +372,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     result.add(RemotePhoto(photo.customProps[SyncAdapter.OC_UNIQUE_ID]!!, "${share.sharePath}/${photo.name}", photo.contentType, 0, 0, 0, photo.modified.toInstant().epochSecond))
             }
 
-            when(share.sortOrder) {
-                Album.BY_NAME_ASC-> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
-                Album.BY_NAME_DESC-> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
-                Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_MODIFIED_ASC-> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
-                Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_MODIFIED_DESC-> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
-            }
+                when (share.sortOrder) {
+                    Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
+                    Album.BY_NAME_DESC -> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
+                    Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_MODIFIED_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+                    Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_MODIFIED_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                }
+            } catch (e: SardineException) { e.printStackTrace() } catch (e: Exception) { e.printStackTrace() }
         }
 
         return result
