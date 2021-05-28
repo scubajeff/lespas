@@ -13,6 +13,8 @@ import android.util.LruCache
 import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.thegrizzlylabs.sardineandroid.Sardine
+import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,10 +28,11 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executors
 import kotlin.math.min
 
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
@@ -43,13 +46,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val baseUrl: String
     private val userName: String
     private var httpClient: OkHttpClient? = null
-    //private var sardine: Sardine? = null
+    private var cachedHttpClient: OkHttpClient? = null
+    private var sardine: Sardine? = null
     private val resourceRoot: String
     private val localRootFolder = "${application.cacheDir}${application.getString(R.string.lespas_base_folder_name)}"
 
-    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-    private val jobMap = HashMap<Int, Job>()
+
+    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
+    private val diskCache = Cache(File(localRootFolder), 500L * 1024L * 1024L)
+    private val decoderJobMap = HashMap<Int, Job>()
+    private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
@@ -62,12 +69,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             try {
-                val builder = OkHttpClient.Builder()
-                if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
-                httpClient = builder.cache(Cache(File(localRootFolder), 500L * 1024L * 1024L))
-                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().header("Cache-Control", CacheControl.Builder().maxAge(2, TimeUnit.DAYS).build().toString()).build() }
-                    .addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
+                val builder = OkHttpClient.Builder().apply {
+                    if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
+                    addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
+                }
+                httpClient = builder.build()
+                cachedHttpClient = builder.cache(diskCache)
+                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=864000").build() }
                     .build()
+                sardine = OkHttpSardine(httpClient)
             } catch (e: Exception) { e.printStackTrace() }
         }
 
@@ -129,7 +139,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             for (share in sharesWith) {
                 share.sharePath = getSharePath(share.shareId) ?: ""
-                httpClient?.apply {
+                cachedHttpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
                         JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
                             meta.getJSONObject("cover").apply {
@@ -346,6 +356,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
+        val result = mutableListOf<RemotePhoto>()
+        withContext(Dispatchers.IO) {
+            sardine?.list("$resourceRoot${share.sharePath}", SyncAdapter.FOLDER_CONTENT_DEPTH, SyncAdapter.NC_PROPFIND_PROP)?.drop(1)!!.forEach { photo->
+                // TODO show video file
+                //if (photo.contentType.startsWith("image/") || photo.contentType.startsWith("video/"))
+                if (photo.contentType.startsWith("image/"))
+                    result.add(RemotePhoto(photo.customProps[SyncAdapter.OC_UNIQUE_ID]!!, "${share.sharePath}/${photo.name}", photo.contentType, 0, 0, 0, photo.modified.toInstant().epochSecond))
+            }
+
+            when(share.sortOrder) {
+                Album.BY_NAME_ASC-> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
+                Album.BY_NAME_DESC-> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
+                Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_MODIFIED_ASC-> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+                Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_MODIFIED_DESC-> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+            }
+        }
+
+        return result
+    }
+
 /*
     fun getPhoto(share: ShareWithMe, callBack: LoadCompleteListener?) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -368,17 +399,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 */
 
-    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) {
+    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
+    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
-        val job = viewModelScope.launch(Dispatchers.IO) {
-            var bitmap = placeholderBitmap
+        view.imageAlpha = 0
+        var bitmap: Bitmap? = null
+        val job = viewModelScope.launch(downloadDispatcher) {
             try {
                 val key = "${photo.fileId}$type"
-                imageCache.get(key)?.let {
-                    bitmap = it
-                } ?: run {
-                    httpClient?.apply {
+                imageCache.get(key)?.let { bitmap = it } ?: run {
+                    cachedHttpClient?.apply {
                         newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().use {
                             val option = BitmapFactory.Options().apply {
                                 inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
@@ -388,27 +419,34 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
                                     val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
 
-                                    bitmap = BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = 4 }) ?: placeholderBitmap
+                                    bitmap = BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = 4 })
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
                                     if (photo.mimeType.startsWith("video")) {
                                         // TODO video thumbnail from network stream
                                     } else {
-                                        bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option.apply { inSampleSize = 8 }) ?: placeholderBitmap
+                                        bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option.apply { inSampleSize = 8 })
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
-                                    bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option) ?: placeholderBitmap
-                                    if (bitmap.allocationByteCount > 100000000) bitmap = Bitmap.createScaledBitmap(bitmap, bitmap.width / 2, bitmap.height / 2, true)
+                                    bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option)?.also { bitmap->
+                                        if (bitmap.allocationByteCount > 100000000) Bitmap.createScaledBitmap(bitmap, bitmap.width / 2, bitmap.height / 2, true)
+                                    }
                                 }
                             }
                         }
                     }
-                    if (type != ImageLoaderViewModel.TYPE_FULL) imageCache.put(key, bitmap)
+                    if (bitmap != null && type != ImageLoaderViewModel.TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
             catch (e: Exception) { e.printStackTrace() }
-            finally { withContext(Dispatchers.Main) { if (isActive) view.setImageBitmap(bitmap) }}
+            finally {
+                if (isActive) withContext(Dispatchers.Main) {
+                    view.setImageBitmap(bitmap ?: placeholderBitmap)
+                    view.imageAlpha = 255
+                }
+                callBack?.onLoadComplete()
+            }
         }
 
         // Replacing previous job
@@ -416,18 +454,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun replacePrevious(key: Int, newJob: Job) {
-        jobMap[key]?.cancel()
-        jobMap[key] = newJob
+        decoderJobMap[key]?.cancel()
+        decoderJobMap[key] = newJob
     }
 
     override fun onCleared() {
-        jobMap.forEach { if (it.value.isActive) it.value.cancel() }
+        decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
+        downloadDispatcher.close()
         super.onCleared()
     }
 
-    class ImageCache (maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
+    class ImageCache (maxSize: Int): LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
+
 
     @Parcelize
     data class Sharee (
@@ -475,6 +515,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val width: Int,
         val height: Int,
         val coverBaseLine: Int,
+        val timestamp: Long,
     ): Parcelable
 
     companion object {

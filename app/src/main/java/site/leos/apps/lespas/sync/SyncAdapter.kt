@@ -872,7 +872,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val NC_NS = "http://nextcloud.org/ns"
 
         // OC and NC defined localpart
-        private const val OC_UNIQUE_ID = "fileid"
+        const val OC_UNIQUE_ID = "fileid"
         private const val OC_SHARETYPE = "share-types"
         private const val OC_CHECKSUMS = "checksums"
         private const val NC_HASPREVIEW = "has-preview"
@@ -881,7 +881,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // WebDAV defined localpart
         private const val DAV_GETETAG = "getetag"
-        private const val DAV_GETLASTMODIFIED = "getlastmodified"
+        const val DAV_GETLASTMODIFIED = "getlastmodified"
         private const val DAV_GETCONTENTTYPE = "getcontenttype"
         private const val DAV_RESOURCETYPE = "resourcetype"
         private const val DAV_GETCONTENTLENGTH = "getcontentlength"
@@ -889,7 +889,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val JUST_FOLDER_DEPTH = 0
         const val FOLDER_CONTENT_DEPTH = 1
 
-        private val NC_PROPFIND_PROP = setOf(
+        val NC_PROPFIND_PROP = setOf(
             QName(DAV_NS, DAV_GETETAG, "D"),
             QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
