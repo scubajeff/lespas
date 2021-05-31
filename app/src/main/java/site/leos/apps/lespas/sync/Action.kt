@@ -29,6 +29,7 @@ data class Action (
        const val ACTION_RENAME_FILE = 7
        const val ACTION_UPDATE_FILE = 8
        const val ACTION_UPDATE_ALBUM_META = 9
+       const val ACTION_UPDATE_PHOTO_META = 10
    }
 }
 

@@ -29,6 +29,7 @@ data class Photo(
 data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
+data class PhotoMeta(val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int)
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
@@ -91,4 +92,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getETag(photoId: String): String
+
+    @Query("SELECT dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE name = :photoName")
+    abstract fun getMeta(photoName: String): PhotoMeta
 }
