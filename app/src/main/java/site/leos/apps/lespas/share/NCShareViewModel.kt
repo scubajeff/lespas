@@ -213,7 +213,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var shareType: Int
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT", true)?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
@@ -232,7 +232,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             for (share in result) {
                 share.sharePath = getSharePath(share.shareId) ?: ""
-                httpClient?.apply {
+                cachedHttpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
                         JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
                             meta.getJSONObject("cover").apply {
