@@ -8,19 +8,20 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Parcelable
 import android.util.LruCache
 import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.thegrizzlylabs.sardineandroid.Sardine
-import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
@@ -29,7 +30,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
-import site.leos.apps.lespas.sync.SyncAdapter
+import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -48,16 +49,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val userName: String
     private var httpClient: OkHttpClient? = null
     private var cachedHttpClient: OkHttpClient? = null
-    private var sardine: Sardine? = null
     private val resourceRoot: String
-    private val localRootFolder = "${application.cacheDir}${application.getString(R.string.lespas_base_folder_name)}"
+    private val lespasBase = application.getString(R.string.lespas_base_folder_name)
+    private val localRootFolder = "${application.cacheDir}${lespasBase}"
 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
+    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_arrow_24)
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 6 * 1024 * 1024)
     private val diskCache = Cache(File(localRootFolder), 500L * 1024L * 1024L)
     private val decoderJobMap = HashMap<Int, Job>()
     private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+
+    private val photoRepository = PhotoRepository(application)
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
@@ -80,7 +84,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 cachedHttpClient = builder.cache(diskCache)
                     .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=864000").build() }
                     .build()
-                sardine = OkHttpSardine(httpClient)
             } catch (e: Exception) { e.printStackTrace() }
         }
 
@@ -123,7 +126,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
                             else-> -1
                         }
-                        if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
+                        if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith(lespasBase)) {
                             // Only interested in shares of subfolders under lespas/
                             if (getString("owner") == userName) {
                                 sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
@@ -355,30 +358,59 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun updatePublish(albums: ShareByMe, removeRecipients: List<Recipient>) {
+    fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (albums.with.isNotEmpty()) createShares(listOf(albums))
-            if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
-            if (albums.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
+            try {
+                if (album.with.isNotEmpty()) {
+                    if (!isShared(album.fileId)) {
+                        // If sharing this album for the 1st time, create content.json on server
+                        var content = "{\"lespas\":{\"photos\":["
+                        photoRepository.getPhotoMetaInAlbum(album.fileId).forEach {
+                            content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+                        }
+
+                        content = content.dropLast(1) + "]}}"
+                        httpClient?.let { httpClient->
+                            httpClient.newCall(Request.Builder()
+                                .url("${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}-content.json")
+                                .put(content.toRequestBody("application/json".toMediaTypeOrNull()))
+                                .build()
+                            ).execute().use {}
+                        }
+                    }
+
+                    createShares(listOf(album))
+                }
+                if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
+                if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
+            }
+            catch (e: Exception) { e.printStackTrace() }
         }
     }
 
+    fun isShared(albumId: String): Boolean = _shareByMe.value.find { it.fileId == albumId } != null
+
     suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
+
         withContext(Dispatchers.IO) {
             try {
-                sardine?.list("$resourceRoot${share.sharePath}", SyncAdapter.FOLDER_CONTENT_DEPTH, SyncAdapter.NC_PROPFIND_PROP)?.drop(1)!!.forEach { photo ->
-                    // TODO show video file
-                    //if (photo.contentType.startsWith("image/") || photo.contentType.startsWith("video/"))
-                    if (photo.contentType.startsWith("image/"))
-                        result.add(RemotePhoto(photo.customProps[SyncAdapter.OC_UNIQUE_ID]!!, "${share.sharePath}/${photo.name}", photo.contentType, 0, 0, 0, photo.modified.toInstant().epochSecond))
+                cachedHttpClient?.apply {
+                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}-content.json").build()).execute().use {
+                        val photos = JSONObject(it.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
+                        for (i in 0 until photos.length()) {
+                            photos.getJSONObject(i).apply {
+                                result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
+                            }
+                        }
+                    }
                 }
 
                 when (share.sortOrder) {
                     Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
                     Album.BY_NAME_DESC -> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
-                    Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_MODIFIED_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
-                    Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_MODIFIED_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                    Album.BY_DATE_TAKEN_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+                    Album.BY_DATE_TAKEN_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
                 }
             } catch (e: SardineException) { e.printStackTrace() } catch (e: Exception) { e.printStackTrace() }
         }
@@ -427,14 +459,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 ImageLoaderViewModel.TYPE_COVER -> {
                                     val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
                                     val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
-
-                                    bitmap = BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = 4 })
+                                    val sampleSize = when(photo.width) {
+                                        in (0..2000)-> 1
+                                        in (2000..3000)-> 2
+                                        else-> 4
+                                    }
+                                    bitmap = BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
                                     if (photo.mimeType.startsWith("video")) {
                                         // TODO video thumbnail from network stream
+                                        bitmap = videoThumbnail
                                     } else {
-                                        bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option.apply { inSampleSize = 8 })
+                                        bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
@@ -532,6 +569,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
+
+        const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"

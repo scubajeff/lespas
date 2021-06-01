@@ -26,12 +26,14 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.share.NCShareViewModel
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -120,34 +122,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", localFile, action.folderId)
                                     //Log.e("****", "Uploaded ${action.fileName}")
                                     // TODO nextcloud return oc-fileid field in http response header "${8 digits int fileid}${instanceid}" and oc-etag field too
-
-/*
-                                    // Patch lespas metadata
-                                    with(photoRepository.getPhotoMeta(action.fileId)) {
-                                        sardine.patch(
-                                            "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}",
-                                            mapOf(Pair(QNAME_LESPAS_TIMESTAMP, this.dateTaken.toEpochSecond(OffsetDateTime.now().offset).toString()), Pair(QNAME_LESPAS_MIMETYPE, mimeType), Pair(QNAME_LESPAS_WIDTH, width.toString()), Pair(QNAME_LESPAS_HEIGHT, height.toString()))
-                                        )
-                                    }
-*/
                                 }
                             }
                             Action.ACTION_UPDATE_FILE -> {
                                 // MIME type is passed in folderId property
                                 val localFile = File(localRootFolder, action.fileName)
-                                if (localFile.exists()) {
-                                    sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
-
-/*
-                                    // Patch lespas metadata
-                                    with(photoRepository.getPhotoMeta(action.fileName)) {
-                                        sardine.patch(
-                                            "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}",
-                                            mapOf(Pair(QNAME_LESPAS_TIMESTAMP, this.dateTaken.toEpochSecond(OffsetDateTime.now().offset).toString()), Pair(QNAME_LESPAS_MIMETYPE, mimeType), Pair(QNAME_LESPAS_WIDTH, width.toString()), Pair(QNAME_LESPAS_HEIGHT, height.toString()))
-                                        )
-                                    }
-*/
-                                }
+                                if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                                 with("$resourceRoot/${Uri.encode(action.folderName)}") {
@@ -193,6 +173,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                                     } else throw IOException()
                                 }
+                            }
+                            Action.ACTION_UPDATE_PHOTO_META -> {
+                                var content = "{\"lespas\":{\"photos\":["
+                                photoRepository.getPhotoMetaInAlbum(action.folderId).forEach {
+                                    content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+                                }
+                                content = content.dropLast(1) + "]}}"
+                                sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", content.encodeToByteArray(), "application/json")
                             }
                         }
                     } catch (e: SardineException) {
@@ -897,7 +885,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val NC_NS = "http://nextcloud.org/ns"
 
         // OC and NC defined localpart
-        const val OC_UNIQUE_ID = "fileid"
+        private const val OC_UNIQUE_ID = "fileid"
         private const val OC_SHARETYPE = "share-types"
         private const val OC_CHECKSUMS = "checksums"
         private const val NC_HASPREVIEW = "has-preview"
@@ -906,7 +894,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // WebDAV defined localpart
         private const val DAV_GETETAG = "getetag"
-        const val DAV_GETLASTMODIFIED = "getlastmodified"
+        private const val DAV_GETLASTMODIFIED = "getlastmodified"
         private const val DAV_GETCONTENTTYPE = "getcontenttype"
         private const val DAV_RESOURCETYPE = "resourcetype"
         private const val DAV_GETCONTENTLENGTH = "getcontentlength"
@@ -914,7 +902,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val JUST_FOLDER_DEPTH = 0
         const val FOLDER_CONTENT_DEPTH = 1
 
-        val NC_PROPFIND_PROP = setOf(
+        private val NC_PROPFIND_PROP = setOf(
             QName(DAV_NS, DAV_GETETAG, "D"),
             QName(DAV_NS, DAV_GETLASTMODIFIED, "D"),
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
@@ -926,14 +914,5 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             QName(OC_NS, OC_SIZE, "oc"),
             QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
         )
-
-/*
-        val QNAME_LESPAS_TIMESTAMP = QName(OC_NS, "lespas_timestamp", "oc")
-        val QNAME_LESPAS_MIMETYPE = QName(OC_NS, "lespas_mimetype", "oc")
-        val QNAME_LESPAS_WIDTH = QName(OC_NS, "lespas_width", "oc")
-        val QNAME_LESPAS_HEIGHT = QName(OC_NS, "lespas_height", "oc")
-
-        val PROPPATCH_PHOTO_META = "<?xml version=\"1.0\"?>\n<d:propertyupdate xmlns:d=\"DAV:\" xmlns:oc=\"http://owncloud.org/ns\"><d:set><d:prop><oc:lespas_timestamp>%d</oc:lespas_timestamp><oc:lespas_width>%d</oc:lespas_width><oc:lespas_height>%d</oc:lespas_height><oc:lespas_mimetype>%s</oc:lespas_mimetype></d:prop></d:set></d:propertyupdate>"
-*/
     }
 }

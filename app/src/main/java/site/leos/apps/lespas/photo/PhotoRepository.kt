@@ -31,5 +31,5 @@ class PhotoRepository(application: Application) {
     fun getAllImage(): List<Photo> = photoDao.getAllImage()
     suspend fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
-    fun getPhotoMeta(photoName: String): PhotoMeta = photoDao.getMeta(photoName)
+    fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
 }

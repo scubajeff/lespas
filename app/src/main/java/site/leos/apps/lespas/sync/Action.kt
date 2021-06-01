@@ -55,4 +55,5 @@ abstract class ActionDao: BaseDao<Action>() {
     abstract suspend fun fileInUse(photoName: String): Boolean
 
     suspend fun updateMeta(albumId: String, coverFileName: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", coverFileName, System.currentTimeMillis(), 1)) }
+    suspend fun updatePhotoMeta(albumId: String, albumName: String) { insert(Action(null, Action.ACTION_UPDATE_PHOTO_META, albumId, albumName, "", "", System.currentTimeMillis(), 1)) }
 }
