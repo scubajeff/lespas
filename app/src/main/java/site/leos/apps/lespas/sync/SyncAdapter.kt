@@ -32,7 +32,6 @@ import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -121,6 +120,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", localFile, action.folderId)
                                     //Log.e("****", "Uploaded ${action.fileName}")
                                     // TODO nextcloud return oc-fileid field in http response header "${8 digits int fileid}${instanceid}" and oc-etag field too
+
+/*
                                     // Patch lespas metadata
                                     with(photoRepository.getPhotoMeta(action.fileId)) {
                                         sardine.patch(
@@ -128,6 +129,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             mapOf(Pair(QNAME_LESPAS_TIMESTAMP, this.dateTaken.toEpochSecond(OffsetDateTime.now().offset).toString()), Pair(QNAME_LESPAS_MIMETYPE, mimeType), Pair(QNAME_LESPAS_WIDTH, width.toString()), Pair(QNAME_LESPAS_HEIGHT, height.toString()))
                                         )
                                     }
+*/
                                 }
                             }
                             Action.ACTION_UPDATE_FILE -> {
@@ -136,6 +138,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 if (localFile.exists()) {
                                     sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
 
+/*
                                     // Patch lespas metadata
                                     with(photoRepository.getPhotoMeta(action.fileName)) {
                                         sardine.patch(
@@ -143,6 +146,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                             mapOf(Pair(QNAME_LESPAS_TIMESTAMP, this.dateTaken.toEpochSecond(OffsetDateTime.now().offset).toString()), Pair(QNAME_LESPAS_MIMETYPE, mimeType), Pair(QNAME_LESPAS_WIDTH, width.toString()), Pair(QNAME_LESPAS_HEIGHT, height.toString()))
                                         )
                                     }
+*/
                                 }
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -923,11 +927,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
         )
 
+/*
         val QNAME_LESPAS_TIMESTAMP = QName(OC_NS, "lespas_timestamp", "oc")
         val QNAME_LESPAS_MIMETYPE = QName(OC_NS, "lespas_mimetype", "oc")
         val QNAME_LESPAS_WIDTH = QName(OC_NS, "lespas_width", "oc")
         val QNAME_LESPAS_HEIGHT = QName(OC_NS, "lespas_height", "oc")
 
         val PROPPATCH_PHOTO_META = "<?xml version=\"1.0\"?>\n<d:propertyupdate xmlns:d=\"DAV:\" xmlns:oc=\"http://owncloud.org/ns\"><d:set><d:prop><oc:lespas_timestamp>%d</oc:lespas_timestamp><oc:lespas_width>%d</oc:lespas_width><oc:lespas_height>%d</oc:lespas_height><oc:lespas_mimetype>%s</oc:lespas_mimetype></d:prop></d:set></d:propertyupdate>"
+*/
     }
 }
