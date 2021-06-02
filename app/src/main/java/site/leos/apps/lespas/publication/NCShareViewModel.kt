@@ -78,9 +78,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
                     addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
                 }
-                httpClient = builder.cache(diskCache)
-                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=300").build() }
-                    .build()
+                httpClient = builder.build()
                 cachedHttpClient = builder.cache(diskCache)
                     .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=864000").build() }
                     .build()
@@ -93,13 +91,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun ocsGet(url: String): JSONObject? = ocsGet(url, false)
-    private fun ocsGet(url: String, ignoreCache: Boolean): JSONObject?  {
+    private fun ocsGet(url: String): JSONObject? {
         var result: JSONObject? = null
 
         httpClient?.apply {
             Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").apply {
-                if (ignoreCache) cacheControl(CacheControl.FORCE_NETWORK)
                 newCall(build()).execute().use {
                     result = it.body?.string()?.let { response -> JSONObject(response).getJSONObject("ocs") }
                 }
