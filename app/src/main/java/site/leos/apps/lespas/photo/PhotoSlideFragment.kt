@@ -55,6 +55,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var pAdapter: PhotoSlideAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
+    //private val publishModel: NCShareViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
@@ -119,6 +120,8 @@ class PhotoSlideFragment : Fragment() {
                     lastId = uri.lastPathSegment!!
 
                     snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
+                        // TODO publish status is not persistent locally
+                        //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
@@ -220,6 +223,8 @@ class PhotoSlideFragment : Fragment() {
                 pAdapter.getNextAvailablePhoto(deleteItem).apply {
                     this.first?.let { photo->
                         currentPhotoModel.setCurrentPhoto(photo, this.second)
+                        // TODO publish status is not persistent locally
+                        //actionModel.deletePhotos(listOf(deleteItem), album.name, publishModel.isShared(album.id))
                         actionModel.deletePhotos(listOf(deleteItem), album.name)
                         slider.beginFakeDrag()
                         slider.fakeDragBy(-1f)

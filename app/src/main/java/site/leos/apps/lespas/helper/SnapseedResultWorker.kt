@@ -28,6 +28,8 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
         val album = albumDao.getAlbumById(inputData.keyValueMap[KEY_ALBUM] as String)
+        // TODO publish status is not persistent locally
+        //val isPublished = inputData.keyValueMap[KEY_PUBLISHED] as Boolean
 
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             cursor.moveToFirst()
@@ -102,6 +104,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Upload new photo to server. Photo mimeType passed in folderId property
                     add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
                     //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
+
+                    // TODO publish status is not persistent locally
+                    //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                    add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+
                     actionDao.insert(this)
                 }
             }
@@ -127,8 +134,16 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 // Create new photo in local database
                 photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
-                // Upload changes to server, mimetype passed in folderId property
-                actionDao.insert(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
+                with(mutableListOf<Action>()) {
+                    // Upload changes to server, mimetype passed in folderId property
+                    add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
+
+                    // TODO publish status is not persistent locally
+                    //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                    add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+
+                    actionDao.insert(this)
+                }
             }
 
             // Remove cache copy
@@ -155,5 +170,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         const val KEY_ALBUM = "ALBUM"
         const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
         const val KEY_NEW_PHOTO_NAME = "NEW_PHOTO_NAME"
+        const val KEY_PUBLISHED = "IS_ALBUM_PUBLISHED"
     }
 }

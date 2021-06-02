@@ -388,7 +388,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun isShared(albumId: String): Boolean = _shareByMe.value.find { it.fileId == albumId } != null
+    fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
     suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
@@ -418,28 +418,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-/*
-    fun getPhoto(share: ShareWithMe, callBack: LoadCompleteListener?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            // TODO real disk cache
-            val localCache = File("$localRootFolder/${share.cover.cover}")
-            try {
-                if (!localCache.exists()) {
-                    httpClient?.apply {
-                        newCall(Request.Builder().url("$resourceRoot${share.sharePath}/${share.coverFileName}").get().build()).execute().body?.byteStream()?.use { input ->
-                            localCache.outputStream().use { output ->
-                                input.copyTo(output, 8192)
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-
-            callBack?.onLoadComplete()
-        }
-    }
-*/
-
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
@@ -453,6 +431,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     cachedHttpClient?.apply {
                         newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().use {
                             val option = BitmapFactory.Options().apply {
+                                // TODO the following setting make picture larger, care to find a new way?
                                 //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                             }
                             when (type) {

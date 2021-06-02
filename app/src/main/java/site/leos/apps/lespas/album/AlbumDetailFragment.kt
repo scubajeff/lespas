@@ -153,6 +153,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     lastId = uri.lastPathSegment!!
 
                     snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
+                        // TODO publish status is not persistent locally
+                        //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
@@ -218,6 +220,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 for (i in sharedSelection) {
                     mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
                 }
+                // TODO publish status is not persistent locally
+                //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
             }
             sharedSelection.clear()
@@ -553,6 +557,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 val photos = mutableListOf<Photo>()
                 for (i in selectionTracker.selection)
                     mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                // TODO publish status is not persistent locally
+                //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
             }
         }

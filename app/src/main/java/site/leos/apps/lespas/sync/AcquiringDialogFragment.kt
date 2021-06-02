@@ -41,6 +41,9 @@ import java.util.*
 class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
     private var total = -1
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+    // TODO publish status is not persistent locally
+    //private val publishModel: NCShareViewModel by activityViewModels()
+    //private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!, publishModel.isShared(arguments?.getParcelable<Album>(KEY_ALBUM)!!.id)) }
     private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
 
     private lateinit var progressLinearLayout: LinearLayoutCompat
@@ -127,16 +130,24 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
+/*
+    // TODO publish status is not persistent locally
+    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val isPublished: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album, isPublished) as T
+    }
+*/
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
     }
 
+    // TODO publish status is not persistent locally
+    //class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album, isPublished: Boolean): AndroidViewModel(application) {
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {
         private var currentProgress = MutableLiveData<Int>()
         private var currentName: String = ""
         private var totalBytes = 0L
         private val newPhotos = mutableListOf<Photo>()
-        private val photoActions = mutableListOf<Action>()
+        private val actions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
         private val albumRepository = AlbumRepository(application)
         private val actionRepository = ActionRepository(application)
@@ -216,7 +227,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         if (date > album.endDate) album.endDate = date
 
                         // Pass photo mimeType in Action's folderId property
-                        photoActions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                        actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
                     } else {
                         // TODO show special error message when there are just some duplicate in uris
                         //photoRepository.changeName(album.id, fileId, fileName)
@@ -240,10 +251,15 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         album.cover = newPhotos[validCover].id
 
                         // Create new album first, store cover, e.g. first photo in new album, in property filename
+                        // TODO add this to photoActions instead
                         actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                     }
 
-                    actionRepository.addActions(photoActions)
+                    // TODO publish status is not persistent locally
+                    //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                    actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+
+                    actionRepository.addActions(actions)
                     photoRepository.insert(newPhotos)
                     albumRepository.upsert(album)
 
