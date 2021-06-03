@@ -1,5 +1,7 @@
 package site.leos.apps.lespas.publication
 
+import android.content.Context
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,20 +16,31 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
-class PublicationListFragment: Fragment() {
+class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListener {
     private val shareModel: NCShareViewModel by activityViewModels()
 
     private lateinit var shareListAdapter: ShareListAdapter
     private lateinit var shareListRecyclerView: RecyclerView
 
+    private var shareSelected: NCShareViewModel.ShareWithMe? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        savedInstanceState?.apply { shareSelected = getParcelable(SELECTED_SHARE) }
+
         shareListAdapter = ShareListAdapter(
             { share ->
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(share), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+                shareSelected = share
+                if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), getString(R.string.yes_i_do)).let {
+                        it.setTargetFragment(this, CONFIRM_DOWNLOAD_PUBLICATION_CODE)
+                        it.show(parentFragmentManager, CONFIRM_DIALOG)
+                    }
+                } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
                 shareModel.getPhoto(
@@ -62,6 +75,19 @@ class PublicationListFragment: Fragment() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        shareSelected?.let { outState.putParcelable(SELECTED_SHARE, it) }
+    }
+
+    override fun onResult(positive: Boolean, requestCode: Int) {
+        if (requestCode == CONFIRM_DOWNLOAD_PUBLICATION_CODE && positive) viewDetail()
+    }
+
+    private fun viewDetail() {
+        parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+    }
+
     class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -87,5 +113,12 @@ class PublicationListFragment: Fragment() {
     class ShareDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.ShareWithMe>() {
         override fun areItemsTheSame(oldItem: NCShareViewModel.ShareWithMe, newItem: NCShareViewModel.ShareWithMe): Boolean = oldItem.shareId == newItem.shareId
         override fun areContentsTheSame(oldItem: NCShareViewModel.ShareWithMe, newItem: NCShareViewModel.ShareWithMe): Boolean = oldItem.shareId == newItem.shareId
+    }
+
+    companion object {
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val CONFIRM_DOWNLOAD_PUBLICATION_CODE = 7878
+
+        private const val SELECTED_SHARE = "SELECTED_SHARE"
     }
 }

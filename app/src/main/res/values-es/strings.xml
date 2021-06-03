@@ -134,4 +134,6 @@
     <string name="publish_button_text">Publicar</string>
     <string name="publication_list_fragment_title">Publicación de los amigos</string>
     <string name="item_show_meta">Mostrar metadatos</string>
+    <string name="yes_i_do">Claro</string>
+    <string name="confirm_download_publication">Ahora estás en la red móvil, ¿estás seguro de que quieres ver esta publicación ahora?</string>
 </resources>

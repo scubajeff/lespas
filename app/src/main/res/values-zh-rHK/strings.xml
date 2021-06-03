@@ -134,4 +134,6 @@
     <string name="publish_button_text">發布</string>
     <string name="publication_list_fragment_title">親友分享</string>
     <string name="item_show_meta">顯示額外信息</string>
+    <string name="yes_i_do">冇問題</string>
+    <string name="confirm_download_publication">您现正使用流動網絡，是否即时觀看親友的分享？</string>
 </resources>

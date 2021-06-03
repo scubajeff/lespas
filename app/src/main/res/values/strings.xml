@@ -209,6 +209,8 @@
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Friend's publications"</string>
+    <string name="confirm_download_publication">You are now on mobile network, are you sure you want to view this publication now?</string>
+    <string name="yes_i_do">Sure</string>
 
     <!-- Publication Detail Fragment -->
     <string name="publication_detail_fragment_title" translatable="false">"%1$s  |  %2$s"</string>

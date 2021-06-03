@@ -134,4 +134,6 @@
     <string name="publish_button_text">公開</string>
     <string name="publication_list_fragment_title">お友達の分</string>
     <string name="item_show_meta">メタデータの表示</string>
+    <string name="yes_i_do">もちろん</string>
+    <string name="confirm_download_publication">あなたはモバイルネットワークを利用していて、今、友達の共有を見ていますか？</string>
 </resources>

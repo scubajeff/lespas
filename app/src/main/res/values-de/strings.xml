@@ -134,4 +134,6 @@
     <string name="publish_button_text">Veröffentlichen</string>
     <string name="publication_list_fragment_title">Veröffentlichung der Freunde</string>
     <string name="item_show_meta">Metadaten anzeigen</string>
+    <string name="yes_i_do">Sicher</string>
+    <string name="confirm_download_publication">Sie befinden sich jetzt im Mobilfunknetz, sind Sie sicher, dass Sie diese Publikation jetzt ansehen möchten?</string>
 </resources>
