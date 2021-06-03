@@ -88,7 +88,7 @@ class SearchResultFragment : Fragment() {
                         .replace(R.id.container_root, CameraRollFragment.newInstance(result.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
-            { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) }
+            { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() }}
         ).apply {
             // Get album's name for display
             Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
@@ -101,6 +101,8 @@ class SearchResultFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
 
         searchResultRecyclerView = view.findViewById(R.id.photogrid)
         stub = view.findViewById(R.id.stub)
