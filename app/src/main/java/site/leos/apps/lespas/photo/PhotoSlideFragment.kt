@@ -398,8 +398,7 @@ class PhotoSlideFragment : Fragment() {
                         applyTo(it)
                     }
 
-                    // TODO If user touch outside VideoView, how to sync video player control view
-                    //it.setOnClickListener { clickListener(video) }
+                    it.setOnClickListener { itemListener.onTouch() }
                 }
 
                 thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {
@@ -576,7 +575,7 @@ class PhotoSlideFragment : Fragment() {
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
             exoPlayer = SimpleExoPlayer.Builder(ctx).build()
-            exoPlayer.addListener(object: Player.EventListener {
+            exoPlayer.addListener(object: Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     super.onPlaybackStateChanged(state)
 

@@ -695,7 +695,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
             exoPlayer = SimpleExoPlayer.Builder(ctx).build()
-            exoPlayer.addListener(object: Player.EventListener {
+            exoPlayer.addListener(object: Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     super.onPlaybackStateChanged(state)
 
