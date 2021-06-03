@@ -79,6 +79,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 val builder = OkHttpClient.Builder().apply {
                     if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
                     addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
+                    addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
                 }
                 httpClient = builder.build()
                 cachedHttpClient = builder.cache(diskCache)

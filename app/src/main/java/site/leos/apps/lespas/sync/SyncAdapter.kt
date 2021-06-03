@@ -56,13 +56,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             AccountManager.get(application).run {
                 val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
                 val serverRoot = getUserData(account, context.getString(R.string.nc_userdata_server))
-                val selfSigned = getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()
-                sardine = if (selfSigned) {
-                    val builder = OkHttpClient.Builder().apply {
-                        hostnameVerifier { _, _ -> true }
-                    }
-                    OkHttpSardine(builder.build())
-                } else OkHttpSardine()
+
+                val builder = OkHttpClient.Builder().apply {
+                    addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
+                }
+                if (getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
+                sardine = OkHttpSardine(builder.build())
+
                 sardine.setCredentials(userName, peekAuthToken(account, serverRoot), true)
                 application.getString(R.string.lespas_base_folder_name).run {
                     resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName$this"
