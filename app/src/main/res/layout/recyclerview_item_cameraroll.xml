@@ -30,7 +30,7 @@
         android:layout_marginRight="@dimen/tiny_padding"
         android:scaleType="fitCenter"
         android:elevation="2dp"
-        android:background="#80000000"
+        android:background="@color/dark_grey_overlay_background"
         android:src="@drawable/ic_baseline_play_arrow_24"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -38,7 +38,7 @@
         app:layout_constraintRight_toRightOf="parent"
         android:layout_margin="@dimen/tiny_padding"
         android:padding="@dimen/tiny_padding"
-        android:background="#80000000"
+        android:background="@color/dark_grey_overlay_background"
         style="@style/TextAppearance.AppCompat.Caption"
         android:textColor="@color/color_text_light"
         tools:text="meta" />
