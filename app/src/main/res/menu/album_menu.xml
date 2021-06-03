@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/option_menu_received_shares"
-        android:title="@string/sharelist_fragment_title"
+        android:title="@string/publication_list_fragment_title"
         android:orderInCategory="97"
         android:icon="@drawable/ic_baseline_shared_with_me_24"
         android:enabled="false"

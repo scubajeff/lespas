@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.share.NCShareViewModel
+import site.leos.apps.lespas.publication.NCShareViewModel
 
 class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_publish_dialog) {
     private val publishModel: NCShareViewModel by activityViewModels()

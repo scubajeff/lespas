@@ -25,8 +25,8 @@ import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.share.NCShareViewModel
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException

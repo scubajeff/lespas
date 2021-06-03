@@ -1,4 +1,4 @@
-package site.leos.apps.lespas.share
+package site.leos.apps.lespas.publication
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,9 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
-class ShareListFragment: Fragment() {
+class PublicationListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
-    private val imageLoaderViewModel: ImageLoaderViewModel by activityViewModels()
 
     private lateinit var shareListAdapter: ShareListAdapter
     private lateinit var shareListRecyclerView: RecyclerView
@@ -27,10 +26,12 @@ class ShareListFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         shareListAdapter = ShareListAdapter(
-            {shareWithMe ->  },
+            { share ->
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(share), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+            },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
                 shareModel.getPhoto(
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline),
+                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
                     view,
                     ImageLoaderViewModel.TYPE_COVER
                 )
@@ -40,7 +41,7 @@ class ShareListFragment: Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_share_list, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_publication_list, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -56,7 +57,7 @@ class ShareListFragment: Fragment() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
-            title = getString(R.string.sharelist_fragment_title)
+            title = getString(R.string.publication_list_fragment_title)
             setDisplayHomeAsUpEnabled(true)
         }
     }
@@ -66,13 +67,13 @@ class ShareListFragment: Fragment() {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bind(item: NCShareViewModel.ShareWithMe) {
                 imageLoader(item, itemView.findViewById(R.id.coverart))
-                itemView.findViewById<TextView>(R.id.title).text = item.albumName
-                itemView.findViewById<TextView>(R.id.duration).text = item.shareBy
+                itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
+                itemView.setOnClickListener { clickListener(item) }
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
-            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent, false))
+            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_publication, parent, false))
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(getItem(position))

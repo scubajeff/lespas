@@ -1,14 +1,15 @@
-package site.leos.apps.lespas.share
+package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.BitmapRegionDecoder
-import android.graphics.Rect
+import android.graphics.*
+import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.Drawable
+import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Build
 import android.os.Parcelable
 import android.util.LruCache
 import android.widget.ImageView
@@ -32,6 +33,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
@@ -54,7 +56,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val localRootFolder = "${application.cacheDir}${lespasBase}"
 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_arrow_24)
+    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_circle_24)
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
     private val diskCache = Cache(File(localRootFolder), 500L * 1024L * 1024L)
@@ -86,8 +88,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            getShareList()
             _sharees.value = getSharees()
+            getShareList()
         }
     }
 
@@ -114,6 +116,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         try {
             ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                var idString: String
+                var labelString: String
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -125,7 +129,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith(lespasBase)) {
                             // Only interested in shares of subfolders under lespas/
                             if (getString("owner") == userName) {
-                                sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
+                                idString = getString("recipient")
+                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                                sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
 
                                 @Suppress("SimpleRedundantLet")
                                 sharesBy.find { share -> share.fileId == getString("file_id") }?.let { item ->
@@ -136,7 +142,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
                                 }
                             } else if (getString("recipient") == userName) {
-                                sharesWith.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), getString("owner"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                                idString = getString("owner")
+                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                                sharesWith.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
                             }
                         }
                     }
@@ -170,8 +178,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT", true)?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                var idString: String
+                var labelString: String
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -183,7 +193,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (shareType >= 0 && getString("owner") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
                             // Only interested in shares of subfolders under lespas/
 
-                            sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(getString("recipient"), getString("recipient"), shareType))
+                            idString = getString("recipient")
+                            labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                            sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
 
                             @Suppress("SimpleRedundantLet")
                             result.find { share-> share.fileId == getString("file_id") }?.let { item->
@@ -212,8 +224,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var shareType: Int
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT", true)?.apply {
+            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                var idString: String
+                var labelString: String
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -223,7 +237,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             else-> -1
                         }
                         if (shareType >= 0 && getString("recipient") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
-                            result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), getString("owner"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                            idString = getString("owner")
+                            labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                            result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
                         }
                     }
                 }
@@ -386,6 +402,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
+    @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
 
@@ -415,17 +432,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
+    @Suppress("BlockingMethodInNonBlockingContext")
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
         view.imageAlpha = 0
         var bitmap: Bitmap? = null
+        var animatedDrawable: Drawable? = null
         val job = viewModelScope.launch(downloadDispatcher) {
             try {
                 val key = "${photo.fileId}$type"
                 imageCache.get(key)?.let { bitmap = it } ?: run {
                     cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().use {
+                        newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use {
                             val option = BitmapFactory.Options().apply {
                                 // TODO the following setting make picture larger, care to find a new way?
                                 //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
@@ -439,18 +458,34 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         in (2000..3000)-> 2
                                         else-> 4
                                     }
-                                    bitmap = BitmapRegionDecoder.newInstance(it.body?.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                    bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
                                     if (photo.mimeType.startsWith("video")) {
-                                        // TODO video thumbnail from network stream
-                                        bitmap = videoThumbnail
+                                        val videoFolder = File(localRootFolder, "videos").apply { mkdir() }
+                                        val fileName = photo.path.substringAfterLast('/')
+                                        it.byteStream().use { input->
+                                            File(videoFolder, fileName).outputStream().use { output->
+                                                input.copyTo(output, 8192)
+                                            }
+                                        }
+                                        MediaMetadataRetriever().apply {
+                                            setDataSource("$videoFolder/$fileName")
+                                            bitmap = getFrameAtTime(3) ?: videoThumbnail
+                                            release()
+                                        }
+                                    } else if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                            animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes()))).apply { if (this is AnimatedImageDrawable) this.start() }
+                                        } else {
+                                            bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                        }
                                     } else {
-                                        bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                        bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
-                                    bitmap = BitmapFactory.decodeStream(it.body?.byteStream(), null, option)?.also { bitmap->
+                                    bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option)?.also { bitmap->
                                         if (bitmap.allocationByteCount > 100000000) Bitmap.createScaledBitmap(bitmap, bitmap.width / 2, bitmap.height / 2, true)
                                     }
                                 }
@@ -463,7 +498,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    view.setImageBitmap(bitmap ?: placeholderBitmap)
+                    animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     view.imageAlpha = 255
                 }
                 callBack?.onLoadComplete()
@@ -480,6 +515,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        File(localRootFolder, "videos").deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
         super.onCleared()
@@ -519,6 +555,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var albumId: String,
         var albumName: String,
         var shareBy: String,
+        var shareByLabel: String,
         var permission: Int,
         var sharedTime: Long,
         var cover: Cover,

@@ -132,5 +132,5 @@
     <string name="item_publish">アルバム公開</string>
     <string name="publish_album">に公開します</string>
     <string name="publish_button_text">公開</string>
-    <string name="sharelist_fragment_title">お友達の分</string>
+    <string name="publication_list_fragment_title">お友達の分</string>
 </resources>

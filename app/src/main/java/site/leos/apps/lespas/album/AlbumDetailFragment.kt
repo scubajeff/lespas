@@ -45,8 +45,8 @@ import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.share.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity

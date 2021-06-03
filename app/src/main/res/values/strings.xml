@@ -207,8 +207,11 @@
     <string name="title_in_album">%1$s in albums</string>
     <string name="title_in_cameraroll">%1$s in Camera Roll</string>
 
-    <!-- Share List Fragment -->
-    <string name="sharelist_fragment_title">"Friend's publications"</string>
+    <!-- Publication List Fragment -->
+    <string name="publication_list_fragment_title">"Friend's publications"</string>
+
+    <!-- Publication Detail Fragment -->
+    <string name="publication_detail_fragment_title" translatable="false">"%1$s  |  %2$s"</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

@@ -132,5 +132,5 @@
     <string name="item_publish">Publier l\'album</string>
     <string name="publish_album">Publier vers :</string>
     <string name="publish_button_text">Publier</string>
-    <string name="sharelist_fragment_title">Publication des amis</string>
+    <string name="publication_list_fragment_title">Publication des amis</string>
 </resources>
