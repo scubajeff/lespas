@@ -140,6 +140,7 @@ class PublicationDetailFragment: Fragment() {
 
     class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
+        private val mBoundViewHolders = mutableSetOf<ViewHolder>()
         private var displayMeta = false
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -165,16 +166,28 @@ class PublicationDetailFragment: Fragment() {
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
+
+            fun toggleMeta() {
+                (itemView.findViewById<TextView>(R.id.meta)).visibility = if (displayMeta) View.VISIBLE else View.GONE
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoListAdapter.ViewHolder =
             ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_remote_media, parent, false))
 
-        override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) { holder.bind(getItem(position), position) }
+        override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) {
+            holder.bind(getItem(position), position)
+            mBoundViewHolders.add(holder)
+        }
+
+        override fun onViewRecycled(holder: ViewHolder) {
+            mBoundViewHolders.remove(holder)
+            super.onViewRecycled(holder)
+        }
 
         fun toggleMetaDisplay() {
             displayMeta = !displayMeta
-            notifyDataSetChanged()
+            for (holder in mBoundViewHolders) holder.toggleMeta()
         }
     }
 
