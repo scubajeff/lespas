@@ -59,7 +59,10 @@ class SearchResultFragment : Fragment() {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val album = albumModel.getThisAlbum(result.photo.albumId)[0]
                         withContext(Dispatchers.Main) {
-                            exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                            exitTransition = MaterialElevationScale(false).apply {
+                                duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                                excludeTarget(imageView, true)
+                            }
                             //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                             parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                                 .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, result.photo.id), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
@@ -78,6 +81,7 @@ class SearchResultFragment : Fragment() {
                     exitTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                         excludeTarget(R.id.stub, true)
+                        excludeTarget(imageView, true)
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)

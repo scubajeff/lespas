@@ -200,6 +200,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                     excludeTarget(R.id.stub, true)
+                    excludeTarget(view, true)
                 }
 
                 parentFragmentManager.beginTransaction()
