@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.publication
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
@@ -7,6 +8,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.app.SharedElementCallback
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -14,7 +17,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import java.time.Instant
@@ -30,17 +36,41 @@ class PublicationDetailFragment: Fragment() {
 
     private lateinit var photoListAdapter: PhotoListAdapter
     private lateinit var photoList: RecyclerView
+    private lateinit var stub: View
 
     private val shareModel: NCShareViewModel by activityViewModels()
+
+    private var clickedItem = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         share = arguments?.getParcelable(SHARE)!!
 
+        savedInstanceState?.apply { clickedItem = getInt(CLICKED_ITEM) }
+
         photoListAdapter = PhotoListAdapter(
-            { photo->  },
-            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) }
+            { view, photo, position->
+                clickedItem = position
+
+                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
+                stub.background = (activity as MainActivity).getToolbarViewContent()
+
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply {
+                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                    excludeTarget(R.id.stub, true)
+                    excludeTarget(view, true)
+                }
+
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, view.transitionName)
+                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(arrayListOf(photo)), RemoteMediaFragment::class.java.canonicalName)
+                    .addToBackStack(null)
+                    .commit()
+            },
+            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() } }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -49,18 +79,35 @@ class PublicationDetailFragment: Fragment() {
             shareModel.getRemotePhotoList(share).toMutableList().apply { photoListAdapter.submitList(this) }
         }
 
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+        }
+
+        // Adjusting the shared element mapping
+        setExitSharedElementCallback(object : SharedElementCallback() {
+            override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
+                photoList.findViewHolderForAdapterPosition(clickedItem)?.let {
+                    sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.media))
+                }
+            }
+        })
+
         setHasOptionsMenu(true)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_publication_detail, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        val vg = inflater.inflate(R.layout.fragment_publication_detail, container, false)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        photoList = view.findViewById<RecyclerView>(R.id.photo_list).apply {
+        stub = vg.findViewById(R.id.stub)
+        photoList = vg.findViewById<RecyclerView>(R.id.photo_list).apply {
             layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
             adapter = photoListAdapter
         }
+
+        postponeEnterTransition()
+
+        return vg
     }
 
     override fun onResume() {
@@ -70,6 +117,11 @@ class PublicationDetailFragment: Fragment() {
             title = String.format(getString(R.string.publication_detail_fragment_title), share.albumName, share.shareByLabel)
             setDisplayHomeAsUpEnabled(true)
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(CLICKED_ITEM, clickedItem)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -86,12 +138,12 @@ class PublicationDetailFragment: Fragment() {
             else-> false
         }
 
-    class PhotoListAdapter(private val clickListener: (NCShareViewModel.RemotePhoto) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
+    class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
         private var displayMeta = false
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bind(item: NCShareViewModel.RemotePhoto) {
+            fun bind(item: NCShareViewModel.RemotePhoto, position: Int) {
                 (itemView.findViewById(R.id.media) as ImageView).apply {
                     imageLoader(item, this)
                     ConstraintSet().apply {
@@ -99,7 +151,9 @@ class PublicationDetailFragment: Fragment() {
                         setDimensionRatio(R.id.media, "H,${item.width}:${item.height}")
                         applyTo(itemView)
                     }
-                    setOnClickListener { clickListener(item) }
+                    setOnClickListener { clickListener(this, item, position) }
+
+                    ViewCompat.setTransitionName(this, item.fileId)
                 }
 
                 (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (item.mimeType.startsWith("video")) View.VISIBLE else View.GONE
@@ -116,7 +170,7 @@ class PublicationDetailFragment: Fragment() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoListAdapter.ViewHolder =
             ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_remote_media, parent, false))
 
-        override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) { holder.bind(getItem(position), position) }
 
         fun toggleMetaDisplay() {
             displayMeta = !displayMeta
@@ -130,7 +184,8 @@ class PublicationDetailFragment: Fragment() {
     }
 
     companion object {
-        const val SHARE = "SHARE"
+        private const val SHARE = "SHARE"
+        private const val CLICKED_ITEM = "CLICKED_ITEM"
 
         @JvmStatic
         fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply {
