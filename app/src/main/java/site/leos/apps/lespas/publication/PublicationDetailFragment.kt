@@ -1,10 +1,9 @@
 package site.leos.apps.lespas.publication
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -18,6 +17,13 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.*
 
 class PublicationDetailFragment: Fragment() {
     private lateinit var share: NCShareViewModel.ShareWithMe
@@ -42,6 +48,8 @@ class PublicationDetailFragment: Fragment() {
         lifecycleScope.launch {
             shareModel.getRemotePhotoList(share).toMutableList().apply { photoListAdapter.submitList(this) }
         }
+
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_publication_detail, container, false)
@@ -64,8 +72,24 @@ class PublicationDetailFragment: Fragment() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.publication_detail_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when(item.itemId) {
+            R.id.option_menu_show_meta-> {
+                photoListAdapter.toggleMetaDisplay()
+                true
+            }
+            else-> false
+        }
+
     class PhotoListAdapter(private val clickListener: (NCShareViewModel.RemotePhoto) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
+        private var displayMeta = false
+
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bind(item: NCShareViewModel.RemotePhoto) {
                 (itemView.findViewById(R.id.media) as ImageView).apply {
@@ -79,6 +103,13 @@ class PublicationDetailFragment: Fragment() {
                 }
 
                 (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (item.mimeType.startsWith("video")) View.VISIBLE else View.GONE
+
+                (itemView.findViewById<TextView>(R.id.meta)).apply {
+                    LocalDateTime.ofInstant(Instant.ofEpochSecond(item.timestamp), ZoneOffset.systemDefault()).apply {
+                        text = "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}"
+                    }
+                    visibility = if (displayMeta) View.VISIBLE else View.GONE
+                }
             }
         }
 
@@ -86,6 +117,11 @@ class PublicationDetailFragment: Fragment() {
             ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_remote_media, parent, false))
 
         override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) { holder.bind(getItem(position)) }
+
+        fun toggleMetaDisplay() {
+            displayMeta = !displayMeta
+            notifyDataSetChanged()
+        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

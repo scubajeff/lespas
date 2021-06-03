@@ -133,4 +133,5 @@
     <string name="publish_album">發布給：</string>
     <string name="publish_button_text">發布</string>
     <string name="publication_list_fragment_title">親友分享</string>
+    <string name="item_show_meta">顯示額外信息</string>
 </resources>

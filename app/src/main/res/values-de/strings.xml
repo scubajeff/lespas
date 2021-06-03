@@ -133,4 +133,5 @@
     <string name="publish_album">Veröffentlichen in:</string>
     <string name="publish_button_text">Veröffentlichen</string>
     <string name="publication_list_fragment_title">Veröffentlichung der Freunde</string>
+    <string name="item_show_meta">Metadaten anzeigen</string>
 </resources>

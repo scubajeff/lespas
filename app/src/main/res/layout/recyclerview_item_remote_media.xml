@@ -30,4 +30,17 @@
         app:layout_constraintWidth_percent="0.25"
         android:src="@drawable/ic_baseline_play_circle_24" />
 
+    <TextView
+        android:id="@+id/meta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_margin="@dimen/tiny_padding"
+        android:padding="@dimen/tiny_padding"
+        android:background="#80000000"
+        style="@style/TextAppearance.AppCompat.Caption"
+        android:textColor="@color/color_text_light"
+        tools:text="meta" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

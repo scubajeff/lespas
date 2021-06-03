@@ -212,6 +212,7 @@
 
     <!-- Publication Detail Fragment -->
     <string name="publication_detail_fragment_title" translatable="false">"%1$s  |  %2$s"</string>
+    <string name="item_show_meta">Show meta</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->
