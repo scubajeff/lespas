@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -135,6 +136,7 @@ class PublicationDetailFragment: Fragment() {
         when(item.itemId) {
             R.id.option_menu_show_meta-> {
                 photoListAdapter.toggleMetaDisplay()
+                item.icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
                 true
             }
             else-> false
@@ -192,6 +194,8 @@ class PublicationDetailFragment: Fragment() {
             displayMeta = !displayMeta
             for (holder in mBoundViewHolders) holder.toggleMeta()
         }
+
+        fun isMetaDisplayed(): Boolean = displayMeta
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
