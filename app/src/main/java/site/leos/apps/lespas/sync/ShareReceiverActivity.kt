@@ -9,7 +9,6 @@ import android.os.Parcelable
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.Tools
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
@@ -43,11 +42,6 @@ class ShareReceiverActivity: AppCompatActivity() {
         else {
             finish()
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Tools.avoidCutOutArea(this.window)
     }
 
     override fun onResume() {

@@ -11,8 +11,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
-import android.view.Window
-import android.view.WindowManager
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
@@ -354,9 +352,5 @@ object Tools {
         } catch (e: Exception) { e.printStackTrace() }
 
         return totalBytes
-    }
-
-    fun avoidCutOutArea(window: Window) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
     }
 }

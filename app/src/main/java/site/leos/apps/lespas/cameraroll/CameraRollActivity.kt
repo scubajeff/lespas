@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.settings.SettingsFragment
 
 
@@ -32,11 +31,6 @@ class CameraRollActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultLi
                 else intent.data?.apply {supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(this), CameraRollFragment::class.java.canonicalName).commit()} ?: run { finish() }
             }
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Tools.avoidCutOutArea(this.window)
     }
 
     override fun onResult(positive: Boolean, requestCode: Int) {
