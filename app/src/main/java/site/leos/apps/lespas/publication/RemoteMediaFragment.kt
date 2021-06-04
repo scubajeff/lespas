@@ -57,7 +57,8 @@ class RemoteMediaFragment: Fragment() {
             { toggleSystemUI() },
             { media, view, type->
                 if (media.mimeType.startsWith("video")) startPostponedEnterTransition()
-                else shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }}
+                else shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
+            { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
@@ -86,6 +87,7 @@ class RemoteMediaFragment: Fragment() {
             pAdapter.setSavedStopPosition(this)
             videoStopPosition = this
         }
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

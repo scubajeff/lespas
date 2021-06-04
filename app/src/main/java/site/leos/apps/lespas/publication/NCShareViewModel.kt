@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
 import android.util.LruCache
+import android.view.View
 import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -534,6 +535,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // Replacing previous job
         replacePrevious(jobKey, job)
+    }
+
+    fun cancelGetPhoto(view: View) {
+        decoderJobMap[System.identityHashCode(view)]?.cancel()
     }
 
     private fun replacePrevious(key: Int, newJob: Job) {

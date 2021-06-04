@@ -71,7 +71,8 @@ class PublicationDetailFragment: Fragment() {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() } }
+            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() } },
+            { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -139,7 +140,7 @@ class PublicationDetailFragment: Fragment() {
             else-> false
         }
 
-    class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
+    class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val mBoundViewHolders = mutableSetOf<ViewHolder>()
         private var displayMeta = false
@@ -183,6 +184,7 @@ class PublicationDetailFragment: Fragment() {
 
         override fun onViewRecycled(holder: ViewHolder) {
             mBoundViewHolders.remove(holder)
+            cancelLoading(holder.itemView.findViewById(R.id.media) as View)
             super.onViewRecycled(holder)
         }
 
