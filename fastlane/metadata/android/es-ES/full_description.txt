@@ -7,6 +7,7 @@ Características:
 - Administra el rollo de cámara de tu teléfono y la copia de seguridad automática al servidor
 - Sincronización entre su servidor Nextcloud y múltiples dispositivos
 - Gestiona libremente los álbumes y las fotos en el servidor de Nextcloud y en tus teléfonos
+- Compartir de forma nativa con otros usuarios en el servidor Nextcloud
 - Buscar fotos por objetos
 - Integrar con Snapseed para la edición de fotos
 - Compartir a las redes sociales

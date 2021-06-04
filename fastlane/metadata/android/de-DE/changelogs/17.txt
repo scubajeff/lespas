@@ -1,0 +1,4 @@
+* Veröffentlichen (z. B. Freigabe auf dem Nextcloud-Server) Ihrer Alben für andere Nextcloud-Benutzer
+* Durchsuchen Sie die Veröffentlichungen anderer Nextcloud-Benutzer
+* Album-Metadaten zwischen Ihren Geräten synchronisieren, Album-Metadaten bei Neuinstallation wiederherstellen. Verlieren Sie nie wieder Ihr Albumcover
+* Andere Verbesserungen und Bugs behoben

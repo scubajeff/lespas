@@ -7,6 +7,7 @@ Caractéristiques :
 - Gérer le rouleau de l'appareil photo de votre téléphone portable et la sauvegarde automatique sur le serveur
 - Synchronisation entre votre serveur Nextcloud et plusieurs appareils
 - Gérez librement vos albums et photos sur le serveur Nextcloud et sur vos téléphones
+- Partage natif avec d'autres utilisateurs sur le serveur Nextcloud
 - Recherche de photos par objets
 - Intégration avec Snapseed pour le montage photo
 - Partager sur les réseaux sociaux

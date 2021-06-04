@@ -7,6 +7,7 @@ Features:
 - Manage your phone's camera roll and auto backup to server
 - Synchronization among your Nextcloud server and multiple devices
 - Manage albums and photos on Nextcloud server and on your phones
+- Native sharing with other users on Nextcloud server
 - Search for photos by objects
 - Integrate with Snapseed for photo editing
 - Share to social networks

@@ -7,6 +7,7 @@ Funktionen:
 - Verwalten der Filmrolle Ihres Telefons und automatische Sicherung auf dem Server
 - Synchronisation zwischen Ihrem Nextcloud-Server und mehreren Geräten
 - Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
+- Native Freigabe mit anderen Benutzern auf dem Nextcloud-Server
 - Suche nach Fotos nach Objekten
 - Integration mit Snapseed zur Fotobearbeitung
 - Teilen in sozialen Netzwerken

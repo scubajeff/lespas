@@ -1,3 +1,8 @@
+## Version 2.0.0
+* Publish (e.g. sharing on Nextcloud server) your albums to other Nextcloud users
+* Browse other Nextcloud users' publications
+* Sync album meta data among your devices, restore album meta data during reinstall. Never lost your album cover again.
+
 ## Version 1.5.2
 * add Traditional Chinese translation
 * fix Japanese translation which prevent gradle from building
