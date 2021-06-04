@@ -33,6 +33,9 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.lang.Thread.sleep
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
@@ -126,64 +129,80 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val sharesWith = mutableListOf<ShareWithMe>()
         var shareType: Int
         var sharee: Recipient
+        var backOff = 2500L
 
-        try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
-                //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
-                var idString: String
-                var labelString: String
-                val data = getJSONArray("data")
-                for (i in 0 until data.length()) {
-                    data.getJSONObject(i).apply {
-                        shareType = when(getString("type")) {
-                            SHARE_TYPE_USER_STRING-> SHARE_TYPE_USER
-                            SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
-                            else-> -1
-                        }
-                        if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith(lespasBase)) {
-                            // Only interested in shares of subfolders under lespas/
-                            if (getString("owner") == userName) {
-                                idString = getString("recipient")
-                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                                sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
+        while(true) {
+            try {
+                ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+                    //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                    var idString: String
+                    var labelString: String
+                    val data = getJSONArray("data")
+                    for (i in 0 until data.length()) {
+                        data.getJSONObject(i).apply {
+                            shareType = when (getString("type")) {
+                                SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
+                                SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
+                                else -> -1
+                            }
+                            if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith(lespasBase)) {
+                                // Only interested in shares of subfolders under lespas/
+                                if (getString("owner") == userName) {
+                                    idString = getString("recipient")
+                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                                    sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
 
-                                @Suppress("SimpleRedundantLet")
-                                sharesBy.find { share -> share.fileId == getString("file_id") }?.let { item ->
-                                    // If this folder existed in result, add new sharee only
-                                    item.with.add(sharee)
-                                } ?: run {
-                                    // Create new share by me item
-                                    sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
+                                    @Suppress("SimpleRedundantLet")
+                                    sharesBy.find { share -> share.fileId == getString("file_id") }?.let { item ->
+                                        // If this folder existed in result, add new sharee only
+                                        item.with.add(sharee)
+                                    } ?: run {
+                                        // Create new share by me item
+                                        sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
+                                    }
+                                } else if (getString("recipient") == userName) {
+                                    idString = getString("owner")
+                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+                                    sharesWith.add(ShareWithMe(getString("id"),"",getString("file_id"),getString("name"),idString,labelString,getInt("permissions"),OffsetDateTime.parse(getString("time")).toInstant().epochSecond,Cover("", 0, 0, 0),"",Album.BY_DATE_TAKEN_ASC))
                                 }
-                            } else if (getString("recipient") == userName) {
-                                idString = getString("owner")
-                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                                sharesWith.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
                             }
                         }
                     }
                 }
-            }
 
-            for (share in sharesWith) {
-                share.sharePath = getSharePath(share.shareId) ?: ""
-                cachedHttpClient?.apply {
-                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
-                            meta.getJSONObject("cover").apply {
-                                share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                share.coverFileName = getString("filename")
+                for (share in sharesWith) {
+                    share.sharePath = getSharePath(share.shareId) ?: ""
+                    cachedHttpClient?.apply {
+                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                meta.getJSONObject("cover").apply {
+                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                    share.coverFileName = getString("filename")
+                                }
+                                share.sortOrder = meta.getInt("sort")
                             }
-                            share.sortOrder = meta.getInt("sort")
                         }
                     }
                 }
-            }
 
-            _shareByMe.value = sharesBy
-            _shareWithMe.value = sharesWith.apply { sort() }
+                _shareByMe.value = sharesBy
+                _shareWithMe.value = sharesWith.apply { sort() }
+                break
+            }
+            catch (e: UnknownHostException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            }
+            catch (e: SocketTimeoutException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                break
+            }
         }
-        catch (e: Exception) { e.printStackTrace() }
     }
 
     private fun updateShareByMe(): MutableList<ShareByMe> {
@@ -245,15 +264,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
-                        shareType = when(getString("type")) {
-                            SHARE_TYPE_USER_STRING-> SHARE_TYPE_USER
-                            SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
-                            else-> -1
+                        shareType = when (getString("type")) {
+                            SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
+                            SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
+                            else -> -1
                         }
                         if (shareType >= 0 && getString("recipient") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
                             idString = getString("owner")
                             labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                            result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                            result.add(ShareWithMe(getString("id"),"",getString("file_id"),getString("name"),idString,labelString,getInt("permissions"),OffsetDateTime.parse(getString("time")).toInstant().epochSecond,Cover("", 0, 0, 0),"",Album.BY_DATE_TAKEN_ASC))
                         }
                     }
                 }
@@ -263,7 +282,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 share.sharePath = getSharePath(share.shareId) ?: ""
                 cachedHttpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta->
+                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
                             meta.getJSONObject("cover").apply {
                                 share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
                                 share.coverFileName = getString("filename")
@@ -285,30 +304,41 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun getSharees(): MutableList<Sharee> {
         val result = mutableListOf<Sharee>()
+        var backOff = 2500L
 
-        try {
-            ocsGet("$baseUrl$SHAREE_LISTING_ENDPOINT")?.apply {
-                //if (getJSONObject("meta").getInt("statuscode") != 100) return null
-                val data = getJSONObject("data")
-                val users = data.getJSONArray("users")
-                for (i in 0 until users.length()) {
-                    users.getJSONObject(i).apply {
-                        result.add(Sharee(getString("shareWithDisplayNameUnique"), getString("label"), SHARE_TYPE_USER))
+        while(true) {
+            try {
+                ocsGet("$baseUrl$SHAREE_LISTING_ENDPOINT")?.apply {
+                    //if (getJSONObject("meta").getInt("statuscode") != 100) return null
+                    val data = getJSONObject("data")
+                    val users = data.getJSONArray("users")
+                    for (i in 0 until users.length()) {
+                        users.getJSONObject(i).apply {
+                            result.add(Sharee(getString("shareWithDisplayNameUnique"), getString("label"), SHARE_TYPE_USER))
+                        }
+                    }
+                    val groups = data.getJSONArray("groups")
+                    for (i in 0 until groups.length()) {
+                        groups.getJSONObject(i).apply {
+                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_GROUP))
+                        }
                     }
                 }
-                val groups = data.getJSONArray("groups")
-                for (i in 0 until groups.length()) {
-                    groups.getJSONObject(i).apply {
-                        result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_GROUP))
-                    }
-                }
+
+                return result
+            } catch (e: UnknownHostException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            } catch (e: SocketTimeoutException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                break
             }
-
-            return result
         }
-        catch (e: IOException) { e.printStackTrace() }
-        catch (e: IllegalStateException) { e.printStackTrace() }
-        catch (e: JSONException) { e.printStackTrace() }
 
         return arrayListOf()
     }
