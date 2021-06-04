@@ -64,6 +64,10 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
         }
 
         shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { shareListAdapter.submitList(it) })
+/*
+
+        lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}
+*/
     }
 
     override fun onResume() {

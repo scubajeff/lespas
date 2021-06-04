@@ -18,8 +18,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -108,6 +107,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         return result
     }
+
+    val themeColor: Flow<Int> = flow {
+        var color = 0
+
+        try {
+            ocsGet("$baseUrl$CAPABILLITIES_ENDPOINT")?.apply {
+                color = Integer.parseInt(getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").getString("color").substringAfter('#'), 16)
+            }
+            if (color != 0) emit(color)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }.flowOn(Dispatchers.IO)
 
     private fun getShareList() {
         val sharesBy = mutableListOf<ShareByMe>()
@@ -612,6 +624,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
         private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
+        private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
         const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"

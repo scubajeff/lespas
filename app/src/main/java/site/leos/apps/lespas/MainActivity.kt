@@ -158,6 +158,12 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         })
     }
 
+/*
+    fun themeToolbar(themeColor: Int) {
+        toolbar.background = TransitionDrawable(arrayOf(ColorDrawable(ContextCompat.getColor(this, R.color.color_primary)), ColorDrawable(themeColor))).apply { startTransition(2000) }
+    }
+
+*/
     // TODO no need to do this after several release updates later?
     class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
