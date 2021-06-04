@@ -42,6 +42,9 @@ class PublicationDetailFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
 
+    private var loadingIndicator: MenuItem? = null
+    private var showMetaMenuItem: MenuItem? = null
+
     private var clickedItem = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,10 +79,24 @@ class PublicationDetailFragment: Fragment() {
             { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+            if (savedInstanceState?.run { getBoolean(SHOW_META, false) } == true) {
+                toggleMetaDisplay()
+            }
         }
 
         lifecycleScope.launch {
-            shareModel.getRemotePhotoList(share).toMutableList().apply { photoListAdapter.submitList(this) }
+            shareModel.getRemotePhotoList(share).toMutableList().apply {
+                photoListAdapter.submitList(this)
+
+                loadingIndicator?.run {
+                    isEnabled = false
+                    isVisible = false
+                }
+                showMetaMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
+            }
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -125,11 +142,25 @@ class PublicationDetailFragment: Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(CLICKED_ITEM, clickedItem)
+        outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.publication_detail_menu, menu)
+
+        loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+        showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
+            icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
+        }
+
+        if (photoListAdapter.itemCount > 0) {
+            loadingIndicator?.isEnabled = false
+            loadingIndicator?.isVisible = false
+            showMetaMenuItem?.isEnabled = true
+            showMetaMenuItem?.isVisible = true
+        }
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -206,6 +237,7 @@ class PublicationDetailFragment: Fragment() {
     companion object {
         private const val SHARE = "SHARE"
         private const val CLICKED_ITEM = "CLICKED_ITEM"
+        private const val SHOW_META = "SHOW_META"
 
         @JvmStatic
         fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply {
