@@ -8,6 +8,8 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -34,6 +37,7 @@ import java.io.File
 import java.time.LocalDateTime
 
 class RemoteMediaFragment: Fragment() {
+    private lateinit var window: Window
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: RemoteMediaAdapter
 
@@ -45,8 +49,10 @@ class RemoteMediaFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        this.window = requireActivity().window
+
         pAdapter = RemoteMediaAdapter(
-            {  },
+            { toggleSystemUI() },
             { media, view, type->
                 if (media.mimeType.startsWith("video")) startPostponedEnterTransition()
                 else shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }}
@@ -93,33 +99,32 @@ class RemoteMediaFragment: Fragment() {
         return view
     }
 
+    @Suppress("DEPRECATION")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_grey_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-        requireActivity().window.run {
-            previousNavBarColor = navigationBarColor
-            navigationBarColor = Color.TRANSPARENT
+        window.run {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.let {
-                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                    it.hide(WindowInsets.Type.systemBars())
-                }
-                statusBarColor = Color.TRANSPARENT
+                previousNavBarColor = navigationBarColor
+                navigationBarColor = systemBarBackground
+                statusBarColor = systemBarBackground
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 setDecorFitsSystemWindows(false)
             } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN)
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             }
         }
+        toggleSystemUI()
+    }
+
+    private var visible: Boolean = true
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private fun toggleSystemUI() {
+        hideHandler.removeCallbacksAndMessages(null)
+        hideHandler.post(if (visible) hideSystemUI else showSystemUI)
     }
 
     override fun onStart() {
@@ -129,7 +134,8 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is RemoteMediaAdapter.VideoViewHolder) this.resume()
         }
@@ -137,7 +143,8 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onPause() {
         super.onPause()
-        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is RemoteMediaAdapter.VideoViewHolder) videoStopPosition = this.pause()
         }
@@ -156,27 +163,72 @@ class RemoteMediaFragment: Fragment() {
 
     @Suppress("DEPRECATION")
     override fun onDestroy() {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        // BACK TO NORMAL UI
+        hideHandler.removeCallbacksAndMessages(null)
 
         requireActivity().window.run {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+
                 decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-                decorView.setOnSystemUiVisibilityChangeListener(null)
+                //decorView.setOnSystemUiVisibilityChangeListener(null)
             } else {
                 insetsController?.apply {
                     show(WindowInsets.Type.systemBars())
                     systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
                 }
                 statusBarColor = resources.getColor(R.color.color_primary)
+                navigationBarColor = previousNavBarColor
                 setDecorFitsSystemWindows(true)
-                decorView.setOnApplyWindowInsetsListener(null)
+                //decorView.setOnApplyWindowInsetsListener(null)
             }
 
-            navigationBarColor = previousNavBarColor
         }
+
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         (requireActivity() as AppCompatActivity).supportActionBar!!.show()
 
         super.onDestroy()
+    }
+
+    @Suppress("DEPRECATION")
+    private val hideSystemUI = Runnable {
+        window.run {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_IMMERSIVE
+                    // Set the content to appear under the system bars so that the
+                    // content doesn't resize when the system bars hide and show.
+                    //or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    // Hide the nav bar and status bar
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                )
+            } else {
+                insetsController?.apply {
+                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    hide(WindowInsets.Type.systemBars())
+                }
+            }
+        }
+
+        visible = false
+    }
+
+    @Suppress("DEPRECATION")
+    private val showSystemUI = Runnable {
+        window.run {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+            else insetsController?.show(WindowInsets.Type.systemBars())
+        }
+
+        visible = true
+
+        // auto hide
+        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     class RemoteMediaAdapter(private val clickListener: () -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit
@@ -429,6 +481,7 @@ class RemoteMediaFragment: Fragment() {
     companion object {
         private const val REMOTE_MEDIA = "REMOTE_MEDIA"
         private const val STOP_POSITION = "STOP_POSITION"
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         @JvmStatic
         fun newInstance(media: List<NCShareViewModel.RemotePhoto>) = RemoteMediaFragment().apply { arguments = Bundle().apply { putParcelableArray(REMOTE_MEDIA, media.toTypedArray()) } }
