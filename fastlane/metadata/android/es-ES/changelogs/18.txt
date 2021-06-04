@@ -1,0 +1,4 @@
+* Publicar (por ejemplo, compartir en el servidor Nextcloud) tus álbumes a otros usuarios de Nextcloud
+* Examinar las publicaciones de otros usuarios de Nextcloud
+* Sincronizar los metadatos de los álbumes entre tus dispositivos, restaurar los metadatos de los álbumes durante la reinstalación. No vuelvas a perder la portada de tu álbum
+* Otras mejoras y errores corregidos
