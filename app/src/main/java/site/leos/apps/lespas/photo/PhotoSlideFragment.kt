@@ -61,6 +61,7 @@ class PhotoSlideFragment : Fragment() {
     private val uiModel: UIViewModel by activityViewModels()
     private var autoRotate = false
     private var previousNavBarColor = 0
+    private var previousOrientationSetting = 0
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -172,6 +173,8 @@ class PhotoSlideFragment : Fragment() {
             pAdapter.setSavedStopPosition(this)
             videoStopPosition = this
         }
+
+        previousOrientationSetting = requireActivity().requestedOrientation
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -196,7 +199,7 @@ class PhotoSlideFragment : Fragment() {
                     pAdapter.getPhotoAt(position).run {
                         currentPhotoModel.setCurrentPhoto(this, position + 1)
 
-                        if (autoRotate) activity?.requestedOrientation =
+                        if (autoRotate) requireActivity().requestedOrientation =
                             if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     }
                 }
@@ -296,15 +299,18 @@ class PhotoSlideFragment : Fragment() {
     }
 
     override fun onStop() {
-        super.onStop()
         pAdapter.cleanUp()
+
+        super.onStop()
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         requireActivity().window.navigationBarColor = previousNavBarColor
-        (requireActivity() as AppCompatActivity).supportActionBar!!.show()
+
+        (requireActivity() as AppCompatActivity).run {
+            supportActionBar!!.show()
+            requestedOrientation = previousOrientationSetting
+        }
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
@@ -312,6 +318,8 @@ class PhotoSlideFragment : Fragment() {
         }
 
         currentPhotoModel.clearRemoveItem()
+
+        super.onDestroy()
     }
 
     class PhotoSlideAdapter(private val ctx: Context, private val rootPath: String, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage

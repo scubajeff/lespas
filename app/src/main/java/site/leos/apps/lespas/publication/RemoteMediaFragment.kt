@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -43,6 +44,7 @@ class RemoteMediaFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
 
+    private var previousOrientationSetting = 0
     private var previousNavBarColor = 0
     private var videoStopPosition = 0L
 
@@ -59,7 +61,13 @@ class RemoteMediaFragment: Fragment() {
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
-            submitList((arguments?.getParcelableArray(REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).toMutableList())
+            (arguments?.getParcelableArray(REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+                submitList(toMutableList())
+
+                previousOrientationSetting = requireActivity().requestedOrientation
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false))
+                    requireActivity().requestedOrientation = if (this[0].width > this[0].height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -186,9 +194,10 @@ class RemoteMediaFragment: Fragment() {
 
         }
 
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        (requireActivity() as AppCompatActivity).supportActionBar!!.show()
-
+        (requireActivity() as AppCompatActivity).run {
+            supportActionBar!!.show()
+            requestedOrientation = previousOrientationSetting
+        }
         super.onDestroy()
     }
 
@@ -231,7 +240,7 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class RemoteMediaAdapter(private val clickListener: () -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit
+    class RemoteMediaAdapter(private val clickListener: () -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var exoPlayer: SimpleExoPlayer
         private var currentVolume = 0f
@@ -415,6 +424,11 @@ class RemoteMediaFragment: Fragment() {
         override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
             super.onViewDetachedFromWindow(holder)
             if (holder is VideoViewHolder) holder.pause()
+        }
+
+        override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+            cancelLoader(holder.itemView.findViewById(R.id.media) as View)
+            super.onViewRecycled(holder)
         }
 
         fun setSavedStopPosition(position: Long) { savedStopPosition = position }
