@@ -95,6 +95,11 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        Tools.avoidCutOutArea(this.window)
+    }
+
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
