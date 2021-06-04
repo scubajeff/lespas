@@ -637,8 +637,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                     findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
 
                     if (recipients.size > 0) {
-                        var names = recipients[0].sharee.name
-                        for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.name}"
+                        var names = recipients[0].sharee.label
+                        for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
                         findViewById<TextView>(R.id.recipients).apply {
                             text = String.format(recipientText, names)
                             visibility = View.VISIBLE
