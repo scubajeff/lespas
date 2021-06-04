@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.Tools
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -40,7 +41,7 @@ class PublicationDetailFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
 
-    private var clickedItem = 0
+    private var clickedItem = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,7 +158,7 @@ class PublicationDetailFragment: Fragment() {
                     ViewCompat.setTransitionName(this, item.fileId)
                 }
 
-                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (item.mimeType.startsWith("video")) View.VISIBLE else View.GONE
+                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
 
                 (itemView.findViewById<TextView>(R.id.meta)).apply {
                     LocalDateTime.ofInstant(Instant.ofEpochSecond(item.timestamp), ZoneOffset.systemDefault()).apply {

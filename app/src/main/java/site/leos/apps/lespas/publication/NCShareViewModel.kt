@@ -437,57 +437,83 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
-        view.imageAlpha = 0
+        //view.imageAlpha = 0
         var bitmap: Bitmap? = null
         var animatedDrawable: Drawable? = null
         val job = viewModelScope.launch(downloadDispatcher) {
             try {
                 val key = "${photo.fileId}$type"
                 imageCache.get(key)?.let { bitmap = it } ?: run {
-                    cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use {
-                            val option = BitmapFactory.Options().apply {
-                                // TODO the following setting make picture larger, care to find a new way?
-                                //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                    // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
+                    if (type == ImageLoaderViewModel.TYPE_GRID) {
+                        cachedHttpClient?.apply {
+                            newCall(Request.Builder().url("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}").get().build()).execute().body?.use {
+                                bitmap = BitmapFactory.decodeStream(it.byteStream())
                             }
-                            when (type) {
-                                ImageLoaderViewModel.TYPE_COVER -> {
-                                    val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                                    val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
-                                    val sampleSize = when(photo.width) {
-                                        in (0..2000)-> 1
-                                        in (2000..3000)-> 2
-                                        else-> 4
+                        }
+                    }
+
+                    // If preview download fail (like no preview for video etc), or other types than TYPE_GRID, then we need to download the media file itself
+                    bitmap ?: run {
+                        // Show cached low resolution bitmap first
+                        imageCache.get("${photo.fileId}${ImageLoaderViewModel.TYPE_GRID}")?.let {
+                            withContext(Dispatchers.Main) { view.setImageBitmap(it) }
+                            callBack?.onLoadComplete()
+                        }
+
+                        val option = BitmapFactory.Options().apply {
+                            // TODO the following setting make picture larger, care to find a new way?
+                            //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                        }
+                        cachedHttpClient?.apply {
+                            newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use {
+                                when (type) {
+                                    ImageLoaderViewModel.TYPE_COVER -> {
+                                        val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
+                                        val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
+                                        val sampleSize = when (photo.width) {
+                                            in (0..2000) -> 1
+                                            in (2000..3000) -> 2
+                                            else -> 4
+                                        }
+                                        bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                     }
-                                    bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
-                                }
-                                ImageLoaderViewModel.TYPE_GRID -> {
-                                    if (photo.mimeType.startsWith("video")) {
-                                        val videoFolder = File(localRootFolder, "videos").apply { mkdir() }
-                                        val fileName = photo.path.substringAfterLast('/')
-                                        it.byteStream().use { input->
-                                            File(videoFolder, fileName).outputStream().use { output->
-                                                input.copyTo(output, 8192)
+                                    ImageLoaderViewModel.TYPE_GRID -> {
+                                        if (photo.mimeType.startsWith("video")) {
+                                            val videoFolder = File(localRootFolder, "videos").apply { mkdir() }
+                                            val fileName = photo.path.substringAfterLast('/')
+                                            it.byteStream().use { input ->
+                                                File(videoFolder, fileName).outputStream().use { output ->
+                                                    input.copyTo(output, 8192)
+                                                }
                                             }
-                                        }
-                                        MediaMetadataRetriever().apply {
-                                            setDataSource("$videoFolder/$fileName")
-                                            bitmap = getFrameAtTime(3) ?: videoThumbnail
-                                            release()
-                                        }
-                                    } else if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                            animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes()))).apply { if (this is AnimatedImageDrawable) this.start() }
-                                        } else {
-                                            bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
-                                        }
-                                    } else {
-                                        bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                            MediaMetadataRetriever().apply {
+                                                setDataSource("$videoFolder/$fileName")
+                                                bitmap = getFrameAtTime(3) ?: videoThumbnail
+                                                release()
+                                            }
+                                        } else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                    }
+                                    ImageLoaderViewModel.TYPE_FULL -> {
+                                        // only image files would be requested as TYPE_FULL
+                                        if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes()))).apply { if (this is AnimatedImageDrawable) this.start() }
+                                            } else {
+                                                bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                            }
+                                        } else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option)
                                     }
                                 }
-                                ImageLoaderViewModel.TYPE_FULL -> {
-                                    bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option)?.also { bitmap->
-                                        if (bitmap.allocationByteCount > 100000000) Bitmap.createScaledBitmap(bitmap, bitmap.width / 2, bitmap.height / 2, true)
+                            }
+                        }
+
+                        // If decoded bitmap is too large
+                        bitmap?.let {
+                            if (it.allocationByteCount > 100000000) {
+                                cachedHttpClient?.apply {
+                                    newCall(Request.Builder().url("$resourceRoot${photo.path}").get().cacheControl(CacheControl.FORCE_CACHE).build()).execute().body?.use {
+                                        bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = 2 })
                                     }
                                 }
                             }
@@ -500,7 +526,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
-                    view.imageAlpha = 255
+                    //view.imageAlpha = 255
                 }
                 callBack?.onLoadComplete()
             }
