@@ -308,12 +308,13 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     override fun onPause() {
         //Log.e(">>>>>", "onPause")
-        super.onPause()
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
             if (this is MediaPagerAdapter.VideoViewHolder) {
                 videoStopPosition = this.pause()
             }
         }
+
+        super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -322,24 +323,25 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onStop() {
-        super.onStop()
         mediaPagerAdapter.cleanUp()
+        super.onStop()
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
-
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+
+        super.onDestroyView()
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         (requireActivity() as AppCompatActivity).run {
             supportActionBar!!.show()
             window.statusBarColor = savedStatusBarColor
             window.navigationBarColor = savedNavigationBarColor
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.navigationBarDividerColor = savedNavigationBarDividerColor
         }
+
+        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

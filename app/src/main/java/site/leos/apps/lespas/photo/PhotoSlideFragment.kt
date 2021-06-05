@@ -285,12 +285,12 @@ class PhotoSlideFragment : Fragment() {
     }
 
     override fun onPause() {
-        super.onPause()
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is PhotoSlideAdapter.VideoViewHolder) videoStopPosition = this.pause()
         }
 
+        super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

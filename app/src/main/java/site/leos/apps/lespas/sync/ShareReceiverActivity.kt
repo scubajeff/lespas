@@ -50,8 +50,8 @@ class ShareReceiverActivity: AppCompatActivity() {
     }
 
     override fun onPause() {
-        super.onPause()
         overridePendingTransition(0, 0)
+        super.onPause()
     }
 
     override fun onDestroy() {

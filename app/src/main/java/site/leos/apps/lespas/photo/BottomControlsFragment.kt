@@ -218,9 +218,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
-
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+
+        super.onDestroyView()
     }
 
     @Suppress("DEPRECATION")
@@ -242,6 +242,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 decorView.setOnApplyWindowInsetsListener(null)
             }
         }
+
         super.onDestroy()
     }
 

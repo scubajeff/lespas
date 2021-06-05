@@ -78,8 +78,8 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     override fun onPause() {
-        super.onPause()
         destinationToggleGroup?.let { lastSelection = it.checkedButtonId }
+        super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
