@@ -252,16 +252,17 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                         // Create new album first, store cover, e.g. first photo in new album, in property filename
                         // TODO add this to photoActions instead
-                        actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                        //actionRepository.addAction(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                        actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                     }
 
                     // TODO publish status is not persistent locally
                     //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
                     actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
 
-                    actionRepository.addActions(actions)
                     photoRepository.insert(newPhotos)
                     albumRepository.upsert(album)
+                    actionRepository.addActions(actions)
 
                     // By setting progress to more than 100%, signaling the calling fragment/activity
                     withContext(Dispatchers.Main) { setProgress(uris.size, fileId) }
