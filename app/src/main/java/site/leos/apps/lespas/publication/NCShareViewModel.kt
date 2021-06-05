@@ -128,7 +128,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun getShareList() {
         val sharesBy = mutableListOf<ShareByMe>()
         val sharesWith = mutableListOf<ShareWithMe>()
-        var shareType: Int
         var sharee: Recipient
         var backOff = 2500L
 
@@ -136,8 +135,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             try {
                 ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                     //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                    var shareType: Int
                     var idString: String
                     var labelString: String
+                    var pathString: String
+                    val lespasBaseLength = lespasBase.length
+
                     val data = getJSONArray("data")
                     for (i in 0 until data.length()) {
                         data.getJSONObject(i).apply {
@@ -146,7 +149,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
                                 else -> -1
                             }
-                            if (shareType >= 0 && getBoolean("is_directory") && getString("path").startsWith(lespasBase)) {
+                            pathString = getString("path")
+                            if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
                                 // Only interested in shares of subfolders under lespas/
                                 if (getString("owner") == userName) {
                                     idString = getString("recipient")
@@ -208,14 +212,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun updateShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
-        var shareType: Int
         var sharee: Recipient
 
         try {
             ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                var shareType: Int
                 var idString: String
                 var labelString: String
+                var pathString: String
+                val lespasBaseLength = lespasBase.length
+
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -224,7 +231,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
                             else-> -1
                         }
-                        if (shareType >= 0 && getString("owner") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
+                        pathString = getString("path")
+                        if (shareType >= 0 && getString("owner") == userName && getBoolean("is_directory") && pathString.startsWith("/lespas") && pathString.length > lespasBaseLength) {
                             // Only interested in shares of subfolders under lespas/
 
                             idString = getString("recipient")
