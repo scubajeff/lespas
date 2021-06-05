@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
@@ -476,6 +477,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
+    @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
@@ -541,7 +543,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // only image files would be requested as TYPE_FULL
                                         if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
                                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes()))).apply { if (this is AnimatedImageDrawable) this.start() }
+                                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes())))
                                             } else {
                                                 bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                             }
@@ -568,7 +570,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
+                    animatedDrawable?.let { view.setImageDrawable(it.apply { (this as AnimatedImageDrawable).start() })} ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     //view.imageAlpha = 255
                 }
                 callBack?.onLoadComplete()
