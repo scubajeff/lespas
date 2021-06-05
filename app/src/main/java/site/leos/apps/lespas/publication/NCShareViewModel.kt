@@ -490,12 +490,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 val key = "${photo.fileId}$type"
                 imageCache.get(key)?.let { bitmap = it } ?: run {
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
-                    if (type == ImageLoaderViewModel.TYPE_GRID) {
-                        cachedHttpClient?.apply {
-                            newCall(Request.Builder().url("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}").get().build()).execute().body?.use {
-                                bitmap = BitmapFactory.decodeStream(it.byteStream())
+                    try {
+                        if (type == ImageLoaderViewModel.TYPE_GRID) {
+                            cachedHttpClient?.apply {
+                                newCall(Request.Builder().url("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}").get().build()).execute().body?.use {
+                                    bitmap = BitmapFactory.decodeStream(it.byteStream())
+                                }
                             }
                         }
+                    } catch(e: Exception) {
+                        // Catch all exception, give TYPE_GRID another chance below
+                        e.printStackTrace()
+                        bitmap = null
                     }
 
                     // If preview download fail (like no preview for video etc), or other types than TYPE_GRID, then we need to download the media file itself
@@ -556,6 +562,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         // If decoded bitmap is too large
                         bitmap?.let {
                             if (it.allocationByteCount > 100000000) {
+                                bitmap = null
                                 cachedHttpClient?.apply {
                                     newCall(Request.Builder().url("$resourceRoot${photo.path}").get().cacheControl(CacheControl.FORCE_CACHE).build()).execute().body?.use {
                                         bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = 2 })
