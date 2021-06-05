@@ -41,6 +41,7 @@ class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
     private lateinit var stub: View
+    private lateinit var emptyView: ImageView
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
@@ -106,6 +107,8 @@ class SearchResultFragment : Fragment() {
 
         searchResultRecyclerView = view.findViewById(R.id.photogrid)
         stub = view.findViewById(R.id.stub)
+        emptyView = view.findViewById(R.id.emptyview)
+        if (arguments?.getBoolean(SEARCH_COLLECTION)!!) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
 
         searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -115,10 +118,10 @@ class SearchResultFragment : Fragment() {
             private fun toggleEmptyView() {
                 if (searchResultAdapter.itemCount == 0) {
                     searchResultRecyclerView.visibility = View.GONE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.VISIBLE
+                    emptyView.visibility = View.VISIBLE
                 } else {
                     searchResultRecyclerView.visibility = View.VISIBLE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.GONE
+                    emptyView.visibility = View.GONE
                 }
             }
 
