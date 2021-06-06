@@ -7,19 +7,20 @@
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
 Features:
-* Simple, beautiful and fast photos & videos viewing
-* View picture details
-* Organized albums
-* Manage your phone's camera roll and auto backup to server
-* Synchronization among your Nextcloud server and multiple devices
-* Manage albums and photos on Nextcloud server and also on your phones
-* Native sharing with other users on Nextcloud server
-* Search for photos by objects
-* Integrate Snapseed for photo editing
-* Share to social networks
-* Theme design inspired by Wes Anderson's works
-* All files saved in App's private storage, stop being scanned by malicious apps
-* Open-source
+- Simple, beautiful and fast photos & videos viewing
+- View picture details
+- Organized albums
+- Manage your phone's camera roll and auto backup to server
+- Synchronization among your Nextcloud server and multiple devices
+- Manage albums and photos on Nextcloud server and also on your phones
+- Share album with other users on Nextcloud server
+- Search for photos by objects
+- Integrate Snapseed for photo editing
+- Share to social networks
+- Theme design inspired by Wes Anderson's works
+- All files saved in App's private storage, stop being scanned by malicious apps
+- Open-source
+
 
 This project build using the following open source software:
 - <a href=https://github.com/thegrizzlylabs/sardine-android>Sardine-android</a>
@@ -49,10 +50,10 @@ Whenever you did something with your albums on your phone, Les Pas will synchron
 Upon opening Les Pas app, it will sync with server once. If you enable periodic sync setting, Les Pas will synchronize with your server every 6 hours in the background.<br>
 One-way backup of phone's camera roll is a background job which also happen every 6 hours. So don't delete photos from your camera roll too fast too soon.
  
-### Checklist for enabling native sharing feature
-To enable publishing (e.g. sharing album to other users on Nextcloud server), there are things you need to setup beforehand:
+### Checklist for enabling sharing on Nextcloud server
+To enable publishing (e.g. sharing album to other users on Nextcloud server), there are several things you need to take care beforehand:
 - Make sure your are using LesPas version 2.0+
 - Install and enable [Share Listing](https://apps.nextcloud.com/apps/sharelisting) on your Nextcloud server
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. User not belongs to any group can not download sharee list from server, this is a limitation of Nextcloud Sharee API
 - Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
-- Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This is done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [document](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for detail.
+- Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [document](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for detail.

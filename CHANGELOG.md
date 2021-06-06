@@ -1,4 +1,10 @@
+## Version 2.0.2
+* Fixed various publishing (sharing on Nextcloud server) related bugs
+
 ## Version 2.0.1
+* Fixed crash when opening albums, cause by updating some kotlin libraries
+
+## Version 2.0.0
 * Publish (e.g. sharing on Nextcloud server) your albums to other Nextcloud users
 * Browse other Nextcloud users' publications
 * Sync album meta data among your devices, restore album meta data during reinstall. Never lost your album cover again.

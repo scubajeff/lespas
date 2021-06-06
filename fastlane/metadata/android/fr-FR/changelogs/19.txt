@@ -1,0 +1,4 @@
+* Publiez (par exemple en partageant sur le serveur Nextcloud) vos albums à d'autres utilisateurs de Nextcloud.
+* Parcourir les publications des autres utilisateurs de Nextcloud
+* Synchronisation des méta-données des albums entre vos appareils, restauration des méta-données des albums lors de la réinstallation. Ne perdez plus jamais la couverture de votre album
+* Autres améliorations et corrections de bogues
