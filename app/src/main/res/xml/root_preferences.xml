@@ -1,7 +1,9 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory app:title="@string/view_header">
+    <PreferenceCategory
+        app:title="@string/view_header"
+        app:icon="@drawable/ic_baseline_style_24">
         <ListPreference
             app:key="@string/auto_theme_perf_key"
             app:title="@string/auto_theme_title"
@@ -18,7 +20,9 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/sync_header">
+    <PreferenceCategory
+        app:title="@string/sync_header"
+        app:icon="@drawable/ic_baseline_sync_24">
         <SwitchPreferenceCompat
             app:key="@string/cameraroll_backup_pref_key"
             android:title="@string/cameraroll_backup_title"
@@ -42,7 +46,9 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/storage_header">
+    <PreferenceCategory
+        app:title="@string/storage_header"
+        app:icon="@drawable/ic_baseline_storage_24">
         <Preference
             app:key="@string/transfer_pref_key"
             app:title="@string/transfer_to_external"
@@ -54,7 +60,9 @@
             app:singleLineTitle="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/other_header">
+    <PreferenceCategory
+        app:title="@string/other_header"
+        app:icon="@drawable/ic_baseline_miscellaneous_services_24">
         <SwitchPreferenceCompat
             app:key="@string/gallery_launcher_pref_key"
             android:title="@string/gallery_launcher_title"
