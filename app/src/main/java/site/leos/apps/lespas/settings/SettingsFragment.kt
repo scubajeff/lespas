@@ -13,7 +13,9 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
+import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -37,6 +39,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.sync.SyncAdapter
+
 
 class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnResultListener {
     private var summaryString: String? = null
@@ -177,6 +180,15 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        val tv = TypedValue()
+        if (requireActivity().theme.resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+            (requireView().parent as ViewGroup).setPadding(0, TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics), 0, 0)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -194,6 +206,12 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         super.onSaveInstanceState(outState)
         summaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
         outState.putLong(STATISTIC_TOTAL_SIZE, totalSize)
+    }
+
+    override fun onStop() {
+        (requireView().parent as ViewGroup).setPadding(0, 0, 0, 0)
+
+        super.onStop()
     }
 
     override fun onPreferenceTreeClick(preference: Preference?): Boolean =
