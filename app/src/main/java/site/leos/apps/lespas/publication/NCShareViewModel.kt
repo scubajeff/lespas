@@ -139,6 +139,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     var idString: String
                     var labelString: String
                     var pathString: String
+                    var recipientString: String
                     val lespasBaseLength = lespasBase.length
 
                     val data = getJSONArray("data")
@@ -152,9 +153,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             pathString = getString("path")
                             if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
                                 // Only interested in shares of subfolders under lespas/
+
+                                recipientString = getString("recipient")
                                 if (getString("owner") == userName) {
-                                    idString = getString("recipient")
+                                    // This is a share by me, get recipient's label
+                                    idString = recipientString
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+
                                     sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
 
                                     @Suppress("SimpleRedundantLet")
@@ -165,10 +170,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // Create new share by me item
                                         sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
                                     }
-                                } else if (getString("recipient") == userName) {
+                                } else if (sharesWith.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || _sharees.value.indexOfFirst { it.name == recipientString && it.type == SHARE_TYPE_GROUP} != -1)) {
+                                    // This is a share with me, either direct to me or to my groups, get owner's label
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                                    sharesWith.add(ShareWithMe(getString("id"),"",getString("file_id"),getString("name"),idString,labelString,getInt("permissions"),OffsetDateTime.parse(getString("time")).toInstant().epochSecond,Cover("", 0, 0, 0),"",Album.BY_DATE_TAKEN_ASC))
+
+                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC))
                                 }
                             }
                         }
@@ -263,13 +270,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun getShareWithMe(): MutableList<ShareWithMe> {
         val result = mutableListOf<ShareWithMe>()
-        var shareType: Int
 
         try {
             ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                var shareType: Int
                 var idString: String
                 var labelString: String
+                var pathString: String
+                var recipientString: String
+                val lespasBaseLength = lespasBase.length
+
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -278,10 +289,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
                             else -> -1
                         }
-                        if (shareType >= 0 && getString("recipient") == userName && getBoolean("is_directory") && getString("path").startsWith("/lespas")) {
-                            idString = getString("owner")
-                            labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                            result.add(ShareWithMe(getString("id"),"",getString("file_id"),getString("name"),idString,labelString,getInt("permissions"),OffsetDateTime.parse(getString("time")).toInstant().epochSecond,Cover("", 0, 0, 0),"",Album.BY_DATE_TAKEN_ASC))
+                        pathString = getString("path")
+                        if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
+                            // Only interested in shares of subfolders under lespas/
+
+                            recipientString = getString("recipient")
+                            if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || _sharees.value.indexOfFirst { it.name == recipientString && it.type == SHARE_TYPE_GROUP} != -1)) {
+                                // This is a share with me, either direct to me or to my groups, get owner's label
+                                idString = getString("owner")
+                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+
+                                result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                            }
                         }
                     }
                 }
