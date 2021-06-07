@@ -50,7 +50,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
-    private val uris = ArrayList<Uri>()
+    private val uris = arrayListOf<Uri>()
 
     private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
