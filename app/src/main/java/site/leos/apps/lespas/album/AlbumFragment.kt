@@ -50,7 +50,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
     private lateinit var selectionTracker: SelectionTracker<Long>
     private lateinit var lastSelection: MutableSet<Long>
-    private val uris = arrayListOf<Uri>()
+    private val uris = ArrayList<Uri>()
 
     private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
@@ -194,7 +194,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onResume() {
         super.onResume()
 
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+        (activity as? AppCompatActivity)?.supportActionBar?.run {
             setDisplayHomeAsUpEnabled(false)
             setDisplayShowTitleEnabled(true)
             title = getString(R.string.app_name)
