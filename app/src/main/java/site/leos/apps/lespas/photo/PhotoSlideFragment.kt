@@ -84,7 +84,7 @@ class PhotoSlideFragment : Fragment() {
                 sharedElements?.put(names?.get(0)!!, slider.getChildAt(0).findViewById(R.id.media))}
         })
 
-        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+        autoRotate = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
 
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
@@ -105,7 +105,7 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
-        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+        requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {

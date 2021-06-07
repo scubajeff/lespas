@@ -78,9 +78,9 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 progressLinearLayout.visibility = View.GONE
                 dialogTitleTextView.text = getString(R.string.finished_preparing_files)
                 var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
-                    if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                        note += context?.getString(R.string.mind_network_setting)
+                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.wifionly_pref_key), true)) {
+                    if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                        note += requireContext().getString(R.string.mind_network_setting)
                     }
                 }
                 messageTextView.text = note
