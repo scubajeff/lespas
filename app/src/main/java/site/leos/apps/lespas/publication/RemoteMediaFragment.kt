@@ -130,13 +130,6 @@ class RemoteMediaFragment: Fragment() {
         toggleSystemUI()
     }
 
-    private var visible: Boolean = true
-    private val hideHandler = Handler(Looper.getMainLooper())
-    private fun toggleSystemUI() {
-        hideHandler.removeCallbacksAndMessages(null)
-        hideHandler.post(if (visible) hideSystemUI else showSystemUI)
-    }
-
     override fun onStart() {
         super.onStart()
         pAdapter.initializePlayer(requireContext())
@@ -201,6 +194,13 @@ class RemoteMediaFragment: Fragment() {
             requestedOrientation = previousOrientationSetting
         }
         super.onDestroy()
+    }
+
+    private var visible: Boolean = true
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private fun toggleSystemUI() {
+        hideHandler.removeCallbacksAndMessages(null)
+        hideHandler.post(if (visible) hideSystemUI else showSystemUI)
     }
 
     @Suppress("DEPRECATION")
