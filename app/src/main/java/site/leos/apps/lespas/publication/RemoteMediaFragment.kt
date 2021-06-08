@@ -6,10 +6,7 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -32,6 +29,7 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import java.io.File
@@ -46,7 +44,7 @@ class RemoteMediaFragment: Fragment() {
 
     private var previousOrientationSetting = 0
     private var previousNavBarColor = 0
-    private var videoStopPosition = 0L
+    private var videoPlayerState = RemoteMediaAdapter.PlayerState(isMuted = false, stopPosition = RemoteMediaAdapter.FAKE_POSITION)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,9 +81,9 @@ class RemoteMediaFragment: Fragment() {
             }
         })
 
-        savedInstanceState?.getLong(STOP_POSITION)?.apply {
-            pAdapter.setSavedStopPosition(this)
-            videoStopPosition = this
+        savedInstanceState?.getParcelable<RemoteMediaAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            pAdapter.setPlayerState(this)
+            videoPlayerState = this
         }
 
     }
@@ -149,14 +147,13 @@ class RemoteMediaFragment: Fragment() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is RemoteMediaAdapter.VideoViewHolder) videoStopPosition = this.pause()
+            if (this is RemoteMediaAdapter.VideoViewHolder) videoPlayerState = this.pause()
         }
-
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLong(STOP_POSITION, videoStopPosition)
+        outState.putParcelable(PLAYER_STATE, videoPlayerState)
     }
 
     override fun onStop() {
@@ -247,7 +244,13 @@ class RemoteMediaFragment: Fragment() {
         private lateinit var exoPlayer: SimpleExoPlayer
         private var currentVolume = 0f
         private var oldVideoViewHolder: VideoViewHolder? = null
-        private var savedStopPosition = FAKE_POSITION
+        private var savedPlayerState = PlayerState(isMuted = false, stopPosition = FAKE_POSITION)
+
+        @Parcelize
+        data class PlayerState(
+            var isMuted: Boolean,
+            var stopPosition: Long,
+        ): Parcelable
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindView(photo: NCShareViewModel.RemotePhoto) {
@@ -283,9 +286,11 @@ class RemoteMediaFragment: Fragment() {
 
             @SuppressLint("ClickableViewAccessibility")
             fun bindView(video: NCShareViewModel.RemotePhoto) {
-                if (savedStopPosition != FAKE_POSITION) {
-                    stopPosition = savedStopPosition
-                    savedStopPosition = FAKE_POSITION
+                if (savedPlayerState.stopPosition != FAKE_POSITION) {
+                    stopPosition = savedPlayerState.stopPosition
+                    savedPlayerState.stopPosition = FAKE_POSITION
+
+                    if (savedPlayerState.isMuted) exoPlayer.volume = 0f
                 }
                 muteButton = itemView.findViewById(R.id.exo_mute)
                 videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
@@ -357,7 +362,7 @@ class RemoteMediaFragment: Fragment() {
                 }
             }
 
-            fun pause(): Long {
+            fun pause(): PlayerState {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -372,7 +377,7 @@ class RemoteMediaFragment: Fragment() {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return stopPosition
+                return PlayerState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -433,11 +438,12 @@ class RemoteMediaFragment: Fragment() {
             super.onViewRecycled(holder)
         }
 
-        fun setSavedStopPosition(position: Long) { savedStopPosition = position }
+        fun setPlayerState(state: PlayerState) { savedPlayerState = state }
 
         fun initializePlayer(ctx: Context) {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
             exoPlayer = SimpleExoPlayer.Builder(ctx).build()
+            currentVolume = exoPlayer.volume
             exoPlayer.addListener(object: Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     super.onPlaybackStateChanged(state)
@@ -477,7 +483,7 @@ class RemoteMediaFragment: Fragment() {
             private const val TYPE_ANIMATED = 1
             private const val TYPE_VIDEO = 2
 
-            private const val FAKE_POSITION = -1L
+            const val FAKE_POSITION = -1L
         }
     }
 
@@ -488,7 +494,7 @@ class RemoteMediaFragment: Fragment() {
 
     companion object {
         private const val REMOTE_MEDIA = "REMOTE_MEDIA"
-        private const val STOP_POSITION = "STOP_POSITION"
+        private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         @JvmStatic

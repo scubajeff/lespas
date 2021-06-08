@@ -12,6 +12,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.transition.Slide
@@ -40,6 +41,7 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
@@ -77,7 +79,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var quickScrollAdapter: QuickScrollAdapter
 
     private lateinit var startWithThisMedia: String
-    private var videoStopPosition = 0L
+    private var videoPlayerState = MediaPagerAdapter.PlayerState(isMuted = false, stopPosition = MediaPagerAdapter.FAKE_POSITION)
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -112,9 +114,9 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             })
         }
 
-        savedInstanceState?.apply {
-            mediaPagerAdapter.setSavedStopPosition(getLong(STOP_POSITION))
-            videoStopPosition = getLong(STOP_POSITION)
+        savedInstanceState?.getParcelable<MediaPagerAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            mediaPagerAdapter.setPlayerState(this)
+            videoPlayerState = this
         }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
@@ -310,7 +312,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         //Log.e(">>>>>", "onPause")
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
             if (this is MediaPagerAdapter.VideoViewHolder) {
-                videoStopPosition = this.pause()
+                videoPlayerState = this.pause()
             }
         }
 
@@ -319,7 +321,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLong(STOP_POSITION, videoStopPosition)
+        outState.putParcelable(PLAYER_STATE, videoPlayerState)
     }
 
     override fun onStop() {
@@ -521,7 +523,13 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private lateinit var exoPlayer: SimpleExoPlayer
         private var currentVolume = 0f
         private var oldVideoViewHolder: VideoViewHolder? = null
-        private var savedStopPosition = FAKE_POSITION
+        private var savedPlayerState = PlayerState(isMuted = false, stopPosition = FAKE_POSITION)
+
+        @Parcelize
+        data class PlayerState(
+            var isMuted: Boolean,
+            var stopPosition: Long,
+        ): Parcelable
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bind(photo: Photo) {
@@ -547,9 +555,11 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
             @SuppressLint("ClickableViewAccessibility")
             fun bind(video: Photo) {
-                if (savedStopPosition != FAKE_POSITION) {
-                    stopPosition = savedStopPosition
-                    savedStopPosition = FAKE_POSITION
+                if (savedPlayerState.stopPosition != FAKE_POSITION) {
+                    stopPosition = savedPlayerState.stopPosition
+                    savedPlayerState.stopPosition = FAKE_POSITION
+
+                    if (savedPlayerState.isMuted) exoPlayer.volume = 0f
                 }
                 muteButton = itemView.findViewById(R.id.exo_mute)
                 videoView = itemView.findViewById(R.id.player_view)
@@ -612,7 +622,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 }
             }
 
-            fun pause(): Long {
+            fun pause(): PlayerState {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -627,7 +637,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return stopPosition
+                return PlayerState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -692,11 +702,12 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         fun getMediaAtPosition(position: Int): Photo = currentList[position]
         fun findMediaPosition(photo: Photo): Int = currentList.indexOf(photo)
-        fun setSavedStopPosition(position: Long) { savedStopPosition = position }
+        fun setPlayerState(state: PlayerState) { savedPlayerState = state }
 
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
             exoPlayer = SimpleExoPlayer.Builder(ctx).build()
+            currentVolume = exoPlayer.volume
             exoPlayer.addListener(object: Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     super.onPlaybackStateChanged(state)
@@ -732,7 +743,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             private const val TYPE_PHOTO = 0
             private const val TYPE_VIDEO = 2
 
-            private const val FAKE_POSITION = -1L
+            const val FAKE_POSITION = -1L
         }
     }
 
@@ -810,7 +821,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         private const val STORAGE_PERMISSION_REQUEST = 6464
 
-        private const val STOP_POSITION = "STOP_POSITION"
+        private const val PLAYER_STATE = "PLAYER_STATE"
 
         @JvmStatic
         fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}

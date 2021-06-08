@@ -9,10 +9,7 @@ import android.database.ContentObserver
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.provider.MediaStore
 import android.view.*
 import android.widget.ImageButton
@@ -39,6 +36,7 @@ import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -66,7 +64,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
 
-    private var videoStopPosition = 0L
+    private var videoPlayerState = PhotoSlideAdapter.PlayerState(isMuted = false, stopPosition = PhotoSlideAdapter.FAKE_POSITION)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,9 +167,9 @@ class PhotoSlideFragment : Fragment() {
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
             else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
 
-        savedInstanceState?.getLong(STOP_POSITION)?.apply {
-            pAdapter.setSavedStopPosition(this)
-            videoStopPosition = this
+        savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            pAdapter.setPlayerState(this)
+            videoPlayerState = this
         }
 
         previousOrientationSetting = requireActivity().requestedOrientation
@@ -287,7 +285,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onPause() {
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is PhotoSlideAdapter.VideoViewHolder) videoStopPosition = this.pause()
+            if (this is PhotoSlideAdapter.VideoViewHolder) videoPlayerState = this.pause()
         }
 
         super.onPause()
@@ -295,7 +293,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLong(STOP_POSITION, videoStopPosition)
+        outState.putParcelable(PLAYER_STATE, videoPlayerState)
     }
 
     override fun onStop() {
@@ -329,8 +327,13 @@ class PhotoSlideFragment : Fragment() {
         private lateinit var exoPlayer: SimpleExoPlayer
         private var currentVolume = 0f
         private var oldVideoViewHolder: VideoViewHolder? = null
-        private var savedStopPosition = FAKE_POSITION
+        private var savedPlayerState = PlayerState(isMuted = false, stopPosition = FAKE_POSITION)
 
+        @Parcelize
+        data class PlayerState(
+            var isMuted: Boolean,
+            var stopPosition: Long,
+        ): Parcelable
 
         fun interface OnTouchListener { fun onTouch() }
         fun interface OnLoadImage { fun loadImage(photo: Photo, view: View, type: String) }
@@ -383,9 +386,11 @@ class PhotoSlideFragment : Fragment() {
 
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(video: Photo) {
-                if (savedStopPosition != FAKE_POSITION) {
-                    stopPosition = savedStopPosition
-                    savedStopPosition = FAKE_POSITION
+                if (savedPlayerState.stopPosition != FAKE_POSITION) {
+                    stopPosition = savedPlayerState.stopPosition
+                    savedPlayerState.stopPosition = FAKE_POSITION
+
+                    if (savedPlayerState.isMuted) exoPlayer.volume = 0f
                 }
                 muteButton = itemView.findViewById(R.id.exo_mute)
                 videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
@@ -459,7 +464,7 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
 
-            fun pause(): Long {
+            fun pause(): PlayerState {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -474,7 +479,7 @@ class PhotoSlideFragment : Fragment() {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return stopPosition
+                return PlayerState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -578,11 +583,12 @@ class PhotoSlideFragment : Fragment() {
             if (holder is VideoViewHolder) holder.pause()
         }
 
-        fun setSavedStopPosition(position: Long) { savedStopPosition = position }
+        fun setPlayerState(state: PlayerState) { savedPlayerState = state }
 
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
             exoPlayer = SimpleExoPlayer.Builder(ctx).build()
+            currentVolume = exoPlayer.volume
             exoPlayer.addListener(object: Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
                     super.onPlaybackStateChanged(state)
@@ -622,7 +628,7 @@ class PhotoSlideFragment : Fragment() {
             private const val TYPE_ANIMATED = 1
             private const val TYPE_VIDEO = 2
 
-            private const val FAKE_POSITION = -1L
+            const val FAKE_POSITION = -1L
         }
     }
 
@@ -677,7 +683,7 @@ class PhotoSlideFragment : Fragment() {
     }
 
     companion object {
-        private const val STOP_POSITION = "STOP_POSITION"
+        private const val PLAYER_STATE = "PLAYER_STATE"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
 
