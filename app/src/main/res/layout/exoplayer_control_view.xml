@@ -4,9 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingTop="@dimen/extra_padding"
-    android:paddingHorizontal="@dimen/video_player_controls_right_margin">
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/small_padding"
+    android:padding="@dimen/big_padding"
+    android:background="#40000000" >
 
     <ImageButton
         android:id="@+id/exo_mute"
