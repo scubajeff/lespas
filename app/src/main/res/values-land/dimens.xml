@@ -2,4 +2,5 @@
 <resources>
     <dimen name="destination_list_maximum_height">128dp</dimen>
     <dimen name="video_player_controls_right_margin">36dp</dimen>
+    <dimen name="player_control_layout_margin">56dp</dimen>
 </resources>
