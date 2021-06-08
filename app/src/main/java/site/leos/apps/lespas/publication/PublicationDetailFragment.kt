@@ -121,7 +121,7 @@ class PublicationDetailFragment: Fragment() {
 
         stub = vg.findViewById(R.id.stub)
         photoList = vg.findViewById<RecyclerView>(R.id.photo_list).apply {
-            layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
+            layoutManager = StaggeredGridLayoutManager(resources.getInteger(R.integer.publication_detail_grid_span_count), StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
             adapter = photoListAdapter
         }
 

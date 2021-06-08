@@ -3,5 +3,6 @@
     <integer name="album_grid_span_count">3</integer>
     <integer name="photo_grid_span_count">8</integer>
     <integer name="search_category_grid_span_count">6</integer>
+    <integer name="publication_detail_grid_span_count">4</integer>
     <integer name="dialog_width_ratio">45</integer>
 </resources>

@@ -13,6 +13,8 @@
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
         android:layout_marginLeft="2dp"
+        app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
+        app:spanCount="@integer/publication_detail_grid_span_count"
         tools:listitem="@layout/recyclerview_item_remote_media"
         tools:ignore="RtlHardcoded" />
 
