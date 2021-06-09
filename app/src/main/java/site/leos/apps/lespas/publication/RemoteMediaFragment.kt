@@ -44,7 +44,6 @@ class RemoteMediaFragment: Fragment() {
 
     private var previousOrientationSetting = 0
     private var previousNavBarColor = 0
-    private var videoPlayerState = RemoteMediaAdapter.PlayerState(isMuted = false, stopPosition = RemoteMediaAdapter.FAKE_POSITION)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,10 +80,7 @@ class RemoteMediaFragment: Fragment() {
             }
         })
 
-        savedInstanceState?.getParcelable<RemoteMediaAdapter.PlayerState>(PLAYER_STATE)?.apply {
-            pAdapter.setPlayerState(this)
-            videoPlayerState = this
-        }
+        savedInstanceState?.getParcelable<RemoteMediaAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
 
     }
 
@@ -147,13 +143,13 @@ class RemoteMediaFragment: Fragment() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is RemoteMediaAdapter.VideoViewHolder) videoPlayerState = this.pause()
+            if (this is RemoteMediaAdapter.VideoViewHolder) this.pause()
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelable(PLAYER_STATE, videoPlayerState)
+        outState.putParcelable(PLAYER_STATE, pAdapter.getPlayerState())
     }
 
     override fun onStop() {
@@ -250,7 +246,12 @@ class RemoteMediaFragment: Fragment() {
         data class PlayerState(
             var isMuted: Boolean,
             var stopPosition: Long,
-        ): Parcelable
+        ): Parcelable {
+            fun setState(isMuted: Boolean, stopPosition: Long) {
+                this.isMuted = isMuted
+                this.stopPosition = stopPosition
+            }
+        }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindView(photo: NCShareViewModel.RemotePhoto) {
@@ -362,7 +363,7 @@ class RemoteMediaFragment: Fragment() {
                 }
             }
 
-            fun pause(): PlayerState {
+            fun pause() {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -377,7 +378,7 @@ class RemoteMediaFragment: Fragment() {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return PlayerState(exoPlayer.volume == 0f, stopPosition)
+                savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -439,6 +440,7 @@ class RemoteMediaFragment: Fragment() {
         }
 
         fun setPlayerState(state: PlayerState) { savedPlayerState = state }
+        fun getPlayerState(): PlayerState = savedPlayerState
 
         fun initializePlayer(ctx: Context) {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()

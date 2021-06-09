@@ -64,8 +64,6 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
 
-    private var videoPlayerState = PhotoSlideAdapter.PlayerState(isMuted = false, stopPosition = PhotoSlideAdapter.FAKE_POSITION)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -167,10 +165,7 @@ class PhotoSlideFragment : Fragment() {
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
             else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
 
-        savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply {
-            pAdapter.setPlayerState(this)
-            videoPlayerState = this
-        }
+        savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
 
         previousOrientationSetting = requireActivity().requestedOrientation
     }
@@ -285,7 +280,7 @@ class PhotoSlideFragment : Fragment() {
     override fun onPause() {
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is PhotoSlideAdapter.VideoViewHolder) videoPlayerState = this.pause()
+            if (this is PhotoSlideAdapter.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -293,7 +288,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelable(PLAYER_STATE, videoPlayerState)
+        outState.putParcelable(PLAYER_STATE, pAdapter.getPlayerState())
     }
 
     override fun onStop() {
@@ -333,7 +328,12 @@ class PhotoSlideFragment : Fragment() {
         data class PlayerState(
             var isMuted: Boolean,
             var stopPosition: Long,
-        ): Parcelable
+        ): Parcelable {
+            fun setState(isMuted: Boolean, stopPosition: Long) {
+                this.isMuted = isMuted
+                this.stopPosition = stopPosition
+            }
+        }
 
         fun interface OnTouchListener { fun onTouch() }
         fun interface OnLoadImage { fun loadImage(photo: Photo, view: View, type: String) }
@@ -464,7 +464,7 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
 
-            fun pause(): PlayerState {
+            fun pause() {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -479,7 +479,7 @@ class PhotoSlideFragment : Fragment() {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return PlayerState(exoPlayer.volume == 0f, stopPosition)
+                savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -584,6 +584,7 @@ class PhotoSlideFragment : Fragment() {
         }
 
         fun setPlayerState(state: PlayerState) { savedPlayerState = state }
+        fun getPlayerState(): PlayerState = savedPlayerState
 
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()

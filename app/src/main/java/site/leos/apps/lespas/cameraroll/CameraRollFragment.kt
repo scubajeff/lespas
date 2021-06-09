@@ -79,7 +79,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var quickScrollAdapter: QuickScrollAdapter
 
     private lateinit var startWithThisMedia: String
-    private var videoPlayerState = MediaPagerAdapter.PlayerState(isMuted = false, stopPosition = MediaPagerAdapter.FAKE_POSITION)
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -114,10 +113,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             })
         }
 
-        savedInstanceState?.getParcelable<MediaPagerAdapter.PlayerState>(PLAYER_STATE)?.apply {
-            mediaPagerAdapter.setPlayerState(this)
-            videoPlayerState = this
-        }
+        savedInstanceState?.getParcelable<MediaPagerAdapter.PlayerState>(PLAYER_STATE)?.apply { mediaPagerAdapter.setPlayerState(this) }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
 
@@ -311,9 +307,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     override fun onPause() {
         //Log.e(">>>>>", "onPause")
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
-            if (this is MediaPagerAdapter.VideoViewHolder) {
-                videoPlayerState = this.pause()
-            }
+            if (this is MediaPagerAdapter.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -321,7 +315,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelable(PLAYER_STATE, videoPlayerState)
+        outState.putParcelable(PLAYER_STATE, mediaPagerAdapter.getPlayerState())
     }
 
     override fun onStop() {
@@ -529,7 +523,12 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         data class PlayerState(
             var isMuted: Boolean,
             var stopPosition: Long,
-        ): Parcelable
+        ): Parcelable {
+            fun setState(isMuted: Boolean, stopPosition: Long) {
+                this.isMuted = isMuted
+                this.stopPosition = stopPosition
+            }
+        }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bind(photo: Photo) {
@@ -622,7 +621,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 }
             }
 
-            fun pause(): PlayerState {
+            fun pause() {
                 //Log.e(">>>>", "pause playback")
                 // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
                 if (oldVideoViewHolder == this) {
@@ -637,7 +636,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 // Resume auto screen off
                 (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-                return PlayerState(exoPlayer.volume == 0f, stopPosition)
+                savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
             }
 
             private fun mute() {
@@ -703,6 +702,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         fun getMediaAtPosition(position: Int): Photo = currentList[position]
         fun findMediaPosition(photo: Photo): Int = currentList.indexOf(photo)
         fun setPlayerState(state: PlayerState) { savedPlayerState = state }
+        fun getPlayerState(): PlayerState = savedPlayerState
 
         fun initializePlayer() {
             //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
