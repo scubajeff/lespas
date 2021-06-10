@@ -182,6 +182,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 }
 
+                _shareByMe.value = sharesBy
+
                 for (share in sharesWith) {
                     share.sharePath = getSharePath(share.shareId) ?: ""
                     cachedHttpClient?.apply {
@@ -197,7 +199,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 }
 
-                _shareByMe.value = sharesBy
                 _shareWithMe.value = sharesWith.apply { sort() }
                 break
             }
