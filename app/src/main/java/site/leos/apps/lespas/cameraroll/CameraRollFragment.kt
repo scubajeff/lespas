@@ -8,6 +8,8 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -456,21 +458,35 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                     }
                 }
                 else {
-                    if (photo.mimeType == "image/jpeg" || photo.mimeType == "image/tiff") {
-                        val exif = ExifInterface(cr.openInputStream(uri)!!)
+                    when(photo.mimeType) {
+                        "image/jpeg", "image/tiff"-> {
+                            val exif = ExifInterface(cr.openInputStream(uri)!!)
 
-                        // Get date
-                        photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
-                            try {
-                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
-                            } catch (e:Exception) {
-                                e.printStackTrace()
-                                LocalDateTime.now()
+                            // Get date
+                            photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
+                                try {
+                                    LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                                } catch (e:Exception) {
+                                    e.printStackTrace()
+                                    LocalDateTime.now()
+                                }
+                            } ?: LocalDateTime.now()
+
+                            // Store orientation in property shareId
+                            photo.shareId = exif.rotationDegrees
+                        }
+                        "image/gif"-> {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                // Set my own image/agif mimetype for animated GIF
+                                if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/agif"
                             }
-                        } ?: LocalDateTime.now()
-
-                        // Store orientation in property shareId
-                        photo.shareId = exif.rotationDegrees
+                        }
+                        "image/webp"-> {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                // Set my own image/agif mimetype for animated GIF
+                                if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/awebp"
+                            }
+                        }
                     }
 
                     BitmapFactory.Options().run {
@@ -541,6 +557,21 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                     maximumScale = 5.0f
                     mediumScale = 2.5f
 
+                    ViewCompat.setTransitionName(this, photo.id)
+                }
+            }
+        }
+
+        inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            @SuppressLint("ClickableViewAccessibility")
+            fun bind(photo: Photo) {
+                itemView.findViewById<ImageView>(R.id.media).apply {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(this.context.contentResolver, Uri.parse(photo.id))).apply { if (this is AnimatedImageDrawable) this.start() })
+                    } else {
+                        setImageBitmap(BitmapFactory.decodeStream(this.context.contentResolver.openInputStream(Uri.parse(photo.id))))
+                    }
+                    setOnClickListener { photoClickListener(photo) }
                     ViewCompat.setTransitionName(this, photo.id)
                 }
             }
@@ -659,14 +690,16 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             return when(viewType) {
                 TYPE_PHOTO-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
+                TYPE_ANIMATED -> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
                 else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
             }
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
-                is PhotoViewHolder-> holder.bind(currentList[position])
-                else-> (holder as VideoViewHolder).bind(currentList[position])
+                is PhotoViewHolder-> holder.bind(getItem(position))
+                is AnimatedViewHolder -> holder.bind(getItem(position))
+                else-> (holder as VideoViewHolder).bind(getItem(position))
             }
         }
 
@@ -693,6 +726,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         override fun getItemViewType(position: Int): Int {
             with(currentList[position].mimeType) {
                 return when {
+                    this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
                     this.startsWith("video/") -> TYPE_VIDEO
                     else -> TYPE_PHOTO
                 }
@@ -741,6 +775,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         companion object {
             private const val TYPE_PHOTO = 0
+            private const val TYPE_ANIMATED = 1
             private const val TYPE_VIDEO = 2
 
             const val FAKE_POSITION = -1L
