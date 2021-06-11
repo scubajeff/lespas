@@ -62,8 +62,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_circle_24)
 
-    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
-    private val diskCache = Cache(File(localRootFolder), 300L * 1024L * 1024L)
+    private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
+    private val diskCache = Cache(File(localRootFolder), DISK_CACHE_SIZE)
     private val decoderJobMap = HashMap<Int, Job>()
     private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
@@ -87,7 +87,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
                 httpClient = builder.build()
                 cachedHttpClient = builder.cache(diskCache)
-                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=864000").build() }
+                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=$MAX_AGE").build() }
                     .build()
             } catch (e: Exception) { e.printStackTrace() }
         }
@@ -736,6 +736,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     ): Parcelable
 
     companion object {
+        private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
+        private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
+        private const val MAX_AGE = "864000"        // 10 days
+
         private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
         private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
