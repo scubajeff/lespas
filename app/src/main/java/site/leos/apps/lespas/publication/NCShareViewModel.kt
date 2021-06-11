@@ -194,12 +194,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     cachedHttpClient?.apply {
                         newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
                             rCode = it.code
-                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                                meta.getJSONObject("cover").apply {
-                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                    share.coverFileName = getString("filename")
+                            if (it.isSuccessful) {
+                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                    meta.getJSONObject("cover").apply {
+                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                        share.coverFileName = getString("filename")
+                                    }
+                                    share.sortOrder = meta.getInt("sort")
                                 }
-                                share.sortOrder = meta.getInt("sort")
                             }
                         }
                     }
@@ -341,12 +343,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 cachedHttpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
                         rCode = it.code
-                        JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                            meta.getJSONObject("cover").apply {
-                                share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                share.coverFileName = getString("filename")
+                        if (it.isSuccessful) {
+                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                meta.getJSONObject("cover").apply {
+                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                    share.coverFileName = getString("filename")
+                                }
+                                share.sortOrder = meta.getInt("sort")
                             }
-                            share.sortOrder = meta.getInt("sort")
                         }
                     }
                 }
