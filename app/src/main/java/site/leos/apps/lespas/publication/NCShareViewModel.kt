@@ -130,6 +130,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val sharesWith = mutableListOf<ShareWithMe>()
         var sharee: Recipient
         var backOff = 2500L
+        var sPath = ""
+        var rCode = 200
+        val lespasBaseLength = lespasBase.length
+        val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
         while(true) {
             try {
@@ -140,7 +144,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     var labelString: String
                     var pathString: String
                     var recipientString: String
-                    val lespasBaseLength = lespasBase.length
 
                     val data = getJSONArray("data")
                     for (i in 0 until data.length()) {
@@ -152,7 +155,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                             pathString = getString("path")
                             if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
-                                // Only interested in shares of subfolders under lespas/
+                                // Only interested in shares of subfolders under /lespas
 
                                 recipientString = getString("recipient")
                                 if (getString("owner") == userName) {
@@ -170,7 +173,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // Create new share by me item
                                         sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
                                     }
-                                } else if (sharesWith.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || _sharees.value.indexOfFirst { it.name == recipientString && it.type == SHARE_TYPE_GROUP} != -1)) {
+                                } else if (sharesWith.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
                                     // This is a share with me, either direct to me or to my groups, get owner's label
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
@@ -184,16 +187,37 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 _shareByMe.value = sharesBy
 
+                // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
+                if (sharesWith.size > 0) sPath = (getSharePath(sharesWith[0].shareId) ?: "").substringBeforeLast('/')
                 for (share in sharesWith) {
-                    share.sharePath = getSharePath(share.shareId) ?: ""
+                    share.sharePath = "${sPath}/${share.albumName}"
                     cachedHttpClient?.apply {
                         newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                            rCode = it.code
                             JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
                                 meta.getJSONObject("cover").apply {
                                     share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
                                     share.coverFileName = getString("filename")
                                 }
                                 share.sortOrder = meta.getInt("sort")
+                            }
+                        }
+                    }
+
+                    if (rCode == 404) {
+                        // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
+                        sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
+
+                        share.sharePath = "${sPath}/${share.albumName}"
+                        cachedHttpClient?.apply {
+                            newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                    meta.getJSONObject("cover").apply {
+                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                        share.coverFileName = getString("filename")
+                                    }
+                                    share.sortOrder = meta.getInt("sort")
+                                }
                             }
                         }
                     }
@@ -271,6 +295,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private fun getShareWithMe(): MutableList<ShareWithMe> {
         val result = mutableListOf<ShareWithMe>()
+        var sPath = ""
+        var rCode = 200
+        val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
         try {
             ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
@@ -295,7 +322,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             // Only interested in shares of subfolders under lespas/
 
                             recipientString = getString("recipient")
-                            if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || _sharees.value.indexOfFirst { it.name == recipientString && it.type == SHARE_TYPE_GROUP} != -1)) {
+                            if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
                                 // This is a share with me, either direct to me or to my groups, get owner's label
                                 idString = getString("owner")
                                 labelString = _sharees.value.find { it.name == idString }?.label ?: idString
@@ -307,10 +334,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
             }
 
+            // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
+            if (result.size > 0) sPath = (getSharePath(result[0].shareId) ?: "").substringBeforeLast('/')
             for (share in result) {
-                share.sharePath = getSharePath(share.shareId) ?: ""
+                share.sharePath = "${sPath}/${share.albumName}"
                 cachedHttpClient?.apply {
                     newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                        rCode = it.code
                         JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
                             meta.getJSONObject("cover").apply {
                                 share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
@@ -320,9 +350,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                 }
+
+                if (rCode == 404) {
+                    // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
+                    sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
+
+                    share.sharePath = "${sPath}/${share.albumName}"
+                    cachedHttpClient?.apply {
+                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
+                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                meta.getJSONObject("cover").apply {
+                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                    share.coverFileName = getString("filename")
+                                }
+                                share.sortOrder = meta.getInt("sort")
+                            }
+                        }
+                    }
+                }
             }
 
-            return result
+            return result.apply { sort() }
         }
         catch (e: IOException) { e.printStackTrace() }
         catch (e: IllegalStateException) { e.printStackTrace() }
