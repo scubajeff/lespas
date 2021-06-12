@@ -1,0 +1,5 @@
+* Verbesserte Abfragegeschwindigkeit der Publikation durch Reduzierung der Anzahl der http-Aufrufe zum Server
+* Verbesserte Anzeige der Publikation bei Verwendung eines großen Bildschirms
+* Wiederherstellung der Stummschaltung des Videoplayers nach dem Drehen des Telefondisplays
+* Animierte Gifs/Webp können jetzt in der Kamerarolle angezeigt werden
+* Andere Verbesserungen und Bugs behoben

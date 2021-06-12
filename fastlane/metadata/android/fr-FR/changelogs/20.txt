@@ -1,0 +1,5 @@
+* Amélioration de la vitesse d'interrogation des publications en réduisant le nombre d'appels http au serveur
+* Amélioration de l'expérience de visualisation de la publication lors de l'utilisation d'un grand écran
+* Restauration de l'état muet du lecteur vidéo après rotation de l'écran du téléphone
+* Possibilité d'afficher les gif/webp animés dans la liste des photos
+* Autres améliorations et corrections de bogues

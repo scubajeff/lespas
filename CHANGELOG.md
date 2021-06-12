@@ -1,3 +1,9 @@
+## Version 2.0.3
+* Improved publication query speed by reducing numbers of http calls to server
+* Improved publication viewing experience when using large screen
+* Restore video player mute state after rotating phone screen
+* Can view animated gif/webp in Camera Roll now
+
 ## Version 2.0.2
 * Fixed various publishing (sharing on Nextcloud server) related bugs
 
