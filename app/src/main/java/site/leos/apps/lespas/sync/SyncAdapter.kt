@@ -15,7 +15,9 @@ import androidx.preference.PreferenceManager
 import com.thegrizzlylabs.sardineandroid.Sardine
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
+import okhttp3.Credentials
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -32,6 +34,7 @@ import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
+import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.stream.Collectors
@@ -41,6 +44,7 @@ import javax.xml.namespace.QName
 
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
 ) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
+    lateinit var httpClient: OkHttpClient
     lateinit var sardine: Sardine
     lateinit var resourceRoot: String
     lateinit var localRootFolder: String
@@ -57,16 +61,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
                 val serverRoot = getUserData(account, context.getString(R.string.nc_userdata_server))
 
-                val builder = OkHttpClient.Builder().apply {
+                httpClient = OkHttpClient.Builder().apply {
+                    if (getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
+                    addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, serverRoot), StandardCharsets.UTF_8)).build()) }
                     addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
-                }
-                if (getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()) builder.hostnameVerifier { _, _ -> true }
-                sardine = OkHttpSardine(builder.build())
+                }.build()
+                sardine = OkHttpSardine(httpClient)
 
-                sardine.setCredentials(userName, peekAuthToken(account, serverRoot), true)
-                application.getString(R.string.lespas_base_folder_name).run {
-                    resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName$this"
-                }
+                resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
                 localRootFolder = Tools.getLocalRoot(application)
 
                 dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
@@ -130,31 +132,64 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 if (localFile.exists()) sardine.put("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", localFile, action.folderId)
                             }
                             Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                                with("$resourceRoot/${Uri.encode(action.folderName)}") {
-                                    try {
-                                        sardine.createDirectory(this)
-                                    } catch(e: SardineException) {
-                                        when(e.statusCode) {
-                                            // Should catch status code 405 here to ignore folder already exists on server
-                                            405-> {}
-                                            else-> {
-                                                Log.e("****SardineException: ", e.stackTraceToString())
-                                                syncResult.stats.numIoExceptions++
-                                                return
+                                httpClient.newCall(Request.Builder().url("$resourceRoot/${Uri.encode(action.folderName)}").method("MKCOL", null).build()).execute().use {
+                                    when {
+                                        it.isSuccessful -> {
+                                            it.headers["oc-fileid"]?.let { federatedId->
+                                                // nextcloud return oc-fileid field in http response header "${8 digits int fileid}${instanceid}"
+                                                (federatedId.substring(0, 8).toInt().toString()).also { fileId->
+                                                    // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
+                                                    // mind that we purposely leave the eTag column empty
+                                                    photoRepository.fixNewPhotosAlbumId(action.folderId, fileId)
+                                                    albumRepository.fixNewLocalAlbumId(action.folderId, fileId, action.fileName)
+                                                    // touch meta file
+                                                    try { File("${localRootFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
+                                                }
+                                            } ?: run {
+                                                sardine.list(action.folderName, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+                                                    // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
+                                                    // mind that we purposely leave the eTag column empty
+                                                    // If sardine.list failed, an exception will be caught, action item remains in database, therefore ACTION_ADD_DIRECTORY_ON_SERVER will be processed again
+                                                    photoRepository.fixNewPhotosAlbumId(action.folderId, it)
+                                                    albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
+                                                    // touch meta file
+                                                    try { File("${localRootFolder}/${it}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
+                                                }
                                             }
                                         }
-                                    }
-                                    // TODO nextcloud return oc-fileid field in http response header "${8 digits int fileid}${instanceid}"
-                                    sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
-                                        // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
-                                        // mind that we purposely leave the eTag column empty
-                                        // If sardine.list failed, an exception will be caught, action item remains in database, therefore ACTION_ADD_DIRECTORY_ON_SERVER will be processed again
-                                        photoRepository.fixNewPhotosAlbumId(action.folderId, it)
-                                        albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
-                                        // touch meta file
-                                        try { File("${localRootFolder}/${it}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
+                                        it.code != 405 -> {
+                                            // Ignore error 405, e.g. folder already exists on server
+                                        }
+                                        else -> {
+                                            syncResult.stats.numIoExceptions++
+                                            return
+                                        }
                                     }
                                 }
+//                                with("$resourceRoot/${Uri.encode(action.folderName)}") {
+//                                    try {
+//                                        sardine.createDirectory(this)
+//                                    } catch(e: SardineException) {
+//                                        when(e.statusCode) {
+//                                            // Should catch status code 405 here to ignore folder already exists on server
+//                                            405-> {}
+//                                            else-> {
+//                                                Log.e("****SardineException: ", e.stackTraceToString())
+//                                                syncResult.stats.numIoExceptions++
+//                                                return
+//                                            }
+//                                        }
+//                                    }
+//                                    sardine.list(this, JUST_FOLDER_DEPTH, NC_PROPFIND_PROP)[0].customProps[OC_UNIQUE_ID]?.let {
+//                                        // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
+//                                        // mind that we purposely leave the eTag column empty
+//                                        // If sardine.list failed, an exception will be caught, action item remains in database, therefore ACTION_ADD_DIRECTORY_ON_SERVER will be processed again
+//                                        photoRepository.fixNewPhotosAlbumId(action.folderId, it)
+//                                        albumRepository.fixNewLocalAlbumId(action.folderId, it, action.fileName)
+//                                        // touch meta file
+//                                        try { File("${localRootFolder}/${it}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
+//                                    }
+//                                }
                             }
                             Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {}
                             Action.ACTION_RENAME_DIRECTORY -> {
