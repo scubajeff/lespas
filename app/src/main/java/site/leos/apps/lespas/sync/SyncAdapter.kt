@@ -908,11 +908,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
             QName(DAV_NS, DAV_RESOURCETYPE, "D"),
             QName(OC_NS, OC_UNIQUE_ID, "oc"),
-            QName(OC_NS, OC_SHARETYPE, "oc"),
-            QName(NC_NS, NC_HASPREVIEW, "nc"),
-            QName(OC_NS, OC_CHECKSUMS, "oc"),
-            QName(OC_NS, OC_SIZE, "oc"),
-            QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
+            //QName(OC_NS, OC_SHARETYPE, "oc"),
+            //QName(NC_NS, NC_HASPREVIEW, "nc"),
+            //QName(OC_NS, OC_CHECKSUMS, "oc"),
+            //QName(OC_NS, OC_SIZE, "oc"),
+            //QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
         )
     }
 }
