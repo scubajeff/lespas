@@ -16,6 +16,7 @@ import com.thegrizzlylabs.sardineandroid.Sardine
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import okhttp3.OkHttpClient
+import okhttp3.internal.http2.StreamResetException
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -762,6 +763,23 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         return
                                     }
                                 }
+                            }
+                            catch (e: StreamResetException) {
+                                // create file in non-existed folder, should create subfolder first
+                                var subFolder = dcimRoot
+                                relativePath.split("/").forEach {
+                                    subFolder += "/$it"
+                                    try {
+                                        if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
+                                        //Log.e(">>>>", "create subfolder $subFolder")
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        syncResult.stats.numIoExceptions++
+                                        return
+                                    }
+                                }
+                                syncResult.stats.numIoExceptions++
+                                return
                             }
 
                             // New timestamp when success
