@@ -1,0 +1,2 @@
+* Se ha corregido el error que se producía cuando la nueva carpeta del Camera Roll no se respaldaba, puede que se deba a que Nextcloud ha cambiado el código de respuesta http
+* Otras mejoras y errores corregidos

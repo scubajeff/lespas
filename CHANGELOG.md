@@ -1,3 +1,6 @@
+## Version 2.0.4
+* Fixed bug when new folder in Camera Roll not being backup, might due to Nextcloud changed the http response code
+
 ## Version 2.0.3
 * Improved publication query speed by reducing numbers of http calls to server
 * Improved publication viewing experience when using large screen

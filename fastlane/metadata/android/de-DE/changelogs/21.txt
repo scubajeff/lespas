@@ -1,0 +1,2 @@
+* Fehler behoben, bei dem neue Ordner in der Kamerarolle nicht gesichert werden, möglicherweise aufgrund von Nextcloud, das den http-Antwortcode geändert hat
+* Andere Verbesserungen und Bugs behoben

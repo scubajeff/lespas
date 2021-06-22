@@ -13,8 +13,8 @@ android {
         applicationId "site.leos.apps.lespas"
         minSdkVersion 25
         targetSdkVersion 30
-        versionCode 20
-        versionName "2.0.3"
+        versionCode 21
+        versionName "2.0.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         archivesBaseName = "LesPas-v$versionName"
@@ -91,8 +91,8 @@ dependencies {
     implementation "androidx.viewpager2:viewpager2:1.0.0"
     implementation 'androidx.preference:preference-ktx:1.1.1'
 
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.14.0'
-    implementation 'com.google.android.exoplayer:exoplayer-ui:2.14.0'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.14.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.14.1'
 
     // Sardine Android WebDAV
     implementation ('com.github.thegrizzlylabs:sardine-android:0.8') {
