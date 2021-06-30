@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.helper
 
+import android.app.Application
 import android.content.ContentResolver
 import android.net.Uri
 import okhttp3.*
@@ -11,13 +12,15 @@ import java.io.File
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 
-class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, appBase: String) {
-    private val serverBase = "${serverAddress}/remote.php/dav/files/${userId}${appBase}"
+class OkHttpWebDav(application: Application, private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, appBase: String?, userAgent: String?) {
+    private val serverBase = "${serverAddress}/remote.php/dav/files/${userId}${appBase.orEmpty()}"
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient = OkHttpClient.Builder().apply {
-        if (selfSigned) hostnameVerifier { _, _ -> true }
-        addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
-        addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "OkHttpWebDav").build())) }
+            if (selfSigned) hostnameVerifier { _, _ -> true }
+            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
+            addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
+            cache(Cache(File("${application.cacheDir}${appBase.orEmpty()}"), DISK_CACHE_SIZE))
+            addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
     }.build()
 
     fun copy(source: String, dest: String): Boolean = copyOrMove(true, source, dest)
@@ -40,30 +43,35 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun getFile(source: String, dest: String, useCache: Boolean): Boolean {
+    fun getFile(source: String, dest: String, cacheControl: CacheControl?): Boolean {
         var isSuccessful = false
 
-/*
         try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(source)).get().build()).execute().body?.byteStream()?.use { input->
+            val reqBuilder = Request.Builder().url(getResourceUrl(source))
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            httpClient.newCall(reqBuilder.get().build()).execute().body?.source()?.use { input-> File(dest).sink(false).buffer().writeAll(input.buffer) }
+/*
+            httpClient.newCall(reqBuilder.get().build()).execute().body?.byteStream()?.use { input->
                 File(dest).outputStream().use { output->
                     input.copyTo(output, 8192)
                 }
             }
-            isSuccessful = true
-        } catch (e: Exception) { e.printStackTrace() }
 */
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(source)).get().build()).execute().body?.source()?.use { input->
-                File(dest).sink(false).buffer().writeAll(input.buffer)
-            }
             isSuccessful = true
         } catch (e: Exception) { e.printStackTrace() }
 
         return isSuccessful
     }
 
-    fun getStream(source: String, dest: String, useCache: Boolean): InputStream? = httpClient.newCall(Request.Builder().url(getResourceUrl(source)).get().build()).execute().body?.byteStream()
+    fun getStream(source: String, cacheControl: CacheControl?): InputStream? =
+        try {
+            val reqBuilder = Request.Builder().url(getResourceUrl(source))
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            httpClient.newCall(reqBuilder.get().build()).execute().body?.byteStream()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
 
     fun mkcol(folderName: String): Pair<Boolean, String> {
         var isSuccessful = false
@@ -180,5 +188,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     companion object {
         private const val UPLOAD_INTERRUPTED = "Trunk upload interrupted."
+        private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
+        private const val MAX_AGE = "864000"        // 10 days
     }
 }
