@@ -620,7 +620,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             }
                                             MediaMetadataRetriever().apply {
                                                 setDataSource("$videoFolder/$fileName")
-                                                bitmap = getFrameAtTime(3) ?: videoThumbnail
+                                                bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
                                                 release()
                                             }
                                         } else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
