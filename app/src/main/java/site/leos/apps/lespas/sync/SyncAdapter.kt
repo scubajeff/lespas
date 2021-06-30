@@ -18,6 +18,7 @@ import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.internal.http2.StreamResetException
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -798,6 +799,23 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     }
                                 }
                             }
+                            catch (e: StreamResetException) {
+                                // create file in non-existed folder, should create subfolder first
+                                var subFolder = dcimRoot
+                                relativePath.split("/").forEach {
+                                    subFolder += "/$it"
+                                    try {
+                                        if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
+                                        //Log.e(">>>>", "create subfolder $subFolder")
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        syncResult.stats.numIoExceptions++
+                                        return
+                                    }
+                                }
+                                syncResult.stats.numIoExceptions++
+                                return
+                            }
 
                             // New timestamp when success
                             lastTime = cursor.getLong(dateColumn) + 1
@@ -943,11 +961,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             QName(DAV_NS, DAV_GETCONTENTTYPE, "D"),
             QName(DAV_NS, DAV_RESOURCETYPE, "D"),
             QName(OC_NS, OC_UNIQUE_ID, "oc"),
-            QName(OC_NS, OC_SHARETYPE, "oc"),
-            QName(NC_NS, NC_HASPREVIEW, "nc"),
-            QName(OC_NS, OC_CHECKSUMS, "oc"),
-            QName(OC_NS, OC_SIZE, "oc"),
-            QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
+            //QName(OC_NS, OC_SHARETYPE, "oc"),
+            //QName(NC_NS, NC_HASPREVIEW, "nc"),
+            //QName(OC_NS, OC_CHECKSUMS, "oc"),
+            //QName(OC_NS, OC_SIZE, "oc"),
+            //QName(OC_NS, OC_DATA_FINGERPRINT, "oc")
         )
     }
 }

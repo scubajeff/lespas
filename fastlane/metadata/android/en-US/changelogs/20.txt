@@ -1,0 +1,5 @@
+* Improved publication query speed by reducing numbers of http calls to server
+* Improved publication viewing experience when using large screen
+* Restore video player mute state after rotating phone screen
+* Can view animated gif/webp in Camera Roll now
+* Other improvements and bugs fixed

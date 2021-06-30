@@ -3,13 +3,14 @@ package site.leos.apps.lespas.sync
 import android.content.DialogInterface
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
-import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -82,21 +83,30 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataAdapter = ClipDataAdapter { uri, view ->
             lifecycleScope.launch(Dispatchers.IO) {
                 val cr = requireContext().contentResolver
-                val bitmap: Bitmap =
-                    if ((cr.getType(uri) ?: "image/*").startsWith("image"))
-                        BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 8 }) ?: Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_imagefile_24)
-                    else
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                val bitmap: Bitmap? =
+                    when {
+                        (cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: "image/*").startsWith("image") -> {
                             try {
-                                cr.loadThumbnail(uri, Size(64, 64), null)
+                                BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 8 })
                             } catch (e: Exception) {
-                                // Some Android Q Rom, like AEX for EMUI 9, throw exception
                                 e.printStackTrace()
-                                Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_videofile_24)
+                                null
                             }
-                        } else Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_videofile_24)
+                        }
+                        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P -> {
+                            try {
+                                val retriever = MediaMetadataRetriever()
+                                retriever.setDataSource(requireContext(), uri)
+                                (retriever.getScaledFrameAtTime(1000000L, MediaMetadataRetriever.OPTION_PREVIOUS_SYNC, 64, 64)).also { retriever.release() }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                null
+                            }
+                        }
+                        else -> null
+                    }
 
-                withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+                withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_imagefile_24)) }
             }
         }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY

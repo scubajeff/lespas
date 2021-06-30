@@ -1,0 +1,2 @@
+* Correction d'un bug lorsque le nouveau dossier dans Camera Roll n'est pas sauvegardé, ce qui pourrait être dû au fait que Nextcloud a modifié le code de réponse http
+* Autres améliorations et corrections de bogues

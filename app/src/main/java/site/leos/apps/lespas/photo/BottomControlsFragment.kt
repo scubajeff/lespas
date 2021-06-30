@@ -207,6 +207,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     //.setAnchorView(window.decorView.rootView)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
                     .setTextColor(resources.getColor(R.color.color_text_light, null))
+                    .addCallback(object: Snackbar.Callback() {
+                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                            super.onDismissed(transientBottomBar, event)
+                            hideHandler.post(showSystemUI)
+                        }
+                    })
                     .show()
 
                 // Clear transition when coming back from CoverSettingFragment

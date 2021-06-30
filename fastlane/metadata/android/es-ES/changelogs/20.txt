@@ -1,0 +1,5 @@
+* Mejora de la velocidad de consulta de la publicación al reducir el número de llamadas http al servidor
+* Mejora de la experiencia de visualización de la publicación cuando se utiliza una pantalla grande
+* Restablecer el estado de silencio del reproductor de vídeo después de girar la pantalla del teléfono
+* Ahora se pueden ver gif/webp animados en Camera Roll
+* Otras mejoras y errores corregidos
