@@ -109,14 +109,17 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
-                    val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
-                    // cover baseline value passed in property shareId
-                    val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                    val rect = Rect(0, photo.shareId, photo.width, bottom)
-                    BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
-                        this.inSampleSize = size
-                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                    }) ?: placeholderBitmap
+                    if (photo.mimeType.startsWith("video/")) { getVideoThumbnail(photo, fileName) }
+                    else {
+                        val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
+                        // cover baseline value passed in property shareId
+                        val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
+                        val rect = Rect(0, photo.shareId, photo.width, bottom)
+                        BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
+                            this.inSampleSize = size
+                            this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                        }) ?: placeholderBitmap
+                    }
                 }
                 else -> errorBitmap
             }
