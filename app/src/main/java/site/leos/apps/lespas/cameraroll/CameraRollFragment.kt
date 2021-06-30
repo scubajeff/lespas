@@ -24,6 +24,7 @@ import android.webkit.MimeTypeMap
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -41,7 +42,6 @@ import androidx.recyclerview.widget.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.MainActivity
@@ -368,7 +368,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         // Observing media list update
         camerarollModel.getMediaList().observe(viewLifecycleOwner, Observer {
             if (it.size == 0) {
-                Snackbar.make(mediaPager, getString(R.string.empty_camera_roll), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
+                Toast.makeText(requireContext(), getString(R.string.empty_camera_roll), Toast.LENGTH_SHORT).show()
                 if (requireActivity() is MainActivity) parentFragmentManager.popBackStack() else requireActivity().finish()
             }
 
