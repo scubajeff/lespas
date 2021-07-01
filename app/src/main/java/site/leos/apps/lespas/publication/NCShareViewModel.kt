@@ -25,6 +25,8 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.IOException
+import okio.buffer
+import okio.sink
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -91,6 +93,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     .build()
             } catch (e: Exception) { e.printStackTrace() }
         }
+
+        File(localRootFolder, VIDEO_CACHE_FOLDER).mkdirs()
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
@@ -611,15 +615,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                     ImageLoaderViewModel.TYPE_GRID -> {
                                         if (photo.mimeType.startsWith("video")) {
-                                            val videoFolder = File(localRootFolder, "videos").apply { mkdir() }
-                                            val fileName = photo.path.substringAfterLast('/')
-                                            it.byteStream().use { input ->
-                                                File(videoFolder, fileName).outputStream().use { output ->
-                                                    input.copyTo(output, 8192)
-                                                }
-                                            }
+                                            // Download video file if necessary
+                                            val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
+                                            val videoFile = File(localRootFolder, fileName)
+                                            if (!videoFile.exists()) videoFile.sink(false).buffer().writeAll(it.source().buffer)
+
+                                            // Get frame at 1s
                                             MediaMetadataRetriever().apply {
-                                                setDataSource("$videoFolder/$fileName")
+                                                setDataSource("$localRootFolder/$fileName")
                                                 bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
                                                 release()
                                             }
@@ -678,7 +681,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     override fun onCleared() {
-        File(localRootFolder, "videos").deleteRecursively()
+        File(localRootFolder, VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
         super.onCleared()
@@ -740,6 +743,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     ): Parcelable
 
     companion object {
+        private const val VIDEO_CACHE_FOLDER = "videos"
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"        // 10 days
