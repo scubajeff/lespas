@@ -15,10 +15,11 @@ import androidx.preference.PreferenceManager
 import com.thegrizzlylabs.sardineandroid.Sardine
 import com.thegrizzlylabs.sardineandroid.impl.OkHttpSardine
 import com.thegrizzlylabs.sardineandroid.impl.SardineException
-import okhttp3.Credentials
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.internal.http2.StreamResetException
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okio.BufferedSink
+import okio.IOException
+import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -32,7 +33,7 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.IOException
+import java.io.InputStream
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.nio.charset.StandardCharsets
@@ -54,6 +55,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             var dcimRoot: String
+            val chunkUploadBase: String
             val sp = PreferenceManager.getDefaultSharedPreferences(application)
             val wifionlyKey = application.getString(R.string.wifionly_pref_key)
 
@@ -66,6 +68,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
                     addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, serverRoot), StandardCharsets.UTF_8)).build()) }
                     addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
+                    retryOnConnectionFailure(true)
+                    protocols(listOf(Protocol.HTTP_1_1))
                 }.build()
                 sardine = OkHttpSardine(httpClient)
 
@@ -707,7 +711,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     MediaStore.Files.FileColumns.DATE_ADDED,
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                     MediaStore.Files.FileColumns.MIME_TYPE,
-                    MediaStore.Files.FileColumns.DISPLAY_NAME
+                    MediaStore.Files.FileColumns.DISPLAY_NAME,
                 )
                 val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                         "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${lastTime})"
@@ -719,9 +723,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                     val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
 
-                    val tempFile = File(cacheFolder, "DCIMTemp")
                     var relativePath: String
                     var fileName: String
+                    var mimeType: String
 
                     while(cursor.moveToNext()) {
                         // Check network type on every loop, so that user is able to stop sync right in the middle
@@ -734,102 +738,82 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
                         fileName = cursor.getString(nameColumn)
-                        relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBefore("/${fileName}")
+                        mimeType = cursor.getString(typeColumn)
+                        relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                         //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+
+                        var responseCode = 200
                         try {
-                            // Since sardine use File only, need this intermediate temp file
                             application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.use { input ->
-                                tempFile.outputStream().use { output ->
-                                    input.copyTo(output, 4096)
+                                httpClient.newCall(
+                                    Request.Builder()
+                                        .url("${dcimRoot}/${relativePath}/${fileName}")
+                                        //.post(MultipartBody.Builder().setType(MultipartBody.FORM).addFormDataPart("file", fileName, streamRequestBody(input, mimeType.toMediaTypeOrNull(), fileSize)).build())
+                                        .put(streamRequestBody(input, mimeType.toMediaTypeOrNull()))
+                                        .build()
+                                ).execute().use { response ->
+                                    if (!response.isSuccessful) {
+                                        responseCode = response.code
+                                        response.close()
+                                        input.close()
+                                        throw IOException()
+                                    }
                                 }
                             }
-                            //Log.e(">>>>>", "$tempFile created")
-
-                            try {
-                                // Upload file
-                                sardine.put("${dcimRoot}/${relativePath}/${fileName}", tempFile, cursor.getString(typeColumn))
-                                //Log.e(">>>>>", "$tempFile uploaded")
-                            } catch (e: SardineException) {
-                                Log.e("****SardineException: ", e.stackTraceToString())
-                                when(e.statusCode) {
-                                    404-> {
-                                        // create file in non-existed folder, should create subfolder first
-                                        var subFolder = dcimRoot
-                                        relativePath.split("/").forEach {
-                                            subFolder += "/$it"
-                                            try {
-                                                if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
-                                                //Log.e(">>>>", "create subfolder $subFolder")
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                syncResult.stats.numIoExceptions++
-                                                return
-                                            }
+                        }
+                        catch (e: IOException) {
+                            Log.e(">>>>>Exception: $responseCode", e.stackTraceToString())
+                            when (responseCode) {
+                                404-> {
+                                    // create file in non-existed folder, should create subfolder first
+                                    var subFolder = dcimRoot
+                                    relativePath.split("/").forEach {
+                                        subFolder += "/$it"
+                                        try {
+                                            if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
+                                            //Log.e(">>>>", "404 create subfolder $subFolder")
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            syncResult.stats.numIoExceptions++
+                                            return
                                         }
-                                        syncResult.stats.numIoExceptions++
-                                        return
                                     }
-                                    400, 405, 406, 410-> {
-                                        // target not found, target readonly, target already existed, etc. should be skipped and move onto next media
-                                    }
-                                    401, 403, 407-> {
-                                        syncResult.stats.numAuthExceptions++
-                                        return
-                                    }
-                                    409-> {
-                                        syncResult.stats.numConflictDetectedExceptions++
-                                        return
-                                    }
-                                    423-> {
-                                        // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
-                                        syncResult.stats.numIoExceptions++
-                                        syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
-                                        return
-                                    }
-                                    in 500..600 -> {
-                                        // Server error, backoff 5 minutes
-                                        syncResult.stats.numIoExceptions++
-                                        syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 300
-                                        return
-                                    }
-                                    else-> {
-                                        // Other unhandled error should be retried
-                                        syncResult.stats.numIoExceptions++
-                                        return
-                                    }
+                                    syncResult.stats.numIoExceptions++
+                                    return
+                                }
+                                400, 405, 406, 410-> {
+                                    // target not found, target readonly, target already existed, etc. should be skipped and move onto next media
+                                }
+                                401, 403, 407 -> {
+                                    syncResult.stats.numAuthExceptions++
+                                    return
+                                }
+                                409 -> {
+                                    syncResult.stats.numConflictDetectedExceptions++
+                                    return
+                                }
+                                423 -> {
+                                    // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
+                                    syncResult.stats.numIoExceptions++
+                                    syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 90
+                                    return
+                                }
+                                in 500..600 -> {
+                                    // Server error, backoff 5 minutes
+                                    syncResult.stats.numIoExceptions++
+                                    syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 300
+                                    return
+                                }
+                                else -> {
+                                    // Other unhandled error should be retried
+                                    syncResult.stats.numIoExceptions++
+                                    return
                                 }
                             }
-                            catch (e: StreamResetException) {
-                                // create file in non-existed folder, should create subfolder first
-                                var subFolder = dcimRoot
-                                relativePath.split("/").forEach {
-                                    subFolder += "/$it"
-                                    try {
-                                        if (!sardine.exists(subFolder)) sardine.createDirectory(subFolder)
-                                        //Log.e(">>>>", "create subfolder $subFolder")
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                        syncResult.stats.numIoExceptions++
-                                        return
-                                    }
-                                }
-                                syncResult.stats.numIoExceptions++
-                                return
-                            }
-
-                            // New timestamp when success
-                            lastTime = cursor.getLong(dateColumn) + 1
-
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // TODO retry or not
-                            //syncResult.hasSoftError()
                         }
-                        finally {
-                            // Delete temp file
-                            try { tempFile.delete() } catch (e: Exception) { e.printStackTrace() }
-                            //Log.e(">>>>>>", "$tempFile deleted")
-                        }
+
+                        // New timestamp when success
+                        lastTime = cursor.getLong(dateColumn) + 1
                     }
                 }
 
@@ -868,6 +852,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             Log.e("****Exception: ", e.stackTraceToString())
         } catch (e:Exception) {
             Log.e("****Exception: ", e.stackTraceToString())
+        }
+    }
+
+    private fun streamRequestBody(input: InputStream, mediaType: MediaType?): RequestBody {
+        return object : RequestBody() {
+            override fun contentType(): MediaType? = mediaType
+            override fun contentLength(): Long = try { input.available().toLong() } catch (e: IOException) { -1 }
+            override fun writeTo(sink: BufferedSink) { sink.writeAll(input.source()) }
         }
     }
 
