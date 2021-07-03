@@ -68,8 +68,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
                     addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, serverRoot), StandardCharsets.UTF_8)).build()) }
                     addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
+                    //eventListenerFactory(LoggingEventListener.Factory())
                     retryOnConnectionFailure(true)
-                    protocols(listOf(Protocol.HTTP_1_1))
+                    //protocols(listOf(Protocol.HTTP_1_1))
                 }.build()
                 sardine = OkHttpSardine(httpClient)
 
