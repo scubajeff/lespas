@@ -25,6 +25,22 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
 
     fun copy(source: String, dest: String): Boolean = copyOrMove(true, source, dest)
 
+    fun createFolder(folderName: String): Pair<Boolean, String> {
+        var isSuccessful = false
+        var fileId = ""
+
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(folderName)).method("MKCOL", null).build()).execute().use { response ->
+                when {
+                    response.isSuccessful -> fileId = response.headers["oc-fileid"]?.also { isSuccessful = true } ?: ""
+                    response.code == 405 -> { isSuccessful = true }
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+
+        return Pair(isSuccessful, fileId)
+    }
+
     fun delete(targetName: String): Boolean {
         return try {
             httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).delete().build()).execute().use { response-> response.isSuccessful }
@@ -34,16 +50,7 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
         }
     }
 
-    fun exist(targetName: String): Boolean {
-        return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).method("PROPFIND", null).header("Depth", "0").build()).execute().use { response-> response.isSuccessful }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
-    }
-
-    fun getFile(source: String, dest: String, cacheControl: CacheControl?): Boolean {
+    fun download(source: String, dest: String, cacheControl: CacheControl?): Boolean {
         var isSuccessful = false
 
         try {
@@ -73,46 +80,39 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
             null
         }
 
-    fun mkcol(folderName: String): Pair<Boolean, String> {
-        var isSuccessful = false
-        var fileId = ""
-
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(folderName)).method("MKCOL", null).build()).execute().use { response ->
-                when {
-                    response.isSuccessful -> fileId = response.headers["oc-fileid"]?.also { isSuccessful = true } ?: ""
-                    response.code == 405 -> { isSuccessful = true }
-                }
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-
-        return Pair(isSuccessful, fileId)
+    fun isExisted(targetName: String): Boolean {
+        return try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).method("PROPFIND", null).header("Depth", "0").build()).execute().use { response-> response.isSuccessful }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
     fun move(source: String, dest: String): Boolean = copyOrMove(false, source, dest)
 
-    fun put(source: String, dest: String, mimeType: String): Boolean {
+    fun upload(source: String, dest: String, mimeType: String): Boolean {
         return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).post(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
+            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
         } catch (e: Exception) {
             e.printStackTrace()
             false
         }
     }
 
-    fun put(source: File, dest: String, mimeType: String): Boolean {
+    fun upload(source: File, dest: String, mimeType: String): Boolean {
         return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).post(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
+            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
         } catch (e: Exception) {
             e.printStackTrace()
             false
         }
     }
 
-    fun put(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver): Boolean {
+    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver): Boolean {
         return try {
             contentResolver.openInputStream(source)?.use { input->
-                httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).post(streamRequestBody(input, mimeType.toMediaTypeOrNull(), 0)).build()).execute().use { response-> response.isSuccessful }
+                httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response-> response.isSuccessful }
             } ?: false
         } catch (e: Exception) {
             e.printStackTrace()
@@ -121,33 +121,37 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
     }
 
     fun chunksUpload(source: String, dest: String, mimeType: String): Boolean {
+        val file = File(source)
+        return chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
+    }
+
+    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Boolean {
         var isSuccessful = false
         val uploadFolder = "${chunkUploadBase}/${Uri.encode(source.substringAfterLast('/'))}"
 
         try {
-
             // Create upload folder on server
             httpClient.newCall(Request.Builder().url(uploadFolder).method("MKCOL", null).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
 
-            // Upload trunks
-            var index = 0L
+            // Upload chunks
             var chunkName: String
-            val webSink = Buffer()
-            File(source).source().buffer().use { input->
-                generateSequence { input.read(webSink, 10L * 1024 * 1024) }.forEach { byteRead->
-                    chunkName = "${uploadFolder}/${String.format("%015d", index)}"
-                    httpClient.newCall(Request.Builder().url(chunkName).post(bufferRequestBody(webSink, mimeType.toMediaTypeOrNull(), byteRead)).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
-                    index += byteRead
-                }
+            val octetMimeType = "application/octet-stream".toMediaTypeOrNull()
+            var index = 0L
+            var chunkSize = CHUNK_SIZE
+            while(index < size) {
+                chunkName = "${uploadFolder}/${String.format("%015d", index)}"
+                with(size - index) { if (this < CHUNK_SIZE) chunkSize = this}
+                httpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, octetMimeType, chunkSize)).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
+                index += chunkSize
             }
 
-            // Tell server to assembly trunks
+            // Tell server to assembly chunks
             httpClient.newCall(Request.Builder().url("${uploadFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T").build()).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
 
             isSuccessful = true
         } catch (e: Exception) { e.printStackTrace() }
 
-        // Upload interrupted, delete uploaded trunks
+        // Upload interrupted, delete uploaded chunks
         if (!isSuccessful) try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
 
         return isSuccessful
@@ -168,21 +172,11 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
         return isSuccessful
     }
 
-    private fun bufferRequestBody(input: Buffer, mediaType: MediaType?, size: Long): RequestBody {
-        return object: RequestBody() {
-            override fun contentType(): MediaType? = mediaType
-            override fun contentLength(): Long = size
-            override fun writeTo(sink: BufferedSink) { sink.write(input, size) }
-        }
-    }
-
-    private fun streamRequestBody(inputStream: InputStream, mediaType: MediaType?, size: Long): RequestBody {
+    private fun streamRequestBody(input: InputStream, mediaType: MediaType?, size: Long): RequestBody {
         return object : RequestBody() {
             override fun contentType(): MediaType? = mediaType
-
-            override fun contentLength(): Long = if (size > 0L) size else try { inputStream.available().toLong() } catch (e: Exception) { 0L }
-
-            override fun writeTo(sink: BufferedSink) { if (size > 0L) sink.write(inputStream.source(), size) else sink.writeAll(inputStream.source()) }
+            override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { -1 }
+            override fun writeTo(sink: BufferedSink) { sink.write(input.source(), size) }
         }
     }
 
@@ -190,5 +184,6 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
         private const val UPLOAD_INTERRUPTED = "Trunk upload interrupted."
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"        // 10 days
+        const val CHUNK_SIZE = 10L * 1024L * 1024L  // Default chunk upload size is 10MB
     }
 }
