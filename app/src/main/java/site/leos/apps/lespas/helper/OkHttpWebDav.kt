@@ -1,7 +1,7 @@
 package site.leos.apps.lespas.helper
 
-import android.app.Application
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.os.Parcelable
 import android.util.Xml
@@ -19,15 +19,16 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class OkHttpWebDav(application: Application, private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, appBase: String?, userAgent: String?) {
+class OkHttpWebDav(context: Context, private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, appBase: String?, userAgent: String?) {
     private val serverBase = "${serverAddress}/remote.php/dav/files/${userId}${appBase.orEmpty()}"
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient = OkHttpClient.Builder().apply {
-            if (selfSigned) hostnameVerifier { _, _ -> true }
-            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
-            addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
-            cache(Cache(File("${application.cacheDir}${appBase.orEmpty()}"), DISK_CACHE_SIZE))
-            addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
+        if (selfSigned) hostnameVerifier { _, _ -> true }
+        addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
+        addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
+        cache(Cache(File("${context.cacheDir}${appBase.orEmpty()}"), DISK_CACHE_SIZE))
+        addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
+        retryOnConnectionFailure(true)
     }.build()
 
     fun copy(source: String, dest: String): Boolean = copyOrMove(true, source, dest)
@@ -89,7 +90,7 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
 
     fun isExisted(targetName: String): Boolean {
         return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).method("PROPFIND", null).header("Depth", "0").build()).execute().use { response-> response.isSuccessful }
+            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response-> response.isSuccessful }
         } catch (e: Exception) {
             e.printStackTrace()
             false

@@ -55,7 +55,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         try {
             val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
             var dcimRoot: String
-            val chunkUploadBase: String
             val sp = PreferenceManager.getDefaultSharedPreferences(application)
             val wifionlyKey = application.getString(R.string.wifionly_pref_key)
 
