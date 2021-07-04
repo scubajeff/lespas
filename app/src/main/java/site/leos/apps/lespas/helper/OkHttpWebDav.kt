@@ -3,14 +3,21 @@ package site.leos.apps.lespas.helper
 import android.app.Application
 import android.content.ContentResolver
 import android.net.Uri
+import android.os.Parcelable
+import android.util.Xml
+import kotlinx.parcelize.Parcelize
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
+import org.xmlpull.v1.XmlPullParser
 import java.io.File
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class OkHttpWebDav(application: Application, private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, appBase: String?, userAgent: String?) {
     private val serverBase = "${serverAddress}/remote.php/dav/files/${userId}${appBase.orEmpty()}"
@@ -87,6 +94,57 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
             e.printStackTrace()
             false
         }
+    }
+
+    fun list(targetName: String, depth: String): List<DAVResource> {
+        val result = mutableListOf<DAVResource>()
+
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
+                if (response.isSuccessful) {
+                    val parser = Xml.newPullParser()
+                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+                    //parser.setInput(response.byteStream(), null)
+                    parser.setInput(response.body!!.byteStream().bufferedReader())
+
+                    var res = DAVResource()
+                    var text = ""
+                    var tag = ""
+                    var event = parser.eventType
+                    while (event != XmlPullParser.END_DOCUMENT) {
+                        tag = parser.name
+                        when (event) {
+                            XmlPullParser.START_TAG -> {
+                                when (tag) {
+                                    RESPONSE_TAG -> res = DAVResource()
+                                }
+                            }
+                            XmlPullParser.TEXT -> text = parser.text
+                            XmlPullParser.END_TAG -> {
+                                when (tag) {
+                                    HREF_TAG -> res.name =
+                                        if (text.endsWith('/')) {
+                                            res.isFolder = true
+                                            text.dropLast(1).substringAfterLast('/')
+                                        } else {
+                                            res.isFolder = false
+                                            text.substringAfterLast('/')
+                                        }
+                                    OC_UNIQUE_ID -> res.fileId = text
+                                    DAV_GETETAG -> res.eTag = text
+                                    DAV_GETCONTENTTYPE -> res.contentType = text
+                                    DAV_GETLASTMODIFIED -> res.modified = LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME)
+                                    RESPONSE_TAG -> result.add(res)
+                                }
+                            }
+                        }
+                        event = parser.next()
+                    }
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+
+        return result
     }
 
     fun move(source: String, dest: String): Boolean = copyOrMove(false, source, dest)
@@ -180,10 +238,50 @@ class OkHttpWebDav(application: Application, private val userId: String, passwor
         }
     }
 
+    @Parcelize
+    data class DAVResource(
+        var name: String = "",
+        var fileId: String = "",
+        var eTag: String = "",
+        var modified: LocalDateTime = LocalDateTime.MIN,
+        var contentType: String = "",
+        var isFolder: Boolean = false,
+    ): Parcelable
+
     companion object {
-        private const val UPLOAD_INTERRUPTED = "Trunk upload interrupted."
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"        // 10 days
+
+        private const val UPLOAD_INTERRUPTED = "Trunk upload interrupted."
         const val CHUNK_SIZE = 10L * 1024L * 1024L  // Default chunk upload size is 10MB
+
+        // PROPFIND depth
+        const val JUST_FOLDER_DEPTH = "0"
+        const val FOLDER_CONTENT_DEPTH = "1"
+
+        // PROPFIND properties namespace
+        private const val DAV_NS = "DAV:"
+        private const val OC_NS = "http://owncloud.org/ns"
+        private const val NC_NS = "http://nextcloud.org/ns"
+
+        // Standard properties
+        private const val DAV_GETETAG = "getetag"
+        private const val DAV_GETLASTMODIFIED = "getlastmodified"
+        private const val DAV_GETCONTENTTYPE = "getcontenttype"
+        private const val DAV_RESOURCETYPE = "resourcetype"
+        private const val DAV_GETCONTENTLENGTH = "getcontentlength"
+
+        // Nextcloud properties
+        private const val OC_UNIQUE_ID = "fileid"
+        private const val OC_SHARETYPE = "share-types"
+        private const val OC_CHECKSUMS = "checksums"
+        private const val NC_HASPREVIEW = "has-preview"
+        private const val OC_SIZE = "size"
+        private const val OC_DATA_FINGERPRINT = "data-fingerprint"
+
+        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/></d:prop></d:propfind>"
+
+        private const val RESPONSE_TAG = "response"
+        private const val HREF_TAG = "href"
     }
 }
