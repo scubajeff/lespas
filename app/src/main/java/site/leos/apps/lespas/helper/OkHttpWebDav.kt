@@ -34,7 +34,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     fun createFolder(folderName: String): String {
         httpClient.newCall(Request.Builder().url(folderName).method("MKCOL", null).build()).execute().use { response ->
             when {
-                response.isSuccessful -> return response.headers["oc-fileid"] ?: ""
+                response.isSuccessful -> return response.header("oc-fileid", "") ?: ""
                 response.code == 405 -> return ""
                 else-> throw OkHttpWebDavException(response)
             }
@@ -125,20 +125,21 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun upload(source: String, dest: String, mimeType: String) {
         httpClient.newCall(Request.Builder().url(dest).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-            if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            if (!response.isSuccessful) throw OkHttpWebDavException(response)
         }
     }
 
-    fun upload(source: File, dest: String, mimeType: String) {
+    fun upload(source: File, dest: String, mimeType: String): Pair<String, String> {
         httpClient.newCall(Request.Builder().url(dest).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-            if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+            else throw OkHttpWebDavException(response)
         }
     }
 
     fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver) {
         contentResolver.openInputStream(source)?.use { input->
             httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
-                if(!response.isSuccessful) throw OkHttpWebDavException(response)
+                if (!response.isSuccessful) throw OkHttpWebDavException(response)
             }
         } ?: throw Exception("InputStream provider crashed")
     }
