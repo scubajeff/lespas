@@ -31,70 +31,55 @@ class OkHttpWebDav(context: Context, private val userId: String, password: Strin
         retryOnConnectionFailure(true)
     }.build()
 
-    fun copy(source: String, dest: String): Boolean = copyOrMove(true, source, dest)
+    fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
 
-    fun createFolder(folderName: String): Pair<Boolean, String> {
-        var isSuccessful = false
-        var fileId = ""
-
+    fun createFolder(folderName: String): String {
         try {
             httpClient.newCall(Request.Builder().url(getResourceUrl(folderName)).method("MKCOL", null).build()).execute().use { response ->
                 when {
-                    response.isSuccessful -> fileId = response.headers["oc-fileid"]?.also { isSuccessful = true } ?: ""
-                    response.code == 405 -> { isSuccessful = true }
+                    response.isSuccessful -> return response.headers["oc-fileid"] ?: ""
+                    response.code == 405 -> return ""
+                    else-> throw OkHttpWebDavException(response)
                 }
             }
-        } catch (e: Exception) { e.printStackTrace() }
-
-        return Pair(isSuccessful, fileId)
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun delete(targetName: String): Boolean {
-        return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).delete().build()).execute().use { response-> response.isSuccessful }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+    fun delete(targetName: String) {
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).delete().build()).execute().use { response->
+                if (!response.isSuccessful) throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun download(source: String, dest: String, cacheControl: CacheControl?): Boolean {
-        var isSuccessful = false
-
+    fun download(source: String, dest: String, cacheControl: CacheControl?) {
         try {
             val reqBuilder = Request.Builder().url(getResourceUrl(source))
             cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            httpClient.newCall(reqBuilder.get().build()).execute().body?.source()?.use { input-> File(dest).sink(false).buffer().writeAll(input.buffer) }
-/*
-            httpClient.newCall(reqBuilder.get().build()).execute().body?.byteStream()?.use { input->
-                File(dest).outputStream().use { output->
-                    input.copyTo(output, 8192)
-                }
+            httpClient.newCall(reqBuilder.get().build()).execute().use { response->
+                if (response.isSuccessful) File(dest).sink(false).buffer().writeAll(response.body!!.source().buffer)
+                else throw OkHttpWebDavException(response)
             }
-*/
-            isSuccessful = true
-        } catch (e: Exception) { e.printStackTrace() }
-
-        return isSuccessful
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun getStream(source: String, cacheControl: CacheControl?): InputStream? =
+    fun getStream(source: String, cacheControl: CacheControl?): InputStream =
         try {
             val reqBuilder = Request.Builder().url(getResourceUrl(source))
             cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            httpClient.newCall(reqBuilder.get().build()).execute().body?.byteStream()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+            httpClient.newCall(reqBuilder.get().build()).execute().use { response->
+                if (response.isSuccessful) return response.body!!.byteStream()
+                else throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
 
-    fun isExisted(targetName: String): Boolean {
-        return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response-> response.isSuccessful }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+    fun isExisted(targetName: String) {
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response->
+                if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
     fun list(targetName: String, depth: String): List<DAVResource> {
@@ -141,56 +126,55 @@ class OkHttpWebDav(context: Context, private val userId: String, password: Strin
                         }
                         event = parser.next()
                     }
-                }
+                } else { throw OkHttpWebDavException(response) }
+
+                return result
             }
-        } catch (e: Exception) { e.printStackTrace() }
-
-        return result
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun move(source: String, dest: String): Boolean = copyOrMove(false, source, dest)
+    fun move(source: String, dest: String) { copyOrMove(false, source, dest) }
 
-    fun upload(source: String, dest: String, mimeType: String): Boolean {
-        return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+    fun upload(source: String, dest: String, mimeType: String) {
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+                if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun upload(source: File, dest: String, mimeType: String): Boolean {
-        return try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response-> response.isSuccessful }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+    fun upload(source: File, dest: String, mimeType: String) {
+        try {
+            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+                if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver): Boolean {
-        return try {
+    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver) {
+        try {
             contentResolver.openInputStream(source)?.use { input->
-                httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response-> response.isSuccessful }
-            } ?: false
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+                httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
+                    if(!response.isSuccessful) throw OkHttpWebDavException(response)
+                }
+            } ?: throw Exception("InputStream provider crashed")
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun chunksUpload(source: String, dest: String, mimeType: String): Boolean {
-        val file = File(source)
-        return chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
+    fun chunksUpload(source: String, dest: String, mimeType: String) {
+        try {
+            File(source).also { file ->
+                chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
+            }
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
 
-    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Boolean {
-        var isSuccessful = false
+    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long) {
         val uploadFolder = "${chunkUploadBase}/${Uri.encode(source.substringAfterLast('/'))}"
 
         try {
             // Create upload folder on server
-            httpClient.newCall(Request.Builder().url(uploadFolder).method("MKCOL", null).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
+            httpClient.newCall(Request.Builder().url(uploadFolder).method("MKCOL", null).build()).execute().use { response-> if (!response.isSuccessful) throw OkHttpWebDavException(response) }
 
             // Upload chunks
             var chunkName: String
@@ -200,36 +184,39 @@ class OkHttpWebDav(context: Context, private val userId: String, password: Strin
             while(index < size) {
                 chunkName = "${uploadFolder}/${String.format("%015d", index)}"
                 with(size - index) { if (this < CHUNK_SIZE) chunkSize = this}
-                httpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, octetMimeType, chunkSize)).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
+                httpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, octetMimeType, chunkSize)).build()).execute().use { response->
+                    if (!response.isSuccessful) {
+                        // Upload interrupted, delete uploaded chunks
+                        try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        throw OkHttpWebDavException(response)
+                    }
+                }
                 index += chunkSize
             }
 
             // Tell server to assembly chunks
-            httpClient.newCall(Request.Builder().url("${uploadFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T").build()).build()).execute().use { response-> if (!response.isSuccessful) throw IOException(UPLOAD_INTERRUPTED) }
-
-            isSuccessful = true
-        } catch (e: Exception) { e.printStackTrace() }
-
-        // Upload interrupted, delete uploaded chunks
-        if (!isSuccessful) try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-
-        return isSuccessful
+            httpClient.newCall(Request.Builder().url("${uploadFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T").build()).build()).execute().use { response->
+                // Upload interrupted, delete uploaded chunks
+                try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                throw OkHttpWebDavException(response)
+            }
+        } catch (e: Exception) {
+            // Upload interrupted, delete uploaded chunks
+            try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+            throw OkHttpWebDavException(Response.Builder().code(-1).build())
+        }
     }
 
-    private fun getResourceUrl(targetName: String): String = "${serverBase}/${Uri.encode(targetName)}"
-
-    private fun copyOrMove(copy: Boolean, source: String, dest: String): Boolean {
-        var isSuccessful = false
-
+    private fun copyOrMove(copy: Boolean, source: String, dest: String) {
         try {
             val hb = Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T")
             httpClient.newCall(Request.Builder().url(getResourceUrl(source)).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
-                isSuccessful = response.isSuccessful
+                if (!response.isSuccessful) throw OkHttpWebDavException(response)
             }
-        } catch (e:Exception) { e.printStackTrace() }
-
-        return isSuccessful
+        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
     }
+
+    private fun getResourceUrl(targetName: String): String = "${serverBase}/${Uri.encode(targetName)}"
 
     private fun streamRequestBody(input: InputStream, mediaType: MediaType?, size: Long): RequestBody {
         return object : RequestBody() {
