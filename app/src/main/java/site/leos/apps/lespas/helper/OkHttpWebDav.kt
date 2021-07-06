@@ -25,8 +25,8 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         if (selfSigned) hostnameVerifier { _, _ -> true }
         addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
         addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
-        cache(Cache(File(cacheFolder), DISK_CACHE_SIZE))
-        addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
+        //cache(Cache(File(cacheFolder), DISK_CACHE_SIZE))
+        //addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
         retryOnConnectionFailure(true)
     }.build()
 
