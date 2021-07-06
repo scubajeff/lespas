@@ -51,7 +51,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         val reqBuilder = Request.Builder().url(source)
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
         httpClient.newCall(reqBuilder.get().build()).execute().use { response->
-            if (response.isSuccessful) File(dest).sink(false).buffer().writeAll(response.body!!.source().buffer)
+            if (response.isSuccessful) File(dest).sink(false).buffer().use { it.writeAll(response.body!!.source()) }
             else throw OkHttpWebDavException(response)
         }
     }
@@ -59,9 +59,12 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     fun getStream(source: String, cacheControl: CacheControl?): InputStream {
         val reqBuilder = Request.Builder().url(source)
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-        httpClient.newCall(reqBuilder.get().build()).execute().use { response ->
+        httpClient.newCall(reqBuilder.get().build()).execute().also { response ->
             if (response.isSuccessful) return response.body!!.byteStream()
-            else throw OkHttpWebDavException(response)
+            else {
+                response.close()
+                throw OkHttpWebDavException(response)
+            }
         }
     }
 
