@@ -34,139 +34,121 @@ class OkHttpWebDav(context: Context, private val userId: String, password: Strin
     fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
 
     fun createFolder(folderName: String): String {
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(folderName)).method("MKCOL", null).build()).execute().use { response ->
-                when {
-                    response.isSuccessful -> return response.headers["oc-fileid"] ?: ""
-                    response.code == 405 -> return ""
-                    else-> throw OkHttpWebDavException(response)
-                }
+        httpClient.newCall(Request.Builder().url(getResourceUrl(folderName)).method("MKCOL", null).build()).execute().use { response ->
+            when {
+                response.isSuccessful -> return response.headers["oc-fileid"] ?: ""
+                response.code == 405 -> return ""
+                else-> throw OkHttpWebDavException(response)
             }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        }
     }
 
     fun delete(targetName: String) {
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).delete().build()).execute().use { response->
-                if (!response.isSuccessful) throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).delete().build()).execute().use { response->
+            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+        }
     }
 
     fun download(source: String, dest: String, cacheControl: CacheControl?) {
-        try {
-            val reqBuilder = Request.Builder().url(getResourceUrl(source))
-            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            httpClient.newCall(reqBuilder.get().build()).execute().use { response->
-                if (response.isSuccessful) File(dest).sink(false).buffer().writeAll(response.body!!.source().buffer)
-                else throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        val reqBuilder = Request.Builder().url(getResourceUrl(source))
+        cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+        httpClient.newCall(reqBuilder.get().build()).execute().use { response->
+            if (response.isSuccessful) File(dest).sink(false).buffer().writeAll(response.body!!.source().buffer)
+            else throw OkHttpWebDavException(response)
+        }
     }
 
-    fun getStream(source: String, cacheControl: CacheControl?): InputStream =
-        try {
-            val reqBuilder = Request.Builder().url(getResourceUrl(source))
-            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            httpClient.newCall(reqBuilder.get().build()).execute().use { response->
-                if (response.isSuccessful) return response.body!!.byteStream()
-                else throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+    fun getStream(source: String, cacheControl: CacheControl?): InputStream {
+        val reqBuilder = Request.Builder().url(getResourceUrl(source))
+        cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+        httpClient.newCall(reqBuilder.get().build()).execute().use { response ->
+            if (response.isSuccessful) return response.body!!.byteStream()
+            else throw OkHttpWebDavException(response)
+        }
+    }
 
-    fun isExisted(targetName: String) {
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response->
-                if(!response.isSuccessful) throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+    fun isExisted(targetName: String): Boolean {
+        httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
+            if (response.isSuccessful) return true
+            else throw OkHttpWebDavException(response)
+        }
     }
 
     fun list(targetName: String, depth: String): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
-                if (response.isSuccessful) {
-                    val parser = Xml.newPullParser()
-                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
-                    //parser.setInput(response.byteStream(), null)
-                    parser.setInput(response.body!!.byteStream().bufferedReader())
+        httpClient.newCall(Request.Builder().url(getResourceUrl(targetName)).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
+            if (response.isSuccessful) {
+                val parser = Xml.newPullParser()
+                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+                //parser.setInput(response.byteStream(), null)
+                parser.setInput(response.body!!.byteStream().bufferedReader())
 
-                    var res = DAVResource()
-                    var text = ""
-                    var tag = ""
-                    var event = parser.eventType
-                    while (event != XmlPullParser.END_DOCUMENT) {
-                        tag = parser.name
-                        when (event) {
-                            XmlPullParser.START_TAG -> {
-                                when (tag) {
-                                    RESPONSE_TAG -> res = DAVResource()
-                                }
-                            }
-                            XmlPullParser.TEXT -> text = parser.text
-                            XmlPullParser.END_TAG -> {
-                                when (tag) {
-                                    HREF_TAG -> res.name =
-                                        if (text.endsWith('/')) {
-                                            res.isFolder = true
-                                            text.dropLast(1).substringAfterLast('/')
-                                        } else {
-                                            res.isFolder = false
-                                            text.substringAfterLast('/')
-                                        }
-                                    OC_UNIQUE_ID -> res.fileId = text
-                                    DAV_GETETAG -> res.eTag = text
-                                    DAV_GETCONTENTTYPE -> res.contentType = text
-                                    DAV_GETLASTMODIFIED -> res.modified = LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME)
-                                    RESPONSE_TAG -> result.add(res)
-                                }
+                var res = DAVResource()
+                var text = ""
+                var tag = ""
+                var event = parser.eventType
+                while (event != XmlPullParser.END_DOCUMENT) {
+                    tag = parser.name
+                    when (event) {
+                        XmlPullParser.START_TAG -> {
+                            when (tag) {
+                                RESPONSE_TAG -> res = DAVResource()
                             }
                         }
-                        event = parser.next()
+                        XmlPullParser.TEXT -> text = parser.text
+                        XmlPullParser.END_TAG -> {
+                            when (tag) {
+                                HREF_TAG -> res.name =
+                                    if (text.endsWith('/')) {
+                                        res.isFolder = true
+                                        text.dropLast(1).substringAfterLast('/')
+                                    } else {
+                                        res.isFolder = false
+                                        text.substringAfterLast('/')
+                                    }
+                                OC_UNIQUE_ID -> res.fileId = text
+                                DAV_GETETAG -> res.eTag = text
+                                DAV_GETCONTENTTYPE -> res.contentType = text
+                                DAV_GETLASTMODIFIED -> res.modified = LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME)
+                                RESPONSE_TAG -> result.add(res)
+                            }
+                        }
                     }
-                } else { throw OkHttpWebDavException(response) }
+                    event = parser.next()
+                }
+            } else { throw OkHttpWebDavException(response) }
 
-                return result
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+            return result
+        }
     }
 
     fun move(source: String, dest: String) { copyOrMove(false, source, dest) }
 
     fun upload(source: String, dest: String, mimeType: String) {
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-                if(!response.isSuccessful) throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+            if(!response.isSuccessful) throw OkHttpWebDavException(response)
+        }
     }
 
     fun upload(source: File, dest: String, mimeType: String) {
-        try {
-            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-                if(!response.isSuccessful) throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+            if(!response.isSuccessful) throw OkHttpWebDavException(response)
+        }
     }
 
     fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver) {
-        try {
-            contentResolver.openInputStream(source)?.use { input->
-                httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
-                    if(!response.isSuccessful) throw OkHttpWebDavException(response)
-                }
-            } ?: throw Exception("InputStream provider crashed")
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        contentResolver.openInputStream(source)?.use { input->
+            httpClient.newCall(Request.Builder().url(getResourceUrl(dest)).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
+                if(!response.isSuccessful) throw OkHttpWebDavException(response)
+            }
+        } ?: throw Exception("InputStream provider crashed")
     }
 
     fun chunksUpload(source: String, dest: String, mimeType: String) {
-        try {
-            File(source).also { file ->
-                chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        File(source).also { file ->
+            chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
+        }
     }
 
     fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long) {
@@ -203,17 +185,15 @@ class OkHttpWebDav(context: Context, private val userId: String, password: Strin
         } catch (e: Exception) {
             // Upload interrupted, delete uploaded chunks
             try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-            throw OkHttpWebDavException(Response.Builder().code(-1).build())
+            throw e
         }
     }
 
     private fun copyOrMove(copy: Boolean, source: String, dest: String) {
-        try {
-            val hb = Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T")
-            httpClient.newCall(Request.Builder().url(getResourceUrl(source)).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
-                if (!response.isSuccessful) throw OkHttpWebDavException(response)
-            }
-        } catch (e: Exception) { throw OkHttpWebDavException(Response.Builder().code(-1).build()) }
+        val hb = Headers.Builder().add("DESTINATION", getResourceUrl(dest)).add("OVERWRITE", "T")
+        httpClient.newCall(Request.Builder().url(getResourceUrl(source)).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
+            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+        }
     }
 
     private fun getResourceUrl(targetName: String): String = "${serverBase}/${Uri.encode(targetName)}"
