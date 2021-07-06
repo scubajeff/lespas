@@ -3,7 +3,6 @@ package site.leos.apps.lespas.helper
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Parcelable
-import android.util.Xml
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,8 +11,10 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
 import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.InputStream
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -80,34 +81,31 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
             if (response.isSuccessful) {
-                val parser = Xml.newPullParser()
+                val parser = XmlPullParserFactory.newInstance().newPullParser()
                 parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
-                //parser.setInput(response.byteStream(), null)
+                //parser.setInput(response.body!!.byteStream(), null)
                 parser.setInput(response.body!!.byteStream().bufferedReader())
 
                 var res = DAVResource()
                 var text = ""
-                var tag = ""
-                var event = parser.eventType
-                while (event != XmlPullParser.END_DOCUMENT) {
-                    tag = parser.name
-                    when (event) {
+                while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                    when (parser.eventType) {
                         XmlPullParser.START_TAG -> {
-                            when (tag) {
+                            when (parser.name) {
                                 RESPONSE_TAG -> res = DAVResource()
                             }
                         }
                         XmlPullParser.TEXT -> text = parser.text
                         XmlPullParser.END_TAG -> {
-                            when (tag) {
-                                HREF_TAG -> res.name =
+                            when (parser.name) {
+                                HREF_TAG -> res.name = URI(
                                     if (text.endsWith('/')) {
                                         res.isFolder = true
                                         text.dropLast(1).substringAfterLast('/')
                                     } else {
                                         res.isFolder = false
                                         text.substringAfterLast('/')
-                                    }
+                                    }).path
                                 OC_UNIQUE_ID -> res.fileId = text
                                 DAV_GETETAG -> res.eTag = text
                                 DAV_GETCONTENTTYPE -> res.contentType = text
@@ -116,7 +114,6 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                             }
                         }
                     }
-                    event = parser.next()
                 }
             } else { throw OkHttpWebDavException(response) }
 
