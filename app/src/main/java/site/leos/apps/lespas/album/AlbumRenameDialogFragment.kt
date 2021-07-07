@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.album
 
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import com.google.android.material.textfield.TextInputEditText
@@ -35,8 +34,8 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
             addTextChangedListener(AlbumNameValidator(this, context))
 
-            setOnEditorActionListener { _, actionId, event ->
-                if (actionId == EditorInfo.IME_NULL && event.action == KeyEvent.ACTION_UP) {
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     val name = this.text.toString().trim()    // Trim the leading and trailing blank
 
                     if (error != null)

@@ -140,7 +140,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         newAlbumTitleTextInputEditText.run {
             setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
+                if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     // Validate the name
                     val name = this.text.toString().trim()    // Trim the leading and trailing blank
 

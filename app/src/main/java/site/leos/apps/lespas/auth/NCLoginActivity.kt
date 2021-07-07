@@ -109,7 +109,7 @@ class NCLoginActivity : AppCompatActivity() {
 
         hostInputText.run {
             setOnEditorActionListener { _, id, _ ->
-                if (id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
+                if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
                     prepareLogin()
                     true
                 } else false
