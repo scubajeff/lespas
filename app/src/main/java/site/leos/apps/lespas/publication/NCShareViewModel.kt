@@ -618,7 +618,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             // Download video file if necessary
                                             val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
                                             val videoFile = File(localRootFolder, fileName)
-                                            if (!videoFile.exists()) videoFile.sink(false).buffer().writeAll(it.source().buffer)
+                                            if (!videoFile.exists()) {
+                                                val sink = videoFile.sink(false).buffer()
+                                                sink.writeAll(it.source())
+                                                sink.close()
+                                            }
 
                                             // Get frame at 1s
                                             MediaMetadataRetriever().apply {
