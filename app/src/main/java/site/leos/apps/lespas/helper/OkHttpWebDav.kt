@@ -70,10 +70,16 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     }
 
     fun isExisted(targetName: String): Boolean {
+        var result: Boolean
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
-            if (response.isSuccessful) return true
-            else throw OkHttpWebDavException(response)
+            result = when {
+                response.isSuccessful -> true
+                response.code == 404 -> false
+                else -> throw OkHttpWebDavException(response)
+            }
         }
+
+        return result
     }
 
     fun list(targetName: String, depth: String): List<DAVResource> {
