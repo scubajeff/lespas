@@ -16,7 +16,9 @@ import java.io.File
 import java.io.InputStream
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?) {
@@ -115,7 +117,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                 OC_UNIQUE_ID -> res.fileId = text
                                 DAV_GETETAG -> res.eTag = text
                                 DAV_GETCONTENTTYPE -> res.contentType = text
-                                DAV_GETLASTMODIFIED -> res.modified = LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME)
+                                DAV_GETLASTMODIFIED -> res.modified = Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime()
                                 RESPONSE_TAG -> result.add(res)
                             }
                         }
