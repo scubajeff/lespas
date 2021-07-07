@@ -36,9 +36,10 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun createFolder(folderName: String): String {
         httpClient.newCall(Request.Builder().url(folderName).method("MKCOL", null).build()).execute().use { response ->
-            when {
-                response.isSuccessful -> return response.header("oc-fileid", "") ?: ""
-                response.code == 405 -> return ""
+            return when {
+                response.isSuccessful -> response.header("oc-fileid", "") ?: ""
+                // Ignore folder already existed error
+                response.code == 405 -> ""
                 else-> throw OkHttpWebDavException(response)
             }
         }
