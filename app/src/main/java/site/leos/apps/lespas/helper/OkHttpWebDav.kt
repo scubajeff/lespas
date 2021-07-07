@@ -205,7 +205,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         return object : RequestBody() {
             override fun contentType(): MediaType? = mediaType
             override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { -1 }
-            override fun writeTo(sink: BufferedSink) { sink.write(input.source(), size) }
+            override fun writeTo(sink: BufferedSink) { sink.write(input.source(), contentLength()) }
         }
     }
 
