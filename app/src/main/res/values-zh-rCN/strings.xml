@@ -136,4 +136,5 @@
     <string name="item_show_meta">显示额外信息</string>
     <string name="yes_i_do">没问题</string>
     <string name="confirm_download_publication">您正在使用移动网络，是否现在观看亲友的分享？</string>
+    <string name="item_reload_publication">刷新</string>
 </resources>

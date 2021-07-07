@@ -136,4 +136,5 @@
     <string name="item_show_meta">Mostrar metadatos</string>
     <string name="yes_i_do">Claro</string>
     <string name="confirm_download_publication">Ahora estás en la red móvil, ¿estás seguro de que quieres ver esta publicación ahora?</string>
+    <string name="item_reload_publication">Recargar la publicación</string>
 </resources>

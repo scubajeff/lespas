@@ -136,4 +136,5 @@
     <string name="item_show_meta">メタデータの表示</string>
     <string name="yes_i_do">もちろん</string>
     <string name="confirm_download_publication">あなたはモバイルネットワークを利用していて、今、友達の共有を見ていますか？</string>
+    <string name="item_reload_publication">リロード</string>
 </resources>

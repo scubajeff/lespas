@@ -44,6 +44,7 @@ class PublicationDetailFragment: Fragment() {
 
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
+    private var reloadPublicationMenuItem: MenuItem? = null
 
     private var clickedItem = -1
 
@@ -85,7 +86,7 @@ class PublicationDetailFragment: Fragment() {
         }
 
         lifecycleScope.launch {
-            shareModel.getRemotePhotoList(share).toMutableList().apply {
+            shareModel.getRemotePhotoList(share, false).toMutableList().apply {
                 photoListAdapter.submitList(this)
 
                 loadingIndicator?.run {
@@ -93,6 +94,10 @@ class PublicationDetailFragment: Fragment() {
                     isVisible = false
                 }
                 showMetaMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
+                reloadPublicationMenuItem?.run {
                     isVisible = true
                     isEnabled = true
                 }
@@ -150,6 +155,7 @@ class PublicationDetailFragment: Fragment() {
         inflater.inflate(R.menu.publication_detail_menu, menu)
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+        reloadPublicationMenuItem = menu.findItem(R.id.option_menu_reload_publication)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
@@ -159,6 +165,8 @@ class PublicationDetailFragment: Fragment() {
             loadingIndicator?.isVisible = false
             showMetaMenuItem?.isEnabled = true
             showMetaMenuItem?.isVisible = true
+            reloadPublicationMenuItem?.isEnabled = true
+            reloadPublicationMenuItem?.isVisible = true
         }
 
     }
@@ -168,6 +176,17 @@ class PublicationDetailFragment: Fragment() {
             R.id.option_menu_show_meta-> {
                 photoListAdapter.toggleMetaDisplay()
                 item.icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
+                true
+            }
+            R.id.option_menu_reload_publication-> {
+                lifecycleScope.launch {
+                    reloadPublicationMenuItem?.isEnabled = false
+                    shareModel.updateShareWithMe()
+                    shareModel.getRemotePhotoList(share, true).toMutableList().apply {
+                        photoListAdapter.submitList(this)
+                        reloadPublicationMenuItem?.isEnabled = true
+                    }
+                }
                 true
             }
             else-> false

@@ -299,92 +299,96 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return arrayListOf()
     }
 
-    private fun getShareWithMe(): MutableList<ShareWithMe> {
+    //fun updateShareWithMe(): MutableList<ShareWithMe> {
+    fun updateShareWithMe() {
         val result = mutableListOf<ShareWithMe>()
         var sPath = ""
         var rCode = 200
         val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
-        try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
-                //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
-                var shareType: Int
-                var idString: String
-                var labelString: String
-                var pathString: String
-                var recipientString: String
-                val lespasBaseLength = lespasBase.length
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+                    //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
+                    var shareType: Int
+                    var idString: String
+                    var labelString: String
+                    var pathString: String
+                    var recipientString: String
+                    val lespasBaseLength = lespasBase.length
 
-                val data = getJSONArray("data")
-                for (i in 0 until data.length()) {
-                    data.getJSONObject(i).apply {
-                        shareType = when (getString("type")) {
-                            SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
-                            SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
-                            else -> -1
-                        }
-                        pathString = getString("path")
-                        if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
-                            // Only interested in shares of subfolders under lespas/
-
-                            recipientString = getString("recipient")
-                            if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
-                                // This is a share with me, either direct to me or to my groups, get owner's label
-                                idString = getString("owner")
-                                labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-
-                                result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                    val data = getJSONArray("data")
+                    for (i in 0 until data.length()) {
+                        data.getJSONObject(i).apply {
+                            shareType = when (getString("type")) {
+                                SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
+                                SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
+                                else -> -1
                             }
-                        }
-                    }
-                }
-            }
+                            pathString = getString("path")
+                            if (getString("owner") != userName && shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
+                                // Only interested in shares of subfolders under lespas/
 
-            // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
-            if (result.size > 0) sPath = (getSharePath(result[0].shareId) ?: "").substringBeforeLast('/')
-            for (share in result) {
-                share.sharePath = "${sPath}/${share.albumName}"
-                cachedHttpClient?.apply {
-                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                        rCode = it.code
-                        if (it.isSuccessful) {
-                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                                meta.getJSONObject("cover").apply {
-                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                    share.coverFileName = getString("filename")
+                                recipientString = getString("recipient")
+                                if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
+                                    // This is a share with me, either direct to me or to my groups, get owner's label
+                                    idString = getString("owner")
+                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
+
+                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
                                 }
-                                share.sortOrder = meta.getInt("sort")
                             }
                         }
                     }
                 }
 
-                if (rCode == 404) {
-                    // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
-                    sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
-
+                // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
+                if (result.size > 0) sPath = (getSharePath(result[0].shareId) ?: "").substringBeforeLast('/')
+                for (share in result) {
                     share.sharePath = "${sPath}/${share.albumName}"
                     cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                            JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                                meta.getJSONObject("cover").apply {
-                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                    share.coverFileName = getString("filename")
+                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use {
+                            rCode = it.code
+                            if (it.isSuccessful) {
+                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                    meta.getJSONObject("cover").apply {
+                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                        share.coverFileName = getString("filename")
+                                    }
+                                    share.sortOrder = meta.getInt("sort")
                                 }
-                                share.sortOrder = meta.getInt("sort")
+                            }
+                        }
+                    }
+
+                    if (rCode == 404) {
+                        // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
+                        sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
+
+                        share.sharePath = "${sPath}/${share.albumName}"
+                        cachedHttpClient?.apply {
+                            newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use {
+                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                                    meta.getJSONObject("cover").apply {
+                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                        share.coverFileName = getString("filename")
+                                    }
+                                    share.sortOrder = meta.getInt("sort")
+                                }
                             }
                         }
                     }
                 }
+                _shareWithMe.value = result.apply { sort() }
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+            } catch (e: IllegalStateException) {
+                e.printStackTrace()
+            } catch (e: JSONException) {
+                e.printStackTrace()
             }
-
-            return result.apply { sort() }
         }
-        catch (e: IOException) { e.printStackTrace() }
-        catch (e: IllegalStateException) { e.printStackTrace() }
-        catch (e: JSONException) { e.printStackTrace() }
-
-        return arrayListOf()
     }
 
     private fun getSharees(): MutableList<Sharee> {
@@ -532,13 +536,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getRemotePhotoList(share: ShareWithMe): List<RemotePhoto> {
+    suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
 
         withContext(Dispatchers.IO) {
             try {
                 cachedHttpClient?.apply {
-                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}-content.json").build()).execute().use {
+                    val request = Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}-content.json")
+                    if (forceNetwork) request.cacheControl(CacheControl.FORCE_NETWORK)
+                    newCall(request.build()).execute().use {
                         val photos = JSONObject(it.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
                         for (i in 0 until photos.length()) {
                             photos.getJSONObject(i).apply {
