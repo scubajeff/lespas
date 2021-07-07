@@ -147,7 +147,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
                 if (!response.isSuccessful) throw OkHttpWebDavException(response)
             }
-        } ?: throw Exception("InputStream provider crashed")
+        } ?: throw IllegalStateException("InputStream provider crashed")
     }
 
     fun chunksUpload(source: String, dest: String, mimeType: String) {
