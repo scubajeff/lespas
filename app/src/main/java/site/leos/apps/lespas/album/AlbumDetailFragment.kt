@@ -577,7 +577,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                         }
                     }
                 } else {
-                    actionModel.renameAlbum(album.id, album.name, newName)
+                    with(sharedByMe.with.isNotEmpty()) {
+                        actionModel.renameAlbum(album.id, album.name, newName, this)
+
+                        // TODO What if sharedByMe is not correct when working offline
+                        if (this) publishModel.renameShare(sharedByMe, newName)
+                    }
+                    //actionModel.renameAlbum(album.id, album.name, newName)
                 }
             }
         }

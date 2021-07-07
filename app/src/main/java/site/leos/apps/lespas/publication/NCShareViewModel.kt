@@ -442,7 +442,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_ENDPOINT").addHeader(NEXTCLOUD_OCSAPI_HEADER, "true")
                             .post(
                                 FormBody.Builder()
-                                    .add("path", "/lespas/${album.folderName}")
+                                    .add("path", "$lespasBase/${album.folderName}")
                                     .add("shareWith", recipient.sharee.name)
                                     .add("shareType", recipient.sharee.type.toString())
                                     .add("permissions", recipient.permission.toString())
@@ -530,6 +530,23 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
             }
             catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun renameShare(album: ShareByMe, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                httpClient?.let { httpClient->
+                    val hb = Headers.Builder().add("DESTINATION", "$resourceRoot$lespasBase/$newName").add("OVERWRITE", "T")
+                    httpClient.newCall(Request.Builder().url("$resourceRoot$lespasBase/${album.folderName}").method("MOVE", null).headers(hb.build()).build()).execute().use { response->
+                        if (response.isSuccessful) {
+                            deleteShares(album.with)
+                            album.folderName = newName
+                            createShares(listOf(album))
+                        }
+                    }
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 

@@ -94,10 +94,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun renameAlbum(albumId: String, oldName: String, newName: String) {
+    fun renameAlbum(albumId: String, oldName: String, newName: String, sharedAlbum: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.changeName(albumId, newName)
-            actionRepository.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
+            if (!sharedAlbum) actionRepository.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
         }
     }
 
