@@ -1,28 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/option_menu_reload_publication"
-        android:title="@string/item_reload_publication"
-        android:orderInCategory="97"
+        android:id="@+id/option_menu_add_photo"
+        android:title="@string/fab_add_photos"
+        android:orderInCategory="98"
         android:visible="false"
         android:enabled="false"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_reload_24"
-        tools:ignore="UnusedAttribute" />
+        android:icon="@drawable/ic_baseline_add_photo_24" />
     <item
         android:id="@+id/option_menu_show_meta"
         android:title="@string/item_show_meta"
-        android:orderInCategory="98"
+        android:orderInCategory="99"
         android:visible="false"
         android:enabled="false"
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_baseline_meta_off_24" />
     <item
+        android:id="@+id/option_menu_reload_publication"
+        android:title="@string/item_refresh_publication"
+        android:orderInCategory="97"
+        android:visible="false"
+        android:enabled="false"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_reload_24" />
+    <item
         android:id="@+id/option_menu_search_progress"
         android:title=""
-        android:orderInCategory="99"
+        android:orderInCategory="96"
         app:showAsAction="ifRoom"
         app:actionLayout="@layout/menuitem_search_progress" />
 </menu>

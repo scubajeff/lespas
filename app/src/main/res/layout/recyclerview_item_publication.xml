@@ -38,14 +38,26 @@
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/title"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toTopOf="@id/joint_album_indicator"
+                app:layout_constraintBottom_toBottomOf="@id/joint_album_indicator"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toLeftOf="@id/joint_album_indicator"
                 android:paddingHorizontal="@dimen/small_padding"
                 android:ellipsize="end"
                 android:lines="1"
                 style="@style/TextAppearance.MaterialComponents.Subtitle1"
                 tools:text="Title" />
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/joint_album_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                android:layout_marginRight="@dimen/small_padding"
+                android:src="@drawable/ic_baseline_joint_album_24" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -136,6 +136,6 @@
     <string name="item_show_meta">顯示額外信息</string>
     <string name="yes_i_do">冇問題</string>
     <string name="confirm_download_publication">您现正使用流動網絡，是否即时觀看親友的分享？</string>
-    <string name="item_reload_publication">刷新</string>
+    <string name="item_refresh_publication">刷新</string>
     <string name="joint_album_checkbox">合作相冊</string>
 </resources>

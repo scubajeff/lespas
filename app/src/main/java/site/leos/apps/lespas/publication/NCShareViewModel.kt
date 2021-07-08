@@ -34,6 +34,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.lang.Thread.sleep
@@ -59,13 +60,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private var cachedHttpClient: OkHttpClient? = null
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
-    private val localRootFolder = "${application.cacheDir}${lespasBase}"
+    private val localCacheFolder = "${application.cacheDir}${lespasBase}"
+    private val localFileFolder = Tools.getLocalRoot(application)
 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_circle_24)
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
-    private val diskCache = Cache(File(localRootFolder), DISK_CACHE_SIZE)
+    private val diskCache = Cache(File(localCacheFolder), DISK_CACHE_SIZE)
     private val decoderJobMap = HashMap<Int, Job>()
     private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
@@ -94,7 +96,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             } catch (e: Exception) { e.printStackTrace() }
         }
 
-        File(localRootFolder, VIDEO_CACHE_FOLDER).mkdirs()
+        File(localCacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
@@ -503,6 +505,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    private fun createContentMeta(photoMeta: List<PhotoMeta>?, remotePhotos: List<RemotePhoto>?): String {
+        var content = "{\"lespas\":{\"photos\":["
+
+        photoMeta?.forEach {
+            content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+        }
+
+        remotePhotos?.forEach {
+            content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
+        }
+
+        return content.dropLast(1) + "]}}"
+    }
+
+    fun createJointAlbumContentMetaFile(albumId: String, remotePhotos: List<RemotePhoto>?) {
+        File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
+            it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
+        }
+    }
+
     fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -513,15 +535,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 if (album.with.isNotEmpty()) {
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
-                        var content = "{\"lespas\":{\"photos\":["
-                        photoRepository.getPhotoMetaInAlbum(album.fileId).forEach {
-                            content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-                        }
-
-                        content = content.dropLast(1) + "]}}"
+                        val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
                         httpClient?.let { httpClient->
                             httpClient.newCall(Request.Builder()
-                                .url("${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}-content.json")
+                                .url("${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX")
                                 .put(content.toRequestBody("application/json".toMediaTypeOrNull()))
                                 .build()
                             ).execute().use {}
@@ -564,7 +581,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         withContext(Dispatchers.IO) {
             try {
                 cachedHttpClient?.apply {
-                    val request = Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}-content.json")
+                    val request = Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX")
                     if (forceNetwork) request.cacheControl(CacheControl.FORCE_NETWORK)
                     newCall(request.build()).execute().use {
                         val photos = JSONObject(it.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
@@ -645,7 +662,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         if (photo.mimeType.startsWith("video")) {
                                             // Download video file if necessary
                                             val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
-                                            val videoFile = File(localRootFolder, fileName)
+                                            val videoFile = File(localCacheFolder, fileName)
                                             if (!videoFile.exists()) {
                                                 val sink = videoFile.sink(false).buffer()
                                                 sink.writeAll(it.source())
@@ -654,7 +671,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                                             // Get frame at 1s
                                             MediaMetadataRetriever().apply {
-                                                setDataSource("$localRootFolder/$fileName")
+                                                setDataSource("$localCacheFolder/$fileName")
                                                 bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
                                                 release()
                                             }
@@ -713,7 +730,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     override fun onCleared() {
-        File(localRootFolder, VIDEO_CACHE_FOLDER).deleteRecursively()
+        File(localCacheFolder, VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
         super.onCleared()
@@ -786,6 +803,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
+        const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
 
         const val SHARE_TYPE_USER = 0

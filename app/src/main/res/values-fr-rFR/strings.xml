@@ -136,6 +136,6 @@
     <string name="item_show_meta">Afficher les métadonnées</string>
     <string name="yes_i_do">Bien sûr</string>
     <string name="confirm_download_publication">Vous êtes maintenant sur le réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>
-    <string name="item_reload_publication">Recharger la publication</string>
+    <string name="item_refresh_publication">Rafraîchir la publication</string>
     <string name="joint_album_checkbox">Album commun</string>
 </resources>

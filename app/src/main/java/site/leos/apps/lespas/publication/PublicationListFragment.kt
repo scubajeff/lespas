@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
@@ -98,6 +99,7 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
             fun bind(item: NCShareViewModel.ShareWithMe) {
                 imageLoader(item, itemView.findViewById(R.id.coverart))
                 itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
+                itemView.findViewById<ImageView>(R.id.joint_album_indicator).visibility = if (item.permission == NCShareViewModel.PERMISSION_JOINT) View.VISIBLE else View.INVISIBLE
                 itemView.setOnClickListener { clickListener(item) }
             }
         }

@@ -1,8 +1,12 @@
 package site.leos.apps.lespas.publication
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -25,6 +29,8 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionRepository
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -45,6 +51,7 @@ class PublicationDetailFragment: Fragment() {
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
     private var reloadPublicationMenuItem: MenuItem? = null
+    private var addPhotoMenuItem: MenuItem? = null
 
     private var clickedItem = -1
 
@@ -98,6 +105,10 @@ class PublicationDetailFragment: Fragment() {
                     isEnabled = true
                 }
                 reloadPublicationMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
+                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
                     isVisible = true
                     isEnabled = true
                 }
@@ -156,6 +167,7 @@ class PublicationDetailFragment: Fragment() {
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
         reloadPublicationMenuItem = menu.findItem(R.id.option_menu_reload_publication)
+        addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
@@ -167,6 +179,10 @@ class PublicationDetailFragment: Fragment() {
             showMetaMenuItem?.isVisible = true
             reloadPublicationMenuItem?.isEnabled = true
             reloadPublicationMenuItem?.isVisible = true
+            if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
+                addPhotoMenuItem?.isEnabled = true
+                addPhotoMenuItem?.isVisible = true
+            }
         }
 
     }
@@ -189,8 +205,45 @@ class PublicationDetailFragment: Fragment() {
                 }
                 true
             }
+            R.id.option_menu_add_photo-> {
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                }
+                startActivityForResult(intent, REQUEST_ADD_PHOTOS)
+                true
+            }
             else-> false
         }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+        super.onActivityResult(requestCode, resultCode, intent)
+
+        val uris = arrayListOf<Uri>()
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ADD_PHOTOS) {
+            intent?.clipData?.apply { for (i in 0 until itemCount) uris.add(getItemAt(i).uri) } ?: uris.add(intent?.data!!)
+
+            if (uris.isNotEmpty()) {
+                // Save joint album's content meta file
+                shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
+
+                val actions = arrayListOf<Action>()
+                val cr = requireContext().contentResolver
+                var mimeType: String
+                for(uri in uris) {
+                    mimeType = cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: ""
+                    if (mimeType.startsWith("image") || mimeType.startsWith("video"))
+                        actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, share.albumId, share.sharePath, "", uri.toString(), System.currentTimeMillis(), 1))
+                }
+                if (actions.isNotEmpty()) {
+                    actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, share.albumId, share.sharePath, "", "", System.currentTimeMillis(), 1))
+                    lifecycleScope.launch { ActionRepository(requireActivity().application).addActions(actions) }
+                }
+            }
+        }
+    }
 
     class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
@@ -254,6 +307,8 @@ class PublicationDetailFragment: Fragment() {
     }
 
     companion object {
+        private const val REQUEST_ADD_PHOTOS = 3333
+
         private const val SHARE = "SHARE"
         private const val CLICKED_ITEM = "CLICKED_ITEM"
         private const val SHOW_META = "SHOW_META"
