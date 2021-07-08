@@ -17,7 +17,6 @@ import android.view.View
 import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.thegrizzlylabs.sardineandroid.impl.SardineException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
@@ -599,7 +598,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     Album.BY_DATE_TAKEN_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
                     Album.BY_DATE_TAKEN_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
                 }
-            } catch (e: SardineException) { e.printStackTrace() } catch (e: Exception) { e.printStackTrace() }
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         return result
