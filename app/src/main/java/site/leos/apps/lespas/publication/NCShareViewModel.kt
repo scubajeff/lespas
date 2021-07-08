@@ -506,6 +506,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                // Remove sharees
+                if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
+
+                // Add sharees
                 if (album.with.isNotEmpty()) {
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
@@ -526,7 +530,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                     createShares(listOf(album))
                 }
-                if (removeRecipients.isNotEmpty()) deleteShares(removeRecipients)
+
+                // Update _shareByMe hence update UI
                 if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
             }
             catch (e: Exception) { e.printStackTrace() }
@@ -791,6 +796,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
+        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ
         private const val PERMISSION_CAN_DELETE = 8
         private const val PERMISSION_CAN_SHARE = 16
         private const val PERMISSION_ALL = 31

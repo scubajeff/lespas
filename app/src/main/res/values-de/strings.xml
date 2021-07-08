@@ -137,4 +137,5 @@
     <string name="yes_i_do">Sicher</string>
     <string name="confirm_download_publication">Sie befinden sich jetzt im Mobilfunknetz, sind Sie sicher, dass Sie diese Publikation jetzt ansehen möchten?</string>
     <string name="item_reload_publication">Veröffentlichung nachladen</string>
+    <string name="joint_album_checkbox">Joint-Album</string>
 </resources>

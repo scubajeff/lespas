@@ -14,10 +14,7 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
-import android.widget.Filter
-import android.widget.Filterable
-import android.widget.TextView
+import android.widget.*
 import androidx.annotation.LayoutRes
 import androidx.annotation.NonNull
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
@@ -44,6 +41,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
     private lateinit var autoCompleteTextView: AppCompatAutoCompleteTextView
     private lateinit var recipientChipGroup: ChipGroup
+    private lateinit var jointAlbumCheckBox: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +52,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         super.onViewCreated(view, savedInstanceState)
 
         recipientChipGroup = view.findViewById(R.id.recipient_chips)
+        jointAlbumCheckBox = view.findViewById(R.id.joint_album)
         view.findViewById<TextInputLayout>(R.id.recipient_textinputlayout).requestFocus()
         autoCompleteTextView = view.findViewById<AppCompatAutoCompleteTextView>(R.id.recipient_textinputedittext).apply {
             setOnEditorActionListener { v, actionId, event ->
@@ -70,18 +69,23 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener { dismiss() }
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
             val currentRecipients = currentShare.with
-            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedShaees) add(NCShareViewModel.Recipient("", NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
+            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedShaees) add(NCShareViewModel.Recipient("", if (jointAlbumCheckBox.isChecked) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
+            val permissionUnChanged = if (currentShare.with.isNotEmpty() && newRecipients.isNotEmpty()) currentShare.with[0].permission == newRecipients[0].permission else false
             val removeRecipients = currentRecipients.toMutableList().apply {
-                for (old in currentRecipients) {
-                    for (new in newRecipients) {
-                        if (old.sharee.name == new.sharee.name && old.sharee.type == new.sharee.type) remove(old)
+                if (permissionUnChanged) {
+                    for (old in currentRecipients) {
+                        for (new in newRecipients) {
+                            if (old.sharee.name == new.sharee.name && old.sharee.type == new.sharee.type) remove(old)
+                        }
                     }
                 }
             }
             val addRecipients = newRecipients.toMutableList().apply {
-                for (new in newRecipients) {
-                    for (old in currentRecipients) {
-                        if (old.sharee.name == new.sharee.name && old.sharee.type == new.sharee.type) remove(new)
+                if (permissionUnChanged) {
+                    for (new in newRecipients) {
+                        for (old in currentRecipients) {
+                            if (old.sharee.name == new.sharee.name && old.sharee.type == new.sharee.type) remove(new)
+                        }
                     }
                 }
             }
@@ -93,6 +97,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         // Get selected recipients from calling argument or saved instance state
         (savedInstanceState?.getParcelableArrayList<NCShareViewModel.Sharee>(SELECTED_RECIPIENTS)
             ?: run {
+                if (currentShare.with.isNotEmpty()) jointAlbumCheckBox.isChecked = NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission
                 arrayListOf<NCShareViewModel.Sharee>().apply {
                     for(recipient in currentShare.with) add(recipient.sharee)
                 }

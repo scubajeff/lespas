@@ -173,6 +173,7 @@
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publish to:</string>
     <string name="publish_button_text">Publish</string>
+    <string name="joint_album_checkbox">Joint album</string>
 <!--
     <string name="permission_to_edit">Allow recipient updating album</string>
 -->
