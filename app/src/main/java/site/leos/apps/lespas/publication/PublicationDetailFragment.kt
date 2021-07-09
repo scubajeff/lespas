@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
-import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -27,10 +26,10 @@ import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
-import site.leos.apps.lespas.sync.Action
-import site.leos.apps.lespas.sync.ActionRepository
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -229,17 +228,12 @@ class PublicationDetailFragment: Fragment() {
                 // Save joint album's content meta file
                 shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
 
-                val actions = arrayListOf<Action>()
-                val cr = requireContext().contentResolver
-                var mimeType: String
-                for(uri in uris) {
-                    mimeType = cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: ""
-                    if (mimeType.startsWith("image") || mimeType.startsWith("video"))
-                        actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, share.albumId, share.sharePath, "", uri.toString(), System.currentTimeMillis(), 1))
-                }
-                if (actions.isNotEmpty()) {
-                    actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, share.albumId, share.sharePath, "", "", System.currentTimeMillis(), 1))
-                    lifecycleScope.launch { ActionRepository(requireActivity().application).addActions(actions) }
+                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
+                    AcquiringDialogFragment.newInstance(
+                        uris,
+                        Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 0F),
+                        false
+                    ).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
         }
@@ -308,6 +302,9 @@ class PublicationDetailFragment: Fragment() {
 
     companion object {
         private const val REQUEST_ADD_PHOTOS = 3333
+        private const val TAG_ACQUIRING_DIALOG = "JOINT_ALBUM_ACQUIRING_DIALOG"
+
+        const val JOINT_ALBUM_ID = "joint"
 
         private const val SHARE = "SHARE"
         private const val CLICKED_ITEM = "CLICKED_ITEM"

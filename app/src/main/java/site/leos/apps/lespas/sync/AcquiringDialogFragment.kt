@@ -22,7 +22,6 @@ import androidx.transition.TransitionInflater
 import androidx.transition.TransitionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -32,15 +31,18 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 
 
 class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
     private var total = -1
-    private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+    private lateinit var album: Album
+
     // TODO publish status is not persistent locally
     //private val publishModel: NCShareViewModel by activityViewModels()
     //private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!, publishModel.isShared(arguments?.getParcelable<Album>(KEY_ALBUM)!!.id)) }
@@ -58,6 +60,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
+        album = arguments?.getParcelable(KEY_ALBUM)!!
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -71,37 +74,41 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         contentLoadingProgressBar = view.findViewById(R.id.current_progress)
 
         acquiringModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            if (progress >= total) {
-                finished = true
+            when {
+                progress >= total -> {
+                    finished = true
 
-                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                progressLinearLayout.visibility = View.GONE
-                dialogTitleTextView.text = getString(R.string.finished_preparing_files)
-                var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
-                    if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                        note += context?.getString(R.string.mind_network_setting)
+                    TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                    progressLinearLayout.visibility = View.GONE
+                    dialogTitleTextView.text = getString(R.string.finished_preparing_files)
+                    var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
+                        if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                            note += context?.getString(R.string.mind_network_setting)
+                        }
                     }
+                    messageTextView.text = note
+                    messageTextView.visibility = View.VISIBLE
+                    dialog?.setCanceledOnTouchOutside(true)
                 }
-                messageTextView.text = note
-                messageTextView.visibility = View.VISIBLE
-                dialog?.setCanceledOnTouchOutside(true)
-            } else if (progress >= 0) {
-                dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
-                fileNameTextView.text = acquiringModel.getCurrentName()
-                contentLoadingProgressBar.progress = progress
-            } else if (progress < 0 ) {
-                TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
-                progressLinearLayout.visibility = View.GONE
-                dialogTitleTextView.text = getString(R.string.error_preparing_files)
-                messageTextView.text = getString(when(progress) {
-                    AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
-                    AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
-                    AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
-                    else-> 0
-                })
-                messageTextView.visibility = View.VISIBLE
-                dialog?.setCanceledOnTouchOutside(true)
+                progress >= 0 -> {
+                    dialogTitleTextView.text = getString(R.string.preparing_files_progress, progress + 1, total)
+                    fileNameTextView.text = acquiringModel.getCurrentName()
+                    contentLoadingProgressBar.progress = progress
+                }
+                progress < 0 -> {
+                    TransitionManager.beginDelayedTransition(background, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                    progressLinearLayout.visibility = View.GONE
+                    dialogTitleTextView.text = getString(R.string.error_preparing_files)
+                    messageTextView.text = getString(when(progress) {
+                        AcquiringViewModel.ACCESS_RIGHT_EXCEPTION-> R.string.access_right_violation
+                        AcquiringViewModel.NO_MEDIA_FILE_FOUND-> R.string.no_media_file_found
+                        AcquiringViewModel.SAME_FILE_EXISTED-> R.string.same_file_found
+                        else-> 0
+                    })
+                    messageTextView.visibility = View.VISIBLE
+                    dialog?.setCanceledOnTouchOutside(true)
+                }
             }
         })
 
@@ -116,13 +123,16 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
 
     override fun onDestroy() {
-        LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(Intent().apply {
-            action = BROADCAST_REMOVE_ORIGINAL
-            putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
-        })
+        if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) {
+            LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(Intent().apply {
+                action = BROADCAST_REMOVE_ORIGINAL
+                putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
+            })
 
-        // Dirty hack to stop DestinationViewModel from emitting livedata again
-        destinationViewModel.resetDestination()
+            // Dirty hack to stop DestinationViewModel from emitting livedata again
+            val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+            destinationViewModel.resetDestination()
+        }
 
         super.onDestroy()
 
@@ -156,6 +166,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
             viewModelScope.launch(Dispatchers.IO) {
                 var fileId = ""
                 val appRootFolder = Tools.getLocalRoot(application)
+                val cacheFolder = "${application.cacheDir}"
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
                 val fakeAlbumId = System.currentTimeMillis().toString()
@@ -188,9 +199,12 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                     }
                     if (fileId.isEmpty()) return@forEachIndexed
 
-                    // If no photo with same name exists in album, create new photo
+                    // If no photo with same name exists in album (always true in case of joint album), create new photo
                     if (!(allPhotoName.contains(AlbumPhotoName(album.id, fileId)))) {
                         //val fileName = "${fileId.substringBeforeLast('.')}_${System.currentTimeMillis()}.${fileId.substringAfterLast('.')}"
+
+                        // Update progress in UI
+                        setProgress(index, fileId)
 
                         // TODO: Default type set to jpeg
                         val mimeType = contentResolver.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
@@ -200,77 +214,90 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         // If it's not image, skip it
                         if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
 
-                        // Update progress in UI
-                        withContext(Dispatchers.Main) { setProgress(index, fileId) }
-
                         // Copy the file to our private storage
                         try {
                             application.contentResolver.openInputStream(uri)?.use { input ->
-                                File(appRootFolder, fileId).outputStream().use { output ->
+                                File(if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
                                     totalBytes += input.copyTo(output, 8192)
                                 }
                             }
                         } catch (e:FileNotFoundException) {
                             // without access right to uri, will throw FileNotFoundException
-                            withContext(Dispatchers.Main) { setProgress(ACCESS_RIGHT_EXCEPTION, "") }
+                            setProgress(ACCESS_RIGHT_EXCEPTION, "")
                             return@launch   // TODO shall we loop to next file?
                         } catch (e:Exception) {
                             e.printStackTrace()
                             return@launch
                         }
 
-                        newPhotos.add(Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId, true).copy(id = fileId, albumId = album.id, name = fileId))
+                        if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                            val meta = Tools.getPhotoParams("$cacheFolder/$fileId", mimeType, fileId, false)
+                            // Skip those image file we can't handle, like SVG
+                            if (meta.width == -1 || meta.height == -1) return@forEachIndexed
+                            // PublicationDetailFragment pass joint album's albumId in property album.eTag
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.name, "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}", fileId, System.currentTimeMillis(), 1))
+                        } else {
+                            val meta = Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId, true)
+                            // Skip those image file we can't handle, like SVG
+                            if (meta.width == -1 || meta.height == -1) return@forEachIndexed
+                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId))
 
-                        // Update album start and end dates accordingly
-                        date = newPhotos.last().dateTaken
-                        if (date < album.startDate) album.startDate = date
-                        if (date > album.endDate) album.endDate = date
+                            // Update album start and end dates accordingly
+                            date = newPhotos.last().dateTaken
+                            if (date < album.startDate) album.startDate = date
+                            if (date > album.endDate) album.endDate = date
 
-                        // Pass photo mimeType in Action's folderId property
-                        actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                            // Pass photo mimeType in Action's folderId property
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                        }
                     } else {
                         // TODO show special error message when there are just some duplicate in uris
                         //photoRepository.changeName(album.id, fileId, fileName)
-                        if (uris.size == 1) withContext(Dispatchers.Main) { setProgress(SAME_FILE_EXISTED, "") }
+                        if (uris.size == 1) setProgress(SAME_FILE_EXISTED, "")
                         return@launch
                     }
                 }
 
-                if (newPhotos.isEmpty()) withContext(Dispatchers.Main) { setProgress(NO_MEDIA_FILE_FOUND, "") }
+                if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
-                    if (album.id == fakeAlbumId) {
-                        // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
-                        // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
-                        var validCover = newPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
-                        if (validCover == -1) validCover = 0
+                    if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                        // Update joint album content meta. PublicationDetailFragment pass joint album's albumId in property album.eTag
+                        actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.name, "", "", System.currentTimeMillis(), 1))
+                    } else {
+                        if (album.id == fakeAlbumId) {
+                            // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder
+                            // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder
+                            var validCover = newPhotos.indexOfFirst { it.mimeType == "image/jpeg" || it.mimeType == "image/png" }
+                            if (validCover == -1) validCover = 0
 
-                        // New album, update cover information but leaving cover column empty as the sign of local added new album
-                        album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
-                        album.coverWidth = newPhotos[validCover].width
-                        album.coverHeight = newPhotos[validCover].height
-                        album.cover = newPhotos[validCover].id
+                            // New album, update cover information but leaving cover column empty as the sign of local added new album
+                            album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
+                            album.coverWidth = newPhotos[validCover].width
+                            album.coverHeight = newPhotos[validCover].height
+                            album.cover = newPhotos[validCover].id
 
-                        // Create new album first, store cover, e.g. first photo in new album, in property filename
-                        actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                            // Create new album first, store cover, e.g. first photo in new album, in property filename
+                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
+                        }
+
+                        // TODO publish status is not persistent locally
+                        //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                        actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+
+                        photoRepository.insert(newPhotos)
+                        albumRepository.upsert(album)
                     }
-
-                    // TODO publish status is not persistent locally
-                    //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-                    actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-
-                    photoRepository.insert(newPhotos)
-                    albumRepository.upsert(album)
                     actionRepository.addActions(actions)
 
                     // By setting progress to more than 100%, signaling the calling fragment/activity
-                    withContext(Dispatchers.Main) { setProgress(uris.size, fileId) }
+                    setProgress(uris.size, fileId)
                 }
             }
         }
 
         private fun setProgress(progress: Int, name: String) {
-            currentProgress.value = progress
             currentName = name
+            currentProgress.postValue(progress)
         }
 
         fun getProgress(): LiveData<Int> = currentProgress
