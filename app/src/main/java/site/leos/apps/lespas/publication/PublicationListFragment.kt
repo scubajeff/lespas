@@ -3,9 +3,7 @@ package site.leos.apps.lespas.publication
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -53,6 +51,8 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
+
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_publication_list, container, false)
@@ -84,6 +84,20 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
         super.onSaveInstanceState(outState)
         shareSelected?.let { outState.putParcelable(SELECTED_SHARE, it) }
     }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.publication_list_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.option_menu_refresh_publication-> {
+                shareModel.updateShareWithMe()
+                true
+            }
+            else-> false
+        }
 
     override fun onResult(positive: Boolean, requestCode: Int) {
         if (requestCode == CONFIRM_DOWNLOAD_PUBLICATION_CODE && positive) viewDetail()
