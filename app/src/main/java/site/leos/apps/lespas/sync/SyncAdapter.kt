@@ -206,19 +206,22 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
                 Action.ACTION_UPDATE_ALBUM_META -> {
                     albumRepository.getThisAlbum(action.folderId)[0].apply {
-                        if (updateMetaFile(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
+                        if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                             // Touch file to avoid re-download
                             try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                         } else throw IOException()
                     }
                 }
                 Action.ACTION_UPDATE_PHOTO_META -> {
+                    updateContentMeta(action.folderId, action.folderName)
+/*
                     var content = "{\"lespas\":{\"photos\":["
                     photoRepository.getPhotoMetaInAlbum(action.folderId).forEach {
                         content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
                     }
                     content = content.dropLast(1) + "]}}"
                     webDav.upload(content, "$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", "application/json")
+*/
                 }
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
@@ -292,7 +295,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 remoteAlbum.modified,           // Use remote version
                                 localAlbum[0].sortOrder,        // Preserve local data
                                 remoteAlbum.eTag,               // Use remote version
-                                0,
+                                if (remoteAlbum.isShared) 1 else 0,
                                 1f,
                             )
                         )
@@ -338,6 +341,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var remotePhotoId: String
                 var localImageFileName: String
                 val metaFileName = "${changedAlbum.id}.json"
+                var needUpdateContentMeta = false
 
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
@@ -375,17 +379,23 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         changedAlbum.cover = remotePhotoId
 
                                         // cover's fileId is ready, create and sync album meta file
-                                        changedAlbum.apply { updateMetaFile(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), remotePhoto.name, sortOrder) }
+                                        changedAlbum.apply { updateAlbumMeta(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), remotePhoto.name, sortOrder) }
                                     }
                                 }
                             } else {
                                 // Either a new photo created on server or an existing photo updated on server
                                 changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
+
+                                // Published album's content meta needs update
+                                if (changedAlbum.shareId == 1) needUpdateContentMeta = true
                             }
                         } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                             // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
                             // file again from server
                             photoRepository.changeName(remotePhotoId, remotePhoto.name)
+
+                            // Published album's content meta needs update
+                            if (changedAlbum.shareId == 1) needUpdateContentMeta = true
                         }
                     }
                 }
@@ -393,7 +403,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Syncing meta
                 if (changedAlbum.cover.isEmpty()) {
                     // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
-                    downloadMetaFile(changedAlbum)?.apply {
+                    downloadAlbumMeta(changedAlbum)?.apply {
                         changedAlbum.cover = cover
                         changedAlbum.coverBaseline = baseline
                         changedAlbum.coverWidth = width
@@ -423,7 +433,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         if (remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli() - File("$localRootFolder/${metaFileName}").lastModified() > 180000) {
                             // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices
                             // TODO more proper way to do this
-                            downloadMetaFile(changedAlbum)?.apply {
+                            downloadAlbumMeta(changedAlbum)?.apply {
                                 changedAlbum.cover = cover
                                 changedAlbum.coverBaseline = baseline
                                 changedAlbum.coverWidth = width
@@ -543,10 +553,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 coverHeight = photosLeft[0].height
 
                                 // Update cover meta
-                                updateMetaFile(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), photosLeft[0].name, sortOrder)
+                                updateAlbumMeta(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), photosLeft[0].name, sortOrder)
                             }
                             albumRepository.updateSync(this)
                         }
+
+                        // Published album's content meta needs update
+                        if (changedAlbum.shareId == 1) needUpdateContentMeta = true
                     } else {
                         // All photos under this album removed, delete album on both local and remote
                         albumRepository.deleteByIdSync(changedAlbum.id)
@@ -557,6 +570,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Recycle the list
                 remotePhotoIds.clear()
                 changedPhotos.clear()
+
+                // If published album's content changed from somewhere else, update it's content meta file now
+                if (needUpdateContentMeta) updateContentMeta(changedAlbum.id, changedAlbum.name)
             }
         }
     }
@@ -645,7 +661,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun updateMetaFile(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
+    private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
         try {
             val metaFileName = "${albumId}.json"
             val localFile = File(localRootFolder, metaFileName)
@@ -666,7 +682,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return true
     }
 
-    private fun downloadMetaFile(album: Album): Meta? {
+    private fun downloadAlbumMeta(album: Album): Meta? {
         var result: Meta? = null
 
         try {
@@ -692,6 +708,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         catch (e: Exception) { e.printStackTrace() }
 
         return result
+    }
+
+    private fun updateContentMeta(albumId: String, albumName: String) {
+        var content = "{\"lespas\":{\"photos\":["
+        photoRepository.getPhotoMetaInAlbum(albumId).forEach {
+            content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+        }
+        content = content.dropLast(1) + "]}}"
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}-content.json", "application/json")
     }
 
 /*

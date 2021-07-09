@@ -119,6 +119,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                 DAV_GETETAG -> res.eTag = text
                                 DAV_GETCONTENTTYPE -> res.contentType = text
                                 DAV_GETLASTMODIFIED -> res.modified = Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime()
+                                DAV_SHARE_TYPE -> res.isShared = true
                                 RESPONSE_TAG -> result.add(res)
                             }
                         }
@@ -220,6 +221,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         var modified: LocalDateTime = LocalDateTime.MIN,
         var contentType: String = "",
         var isFolder: Boolean = false,
+        var isShared: Boolean = false,
     ): Parcelable
 
     companion object {
@@ -243,6 +245,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val DAV_GETCONTENTTYPE = "getcontenttype"
         private const val DAV_RESOURCETYPE = "resourcetype"
         private const val DAV_GETCONTENTLENGTH = "getcontentlength"
+        private const val DAV_SHARE_TYPE = "share-type"
 
         // Nextcloud properties
         private const val OC_UNIQUE_ID = "fileid"
@@ -252,7 +255,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val OC_SIZE = "size"
         private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
-        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/></d:prop></d:propfind>"
+        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/></d:prop></d:propfind>"
 
         private const val RESPONSE_TAG = "response"
         private const val HREF_TAG = "href"
