@@ -14,6 +14,9 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
 import okio.IOException
+import okio.buffer
+import okio.sink
+import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -65,6 +68,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             when (e.statusCode) {
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
+                    // TODO remote the top action item
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
@@ -215,6 +219,42 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                     content = content.dropLast(1) + "]}}"
                     webDav.upload(content, "$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", "application/json")
+                }
+                Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
+                    // Property folderId holds MIME type
+                    // Property folderName holds joint album share path, start from Nextcloud server defined share path
+                    // Property fileId holds string "joint album's id|dateTaken|width|height"
+                    // Property fileName holds media file name
+                    // Media file is located in app's cache folder
+                    // Joint Album's content meta file is located in app's file folder
+                    val localFile = File(application.cacheDir, action.fileName)
+                    if (localFile.exists()) {
+                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId)) {
+                            // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
+                            val metaFromAction = action.fileId.split('|')
+                            val metaString = String.format(PHOTO_META_JSON, this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
+                            //val metaString = String.format(PHOTO_META_JSON, "fake", action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
+                            val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
+                            var newMetaString: String
+                            contentMetaFile.source().buffer().use { newMetaString = it.readUtf8() }
+                            newMetaString = newMetaString.dropLast(3) + metaString
+                            contentMetaFile.sink(false).buffer().use { it.write(newMetaString.encodeToByteArray()) }
+
+                            // Don't keep the media file, other user owns the album after all
+                            localFile.delete()
+                        }
+
+                    }
+                }
+                Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
+                    // Property folderId holds joint album's id
+                    // Property folderName holds joint album share path, start from Nextcloud server defined share path
+                    val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
+                    File(localRootFolder, fileName).apply {
+                        // TODO conflicting, some other users might change this publication's content
+                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", "application/json")
+                        this.delete()
+                    }
                 }
             }
 
@@ -654,6 +694,75 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return result
     }
 
+/*
+    private fun getMediaMetaFromUri(uri: String): NCShareViewModel.RemotePhoto? = getMediaMetaFromUri(Uri.parse(uri))
+    private fun getMediaMetaFromUri(uri: Uri): NCShareViewModel.RemotePhoto? {
+        val result = NCShareViewModel.RemotePhoto()
+        val cr = application.contentResolver
+
+        try {
+            // Get file name, last modified timestamp and MIME type from content resolver query
+            cr.query(uri, null, null, null, null, null)?.use { cursor ->
+                cursor.moveToFirst()
+                result.path = cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
+                result.timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)) / 1000
+                result.mimeType = cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)).lowercase()
+            }
+
+            when {
+                result.mimeType.startsWith("video/", true) -> {
+                    with(MediaMetadataRetriever()) {
+                        setDataSource(application, uri)
+                        Tools.getVideoFileDate(this, result.path).apply { if (this != LocalDateTime.MIN) result.timestamp = this.toEpochSecond(OffsetDateTime.now().offset) }
+
+                        // Get video file dimension
+                        extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let {
+                            if (it == "90" || it == "270") {
+                                // Swap width and height if rotate 90 or 270 degree
+                                result.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                                result.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            } else {
+                                result.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                                result.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            }
+                        }
+                    }
+                }
+                result.mimeType.startsWith("image/", true) -> {
+                    val exif: ExifInterface
+                    cr.openInputStream(uri)?.use {
+                        exif = ExifInterface(it)
+                        Tools.getImageFileDate(exif, result.path)?.let { date -> SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.getDefault()).apply{ timeZone = TimeZone.getDefault() }.parse(date)?.run { result.timestamp = this.time / 1000 }}
+
+                        result.coverBaseLine = exif.rotationDegrees
+                    }
+
+                    // Detect animated GIF/WebP
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        when (result.mimeType) {
+                            "image/gif" -> if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) result.mimeType = "image/agif"
+                            "image/webp" -> if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) result.mimeType = "image/awebp"
+                        }
+                    }
+
+                    BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                        cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, this) }
+                        result.width = if (outWidth != -1) outWidth else return null
+                        result.height = if (outHeight != -1) outHeight else return null
+                    }
+                }
+                else -> return null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+
+        return result
+    }
+*/
+
     data class Meta (
         val cover: String,
         val baseline: Int,
@@ -669,5 +778,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_BOTH_WAY = 3
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
+
+        private const val PHOTO_META_JSON = ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}"
+
     }
 }
