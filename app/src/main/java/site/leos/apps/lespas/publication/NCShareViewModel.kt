@@ -49,9 +49,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
     private val _shareWithMe = MutableStateFlow<List<ShareWithMe>>(arrayListOf())
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
+    private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val sharees: StateFlow<List<Sharee>> = _sharees
+    val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
 
     private val baseUrl: String
     private val userName: String
@@ -573,11 +575,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
+    private fun isShared(albumId: String): Boolean = _shareByMe.value.indexOfFirst { it.fileId == albumId } != -1
+
+    fun resetPublicationContentMeta() {
+        _publicationContentMeta.value = mutableListOf()
+    }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean): List<RemotePhoto> {
-        val result = mutableListOf<RemotePhoto>()
+    suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
+        var doRefresh = true
 
         withContext(Dispatchers.IO) {
             try {
@@ -585,22 +591,32 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val request = Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX")
                     if (forceNetwork) request.cacheControl(CacheControl.FORCE_NETWORK)
                     newCall(request.build()).execute().use {
-                        val photos = JSONObject(it.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
-                        for (i in 0 until photos.length()) {
-                            photos.getJSONObject(i).apply {
-                                result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
-                            }
-                        }
+                        if (forceNetwork || it.networkResponse != null) doRefresh = false
+                        _publicationContentMeta.value = getContentMeta(it, share)
                     }
                 }
 
-                when (share.sortOrder) {
-                    Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
-                    Album.BY_NAME_DESC -> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
-                    Album.BY_DATE_TAKEN_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
-                    Album.BY_DATE_TAKEN_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                if (doRefresh) cachedHttpClient?.apply {
+                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use { _publicationContentMeta.value = getContentMeta(it, share) }
                 }
             } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    private fun getContentMeta(response: Response, share: ShareWithMe): List<RemotePhoto> {
+        val result = mutableListOf<RemotePhoto>()
+
+        val photos = JSONObject(response.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
+        for (i in 0 until photos.length()) {
+            photos.getJSONObject(i).apply {
+                result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
+            }
+        }
+        when (share.sortOrder) {
+            Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
+            Album.BY_NAME_DESC -> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
+            Album.BY_DATE_TAKEN_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+            Album.BY_DATE_TAKEN_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
         }
 
         return result

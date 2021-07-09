@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -49,7 +50,6 @@ class PublicationDetailFragment: Fragment() {
 
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
-    private var reloadPublicationMenuItem: MenuItem? = null
     private var addPhotoMenuItem: MenuItem? = null
 
     private var clickedItem = -1
@@ -91,29 +91,6 @@ class PublicationDetailFragment: Fragment() {
             }
         }
 
-        lifecycleScope.launch {
-            shareModel.getRemotePhotoList(share, false).toMutableList().apply {
-                photoListAdapter.submitList(this)
-
-                loadingIndicator?.run {
-                    isEnabled = false
-                    isVisible = false
-                }
-                showMetaMenuItem?.run {
-                    isVisible = true
-                    isEnabled = true
-                }
-                reloadPublicationMenuItem?.run {
-                    isVisible = true
-                    isEnabled = true
-                }
-                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
-                    isVisible = true
-                    isEnabled = true
-                }
-            }
-        }
-
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -145,6 +122,28 @@ class PublicationDetailFragment: Fragment() {
         return vg
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
+            photoListAdapter.submitList(it)
+
+            loadingIndicator?.run {
+                isEnabled = false
+                isVisible = false
+            }
+            showMetaMenuItem?.run {
+                isVisible = true
+                isEnabled = true
+            }
+            if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
+                isVisible = true
+                isEnabled = true
+            }
+        })
+
+        lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
+    }
+
     override fun onResume() {
         super.onResume()
 
@@ -160,12 +159,16 @@ class PublicationDetailFragment: Fragment() {
         outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        shareModel.resetPublicationContentMeta()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.publication_detail_menu, menu)
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
-        reloadPublicationMenuItem = menu.findItem(R.id.option_menu_reload_publication)
         addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
@@ -176,14 +179,11 @@ class PublicationDetailFragment: Fragment() {
             loadingIndicator?.isVisible = false
             showMetaMenuItem?.isEnabled = true
             showMetaMenuItem?.isVisible = true
-            reloadPublicationMenuItem?.isEnabled = true
-            reloadPublicationMenuItem?.isVisible = true
             if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
                 addPhotoMenuItem?.isEnabled = true
                 addPhotoMenuItem?.isVisible = true
             }
         }
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
@@ -191,17 +191,6 @@ class PublicationDetailFragment: Fragment() {
             R.id.option_menu_show_meta-> {
                 photoListAdapter.toggleMetaDisplay()
                 item.icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
-                true
-            }
-            R.id.option_menu_reload_publication-> {
-                lifecycleScope.launch {
-                    reloadPublicationMenuItem?.isEnabled = false
-                    shareModel.updateShareWithMe()
-                    shareModel.getRemotePhotoList(share, true).toMutableList().apply {
-                        photoListAdapter.submitList(this)
-                        reloadPublicationMenuItem?.isEnabled = true
-                    }
-                }
                 true
             }
             R.id.option_menu_add_photo-> {
@@ -262,7 +251,7 @@ class PublicationDetailFragment: Fragment() {
 
                 (itemView.findViewById<TextView>(R.id.meta)).apply {
                     LocalDateTime.ofInstant(Instant.ofEpochSecond(item.timestamp), ZoneOffset.systemDefault()).apply {
-                        text = "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}"
+                        text = String.format("%s, %s", this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
                     }
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
