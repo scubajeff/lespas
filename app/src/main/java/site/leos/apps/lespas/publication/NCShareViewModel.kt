@@ -542,7 +542,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         httpClient?.let { httpClient->
                             httpClient.newCall(Request.Builder()
                                 .url("${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX")
-                                .put(content.toRequestBody("application/json".toMediaTypeOrNull()))
+                                .put(content.toRequestBody(MIME_TYPE_JSON.toMediaTypeOrNull()))
                                 .build()
                             ).execute().use {}
                         }
@@ -820,6 +820,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
+        const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
 

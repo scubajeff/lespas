@@ -54,7 +54,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
-            val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
+            //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
 
             prepare(account)
             syncLocalChanges()
@@ -220,7 +220,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
                     }
                     content = content.dropLast(1) + "]}}"
-                    webDav.upload(content, "$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", "application/json")
+                    webDav.upload(content, "$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", NCShareViewModel.MIME_TYPE_JSON)
 */
                 }
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
@@ -255,7 +255,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
-                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", "application/json")
+                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON)
                         this.delete()
                     }
                 }
@@ -672,7 +672,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             // If local meta json file created successfully
-            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", "application/json")
+            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", NCShareViewModel.MIME_TYPE_JSON)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -716,7 +716,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
         }
         content = content.dropLast(1) + "]}}"
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}-content.json", "application/json")
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}-content.json", NCShareViewModel.MIME_TYPE_JSON)
     }
 
 /*
