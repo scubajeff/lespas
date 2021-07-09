@@ -94,7 +94,7 @@ object Tools {
                             Matrix().apply { preRotate(exifRotation.toFloat()) },
                             true
                         ).apply {
-                            compress(Bitmap.CompressFormat.JPEG, 100, File(pathName).outputStream())
+                            compress(Bitmap.CompressFormat.JPEG, 95, File(pathName).outputStream())
                             recycle()
                         }
 
