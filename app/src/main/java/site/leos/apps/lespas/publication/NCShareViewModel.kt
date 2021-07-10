@@ -98,6 +98,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         File(localCacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
+        File(localCacheFolder, "avatar").mkdirs()
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
@@ -433,6 +434,31 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         return arrayListOf()
+    }
+
+    private fun updateAvatar() {
+        var backOff = 3000L
+
+        for (user in _sharees.value) {
+            try {
+                cachedHttpClient?.apply {
+                    newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64").get().build()).execute().use { response->
+                        if (response.isSuccessful) File("${localCacheFolder}/avatar/${user.name}.png").sink(false).buffer().use { it.writeAll(response.body!!.source()) }
+                    }
+                }
+            } catch (e: UnknownHostException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            } catch (e: SocketTimeoutException) {
+                // Retry for network unavailable, hope it's temporarily
+                backOff *= 2
+                sleep(backOff)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                break
+            }
+        }
     }
 
     private fun createShares(albums: List<ShareByMe>) {
@@ -819,6 +845,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
+        private const val AVATAR_ENDPOINT = "/index.php/avatar/"
 
         const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
