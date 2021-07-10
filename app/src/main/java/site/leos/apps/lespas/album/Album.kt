@@ -69,6 +69,9 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract suspend fun getAlbumById(albumId: String): Album
 
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name = :albumName")
+    abstract fun getAlbumByName(albumName: String): Album
+
     @Query("SELECT id, cover FROM ${Album.TABLE_NAME} ORDER BY id ASC")
     abstract fun getAllIdAndCover(): List<IDandCover>
 

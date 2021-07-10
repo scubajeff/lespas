@@ -10,6 +10,7 @@ class AlbumRepository(application: Application){
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
     fun getThisAlbum(albumId: String): List<Album> = albumDao.getThisAlbum(albumId)
+    fun getAlbumByName(albumName: String): Album = albumDao.getAlbumByName(albumName)
     suspend fun insert(album: Album){ albumDao.insert(album) }
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun upsert(album: Album) { albumDao.upsert(album) }

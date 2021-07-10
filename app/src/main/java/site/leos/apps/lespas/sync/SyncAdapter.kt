@@ -165,19 +165,42 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}")
                 }
                 Action.ACTION_ADD_FILES_ON_SERVER -> {
-                    // Upload to server and verify
                     // MIME type passed in folderId property
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
-                        webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)
-                        // TODO nextcloud return oc-fileid field in http response header "${8 digits int fileid}${instanceid}" and oc-etag field too
+                        with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)) {
+                            // Nextcloud WebDAV put return fileId and eTag
+                            if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
+                                val newId = this.first.substring(0, 8).toInt().toString()
+                                // Rename image file name to fileId
+                                try { localFile.renameTo(File(localRootFolder, newId)) } catch (e: Exception) { e.printStackTrace() }
+
+                                // Update photo's id to the real fileId and latest eTag now. When called from Snapseed Replace, newEtag is what needs to be updated
+                                photoRepository.fixPhotoIdEtag(action.fileId, newId, this.second)
+
+                                // Fix album cover id if this photo is the cover
+                                albumRepository.getAlbumByName(action.folderName).also { album ->
+                                    if (album.cover == action.fileId) {
+                                        // Taking care the cover
+                                        // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
+                                        albumRepository.fixCoverId(album.id, newId)
+
+                                        // cover's fileId is ready, create and sync album meta file. When called from Snapseed Replace, new file name passed in action.fileName is what needs to be updated
+                                        with(album) { updateAlbumMeta(id, name, Cover(newId, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder) }
+                                    }
+
+                                }
+                            }
+                        }
                     }
                 }
+/*
                 Action.ACTION_UPDATE_FILE -> {
                     // MIME type is passed in folderId property
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)
                 }
+*/
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                     webDav.createFolder("$resourceRoot/${Uri.encode(action.folderName)}").apply {
                         if (this.isNotEmpty()) this.substring(0, 8).toInt().toString().also { fileId ->
@@ -213,15 +236,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
                 Action.ACTION_UPDATE_PHOTO_META -> {
-                    updateContentMeta(action.folderId, action.folderName)
-/*
-                    var content = "{\"lespas\":{\"photos\":["
-                    photoRepository.getPhotoMetaInAlbum(action.folderId).forEach {
-                        content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-                    }
-                    content = content.dropLast(1) + "]}}"
-                    webDav.upload(content, "$resourceRoot/${Uri.encode(action.folderName)}/${action.folderId}-content.json", NCShareViewModel.MIME_TYPE_JSON)
-*/
+                    updateContentMeta(null, action.folderName)
                 }
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
@@ -710,7 +725,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return result
     }
 
-    private fun updateContentMeta(albumId: String, albumName: String) {
+    private fun updateContentMeta(id: String?, albumName: String) {
+        val albumId = id ?: albumRepository.getAlbumByName(albumName).id
         var content = "{\"lespas\":{\"photos\":["
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
             content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)

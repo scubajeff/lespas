@@ -101,9 +101,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 with(mutableListOf<Action>()) {
                     // Rename file to new filename on server
                     add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
-                    // Upload new photo to server. Photo mimeType passed in folderId property
-                    add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
-                    //add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, sharedPhoto.id, sharedPhoto.name, System.currentTimeMillis(), 1))
+                    // Upload new photo to server. Photo mimeType passed in folderId property, and since this is actually an file update on server, pass the current photo id in property fileId
+                    //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
+                    add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
 
                     // TODO publish status is not persistent locally
                     //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
@@ -135,7 +135,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
 
                 with(mutableListOf<Action>()) {
-                    // Upload changes to server, mimetype passed in folderId property
+                    // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
                     add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
 
                     // TODO publish status is not persistent locally

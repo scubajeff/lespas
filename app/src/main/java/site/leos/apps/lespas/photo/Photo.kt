@@ -64,6 +64,9 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newName, eTag = :eTag, lastModified = :lastModified WHERE id = :oldId")
     abstract fun fixPhoto(oldId: String, newId: String, newName: String, eTag: String, lastModified: LocalDateTime)
 
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag WHERE id = :oldId")
+    abstract fun fixPhotoIdEtag(oldId: String, newId: String, eTag: String)
+
     @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")
     abstract fun getAllPhotoNameMap(): List<AlbumPhotoName>
 

@@ -247,7 +247,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             if (date < album.startDate) album.startDate = date
                             if (date > album.endDate) album.endDate = date
 
-                            // Pass photo mimeType in Action's folderId property
+                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table
                             actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
                         }
                     } else {
