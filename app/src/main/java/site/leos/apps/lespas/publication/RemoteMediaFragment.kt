@@ -107,7 +107,7 @@ class RemoteMediaFragment: Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
-        val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_grey_overlay_background)
+        val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
         window.run {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

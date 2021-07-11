@@ -30,7 +30,7 @@
         app:layout_constraintBottom_toBottomOf="@id/photo"
         android:paddingVertical="@dimen/tiny_padding"
         android:paddingHorizontal="@dimen/small_padding"
-        android:background="@color/dark_grey_overlay_background"
+        android:background="@color/dark_gray_overlay_background"
         android:elevation="2dp"
         android:ellipsize="middle"
         android:singleLine="true"
