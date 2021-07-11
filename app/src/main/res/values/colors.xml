@@ -10,6 +10,7 @@
     <color name="color_on_primary_invert">#1B1D1C</color>
     <color name="color_secondary">#2B8E7E</color> <!-- 61BFAD -->
     <color name="color_secondary_variant">#236E5F</color>
+    <color name="color_secondary_variant_faded">#20236E5F</color>
     <color name="color_on_secondary">#1B1D1C</color>
     <color name="color_background">#EFE8D8</color>
     <color name="color_surface">#EAEFD8</color>
