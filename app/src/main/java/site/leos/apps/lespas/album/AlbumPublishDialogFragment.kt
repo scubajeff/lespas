@@ -112,7 +112,9 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         shareeJob = lifecycleScope.launch { publishModel.sharees.collect {
             it.let {
                 allSharees = it
-                autoCompleteTextView.setAdapter(RecipientAutoCompleteAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, it))
+                autoCompleteTextView.setAdapter(RecipientAutoCompleteAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, it) { name, view ->
+                    publishModel.getAvatar(name, view, null)
+                })
             }
         }}
     }
@@ -140,6 +142,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                     (LayoutInflater.from(context).inflate(R.layout.chip_recipient, null) as Chip).apply {
                         this.text = recipient.label
                         if (recipient.type == NCShareViewModel.SHARE_TYPE_GROUP) chipIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_group_24)
+                        publishModel.getAvatar(recipient.name, this, null)
                         setOnClickListener { chipView ->
                             chipView.startAnimation(
                                 AlphaAnimation(1f, 0.1f).apply {
@@ -167,7 +170,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         autoCompleteTextView.setText("")
     }
 
-    class RecipientAutoCompleteAdapter(@NonNull context: Context, @LayoutRes private val layoutRes: Int, @NonNull private val sharees: List<NCShareViewModel.Sharee>
+    class RecipientAutoCompleteAdapter(@NonNull context: Context, @LayoutRes private val layoutRes: Int, @NonNull private val sharees: List<NCShareViewModel.Sharee>, private val avatarLoader: (String, View) -> Unit
     ): ArrayAdapter<NCShareViewModel.Sharee>(context, layoutRes, sharees), Filterable {
         private val matchedColor = ContextCompat.getColor(context, R.color.color_secondary)
         private var filteredSharees = sharees
@@ -191,6 +194,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                     setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(context, if (filteredSharees[position].type == NCShareViewModel.SHARE_TYPE_USER) R.drawable.ic_baseline_person_24 else R.drawable.ic_baseline_group_24), null, null, null)
                     compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
                 }
+                avatarLoader(filteredSharees[position].name, this)
             }
 
         @Suppress("UNCHECKED_CAST")

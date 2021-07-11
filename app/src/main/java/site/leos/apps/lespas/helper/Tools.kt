@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.math.min
 
 object Tools {
     fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
@@ -310,5 +311,16 @@ object Tools {
         } catch (e: Exception) { e.printStackTrace() }
 
         return totalBytes
+    }
+
+    fun getRoundBitmap(bitmap: Bitmap): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            Canvas(this).apply {
+                clipPath(Path().apply { addCircle((width.toFloat() / 2), (height.toFloat() / 2), min(width.toFloat(), (height.toFloat() / 2)), Path.Direction.CCW) })
+                drawBitmap(bitmap, 0f, 0f, null)
+            }
+        }
     }
 }

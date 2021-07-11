@@ -148,7 +148,9 @@ class PublicationDetailFragment: Fragment() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
-            title = String.format(getString(R.string.publication_detail_fragment_title), share.albumName, share.shareByLabel)
+            //title = String.format(getString(R.string.publication_detail_fragment_title), share.albumName, share.shareByLabel)
+            title = share.albumName
+            //subtitle = share.shareByLabel
             setDisplayHomeAsUpEnabled(true)
         }
     }
@@ -160,8 +162,8 @@ class PublicationDetailFragment: Fragment() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         shareModel.resetPublicationContentMeta()
+        super.onDestroy()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

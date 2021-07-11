@@ -7,6 +7,7 @@ import android.app.Application
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
@@ -15,8 +16,10 @@ import android.os.Parcelable
 import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
@@ -98,7 +101,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         File(localCacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
-        File(localCacheFolder, "avatar").mkdirs()
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
@@ -436,31 +438,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return arrayListOf()
     }
 
-    private fun updateAvatar() {
-        var backOff = 3000L
-
-        for (user in _sharees.value) {
-            try {
-                cachedHttpClient?.apply {
-                    newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64").get().build()).execute().use { response->
-                        if (response.isSuccessful) File("${localCacheFolder}/avatar/${user.name}.png").sink(false).buffer().use { it.writeAll(response.body!!.source()) }
-                    }
-                }
-            } catch (e: UnknownHostException) {
-                // Retry for network unavailable, hope it's temporarily
-                backOff *= 2
-                sleep(backOff)
-            } catch (e: SocketTimeoutException) {
-                // Retry for network unavailable, hope it's temporarily
-                backOff *= 2
-                sleep(backOff)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                break
-            }
-        }
-    }
-
     private fun createShares(albums: List<ShareByMe>) {
         var response: Response? = null
 
@@ -754,6 +731,43 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let { view.setImageDrawable(it.apply { (this as AnimatedImageDrawable).start() })} ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     //view.imageAlpha = 255
+                }
+                callBack?.onLoadComplete()
+            }
+        }
+
+        // Replacing previous job
+        replacePrevious(jobKey, job)
+    }
+
+    @Suppress("BlockingMethodInNonBlockingContext")
+    fun getAvatar(userName: String, view: View, callBack: LoadCompleteListener?) {
+        val jobKey = System.identityHashCode(view)
+
+        var bitmap: Bitmap? = null
+        val key = "$userName-avatar"
+        val job = viewModelScope.launch(downloadDispatcher) {
+            try {
+                imageCache.get(key)?.let { bitmap = it } ?: run {
+                    cachedHttpClient?.apply {
+                        newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(userName)}/64").get().build()).execute().body?.use {
+                            bitmap = BitmapFactory.decodeStream(it.byteStream())
+                        }
+                    }
+                    bitmap?.let { imageCache.put(key, it) }
+                }
+            }
+            catch (e: Exception) { e.printStackTrace() }
+            finally {
+                if (isActive) withContext(Dispatchers.Main) {
+                    bitmap?.let {
+                        BitmapDrawable(view.resources, Tools.getRoundBitmap(it)).apply {
+                            when (view) {
+                                is Chip -> view.chipIcon = this
+                                is TextView-> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                            }
+                        }
+                    }
                 }
                 callBack?.onLoadComplete()
             }

@@ -47,10 +47,9 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
                     view,
                     ImageLoaderViewModel.TYPE_COVER
                 )
-            }
-        ).apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-        }
+            },
+            { name, view -> shareModel.getAvatar(name, view, null) }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         setHasOptionsMenu(true)
     }
@@ -107,12 +106,16 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
-    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit
+    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (String, View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bind(item: NCShareViewModel.ShareWithMe) {
                 imageLoader(item, itemView.findViewById(R.id.coverart))
-                itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
+                //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
+                itemView.findViewById<TextView>(R.id.title).apply {
+                    text = item.albumName
+                    avatarLoader(item.shareBy, this)
+                }
                 itemView.findViewById<ImageView>(R.id.joint_album_indicator).visibility = if (item.permission == NCShareViewModel.PERMISSION_JOINT) View.VISIBLE else View.INVISIBLE
                 itemView.setOnClickListener { clickListener(item) }
             }
