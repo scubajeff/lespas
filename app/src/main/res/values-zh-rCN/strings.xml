@@ -137,5 +137,8 @@
     <string name="yes_i_do">没问题</string>
     <string name="confirm_download_publication">您正在使用移动网络，是否现在观看亲友的分享？</string>
     <string name="item_refresh_publication">刷新</string>
-    <string name="joint_album_checkbox">合作相册</string>
+    <string name="joint_album">合作相册</string>
+    <string name="solo_album">个人相册</string>
+    <string name="joint_album_tooltips">大家共同编辑这个相册</string>
+    <string name="solo_album_tooltips">他人只能浏览这个相册</string>
 </resources>

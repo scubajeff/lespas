@@ -137,5 +137,8 @@
     <string name="yes_i_do">もちろん</string>
     <string name="confirm_download_publication">あなたはモバイルネットワークを利用していて、今、友達の共有を見ていますか？</string>
     <string name="item_refresh_publication">リフレッシュ</string>
-    <string name="joint_album_checkbox">共同アルバム</string>
+    <string name="joint_album">ジョイント</string>
+    <string name="solo_album">ソロ</string>
+    <string name="joint_album_tooltips">受信者が編集できます。</string>
+    <string name="solo_album_tooltips">受信者のみ表示されます。</string>
 </resources>

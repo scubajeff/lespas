@@ -10,6 +10,7 @@
     <color name="color_background">#1F3B34</color>
     <color name="color_surface">#26564E</color>
     <color name="color_recipient_chip_text">#B2FFFFFF</color>
+    <color name="color_gray_out">#606060</color>
 
     <color name="album_item_selected_background">#89937A</color>
 </resources>

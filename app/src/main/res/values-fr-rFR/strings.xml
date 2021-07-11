@@ -137,5 +137,8 @@
     <string name="yes_i_do">Bien sûr</string>
     <string name="confirm_download_publication">Vous êtes maintenant sur le réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>
     <string name="item_refresh_publication">Rafraîchir les publications</string>
-    <string name="joint_album_checkbox">Album commun</string>
+    <string name="joint_album">Commun</string>
+    <string name="solo_album">Solo</string>
+    <string name="joint_album_tooltips">Les destinataires peuvent modifier.</string>
+    <string name="solo_album_tooltips">Vue des destinataires uniquement.</string>
 </resources>

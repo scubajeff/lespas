@@ -17,6 +17,7 @@
     <color name="color_text_light">#F9F7E8</color>
     <color name="color_text_dark">#1B1D1C</color>
     <color name="color_recipient_chip_text">#89000000</color>
+    <color name="color_gray_out">@android:color/darker_gray</color>
 
     <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
 

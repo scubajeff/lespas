@@ -173,10 +173,13 @@
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publish to:</string>
     <string name="publish_button_text">Publish</string>
-    <string name="joint_album_checkbox">Joint album</string>
-<!--
-    <string name="permission_to_edit">Allow recipient updating album</string>
--->
+    <string name="joint_album">Joint</string>
+    <string name="joint_album_tooltips">Recipients can edit.</string>
+    <string name="solo_album">Solo</string>
+    <string name="solo_album_tooltips">Recipients view only.</string>
+    <!--
+        <string name="permission_to_edit">Allow recipient updating album</string>
+    -->
 
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>

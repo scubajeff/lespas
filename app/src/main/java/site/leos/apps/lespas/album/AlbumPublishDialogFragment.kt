@@ -14,7 +14,10 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.view.inputmethod.EditorInfo
-import android.widget.*
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import android.widget.Filterable
+import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.annotation.NonNull
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
@@ -22,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
@@ -41,7 +45,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
     private lateinit var autoCompleteTextView: AppCompatAutoCompleteTextView
     private lateinit var recipientChipGroup: ChipGroup
-    private lateinit var jointAlbumCheckBox: CheckBox
+    private lateinit var publicatonTypeToggleGroup: MaterialButtonToggleGroup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +56,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         super.onViewCreated(view, savedInstanceState)
 
         recipientChipGroup = view.findViewById(R.id.recipient_chips)
-        jointAlbumCheckBox = view.findViewById(R.id.joint_album)
+        publicatonTypeToggleGroup = view.findViewById(R.id.publication_type)
         view.findViewById<TextInputLayout>(R.id.recipient_textinputlayout).requestFocus()
         autoCompleteTextView = view.findViewById<AppCompatAutoCompleteTextView>(R.id.recipient_textinputedittext).apply {
             setOnEditorActionListener { v, actionId, event ->
@@ -69,7 +73,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener { dismiss() }
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
             val currentRecipients = currentShare.with
-            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedShaees) add(NCShareViewModel.Recipient("", if (jointAlbumCheckBox.isChecked) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
+            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedShaees) add(NCShareViewModel.Recipient("", if (publicatonTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
             val permissionUnChanged = if (currentShare.with.isNotEmpty() && newRecipients.isNotEmpty()) currentShare.with[0].permission == newRecipients[0].permission else false
             val removeRecipients = currentRecipients.toMutableList().apply {
                 if (permissionUnChanged) {
@@ -97,7 +101,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         // Get selected recipients from calling argument or saved instance state
         (savedInstanceState?.getParcelableArrayList<NCShareViewModel.Sharee>(SELECTED_RECIPIENTS)
             ?: run {
-                if (currentShare.with.isNotEmpty()) jointAlbumCheckBox.isChecked = NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission
+                if (currentShare.with.isNotEmpty()) publicatonTypeToggleGroup.check( if (NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission) R.id.joint_album else R.id.solo_album)
                 arrayListOf<NCShareViewModel.Sharee>().apply {
                     for(recipient in currentShare.with) add(recipient.sharee)
                 }
