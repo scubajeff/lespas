@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
@@ -15,7 +15,8 @@
         android:theme="@style/Theme.LesPas.Toolbar.Dark.Overlay"
         app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
         android:background="?attr/colorPrimary"
-        android:elevation="4dp" />
+        android:elevation="4dp">
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/container_root"

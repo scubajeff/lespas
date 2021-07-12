@@ -18,12 +18,12 @@ import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
 import androidx.work.*
+import com.google.android.material.appbar.MaterialToolbar
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -38,7 +38,7 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private val albumViewModel: AlbumViewModel by viewModels()
-    private lateinit var toolbar: Toolbar
+    private lateinit var toolbar: MaterialToolbar
     private lateinit var sp: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {

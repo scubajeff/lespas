@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
@@ -147,18 +148,32 @@ class PublicationDetailFragment: Fragment() {
     override fun onResume() {
         super.onResume()
 
-        (activity as? AppCompatActivity)?.supportActionBar?.run {
-            //title = String.format(getString(R.string.publication_detail_fragment_title), share.albumName, share.shareByLabel)
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
             title = share.albumName
-            //subtitle = share.shareByLabel
             setDisplayHomeAsUpEnabled(true)
         }
+
+        // TODO dirty hack to get title view
+        try {
+            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).run {
+                shareModel.getAvatar(share.shareBy, this, null)
+                compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+            }
+        } catch ( e: Exception) { e.printStackTrace() }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(CLICKED_ITEM, clickedItem)
         outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
+    }
+
+    override fun onStop() {
+        // TODO dirty hack to get title view
+        try {
+            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
+        } catch (e: Exception) { e.printStackTrace() }
+        super.onStop()
     }
 
     override fun onDestroy() {
