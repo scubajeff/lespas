@@ -313,12 +313,13 @@ object Tools {
         return totalBytes
     }
 
-    fun getRoundBitmap(bitmap: Bitmap): Bitmap {
+    fun getRoundBitmap(context: Context, bitmap: Bitmap): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
             Canvas(this).apply {
                 clipPath(Path().apply { addCircle((width.toFloat() / 2), (height.toFloat() / 2), min(width.toFloat(), (height.toFloat() / 2)), Path.Direction.CCW) })
+                this.drawColor(ContextCompat.getColor(context, R.color.color_avatar_default_background))
                 drawBitmap(bitmap, 0f, 0f, null)
             }
         }

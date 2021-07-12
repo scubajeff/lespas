@@ -761,7 +761,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     bitmap?.let {
-                        BitmapDrawable(view.resources, Tools.getRoundBitmap(it)).apply {
+                        BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, it)).apply {
                             when (view) {
                                 is Chip -> view.chipIcon = this
                                 is TextView-> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
