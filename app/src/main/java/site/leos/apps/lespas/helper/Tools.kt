@@ -70,48 +70,53 @@ object Tools {
             }
         } else {
             when(mimeType) {
-                "image/jpeg", "image/tiff"-> {
+                "image/jpeg", "image/tiff", "image/png"-> {
+                    // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
-                    val exif = ExifInterface(pathName)
 
-                    timeString = getImageFileDate(exif, fileName)
-                    if (isUnknown(timeString)) {
-                        timeString = dateFormatter.format(lastModified)
+                    try { ExifInterface(pathName) }
+                    catch (e: Exception) {
+                        Log.e("****Exception", e.stackTraceToString())
+                        null
+                    }?.let { exif->
+                        timeString = getImageFileDate(exif, fileName)
+                        if (isUnknown(timeString)) {
+                            timeString = dateFormatter.format(lastModified)
 
-                        if (updateCreationDate) {
-                            exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
+                            if (updateCreationDate) {
+                                exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
+                                exif.resetOrientation()
+                                saveExif = true
+                            }
+                        }
+
+                        val exifRotation = exif.rotationDegrees
+                        if (exifRotation != 0) {
+                            Bitmap.createBitmap(
+                                BitmapFactory.decodeFile(pathName),
+                                0, 0,
+                                exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
+                                exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
+                                Matrix().apply { preRotate(exifRotation.toFloat()) },
+                                true
+                            ).apply {
+                                compress(Bitmap.CompressFormat.JPEG, 95, File(pathName).outputStream())
+                                recycle()
+                            }
+
                             exif.resetOrientation()
+                            val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
+                            exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
+                            exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
                             saveExif = true
                         }
-                    }
 
-                    val exifRotation = exif.rotationDegrees
-                    if (exifRotation != 0) {
-                        Bitmap.createBitmap(
-                            BitmapFactory.decodeFile(pathName),
-                            0, 0,
-                            exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0),
-                            exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0),
-                            Matrix().apply { preRotate(exifRotation.toFloat()) },
-                            true
-                        ).apply {
-                            compress(Bitmap.CompressFormat.JPEG, 95, File(pathName).outputStream())
-                            recycle()
-                        }
-
-                        exif.resetOrientation()
-                        val w = exif.getAttribute(ExifInterface.TAG_IMAGE_WIDTH)
-                        exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, exif.getAttribute(ExifInterface.TAG_IMAGE_LENGTH))
-                        exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, w)
-                        saveExif = true
-                    }
-
-                    if (saveExif) {
-                        try {
-                            exif.saveAttributes()
-                        } catch (e: Exception) {
-                            // TODO: If EXIF.saveAttributes throw exception
-                            Log.e("****Exception", e.stackTraceToString())
+                        if (saveExif) {
+                            try { exif.saveAttributes() }
+                            catch (e: Exception) {
+                                // TODO: better way to handle this
+                                Log.e("****Exception", e.stackTraceToString())
+                            }
                         }
                     }
                 }
