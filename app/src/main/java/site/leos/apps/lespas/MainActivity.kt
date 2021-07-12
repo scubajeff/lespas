@@ -55,9 +55,8 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        val account: Account = AccountManager.get(this).accounts[0]
         if (savedInstanceState == null) {
-            val account: Account = AccountManager.get(this).accounts[0]
-
             if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
                 if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false).let {
@@ -65,22 +64,11 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                     it.show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 }
             } else {
-                // Syncing server changes at startup and set it to run when receiving network tickle
+                // Syncing server changes at startup
                 ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                     putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                     //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                     putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
-                })
-                ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-
-                supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
-
-                // Setup observer to fire up SyncAdapter
-                actionsPendingModel.allActions.observe(this, { actions ->
-                    if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-                    })
                 })
 
                 // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
@@ -88,11 +76,23 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                     putBoolean(getString(R.string.snapseed_pref_key), false)
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                 }
+
+                supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
             }
 
             // Create album meta file for all synced albums if needed
             WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
         }
+
+        // Sync when receiving network tickle
+        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
+        // Setup observer to fire up SyncAdapter
+        actionsPendingModel.allActions.observe(this, { actions ->
+            if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        })
     }
 
     override fun onResume() {
