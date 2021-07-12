@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
@@ -21,7 +22,6 @@ import androidx.lifecycle.asLiveData
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
-import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
@@ -83,7 +83,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                     .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
-            }
+            },
+            { name, view -> publishViewModel.getAvatar(name, view, null) }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -328,7 +329,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
+    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val avatarLoader: OnLoadAvatar, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private lateinit var ctx: Context
         private var albums = emptyList<Album>()
         private var covers = mutableListOf<Photo>()
@@ -342,6 +343,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
         fun interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
+        fun interface OnLoadAvatar {
+            fun loadAvatar(userName: String, view: View)
         }
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -377,7 +382,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
                     val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
                     recipients.find { it.fileId == album.id }?.let {
-                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.chip_recipient_label, null) as Chip).apply { text = recipient.sharee.label })
+                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
+                            recipient.sharee.run {
+                                if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
+                                    it.text = label
+                                    it.setBackgroundColor(ContextCompat.getColor(ctx, R.color.dark_gray_overlay_background))
+                                    it.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(ctx, R.drawable.ic_baseline_group_24), null, null, null)
+                                } else avatarLoader.loadAvatar(name, it)
+                            }
+                        })
                     }
                 }
             }
