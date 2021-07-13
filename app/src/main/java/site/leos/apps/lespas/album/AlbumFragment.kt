@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
@@ -22,7 +23,6 @@ import androidx.lifecycle.asLiveData
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
@@ -380,17 +380,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
 
-                    val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
-                    recipients.find { it.fileId == album.id }?.let {
-                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
-                            recipient.sharee.run {
-                                if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
-                                    it.text = label
-                                    it.setBackgroundColor(ContextCompat.getColor(ctx, R.color.dark_gray_overlay_background))
-                                    it.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(ctx, R.drawable.ic_baseline_group_24), null, null, null)
-                                } else avatarLoader.loadAvatar(name, it)
-                            }
-                        })
+                    findViewById<LinearLayoutCompat>(R.id.recipients).also { chipGroup->
+                        chipGroup.removeAllViews()
+                        recipients.find { it.fileId == album.id }?.let {
+                            for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
+                                recipient.sharee.run {
+                                    if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
+                                        it.text = label
+                                        it.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(ctx, R.drawable.ic_baseline_group_24), null, null, null)
+                                        it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                                    } else avatarLoader.loadAvatar(this, it)
+                                }
+                            })
+                        }
                     }
                 }
             }

@@ -39,19 +39,16 @@
             android:progressDrawable="@drawable/progressbar_horizontal" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/chip_container"
+            android:id="@+id/recipients"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintRight_toRightOf="@id/coverart"
             app:layout_constraintBottom_toTopOf="@id/sync_progress"
-            android:padding="@dimen/small_padding">
+            android:layout_marginHorizontal="@dimen/tiny_padding"
+            android:layout_marginBottom="@dimen/mini_padding"
+            android:orientation="horizontal"
+            android:padding="@dimen/tiny_padding">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/recipients"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/tiny_padding"
-                app:chipSpacing="@dimen/mini_padding"/>
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.constraintlayout.widget.ConstraintLayout
