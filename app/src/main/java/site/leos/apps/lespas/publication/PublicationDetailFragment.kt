@@ -126,19 +126,19 @@ class PublicationDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
-            photoListAdapter.submitList(it)
-
-            loadingIndicator?.run {
-                isEnabled = false
-                isVisible = false
-            }
-            showMetaMenuItem?.run {
-                isVisible = true
-                isEnabled = true
-            }
-            if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
-                isVisible = true
-                isEnabled = true
+            photoListAdapter.submitList(it) {
+                loadingIndicator?.run {
+                    isEnabled = false
+                    isVisible = false
+                }
+                showMetaMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
+                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
             }
         })
 
@@ -155,11 +155,22 @@ class PublicationDetailFragment: Fragment() {
 
         // TODO dirty hack to get title view
         try {
-            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).run {
-                shareModel.getAvatar(share.shareBy, this, null)
-                compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
+        } catch (e: ClassCastException) {
+            e.printStackTrace()
+            try {
+                (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
-        } catch ( e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }?.run {
+            shareModel.getAvatar(NCShareViewModel.Sharee(share.shareBy, share.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this, null)
+            compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -191,7 +202,7 @@ class PublicationDetailFragment: Fragment() {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
 
-        if (photoListAdapter.itemCount > 0) {
+        if (!photoListAdapter.currentList.isNullOrEmpty()) {
             loadingIndicator?.isEnabled = false
             loadingIndicator?.isVisible = false
             showMetaMenuItem?.isEnabled = true

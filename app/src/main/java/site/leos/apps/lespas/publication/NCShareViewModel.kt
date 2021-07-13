@@ -17,6 +17,7 @@ import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.chip.Chip
@@ -741,34 +742,50 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun getAvatar(userName: String, view: View, callBack: LoadCompleteListener?) {
+    fun getAvatar(user: Sharee, view: View, callBack: LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
-        var bitmap: Bitmap? = null
-        val key = "$userName-avatar"
         val job = viewModelScope.launch(downloadDispatcher) {
+            var bitmap: Bitmap? = null
+            var drawable: Drawable? = null
             try {
-                imageCache.get(key)?.let { bitmap = it } ?: run {
-                    cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(userName)}/64").get().build()).execute().body?.use {
-                            bitmap = BitmapFactory.decodeStream(it.byteStream())
+                if (user.type == SHARE_TYPE_GROUP) drawable = ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_group_24)
+                else {
+                    // Only user has avatar
+                    val key = "${user.name}-avatar"
+                    imageCache.get(key)?.let { bitmap = it } ?: run {
+                        // Set default avatar first
+                        if (isActive) withContext(Dispatchers.Main) {
+                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24).apply {
+                                when (view) {
+                                    is Chip -> view.chipIcon = this
+                                    is TextView -> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                }
+                            }
                         }
+
+                        cachedHttpClient?.apply {
+                            newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64").get().build()).execute().body?.use {
+                                bitmap = BitmapFactory.decodeStream(it.byteStream())
+                            }
+                        }
+
+                        bitmap?.let { imageCache.put(key, it) }
                     }
-                    bitmap?.let { imageCache.put(key, it) }
                 }
             }
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    bitmap?.let {
-                        BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, it)).apply {
-                            when (view) {
-                                is Chip -> view.chipIcon = this
-                                is TextView-> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
-                            }
+                    if (drawable == null && bitmap != null) drawable = BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, bitmap!!))
+                    drawable?.run {
+                        when (view) {
+                            is Chip -> view.chipIcon = this
+                            is TextView-> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
                         }
                     }
                 }
+
                 callBack?.onLoadComplete()
             }
         }

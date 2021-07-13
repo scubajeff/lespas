@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
@@ -21,8 +22,6 @@ import androidx.lifecycle.asLiveData
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
@@ -83,7 +82,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                     .setReorderingAllowed(true)
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                     .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
-            }
+            },
+            { user, view -> publishViewModel.getAvatar(user, view, null) }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -328,7 +328,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
+    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val avatarLoader: OnLoadAvatar, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
         private lateinit var ctx: Context
         private var albums = emptyList<Album>()
         private var covers = mutableListOf<Photo>()
@@ -342,6 +342,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
         fun interface OnLoadImage {
             fun loadImage(photo: Photo, view: ImageView, type: String)
+        }
+
+        fun interface OnLoadAvatar {
+            fun loadAvatar(user: NCShareViewModel.Sharee, view: View)
         }
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -375,9 +379,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
 
-                    val chipGroup = findViewById<ChipGroup>(R.id.recipients).apply { removeAllViews() }
-                    recipients.find { it.fileId == album.id }?.let {
-                        for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.chip_recipient_label, null) as Chip).apply { text = recipient.sharee.label })
+                    findViewById<LinearLayoutCompat>(R.id.recipients).also { chipGroup->
+                        chipGroup.removeAllViews()
+                        recipients.find { it.fileId == album.id }?.let {
+                            for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
+                                recipient.sharee.run {
+                                    if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
+                                        it.text = label
+                                        it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                                    }
+                                    avatarLoader.loadAvatar(this, it)
+                                }
+                            })
+                        }
                     }
                 }
             }
