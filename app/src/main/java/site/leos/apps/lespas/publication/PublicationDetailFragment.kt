@@ -155,11 +155,22 @@ class PublicationDetailFragment: Fragment() {
 
         // TODO dirty hack to get title view
         try {
-            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).run {
-                shareModel.getAvatar(NCShareViewModel.Sharee(share.shareBy, share.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this, null)
-                compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
+        } catch (e: ClassCastException) {
+            e.printStackTrace()
+            try {
+                (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
-        } catch ( e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }?.run {
+            shareModel.getAvatar(NCShareViewModel.Sharee(share.shareBy, share.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this, null)
+            compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
