@@ -13,7 +13,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
@@ -84,7 +83,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                     .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                     .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { name, view -> publishViewModel.getAvatar(name, view, null) }
+            { user, view -> publishViewModel.getAvatar(user, view, null) }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -346,7 +345,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         }
 
         fun interface OnLoadAvatar {
-            fun loadAvatar(userName: String, view: View)
+            fun loadAvatar(user: NCShareViewModel.Sharee, view: View)
         }
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -387,9 +386,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                                 recipient.sharee.run {
                                     if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
                                         it.text = label
-                                        it.setCompoundDrawablesWithIntrinsicBounds(ContextCompat.getDrawable(ctx, R.drawable.ic_baseline_group_24), null, null, null)
                                         it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
-                                    } else avatarLoader.loadAvatar(this, it)
+                                    }
+                                    avatarLoader.loadAvatar(this, it)
                                 }
                             })
                         }

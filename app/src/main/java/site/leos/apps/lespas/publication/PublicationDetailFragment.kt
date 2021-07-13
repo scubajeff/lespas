@@ -156,7 +156,7 @@ class PublicationDetailFragment: Fragment() {
         // TODO dirty hack to get title view
         try {
             (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).run {
-                shareModel.getAvatar(share.shareBy, this, null)
+                shareModel.getAvatar(NCShareViewModel.Sharee(share.shareBy, share.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this, null)
                 compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
             }
         } catch ( e: Exception) { e.printStackTrace() }
