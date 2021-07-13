@@ -43,6 +43,10 @@
             android:ellipsize="marquee"
             style="@style/TextAppearance.MaterialComponents.Headline5"
             android:textColor="@color/color_text_light"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:shadowColor="@color/dark_gray_overlay_background"
             tools:text="Title" />
 
         <TextView
@@ -56,6 +60,10 @@
             android:text="|"
             android:textColor="@color/color_text_light"
             style="@style/TextAppearance.MaterialComponents.Body2"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:shadowColor="@color/dark_gray_overlay_background"
             tools:ignore="HardcodedText" />
 
 
@@ -70,6 +78,10 @@
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
             android:textAlignment="textEnd"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:shadowColor="@color/dark_gray_overlay_background"
             tools:text="duration" />
 
         <TextView
@@ -81,6 +93,10 @@
             app:layout_constraintRight_toRightOf="parent"
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:shadowColor="@color/dark_gray_overlay_background"
             tools:text="total" />
 
         <TextView
@@ -95,6 +111,10 @@
             style="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/color_text_light"
             android:textAlignment="center"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:shadowColor="@color/dark_gray_overlay_background"
             tools:text="Published to: " />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

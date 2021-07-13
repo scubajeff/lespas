@@ -30,13 +30,16 @@
         app:layout_constraintBottom_toBottomOf="@id/photo"
         android:paddingVertical="@dimen/tiny_padding"
         android:paddingHorizontal="@dimen/small_padding"
-        android:background="@color/dark_gray_overlay_background"
         android:elevation="2dp"
         android:ellipsize="middle"
         android:singleLine="true"
         style="@style/TextAppearance.MaterialComponents.Body2"
         android:textSize="12sp"
         android:textColor="@color/color_text_light"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:shadowRadius="1"
+        android:shadowColor="@color/dark_gray_overlay_background"
         android:textAlignment="textEnd" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
