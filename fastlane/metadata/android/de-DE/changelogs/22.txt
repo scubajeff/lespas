@@ -1,0 +1,7 @@
+* Neue Funktion, gemeinsames Album, mit anderen Nextcloud-Benutzern bearbeiten
+* Unterstützung des Benutzeravatars vom Nextcloud-Server
+* Publikationsinhalte automatisch aktualisieren
+* Sardine-Bibliothek durch Homebrew ersetzt, App sollte flotter sein
+* Behobene Cover-Anzeige für Nur-Video-Album
+* Fehler beim Umbenennen eines freigegebenen Albums behoben
+* Andere Verbesserungen und Bugs behoben

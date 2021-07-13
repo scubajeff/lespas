@@ -1,0 +1,7 @@
+* Nueva característica, álbum conjunto, editarlo con otros usuarios de Nextcloud
+* Soporta el avatar del usuario desde el servidor de Nextcloud
+* Refrescar el contenido de la publicación automáticamente
+* Sustitución de la biblioteca Sardine con homebrew, la aplicación debe ser más ágil
+* Arreglada la visualización de la portada para el álbum de sólo vídeo
+* Corregido un error al renombrar un álbum compartido
+* Otras mejoras y errores corregidos

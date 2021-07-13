@@ -1,0 +1,7 @@
+* New feature, Joint album, edit it with other Nextcloud users
+* Support user avatar from Nextcloud server
+* Refresh publication content automatically
+* Replaced Sardine library with homebrew, app should be more snappy
+* Fixed cover display for video only album
+* Fixed bug when renaming a shared album
+* Other improvements and bugs fixed

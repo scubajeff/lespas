@@ -1,3 +1,12 @@
+## Version 2.1.0
+* New feature, Joint album, edit it with other Nextcloud users
+* Support user avatar from Nextcloud server
+* Refresh publication content automatically
+* Replaced Sardine library with homebrew, app should be more snappy
+* Fixed cover display for video only album
+* Fixed bug when renaming a shared album
+
+
 ## Version 2.0.4
 * Fixed bug when new folder in Camera Roll not being backup, might due to Nextcloud changed the http response code
 

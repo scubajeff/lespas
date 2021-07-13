@@ -1,6 +1,6 @@
 ![Feature graphic](fastlane//metadata/android/en-US/images/featureGraphic.png)
 
-## A photo album that saves all your precious memory in the private Nextcloud server
+## A photo album that saves and shares all your precious memory in the private Nextcloud server
 <a href='https://play.google.com/store/apps/details?id=site.leos.apps.lespas'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='50'/></a>
 <a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='50'></a>
 
@@ -8,14 +8,13 @@ Les Pas, is a free, modern, lightweight and fast gallery app. Organize your phot
 
 Features:
 - Simple, beautiful and fast photos & videos viewing
-- View picture details
-- Organized albums
+- Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
-- Synchronization among your Nextcloud server and multiple devices
-- Manage albums and photos on Nextcloud server and also on your phones
-- Share album with other users on Nextcloud server
-- Search for photos by objects
-- Integrate Snapseed for photo editing
+- Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously 
+- Share albums with other Nextcloud users
+- Joint album which you and other Nextcloud users can edit together
+- Search for photos by objects with AI
+- Integrate with Snapseed for photo editing on mobile devices
 - Share to social networks
 - Theme design inspired by Wes Anderson's works
 - All files saved in App's private storage, stop being scanned by malicious apps
@@ -23,7 +22,7 @@ Features:
 
 
 This project build using the following open source software:
-- <a href=https://github.com/thegrizzlylabs/sardine-android>Sardine-android</a>
+- <a href=https://square.github.io/okhttp/>OkHttp</a>
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
 - <a href=https://www.tensorflow.org>TensorFlow</a>
 

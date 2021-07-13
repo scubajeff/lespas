@@ -1,0 +1,7 @@
+* Nouvelle fonctionnalité, Album Commun, l'éditer avec d'autres utilisateurs Nextcloud
+* Support de l'avatar de l'utilisateur depuis le serveur Nextcloud
+* Rafraîchissement automatique du contenu des publications
+* Remplacement de la bibliothèque Sardine par une bibliothèque maison, l'application devrait être plus rapide.
+* Correction de l'affichage de la couverture pour les albums vidéo uniquement
+* Correction d'un bug lors du renommage d'un album partagé
+* Autres améliorations et corrections de bogues
