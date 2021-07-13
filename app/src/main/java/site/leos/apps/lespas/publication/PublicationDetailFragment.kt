@@ -126,19 +126,19 @@ class PublicationDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
-            photoListAdapter.submitList(it)
-
-            loadingIndicator?.run {
-                isEnabled = false
-                isVisible = false
-            }
-            showMetaMenuItem?.run {
-                isVisible = true
-                isEnabled = true
-            }
-            if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
-                isVisible = true
-                isEnabled = true
+            photoListAdapter.submitList(it) {
+                loadingIndicator?.run {
+                    isEnabled = false
+                    isVisible = false
+                }
+                showMetaMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
+                if (share.permission == NCShareViewModel.PERMISSION_JOINT) addPhotoMenuItem?.run {
+                    isVisible = true
+                    isEnabled = true
+                }
             }
         })
 
@@ -202,7 +202,7 @@ class PublicationDetailFragment: Fragment() {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
 
-        if (photoListAdapter.itemCount > 0) {
+        if (!photoListAdapter.currentList.isNullOrEmpty()) {
             loadingIndicator?.isEnabled = false
             loadingIndicator?.isVisible = false
             showMetaMenuItem?.isEnabled = true
