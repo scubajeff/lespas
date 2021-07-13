@@ -22,7 +22,7 @@ Features:
 
 
 This project build using the following open source software:
-- <a href=https://square.github.io/okhttp/>OkHttp</a>
+- <a href=https://square.github.io/okhttp>OkHttp</a>
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
 - <a href=https://www.tensorflow.org>TensorFlow</a>
 

@@ -1,22 +1,21 @@
 Les Pas, es una aplicación de galería gratuita, moderna, ligera y rápida. Organiza tus fotos, GIF y vídeos en álbumes para verlos y compartirlos fácilmente. Con una sincronización bidireccional incorporada con tu servidor Nextcloud, tus archivos se mantienen privados, seguros y a salvo.
 
 Características:
-- Visualización de fotos y vídeos sencilla, bonita y rápida
-- Ver detalles de la foto
-- Álbumes organizados
-- Administra el rollo de cámara de tu teléfono y la copia de seguridad automática al servidor
-- Sincronización entre su servidor Nextcloud y múltiples dispositivos
-- Gestiona libremente los álbumes y las fotos en el servidor de Nextcloud y en tus teléfonos
-- Compartir de forma nativa con otros usuarios en el servidor Nextcloud
-- Buscar fotos por objetos
-- Integrar con Snapseed para la edición de fotos
-- Compartir a las redes sociales
-- Diseño temático inspirado en las obras de Wes Anderson
-- Todos los archivos guardados en el almacenamiento privado de la aplicación, dejan de ser escaneados por aplicaciones maliciosas
-- Código abierto
+- Visualisation simple, belle et rapide des photos et vidéos
+- Organisation des photos et vidéos en albums
+- Gérez la liste des photos de votre téléphone et sauvegardez automatiquement sur le serveur.
+- La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditez des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.
+- Partager des albums avec d'autres utilisateurs Nextcloud
+- Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
+- Recherchez des photos par objets avec l'IA
+- Intégration avec Snapseed pour la retouche photo sur les appareils mobiles
+- Partager sur les réseaux sociaux
+- Conception du thème inspirée des œuvres de Wes Anderson
+- Tous les fichiers sont enregistrés dans le stockage privé de l'application et ne sont plus analysés par des applications malveillantes.
+- Source ouverte
 
 Este proyecto se construye utilizando el siguiente software de código abierto:
-- Sardine-Android https://github.com/thegrizzlylabs/sardine-android
+- OkHttp https://square.github.io/okhttp
 - PhotoView https://github.com/chrisbanes/PhotoView
 - Proyecto de código abierto para Android https://source.android.com
 - TensorFlow https://www.tensorflow.org

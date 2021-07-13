@@ -1,22 +1,21 @@
 Les Pas, ist eine kostenlose, moderne, leichte und schnelle Galerie-App. Organisieren Sie Ihre Fotos, GIFs und Videos in Alben zum einfachen Betrachten und Teilen. Durch die integrierte Zwei-Wege-Synchronisation mit dem Nextcloud-Server bleiben Ihre Dateien privat, sicher und geschützt.
 
 Funktionen:
-- Einfaches, schönes und schnelles Betrachten von Fotos und Videos
-- Ansicht von Bilddetails
-- Organisierte Alben
-- Verwalten der Filmrolle Ihres Telefons und automatische Sicherung auf dem Server
-- Synchronisation zwischen Ihrem Nextcloud-Server und mehreren Geräten
-- Freie Verwaltung von Alben und Fotos auf dem Nextcloud-Server und auf Ihren Geräten
-- Native Freigabe mit anderen Benutzern auf dem Nextcloud-Server
-- Suche nach Fotos nach Objekten
-- Integration mit Snapseed zur Fotobearbeitung
+- Einfache, schöne und schnelle Anzeige von Fotos und Videos
+- Organisierte Fotos und Videos in Alben
+- Verwalten Sie die Kamerarolle Ihres Handys und erstellen Sie automatisch ein Backup auf dem Server
+- Synchronisation funktioniert mit Nextcloud-Server und zwischen mehreren Geräten, bearbeiten Sie Alben auf Nextcloud-Server und auf allen Ihren mobilen Geräten gleichzeitig
+- Teilen Sie Alben mit anderen Nextcloud-Benutzern
+- Gemeinsames Album, das Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
+- Suche nach Fotos nach Objekten mit AI
+- Integration mit Snapseed zur Fotobearbeitung auf mobilen Geräten
 - Teilen in sozialen Netzwerken
 - Themendesign inspiriert von den Werken von Wes Anderson
 - Alle Dateien werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden
 - Open-Source
 
 Dieses Projekt wurde unter Verwendung der folgenden Open-Source-Software erstellt:
-- Sardine-Android https://github.com/thegrizzlylabs/sardine-android
+- OkHttp https://square.github.io/okhttp
 - PhotoView https://github.com/chrisbanes/PhotoView
 - Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
