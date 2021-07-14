@@ -48,6 +48,7 @@ import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
@@ -781,7 +782,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     drawable?.run {
                         when (view) {
                             is Chip -> view.chipIcon = this
-                            is TextView-> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                            is TextView-> {
+                                (view.textSize * 1.2).roundToInt().let { this.setBounds(0, 0, it, it) }
+                                //view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                view.setCompoundDrawables(this, null, null, null)
+                            }
                         }
                     }
                 }
