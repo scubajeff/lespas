@@ -271,7 +271,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
                         if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON)
-                        this.delete()
+                        //this.delete()
                     }
                 }
             }
