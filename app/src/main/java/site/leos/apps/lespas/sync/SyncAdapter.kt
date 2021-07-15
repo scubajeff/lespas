@@ -614,7 +614,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${lastTime})"
+                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_MODIFIED} > ${lastTime})"
             application.contentResolver.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
             )?.use { cursor->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
