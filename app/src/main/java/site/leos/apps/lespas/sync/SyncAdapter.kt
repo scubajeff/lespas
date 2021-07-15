@@ -169,7 +169,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
                         with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)) {
-                            // Nextcloud WebDAV put return fileId and eTag
+                            // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
                                 val newId = this.first.substring(0, 8).toInt().toString()
                                 // Rename image file name to fileId
@@ -641,11 +641,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     while(true) {
                         try {
+                            webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn))
+/*
                             cursor.getLong(sizeColumn).run {
                                 if (this > OkHttpWebDav.CHUNK_SIZE)
                                     application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.let { webDav.chunksUpload(it, fileName, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, this) }
                                 else webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver)
                             }
+*/
                             break
                         } catch (e: OkHttpWebDavException) {
                             Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)
@@ -687,6 +690,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val metaFileName = "${albumId}.json"
             val localFile = File(localRootFolder, metaFileName)
 
+            // Need this file in phone
             //FileWriter("$localRootFolder/metaFileName").apply {
             localFile.writer().use {
                 it.write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))

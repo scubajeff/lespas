@@ -34,7 +34,6 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         //addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
         readTimeout(20, TimeUnit.SECONDS)
         writeTimeout(20, TimeUnit.SECONDS)
-        //retryOnConnectionFailure(true)
     }.build()
 
     fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
@@ -139,34 +138,34 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun move(source: String, dest: String) { copyOrMove(false, source, dest) }
 
-    fun upload(source: String, dest: String, mimeType: String) {
+    fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
         httpClient.newCall(Request.Builder().url(dest).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
-            if (!response.isSuccessful) throw OkHttpWebDavException(response)
-        }
-    }
-
-    fun upload(source: File, dest: String, mimeType: String): Pair<String, String> {
-        httpClient.newCall(Request.Builder().url(dest).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
             else throw OkHttpWebDavException(response)
         }
     }
 
-    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver) {
+    fun upload(source: File, dest: String, mimeType: String): Pair<String, String> {
+        source.length().run {
+            if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this)
+            else httpClient.newCall(Request.Builder().url(dest).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
+                if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                else throw OkHttpWebDavException(response)
+            }
+        }
+    }
+
+    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
-            httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
-                if (!response.isSuccessful) throw OkHttpWebDavException(response)
+            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size)
+            else httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
+                if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                else throw OkHttpWebDavException(response)
             }
         } ?: throw IllegalStateException("InputStream provider crashed")
     }
 
-    fun chunksUpload(source: String, dest: String, mimeType: String): Pair<String, String> {
-        File(source).also { file ->
-            return chunksUpload(file.inputStream(), source.substringAfterLast('/'), dest, mimeType, file.length())
-        }
-    }
-
-    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Pair<String, String> {
+    private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Pair<String, String> {
         val chunkFolder = "${chunkUploadBase}/${Uri.encode(source)}"
         var result = Pair("", "")
 
@@ -270,7 +269,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"                        // 10 days
 
-        const val CHUNK_SIZE = 50L * 1024L * 1024L                  // Default chunk size is 50MB
+        private const val CHUNK_SIZE = 50L * 1024L * 1024L          // Default chunk size is 50MB
 
         // PROPFIND depth
         const val JUST_FOLDER_DEPTH = "0"
