@@ -16,10 +16,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -41,15 +38,21 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.time.LocalDateTime
 import java.util.*
 
 class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destination_dialog) {
     private lateinit var albumAdapter: DestinationAdapter
     private lateinit var clipDataAdapter: ClipDataAdapter
+
     private val albumNameModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val publicationModel: NCShareViewModel by activityViewModels()
+    private lateinit var jointAlbumLiveData: LiveData<List<NCShareViewModel.ShareWithMe>>
+
     private lateinit var rootLayout: ConstraintLayout
     private lateinit var clipDataRecyclerView: RecyclerView
     private lateinit var destinationRecyclerView: RecyclerView
@@ -70,16 +73,25 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 }
                 // User choose an existing album
                 else {
+                    var theAlbum = album
                     destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                    destinationModel.setDestination(album)
+                    if (album.shareId == NCShareViewModel.PERMISSION_JOINT) theAlbum =
+                        Album(PublicationDetailFragment.JOINT_ALBUM_ID, album.cover.substringBeforeLast('/'), LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, album.id, 0, 1F)
+                    destinationModel.setDestination(theAlbum)
                     dismiss()
                 }
             },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) },
+            { photo, view -> imageLoaderModel.loadPhoto(photo, view, ImageLoaderViewModel.TYPE_COVER) },
+            { photo, view -> run {
+                val remoteCover = NCShareViewModel.RemotePhoto(photo.id, photo.name, photo.mimeType, photo.width, photo.height, photo.shareId, System.currentTimeMillis())
+                //Log.e(">>>>>>", "$remoteCover")
+                publicationModel.getPhoto(remoteCover, view, ImageLoaderViewModel.TYPE_COVER)
+            }},
             { view -> imageLoaderModel.cancelLoading(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
+
         clipDataAdapter = ClipDataAdapter { uri, view ->
             lifecycleScope.launch(Dispatchers.IO) {
                 val cr = requireContext().contentResolver
@@ -111,13 +123,66 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
-
         clipDataAdapter.submitList(arguments?.getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList())
 
-        albumNameModel.allAlbumsByEndDate.observe(this, { albums ->
-            albumAdapter.setDestinations(albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)))
+/*
+        MediatorLiveData<MutableList<Album>>().apply {
+            val myOwn = albumNameModel.allAlbumsByEndDate
+            val joint = publicationModel.shareWithMe.asLiveData()
+
+            addSource(myOwn) {
+                val albums = value ?: mutableListOf()
+                for (item in it) item.shareId = 0
+                albums.addAll(0, it)
+                if (albums.last().id.isEmpty()) albums.removeLast()
+                albums.sortBy { it.shareId }
+                postValue(albums)
+                removeSource(myOwn)
+            }
+            addSource(joint) {
+                val jointAlbums = mutableListOf<Album>()
+                for (publication in it) {
+                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT) jointAlbums.add(
+                        Album(publication.albumId, "${publication.albumName} | ${publication.shareByLabel}", LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, "", publication.permission, 1f)
+                    )
+                }
+                if (jointAlbums.isNotEmpty()) {
+                    val albums = value ?: mutableListOf()
+                    albums.addAll(jointAlbums)
+                    if (albums.last().id.isEmpty()) albums.removeLast()
+                    albums.sortBy { it.shareId }
+                    postValue(albums)
+                }
+                if (it.isNotEmpty()) removeSource(joint)
+            }
+        }.observe(this) { albums->
+            //albumAdapter.setDestinations(albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)))
+            albumAdapter.submitList((albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
             albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
-        })
+            destinationRecyclerView?.scrollToPosition(0)
+        }
+*/
+        jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
+        albumNameModel.allAlbumsByEndDate.observe(this) {
+            albumAdapter.submitList((it.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
+            albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
+
+            jointAlbumLiveData.observe(this) { shared->
+                val jointAlbums = mutableListOf<Album>()
+                for (publication in shared) {
+                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT) jointAlbums.add(
+                        Album(publication.albumId, "${publication.albumName} | ${publication.shareByLabel}", LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, "", publication.permission, 1f)
+                    )
+                }
+                if (jointAlbums.isNotEmpty()) {
+                    val albums = albumAdapter.currentList.toMutableList()
+                    if (albums.last().id.isEmpty()) albums.removeLast()
+                    albums.addAll(jointAlbums)
+                    albumAdapter.submitList((albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
+                }
+                if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -209,8 +274,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         return existed
     }
 
-    class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Photo, ImageView, String)-> Unit, private val cancelLoading: (ImageView)-> Unit): RecyclerView.Adapter<DestinationAdapter.DestViewHolder>() {
-        private var destinations = emptyList<Album>()
+    class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Photo, ImageView)-> Unit, private val publicationCoverLoader: (Photo, ImageView)-> Unit, private val cancelLoading: (ImageView)-> Unit)
+    : ListAdapter<Album, DestinationAdapter.DestViewHolder>(DestinationDiffCallback()) {
         private var covers = mutableListOf<Photo>()
         private var coverType: String = ImageLoaderViewModel.TYPE_SMALL_COVER
 
@@ -228,7 +293,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         setOnClickListener { itemClickListener(album) }
                     } else {
                         findViewById<ImageView>(R.id.cover).apply {
-                            imageLoader(covers[adapterPosition], this, coverType)
+                            if (album.shareId == NCShareViewModel.PERMISSION_JOINT) publicationCoverLoader(covers[bindingAdapterPosition], this)
+                            else imageLoader(covers[bindingAdapterPosition], this)
                             scaleType = ImageView.ScaleType.CENTER_CROP
                             //setBackgroundColor(resources.getColor(R.color.color_secondary_variant, null))
                             setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSurface))
@@ -240,21 +306,23 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DestViewHolder {
-            return DestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_destination, parent, false))
-        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DestViewHolder =
+            DestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_destination, parent, false))
 
         override fun onBindViewHolder(holder: DestViewHolder, position: Int) {
-            holder.bindViewItems(destinations[position])
+            holder.bindViewItems(currentList[position])
         }
 
-        override fun getItemCount(): Int = destinations.size
-
-        fun setDestinations(destinations: List<Album>) {
-            this.destinations = destinations
+        override fun submitList(list: MutableList<Album>?) {
             covers.clear()
-            this.destinations.forEach { covers.add(Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, "", it.coverBaseline)) }
-            notifyDataSetChanged()
+            list?.forEach {
+                covers.add(
+                    if (it.shareId == NCShareViewModel.PERMISSION_JOINT) Photo(it.id, it.id, it.cover, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, "", it.coverBaseline)
+                    else Photo(it.cover, it.id, it.name, "", it.startDate, it.endDate, it.coverWidth, it.coverHeight, "", it.coverBaseline)
+                )
+            }
+
+            super.submitList(list)
         }
 
         fun setCoverType(smallCover: Boolean) {
@@ -262,7 +330,12 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
     }
 
-    class ClipDataAdapter(private val loadClipData: (Uri, ImageView)-> Unit): ListAdapter<Uri, RecyclerView.ViewHolder>(ClipDataDiffCallback()) {
+    class DestinationDiffCallback: DiffUtil.ItemCallback<Album>() {
+        override fun areItemsTheSame(oldItem: Album, newItem: Album) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Album, newItem: Album) = oldItem.id == newItem.id && oldItem.cover == newItem.cover
+    }
+
+    class ClipDataAdapter(private val loadClipData: (Uri, ImageView)-> Unit): ListAdapter<Uri, ClipDataAdapter.MediaViewHolder>(ClipDataDiffCallback()) {
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bind(uri: Uri) {
                 with(itemView.findViewById<ImageView>(R.id.media)) {
@@ -271,11 +344,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder =
             MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_clipdata, parent, false))
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            (holder as MediaViewHolder).bind(currentList[position])
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
+            holder.bind(currentList[position])
         }
     }
 
