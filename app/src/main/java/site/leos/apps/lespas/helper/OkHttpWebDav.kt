@@ -14,12 +14,15 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.InputStream
+import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit
 
 class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
@@ -29,7 +32,9 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
         //cache(Cache(File(cacheFolder), DISK_CACHE_SIZE))
         //addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
-        retryOnConnectionFailure(true)
+        readTimeout(20, TimeUnit.SECONDS)
+        writeTimeout(20, TimeUnit.SECONDS)
+        //retryOnConnectionFailure(true)
     }.build()
 
     fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
@@ -121,6 +126,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                 DAV_GETLASTMODIFIED -> res.modified = Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime()
                                 DAV_SHARE_TYPE -> res.isShared = true
                                 RESPONSE_TAG -> result.add(res)
+                                DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
                             }
                         }
                     }
@@ -154,48 +160,83 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         } ?: throw IllegalStateException("InputStream provider crashed")
     }
 
-    fun chunksUpload(source: String, dest: String, mimeType: String) {
+    fun chunksUpload(source: String, dest: String, mimeType: String): Pair<String, String> {
         File(source).also { file ->
-            chunksUpload(file.inputStream(), source, dest, mimeType, file.length())
+            return chunksUpload(file.inputStream(), source.substringAfterLast('/'), dest, mimeType, file.length())
         }
     }
 
-    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long) {
-        val uploadFolder = "${chunkUploadBase}/${Uri.encode(source.substringAfterLast('/'))}"
+    fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Pair<String, String> {
+        val chunkFolder = "${chunkUploadBase}/${Uri.encode(source)}"
+        var result = Pair("", "")
 
         try {
-            // Create upload folder on server
-            httpClient.newCall(Request.Builder().url(uploadFolder).method("MKCOL", null).build()).execute().use { response-> if (!response.isSuccessful) throw OkHttpWebDavException(response) }
-
-            // Upload chunks
             var chunkName: String
-            val octetMimeType = "application/octet-stream".toMediaTypeOrNull()
             var index = 0L
             var chunkSize = CHUNK_SIZE
+
+            // Create upload folder on server
+            httpClient.newCall(Request.Builder().url(chunkFolder).method("MKCOL", null).build()).execute().use { response->
+                when {
+                    response.isSuccessful-> {}
+                    response.code == 405-> {
+                        // Try to resume from the last position, assume that all uploaded chunks except the last 1 are intact
+                        list(chunkFolder, FOLDER_CONTENT_DEPTH).drop(1).maxByOrNull { it.name }?.run {
+                            try { (this.name.substringBefore('.')).toLong() } catch (e: NumberFormatException) { null }?.let {
+                                // If last chunk uploaded is intact, start from the next chunk
+                                index = it + if (this.size == CHUNK_SIZE) CHUNK_SIZE else 0
+
+                                // Skip to resume position, if skip failed, start from the very beginning
+                                inputStream.skip(index).let { skipped->
+                                    //Log.e(">>>>>", "should skip $index, actually skip $skipped")
+                                    if (skipped != index) index = 0
+                                }
+                            }
+                        }
+                    }
+                    else-> throw OkHttpWebDavException(response)
+                }
+            }
+
+            // Upload chunks
+            // Longer timeout adapting to slow connection
+            val uploadHttpClient = httpClient.newBuilder().readTimeout(2, TimeUnit.MINUTES).writeTimeout(2, TimeUnit.MINUTES).build()
             while(index < size) {
-                chunkName = "${uploadFolder}/${String.format("%015d", index)}"
-                with(size - index) { if (this < CHUNK_SIZE) chunkSize = this}
-                httpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, octetMimeType, chunkSize)).build()).execute().use { response->
+                // Chunk file name is chunk's start position within inputstream
+                chunkName = "${chunkFolder}/${String.format("%015d", index)}"
+                with(size - index) { if (this < CHUNK_SIZE) chunkSize = this }
+                //Log.e(">>>>>>", chunkName)
+
+                uploadHttpClient.newCall(Request.Builder().url(chunkName).put(streamRequestBody(inputStream, mimeType.toMediaTypeOrNull(), chunkSize)).build()).execute().use { response ->
                     if (!response.isSuccessful) {
                         // Upload interrupted, delete uploaded chunks
-                        try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
                         throw OkHttpWebDavException(response)
                     }
                 }
                 index += chunkSize
             }
 
-            // Tell server to assembly chunks
-            httpClient.newCall(Request.Builder().url("${uploadFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response->
-                // Upload interrupted, delete uploaded chunks
-                try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-                throw OkHttpWebDavException(response)
+            //Log.e(">>>>>>>", "start assemblying")
+            try {
+                // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
+                httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).callTimeout(7, TimeUnit.MINUTES).build()
+                    .newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                        if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                        else {
+                            // Upload interrupted, delete uploaded chunks
+                            //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                            throw OkHttpWebDavException(response)
+                        }
+                    }
             }
-        } catch (e: Exception) {
-            // Upload interrupted, delete uploaded chunks
-            try { httpClient.newCall(Request.Builder().url(uploadFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-            throw e
+            catch (e: InterruptedIOException) { e.printStackTrace() }
+            catch (e: SocketTimeoutException) { e.printStackTrace() }
+        } finally {
+            try { inputStream.close() } catch (e: Exception) { e.printStackTrace() }
         }
+
+        return result
     }
 
     private fun copyOrMove(copy: Boolean, source: String, dest: String) {
@@ -222,13 +263,14 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         var contentType: String = "",
         var isFolder: Boolean = false,
         var isShared: Boolean = false,
+        var size: Long = 0L,
     ): Parcelable
 
     companion object {
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
-        private const val MAX_AGE = "864000"        // 10 days
+        private const val MAX_AGE = "864000"                        // 10 days
 
-        const val CHUNK_SIZE = 10L * 1024L * 1024L  // Default chunk upload size is 10MB
+        const val CHUNK_SIZE = 50L * 1024L * 1024L                  // Default chunk size is 50MB
 
         // PROPFIND depth
         const val JUST_FOLDER_DEPTH = "0"
@@ -255,7 +297,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val OC_SIZE = "size"
         private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
-        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/></d:prop></d:propfind>"
+        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
 
         private const val RESPONSE_TAG = "response"
         private const val HREF_TAG = "href"

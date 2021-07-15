@@ -64,7 +64,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Clear status counters
             syncResult.stats.clear()
         } catch (e: OkHttpWebDavException) {
-            Log.e("****OkHttpWebDavException: ", e.stackTraceString)
+            Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString)
             when (e.statusCode) {
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
@@ -93,35 +93,35 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
         } catch (e: IOException) {
             syncResult.stats.numIoExceptions++
-            Log.e("****IOException: ", e.stackTraceToString())
+            Log.e(">>>>IOException: ", e.stackTraceToString())
         } catch (e: SocketTimeoutException) {
             syncResult.stats.numIoExceptions++
-            Log.e("****SocketTimeoutException: ", e.stackTraceToString())
+            Log.e(">>>>SocketTimeoutException: ", e.stackTraceToString())
         } catch (e: InterruptedIOException) {
             syncResult.stats.numIoExceptions++
-            Log.e("****InterruptedIOException: ", e.stackTraceToString())
+            Log.e(">>>>InterruptedIOException: ", e.stackTraceToString())
         } catch (e: SSLHandshakeException) {
             syncResult.stats.numIoExceptions++
             syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
-            Log.e("****SSLHandshakeException: ", e.stackTraceToString())
+            Log.e(">>>>SSLHandshakeException: ", e.stackTraceToString())
         } catch (e: SSLPeerUnverifiedException) {
             syncResult.stats.numIoExceptions++
             syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
-            Log.e("****SSLPeerUnverifiedException: ", e.stackTraceToString())
+            Log.e(">>>>SSLPeerUnverifiedException: ", e.stackTraceToString())
         } catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
-            Log.e("****AuthenticatorException: ", e.stackTraceToString())
+            Log.e(">>>>AuthenticatorException: ", e.stackTraceToString())
         } catch (e: IllegalArgumentException) {
             syncResult.hasSoftError()
-            Log.e("****IllegalArgumentException: ", e.stackTraceToString())
+            Log.e(">>>>IllegalArgumentException: ", e.stackTraceToString())
         } catch (e: IllegalStateException) {
             syncResult.hasSoftError()
-            Log.e("****IllegalStateException: ", e.stackTraceToString())
+            Log.e(">>>>IllegalStateException: ", e.stackTraceToString())
         } catch (e: NetworkErrorException) {
             syncResult.hasSoftError()
-            Log.e("****NetworkErrorException: ", e.stackTraceToString())
+            Log.e(">>>>NetworkErrorException: ", e.stackTraceToString())
         } catch (e:Exception) {
-            Log.e("****Exception: ", e.stackTraceToString())
+            Log.e(">>>>Exception: ", e.stackTraceToString())
         }
     }
 
@@ -282,7 +282,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun syncRemoteChanges() {
-        //Log.e("**********", "sync remote changes")
+        //Log.e(">>>>>>>>**", "sync remote changes")
         val changedAlbums: MutableList<Album> = mutableListOf()
         val remoteAlbumIds = arrayListOf<String>()
 
@@ -336,7 +336,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try { File(localRootFolder, it.id).delete() } catch (e: Exception) { e.printStackTrace() }
                     try { File(localRootFolder, it.name).delete() } catch(e: Exception) { e.printStackTrace() }
                 }
-                //Log.e("****", "Deleted album: ${local.id}")
+                //Log.e(">>>>", "Deleted album: ${local.id}")
             }
         }
 
@@ -377,11 +377,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 try {
                                     // If this file has already being uploaded,
                                     File(localRootFolder, remotePhotoId).delete()
-                                } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+                                } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
                                 try {
                                     File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                    //Log.e("****", "rename ${remotePhoto.name} to $remotePhotoId")
-                                } catch (e: Exception) { Log.e("****Exception: ", e.stackTraceToString()) }
+                                    //Log.e(">>>>", "rename ${remotePhoto.name} to $remotePhotoId")
+                                } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
 
                                 localPhotoNamesReverse[remotePhoto.name]?.apply {
                                     // Update it's id to the real fileId and also eTag now
@@ -474,13 +474,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         try {
                             File(localRootFolder, changedPhoto.id).delete()
                         } catch (e: Exception) {
-                            Log.e("****Exception: ", e.stackTraceToString())
+                            Log.e(">>>>Exception: ", e.stackTraceToString())
                         }
                         try {
                             File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id))
-                            Log.e("****", "rename file $localImageFileName to ${changedPhoto.id}")
+                            Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
                         } catch (e: Exception) {
-                            Log.e("****Exception: ", e.stackTraceToString())
+                            Log.e(">>>>Exception: ", e.stackTraceToString())
                         }
                     } else {
                         // Check network type on every loop, so that user is able to stop sync right in the middle
@@ -488,7 +488,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Download image file from server
                         webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
-                        //Log.e("****", "Downloaded ${changedPhoto.name}")
+                        //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
                     }
 
                     with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name)) {
@@ -548,7 +548,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         photoRepository.deleteByIdSync(localPhoto.key)
                         try {
                             File(localRootFolder, localPhoto.key).delete()
-                            //Log.e("****", "Deleted photo: ${localPhoto.key}")
+                            //Log.e(">>>>", "Deleted photo: ${localPhoto.key}")
                         } catch (e: Exception) { e.printStackTrace() }
                     }
                 }
@@ -612,6 +612,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
+                MediaStore.Files.FileColumns.SIZE,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                     "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_MODIFIED} > ${lastTime})"
@@ -622,6 +623,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
                 val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                 val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
 
                 var relativePath: String
                 var fileName: String
@@ -639,7 +641,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     while(true) {
                         try {
-                            webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${relativePath}/${fileName}", mimeType, application.contentResolver)
+                            cursor.getLong(sizeColumn).run {
+                                if (this > OkHttpWebDav.CHUNK_SIZE)
+                                    application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.let { webDav.chunksUpload(it, fileName, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, this) }
+                                else webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver)
+                            }
                             break
                         } catch (e: OkHttpWebDavException) {
                             Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)
@@ -712,14 +718,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Store meta info in meta data holder
                     val meta = JSONObject(content).getJSONObject("lespas")
                     meta.getJSONObject("cover").apply { result = Meta(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), meta.getInt("sort")) }
-                    //Log.e("****", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
+                    //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
                 }
             }
         }
         // TODO consolidate these exception handling codes
-        catch (e: OkHttpWebDavException) { Log.e("****OkHttpWebDavException: ", e.stackTraceToString()) }
-        catch (e: FileNotFoundException) { Log.e("****FileNotFoundException: meta file not exist", e.stackTraceToString())}
-        catch (e: JSONException) { Log.e("****JSONException: error parsing meta information", e.stackTraceToString())}
+        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ", e.stackTraceToString()) }
+        catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
+        catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
         catch (e: Exception) { e.printStackTrace() }
 
         return result
