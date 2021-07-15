@@ -253,6 +253,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             val metaString = String.format(PHOTO_META_JSON, this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
                             //val metaString = String.format(PHOTO_META_JSON, "fake", action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
                             val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
+                            if (!contentMetaFile.exists()) {
+                                // Download content meta file if it's not ready
+                                webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", contentMetaFile, null)
+                            }
                             var newMetaString: String
                             contentMetaFile.source().buffer().use { newMetaString = it.readUtf8() }
                             newMetaString = newMetaString.dropLast(3) + metaString
@@ -271,7 +275,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
                         if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON)
-                        //this.delete()
+                        this.delete()
                     }
                 }
             }

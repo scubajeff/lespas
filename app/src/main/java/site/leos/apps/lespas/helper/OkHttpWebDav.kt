@@ -64,6 +64,15 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
+    fun download(source: String, dest: File, cacheControl: CacheControl?) {
+        val reqBuilder = Request.Builder().url(source)
+        cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+        httpClient.newCall(reqBuilder.get().build()).execute().use { response->
+            if (response.isSuccessful) dest.sink(false).buffer().use { it.writeAll(response.body!!.source()) }
+            else throw OkHttpWebDavException(response)
+        }
+    }
+
     fun getStream(source: String, cacheControl: CacheControl?): InputStream {
         val reqBuilder = Request.Builder().url(source)
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
