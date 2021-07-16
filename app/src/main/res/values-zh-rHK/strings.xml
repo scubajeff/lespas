@@ -131,7 +131,7 @@
     <string name="published_to">已發布俾：%1$s</string>
     <string name="item_publish">發布相冊</string>
     <string name="publish_album">發布俾：</string>
-    <string name="publish_button_text">發布</string>
+    <string name="publish_button_text">確定</string>
     <string name="publication_list_fragment_title">親友分享</string>
     <string name="item_show_meta">顯示額外信息</string>
     <string name="yes_i_do">冇問題</string>

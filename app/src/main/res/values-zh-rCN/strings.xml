@@ -131,7 +131,7 @@
     <string name="published_to">已发布给：%1$s</string>
     <string name="item_publish">发布相册</string>
     <string name="publish_album">发布给：</string>
-    <string name="publish_button_text">发布</string>
+    <string name="publish_button_text">设定</string>
     <string name="publication_list_fragment_title">亲友分享</string>
     <string name="item_show_meta">显示额外信息</string>
     <string name="yes_i_do">没问题</string>

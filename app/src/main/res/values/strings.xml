@@ -172,7 +172,7 @@
 
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publish to:</string>
-    <string name="publish_button_text">Publish</string>
+    <string name="publish_button_text">Set</string>
     <string name="joint_album">Joint</string>
     <string name="joint_album_tooltips">Recipients can edit.</string>
     <string name="solo_album">Solo</string>

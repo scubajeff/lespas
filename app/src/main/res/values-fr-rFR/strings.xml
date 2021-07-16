@@ -131,7 +131,7 @@
     <string name="published_to">Publié à : %1$s</string>
     <string name="item_publish">Publier l\'album</string>
     <string name="publish_album">Publier vers :</string>
-    <string name="publish_button_text">Publier</string>
+    <string name="publish_button_text">Régler</string>
     <string name="publication_list_fragment_title">Publication des amis</string>
     <string name="item_show_meta">Afficher les métadonnées</string>
     <string name="yes_i_do">Bien sûr</string>
