@@ -168,7 +168,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // MIME type passed in folderId property
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
-                        with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)) {
+                        with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
                                 val newId = this.first.substring(0, 8).toInt().toString()
@@ -247,7 +247,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Joint Album's content meta file is located in app's file folder
                     val localFile = File(application.cacheDir, action.fileName)
                     if (localFile.exists()) {
-                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId)) {
+                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
                             val metaString = String.format(PHOTO_META_JSON, this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
@@ -274,7 +274,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
-                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON)
+                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON, application)
                         this.delete()
                     }
                 }
@@ -643,16 +643,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     mimeType = cursor.getString(typeColumn)
                     //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
 
+                    // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn))
-/*
-                            cursor.getLong(sizeColumn).run {
-                                if (this > OkHttpWebDav.CHUNK_SIZE)
-                                    application.contentResolver.openInputStream(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)))?.let { webDav.chunksUpload(it, fileName, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, this) }
-                                else webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver)
-                            }
-*/
+                            webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)
@@ -701,7 +695,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             // If local meta json file created successfully
-            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", NCShareViewModel.MIME_TYPE_JSON)
+            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", NCShareViewModel.MIME_TYPE_JSON, application)
 
         } catch (e: Exception) {
             e.printStackTrace()

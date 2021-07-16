@@ -1,8 +1,12 @@
 package site.leos.apps.lespas.helper
 
+import android.accounts.NetworkErrorException
 import android.content.ContentResolver
+import android.content.Context
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Parcelable
+import androidx.preference.PreferenceManager
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,6 +16,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import site.leos.apps.lespas.R
 import java.io.File
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -154,9 +159,9 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun upload(source: File, dest: String, mimeType: String): Pair<String, String> {
+    fun upload(source: File, dest: String, mimeType: String, ctx: Context): Pair<String, String> {
         source.length().run {
-            if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this)
+            if (this > CHUNK_SIZE) return chunksUpload(source.inputStream(), dest.substringAfterLast('/'), dest, mimeType, this, ctx)
             else httpClient.newCall(Request.Builder().url(dest).put(source.asRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                 else throw OkHttpWebDavException(response)
@@ -164,9 +169,9 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long): Pair<String, String> {
+    fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
-            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size)
+            if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx)
             else httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                 else throw OkHttpWebDavException(response)
@@ -174,9 +179,11 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         } ?: throw IllegalStateException("InputStream provider crashed")
     }
 
-    private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long): Pair<String, String> {
+    private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context): Pair<String, String> {
         val chunkFolder = "${chunkUploadBase}/${Uri.encode(source)}"
         var result = Pair("", "")
+        val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
+        val wifionlyKey = ctx.getString(R.string.wifionly_pref_key)
 
         try {
             var chunkName: String
@@ -210,6 +217,10 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             // Longer timeout adapting to slow connection
             val uploadHttpClient = httpClient.newBuilder().readTimeout(2, TimeUnit.MINUTES).writeTimeout(2, TimeUnit.MINUTES).build()
             while(index < size) {
+                if (sp.getBoolean(wifionlyKey, true)) {
+                    if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
+                }
+
                 // Chunk file name is chunk's start position within inputstream
                 chunkName = "${chunkFolder}/${String.format("%015d", index)}"
                 with(size - index) { if (this < CHUNK_SIZE) chunkSize = this }
