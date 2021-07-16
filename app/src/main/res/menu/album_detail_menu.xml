@@ -3,6 +3,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/option_menu_add_photo"
+        android:title="@string/fab_add_photos"
+        android:orderInCategory="8"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_add_photo_24" />
+    <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
         android:orderInCategory="9"

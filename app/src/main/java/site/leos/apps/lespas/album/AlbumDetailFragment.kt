@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.album
 
+import android.app.Activity
 import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
@@ -422,6 +423,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
+            R.id.option_menu_add_photo-> {
+                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    putExtra(Intent.EXTRA_LOCAL_ONLY, true)
+                }
+                startActivityForResult(intent, REQUEST_ADD_PHOTOS)
+                true
+            }
             R.id.option_menu_rename-> {
                 if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
                     it.setTargetFragment(this, 0)
@@ -550,6 +561,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
+        super.onActivityResult(requestCode, resultCode, intent)
+
+        val uris = arrayListOf<Uri>()
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ADD_PHOTOS) {
+            intent?.clipData?.apply { for (i in 0 until itemCount) uris.add(getItemAt(i).uri) } ?: uris.add(intent?.data!!)
+
+            if (uris.isNotEmpty()) {
+                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
+                    AcquiringDialogFragment.newInstance(uris, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
+            }
+        }
     }
 
     override fun onResult(positive: Boolean, requestCode: Int) {
@@ -825,6 +851,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
 
         private const val DELETE_REQUEST_CODE = 0
         private const val RENAME_REQUEST_CODE = 1
+
+        private const val REQUEST_ADD_PHOTOS = 7373
+        private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 
