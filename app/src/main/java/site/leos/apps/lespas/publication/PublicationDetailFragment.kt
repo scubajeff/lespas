@@ -182,8 +182,21 @@ class PublicationDetailFragment: Fragment() {
     override fun onStop() {
         // TODO dirty hack to get title view
         try {
-            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView).setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-        } catch (e: Exception) { e.printStackTrace() }
+            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
+        } catch (e: ClassCastException) {
+            e.printStackTrace()
+            try {
+                (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }?.run {
+            setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
+        }
         super.onStop()
     }
 
