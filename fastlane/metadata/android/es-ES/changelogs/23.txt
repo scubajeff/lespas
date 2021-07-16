@@ -1,0 +1,4 @@
+* Soporte para compartir medios en el Álbum Común
+* Soporta la carga de archivos grandes
+* Se ha corregido el error de que todo el proceso de sincronización se bloqueaba al contribuir al Álbum Común en algunas circunstancias raras
+* Otras mejoras y errores corregidos

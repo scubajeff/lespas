@@ -1,0 +1,4 @@
+* Unterstützung der Freigabe von Medien für das Joint Album
+* Unterstützung für den Upload großer Dateien
+* Fehler behoben, bei dem in seltenen Fällen der gesamte Synchronisierungsprozess beim Beitragen zum Joint Album blockiert wurde
+* Weitere Verbesserungen und behobene Bugs

@@ -1,0 +1,4 @@
+* Support sharing media to Joint Album
+* Support large file upload
+* Fixed bug of the whole sync process got blocked when contributing to Joint Album under some rare circumstances
+* Other improvements and bugs fixed

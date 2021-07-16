@@ -1,0 +1,4 @@
+* Prise en charge du partage de médias sur Album Commun
+* Prise en charge du téléchargement de gros fichiers
+* Correction d'un bogue qui bloquait l'ensemble du processus de synchronisation lors de la contribution à l'album commun dans certaines circonstances rares.
+* Autres améliorations et bogues corrigés
