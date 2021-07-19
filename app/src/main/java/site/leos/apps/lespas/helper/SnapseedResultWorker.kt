@@ -61,11 +61,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 }
                  */
 
-                // Remove file name after photo id, ImageLoaderViewModel will load file name after photo name instead
-                try {
-                    File(appRootFolder, originalPhoto.id).delete()
-                } catch (e: Exception) { e.printStackTrace() }
-
                 // Make a copy of this file after imageName, e.g. the photo name, so that when new eTag synced back from server, file will not need to be downloaded
                 // If we share this photo to Snapseed again, the share function will use this new name, then snapseed will append another "-01" to the result filename
                 try {
@@ -82,11 +77,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     return Result.failure()
                 }
 
-                // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any
-                try {
-                    File(appRootFolder, originalPhoto.name).delete()
-                } catch (e: Exception) { e.printStackTrace() }
-
                 // Update local database
                 val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
                     //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
@@ -97,9 +87,19 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
                 setProgress(workDataOf( KEY_NEW_PHOTO_NAME to imageName))
 
+                // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
+                try {
+                    File(appRootFolder, originalPhoto.id).delete()
+                } catch (e: Exception) { e.printStackTrace() }
+                // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any
+                try {
+                    File(appRootFolder, originalPhoto.name).delete()
+                } catch (e: Exception) { e.printStackTrace() }
+
+
                 // Update server
                 with(mutableListOf<Action>()) {
-                    // Rename file to new filename on server
+                    // Rename file to new filename on server, so that we can overwrite it in the next action and keep it's fileId intact
                     add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                     // Upload new photo to server. Photo mimeType passed in folderId property, and since this is actually an file update on server, pass the current photo id in property fileId
                     //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
