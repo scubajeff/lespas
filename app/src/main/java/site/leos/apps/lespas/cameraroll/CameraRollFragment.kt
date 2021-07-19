@@ -183,6 +183,9 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             }
         }
 
+        // Disable delete function if it's launched as media viewer on Android 11
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arguments?.getString(KEY_URI)?.let { view.findViewById<ImageButton>(R.id.remove_button).isEnabled = false }
+
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
             adapter = quickScrollAdapter
 
