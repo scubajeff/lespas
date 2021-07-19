@@ -96,15 +96,19 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
                         // If image is too large
                         // TODO hardcoded size
-                        if (bmp.allocationByteCount > 100000000) {
-                            bmp.recycle()
-                            val option = BitmapFactory.Options().apply { inSampleSize = 2 }
-                            bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
+                        bmp?.let {
+                            if (bmp.allocationByteCount > 100000000) {
+                                bmp.recycle()
+                                val option = BitmapFactory.Options().apply { inSampleSize = 2 }
+                                bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
+                            }
                         }
 
+                        // Rotate according to EXIF when this photo comes from camera roll
                         if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
                             bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true)
                         }
+
                         bmp
                     }
                 }
