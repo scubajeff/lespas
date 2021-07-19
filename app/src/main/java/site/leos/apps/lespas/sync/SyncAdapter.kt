@@ -68,7 +68,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             when (e.statusCode) {
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
-                    // TODO remote the top action item
+                    actionRepository.discardCurrentWorkingAction()
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
