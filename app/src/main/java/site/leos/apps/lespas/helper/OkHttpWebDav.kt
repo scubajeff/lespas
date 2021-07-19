@@ -261,7 +261,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     private fun copyOrMove(copy: Boolean, source: String, dest: String) {
         val hb = Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T")
         httpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
-            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+            if (!response.isSuccessful && response.code != 404) throw OkHttpWebDavException(response)
         }
     }
 
