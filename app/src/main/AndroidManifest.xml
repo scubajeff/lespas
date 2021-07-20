@@ -21,7 +21,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.LesPas">
+        android:theme="@style/Theme.LesPas"
+        android:requestLegacyExternalStorage="true">
         <activity
             android:name=".LesPas"
             android:launchMode="singleTask"
