@@ -141,4 +141,6 @@
     <string name="solo_album">個人相冊</string>
     <string name="joint_album_tooltips">大家共同編輯這個相冊</string>
     <string name="solo_album_tooltips">他人只可瀏覽這個相冊</string>
+    <string name="muzei_provider_description">Les Pas推薦Wallpaper</string>
+    <string name="exclude_albums">剔除以下相冊：</string>
 </resources>

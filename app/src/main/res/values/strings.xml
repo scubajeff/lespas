@@ -228,4 +228,8 @@
     <string name="object_plant">Plant</string>
     <string name="object_food">Food</string>
     <string name="object_vehicle">Vehicle</string>
+
+    <!-- Muzei Artwork Provider -->
+    <string name="muzei_provider_description">Random photo from Les Pas</string>
+    <string name="exclude_albums">Exclude photos from:</string>
 </resources>
