@@ -38,19 +38,6 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:progressDrawable="@drawable/progressbar_horizontal" />
 
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/recipients"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintRight_toRightOf="@id/coverart"
-            app:layout_constraintBottom_toTopOf="@id/sync_progress"
-            android:layout_marginHorizontal="@dimen/tiny_padding"
-            android:layout_marginBottom="@dimen/mini_padding"
-            android:orientation="horizontal"
-            android:padding="@dimen/tiny_padding">
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
-
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,16 +57,36 @@
                 style="@style/TextAppearance.MaterialComponents.Subtitle1"
                 tools:text="Title" />
 
-            <androidx.appcompat.widget.AppCompatTextView
-                android:id="@+id/duration"
-                android:layout_width="wrap_content"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/title"
-                android:paddingHorizontal="@dimen/small_padding"
-                android:lines="1"
-                style="@style/TextAppearance.MaterialComponents.Caption"
-                tools:text="1969.01.01 - 1976.12.23" />
+                android:paddingHorizontal="@dimen/small_padding">
+
+                <androidx.appcompat.widget.AppCompatTextView
+                    android:id="@+id/duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    android:lines="1"
+                    style="@style/TextAppearance.MaterialComponents.Caption"
+                    tools:text="1969.01.01 - 1976.12.23" />
+
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:id="@+id/recipients"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintLeft_toRightOf="@id/duration"
+                    android:layout_marginLeft="@dimen/small_padding"
+                    android:orientation="horizontal"
+                    android:gravity="right"
+                    tools:ignore="RtlHardcoded" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
