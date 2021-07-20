@@ -276,7 +276,7 @@ object Tools {
                     Photo(
                         ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
                         ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                        cursor.getString(nameColumn),
+                        cursor.getString(nameColumn) ?: "",
                         cursor.getString(sizeColumn),
                         LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone),     // DATE_TAKEN has nano adjustment
                         LocalDateTime.MIN,
