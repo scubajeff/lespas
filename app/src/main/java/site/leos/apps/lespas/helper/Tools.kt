@@ -18,6 +18,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
+import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.*
@@ -70,7 +71,7 @@ object Tools {
             }
         } else {
             when(mimeType) {
-                "image/jpeg", "image/tiff", "image/png"-> {
+                "image/jpeg", "image/png"-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
 
@@ -230,13 +231,15 @@ object Tools {
         return "${manufacturer}_${model}"
     }
 
-    fun getCameraRoll(cr: ContentResolver, imageOnly: Boolean): MutableList<Photo> {
+    fun getCameraRoll(cr: ContentResolver, imageOnly: Boolean): MutableList<Photo> = listMediaContent("DCIM", cr, imageOnly, false)
+
+    fun listMediaContent(folder: String, cr: ContentResolver, imageOnly: Boolean, strict: Boolean): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
 
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN
+        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             pathSelection,
@@ -247,13 +250,12 @@ object Tools {
             MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.WIDTH,
             MediaStore.Files.FileColumns.HEIGHT,
-            "orientation",  // MediaStore.Files.FileColumns.ORIENTATION,
+            "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
         )
-        val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%DCIM%')"
-            else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+        val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%${folder}%')"
+            else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%${folder}%')"
 
-        cr.query(
-            externalStorageUri, projection, selection, null, "$dateSelection DESC"
+        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
             val nameColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
@@ -263,15 +265,17 @@ object Tools {
             val sizeColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
             val widthColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.WIDTH)
             val heightColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT)
-            val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION
+            val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
             val defaultZone = ZoneId.systemDefault()
             var externalUri: Uri
             var mimeType: String
 
             while (cursor.moveToNext()) {
+                if ((strict) && (cursor.getString(cursor.getColumnIndex(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
                 // Insert media
                 mimeType = cursor.getString(typeColumn)
                 externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) continue
                 medias.add(
                     Photo(
                         ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
@@ -290,6 +294,58 @@ object Tools {
         }
 
         return medias
+    }
+
+    fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
+        val colon = "%3A"
+        val storageUriSignature = "com.android.externalstorage.documents"
+        val mediaProviderUriSignature = "com.android.providers.media.documents"
+        val downloadProviderUriSignature = "com.android.providers.downloads.documents"
+
+        //Log.e(">>>>>", "input: $uriString")
+        return try {
+            when {
+                (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && uriString.contains(downloadProviderUriSignature)) || uriString.contains(storageUriSignature) -> {
+                    var id: String? = null
+                    val folder = URLDecoder.decode(uriString.substringAfter(colon), "UTF-8").substringBeforeLast("/")
+                    val externalStorageUri = MediaStore.Files.getContentUri("external")
+                    val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+                    val projection = arrayOf(
+                        MediaStore.Files.FileColumns._ID,
+                        MediaStore.Files.FileColumns.DISPLAY_NAME,
+                        pathColumn,
+                    )
+                    val selection = "($pathColumn LIKE '%${folder}%') AND (${MediaStore.Files.FileColumns.DISPLAY_NAME}='${URLDecoder.decode(uriString, "UTF-8").substringAfterLast('/')}')"
+
+                    contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) id = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID))
+                    }
+
+                    id?.let { Pair("$folder/", id!!) }
+                }
+                uriString.contains(mediaProviderUriSignature) || uriString.contains(downloadProviderUriSignature) -> {
+                    var folderName: String? = null
+                    val id = uriString.substringAfter(colon)
+                    val externalStorageUri = MediaStore.Files.getContentUri("external")
+                    val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+                    val projection = arrayOf(
+                        MediaStore.Files.FileColumns._ID,
+                        pathSelection,
+                    )
+                    val selection = "${MediaStore.Files.FileColumns._ID} = $id"
+
+                    contentResolver.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) folderName = cursor.getString(cursor.getColumnIndexOrThrow(pathSelection))
+                    }
+
+                    folderName?.let { Pair(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) folderName!! else "${folderName!!.substringAfter("/storage/emulated/0/").substringBeforeLast('/')}/", id) }
+                }
+                else -> null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     fun getBitmapFromVector(context: Context, vectorResource: Int): Bitmap {

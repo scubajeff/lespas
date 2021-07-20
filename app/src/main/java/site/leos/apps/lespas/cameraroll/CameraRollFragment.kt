@@ -69,13 +69,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private lateinit var nameTextView: TextView
     private lateinit var sizeTextView: TextView
     private lateinit var shareButton: ImageButton
+    private lateinit var removeButton: ImageButton
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val camerarollModel: CamerarollViewModel by viewModels { CamerarollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
+    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
 
     private lateinit var mediaPagerAdapter: MediaPagerAdapter
     private lateinit var quickScrollAdapter: QuickScrollAdapter
@@ -151,6 +152,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         nameTextView = view.findViewById(R.id.name)
         sizeTextView = view.findViewById(R.id.size)
         shareButton = view.findViewById(R.id.share_button)
+        removeButton = view.findViewById(R.id.remove_button)
         divider = view.findViewById(R.id.divider)
 
         shareButton.setOnClickListener {
@@ -171,7 +173,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                 DestinationDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
         }
-        view.findViewById<ImageButton>(R.id.remove_button).setOnClickListener {
+        removeButton.setOnClickListener {
             toggleControlView(false)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -182,9 +184,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 it.show(parentFragmentManager, CONFIRM_DIALOG)
             }
         }
-
-        // Disable delete function if it's launched as media viewer on Android 11
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) arguments?.getString(KEY_URI)?.let { view.findViewById<ImageButton>(R.id.remove_button).isEnabled = false }
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
             adapter = quickScrollAdapter
@@ -385,6 +384,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             (mediaPager.adapter as MediaPagerAdapter).submitList(it)
             mediaPager.scrollToPosition(camerarollModel.getCurrentMediaIndex())
             (quickScroll.adapter as QuickScrollAdapter).submitList(it)
+
+            // Disable delete function if it's launched as media viewer on Android 11
+            if (camerarollModel.shouldDisableRemove()) removeButton.isEnabled = false
+
         })
     }
 
@@ -420,87 +423,95 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class CamerarollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = CamerarollViewModel(application, fileUri) as T
+    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel?> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
     }
 
-    class CamerarollViewModel(application: Application, fileUri: String?): AndroidViewModel(application) {
+    class CameraRollViewModel(application: Application, fileUri: String?): AndroidViewModel(application) {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var currentMediaIndex = 0
         private val cr = application.contentResolver
+        private var shouldDisableRemove = false
 
         init {
             var medias = mutableListOf<Photo>()
 
             fileUri?.apply {
-                val uri = Uri.parse(this)
-                val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                Tools.getFolderFromUri(this, application.contentResolver)?.let { uri->
+                    //Log.e(">>>>>", "${uri.first}   ${uri.second}")
+                    medias = Tools.listMediaContent(uri.first, cr, false, true)
+                    setCurrentMediaIndex(medias.indexOfFirst { it.id.substringAfterLast('/') == uri.second })
+                } ?: run {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
-                photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                    MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: "image/jpeg"
-                }
-                when(uri.scheme) {
-                    "content"-> {
-                        cr.query(uri, null, null, null, null)?.use { cursor->
-                            cursor.moveToFirst()
-                            cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
-                            // Store file size in property eTag
-                            cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE))?.let { photo.eTag = it }
+                    val uri = Uri.parse(this)
+                    val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+
+                    photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: "image/jpeg"
+                    }
+                    when (uri.scheme) {
+                        "content" -> {
+                            cr.query(uri, null, null, null, null)?.use { cursor ->
+                                cursor.moveToFirst()
+                                cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
+                                // Store file size in property eTag
+                                cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE))?.let { photo.eTag = it }
+                            }
                         }
+                        "file" -> uri.path?.let { photo.name = it.substringAfterLast('/') }
                     }
-                    "file"-> uri.path?.let { photo.name = it.substringAfterLast('/') }
-                }
 
-                if (photo.mimeType.startsWith("video/")) {
-                    MediaMetadataRetriever().run {
-                        setDataSource(application, uri)
-                        photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                        photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                        photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
-                        release()
-                    }
-                }
-                else {
-                    when(photo.mimeType) {
-                        "image/jpeg", "image/tiff"-> {
-                            val exif = ExifInterface(cr.openInputStream(uri)!!)
+                    if (photo.mimeType.startsWith("video/")) {
+                        MediaMetadataRetriever().run {
+                            setDataSource(application, uri)
+                            photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                            photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
+                            release()
+                        }
+                    } else {
+                        when (photo.mimeType) {
+                            "image/jpeg", "image/tiff" -> {
+                                val exif = ExifInterface(cr.openInputStream(uri)!!)
 
-                            // Get date
-                            photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
-                                try {
-                                    LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
-                                } catch (e:Exception) {
-                                    e.printStackTrace()
-                                    LocalDateTime.now()
+                                // Get date
+                                photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
+                                    try {
+                                        LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        LocalDateTime.now()
+                                    }
+                                } ?: LocalDateTime.now()
+
+                                // Store orientation in property shareId
+                                photo.shareId = exif.rotationDegrees
+                            }
+                            "image/gif" -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    // Set my own image/agif mimetype for animated GIF
+                                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/agif"
                                 }
-                            } ?: LocalDateTime.now()
+                            }
+                            "image/webp" -> {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    // Set my own image/agif mimetype for animated GIF
+                                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/awebp"
+                                }
+                            }
+                        }
 
-                            // Store orientation in property shareId
-                            photo.shareId = exif.rotationDegrees
-                        }
-                        "image/gif"-> {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                // Set my own image/agif mimetype for animated GIF
-                                if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/agif"
-                            }
-                        }
-                        "image/webp"-> {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                // Set my own image/agif mimetype for animated GIF
-                                if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/awebp"
-                            }
+                        BitmapFactory.Options().run {
+                            inJustDecodeBounds = true
+                            BitmapFactory.decodeStream(cr.openInputStream(uri), null, this)
+                            photo.width = outWidth
+                            photo.height = outHeight
                         }
                     }
 
-                    BitmapFactory.Options().run {
-                        inJustDecodeBounds = true
-                        BitmapFactory.decodeStream(cr.openInputStream(uri), null, this)
-                        photo.width = outWidth
-                        photo.height = outHeight
-                    }
+                    medias.add(photo)
                 }
-
-                medias.add(photo)
 
             } ?: run { medias = Tools.getCameraRoll(cr, false) }
 
@@ -529,6 +540,8 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 mediaList.postValue(this)
             }
         }
+
+        fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
     }
 
     class MediaPagerAdapter(private val ctx: Context, private val photoClickListener: (Photo) -> Unit, private val videoClickListener: (Boolean) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
@@ -570,9 +583,10 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             fun bind(photo: Photo) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(this.context.contentResolver, Uri.parse(photo.id))).apply { if (this is AnimatedImageDrawable) this.start() })
+                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(this.context.contentResolver, Uri.parse(photo.id))).apply { if (this is AnimatedImageDrawable) start() })
                     } else {
-                        setImageBitmap(BitmapFactory.decodeStream(this.context.contentResolver.openInputStream(Uri.parse(photo.id))))
+                        //setImageBitmap(BitmapFactory.decodeStream(this.context.contentResolver.openInputStream(Uri.parse(photo.id))))
+                        imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                     }
                     setOnClickListener { photoClickListener(photo) }
                     ViewCompat.setTransitionName(this, photo.id)
@@ -729,7 +743,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         override fun getItemViewType(position: Int): Int {
             with(currentList[position].mimeType) {
                 return when {
-                    this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
+                    this == "image/gif" || this == "image/webp" -> TYPE_ANIMATED    // Let viewholder decide how to handle animation
                     this.startsWith("video/") -> TYPE_VIDEO
                     else -> TYPE_PHOTO
                 }
