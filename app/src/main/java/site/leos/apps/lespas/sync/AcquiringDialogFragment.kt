@@ -212,7 +212,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
                         // If it's not image, skip it
-                        if (!(mimeType.startsWith("image/", true) || mimeType.startsWith("video/", true))) return@forEachIndexed
+                        if (!((mimeType.startsWith("image/", true) && mimeType.substringAfter('/') in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) || mimeType.startsWith("video/", true))) return@forEachIndexed
 
                         // Copy the file to our private storage
                         try {

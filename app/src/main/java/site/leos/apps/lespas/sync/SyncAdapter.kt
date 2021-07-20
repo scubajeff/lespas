@@ -365,7 +365,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
-                    if (remotePhoto.contentType.startsWith("image/", true) || remotePhoto.contentType.startsWith("video/", true)) {
+                    if ((remotePhoto.contentType.startsWith("image/", true) && remotePhoto.contentType.substringAfter('/') in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) || remotePhoto.contentType.startsWith("video/", true)) {
                         remotePhotoId = remotePhoto.fileId
                         // Accumulate remote photos list
                         remotePhotoIds.add(remotePhotoId)
