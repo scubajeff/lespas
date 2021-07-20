@@ -421,6 +421,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Syncing meta
                 if (changedAlbum.cover.isEmpty()) {
+                    // If new album is empty, process next one
+                    if (changedPhotos.size <= 0) continue
+
                     // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
                     downloadAlbumMeta(changedAlbum)?.apply {
                         changedAlbum.cover = cover
