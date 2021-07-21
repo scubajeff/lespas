@@ -64,7 +64,12 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
             ExclusionViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_muzei_exclude, parent, false))
 
         override fun onBindViewHolder(holder: ExclusionViewHolder, position: Int) {
-            holder.bind(getItem(position))
+            holder.bind(currentList[position])
+        }
+
+        override fun onViewRecycled(holder: ExclusionViewHolder) {
+            super.onViewRecycled(holder)
+            holder.itemView.findViewById<CheckBox>(R.id.album_name).setOnCheckedChangeListener(null)
         }
 
         fun getExclusionList(): String {
