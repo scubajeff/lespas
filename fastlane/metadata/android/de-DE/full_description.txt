@@ -9,6 +9,7 @@ Funktionen:
 - Gemeinsames Album, das Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
 - Suche nach Fotos nach Objekten mit AI
 - Integration mit Snapseed zur Fotobearbeitung auf mobilen Geräten
+- Integration mit Muzei Live Wallpaper App
 - Teilen in sozialen Netzwerken
 - Themendesign inspiriert von den Werken von Wes Anderson
 - Alle Dateien werden im privaten Speicher der App gespeichert, damit sie nicht von bösartigen Apps gescannt werden

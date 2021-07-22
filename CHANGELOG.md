@@ -1,3 +1,9 @@
+## Version 2.1.2
+* Support Muzei wallpaper app
+* Fixed sync got stuck after finished editing photo with Snapseed
+* Fixed sync crash when there is an new empty album on server
+* Fixed can't delete media file in public storage area on Android 10
+
 ## Version 2.1.1
 * Support sharing media to Joint Album
 * Support large file upload

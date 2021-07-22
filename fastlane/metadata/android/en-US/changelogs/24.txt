@@ -1,0 +1,5 @@
+* Support Muzei wallpaper app
+* Fixed sync got stuck after finished editing photo with Snapseed
+* Fixed sync crash when there is an new empty album on server
+* Fixed can't delete media file in public storage area on Android 10
+* Other improvements and bugs fixed

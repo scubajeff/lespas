@@ -1,0 +1,5 @@
+* Apoyo a la aplicación Muzei
+* Corregida la sincronización que se quedaba atascada después de terminar de editar la foto con Snapseed
+* Corregido el fallo de sincronización cuando hay un nuevo álbum vacío en el servidor
+* Se ha corregido la imposibilidad de eliminar archivos multimedia en el área de almacenamiento público en Android 10
+* Otras mejoras y errores corregidos

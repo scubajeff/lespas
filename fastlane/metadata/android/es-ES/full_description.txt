@@ -9,6 +9,7 @@ Características:
 - Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
 - Recherchez des photos par objets avec l'IA
 - Intégration avec Snapseed pour la retouche photo sur les appareils mobiles
+- Integración con la aplicación Muzei Live Wallpaper
 - Partager sur les réseaux sociaux
 - Conception du thème inspirée des œuvres de Wes Anderson
 - Tous les fichiers sont enregistrés dans le stockage privé de l'application et ne sont plus analysés par des applications malveillantes.

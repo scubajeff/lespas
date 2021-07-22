@@ -1,0 +1,5 @@
+* Unterstützung der Muzei Wallpaper App
+* Behoben, dass die Synchronisation nach Beendigung der Fotobearbeitung mit Snapseed hängen bleibt
+* Sync-Absturz behoben, wenn es ein neues leeres Album auf dem Server gibt
+* Behoben: Mediendatei im öffentlichen Speicherbereich kann unter Android 10 nicht gelöscht werden
+* Weitere Verbesserungen und behobene Bugs
