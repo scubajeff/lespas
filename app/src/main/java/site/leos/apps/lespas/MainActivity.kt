@@ -24,11 +24,13 @@ import androidx.core.view.drawToBitmap
 import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.google.android.material.appbar.MaterialToolbar
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
-import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
+import site.leos.apps.lespas.muzei.LesPasArtProvider
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
@@ -37,7 +39,6 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
     private val actionsPendingModel: ActionViewModel by viewModels()
-    private val albumViewModel: AlbumViewModel by viewModels()
     private lateinit var toolbar: MaterialToolbar
     private lateinit var sp: SharedPreferences
 
@@ -77,7 +78,11 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                 }
 
-                supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+                intent.getParcelableExtra<Album>(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
+                    supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(it, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: "")).commit()
+                } ?: run {
+                    supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+                }
             }
 
             // Create album meta file for all synced albums if needed
