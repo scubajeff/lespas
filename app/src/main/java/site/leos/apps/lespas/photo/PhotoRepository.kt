@@ -34,7 +34,7 @@ class PhotoRepository(application: Application) {
     suspend fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
-    fun getMuzeiArtwork(exclusion: String, portraitMode: Boolean): Photo? {
+    fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): Photo? {
         return photoDao.getMuzeiArtwork(exclusion, portraitMode).run {
             if (this.isNotEmpty()) {
                 this[Random.nextInt(0, this.size-1)]

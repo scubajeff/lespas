@@ -19,7 +19,7 @@ import site.leos.apps.lespas.album.AlbumViewModel
 
 class LesPasArtProviderSettingActivity: AppCompatActivity() {
     private lateinit var exclusionAdapter: ExclusionAdapter
-    private var exclusionList = mutableListOf<String>()
+    private var exclusionList = mutableSetOf<String>()
     private lateinit var sp: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,7 +33,7 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
         }
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
-        sp.getString(EXCLUSION_LIST, "")?.apply { splitToSequence(',').forEach { exclusionList.add(it) }}
+        exclusionList = sp.getStringSet(EXCLUSION_LIST, mutableSetOf<String>()) ?: mutableSetOf()
 
         ViewModelProvider(this).get(AlbumViewModel::class.java).allAlbumsByEndDate.observe(this, {
             for (album in it) album.shareId = if (exclusionList.contains(album.id)) 1 else 0
@@ -43,7 +43,7 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
 
     @SuppressLint("ApplySharedPref")
     override fun onPause() {
-        sp.edit().putString(EXCLUSION_LIST, exclusionAdapter.getExclusionList()).commit()
+        sp.edit().putStringSet(EXCLUSION_LIST, exclusionAdapter.getExclusionList()).commit()
         super.onPause()
     }
 
@@ -72,12 +72,10 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
             holder.itemView.findViewById<CheckBox>(R.id.album_name).setOnCheckedChangeListener(null)
         }
 
-        fun getExclusionList(): String {
-            var exclusionList = ""
-
-            for (album in currentList) if (album.shareId == 1) exclusionList += "${album.id},"
-
-            return exclusionList.dropLast(1)
+        fun getExclusionList(): MutableSet<String> {
+            val exclusionList = mutableSetOf<String>()
+            for (album in currentList) if (album.shareId == 1) exclusionList.add(album.id)
+            return exclusionList
         }
     }
 
@@ -87,6 +85,6 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
     }
 
     companion object {
-        const val EXCLUSION_LIST = "MUZEI_EXCLUSION_LIST"
+        const val EXCLUSION_LIST = "MUZEI_EXCLUSION_SET"
     }
 }

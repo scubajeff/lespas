@@ -27,7 +27,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
         if (initial || Date().time - lastAddedDate.time > 60000) {
             (context?.applicationContext as Application).let {
-                PhotoRepository(it).getMuzeiArtwork(PreferenceManager.getDefaultSharedPreferences(it).getString(LesPasArtProviderSettingActivity.EXCLUSION_LIST, "") ?: "", it.resources.getBoolean(R.bool.portrait_artwork))?.also { photo ->
+                val exclusionList = (PreferenceManager.getDefaultSharedPreferences(it).getStringSet(LesPasArtProviderSettingActivity.EXCLUSION_LIST, mutableSetOf<String>()) ?: mutableSetOf<String>()).toList()
+                PhotoRepository(it).getMuzeiArtwork(exclusionList, it.resources.getBoolean(R.bool.portrait_artwork))?.also { photo ->
                     album = AlbumRepository(it).getThisAlbum(photo.albumId)[0]
                     setArtwork(Artwork(title = album?.name, token = photo.id, byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",))
                 }
