@@ -57,7 +57,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     override fun onDestroy() {
         if (!intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
             // Request sync immediately if called from other apps
-            ContentResolver.requestSync(AccountManager.get(this).accounts[0], getString(R.string.sync_authority), Bundle().apply {
+            ContentResolver.requestSync(AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)

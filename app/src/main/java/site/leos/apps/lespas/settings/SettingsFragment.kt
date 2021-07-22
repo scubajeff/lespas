@@ -58,7 +58,7 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         volume = (requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes
-        accounts = AccountManager.get(requireContext()).accounts
+        accounts = AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))
 
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
 

@@ -32,7 +32,7 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
         val inInternal = sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)
         val isSyncEnabled = sp.getBoolean(context.getString(R.string.sync_pref_key), false)
         val message: String
-        val accounts = AccountManager.get(context).accounts
+        val accounts = AccountManager.get(context).getAccountsByType(context.getString(R.string.account_type_nc))
 
         context.getString(R.string.lespas_base_folder_name).apply {
             if (inInternal) {

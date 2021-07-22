@@ -56,7 +56,7 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        val account: Account = AccountManager.get(this).accounts[0]
+        val account: Account = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0]
         if (savedInstanceState == null) {
             if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
-        if (AccountManager.get(this).accounts.isEmpty()) finishAndRemoveTask()
+        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

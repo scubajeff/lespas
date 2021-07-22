@@ -109,7 +109,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             if (it) camerarollModel.removeCurrentMedia()
 
             // Immediately sync with server after adding photo to local album
-            ContentResolver.requestSync(AccountManager.get(requireContext()).accounts[0], getString(R.string.sync_authority), Bundle().apply {
+            ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
