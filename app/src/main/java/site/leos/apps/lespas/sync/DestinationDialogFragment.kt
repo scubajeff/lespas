@@ -253,6 +253,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         setOnClickListener { itemClickListener(album) }
                     } else {
                         findViewById<ImageView>(R.id.cover).apply {
+                            cancelLoading(this)
                             if (album.shareId == NCShareViewModel.PERMISSION_JOINT) {
                                 publicationCoverLoader(covers[bindingAdapterPosition], this)
                                 avatarLoader(NCShareViewModel.Sharee(album.eTag, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
