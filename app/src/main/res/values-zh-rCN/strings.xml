@@ -141,6 +141,6 @@
     <string name="solo_album">个人相册</string>
     <string name="joint_album_tooltips">大家共同编辑这个相册</string>
     <string name="solo_album_tooltips">他人只能浏览这个相册</string>
-    <string name="muzei_provider_description">Les Pas推荐桌布</string>
-    <string name="exclude_albums">不采用以下相册：</string>
+    <string name="muzei_provider_description">Les Pas瞬间</string>
+    <string name="exclude_albums">排除以下相册：</string>
 </resources>

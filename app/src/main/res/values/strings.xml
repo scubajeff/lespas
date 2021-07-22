@@ -230,6 +230,6 @@
     <string name="object_vehicle">Vehicle</string>
 
     <!-- Muzei Artwork Provider -->
-    <string name="muzei_provider_description">Random photo from Les Pas</string>
-    <string name="exclude_albums">Exclude photos from:</string>
+    <string name="muzei_provider_description">Les Pas Moment</string>
+    <string name="exclude_albums">Exclude from:</string>
 </resources>

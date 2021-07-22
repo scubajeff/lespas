@@ -141,6 +141,6 @@
     <string name="solo_album">Solo</string>
     <string name="joint_album_tooltips">Empfänger können bearbeiten.</string>
     <string name="solo_album_tooltips">Nur für Empfänger sichtbar.</string>
-    <string name="muzei_provider_description">Zufallsfoto aus Les Pas</string>
+    <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="exclude_albums">Schließen Sie Fotos aus:</string>
 </resources>
