@@ -8,7 +8,6 @@ import com.google.android.apps.muzei.api.provider.Artwork
 import com.google.android.apps.muzei.api.provider.MuzeiArtProvider
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -20,8 +19,6 @@ import java.time.format.TextStyle
 import java.util.*
 
 class LesPasArtProvider: MuzeiArtProvider() {
-    private var album: Album? = null
-
     override fun onLoadRequested(initial: Boolean) {
         val lastAddedDate = lastAddedArtwork?.dateAdded ?: Date()
 
@@ -29,8 +26,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             (context?.applicationContext as Application).let {
                 val exclusionList = (PreferenceManager.getDefaultSharedPreferences(it).getStringSet(LesPasArtProviderSettingActivity.EXCLUSION_LIST, mutableSetOf<String>()) ?: mutableSetOf<String>()).toList()
                 PhotoRepository(it).getMuzeiArtwork(exclusionList, it.resources.getBoolean(R.bool.portrait_artwork))?.also { photo ->
-                    album = AlbumRepository(it).getThisAlbum(photo.albumId)[0]
-                    setArtwork(Artwork(title = album?.name, token = photo.id, byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",))
+                    setArtwork(Artwork(title = AlbumRepository(it).getThisAlbum(photo.albumId)[0].name, token = photo.id, metadata = photo.albumId, byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",))
                 }
             }
         }
@@ -41,10 +37,10 @@ class LesPasArtProvider: MuzeiArtProvider() {
         val intent = Intent().apply {
             setClass(context!!, MainActivity::class.java)
             putExtra(FROM_MUZEI_PHOTO, artwork.token)
-            putExtra(FROM_MUZEI_ALBUM, album)
+            putExtra(FROM_MUZEI_ALBUM, artwork.metadata)
         }
 
-        return PendingIntent.getActivity(context!!, 0, intent, 0)
+        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_ONE_SHOT)
     }
 
     companion object {
