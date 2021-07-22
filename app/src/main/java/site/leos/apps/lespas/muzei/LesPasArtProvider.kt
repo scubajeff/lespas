@@ -7,6 +7,7 @@ import androidx.preference.PreferenceManager
 import com.google.android.apps.muzei.api.provider.Artwork
 import com.google.android.apps.muzei.api.provider.MuzeiArtProvider
 import site.leos.apps.lespas.MainActivity
+import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.Tools
@@ -26,15 +27,9 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
         if (initial || Date().time - lastAddedDate.time > 60000) {
             (context?.applicationContext as Application).let {
-                PhotoRepository(it).getMuzeiArtwork(PreferenceManager.getDefaultSharedPreferences(it).getString(LesPasArtProviderSettingActivity.EXCLUSION_LIST, "") ?: "")?.also { photo ->
+                PhotoRepository(it).getMuzeiArtwork(PreferenceManager.getDefaultSharedPreferences(it).getString(LesPasArtProviderSettingActivity.EXCLUSION_LIST, "") ?: "", it.resources.getBoolean(R.bool.portrait_artwork))?.also { photo ->
                     album = AlbumRepository(it).getThisAlbum(photo.albumId)[0]
-                    setArtwork(
-                        Artwork(
-                            title = album?.name,
-                            byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
-                            token = photo.id,
-                        )
-                    )
+                    setArtwork(Artwork(title = album?.name, token = photo.id, byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",))
                 }
             }
         }

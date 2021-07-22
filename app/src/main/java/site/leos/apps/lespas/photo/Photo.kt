@@ -100,6 +100,6 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
     //@Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE width < height AND (mimeType LIKE '%jpeg%' OR mimeType LIKE '%png%')")
-    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE width < height AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp') AND albumId NOT IN ( :exclusion )")
-    abstract fun getMuzeiArtwork(exclusion: String): List<Photo>
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp') AND albumId NOT IN ( :exclusion )")
+    abstract fun getMuzeiArtwork(exclusion: String, portraitMode: Boolean): List<Photo>
 }
