@@ -15,7 +15,7 @@ Features:
 - Joint album which you and other Nextcloud users can edit together
 - Search for photos by objects with AI
 - Integrate with Snapseed for photo editing on mobile devices
-- Integrate with Muzei Live Wallpaper app
+- Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app
 - Share to social networks
 - Theme design inspired by Wes Anderson's works
 - All files saved in App's private storage, stop being scanned by malicious apps
