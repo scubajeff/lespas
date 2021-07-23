@@ -141,8 +141,7 @@
         <provider
             android:authorities="site.leos.apps.lespas.muzei.ArtProvider"
             android:name=".muzei.LesPasArtProvider"
-            android:label="@string/app_name"
-            android:description="@string/muzei_provider_description"
+            android:label="@string/muzei_provider_description"
             android:permission="com.google.android.apps.muzei.api.ACCESS_PROVIDER"
             android:exported="true">
             <intent-filter>

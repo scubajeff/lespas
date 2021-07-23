@@ -31,8 +31,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
             }
         }
     }
-
     override fun openFile(artwork: Artwork): InputStream = File(Tools.getLocalRoot(context!!), artwork.token!!).inputStream()
+    override fun getDescription(): String = lastAddedArtwork?.run { "$title" } ?: run { super.getDescription() }
     override fun getArtworkInfo(artwork: Artwork): PendingIntent? {
         val intent = Intent().apply {
             setClass(context!!, MainActivity::class.java)
