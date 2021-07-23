@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:layout_marginVertical="56dp"
     android:layout_marginHorizontal="@dimen/extra_padding"
+    android:background="@android:color/transparent"
     tools:context=".muzei.LesPasArtProviderSettingActivity">
 
     <TextView
@@ -15,6 +16,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
+        android:background="@android:color/transparent"
         android:textAppearance="?android:textAppearanceLarge"
         android:textStyle="bold"
         android:text="@string/exclude_albums" />
@@ -27,6 +29,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_margin="@dimen/big_padding"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        android:background="@android:color/transparent"
         tools:listitem="@layout/recyclerview_item_muzei_exclude" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
