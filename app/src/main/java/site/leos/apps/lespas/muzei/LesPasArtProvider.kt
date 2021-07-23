@@ -40,7 +40,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             putExtra(FROM_MUZEI_ALBUM, artwork.metadata)
         }
 
-        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
     }
 
     companion object {
