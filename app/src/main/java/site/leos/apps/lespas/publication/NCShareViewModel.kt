@@ -799,7 +799,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         when (view) {
                             is Chip -> view.chipIcon = this
                             is TextView-> {
-                                (view.textSize * 1.2).roundToInt().let { this.setBounds(0, 0, it, it) }
+                                (view.textSize * 1.2).roundToInt().let {
+                                    val size = if (it < 48) 48 else it
+                                    this.setBounds(0, 0, size, size)
+                                }
                                 //view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
                                 view.setCompoundDrawables(this, null, null, null)
                             }
