@@ -627,6 +627,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
+    private fun getRemoteVideoThumbnail(responseBody: ResponseBody, photo: RemotePhoto): Bitmap? {
+        var bitmap: Bitmap? = null
+        // Download video file if necessary
+        val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
+        val videoFile = File(localCacheFolder, fileName)
+        if (!videoFile.exists()) {
+            val sink = videoFile.sink(false).buffer()
+            sink.writeAll(responseBody.source())
+            sink.close()
+        }
+
+        // Get frame at 1s
+        MediaMetadataRetriever().apply {
+            setDataSource("$localCacheFolder/$fileName")
+            bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
+            release()
+        }
+
+        return bitmap
+    }
+
     fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
     @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -678,26 +699,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             in (2000..3000) -> 2
                                             else -> 4
                                         }
-                                        bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                        try  {
+                                            bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                        } catch (e: IOException) {
+                                            // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
+                                            e.printStackTrace()
+                                            it.close()
+                                            newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use { vResp->
+                                                // TODO could take a long time to download the video file
+                                                bitmap = getRemoteVideoThumbnail(vResp, photo)
+                                            }
+                                        }
                                     }
                                     ImageLoaderViewModel.TYPE_GRID -> {
-                                        if (photo.mimeType.startsWith("video")) {
-                                            // Download video file if necessary
-                                            val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
-                                            val videoFile = File(localCacheFolder, fileName)
-                                            if (!videoFile.exists()) {
-                                                val sink = videoFile.sink(false).buffer()
-                                                sink.writeAll(it.source())
-                                                sink.close()
-                                            }
-
-                                            // Get frame at 1s
-                                            MediaMetadataRetriever().apply {
-                                                setDataSource("$localCacheFolder/$fileName")
-                                                bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
-                                                release()
-                                            }
-                                        } else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                        if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
+                                        else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                     }
                                     ImageLoaderViewModel.TYPE_FULL -> {
                                         // only image files would be requested as TYPE_FULL
