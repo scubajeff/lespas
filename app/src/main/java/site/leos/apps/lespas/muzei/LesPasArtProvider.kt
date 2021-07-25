@@ -30,9 +30,10 @@ class LesPasArtProvider: MuzeiArtProvider() {
             setClass(context!!, MainActivity::class.java)
             putExtra(FROM_MUZEI_PHOTO, artwork.token)
             putExtra(FROM_MUZEI_ALBUM, artwork.metadata)
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
-        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT)
+        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private fun updateArtwork() {
