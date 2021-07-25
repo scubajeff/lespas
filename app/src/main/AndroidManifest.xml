@@ -139,7 +139,7 @@
         </provider>
 
         <provider
-            android:authorities="site.leos.apps.lespas.muzei.ArtProvider"
+            android:authorities="@string/muzei_authority"
             android:name=".muzei.LesPasArtProvider"
             android:label="@string/muzei_provider_description"
             android:permission="com.google.android.apps.muzei.api.ACCESS_PROVIDER"

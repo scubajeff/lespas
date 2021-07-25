@@ -143,4 +143,8 @@
     <string name="solo_album_tooltips">他人只能浏览这个相册</string>
     <string name="muzei_provider_description">Les Pas瞬间</string>
     <string name="exclude_albums">排除以下相册：</string>
+    <string name="prefer">选取：</string>
+    <string name="prefer_day_in_history">那时今日</string>
+    <string name="prefer_random">无所谓</string>
+    <string name="prefer_latest">近期</string>
 </resources>

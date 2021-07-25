@@ -143,4 +143,8 @@
     <string name="solo_album_tooltips">Nur für Empfänger sichtbar.</string>
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="exclude_albums">Schließen Sie Fotos aus:</string>
+    <string name="prefer_day_in_history">Damals und heute</string>
+    <string name="prefer">Bevorzugt:</string>
+    <string name="prefer_latest">Neueste</string>
+    <string name="prefer_random">Zufällig</string>
 </resources>
