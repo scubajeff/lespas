@@ -233,7 +233,7 @@
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="prefer">Prefer:</string>
     <string name="prefer_day_in_history">Then and now</string>
-    <string name="prefer_random">Random</string>
+    <string name="prefer_random">Random (fallback of all the above)</string>
     <string name="exclude_albums">Exclude from:</string>
     <string name="prefer_latest">Recent</string>
 </resources>

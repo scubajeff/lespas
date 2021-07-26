@@ -146,5 +146,5 @@
     <string name="prefer_day_in_history">Antes y ahora</string>
     <string name="prefer">Prefiero:</string>
     <string name="prefer_latest">Recientes</string>
-    <string name="prefer_random">Al azar</string>
+    <string name="prefer_random">Al azar (el recurso de todo lo anterior)</string>
 </resources>

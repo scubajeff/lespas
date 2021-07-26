@@ -146,5 +146,5 @@
     <string name="prefer_day_in_history">昔と今</string>
     <string name="prefer">好み</string>
     <string name="prefer_latest">最近の</string>
-    <string name="prefer_random">ランダム</string>
+    <string name="prefer_random">ランダム (フォールバック)</string>
 </resources>
