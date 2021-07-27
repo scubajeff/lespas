@@ -24,27 +24,29 @@ import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.CacheControl
+import okhttp3.FormBody
 import okio.IOException
 import okio.buffer
 import okio.sink
+import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.OkHttpWebDav
+import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -60,10 +62,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
 
+    private var webDav: OkHttpWebDav
+
     private val baseUrl: String
     private val userName: String
-    private var httpClient: OkHttpClient? = null
-    private var cachedHttpClient: OkHttpClient? = null
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
     private val localCacheFolder = "${application.cacheDir}${lespasBase}"
@@ -73,7 +75,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_circle_24)
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
-    private val diskCache = Cache(File(localCacheFolder), DISK_CACHE_SIZE)
     private val decoderJobMap = HashMap<Int, Job>()
     private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
@@ -89,20 +90,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
-            try {
-                val builder = OkHttpClient.Builder().apply {
-                    if (getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean()) hostnameVerifier { _, _ -> true }
-                    addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userName, peekAuthToken(account, baseUrl), StandardCharsets.UTF_8)).build()) }
-                    addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", "LesPas_${application.getString(R.string.lespas_version)}").build())) }
-                }
-                httpClient = builder.build()
-                cachedHttpClient = builder.cache(diskCache)
-                    .addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=$MAX_AGE").build() }
-                    .build()
-            } catch (e: Exception) { e.printStackTrace() }
+            webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}", "LesPas_${application.getString(R.string.lespas_version)}")
         }
-
-        File(localCacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
@@ -110,25 +99,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun ocsGet(url: String): JSONObject? {
-        var result: JSONObject? = null
-
-        httpClient?.apply {
-            Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").apply {
-                newCall(build()).execute().use {
-                    result = it.body?.string()?.let { response -> JSONObject(response).getJSONObject("ocs") }
-                }
-            }
-        }
-
-        return result
-    }
-
     val themeColor: Flow<Int> = flow {
         var color = 0
 
         try {
-            ocsGet("$baseUrl$CAPABILLITIES_ENDPOINT")?.apply {
+            webDav.ocsGet("$baseUrl$CAPABILLITIES_ENDPOINT")?.apply {
                 color = Integer.parseInt(getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").getString("color").substringAfter('#'), 16)
             }
             if (color != 0) emit(color)
@@ -143,13 +118,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
         var backOff = 2500L
         var sPath = ""
-        var rCode = 200
         val lespasBaseLength = lespasBase.length
         val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
         while(true) {
             try {
-                ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+                webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                     //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                     var shareType: Int
                     var idString: String
@@ -190,7 +164,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
 
-                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC))
+                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC, 0L))
                                 }
                             }
                         }
@@ -199,33 +173,39 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 _shareByMe.value = sharesBy
 
-                // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
-                if (sharesWith.size > 0) sPath = (getSharePath(sharesWith[0].shareId) ?: "").substringBeforeLast('/')
+                // Avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
+                if (sharesWith.size > 0) sPath = getSharePath(sharesWith[0].shareId) ?: ""
+
+                // Get shares' last modified timestamp by PROPFIND share path
+                val lastModified = HashMap<String, Long>()
+                val offset = OffsetDateTime.now().offset
+                webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                 for (share in sharesWith) {
                     share.sharePath = "${sPath}/${share.albumName}"
-                    cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                            rCode = it.code
-                            if (it.isSuccessful) {
-                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                                    meta.getJSONObject("cover").apply {
-                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                        share.coverFileName = getString("filename")
-                                    }
-                                    share.sortOrder = meta.getInt("sort")
+                    share.lastModified = lastModified[share.albumId] ?: 0L
+                    try {
+                        webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
+                            JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
+                                meta.getJSONObject("cover").apply {
+                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                    share.coverFileName = getString("filename")
                                 }
+                                share.sortOrder = meta.getInt("sort")
                             }
+
                         }
-                    }
+                    } catch (e: OkHttpWebDavException) {
+                        e.printStackTrace()
+                        if (e.statusCode == 404) {
+                            // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
+                            sPath = getSharePath(share.shareId) ?: ""
+                            webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
 
-                    if (rCode == 404) {
-                        // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
-                        sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
-
-                        share.sharePath = "${sPath}/${share.albumName}"
-                        cachedHttpClient?.apply {
-                            newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").build()).execute().use {
-                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                            share.sharePath = "${sPath}/${share.albumName}"
+                            share.lastModified = lastModified[share.albumId] ?: 0L
+                            webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
+                                JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                                     meta.getJSONObject("cover").apply {
                                         share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
                                         share.coverFileName = getString("filename")
@@ -261,7 +241,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+            webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                 //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                 var shareType: Int
                 var idString: String
@@ -307,16 +287,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return arrayListOf()
     }
 
-    //fun updateShareWithMe(): MutableList<ShareWithMe> {
     fun updateShareWithMe() {
         val result = mutableListOf<ShareWithMe>()
         var sPath = ""
-        var rCode = 200
         val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
+                webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
                     //if (getJSONObject("meta").getInt("statuscode") != 200) return null  // TODO this safety check is not necessary
                     var shareType: Int
                     var idString: String
@@ -343,40 +321,46 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
 
-                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L))
                                 }
                             }
                         }
                     }
                 }
 
-                // To avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
-                if (result.size > 0) sPath = (getSharePath(result[0].shareId) ?: "").substringBeforeLast('/')
+                // Avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
+                if (result.size > 0) sPath = getSharePath(result[0].shareId) ?: ""
+
+                // Get shares' last modified timestamp by PROPFIND share path
+                val lastModified = HashMap<String, Long>()
+                val offset = OffsetDateTime.now().offset
+                webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                 for (share in result) {
                     share.sharePath = "${sPath}/${share.albumName}"
-                    cachedHttpClient?.apply {
-                        newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use {
-                            rCode = it.code
-                            if (it.isSuccessful) {
-                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
-                                    meta.getJSONObject("cover").apply {
-                                        share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                        share.coverFileName = getString("filename")
-                                    }
-                                    share.sortOrder = meta.getInt("sort")
+                    share.lastModified = lastModified[share.albumId] ?: 0L
+                    try {
+                        webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
+                            JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
+                                meta.getJSONObject("cover").apply {
+                                    share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
+                                    share.coverFileName = getString("filename")
                                 }
+                                share.sortOrder = meta.getInt("sort")
                             }
+
                         }
-                    }
+                    } catch (e: OkHttpWebDavException) {
+                        e.printStackTrace()
+                        if (e.statusCode == 404) {
+                            // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
+                            sPath = getSharePath(share.shareId) ?: ""
+                            webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
 
-                    if (rCode == 404) {
-                        // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
-                        sPath = (getSharePath(share.shareId) ?: "").substringBeforeLast('/')
-
-                        share.sharePath = "${sPath}/${share.albumName}"
-                        cachedHttpClient?.apply {
-                            newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}.json").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use {
-                                JSONObject(it.body?.string() ?: "").getJSONObject("lespas").let { meta ->
+                            share.sharePath = "${sPath}/${share.albumName}"
+                            share.lastModified = lastModified[share.albumId] ?: 0L
+                            webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
+                                JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                                     meta.getJSONObject("cover").apply {
                                         share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
                                         share.coverFileName = getString("filename")
@@ -405,7 +389,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         while(true) {
             try {
-                ocsGet("$baseUrl$SHAREE_LISTING_ENDPOINT")?.apply {
+                webDav.ocsGet("$baseUrl$SHAREE_LISTING_ENDPOINT")?.apply {
                     //if (getJSONObject("meta").getInt("statuscode") != 100) return null
                     val data = getJSONObject("data")
                     val users = data.getJSONArray("users")
@@ -441,44 +425,28 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun createShares(albums: List<ShareByMe>) {
-        var response: Response? = null
-
-        httpClient?.let { httpClient->
-            for (album in albums) {
-                for (recipient in album.with) {
-                    try {
-                        response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_ENDPOINT").addHeader(NEXTCLOUD_OCSAPI_HEADER, "true")
-                            .post(
-                                FormBody.Builder()
-                                    .add("path", "$lespasBase/${album.folderName}")
-                                    .add("shareWith", recipient.sharee.name)
-                                    .add("shareType", recipient.sharee.type.toString())
-                                    .add("permissions", recipient.permission.toString())
-                                    .build()
-                            )
+        for (album in albums) {
+            for (recipient in album.with) {
+                try {
+                    webDav.ocsPost(
+                        "$baseUrl$PUBLISH_ENDPOINT",
+                        FormBody.Builder()
+                            .add("path", "$lespasBase/${album.folderName}")
+                            .add("shareWith", recipient.sharee.name)
+                            .add("shareType", recipient.sharee.type.toString())
+                            .add("permissions", recipient.permission.toString())
                             .build()
-                        ).execute()
-                    }
-                    catch (e: java.io.IOException) { e.printStackTrace() }
-                    catch (e: IllegalStateException) { e.printStackTrace() }
-                    finally { response?.close() }
-                }
+                    )
+                } catch (e: Exception) { e.printStackTrace() }
             }
         }
     }
 
     private fun deleteShares(recipients: List<Recipient>) {
-        var response: Response? = null
-
-        httpClient?.let { httpClient->
-            for (recipient in recipients) {
-                try {
-                    response = httpClient.newCall(Request.Builder().url("$baseUrl$PUBLISH_ENDPOINT/${recipient.shareId}").delete().addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute()
-                }
-                catch (e: java.io.IOException) { e.printStackTrace() }
-                catch (e: IllegalStateException) { e.printStackTrace() }
-                finally { response?.close() }
-            }
+        for (recipient in recipients) {
+            try {
+                webDav.ocsDelete("$baseUrl$PUBLISH_ENDPOINT/${recipient.shareId}")
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -486,8 +454,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var path: String? = null
 
         try {
-            ocsGet("$baseUrl$PUBLISH_ENDPOINT/${shareId}?format=json")?.apply {
-                path = getJSONArray("data").getJSONObject(0).getString("path")
+            webDav.ocsGet("$baseUrl$PUBLISH_ENDPOINT/${shareId}?format=json")?.apply {
+                path = getJSONArray("data").getJSONObject(0).getString("path").substringBeforeLast('/')
             }
         }
         catch (e: java.io.IOException) { e.printStackTrace() }
@@ -544,13 +512,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
-                        httpClient?.let { httpClient->
-                            httpClient.newCall(Request.Builder()
-                                .url("${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX")
-                                .put(content.toRequestBody(MIME_TYPE_JSON.toMediaTypeOrNull()))
-                                .build()
-                            ).execute().use {}
-                        }
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -566,16 +528,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun renameShare(album: ShareByMe, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                httpClient?.let { httpClient->
-                    val hb = Headers.Builder().add("DESTINATION", "$resourceRoot$lespasBase/$newName").add("OVERWRITE", "T")
-                    httpClient.newCall(Request.Builder().url("$resourceRoot$lespasBase/${album.folderName}").method("MOVE", null).headers(hb.build()).build()).execute().use { response->
-                        if (response.isSuccessful) {
-                            deleteShares(album.with)
-                            album.folderName = newName
-                            createShares(listOf(album))
-                        }
-                    }
-                }
+                webDav.move("$resourceRoot$lespasBase/${album.folderName}", "$resourceRoot$lespasBase/$newName")
+                deleteShares(album.with)
+                album.folderName = newName
+                createShares(listOf(album))
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
@@ -592,26 +548,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         withContext(Dispatchers.IO) {
             try {
-                cachedHttpClient?.apply {
-                    val request = Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX")
-                    if (forceNetwork) request.cacheControl(CacheControl.FORCE_NETWORK)
-                    newCall(request.build()).execute().use {
-                        if (forceNetwork || it.networkResponse != null) doRefresh = false
-                        _publicationContentMeta.value = getContentMeta(it, share)
-                    }
+                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
+                    if (forceNetwork || this.second) doRefresh = false
+                    this.first.use { _publicationContentMeta.value = getContentMeta(it, share) }
                 }
 
-                if (doRefresh) cachedHttpClient?.apply {
-                    newCall(Request.Builder().url("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX").cacheControl(CacheControl.FORCE_NETWORK).build()).execute().use { _publicationContentMeta.value = getContentMeta(it, share) }
-                }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
-    private fun getContentMeta(response: Response, share: ShareWithMe): List<RemotePhoto> {
+    private fun getContentMeta(inputStream: InputStream, share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
 
-        val photos = JSONObject(response.body?.string() ?: "").getJSONObject("lespas").getJSONArray("photos")
+        val photos = JSONObject(inputStream.bufferedReader().readText()).getJSONObject("lespas").getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
                 result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
@@ -627,14 +577,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    private fun getRemoteVideoThumbnail(responseBody: ResponseBody, photo: RemotePhoto): Bitmap? {
+    private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
         var bitmap: Bitmap? = null
         // Download video file if necessary
-        val fileName = "${VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
+        val fileName = "${OkHttpWebDav.VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
         val videoFile = File(localCacheFolder, fileName)
         if (!videoFile.exists()) {
             val sink = videoFile.sink(false).buffer()
-            sink.writeAll(responseBody.source())
+            sink.writeAll(inputStream.source())
             sink.close()
         }
 
@@ -664,11 +614,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
                     try {
                         if (type == ImageLoaderViewModel.TYPE_GRID) {
-                            cachedHttpClient?.apply {
-                                newCall(Request.Builder().url("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}").get().build()).execute().body?.use {
-                                    bitmap = BitmapFactory.decodeStream(it.byteStream())
-                                }
-                            }
+                            webDav.getStream("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
                         }
                     } catch(e: Exception) {
                         // Catch all exception, give TYPE_GRID another chance below
@@ -688,44 +634,43 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             // TODO the following setting make picture larger, care to find a new way?
                             //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                         }
-                        cachedHttpClient?.apply {
-                            newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use {
-                                when (type) {
-                                    ImageLoaderViewModel.TYPE_COVER -> {
-                                        val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                                        val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
-                                        val sampleSize = when (photo.width) {
-                                            in (0..2000) -> 1
-                                            in (2000..3000) -> 2
-                                            else -> 4
-                                        }
-                                        try  {
-                                            bitmap = BitmapRegionDecoder.newInstance(it.byteStream(), false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
-                                        } catch (e: IOException) {
-                                            // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
-                                            e.printStackTrace()
-                                            it.close()
-                                            newCall(Request.Builder().url("$resourceRoot${photo.path}").get().build()).execute().body?.use { vResp->
-                                                // TODO could take a long time to download the video file
-                                                bitmap = getRemoteVideoThumbnail(vResp, photo)
-                                            }
-                                        }
+                        webDav.getStream("$resourceRoot${photo.path}", true,null).use {
+                            when (type) {
+                                ImageLoaderViewModel.TYPE_COVER -> {
+                                    val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
+                                    val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
+                                    val sampleSize = when (photo.width) {
+                                        in (0..2000) -> 1
+                                        in (2000..3000) -> 2
+                                        else -> 4
                                     }
-                                    ImageLoaderViewModel.TYPE_GRID -> {
-                                        if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
-                                        else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
-                                    }
-                                    ImageLoaderViewModel.TYPE_FULL -> {
-                                        // only image files would be requested as TYPE_FULL
-                                        if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.bytes())))
-                                            } else {
-                                                bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
-                                            }
-                                        } else bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option)
+                                    try  {
+                                        bitmap = BitmapRegionDecoder.newInstance(it, false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                    } catch (e: IOException) {
+                                        // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
+                                        e.printStackTrace()
+                                        it.close()
+                                        webDav.getStream("$resourceRoot${photo.path}", true,null).use { vResp->
+                                            // TODO could take a long time to download the video file
+                                            bitmap = getRemoteVideoThumbnail(vResp, photo)
+                                        }
                                     }
                                 }
+                                ImageLoaderViewModel.TYPE_GRID -> {
+                                    if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
+                                    else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                }
+                                ImageLoaderViewModel.TYPE_FULL -> {
+                                    // only image files would be requested as TYPE_FULL
+                                    if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                            animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
+                                        } else {
+                                            bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                        }
+                                    } else bitmap = BitmapFactory.decodeStream(it, null, option)
+                                }
+                                else-> {}
                             }
                         }
 
@@ -733,11 +678,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         bitmap?.let {
                             if (it.allocationByteCount > 100000000) {
                                 bitmap = null
-                                cachedHttpClient?.apply {
-                                    newCall(Request.Builder().url("$resourceRoot${photo.path}").get().cacheControl(CacheControl.FORCE_CACHE).build()).execute().body?.use {
-                                        bitmap = BitmapFactory.decodeStream(it.byteStream(), null, option.apply { inSampleSize = 2 })
-                                    }
-                                }
+                                webDav.getStream("$resourceRoot${photo.path}", true, CacheControl.FORCE_CACHE).use { s-> bitmap = BitmapFactory.decodeStream(s, null, option.apply { inSampleSize = 2 })}
                             }
                         }
                     }
@@ -773,19 +714,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     imageCache.get(key)?.let { bitmap = it } ?: run {
                         // Set default avatar first
                         if (isActive) withContext(Dispatchers.Main) {
-                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24).apply {
+                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.apply {
                                 when (view) {
                                     is Chip -> view.chipIcon = this
-                                    is TextView -> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                    is TextView -> {
+                                        (view.textSize * 1.2).roundToInt().let {
+                                            val size = if (it < 48) 48 else it
+                                            this.setBounds(0, 0, size, size)
+                                        }
+                                        //view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                        view.setCompoundDrawables(this, null, null, null)
+                                    }
                                 }
                             }
                         }
 
-                        cachedHttpClient?.apply {
-                            newCall(Request.Builder().url("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64").get().build()).execute().body?.use {
-                                bitmap = BitmapFactory.decodeStream(it.byteStream())
-                            }
-                        }
+                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true,null).use { bitmap = BitmapFactory.decodeStream(it) }
 
                         bitmap?.let { imageCache.put(key, it) }
                     }
@@ -828,7 +772,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     override fun onCleared() {
-        File(localCacheFolder, VIDEO_CACHE_FOLDER).deleteRecursively()
+        File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
         super.onCleared()
@@ -874,8 +818,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var cover: Cover,
         var coverFileName: String,
         var sortOrder: Int,
+        var lastModified: Long,
     ): Parcelable, Comparable<ShareWithMe> {
-        override fun compareTo(other: ShareWithMe): Int = (other.sharedTime - this.sharedTime).toInt()
+        override fun compareTo(other: ShareWithMe): Int = (other.lastModified - this.lastModified).toInt()
     }
 
     @Parcelize
@@ -890,12 +835,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     ): Parcelable
 
     companion object {
-        private const val VIDEO_CACHE_FOLDER = "videos"
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
-        private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
-        private const val MAX_AGE = "864000"        // 10 days
 
-        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
         private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"

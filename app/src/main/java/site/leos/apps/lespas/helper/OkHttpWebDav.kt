@@ -14,6 +14,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
+import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
@@ -31,15 +32,23 @@ import java.util.concurrent.TimeUnit
 
 class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
-    private val httpClient: OkHttpClient = OkHttpClient.Builder().apply {
-        if (selfSigned) hostnameVerifier { _, _ -> true }
-        addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
-        addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
-        //cache(Cache(File(cacheFolder), DISK_CACHE_SIZE))
-        //addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }
-        readTimeout(20, TimeUnit.SECONDS)
-        writeTimeout(20, TimeUnit.SECONDS)
-    }.build()
+    private val httpClient: OkHttpClient
+    private val cachedHttpClient: OkHttpClient
+
+    init {
+        val builder = OkHttpClient.Builder().apply {
+            if (selfSigned) hostnameVerifier { _, _ -> true }
+            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
+            addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
+            readTimeout(20, TimeUnit.SECONDS)
+            writeTimeout(20, TimeUnit.SECONDS)
+        }
+        httpClient = builder.build()
+        cachedHttpClient = builder.cache(Cache(File(cacheFolder), DISK_CACHE_SIZE)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build()
+
+        // Make cache folder for video download
+        File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
+    }
 
     fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
 
@@ -78,11 +87,16 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun getStream(source: String, cacheControl: CacheControl?): InputStream {
+    fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
+    fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {
         val reqBuilder = Request.Builder().url(source)
-        cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-        httpClient.newCall(reqBuilder.get().build()).execute().also { response ->
-            if (response.isSuccessful) return response.body!!.byteStream()
+        (if (useCache) {
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            cachedHttpClient.newCall(reqBuilder.get().build())
+        } else {
+            httpClient.newCall(reqBuilder.get().build())
+        }).execute().also { response ->
+            if (response.isSuccessful) return Pair(response.body!!.byteStream(), response.networkResponse != null)
             else {
                 response.close()
                 throw OkHttpWebDavException(response)
@@ -151,6 +165,20 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     }
 
     fun move(source: String, dest: String) { copyOrMove(false, source, dest) }
+
+    fun ocsDelete(url: String) {
+        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
+    }
+
+    fun ocsGet(url: String): JSONObject? =
+        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
+            if (response.isSuccessful) response.body?.string()?.let { json-> JSONObject(json).getJSONObject("ocs") }
+            else null
+        }
+
+    fun ocsPost(url: String, body: RequestBody) {
+        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use {}
+    }
 
     fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
         httpClient.newCall(Request.Builder().url(dest).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
@@ -288,6 +316,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     companion object {
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"                        // 10 days
+        const val VIDEO_CACHE_FOLDER = "videos"
 
         private const val CHUNK_SIZE = 50L * 1024L * 1024L          // Default chunk size is 50MB
 
@@ -320,5 +349,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
         private const val RESPONSE_TAG = "response"
         private const val HREF_TAG = "href"
+
+        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
     }
 }
