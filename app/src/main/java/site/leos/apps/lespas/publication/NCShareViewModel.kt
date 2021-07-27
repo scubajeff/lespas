@@ -164,7 +164,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
 
-                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC))
+                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC, 0L))
                                 }
                             }
                         }
@@ -175,8 +175,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
                 if (sharesWith.size > 0) sPath = getSharePath(sharesWith[0].shareId) ?: ""
+
+                // Get shares' last modified timestamp by PROPFIND share path
+                val lastModified = HashMap<String, Long>()
+                val offset = OffsetDateTime.now().offset
+                webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                 for (share in sharesWith) {
                     share.sharePath = "${sPath}/${share.albumName}"
+                    share.lastModified = lastModified[share.albumId] ?: 0L
                     try {
                         webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                             JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
@@ -193,7 +200,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (e.statusCode == 404) {
                             // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
                             sPath = getSharePath(share.shareId) ?: ""
+                            webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                             share.sharePath = "${sPath}/${share.albumName}"
+                            share.lastModified = lastModified[share.albumId] ?: 0L
                             webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                                 JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                                     meta.getJSONObject("cover").apply {
@@ -311,7 +321,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     idString = getString("owner")
                                     labelString = _sharees.value.find { it.name == idString }?.label ?: idString
 
-                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC))
+                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L))
                                 }
                             }
                         }
@@ -320,8 +330,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
                 if (result.size > 0) sPath = getSharePath(result[0].shareId) ?: ""
+
+                // Get shares' last modified timestamp by PROPFIND share path
+                val lastModified = HashMap<String, Long>()
+                val offset = OffsetDateTime.now().offset
+                webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                 for (share in result) {
                     share.sharePath = "${sPath}/${share.albumName}"
+                    share.lastModified = lastModified[share.albumId] ?: 0L
                     try {
                         webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                             JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
@@ -338,7 +355,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         if (e.statusCode == 404) {
                             // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
                             sPath = getSharePath(share.shareId) ?: ""
+                            webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+
                             share.sharePath = "${sPath}/${share.albumName}"
+                            share.lastModified = lastModified[share.albumId] ?: 0L
                             webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                                 JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                                     meta.getJSONObject("cover").apply {
@@ -791,8 +811,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var cover: Cover,
         var coverFileName: String,
         var sortOrder: Int,
+        var lastModified: Long,
     ): Parcelable, Comparable<ShareWithMe> {
-        override fun compareTo(other: ShareWithMe): Int = (other.sharedTime - this.sharedTime).toInt()
+        override fun compareTo(other: ShareWithMe): Int = (other.lastModified - this.lastModified).toInt()
     }
 
     @Parcelize
