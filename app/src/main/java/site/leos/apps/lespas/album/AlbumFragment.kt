@@ -13,12 +13,14 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
@@ -57,7 +59,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
-    private var optionMenu: MenuItem? = null
+    private var receivedShareMenu: MenuItem? = null
+    private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,8 +108,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         // Register data observer first, try feeding adapter with latest data asap
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> mAdapter.setAlbums(albums) })
 
-        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { it.let { mAdapter.setRecipients(it) }})
-        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { it.let { if (it.isNotEmpty()) optionMenu?.isEnabled = true }})
+        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
+        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, {
+            if (it.isNotEmpty()) {
+                receivedShareMenu?.isEnabled = true
+
+                // Show notification badge
+                newTimestamp = it[0].lastModified
+                //it.forEach { share-> if (share.sharedTime > newTimestamp) newTimestamp = share.sharedTime }
+                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getLong(KEY_RECEIVED_SHARE_TIMESTAMP, 0L) < newTimestamp)
+                    receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_with_me_notification)
+            }
+        })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -239,7 +252,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        optionMenu = menu.findItem(R.id.option_menu_received_shares).apply { isEnabled = publishViewModel.shareWithMe.value.isNotEmpty() }
+        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares).apply { isEnabled = publishViewModel.shareWithMe.value.isNotEmpty() }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -266,6 +279,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
                 return true
             }
             R.id.option_menu_received_shares-> {
+                receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
+
                 exitTransition = null
                 reenterTransition = null
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
@@ -468,6 +484,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SCROLL_POSITION = "SCROLL_POSITION"
         private const val SELECTION = "SELECTION"
+
+        private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 
         @JvmStatic
         fun newInstance() = AlbumFragment()
