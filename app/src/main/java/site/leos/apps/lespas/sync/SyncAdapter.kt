@@ -715,7 +715,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val metaFileName = "${album.id}.json"
 
             // Download the updated meta file
-            webDav.getStream("$resourceRoot/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}", null).reader().use { input->
+            webDav.getStream("$resourceRoot/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}", false,null).reader().use { input->
                 File(localRootFolder, metaFileName).writer().use { output ->
                     val content = input.readText()
                     output.write(content)
