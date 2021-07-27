@@ -714,10 +714,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     imageCache.get(key)?.let { bitmap = it } ?: run {
                         // Set default avatar first
                         if (isActive) withContext(Dispatchers.Main) {
-                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24).apply {
+                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.apply {
                                 when (view) {
                                     is Chip -> view.chipIcon = this
-                                    is TextView -> view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                    is TextView -> {
+                                        (view.textSize * 1.2).roundToInt().let {
+                                            val size = if (it < 48) 48 else it
+                                            this.setBounds(0, 0, size, size)
+                                        }
+                                        //view.setCompoundDrawablesWithIntrinsicBounds(this, null, null, null)
+                                        view.setCompoundDrawables(this, null, null, null)
+                                    }
                                 }
                             }
                         }
