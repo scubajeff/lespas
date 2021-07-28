@@ -1,0 +1,3 @@
+* Tres formas de seleccionar fotos como fondo de pantalla Muzei: Reciente, Antes y ahora, Al azar
+* Notificación de las actualizaciones de las acciones publicadas por otros a mí
+* Otras mejoras y errores corregidos

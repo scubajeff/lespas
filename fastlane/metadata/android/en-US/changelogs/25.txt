@@ -1,0 +1,3 @@
+* Three ways to select photos as Muzei wallpaper: Recent, Then and now, Random
+* Notification of updates of shares published by others to me
+* Other improvements and bugs fixed

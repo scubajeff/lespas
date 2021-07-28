@@ -1,4 +1,8 @@
-## Version 2.1.2
+## Version 2.2.1
+* Three ways to select photos as Muzei wallpaper: Recent, Then and now, Random
+* Update notification of shares with me
+
+## Version 2.2.0
 * Support Muzei wallpaper app
 * Fixed sync got stuck after finished editing photo with Snapseed
 * Fixed sync crash when there is an new empty album on server

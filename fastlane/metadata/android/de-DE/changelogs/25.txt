@@ -1,0 +1,3 @@
+* Drei Möglichkeiten zur Auswahl von Fotos als Muzei-Hintergrundbild: Zuletzt, Damals und heute, Zufällig
+* Benachrichtigung über Aktualisierungen von Freigaben, die von anderen an mich veröffentlicht wurden
+* Weitere Verbesserungen und Fehlerbehebungen

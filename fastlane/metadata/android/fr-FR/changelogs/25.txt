@@ -1,0 +1,5 @@
+* Prise en charge de l'application Muzei
+* Correction de la synchronisation qui se bloque après avoir fini de modifier une photo avec Snapseed.
+* Correction du crash de synchronisation lorsqu'il y a un nouvel album vide sur le serveur.
+* Correction de l'impossibilité de supprimer un fichier dans la zone de stockage publique sur Android 10
+* Autres améliorations et bogues corrigés
