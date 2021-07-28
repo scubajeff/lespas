@@ -145,6 +145,6 @@
     <string name="exclude_albums">Schließen Sie Fotos aus:</string>
     <string name="prefer_day_in_history">Damals und heute</string>
     <string name="prefer">Bevorzugt:</string>
-    <string name="prefer_latest">Neueste</string>
+    <string name="prefer_latest">Zuletzt</string>
     <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
 </resources>
