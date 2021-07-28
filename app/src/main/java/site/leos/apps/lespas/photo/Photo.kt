@@ -30,7 +30,7 @@ data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
 data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int)
-data class MuzeiPhoto(val id: String, val albumId: String, val dateTaken: LocalDateTime)
+data class MuzeiPhoto(val id: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int)
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
@@ -101,6 +101,6 @@ abstract class PhotoDao: BaseDao<Photo>() {
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
     //@Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE width < height AND (mimeType LIKE '%jpeg%' OR mimeType LIKE '%png%')")
-    @Query("SELECT id, albumId, dateTaken FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp') AND albumId NOT IN ( :exclusion )")
+    @Query("SELECT id, albumId, dateTaken, width, height FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp') AND albumId NOT IN ( :exclusion )")
     abstract fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto>
 }

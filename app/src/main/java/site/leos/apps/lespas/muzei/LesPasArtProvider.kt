@@ -2,7 +2,14 @@ package site.leos.apps.lespas.muzei
 
 import android.app.Application
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapRegionDecoder
+import android.graphics.Rect
+import android.os.Build
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import androidx.preference.PreferenceManager
 import com.google.android.apps.muzei.api.provider.Artwork
 import com.google.android.apps.muzei.api.provider.MuzeiArtProvider
@@ -11,7 +18,8 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
-import java.io.File
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.time.LocalDate
 import java.time.Period
@@ -23,13 +31,65 @@ import kotlin.random.Random
 
 class LesPasArtProvider: MuzeiArtProvider() {
     override fun onLoadRequested(initial: Boolean) { if (initial || Date().time - (lastAddedArtwork?.dateAdded ?: Date()).time > 30000) updateArtwork() }
-    override fun openFile(artwork: Artwork): InputStream = File(Tools.getLocalRoot(context!!), artwork.token!!).inputStream()
+
+    override fun openFile(artwork: Artwork): InputStream {
+        var sWidth: Int
+        var sHeight: Int
+        val pWidth: Int
+        val pHeight: Int
+
+        // Get screen real metrics
+        val wm = context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            with(DisplayMetrics()) {
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealMetrics(this)
+                sWidth = widthPixels
+                sHeight = heightPixels
+            }
+        } else {
+            with(wm.maximumWindowMetrics.bounds) {
+                sWidth = width()
+                sHeight = height()
+            }
+        }
+
+        // Adapt to original orientation
+        val portrait = context!!.resources.getBoolean(R.bool.portrait_artwork)
+        if ((portrait && sWidth > sHeight) || (!portrait && sWidth < sHeight)) {
+            sWidth -= sHeight
+            sHeight += sWidth
+            sWidth = sHeight - sWidth
+        }
+
+        with(artwork.metadata!!.split(',')) {
+            pWidth = this[1].toInt()
+            pHeight = this[2].toInt()
+        }
+
+        // Center crop the picture
+        val rect: Rect = if (sWidth.toFloat()/sHeight < pWidth.toFloat()/pHeight) {
+            val left = ((pWidth - (pHeight.toFloat() * sWidth / sHeight)) / 2).toInt()
+            Rect(left, 0, pWidth-left ,pHeight)
+        } else {
+            val top = ((pHeight - (pWidth.toFloat() * sHeight / sWidth)) / 2).toInt()
+            Rect(0, top, pWidth, pHeight-top)
+        }
+
+        val out = ByteArrayOutputStream()
+        BitmapRegionDecoder.newInstance("${Tools.getLocalRoot(context!!)}/${artwork.token!!}", false).decodeRegion(rect, null).compress(Bitmap.CompressFormat.JPEG, 90, out)
+        return ByteArrayInputStream(out.toByteArray())
+
+        //File(Tools.getLocalRoot(context!!), artwork.token!!).inputStream()
+    }
+
     override fun getDescription(): String = lastAddedArtwork?.run { "$title" } ?: run { super.getDescription() }
+
     override fun getArtworkInfo(artwork: Artwork): PendingIntent? {
         val intent = Intent().apply {
             setClass(context!!, MainActivity::class.java)
             putExtra(FROM_MUZEI_PHOTO, artwork.token)
-            putExtra(FROM_MUZEI_ALBUM, artwork.metadata)
+            putExtra(FROM_MUZEI_ALBUM, artwork.metadata!!.split(',')[0])
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
@@ -66,7 +126,12 @@ class LesPasArtProvider: MuzeiArtProvider() {
                             else -> photoList[Random.nextInt(photoList.size - 1)]
                         }
                     }
-                }?.let { photo -> setArtwork(Artwork(title = AlbumRepository(it).getThisAlbum(photo.albumId)[0].name, token = photo.id, metadata = photo.albumId, byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",)) }
+                }?.let { photo -> setArtwork(Artwork(
+                    title = AlbumRepository(it).getThisAlbum(photo.albumId)[0].name,
+                    token = photo.id,
+                    metadata = "${photo.albumId},${photo.width},${photo.height}",
+                    byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
+                )) }
             }
         }.start()
     }
