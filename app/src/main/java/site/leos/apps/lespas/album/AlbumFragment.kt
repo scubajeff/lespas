@@ -109,17 +109,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> mAdapter.setAlbums(albums) })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
-        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, {
-            if (it.isNotEmpty()) {
-                receivedShareMenu?.isEnabled = true
-
-                // Show notification badge
-                newTimestamp = it[0].lastModified
-                //it.forEach { share-> if (share.sharedTime > newTimestamp) newTimestamp = share.sharedTime }
-                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getLong(KEY_RECEIVED_SHARE_TIMESTAMP, 0L) < newTimestamp)
-                    receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_with_me_notification)
-            }
-        })
+        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -252,15 +242,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares).apply { isEnabled = publishViewModel.shareWithMe.value.isNotEmpty() }
+        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
+        publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
                 parentFragmentManager.beginTransaction()
-                    //.replace(R.id.container_camera_gallery, CameraGalleryFragment(), CameraGalleryFragment::class.java.canonicalName)
-                    //.replace(R.id.container_root, CameraMediaFragment(), CameraMediaFragment::class.java.canonicalName)
                     .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName)
                     .addToBackStack(null)
                     .commit()
@@ -319,7 +308,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             }
             R.id.share -> {
                 selectionTracker.selection.forEach { _ -> }
-
                 selectionTracker.clearSelection()
                 true
             }
@@ -341,6 +329,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
             actionModel.deleteAlbums(albums)
         }
         selectionTracker.clearSelection()
+    }
+
+    private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {
+        if (shareList.isNotEmpty()) {
+            receivedShareMenu?.isEnabled = true
+
+            // Show notification badge
+            newTimestamp = shareList[0].lastModified
+            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getLong(KEY_RECEIVED_SHARE_TIMESTAMP, 0L) < newTimestamp)
+                receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_with_me_notification)
+        }
     }
 
     // List adapter for Albums' recyclerView
