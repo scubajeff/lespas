@@ -147,4 +147,5 @@
     <string name="prefer">Bevorzugt:</string>
     <string name="prefer_latest">Zuletzt</string>
     <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
+    <string name="http_toggle_helper_text">Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
 </resources>

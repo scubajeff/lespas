@@ -54,6 +54,7 @@ class NCLoginActivity : AppCompatActivity() {
     private lateinit var hostInputText: TextInputEditText
     private lateinit var loadingSpinner: Drawable
     private var selfSigned = false
+    private var useHttps = true
 
     @SuppressLint("SetJavaScriptEnabled")   // Nextcloud authentication page requires JavaScript enabled
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,8 +94,7 @@ class NCLoginActivity : AppCompatActivity() {
                             }
                             welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
                             inputArea.apply {
-                                // Clear the focus of input area, make the screen cleaner
-                                clearFocus()
+                                requestFocus()
                                 visibility = View.VISIBLE
                             }
 
@@ -122,6 +122,11 @@ class NCLoginActivity : AppCompatActivity() {
                     // TODO: url validation, helper text hints
                 }
             })
+        }
+
+        inputArea.findViewById<TextView>(com.google.android.material.R.id.textinput_prefix_text).setOnClickListener {
+            useHttps = !useHttps
+            inputArea.prefixText = if (useHttps) "https://" else "http://"
         }
 
         authWebpage.run {
@@ -273,7 +278,7 @@ class NCLoginActivity : AppCompatActivity() {
     }
 
     private fun prepareLogin() {
-        val hostUrl = "https://" + hostInputText.text.toString().trim()
+        val hostUrl = (if (useHttps) "https://" else "http://") + hostInputText.text.toString().trim()
         var result: Int
 
         if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\\[\\]]*[-a-zA-Z0-9\\]+&@#/%=~_|]").matcher(hostUrl).matches()) {

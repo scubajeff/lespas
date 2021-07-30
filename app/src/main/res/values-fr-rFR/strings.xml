@@ -147,4 +147,5 @@
     <string name="prefer">Préférer :</string>
     <string name="prefer_latest">Récent</string>
     <string name="prefer_random">Au hasard (solution de rechange à tout ce qui précède)</string>
+    <string name="http_toggle_helper_text">Touchez le préfixe pour activer le HTTP non sécurisé.</string>
 </resources>

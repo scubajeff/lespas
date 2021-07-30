@@ -14,6 +14,7 @@
     <string name="welcom_message">To get started, please grant access on your Nextcloud server.</string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
+    <string name="http_toggle_helper_text">Touch prefix to toggle unsecure HTTP</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
