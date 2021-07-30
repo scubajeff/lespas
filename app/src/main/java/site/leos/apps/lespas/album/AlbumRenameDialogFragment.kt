@@ -11,16 +11,6 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 
 class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumrename_dialog) {
     private lateinit var renameTextInputLayout: TextInputLayout
-    private lateinit var onFinishListener: OnFinishListener
-
-    interface OnFinishListener {
-        fun onRenameFinished(newName: String)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        onFinishListener = targetFragment as OnFinishListener
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -41,7 +31,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
                     if (error != null)
                     else if (name.isEmpty())
                     else {
-                        onFinishListener.onRenameFinished(name)
+                        parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply { putString(RESULT_KEY_NEW_NAME, name) })
                         dismiss()
                     }
                 }
@@ -52,6 +42,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
     companion object {
         const val OLD_NAME = "OLD_NAME"
+        const val RESULT_KEY_NEW_NAME = "RESULT_KEY_NEW_NAME"
 
         @JvmStatic
         fun newInstance(albumName: String) = AlbumRenameDialogFragment().apply {arguments = Bundle().apply { putString(OLD_NAME, albumName) }}

@@ -58,7 +58,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener, AlbumRenameDialogFragment.OnFinishListener {
+class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener {
     private lateinit var album: Album
     private var actionMode: ActionMode? = null
     private lateinit var stub: View
@@ -372,6 +372,33 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+
+        // Rename result handler
+        parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, this) { key, bundle->
+            if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
+                bundle.getString(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
+                    if (newName != album.name) {
+                        CoroutineScope(Dispatchers.Main).launch(Dispatchers.IO) {
+                            if (albumModel.isAlbumExisted(newName)) {
+                                withContext(Dispatchers.Main) {
+                                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok)).let {
+                                        it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_root), RENAME_REQUEST_CODE)
+                                        it.show(parentFragmentManager, CONFIRM_DIALOG)
+                                    }
+                                }
+                            } else {
+                                with(sharedByMe.with.isNotEmpty()) {
+                                    actionModel.renameAlbum(album.id, album.name, newName, this)
+
+                                    // TODO What if sharedByMe is not available when working offline
+                                    if (this) publishModel.renameShare(sharedByMe, newName)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -439,10 +466,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 true
             }
             R.id.option_menu_rename-> {
-                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).let {
-                    it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, RENAME_DIALOG)
-                }
+                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).show(parentFragmentManager, RENAME_DIALOG)
                 true
             }
             R.id.option_menu_settings-> {
@@ -472,10 +496,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                 publishModel.sharees.value.let { sharees->
                     sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
                 }
-                if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).let {
-                    it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, PUBLISH_DIALOG)
-                }
+                if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).show(parentFragmentManager, PUBLISH_DIALOG)
                 true
             }
             else-> false
@@ -580,29 +601,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
             }
         }
         selectionTracker.clearSelection()
-    }
-
-    override fun onRenameFinished(newName: String) {
-        if (newName != album.name) {
-            CoroutineScope(Dispatchers.Main).launch(Dispatchers.IO) {
-                if (albumModel.isAlbumExisted(newName)) {
-                    withContext(Dispatchers.Main) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok)).let {
-                            it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_root), RENAME_REQUEST_CODE)
-                            it.show(parentFragmentManager, CONFIRM_DIALOG)
-                        }
-                    }
-                } else {
-                    with(sharedByMe.with.isNotEmpty()) {
-                        actionModel.renameAlbum(album.id, album.name, newName, this)
-
-                        // TODO What if sharedByMe is not correct when working offline
-                        if (this) publishModel.renameShare(sharedByMe, newName)
-                    }
-                    //actionModel.renameAlbum(album.id, album.name, newName)
-                }
-            }
-        }
     }
 
     private fun updateSortOrder(newOrder: Int) {
