@@ -57,6 +57,7 @@
             style="@style/TextAppearance.MaterialComponents.Subtitle2"
             android:textColor="@color/color_text_light"
             android:text="@string/welcom_message"
+            android:labelFor="@id/input_area"
             android:visibility="gone" />
 
         <com.google.android.material.textfield.TextInputLayout
@@ -65,11 +66,11 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-            app:helperTextEnabled="false"
+            app:helperTextEnabled="true"
+            app:helperText="@string/http_toggle_helper_text"
             app:errorEnabled="true"
             app:prefixText="https://"
             app:boxStrokeColor="?attr/colorSecondary"
-            app:helperTextTextColor="@color/color_text_light"
             android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText
