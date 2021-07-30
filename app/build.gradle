@@ -51,7 +51,7 @@ android {
         exclude 'META-INF/atomicfu.kotlin_module'
     }
     aaptOptions {
-        noCompress "tflite"
+        noCompress 'tflite'
     }
 }
 
