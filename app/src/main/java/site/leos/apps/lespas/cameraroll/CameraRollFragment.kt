@@ -25,6 +25,9 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -85,6 +88,8 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
+    private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -130,6 +135,11 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
                 sharedElements?.put(names?.get(0)!!, mediaPager.findViewHolderForAdapterPosition(camerarollModel.getCurrentMediaIndex())?.itemView?.findViewById(R.id.media)!!)}
         })
+
+        // On Android 11 and above, result handler of media deletion request
+        deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result->
+            if (result.resultCode == Activity.RESULT_OK) camerarollModel.removeCurrentMedia()
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -177,7 +187,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             toggleControlView(false)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                startIntentSenderForResult(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri())).intentSender, DELETE_MEDIA_REQUEST_CODE, null, 0, 0, 0, null)
+                deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).setFlags(0, 0).build())
             }
             else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let{
                 it.setTargetFragment(this, DELETE_MEDIA_REQUEST_CODE)
@@ -349,16 +359,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) observeCameraRoll()
             else if (requireActivity() is MainActivity) parentFragmentManager.popBackStack() else requireActivity().finish()
         }
-    }
-
-    // On Android 11 and above, result of media deletion request from Android
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == DELETE_MEDIA_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                camerarollModel.removeCurrentMedia()
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     // From ConfirmDialogFragment for media deletion

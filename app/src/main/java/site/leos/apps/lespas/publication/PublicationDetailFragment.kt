@@ -1,13 +1,13 @@
 package site.leos.apps.lespas.publication
 
-import android.app.Activity
-import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -54,6 +54,8 @@ class PublicationDetailFragment: Fragment() {
     private var addPhotoMenuItem: MenuItem? = null
 
     private var clickedItem = -1
+
+    private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +109,21 @@ class PublicationDetailFragment: Fragment() {
         })
 
         setHasOptionsMenu(true)
+
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            if (uris.isNotEmpty()) {
+                // Save joint album's content meta file
+                shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
+
+                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
+                    AcquiringDialogFragment.newInstance(
+                        uris as ArrayList<Uri>,
+                        Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
+                        false
+                    ).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -235,39 +252,11 @@ class PublicationDetailFragment: Fragment() {
                 true
             }
             R.id.option_menu_add_photo-> {
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "*/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                    putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                }
-                startActivityForResult(intent, REQUEST_ADD_PHOTOS)
+                addFileLauncher.launch("*/*")
                 true
             }
             else-> false
         }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intent)
-
-        val uris = arrayListOf<Uri>()
-        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ADD_PHOTOS) {
-            intent?.clipData?.apply { for (i in 0 until itemCount) uris.add(getItemAt(i).uri) } ?: uris.add(intent?.data!!)
-
-            if (uris.isNotEmpty()) {
-                // Save joint album's content meta file
-                shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
-
-                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
-                    AcquiringDialogFragment.newInstance(
-                        uris,
-                        Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
-                        false
-                    ).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
-                }
-            }
-        }
-    }
 
     class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
@@ -331,7 +320,6 @@ class PublicationDetailFragment: Fragment() {
     }
 
     companion object {
-        private const val REQUEST_ADD_PHOTOS = 3333
         private const val TAG_ACQUIRING_DIALOG = "JOINT_ALBUM_ACQUIRING_DIALOG"
 
         const val JOINT_ALBUM_ID = "joint"

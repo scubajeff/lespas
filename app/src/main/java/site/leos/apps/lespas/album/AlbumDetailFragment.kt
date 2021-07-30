@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.album
 
-import android.app.Activity
 import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
@@ -14,6 +13,8 @@ import android.provider.MediaStore
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.app.SharedElementCallback
@@ -87,6 +88,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
 
     private var sortOrderChanged = false
+
+    private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -230,6 +233,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         }
 
         savedInstanceState ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
+
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+            if (uris.isNotEmpty()) {
+                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
+                    AcquiringDialogFragment.newInstance(uris as ArrayList<Uri>, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -424,13 +435,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_add_photo-> {
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "*/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                    putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-                }
-                startActivityForResult(intent, REQUEST_ADD_PHOTOS)
+                addFileLauncher.launch("*/*")
                 true
             }
             R.id.option_menu_rename-> {
@@ -561,21 +566,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intent)
-
-        val uris = arrayListOf<Uri>()
-        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ADD_PHOTOS) {
-            intent?.clipData?.apply { for (i in 0 until itemCount) uris.add(getItemAt(i).uri) } ?: uris.add(intent?.data!!)
-
-            if (uris.isNotEmpty()) {
-                parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
-                    AcquiringDialogFragment.newInstance(uris, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
-                }
-            }
-        }
     }
 
     override fun onResult(positive: Boolean, requestCode: Int) {
@@ -852,7 +842,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val DELETE_REQUEST_CODE = 0
         private const val RENAME_REQUEST_CODE = 1
 
-        private const val REQUEST_ADD_PHOTOS = 7373
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"

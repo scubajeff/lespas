@@ -1,8 +1,6 @@
 package site.leos.apps.lespas.album
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
@@ -10,6 +8,8 @@ import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
@@ -62,6 +62,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     private var receivedShareMenu: MenuItem? = null
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
+    private lateinit var addFileLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -69,6 +71,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
         setHasOptionsMenu(true)
 
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+            if (it.isNotEmpty()) {
+                uris.clear()
+                uris.addAll(it)
+                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
+                    DestinationDialogFragment.newInstance(uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+            }
+        }
         destinationModel.getDestination().observe (this, { album->
             // Acquire files
             album?.apply {
@@ -183,15 +193,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         }
 
 
-        fab.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                type = "*/*"
-                addCategory(Intent.CATEGORY_OPENABLE)
-                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                putExtra(Intent.EXTRA_LOCAL_ONLY, true)
-            }
-            startActivityForResult(intent, REQUEST_FOR_IMAGES)
-        }
+        fab.setOnClickListener { addFileLauncher.launch("*/*") }
     }
 
     override fun onResume() {
@@ -214,24 +216,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         recyclerView.adapter = null
 
         super.onDestroyView()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intent)
-
-        if (resultCode == Activity.RESULT_OK) {
-            when(requestCode) {
-                REQUEST_FOR_IMAGES-> {
-                    uris.clear()
-                    intent?.clipData?.apply {for (i in 0 until itemCount) uris.add(getItemAt(i).uri)} ?: uris.add(intent?.data!!)
-
-                    if (uris.isNotEmpty()) {
-                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                            DestinationDialogFragment.newInstance(uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                    }
-                }
-            }
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -477,7 +461,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     }
 
     companion object {
-        const val REQUEST_FOR_IMAGES = 1111
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
