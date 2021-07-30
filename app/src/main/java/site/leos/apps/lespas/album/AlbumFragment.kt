@@ -43,7 +43,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener {
+class AlbumFragment : Fragment(), ActionMode.Callback {
     private var actionMode: ActionMode? = null
     private lateinit var mAdapter: AlbumListAdapter
     private lateinit var recyclerView: RecyclerView
@@ -194,6 +194,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
 
 
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
+
+        // Delete album confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                    val albums = mutableListOf<Album>()
+                    // Selection key is Album.id
+                    for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
+                    actionModel.deleteAlbums(albums)
+                }
+                selectionTracker.clearSelection()
+            }
+        }
     }
 
     override fun onResume() {
@@ -284,10 +297,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
-                    it.setTargetFragment(this, 0)
-                    it.show(parentFragmentManager, "CONFIRM_DIALOG")
-                }
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, "CONFIRM_DIALOG")
                 true
             }
             R.id.share -> {
@@ -303,16 +313,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnR
         selectionTracker.clearSelection()
         actionMode = null
         fab.isEnabled = true
-    }
-
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) {
-            val albums = mutableListOf<Album>()
-            // Selection key is Album.id
-            for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
-            actionModel.deleteAlbums(albums)
-        }
-        selectionTracker.clearSelection()
     }
 
     private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {

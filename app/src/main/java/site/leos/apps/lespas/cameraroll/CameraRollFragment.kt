@@ -64,7 +64,7 @@ import java.time.format.TextStyle
 import java.util.*
 import kotlin.math.roundToInt
 
-class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
+class CameraRollFragment : Fragment() {
     private lateinit var controlViewGroup: ConstraintLayout
     private lateinit var mediaPager: RecyclerView
     private lateinit var quickScroll: RecyclerView
@@ -138,11 +138,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                 sharedElements?.put(names?.get(0)!!, mediaPager.findViewHolderForAdapterPosition(camerarollModel.getCurrentMediaIndex())?.itemView?.findViewById(R.id.media)!!)}
         })
 
-        // On Android 11 and above, result handler of media deletion request
-        deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result->
-            if (result.resultCode == Activity.RESULT_OK) camerarollModel.removeCurrentMedia()
-        }
-
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             when {
                 isGranted -> observeCameraRoll()
@@ -199,10 +194,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).build())
             }
-            else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let{
-                it.setTargetFragment(this, DELETE_MEDIA_REQUEST_CODE)
-                it.show(parentFragmentManager, CONFIRM_DIALOG)
-            }
+            else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, CONFIRM_DIALOG)
         }
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
@@ -293,6 +285,17 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         })
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+
+        // Removing medias confirm result handler
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) camerarollModel.removeCurrentMedia()
+            }
+        } else {
+            parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+                if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) camerarollModel.removeCurrentMedia()
+            }
+        }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -360,11 +363,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
 
         super.onDestroy()
-    }
-
-    // From ConfirmDialogFragment for media deletion
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) camerarollModel.removeCurrentMedia()
     }
 
     private fun observeCameraRoll() {
@@ -870,9 +868,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val DELETE_MEDIA_REQUEST_CODE = 3399
-
-        private const val STORAGE_PERMISSION_REQUEST = 6464
 
         private const val PLAYER_STATE = "PLAYER_STATE"
 

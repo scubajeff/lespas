@@ -58,7 +58,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragment.OnResultListener {
+class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var album: Album
     private var actionMode: ActionMode? = null
     private lateinit var stub: View
@@ -374,17 +374,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Rename result handler
-        parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, this) { key, bundle->
+        parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
             if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
                 bundle.getString(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
                     if (newName != album.name) {
                         CoroutineScope(Dispatchers.Main).launch(Dispatchers.IO) {
                             if (albumModel.isAlbumExisted(newName)) {
                                 withContext(Dispatchers.Main) {
-                                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok)).let {
-                                        it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_root), RENAME_REQUEST_CODE)
-                                        it.show(parentFragmentManager, CONFIRM_DIALOG)
-                                    }
+                                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok), false).show(parentFragmentManager, CONFIRM_DIALOG)
                                 }
                             } else {
                                 with(sharedByMe.with.isNotEmpty()) {
@@ -396,6 +393,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // Confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY) == DELETE_REQUEST_KEY) {
+                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                        val photos = mutableListOf<Photo>()
+                        for (i in selectionTracker.selection)
+                            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                        // TODO publish status is not persistent locally
+                        //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
+                        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                    }
+                    selectionTracker.clearSelection()
                 }
             }
         }
@@ -515,11 +529,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
-                    it.setTargetFragment(this, DELETE_REQUEST_CODE)
-                    it.show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.share -> {
@@ -587,20 +597,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
     override fun onDestroyActionMode(mode: ActionMode?) {
         selectionTracker.clearSelection()
         actionMode = null
-    }
-
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) {
-            if (requestCode == DELETE_REQUEST_CODE) {
-                val photos = mutableListOf<Photo>()
-                for (i in selectionTracker.selection)
-                    mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-                // TODO publish status is not persistent locally
-                //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
-                if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
-            }
-        }
-        selectionTracker.clearSelection()
     }
 
     private fun updateSortOrder(newOrder: Int) {
@@ -837,8 +833,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback, ConfirmDialogFragme
         private const val SHARED_SELECTION = "SHARED_SELECTION"
         private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"
 
-        private const val DELETE_REQUEST_CODE = 0
-        private const val RENAME_REQUEST_CODE = 1
+        private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
 
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
 
