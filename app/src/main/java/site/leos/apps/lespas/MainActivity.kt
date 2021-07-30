@@ -37,7 +37,7 @@ import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.util.concurrent.Executors
 
-class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener {
+class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var toolbar: MaterialToolbar
     private lateinit var sp: SharedPreferences
@@ -56,14 +56,25 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
+            if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                    CONFIRM_RESTART_DIALOG-> {
+                        WorkManager.getInstance(this).pruneWork()
+                        navigateUpTo(Intent(this, MainActivity::class.java))
+                        startActivity(intent)
+                    }
+                    CONFIRM_REQUIRE_SD_DIALOG-> finish()
+                }
+            }
+        }
+
         val account: Account = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0]
         if (savedInstanceState == null) {
             if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
-                if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false).let {
-                    it.setRequestCode(CONFIRM_REQUIRE_SD_REQUEST_CODE)
-                    it.show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
-                }
+                if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
+                    .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
             } else {
                 // Syncing server changes at startup
                 ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
@@ -73,7 +84,7 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
                 })
 
                 // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED                ) sp.edit {
+                if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
                     putBoolean(getString(R.string.snapseed_pref_key), false)
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                 }
@@ -119,17 +130,6 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
         return true
     }
 
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        when(requestCode) {
-            CONFIRM_RESTART_REQUEST_CODE-> {
-                WorkManager.getInstance(this).pruneWork()
-                navigateUpTo(Intent(this, MainActivity::class.java))
-                startActivity(intent)
-            }
-            CONFIRM_REQUIRE_SD_REQUEST_CODE-> finish()
-        }
-    }
-
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         supportFragmentManager.run {
@@ -151,10 +151,8 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
             try {
                 workInfos?.get(0)?.apply {
                     if (state.isFinished) {
-                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), null, false).let {
-                            it.setRequestCode(CONFIRM_RESTART_REQUEST_CODE)
-                            it.show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
-                        }
+                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), null, false, CONFIRM_RESTART_DIALOG)
+                            .show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
                     }
                 }
             } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
@@ -188,9 +186,8 @@ class MainActivity : AppCompatActivity(), ConfirmDialogFragment.OnResultListener
     }
 
     companion object {
-        private const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
-        private const val CONFIRM_RESTART_REQUEST_CODE = 5354
-        private const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
-        private const val CONFIRM_REQUIRE_SD_REQUEST_CODE = 5453
+        const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
+        const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
+        const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
     }
 }

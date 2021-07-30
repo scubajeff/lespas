@@ -39,7 +39,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
-class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener, ConfirmDialogFragment.OnResultListener {
+class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
     private lateinit var window: Window
     private lateinit var controlsContainer: LinearLayout
@@ -193,10 +193,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let {
-                        it.setTargetFragment(parentFragmentManager.findFragmentById(R.id.container_bottom_toolbar), 0)
-                        it.show(parentFragmentManager, REMOVE_DIALOG)
-                    }
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, REMOVE_DIALOG)
             }
         }
 
@@ -221,6 +218,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
 
         LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+
+        // Remove photo confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) currentPhotoModel.removePhoto()
+        }
     }
 
     override fun onDestroyView() {
@@ -256,11 +258,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         else hideHandler.removeCallbacks(hideSystemUI)
-    }
-
-    // Remove current photo after confirmation
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) currentPhotoModel.removePhoto()
     }
 
     // Hide/Show controls, status bar, navigation bar

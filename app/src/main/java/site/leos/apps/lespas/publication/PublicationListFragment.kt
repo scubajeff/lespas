@@ -18,7 +18,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 
-class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListener {
+class PublicationListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
 
     private lateinit var shareListAdapter: ShareListAdapter
@@ -35,10 +35,7 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
             { share ->
                 shareSelected = share
                 if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), getString(R.string.yes_i_do)).let {
-                        it.setTargetFragment(this, CONFIRM_DOWNLOAD_PUBLICATION_CODE)
-                        it.show(parentFragmentManager, CONFIRM_DIALOG)
-                    }
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), getString(R.string.yes_i_do)).show(parentFragmentManager, CONFIRM_DIALOG)
                 } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
@@ -68,6 +65,11 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
 
         lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}
 */
+
+        // Use mobile data confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) viewDetail()
+        }
     }
 
     override fun onResume() {
@@ -97,10 +99,6 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
             }
             else-> false
         }
-
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (requestCode == CONFIRM_DOWNLOAD_PUBLICATION_CODE && positive) viewDetail()
-    }
 
     private fun viewDetail() {
         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
@@ -140,7 +138,6 @@ class PublicationListFragment: Fragment(), ConfirmDialogFragment.OnResultListene
 
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val CONFIRM_DOWNLOAD_PUBLICATION_CODE = 7878
 
         private const val SELECTED_SHARE = "SELECTED_SHARE"
     }

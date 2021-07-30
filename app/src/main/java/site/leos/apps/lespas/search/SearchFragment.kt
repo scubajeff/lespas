@@ -20,7 +20,7 @@ import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 
-class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
+class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
@@ -61,10 +61,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
             else if (noAlbum)
                 parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
-                    ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).let {
-                        it.setTargetFragment(this@SearchFragment, LEAVE_REQUEST_CODE)
-                        it.show(parentFragmentManager, CONFIRM_DIALOG)
-                    }
+                    ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
         }
     }
@@ -77,6 +74,11 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
         view.findViewById<RecyclerView>(R.id.category_list).apply {
             adapter = categoryAdapter
+        }
+
+        // Not ready to search confirm exit dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) parentFragmentManager.popBackStack()
         }
     }
 
@@ -138,10 +140,6 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         if (lastSelection != 0) destinationToggleGroup?.check(lastSelection)
     }
 
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive && requestCode == LEAVE_REQUEST_CODE) parentFragmentManager.popBackStack()
-    }
-
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             fun bind(category: SearchCategory) {
@@ -181,7 +179,6 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
 //        private const val STORAGE_PERMISSION_REQUEST = 8900
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val LEAVE_REQUEST_CODE = 1
 
         @JvmStatic
         fun newInstance(noAlbum: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(NO_ALBUM, noAlbum) }}

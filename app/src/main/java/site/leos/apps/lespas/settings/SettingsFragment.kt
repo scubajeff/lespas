@@ -41,7 +41,7 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.sync.SyncAdapter
 
 
-class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnResultListener {
+class SettingsFragment : PreferenceFragmentCompat() {
     private var summaryString: String? = null
     private var totalSize = -1L
     private lateinit var volume: MutableList<StorageVolume>
@@ -53,6 +53,32 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
         savedInstanceState?.let {
             summaryString = it.getString(STATISTIC_SUMMARY_STRING)
             totalSize = it.getLong(STATISTIC_TOTAL_SIZE)
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                    when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                        LOGOUT_CONFIRM_DIALOG -> {
+                            AccountManager.get(context).apply { removeAccountExplicitly(getAccountsByType(getString(R.string.account_type_nc))[0]) }
+                            (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
+                            requireActivity().packageManager.setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+                            requireActivity().finish()
+                        }
+                        PERMISSION_RATIONALE_REQUEST_DIALOG-> {
+                            requestPermissions(arrayOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
+                        }
+                    }
+                } else {
+                    if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "") == PERMISSION_RATIONALE_REQUEST_DIALOG)
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+                }
+            }
         }
     }
 
@@ -108,10 +134,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                 if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
                     if (shouldShowRequestPermissionRationale(permission)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request)).let { fragment->
-                                fragment.setTargetFragment(this, PERMISSION_RATIONALE_REQUEST_CODE)
-                                fragment.show(parentFragmentManager, CONFIRM_DIALOG)
-                            }
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, PERMISSION_RATIONALE_REQUEST_DIALOG)
+                                .show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     } else requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
 
@@ -221,11 +245,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                 true
             }
             getString(R.string.logout_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.logout_dialog_msg, accounts[0].name), getString(R.string.yes_logout)).let {
-                    it.setTargetFragment(this, LOGOUT_CONFIRM_REQUEST_CODE)
-                    it.show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.logout_dialog_msg, accounts[0].name), getString(R.string.yes_logout), true, LOGOUT_CONFIRM_DIALOG)
+                    .show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             getString(R.string.auto_theme_perf_key) -> {
@@ -252,10 +273,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
             }
             getString(R.string.transfer_pref_key) -> {
                 if (ContentResolver.isSyncActive(accounts[0], getString(R.string.sync_authority))) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), null, false).let {
-                        it.setTargetFragment(this, IS_SYNCING_REQUEST_CODE)
-                        it.show(parentFragmentManager, CONFIRM_DIALOG)
-                    }
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), null, false)
+                        .show(parentFragmentManager, CONFIRM_DIALOG)
                 }
                 else
                     if (parentFragmentManager.findFragmentByTag(TRANSFER_FILES_DIALOG) == null) TransferStorageDialog.newInstance(getString(R.string.confirm_transferring_message, preference.title)).show(parentFragmentManager, TRANSFER_FILES_DIALOG)
@@ -292,25 +311,6 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
                     }
                 }
             }
-        }
-    }
-
-    override fun onResult(positive: Boolean, requestCode: Int) {
-        if (positive) {
-            when (requestCode) {
-                LOGOUT_CONFIRM_REQUEST_CODE -> {
-                    AccountManager.get(context).apply { removeAccountExplicitly(getAccountsByType(getString(R.string.account_type_nc))[0]) }
-                    (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
-                    requireActivity().packageManager.setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
-                    requireActivity().finish()
-                }
-                PERMISSION_RATIONALE_REQUEST_CODE -> {
-                    requestPermissions(arrayOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
-                }
-            }
-        } else {
-            // If user choose not to proceed with permission granting, reset Snapseed integration to False
-            if (requestCode == PERMISSION_RATIONALE_REQUEST_CODE) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
         }
     }
 
@@ -381,9 +381,8 @@ class SettingsFragment : PreferenceFragmentCompat(), ConfirmDialogFragment.OnRes
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val TRANSFER_FILES_DIALOG = "CONFIRM_MOVING_DIALOG"
-        private const val LOGOUT_CONFIRM_REQUEST_CODE = 100
-        private const val PERMISSION_RATIONALE_REQUEST_CODE = 101
-        private const val IS_SYNCING_REQUEST_CODE = 102
+        private const val LOGOUT_CONFIRM_DIALOG = "LOGOUT_CONFIRM_DIALOG"
+        private const val PERMISSION_RATIONALE_REQUEST_DIALOG = "PERMISSION_RATIONALE_REQUEST_DIALOG"
         private const val STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED = 8989
         private const val STORAGE_PERMISSION_REQUEST_FOR_BACKUP = 9090
 
