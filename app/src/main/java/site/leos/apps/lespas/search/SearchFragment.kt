@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -26,6 +28,8 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     private var noAlbum = true
     // Flag indicating showing Snackbar when clicking search album button
     private var onMenuCreation = true
+
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +56,17 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         savedInstanceState?.apply { lastSelection = getInt(LAST_SELECTION) }
 
         noAlbum = arguments?.getBoolean(NO_ALBUM) == true
+
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
+            else if (noAlbum)
+                parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
+                    ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).let {
+                        it.setTargetFragment(this@SearchFragment, LEAVE_REQUEST_CODE)
+                        it.show(parentFragmentManager, CONFIRM_DIALOG)
+                    }
+                }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -99,7 +114,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
                     R.id.search_cameraroll-> {
                         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
                         if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                            requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST)
+                            storagePermissionRequestLauncher.launch(permission)
                             if (!noAlbum) this.check(R.id.search_album)
                         }
                     }
@@ -121,17 +136,6 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         if (lastSelection != 0) destinationToggleGroup?.check(lastSelection)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == STORAGE_PERMISSION_REQUEST && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) destinationToggleGroup?.check(R.id.search_cameraroll)
-        else if (noAlbum)
-            parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
-                ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).let {
-                    it.setTargetFragment(this@SearchFragment, LEAVE_REQUEST_CODE)
-                    it.show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-            }
     }
 
     override fun onResult(positive: Boolean, requestCode: Int) {
@@ -175,7 +179,7 @@ class SearchFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         private const val NO_ALBUM = "NO_ALBUM"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
-        private const val STORAGE_PERMISSION_REQUEST = 8900
+//        private const val STORAGE_PERMISSION_REQUEST = 8900
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val LEAVE_REQUEST_CODE = 1
 

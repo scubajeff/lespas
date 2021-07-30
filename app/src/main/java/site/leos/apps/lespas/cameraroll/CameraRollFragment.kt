@@ -90,6 +90,8 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
 
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
 
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -140,6 +142,14 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result->
             if (result.resultCode == Activity.RESULT_OK) camerarollModel.removeCurrentMedia()
         }
+
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            when {
+                isGranted -> observeCameraRoll()
+                requireActivity() is MainActivity -> parentFragmentManager.popBackStack()
+                else -> requireActivity().finish()
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -187,7 +197,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             toggleControlView(false)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).setFlags(0, 0).build())
+                deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).build())
             }
             else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).let{
                 it.setTargetFragment(this, DELETE_MEDIA_REQUEST_CODE)
@@ -269,9 +279,7 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
             observeCameraRoll()
         } ?: run {
             val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST)
-            }
+            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) storagePermissionRequestLauncher.launch(permission)
             else observeCameraRoll()
         }
 
@@ -352,13 +360,6 @@ class CameraRollFragment : Fragment(), ConfirmDialogFragment.OnResultListener {
         }
 
         super.onDestroy()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == STORAGE_PERMISSION_REQUEST) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) observeCameraRoll()
-            else if (requireActivity() is MainActivity) parentFragmentManager.popBackStack() else requireActivity().finish()
-        }
     }
 
     // From ConfirmDialogFragment for media deletion
