@@ -252,9 +252,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
                     } else {
                         // TODO show special error message when there are just some duplicate in uris
-                        //photoRepository.changeName(album.id, fileId, fileName)
                         if (uris.size == 1) setProgress(SAME_FILE_EXISTED, "")
-                        return@launch
+                        else setProgress(index, fileId)
                     }
                 }
 
