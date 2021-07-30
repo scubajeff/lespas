@@ -169,17 +169,17 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
                     // Validate the name
-                    val name = this.text.toString().trim()    // Trim the leading and trailing blank
-
-                    if (error != null)
-                    else if (name.isEmpty())
-                    else if (isAlbumExisted(name)) this.error = getString(R.string.album_existed)
-                    else {
-                        destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                        // Return with album id field empty, calling party will know this is a new album
-                        destinationModel.setDestination(Album("", name,
-                            LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
-                        dismiss()
+                    error ?: run {
+                        val name = this.text.toString().trim()    // Trim the leading and trailing blank
+                        if (name.isNotEmpty()) {
+                            if (isAlbumExisted(name)) this.error = getString(R.string.album_existed)
+                            else {
+                                destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
+                                // Return with album id field empty, calling party will know this is a new album
+                                destinationModel.setDestination(Album("", name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
+                                dismiss()
+                            }
+                        }
                     }
                     true
                 } else false

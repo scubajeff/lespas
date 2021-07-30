@@ -26,13 +26,12 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
-                    val name = this.text.toString().trim()    // Trim the leading and trailing blank
-
-                    if (error != null)
-                    else if (name.isEmpty())
-                    else {
-                        parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply { putString(RESULT_KEY_NEW_NAME, name) })
-                        dismiss()
+                    error ?: run {
+                        val name = this.text.toString().trim()    // Trim the leading and trailing blank
+                        if (name.isNotEmpty()) {
+                            parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply { putString(RESULT_KEY_NEW_NAME, name) })
+                            dismiss()
+                        }
                     }
                 }
                 true
