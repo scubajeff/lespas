@@ -103,53 +103,46 @@ class SearchResultFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        postponeEnterTransition()
-
         searchResultRecyclerView = view.findViewById(R.id.photogrid)
+        searchResultRecyclerView.adapter = searchResultAdapter
+        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
+
         stub = view.findViewById(R.id.stub)
         emptyView = view.findViewById(R.id.emptyview)
         if (arguments?.getBoolean(SEARCH_COLLECTION)!!) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
 
         searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
                 if (searchResultAdapter.itemCount == 0) {
                     searchResultRecyclerView.visibility = View.GONE
                     emptyView.visibility = View.VISIBLE
-                } else {
-                    searchResultRecyclerView.visibility = View.VISIBLE
-                    emptyView.visibility = View.GONE
                 }
+            }
+
+            private fun hideEmptyView() {
+                searchResultRecyclerView.visibility = View.VISIBLE
+                emptyView.visibility = View.GONE
             }
 
             override fun onChanged() {
                 super.onChanged()
-                toggleEmptyView()
+                hideEmptyView()
             }
 
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
+                hideEmptyView()
             }
         })
 
-        searchResultRecyclerView.adapter = searchResultAdapter
-
-        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
         adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished ->
             if (finished) loadingIndicator?.apply {
                 isVisible = false
                 isEnabled = false
             }
         })
+
+        if (searchResultAdapter.itemCount !=0 ) postponeEnterTransition()
     }
 
     override fun onResume() {
