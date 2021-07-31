@@ -144,6 +144,7 @@ class PublicationDetailFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
             photoListAdapter.submitList(it) {
+                // Setup UI in this submitList commitCallback
                 loadingIndicator?.run {
                     isEnabled = false
                     isVisible = false
