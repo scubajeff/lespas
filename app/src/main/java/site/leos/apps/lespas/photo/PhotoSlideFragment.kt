@@ -77,7 +77,10 @@ class PhotoSlideFragment : Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                sharedElements?.put(names?.get(0)!!, slider.getChildAt(0).findViewById(R.id.media))}
+                try {
+                    sharedElements?.put(names?.get(0)!!, slider.getChildAt(0).findViewById(R.id.media))
+                } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
+            }
         })
 
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)

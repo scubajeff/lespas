@@ -135,7 +135,10 @@ class CameraRollFragment : Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                sharedElements?.put(names?.get(0)!!, mediaPager.findViewHolderForAdapterPosition(camerarollModel.getCurrentMediaIndex())?.itemView?.findViewById(R.id.media)!!)}
+                try {
+                    sharedElements?.put(names?.get(0)!!, mediaPager.findViewHolderForAdapterPosition(camerarollModel.getCurrentMediaIndex())?.itemView?.findViewById(R.id.media)!!)
+                } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
+            }
         })
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
