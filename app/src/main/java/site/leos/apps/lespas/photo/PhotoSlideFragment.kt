@@ -233,10 +233,7 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         })
-    }
 
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
         // Setup basic UI here because BottomControlsFragment might be replaced by CoverSettingFragment
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
         requireActivity().window.run {

@@ -153,6 +153,8 @@ class CameraRollFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
+
         postponeEnterTransition()
 
         view.setBackgroundColor(Color.BLACK)
@@ -296,11 +298,6 @@ class CameraRollFragment : Fragment() {
                 if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) camerarollModel.removeCurrentMedia()
             }
         }
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
     }
 
     override fun onStart() {
