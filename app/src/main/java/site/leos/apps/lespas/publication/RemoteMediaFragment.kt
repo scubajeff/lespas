@@ -30,6 +30,7 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.AnimatedViewHolder
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.PhotoViewHolder
 import java.io.File
@@ -254,17 +255,6 @@ class RemoteMediaFragment: Fragment() {
             }
         }
 
-        inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindView(photo: NCShareViewModel.RemotePhoto) {
-                itemView.findViewById<ImageView>(R.id.media).apply {
-                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                    setOnClickListener { clickListener() }
-                    ViewCompat.setTransitionName(this, photo.fileId)
-                }
-            }
-        }
-
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private lateinit var videoView: PlayerView
             private lateinit var thumbnailView: ImageView
@@ -397,7 +387,7 @@ class RemoteMediaFragment: Fragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is VideoViewHolder -> holder.bindView(getItem(position))
-                is AnimatedViewHolder -> holder.bindView(getItem(position))
+                is AnimatedViewHolder -> holder.bind(getItem(position), getItem(position).fileId, imageLoader as (Any, ImageView, String) -> Unit, clickListener)
                 else-> (holder as PhotoViewHolder).bind(getItem(position), getItem(position).fileId, imageLoader as (Any, ImageView, String) -> Unit, clickListener)
             }
         }

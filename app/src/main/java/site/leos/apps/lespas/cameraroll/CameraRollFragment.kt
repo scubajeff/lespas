@@ -31,7 +31,6 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -546,16 +545,6 @@ class CameraRollFragment : Fragment() {
             }
         }
 
-        inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bind(photo: Photo) {
-                itemView.findViewById<ImageView>(R.id.media).apply {
-                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                    setOnClickListener { photoClickListener() }
-                    ViewCompat.setTransitionName(this, photo.id)
-                }
-            }
-        }
-
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private lateinit var videoView: PlayerView
             private lateinit var muteButton: ImageButton
@@ -677,7 +666,7 @@ class CameraRollFragment : Fragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is PhotoViewHolder-> holder.bind(getItem(position), getItem(position).id, imageLoader as (Any, ImageView, String) -> Unit, photoClickListener)
-                is AnimatedViewHolder -> holder.bind(getItem(position))
+                is AnimatedViewHolder -> holder.bind(getItem(position), getItem(position).id, imageLoader as (Any, ImageView, String) -> Unit, photoClickListener)
                 else-> (holder as VideoViewHolder).bind(getItem(position))
             }
         }

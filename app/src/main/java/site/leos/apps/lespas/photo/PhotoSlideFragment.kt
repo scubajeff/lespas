@@ -38,10 +38,7 @@ import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.PhotoViewHolder
-import site.leos.apps.lespas.helper.SnapseedResultWorker
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 import java.time.LocalDateTime
@@ -334,17 +331,6 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            @SuppressLint("ClickableViewAccessibility")
-            fun bindViewItems(photo: Photo) {
-                itemView.findViewById<ImageView>(R.id.media).apply {
-                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                    setOnClickListener { itemListener() }
-                    ViewCompat.setTransitionName(this, photo.id)
-                }
-            }
-        }
-
         inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private lateinit var videoView: PlayerView
             private lateinit var thumbnailView: ImageView
@@ -479,7 +465,7 @@ class PhotoSlideFragment : Fragment() {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
                 is VideoViewHolder-> holder.bindViewItems(photos[position])
-                is AnimatedViewHolder-> holder.bindViewItems(photos[position])
+                is AnimatedViewHolder-> holder.bind(photos[position], photos[position].id, imageLoader as (Any, ImageView, String) -> Unit, itemListener)
                 else-> (holder as PhotoViewHolder).bind(photos[position], photos[position].id, imageLoader as (Any, ImageView, String) -> Unit, itemListener)
             }
         }
