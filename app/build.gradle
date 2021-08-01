@@ -17,11 +17,11 @@ android {
         versionName '2.2.1'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        archivesBaseName = 'LesPas-v$versionName'
-        resValue 'string', 'sync_authority', '${applicationId}.StubProvider'
-        resValue 'string', 'file_authority', '${applicationId}.fileProvider'
-        resValue 'string', 'muzei_authority', '${applicationId}.muzei.ArtProvider'
-        resValue 'string', 'lespas_version', 'v${versionName}'
+        archivesBaseName = "LesPas-v$versionName"
+        resValue 'string', 'lespas_version', "v${versionName}"
+        resValue 'string', 'sync_authority', "${applicationId}.StubProvider"
+        resValue 'string', 'file_authority', "${applicationId}.fileProvider"
+        resValue 'string', 'muzei_authority', "${applicationId}.muzei.ArtProvider"
 
         javaCompileOptions {
             annotationProcessorOptions {
