@@ -23,7 +23,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -32,6 +31,7 @@ import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.PhotoViewHolder
 import java.io.File
 import java.time.LocalDateTime
 
@@ -254,19 +254,6 @@ class RemoteMediaFragment: Fragment() {
             }
         }
 
-        inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindView(photo: NCShareViewModel.RemotePhoto) {
-                itemView.findViewById<PhotoView>(R.id.media).apply {
-                    imageLoader(photo, this as ImageView, ImageLoaderViewModel.TYPE_FULL)
-                    setOnPhotoTapListener { _, _, _ -> clickListener() }
-                    setOnOutsidePhotoTapListener { clickListener() }
-                    maximumScale = 5.0f
-                    mediumScale = 2.5f
-                    ViewCompat.setTransitionName(this, photo.fileId)
-                }
-            }
-        }
-
         inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindView(photo: NCShareViewModel.RemotePhoto) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
@@ -411,7 +398,7 @@ class RemoteMediaFragment: Fragment() {
             when(holder) {
                 is VideoViewHolder -> holder.bindView(getItem(position))
                 is AnimatedViewHolder -> holder.bindView(getItem(position))
-                else-> (holder as PhotoViewHolder).bindView(getItem(position))
+                else-> (holder as PhotoViewHolder).bind(getItem(position), getItem(position).fileId, imageLoader as (Any, ImageView, String) -> Unit, clickListener)
             }
         }
 

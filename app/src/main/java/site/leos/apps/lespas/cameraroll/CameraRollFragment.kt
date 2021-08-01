@@ -42,7 +42,6 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.*
-import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
@@ -543,7 +542,7 @@ class CameraRollFragment : Fragment() {
         fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
     }
 
-    class MediaPagerAdapter(private val ctx: Context, private val photoClickListener: (Photo) -> Unit, private val videoClickListener: (Boolean) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class MediaPagerAdapter(private val ctx: Context, private val photoClickListener: () -> Unit, private val videoClickListener: (Boolean) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var exoPlayer: SimpleExoPlayer
         private var currentVolume = 0f
@@ -561,22 +560,6 @@ class CameraRollFragment : Fragment() {
             }
         }
 
-        inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bind(photo: Photo) {
-                itemView.findViewById<PhotoView>(R.id.media).apply {
-                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-
-                    setOnPhotoTapListener { _, _, _ ->  photoClickListener(photo) }
-                    setOnOutsidePhotoTapListener { photoClickListener(photo) }
-
-                    maximumScale = 5.0f
-                    mediumScale = 2.5f
-
-                    ViewCompat.setTransitionName(this, photo.id)
-                }
-            }
-        }
-
         inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             @SuppressLint("ClickableViewAccessibility")
             fun bind(photo: Photo) {
@@ -587,7 +570,7 @@ class CameraRollFragment : Fragment() {
                         //setImageBitmap(BitmapFactory.decodeStream(this.context.contentResolver.openInputStream(Uri.parse(photo.id))))
                         imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                     }
-                    setOnClickListener { photoClickListener(photo) }
+                    setOnClickListener { photoClickListener() }
                     ViewCompat.setTransitionName(this, photo.id)
                 }
             }
@@ -713,7 +696,7 @@ class CameraRollFragment : Fragment() {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             when(holder) {
-                is PhotoViewHolder-> holder.bind(getItem(position))
+                is PhotoViewHolder-> holder.bind(getItem(position), getItem(position).id, imageLoader as (Any, ImageView, String) -> Unit, photoClickListener)
                 is AnimatedViewHolder -> holder.bind(getItem(position))
                 else-> (holder as VideoViewHolder).bind(getItem(position))
             }

@@ -30,7 +30,6 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
-import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -41,6 +40,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.PhotoViewHolder
 import site.leos.apps.lespas.helper.SnapseedResultWorker
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -166,7 +166,7 @@ class PhotoSlideFragment : Fragment() {
             { uiModel.toggleOnOff() },
         ) { photo, imageView, type ->
             if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
-            else imageLoaderModel.loadPhoto(photo, imageView as ImageView, type) { startPostponedEnterTransition() }}
+            else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
 
         savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
 
@@ -315,7 +315,7 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
-    class PhotoSlideAdapter(private val ctx: Context, private val rootPath: String, private val itemListener: OnTouchListener, private val imageLoader: OnLoadImage
+    class PhotoSlideAdapter(private val ctx: Context, private val rootPath: String, private val itemListener: () -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         private var photos = emptyList<Photo>()
 
@@ -335,28 +335,12 @@ class PhotoSlideFragment : Fragment() {
             }
         }
 
-        fun interface OnTouchListener { fun onTouch() }
-        fun interface OnLoadImage { fun loadImage(photo: Photo, view: View, type: String) }
-
-        inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(photo: Photo) {
-                itemView.findViewById<PhotoView>(R.id.media).apply {
-                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                    setOnPhotoTapListener { _, _, _ -> itemListener.onTouch() }
-                    setOnOutsidePhotoTapListener { itemListener.onTouch() }
-                    maximumScale = 5.0f
-                    mediumScale = 2.5f
-                    ViewCompat.setTransitionName(this, photo.id)
-                }
-            }
-        }
-
         inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(photo: Photo) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
                     // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
 
                     var fileName = "$rootPath/${photo.id}"
                     if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
@@ -367,7 +351,7 @@ class PhotoSlideFragment : Fragment() {
                     }
                     setOnTouchListener { _, event ->
                         if (event.action == MotionEvent.ACTION_DOWN) {
-                            itemListener.onTouch()
+                            itemListener()
                             true
                         } else false
                     }
@@ -395,7 +379,7 @@ class PhotoSlideFragment : Fragment() {
                 muteButton = itemView.findViewById(R.id.exo_mute)
                 videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
                     controllerShowTimeoutMs = 3000
-                    setOnClickListener { itemListener.onTouch() }
+                    setOnClickListener { itemListener() }
                 }
 
                 var fileName = "$rootPath/${video.id}"
@@ -411,12 +395,12 @@ class PhotoSlideFragment : Fragment() {
                         applyTo(it)
                     }
 
-                    it.setOnClickListener { itemListener.onTouch() }
+                    it.setOnClickListener { itemListener() }
                 }
 
                 thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {
                     // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader.loadImage(video, this, ImageLoaderViewModel.TYPE_FULL)
+                    imageLoader(video, this, ImageLoaderViewModel.TYPE_FULL)
                     ViewCompat.setTransitionName(this, video.id)
                 }
 
@@ -511,7 +495,7 @@ class PhotoSlideFragment : Fragment() {
             when(holder) {
                 is VideoViewHolder-> holder.bindViewItems(photos[position])
                 is AnimatedViewHolder-> holder.bindViewItems(photos[position])
-                else-> (holder as PhotoViewHolder).bindViewItems(photos[position])
+                else-> (holder as PhotoViewHolder).bind(photos[position], photos[position].id, imageLoader as (Any, ImageView, String) -> Unit, itemListener)
             }
         }
 
