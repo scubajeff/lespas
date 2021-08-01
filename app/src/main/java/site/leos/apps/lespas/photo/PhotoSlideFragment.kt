@@ -7,7 +7,6 @@ import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.*
-import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
@@ -165,7 +164,7 @@ class PhotoSlideFragment : Fragment() {
             Tools.getLocalRoot(requireContext()),
             { uiModel.toggleOnOff() },
         ) { photo, imageView, type ->
-            if (Tools.isMediaPlayable(photo.mimeType)) startPostponedEnterTransition()
+            if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
             else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
 
         savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
@@ -339,22 +338,8 @@ class PhotoSlideFragment : Fragment() {
             @SuppressLint("ClickableViewAccessibility")
             fun bindViewItems(photo: Photo) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
-                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
                     imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-
-                    var fileName = "$rootPath/${photo.id}"
-                    if (!(File(fileName).exists())) fileName = "$rootPath/${photo.name}"
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName))).apply { if (this is AnimatedImageDrawable) this.start() })
-                    } else {
-                        setImageBitmap(BitmapFactory.decodeFile(fileName))
-                    }
-                    setOnTouchListener { _, event ->
-                        if (event.action == MotionEvent.ACTION_DOWN) {
-                            itemListener()
-                            true
-                        } else false
-                    }
+                    setOnClickListener { itemListener() }
                     ViewCompat.setTransitionName(this, photo.id)
                 }
             }

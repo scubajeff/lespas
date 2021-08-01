@@ -1,11 +1,15 @@
 package site.leos.apps.lespas.helper
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.Drawable
 import android.media.ThumbnailUtils
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
@@ -35,8 +39,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         fun onLoadComplete()
     }
 
-    private fun decodeBitmap(photo: Photo, type: String): Bitmap? {
+    private fun decodeBitmap(photo: Photo, type: String): Pair<Bitmap?, Drawable?> {
         var bitmap: Bitmap? = null
+        var animatedDrawable: Drawable? = null
         var fileName = ""
         var uri = Uri.EMPTY
 
@@ -47,7 +52,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 fileName = "${rootPath}/${photo.id}"
                 if (!(File(fileName).exists())) {
                     fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
-                    if (!File(fileName).exists()) return errorBitmap
+                    if (!File(fileName).exists()) return Pair(errorBitmap, null)
                 }
             } else fileName = "${rootPath}/${if (photo.eTag.isNotEmpty()) photo.id else photo.name}"
         }
@@ -92,21 +97,36 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 TYPE_FULL -> {
                     if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     else {
-                        var bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri)) else BitmapFactory.decodeFile(fileName)
+                        var bmp =
+                            if (photo.albumId == FROM_CAMERA_ROLL) {
+                                // Photo from camera roll doesn't support image/awebp, image/agif
+                                if ((photo.mimeType == "image/webp" || photo.mimeType == "image/gif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(contentResolver, uri))
+                                    null
+                                }
+                                else BitmapFactory.decodeStream(contentResolver.openInputStream(uri))
+                            }
+                            else {
+                                if ((photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName)))
+                                    null
+                                }
+                                else BitmapFactory.decodeFile(fileName)
+                            }
 
                         // If image is too large
                         // TODO hardcoded size
                         bmp?.let {
-                            if (bmp.allocationByteCount > 100000000) {
-                                bmp.recycle()
+                            if (bmp!!.allocationByteCount > 100000000) {
+                                bmp!!.recycle()
                                 val option = BitmapFactory.Options().apply { inSampleSize = 2 }
                                 bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
                             }
                         }
 
                         // Rotate according to EXIF when this photo comes from camera roll
-                        if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) {
-                            bmp = Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true)
+                        bmp?.let {
+                            if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) bmp = Bitmap.createBitmap(bmp!!, 0, 0, photo.width, photo.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true)
                         }
 
                         bmp
@@ -143,11 +163,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 else -> errorBitmap
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            return bitmap
-        }
+        } catch (e: Exception) { e.printStackTrace() }
+
+        return Pair(bitmap, animatedDrawable)
     }
 
     fun invalid(photoId: String) {
@@ -168,13 +186,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
      */
 
+    @SuppressLint("NewApi")
     @JvmOverloads
     fun loadPhoto(photo: Photo, view: ImageView, type: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(Dispatchers.IO) {
-            //var bitmap: Bitmap?
-            var bitmap: Bitmap? = null
+            var decodeResult: Pair<Bitmap?, Drawable?> = Pair(null, null)
+            var bitmap: Bitmap?
             var key = "${photo.id}$type"
 
             // suffix 'baseline' in case same photo chosen
@@ -194,7 +213,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             callBack?.onLoadComplete()
                         }}}
                     }
-                    bitmap = decodeBitmap(photo, type)
+                    decodeResult = decodeBitmap(photo, type)
+                    bitmap = decodeResult.first
                     if (bitmap == null) bitmap = errorBitmap
                     else if (type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
@@ -203,7 +223,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
                 // If we are still active at this moment, set the imageview
                 if (isActive) {
-                    withContext(Dispatchers.Main) { view.setImageBitmap(bitmap) }
+                    withContext(Dispatchers.Main) {
+                        decodeResult.second?.let { view.setImageDrawable(it.apply { (this as AnimatedImageDrawable).start() }) } ?: run { view.setImageBitmap(bitmap) }
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

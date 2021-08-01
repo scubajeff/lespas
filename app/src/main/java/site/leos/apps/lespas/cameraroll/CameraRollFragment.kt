@@ -8,8 +8,6 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.ImageDecoder
-import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -486,18 +484,6 @@ class CameraRollFragment : Fragment() {
                                 // Store orientation in property shareId
                                 photo.shareId = exif.rotationDegrees
                             }
-                            "image/gif" -> {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    // Set my own image/agif mimetype for animated GIF
-                                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/agif"
-                                }
-                            }
-                            "image/webp" -> {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    // Set my own image/agif mimetype for animated GIF
-                                    if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) photo.mimeType = "image/awebp"
-                                }
-                            }
                         }
 
                         BitmapFactory.Options().run {
@@ -561,15 +547,9 @@ class CameraRollFragment : Fragment() {
         }
 
         inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            @SuppressLint("ClickableViewAccessibility")
             fun bind(photo: Photo) {
                 itemView.findViewById<ImageView>(R.id.media).apply {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        setImageDrawable(ImageDecoder.decodeDrawable(ImageDecoder.createSource(this.context.contentResolver, Uri.parse(photo.id))).apply { if (this is AnimatedImageDrawable) start() })
-                    } else {
-                        //setImageBitmap(BitmapFactory.decodeStream(this.context.contentResolver.openInputStream(Uri.parse(photo.id))))
-                        imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                    }
+                    imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                     setOnClickListener { photoClickListener() }
                     ViewCompat.setTransitionName(this, photo.id)
                 }
@@ -725,7 +705,7 @@ class CameraRollFragment : Fragment() {
         override fun getItemViewType(position: Int): Int {
             with(currentList[position].mimeType) {
                 return when {
-                    this == "image/gif" || this == "image/webp" -> TYPE_ANIMATED    // Let viewholder decide how to handle animation
+                    this == "image/gif" || this == "image/webp" -> TYPE_ANIMATED    // Let imageloader decided if it's playable
                     this.startsWith("video/") -> TYPE_VIDEO
                     else -> TYPE_PHOTO
                 }
