@@ -135,8 +135,6 @@ class PublicationDetailFragment: Fragment() {
             adapter = photoListAdapter
         }
 
-        postponeEnterTransition()
-
         return vg
     }
 
@@ -161,6 +159,8 @@ class PublicationDetailFragment: Fragment() {
         })
 
         lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
+
+        if (photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
 
     override fun onResume() {
