@@ -1,0 +1,2 @@
+* Admite la conexión HTTP insegura con el servidor
+* Otras mejoras y errores corregidos

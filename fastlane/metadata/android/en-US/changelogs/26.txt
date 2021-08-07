@@ -1,0 +1,2 @@
+* Support insecure HTTP connection to server
+* Other improvements and bugs fixed
