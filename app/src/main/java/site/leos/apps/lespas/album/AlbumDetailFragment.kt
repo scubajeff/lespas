@@ -353,9 +353,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             hideHandler.removeCallbacksAndMessages(null)
                             dateIndicator.apply {
                                 text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
-                                    mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1)
+                                    mAdapter.getPhotoAt((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1)
                                 else
-                                    mAdapter.getItemByPosition((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                    mAdapter.getPhotoAt((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
                                 visibility = View.VISIBLE
                             }
                         }
@@ -757,9 +757,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             return 0
         }
 
-        internal fun getPhotoAt(position: Int): Photo {
-            return photos[position]
-        }
+        internal fun getPhotoAt(position: Int): Photo = photos[position]
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             recipientText = parent.context.getString(R.string.published_to)
@@ -780,8 +778,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun getItemId(position: Int): Long = position.toLong()
-
-        fun getItemByPosition(position: Int): Photo = photos[position]
 
         fun refreshPhoto(sharedPhoto: Photo) {
             notifyItemChanged(photos.indexOfLast { it.id == sharedPhoto.id })
