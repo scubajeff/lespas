@@ -5,7 +5,7 @@ Caractéristiques :
 - Organisation des photos et vidéos en albums
 - Gérez la liste des photos de votre téléphone et sauvegardez automatiquement sur le serveur.
 - La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditez des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.
-- Partager des albums avec d'autres utilisateurs Nextcloud
+- Partager des albums avec d'autres utilisateurs Nextcloud (vérifier les conditions préalables à l'adresse https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
 - Recherchez des photos par objets avec l'IA
 - Intégration avec Snapseed pour la retouche photo sur les appareils mobiles

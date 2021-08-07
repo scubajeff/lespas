@@ -1,0 +1,2 @@
+* Prise en charge de la connexion HTTP non sécurisée au serveur
+* Autres améliorations et corrections de bugs

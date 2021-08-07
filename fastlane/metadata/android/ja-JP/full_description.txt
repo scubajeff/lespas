@@ -5,7 +5,7 @@ Les Pas」は、無料のオープンソースで、シンプルで効率的、�
 - 写真やビデオをアルバムで整理
 - 携帯電話のカメラロールの管理とサーバーへの自動バックアップ
 - Nextcloudサーバーと複数のデバイス間での同期機能により、Nextcloudサーバーとすべてのモバイルデバイスで同時にアルバムを編集できます。
-- 他のNextcloudユーザーとアルバムを共有
+- 他のNextcloudユーザーとアルバムを共有 (https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server で前提条件を確認します)
 - 自分と他のNextcloudユーザーが一緒に編集できるジョイントアルバム
 - AIを活用した被写体別の写真検索
 - Snapseedと連携してモバイル端末での写真編集が可能

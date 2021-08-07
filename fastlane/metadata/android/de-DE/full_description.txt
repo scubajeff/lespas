@@ -5,7 +5,7 @@ Funktionen:
 - Organisierte Fotos und Videos in Alben
 - Verwalten Sie die Kamerarolle Ihres Handys und erstellen Sie automatisch ein Backup auf dem Server
 - Synchronisation funktioniert mit Nextcloud-Server und zwischen mehreren Geräten, bearbeiten Sie Alben auf Nextcloud-Server und auf allen Ihren mobilen Geräten gleichzeitig
-- Teilen Sie Alben mit anderen Nextcloud-Benutzern
+- Teilen Sie Alben mit anderen Nextcloud-Benutzern (Voraussetzungen prüfen unter https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Gemeinsames Album, das Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
 - Suche nach Fotos nach Objekten mit AI
 - Integration mit Snapseed zur Fotobearbeitung auf mobilen Geräten

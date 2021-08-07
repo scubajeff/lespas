@@ -1,19 +1,19 @@
 Les Pas, es una aplicación de galería gratuita, moderna, ligera y rápida. Organiza tus fotos, GIF y vídeos en álbumes para verlos y compartirlos fácilmente. Con una sincronización bidireccional incorporada con tu servidor Nextcloud, tus archivos se mantienen privados, seguros y a salvo.
 
 Características:
-- Visualisation simple, belle et rapide des photos et vidéos
-- Organisation des photos et vidéos en albums
-- Gérez la liste des photos de votre téléphone et sauvegardez automatiquement sur le serveur.
-- La synchronisation fonctionne avec le serveur Nextcloud et entre plusieurs appareils, éditez des albums sur le serveur Nextcloud et sur tous vos appareils mobiles simultanément.
-- Partager des albums avec d'autres utilisateurs Nextcloud
-- Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
-- Recherchez des photos par objets avec l'IA
-- Intégration avec Snapseed pour la retouche photo sur les appareils mobiles
+- Visualización de fotos y vídeos sencilla, bonita y rápida
+- Fotos y vídeos organizados en álbumes
+- Gestiona el rollo de la cámara de tu teléfono y realiza una copia de seguridad automática en el servidor
+- La sincronización funciona con el servidor Nextcloud y entre múltiples dispositivos, edita álbumes en el servidor Nextcloud y en todos tus dispositivos móviles simultáneamente
+- Comparte álbumes con otros usuarios de Nextcloud (compruebe los requisitos previos en https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
+- Álbumes conjuntos que usted y otros usuarios de Nextcloud pueden editar juntos
+- Búsqueda de fotos por objetos con IA
+- Integración con Snapseed para la edición de fotos en dispositivos móviles
 - Integración con la aplicación Muzei Live Wallpaper
-- Partager sur les réseaux sociaux
-- Conception du thème inspirée des œuvres de Wes Anderson
-- Tous les fichiers sont enregistrés dans le stockage privé de l'application et ne sont plus analysés par des applications malveillantes.
-- Source ouverte
+- Compartir en las redes sociales
+- Diseño del tema inspirado en las obras de Wes Anderson
+- Todos los archivos guardados en el almacenamiento privado de la App, dejan de ser escaneados por aplicaciones maliciosas
+- De código abierto
 
 Este proyecto se construye utilizando el siguiente software de código abierto:
 - OkHttp https://square.github.io/okhttp

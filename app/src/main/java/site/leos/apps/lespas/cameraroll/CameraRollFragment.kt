@@ -299,6 +299,7 @@ class CameraRollFragment : Fragment() {
         }
     }
 
+
     override fun onStart() {
         super.onStart()
         mediaPagerAdapter.initializePlayer()

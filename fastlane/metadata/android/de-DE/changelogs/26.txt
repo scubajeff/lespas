@@ -1,0 +1,2 @@
+* Unterstützung unsicherer HTTP-Verbindungen zum Server
+* Weitere Verbesserungen und Fehlerbehebungen
