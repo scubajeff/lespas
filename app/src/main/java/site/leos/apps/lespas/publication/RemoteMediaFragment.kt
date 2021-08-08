@@ -1,40 +1,27 @@
 package site.leos.apps.lespas.publication
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
-import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.AnimatedViewHolder
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.PhotoViewHolder
+import site.leos.apps.lespas.helper.MediaSliderAdapter
 import java.io.File
-import java.time.LocalDateTime
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -52,6 +39,7 @@ class RemoteMediaFragment: Fragment() {
         this.window = requireActivity().window
 
         pAdapter = RemoteMediaAdapter(
+            "${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
             { toggleSystemUI() },
             { media, view, type->
                 if (media.mimeType.startsWith("video")) startPostponedEnterTransition()
@@ -61,7 +49,7 @@ class RemoteMediaFragment: Fragment() {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
             (arguments?.getParcelableArray(REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
-                submitList(toMutableList())
+                submitList(toMutableList() as List<Any>?)
 
                 previousOrientationSetting = requireActivity().requestedOrientation
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false))
@@ -83,8 +71,7 @@ class RemoteMediaFragment: Fragment() {
             }
         })
 
-        savedInstanceState?.getParcelable<RemoteMediaAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
-
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -136,17 +123,18 @@ class RemoteMediaFragment: Fragment() {
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is RemoteMediaAdapter.VideoViewHolder) this.resume()
+            if (this is MediaSliderAdapter.VideoViewHolder) this.resume()
         }
     }
 
     override fun onPause() {
-        super.onPause()
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is RemoteMediaAdapter.VideoViewHolder) this.pause()
+            if (this is MediaSliderAdapter.VideoViewHolder) this.pause()
         }
+
+        super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -155,8 +143,8 @@ class RemoteMediaFragment: Fragment() {
     }
 
     override fun onStop() {
-        super.onStop()
         pAdapter.cleanUp()
+        super.onStop()
     }
 
     @Suppress("DEPRECATION")
@@ -237,234 +225,13 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class RemoteMediaAdapter(private val clickListener: () -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<NCShareViewModel.RemotePhoto, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
-        private lateinit var exoPlayer: SimpleExoPlayer
-        private var currentVolume = 0f
-        private var oldVideoViewHolder: VideoViewHolder? = null
-        private var savedPlayerState = PlayerState(isMuted = false, stopPosition = FAKE_POSITION)
-
-        @Parcelize
-        data class PlayerState(
-            var isMuted: Boolean,
-            var stopPosition: Long,
-        ): Parcelable {
-            fun setState(isMuted: Boolean, stopPosition: Long) {
-                this.isMuted = isMuted
-                this.stopPosition = stopPosition
-            }
+    class RemoteMediaAdapter(private val cachePath: String, val clickListener: () -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
+    ): MediaSliderAdapter(PhotoDiffCallback() as DiffUtil.ItemCallback<Any>, clickListener, imageLoader as (Any, ImageView, String) -> Unit, cancelLoader) {
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
+            VideoItem(Uri.fromFile(File("$cachePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
         }
-
-        inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private lateinit var videoView: PlayerView
-            private lateinit var thumbnailView: ImageView
-            private lateinit var muteButton: ImageButton
-            private lateinit var videoUri: Uri
-            private var videoMimeType = ""
-            private var stopPosition = 0L
-
-            @SuppressLint("ClickableViewAccessibility")
-            fun bindView(video: NCShareViewModel.RemotePhoto) {
-                if (savedPlayerState.stopPosition != FAKE_POSITION) {
-                    stopPosition = savedPlayerState.stopPosition
-                    savedPlayerState.stopPosition = FAKE_POSITION
-
-                    if (savedPlayerState.isMuted) exoPlayer.volume = 0f
-                }
-                muteButton = itemView.findViewById(R.id.exo_mute)
-                videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
-                    controllerShowTimeoutMs = 3000
-                    setOnClickListener { clickListener() }
-                }
-
-                with(itemView.context) { videoUri = Uri.fromFile(File("${cacheDir}/${getString(R.string.lespas_base_folder_name)}/videos/${video.path.substringAfterLast('/')}")) }
-                videoMimeType = video.mimeType
-
-                itemView.findViewById<ConstraintLayout>(R.id.videoview_container).let {
-                    // Fix view aspect ratio
-                    if (video.height != 0) with(ConstraintSet()) {
-                        clone(it)
-                        setDimensionRatio(R.id.media, "${video.width}:${video.height}")
-                        applyTo(it)
-                    }
-
-                    it.setOnClickListener { clickListener() }
-                }
-
-                thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {
-                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader(video, this, ImageLoaderViewModel.TYPE_FULL)
-                    ViewCompat.setTransitionName(this, video.fileId)
-                }
-
-                muteButton.setOnClickListener { toggleMute() }
-            }
-
-            // Need to call this so that exit transition can happen
-            fun showThumbnail() { thumbnailView.visibility = View.INVISIBLE }
-
-            fun hideControllers() { videoView.hideController() }
-            fun setStopPosition(position: Long) {
-                //Log.e(">>>","set stop position $position")
-                stopPosition = position }
-
-            // This step is important to reset the SurfaceView that ExoPlayer attached to, avoiding video playing with a black screen
-            fun resetVideoViewPlayer() { videoView.player = null }
-
-            fun resume() {
-                //Log.e(">>>>", "resume playback at $stopPosition")
-                exoPlayer.apply {
-                    // Stop playing old video if swipe from it. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
-                    if (isPlaying) {
-                        playWhenReady = false
-                        stop()
-                        oldVideoViewHolder?.apply {
-                            if (this != this@VideoViewHolder) {
-                                setStopPosition(currentPosition)
-                                showThumbnail()
-                            }
-                        }
-                    }
-                    playWhenReady = true
-                    setMediaItem(MediaItem.Builder().setUri(videoUri).setMimeType(videoMimeType).build(), stopPosition)
-                    //setMediaItem(MediaItem.fromUri(videoUri), stopPosition)
-                    prepare()
-                    oldVideoViewHolder?.resetVideoViewPlayer()
-                    videoView.player = exoPlayer
-                    oldVideoViewHolder = this@VideoViewHolder
-
-                    // Maintain mute status indicator
-                    muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
-
-                    // Keep screen on
-                    (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                }
-            }
-
-            fun pause() {
-                //Log.e(">>>>", "pause playback")
-                // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
-                if (oldVideoViewHolder == this) {
-                    exoPlayer.apply {
-                        playWhenReady = false
-                        stop()
-                        setStopPosition(currentPosition)
-                    }
-                    hideControllers()
-                }
-
-                // Resume auto screen off
-                (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-                savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
-            }
-
-            private fun mute() {
-                currentVolume = exoPlayer.volume
-                exoPlayer.volume = 0f
-                muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
-            }
-
-            private fun toggleMute() {
-                exoPlayer.apply {
-                    if (volume == 0f) {
-                        volume = currentVolume
-                        muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
-                    }
-                    else mute()
-                }
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return when(viewType) {
-                TYPE_VIDEO -> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
-                TYPE_ANIMATED -> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
-                else-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
-            }
-        }
-
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            when(holder) {
-                is VideoViewHolder -> holder.bindView(getItem(position))
-                is AnimatedViewHolder -> holder.bind(getItem(position), getItem(position).fileId, imageLoader as (Any, ImageView, String) -> Unit, clickListener)
-                else-> (holder as PhotoViewHolder).bind(getItem(position), getItem(position).fileId, imageLoader as (Any, ImageView, String) -> Unit, clickListener)
-            }
-        }
-
-        override fun getItemViewType(position: Int): Int {
-            with(getItem(position).mimeType) {
-                return when {
-                    this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
-                    this.startsWith("video/") -> TYPE_VIDEO
-                    else -> TYPE_PHOTO
-                }
-            }
-        }
-
-        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewAttachedToWindow(holder)
-            if (holder is VideoViewHolder) holder.resume()
-        }
-
-        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewDetachedFromWindow(holder)
-            if (holder is VideoViewHolder) holder.pause()
-        }
-
-        override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-            cancelLoader(holder.itemView.findViewById(R.id.media) as View)
-            super.onViewRecycled(holder)
-        }
-
-        fun setPlayerState(state: PlayerState) { savedPlayerState = state }
-        fun getPlayerState(): PlayerState = savedPlayerState
-
-        fun initializePlayer(ctx: Context) {
-            //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-            exoPlayer = SimpleExoPlayer.Builder(ctx).build()
-            currentVolume = exoPlayer.volume
-            exoPlayer.addListener(object: Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    super.onPlaybackStateChanged(state)
-
-                    if (state == Player.STATE_ENDED) {
-                        exoPlayer.playWhenReady = false
-                        exoPlayer.seekTo(0L)
-                        oldVideoViewHolder?.setStopPosition(0L)
-
-                        // Resume auto screen off
-                        (oldVideoViewHolder?.itemView?.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    }
-                }
-
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    super.onIsPlayingChanged(isPlaying)
-                    if (isPlaying) oldVideoViewHolder?.run {
-                        showThumbnail()
-                        hideControllers()
-                    }
-                }
-            })
-
-            // Default mute the video playback during late night
-            with(LocalDateTime.now().hour) {
-                if (this >= 22 || this < 7) {
-                    currentVolume = exoPlayer.volume
-                    exoPlayer.volume = 0f
-                }
-            }
-        }
-
-        fun cleanUp() { exoPlayer.release() }
-
-        companion object {
-            private const val TYPE_PHOTO = 0
-            private const val TYPE_ANIMATED = 1
-            private const val TYPE_VIDEO = 2
-
-            const val FAKE_POSITION = -1L
-        }
+        override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
+        override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

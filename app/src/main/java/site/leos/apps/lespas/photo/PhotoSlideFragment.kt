@@ -1,24 +1,21 @@
 package site.leos.apps.lespas.photo
 
-import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.database.ContentObserver
-import android.graphics.*
+import android.graphics.Color
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.*
-import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -26,22 +23,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.MediaSliderAdapter
+import site.leos.apps.lespas.helper.SnapseedResultWorker
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
-import java.time.LocalDateTime
 
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
@@ -49,7 +45,6 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var pAdapter: PhotoSlideAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
-    //private val publishModel: NCShareViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private val uiModel: UIViewModel by activityViewModels()
@@ -65,9 +60,29 @@ class PhotoSlideFragment : Fragment() {
 
         album = arguments?.getParcelable(KEY_ALBUM)!!
 
+        pAdapter = PhotoSlideAdapter(
+            Tools.getLocalRoot(requireContext()),
+            { uiModel.toggleOnOff() },
+            { photo, imageView, type ->
+                if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
+                else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
+            },
+            { view -> imageLoaderModel.cancelLoading(view) }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.also {
+            // Prevent ViewPager from showing content before transition finished
+            it.addListener(object : Transition.TransitionListener {
+                override fun onTransitionStart(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.INVISIBLE }
+                override fun onTransitionEnd(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
+                override fun onTransitionCancel(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
+                override fun onTransitionPause(transition: Transition) {}
+                override fun onTransitionResume(transition: Transition) {}
+            })
         }
 
         // Adjusting the shared element mapping
@@ -79,7 +94,10 @@ class PhotoSlideFragment : Fragment() {
             }
         })
 
+        previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
 
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
@@ -155,18 +173,6 @@ class PhotoSlideFragment : Fragment() {
                 requireContext().contentResolver.unregisterContentObserver(this)
             }
         }
-
-        pAdapter = PhotoSlideAdapter(
-            requireContext(),
-            Tools.getLocalRoot(requireContext()),
-            { uiModel.toggleOnOff() },
-        ) { photo, imageView, type ->
-            if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
-            else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }}
-
-        savedInstanceState?.getParcelable<PhotoSlideAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
-
-        previousOrientationSetting = requireActivity().requestedOrientation
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -190,9 +196,7 @@ class PhotoSlideFragment : Fragment() {
 
                     pAdapter.getPhotoAt(position).run {
                         currentPhotoModel.setCurrentPhoto(this, position + 1)
-
-                        if (autoRotate) requireActivity().requestedOrientation =
-                            if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                     }
                 }
             })
@@ -206,7 +210,6 @@ class PhotoSlideFragment : Fragment() {
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos, album.sortOrder)
-            //slider.setCurrentItem(pAdapter.findPhotoPosition(currentPhotoModel.getCurrentPhoto().value!!), false)
             currentPhotoModel.getCurrentPhotoId()?.let {
                 //imageLoaderModel.invalid(it)
                 slider.setCurrentItem(pAdapter.findPhotoPosition(it), false)
@@ -262,21 +265,23 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        pAdapter.initializePlayer()
+        pAdapter.initializePlayer(requireContext())
     }
 
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is PhotoSlideAdapter.VideoViewHolder) this.resume()
+            if (this is MediaSliderAdapter.VideoViewHolder) this.resume()
         }
     }
 
     override fun onPause() {
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is PhotoSlideAdapter.VideoViewHolder) this.pause()
+            if (this is MediaSliderAdapter.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -289,7 +294,6 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onStop() {
         pAdapter.cleanUp()
-
         super.onStop()
     }
 
@@ -311,192 +315,18 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
-    class PhotoSlideAdapter(private val ctx: Context, private val rootPath: String, private val itemListener: () -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
-    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var photos = emptyList<Photo>()
-
-        private lateinit var exoPlayer: SimpleExoPlayer
-        private var currentVolume = 0f
-        private var oldVideoViewHolder: VideoViewHolder? = null
-        private var savedPlayerState = PlayerState(isMuted = false, stopPosition = FAKE_POSITION)
-
-        @Parcelize
-        data class PlayerState(
-            var isMuted: Boolean,
-            var stopPosition: Long,
-        ): Parcelable {
-            fun setState(isMuted: Boolean, stopPosition: Long) {
-                this.isMuted = isMuted
-                this.stopPosition = stopPosition
-            }
+    class PhotoSlideAdapter(private val rootPath: String, val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (ImageView) -> Unit
+    ): MediaSliderAdapter(PhotoDiffCallback() as DiffUtil.ItemCallback<Any>, clickListener, imageLoader as (Any, ImageView, String) -> Unit, cancelLoader as (View) -> Unit) {
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
+            var fileName = "$rootPath/${id}"
+            if (!(File(fileName).exists())) fileName = "$rootPath/${name}"
+            VideoItem(Uri.fromFile(File(fileName)), mimeType, width, height, id)
         }
-
-        inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private lateinit var videoView: PlayerView
-            private lateinit var thumbnailView: ImageView
-            private lateinit var muteButton: ImageButton
-            private lateinit var videoUri: Uri
-            private var videoMimeType = ""
-            private var stopPosition = 0L
-
-            @SuppressLint("ClickableViewAccessibility")
-            fun bindViewItems(video: Photo) {
-                if (savedPlayerState.stopPosition != FAKE_POSITION) {
-                    stopPosition = savedPlayerState.stopPosition
-                    savedPlayerState.stopPosition = FAKE_POSITION
-
-                    if (savedPlayerState.isMuted) exoPlayer.volume = 0f
-                }
-                muteButton = itemView.findViewById(R.id.exo_mute)
-                videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
-                    controllerShowTimeoutMs = 3000
-                    setOnClickListener { itemListener() }
-                }
-
-                var fileName = "$rootPath/${video.id}"
-                if (!(File(fileName).exists())) fileName = "$rootPath/${video.name}"
-                videoUri = Uri.fromFile(File(fileName))
-                videoMimeType = video.mimeType
-
-                itemView.findViewById<ConstraintLayout>(R.id.videoview_container).let {
-                    // Fix view aspect ratio
-                    if (video.height != 0) with(ConstraintSet()) {
-                        clone(it)
-                        setDimensionRatio(R.id.media, "${video.width}:${video.height}")
-                        applyTo(it)
-                    }
-
-                    it.setOnClickListener { itemListener() }
-                }
-
-                thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {
-                    // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                    imageLoader(video, this, ImageLoaderViewModel.TYPE_FULL)
-                    ViewCompat.setTransitionName(this, video.id)
-                }
-
-                muteButton.setOnClickListener { toggleMute() }
-            }
-
-            // Need to call this so that exit transition can happen
-            fun showThumbnail() { thumbnailView.visibility = View.INVISIBLE }
-
-            fun hideControllers() { videoView.hideController() }
-            fun setStopPosition(position: Long) {
-                //Log.e(">>>","set stop position $position")
-                stopPosition = position }
-
-            // This step is important to reset the SurfaceView that ExoPlayer attached to, avoiding video playing with a black screen
-            fun resetVideoViewPlayer() { videoView.player = null }
-
-            fun resume() {
-                //Log.e(">>>>", "resume playback at $stopPosition")
-                exoPlayer.apply {
-                    // Stop playing old video if swipe from it. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
-                    if (isPlaying) {
-                        playWhenReady = false
-                        stop()
-                        oldVideoViewHolder?.apply {
-                            if (this != this@VideoViewHolder) {
-                                setStopPosition(currentPosition)
-                                showThumbnail()
-                            }
-                        }
-                    }
-                    playWhenReady = true
-                    setMediaItem(MediaItem.Builder().setUri(videoUri).setMimeType(videoMimeType).build(), stopPosition)
-                    //setMediaItem(MediaItem.fromUri(videoUri), stopPosition)
-                    prepare()
-                    oldVideoViewHolder?.resetVideoViewPlayer()
-                    videoView.player = exoPlayer
-                    oldVideoViewHolder = this@VideoViewHolder
-
-                    // Maintain mute status indicator
-                    muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
-
-                    // Keep screen on
-                    (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                }
-            }
-
-            fun pause() {
-                //Log.e(">>>>", "pause playback")
-                // If swipe out to a new VideoView, then no need to perform stop procedure. The childDetachedFrom event of old VideoView always fired later than childAttachedTo event of new VideoView
-                if (oldVideoViewHolder == this) {
-                    exoPlayer.apply {
-                        playWhenReady = false
-                        stop()
-                        setStopPosition(currentPosition)
-                    }
-                    hideControllers()
-                }
-
-                // Resume auto screen off
-                (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-                savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
-            }
-
-            private fun mute() {
-                currentVolume = exoPlayer.volume
-                exoPlayer.volume = 0f
-                muteButton.setImageResource(R.drawable.ic_baseline_volume_off_24)
-            }
-
-            private fun toggleMute() {
-                exoPlayer.apply {
-                    if (volume == 0f) {
-                        volume = currentVolume
-                        muteButton.setImageResource(R.drawable.ic_baseline_volume_on_24)
-                    }
-                    else mute()
-                }
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            return when(viewType) {
-                TYPE_VIDEO-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
-                TYPE_ANIMATED-> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
-                else-> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
-            }
-        }
-
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            when(holder) {
-                is VideoViewHolder-> holder.bindViewItems(photos[position])
-                is AnimatedViewHolder-> holder.bind(photos[position], photos[position].id, imageLoader as (Any, ImageView, String) -> Unit, itemListener)
-                else-> (holder as PhotoViewHolder).bind(photos[position], photos[position].id, imageLoader as (Any, ImageView, String) -> Unit, itemListener)
-            }
-        }
-
-        fun findPhotoPosition(photoId: String): Int {
-            photos.forEachIndexed { i, p ->
-                // If photo synced back from server, the id property will be changed from filename to fileId
-                if ((p.id == photoId) || (p.name == photoId)) return i
-            }
-            return -1
-        }
-
-        fun getPhotoAt(position: Int): Photo = photos[position]
-
-        fun getNextAvailablePhoto(photo: Photo): Pair<Photo?, Int> {
-            with(photos.indexOf(photo)) {
-                return when(this) {
-                    -1-> Pair(null, -1)
-                    photos.size - 1-> if (this > 0) Pair(photos[this - 1], this - 1) else Pair(null, -1)
-                    else-> Pair(photos[this + 1], this)
-                }
-            }
-        }
-
-        fun refreshPhoto(photo: Photo) {
-            notifyItemChanged(findPhotoPosition(photo.id))
-        }
+        override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
+        override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
-            //val oldPhotos = photos
-            photos = when(sortOrder) {
+            val photos = when(sortOrder) {
                 Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
                 Album.BY_DATE_TAKEN_DESC-> collection.sortedWith(compareByDescending { it.dateTaken })
                 Album.BY_DATE_MODIFIED_ASC-> collection.sortedWith(compareBy { it.lastModified })
@@ -505,87 +335,32 @@ class PhotoSlideFragment : Fragment() {
                 Album.BY_NAME_DESC-> collection.sortedWith(compareByDescending { it.name })
                 else-> collection
             }
-            /*
-            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun getOldListSize(): Int = oldPhotos.size
-                override fun getNewListSize(): Int = photos.size
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldPhotos[oldItemPosition].name == photos[newItemPosition].name
-                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldPhotos[oldItemPosition] == photos[newItemPosition]
-            }).dispatchUpdatesTo(this)
-             */
-            notifyDataSetChanged()
+
+            submitList(photos as MutableList<Any>)
         }
-
-        override fun getItemCount(): Int = photos.size
-
-        override fun getItemViewType(position: Int): Int {
-            with(getPhotoAt(position).mimeType) {
-                return when {
-                    this == "image/agif" || this == "image/awebp" -> TYPE_ANIMATED
-                    this.startsWith("video/") -> TYPE_VIDEO
-                    else -> TYPE_PHOTO
+        fun refreshPhoto(photo: Photo) { notifyItemChanged(findPhotoPosition(photo.id)) }
+        fun findPhotoPosition(photoId: String): Int {
+            with(currentList as List<Photo>) {
+                // If photo synced back from server, the id property will be changed from filename to fileId
+                forEachIndexed { index, photo -> if (photo.id == photoId || photo.name == photoId) return index }
+            }
+            return -1
+        }
+        fun getPhotoAt(position: Int): Photo = currentList[position] as Photo
+        fun getNextAvailablePhoto(photo: Photo): Pair<Photo?, Int> {
+            with((currentList as List<Photo>).indexOf(photo)) {
+                return when(this) {
+                    -1-> Pair(null, -1)
+                    currentList.size - 1-> if (this > 0) Pair(currentList[this - 1] as Photo, this - 1) else Pair(null, -1)
+                    else-> Pair(currentList[this + 1] as Photo, this)
                 }
             }
         }
+    }
 
-        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewAttachedToWindow(holder)
-            if (holder is VideoViewHolder) holder.resume()
-        }
-
-        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewDetachedFromWindow(holder)
-            if (holder is VideoViewHolder) holder.pause()
-        }
-
-        fun setPlayerState(state: PlayerState) { savedPlayerState = state }
-        fun getPlayerState(): PlayerState = savedPlayerState
-
-        fun initializePlayer() {
-            //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-            exoPlayer = SimpleExoPlayer.Builder(ctx).build()
-            currentVolume = exoPlayer.volume
-            exoPlayer.addListener(object: Player.Listener {
-                override fun onPlaybackStateChanged(state: Int) {
-                    super.onPlaybackStateChanged(state)
-
-                    if (state == Player.STATE_ENDED) {
-                        exoPlayer.playWhenReady = false
-                        exoPlayer.seekTo(0L)
-                        oldVideoViewHolder?.setStopPosition(0L)
-
-                        // Resume auto screen off
-                        (oldVideoViewHolder?.itemView?.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    }
-                }
-
-                override fun onIsPlayingChanged(isPlaying: Boolean) {
-                    super.onIsPlayingChanged(isPlaying)
-                    if (isPlaying) oldVideoViewHolder?.run {
-                        showThumbnail()
-                        hideControllers()
-                    }
-                }
-            })
-
-            // Default mute the video playback during late night
-            with(LocalDateTime.now().hour) {
-                if (this >= 22 || this < 7) {
-                    currentVolume = exoPlayer.volume
-                    exoPlayer.volume = 0f
-                }
-            }
-        }
-
-        fun cleanUp() { exoPlayer.release() }
-
-        companion object {
-            private const val TYPE_PHOTO = 0
-            private const val TYPE_ANIMATED = 1
-            private const val TYPE_VIDEO = 2
-
-            const val FAKE_POSITION = -1L
-        }
+    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
+        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified
     }
 
     // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
@@ -640,9 +415,7 @@ class PhotoSlideFragment : Fragment() {
 
     companion object {
         private const val PLAYER_STATE = "PLAYER_STATE"
-
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
-
         const val KEY_ALBUM = "ALBUM"
 
         @JvmStatic

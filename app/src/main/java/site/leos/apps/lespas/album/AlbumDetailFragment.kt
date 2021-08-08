@@ -106,6 +106,36 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         }
 
+        mAdapter = PhotoGridAdapter(
+            { view, position ->
+                currentPhotoModel.run {
+                    setCurrentPhoto(mAdapter.getPhotoAt(position), position)
+                    setLastPosition(position)
+                }
+
+                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
+                stub.background = (activity as MainActivity).getToolbarViewContent()
+
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply {
+                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                    excludeTarget(R.id.stub, true)
+                    excludeTarget(view, true)
+                }
+
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, view.transitionName)
+                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
+                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.java.canonicalName)
+                    .addToBackStack(null)
+                    .commit()
+            },
+            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
+        ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }.apply {
+            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        }
+
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -188,35 +218,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 requireContext().contentResolver.unregisterContentObserver(this)
             }
-        }
-
-        mAdapter = PhotoGridAdapter(
-            { view, position ->
-                currentPhotoModel.run {
-                    setCurrentPhoto(mAdapter.getPhotoAt(position), position)
-                    setLastPosition(position)
-                }
-
-                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
-                stub.background = (activity as MainActivity).getToolbarViewContent()
-
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply {
-                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                    excludeTarget(R.id.stub, true)
-                    excludeTarget(view, true)
-                }
-
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName).addToBackStack(null)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.java.canonicalName)
-                    .commit()
-            },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
-        ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }.apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
