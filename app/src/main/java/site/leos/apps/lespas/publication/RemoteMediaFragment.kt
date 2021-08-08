@@ -49,7 +49,7 @@ class RemoteMediaFragment: Fragment() {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
             (arguments?.getParcelableArray(REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
-                submitList(toMutableList() as List<Any>?)
+                submitList(toMutableList())
 
                 previousOrientationSetting = requireActivity().requestedOrientation
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false))
@@ -123,7 +123,7 @@ class RemoteMediaFragment: Fragment() {
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.resume()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
         }
     }
 
@@ -131,7 +131,7 @@ class RemoteMediaFragment: Fragment() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.pause()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -226,7 +226,7 @@ class RemoteMediaFragment: Fragment() {
     }
 
     class RemoteMediaAdapter(private val cachePath: String, val clickListener: () -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
-    ): MediaSliderAdapter(PhotoDiffCallback() as DiffUtil.ItemCallback<Any>, clickListener, imageLoader as (Any, ImageView, String) -> Unit, cancelLoader) {
+    ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
             VideoItem(Uri.fromFile(File("$cachePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
         }

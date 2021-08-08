@@ -67,7 +67,7 @@ class PhotoSlideFragment : Fragment() {
                 if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
                 else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
             },
-            { view -> imageLoaderModel.cancelLoading(view) }
+            { view -> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -273,7 +273,7 @@ class PhotoSlideFragment : Fragment() {
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.resume()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
         }
     }
 
@@ -281,7 +281,7 @@ class PhotoSlideFragment : Fragment() {
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.pause()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -315,8 +315,8 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
-    class PhotoSlideAdapter(private val rootPath: String, val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (ImageView) -> Unit
-    ): MediaSliderAdapter(PhotoDiffCallback() as DiffUtil.ItemCallback<Any>, clickListener, imageLoader as (Any, ImageView, String) -> Unit, cancelLoader as (View) -> Unit) {
+    class PhotoSlideAdapter(private val rootPath: String, val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
+    ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
             if (!(File(fileName).exists())) fileName = "$rootPath/${name}"
@@ -336,7 +336,7 @@ class PhotoSlideFragment : Fragment() {
                 else-> collection
             }
 
-            submitList(photos as MutableList<Any>)
+            submitList(photos.toMutableList())
         }
         fun refreshPhoto(photo: Photo) { notifyItemChanged(findPhotoPosition(photo.id)) }
         fun findPhotoPosition(photoId: String): Int {

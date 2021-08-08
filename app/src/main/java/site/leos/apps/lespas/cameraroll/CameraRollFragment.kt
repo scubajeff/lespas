@@ -318,14 +318,14 @@ class CameraRollFragment : Fragment() {
         }
 
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.resume()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
         }
     }
 
     override fun onPause() {
         //Log.e(">>>>>", "onPause")
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
-            if (this is MediaSliderAdapter.VideoViewHolder) this.pause()
+            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
 
         super.onPause()
@@ -373,7 +373,7 @@ class CameraRollFragment : Fragment() {
             }
 
             // Populate list and scroll to correct position
-            (mediaPager.adapter as MediaPagerAdapter).submitList(it as MutableList<Any>)
+            (mediaPager.adapter as MediaPagerAdapter).submitList(it)
             mediaPager.scrollToPosition(camerarollModel.getCurrentMediaIndex())
             (quickScroll.adapter as QuickScrollAdapter).submitList(it)
 
@@ -525,7 +525,7 @@ class CameraRollFragment : Fragment() {
     }
 
     class MediaPagerAdapter(val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
-    ): MediaSliderAdapter(PhotoDiffCallback() as DiffUtil.ItemCallback<Any>, clickListener, imageLoader as (Any, ImageView, String) -> Unit, cancelLoader) {
+    ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
         }

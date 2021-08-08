@@ -25,9 +25,9 @@ import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
-abstract class MediaSliderAdapter(differ: ItemCallback<Any>, private val clickListener: () -> Unit, private val imageLoader: (Any, ImageView, type: String) -> Unit, private val cancelLoader: (View) -> Unit
-): ListAdapter<Any, RecyclerView.ViewHolder>(differ) {
-    private lateinit var exoPlayer: SimpleExoPlayer
+abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: () -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
+    lateinit var exoPlayer: SimpleExoPlayer
     private var currentVolume = 0f
     private var oldVideoViewHolder: VideoViewHolder? = null
     private var savedPlayerState = PlayerState()
@@ -56,20 +56,20 @@ abstract class MediaSliderAdapter(differ: ItemCallback<Any>, private val clickLi
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder) {
-            is VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position))
-            is AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position))
-            else-> (holder as PhotoViewHolder).bind(getItem(position), getItemTransitionName(position))
+            is MediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), clickListener, imageLoader)
+            is MediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), clickListener, imageLoader)
+            else-> (holder as MediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position),clickListener, imageLoader)
         }
     }
 
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
         super.onViewAttachedToWindow(holder)
-        if (holder is VideoViewHolder) holder.resume()
+        if (holder is MediaSliderAdapter<*>.VideoViewHolder) holder.resume()
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         super.onViewDetachedFromWindow(holder)
-        if (holder is VideoViewHolder) holder.pause()
+        if (holder is MediaSliderAdapter<*>.VideoViewHolder) holder.pause()
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
@@ -78,7 +78,7 @@ abstract class MediaSliderAdapter(differ: ItemCallback<Any>, private val clickLi
     }
 
     inner class PhotoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-        fun bind(photo: Any, transitionName: String) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             itemView.findViewById<PhotoView>(R.id.media).apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                 setOnPhotoTapListener { _, _, _ -> clickListener() }
@@ -91,7 +91,7 @@ abstract class MediaSliderAdapter(differ: ItemCallback<Any>, private val clickLi
     }
 
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun bind(photo: Any, transitionName: String) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             itemView.findViewById<ImageView>(R.id.media).apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                 setOnClickListener { clickListener() }
@@ -109,7 +109,7 @@ abstract class MediaSliderAdapter(differ: ItemCallback<Any>, private val clickLi
         private var stopPosition = 0L
 
         @SuppressLint("ClickableViewAccessibility")
-        fun bind(item: Any, video: VideoItem) {
+        fun <T> bind(item: T, video: VideoItem, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             this.videoUri = video.uri
 
             if (savedPlayerState.stopPosition != FAKE_POSITION) {
