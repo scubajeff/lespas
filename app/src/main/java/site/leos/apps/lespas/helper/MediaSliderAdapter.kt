@@ -122,6 +122,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
                 controllerShowTimeoutMs = 3000
                 setOnClickListener { clickListener() }
+                hideController()
             }
 
             videoMimeType = video.mimeType
