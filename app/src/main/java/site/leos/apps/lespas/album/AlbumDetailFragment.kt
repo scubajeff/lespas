@@ -99,8 +99,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         lastSelection = mutableSetOf()
         sharedSelection = mutableSetOf()
         savedInstanceState?.let {
-            lastSelection = it.getStringArray(SELECTION)?.toMutableSet()!!
-            sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet()!!
+            lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+            sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
             sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         }
 
@@ -164,12 +164,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (workInfo != null) {
                             //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
                             workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.let {
-                                //sharedPhoto.name = it
-                                //sharedPhoto.eTag = ""
-                                //imageLoaderModel.reloadPhoto(sharedPhoto)
-                                //recyclerView.findViewHolderForAdapterPosition(mAdapter.findPhotoPosition(sharedPhoto))?.itemView?.findViewById<ImageView>(R.id.photo)?.invalidate()
-                                //mAdapter.refreshPhoto(sharedPhoto)
                                 imageLoaderModel.invalid(sharedPhoto.id)
+                                // Update cover if needed, cover id can be found only in adapter
                                 mAdapter.updateCover(sharedPhoto)
                             }
                         }
@@ -220,10 +216,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
                 val photos = mutableListOf<Photo>()
-                for (photoId in sharedSelection) {
-                    //mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-                    mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                }
+                for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                 // TODO publish status is not persistent locally
                 //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
@@ -289,6 +282,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
                 scrollTo = ""
             }
+
+            // Restore selection state
+            if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
         })
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
@@ -331,9 +327,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 })
             }
             mAdapter.setSelectionTracker(selectionTracker)
-
-            // Restore selection state
-            if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
 
             // Get scroll position after scroll idle
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -402,9 +395,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY) == DELETE_REQUEST_KEY) {
                     if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                         val photos = mutableListOf<Photo>()
-                        for (photoId in selectionTracker.selection)
-                            //mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-                            mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
+                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                         // TODO publish status is not persistent locally
                         //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                         if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
