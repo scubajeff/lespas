@@ -64,8 +64,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var dateIndicator: MaterialButton
     private lateinit var mAdapter: PhotoGridAdapter
 
-    private lateinit var selectionTracker: SelectionTracker<Long>
-    private lateinit var lastSelection: MutableSet<Long>
+    private lateinit var selectionTracker: SelectionTracker<String>
+    private lateinit var lastSelection: MutableSet<String>
     private var scrollTo = ""
 
     private val albumModel: AlbumViewModel by activityViewModels()
@@ -78,7 +78,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
 
-    private lateinit var sharedSelection: MutableSet<Long>
+    private lateinit var sharedSelection: MutableSet<String>
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -99,8 +99,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         lastSelection = mutableSetOf()
         sharedSelection = mutableSetOf()
         savedInstanceState?.let {
-            lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
-            sharedSelection = it.getLongArray(SHARED_SELECTION)?.toMutableSet()!!
+            lastSelection = it.getStringArray(SELECTION)?.toMutableSet()!!
+            sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet()!!
             sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         }
 
@@ -170,7 +170,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 //recyclerView.findViewHolderForAdapterPosition(mAdapter.findPhotoPosition(sharedPhoto))?.itemView?.findViewById<ImageView>(R.id.photo)?.invalidate()
                                 //mAdapter.refreshPhoto(sharedPhoto)
                                 imageLoaderModel.invalid(sharedPhoto.id)
-                                mAdapter.refreshPhoto(sharedPhoto)
+                                mAdapter.updateCover(sharedPhoto)
                             }
                         }
                         /*
@@ -220,8 +220,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
                 val photos = mutableListOf<Photo>()
-                for (i in sharedSelection) {
-                    mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                for (photoId in sharedSelection) {
+                    //mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                    mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                 }
                 // TODO publish status is not persistent locally
                 //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
@@ -249,7 +250,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         dateIndicator = vg.findViewById(R.id.date_indicator)
         recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
             // Stop item from blinking when notifying changes
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+            //(itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
 
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
@@ -285,7 +286,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             // Scroll to designated photo at first run
             if (scrollTo.isNotEmpty()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(mAdapter.getPhotoPosition(scrollTo))
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
                 scrollTo = ""
             }
         })
@@ -301,15 +302,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             selectionTracker = Builder(
                 "photoSelection",
                 this,
-                PhotoGridAdapter.PhotoKeyProvider(),
+                PhotoGridAdapter.PhotoKeyProvider(mAdapter),
                 PhotoGridAdapter.PhotoDetailsLookup(this),
-                StorageStrategy.createLongStorage()
-            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
-                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = (key != 0L)
+                StorageStrategy.createStringStorage()
+            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = (key.isNotEmpty())
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
-                addObserver(object : SelectionTracker.SelectionObserver<Long>() {
+                addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
@@ -322,7 +323,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
                     }
 
-                    override fun onItemStateChanged(key: Long, selected: Boolean) {
+                    override fun onItemStateChanged(key: String, selected: Boolean) {
                         super.onItemStateChanged(key, selected)
                         if (selected) lastSelection.add(key)
                         else lastSelection.remove(key)
@@ -401,8 +402,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY) == DELETE_REQUEST_KEY) {
                     if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                         val photos = mutableListOf<Photo>()
-                        for (i in selectionTracker.selection)
-                            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                        for (photoId in selectionTracker.selection)
+                            //mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                            mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                         // TODO publish status is not persistent locally
                         //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                         if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
@@ -421,8 +423,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLongArray(SELECTION, lastSelection.toLongArray())
-        outState.putLongArray(SHARED_SELECTION, sharedSelection.toLongArray())
+        outState.putStringArray(SELECTION, lastSelection.toTypedArray())
+        outState.putStringArray(SHARED_SELECTION, sharedSelection.toTypedArray())
         outState.putBoolean(SORT_ORDER_CHANGED, sortOrderChanged)
     }
 
@@ -537,9 +539,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 val authority = getString(R.string.file_authority)
 
                 sharedSelection.clear()
-                for (i in selectionTracker.selection) {
-                    sharedSelection.add(i.toLong())
-                    with(mAdapter.getPhotoAt(i.toInt())) {
+                for (photoId in selectionTracker.selection) {
+                    sharedSelection.add(photoId)
+                    //with(mAdapter.getPhotoAt(i.toInt())) {
+                    with(mAdapter.getPhotoBy(photoId)) {
                         // Synced file is named after id, not yet synced file is named after file's name
                         File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
                         uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
@@ -551,7 +554,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
                     else clipData.addItem(ClipData.Item(uris[i]))
 
-                sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
                 if (selectionTracker.selection.size() > 1) {
                     startActivity(
                         Intent.createChooser(
@@ -585,7 +589,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                for (i in 0..mAdapter.itemCount) selectionTracker.select(i.toLong())
+                for (i in 1 until mAdapter.itemCount) selectionTracker.select(mAdapter.getPhotoId(i))
                 true
             }
             else -> false
@@ -605,16 +609,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     // Adapter for photo grid
     class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val titleUpdater: (Boolean) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
-        private lateinit var selectionTracker: SelectionTracker<Long>
+        private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
-
-        init {
-            setHasStableIds(true)
-        }
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
@@ -647,12 +647,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
             }
-
-            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
-                override fun getPosition(): Int = bindingAdapterPosition
-                override fun getSelectionKey(): Long = itemId
-                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
-            }
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -680,9 +674,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
 
-            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<String>() {
                 override fun getPosition(): Int = bindingAdapterPosition
-                override fun getSelectionKey(): Long = itemId
+                override fun getSelectionKey(): String = getPhotoId(bindingAdapterPosition)
             }
         }
 
@@ -696,7 +690,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(position.toLong()))
+            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
             else (holder as CoverViewHolder).bindViewItem()
         }
 
@@ -715,8 +709,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         internal fun setAlbum(album: AlbumWithPhotos) {
             val photos = mutableListOf<Photo>()
-            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
-            photos.addAll(1,
+            photos.addAll(
                 when(album.album.sortOrder) {
                     Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
                     Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
@@ -727,6 +720,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     else-> album.photos
                 }
             )
+            album.album.run { photos.add(0, Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, photos.size.toString(), coverBaseline)) }
             submitList(photos)
         }
 
@@ -738,23 +732,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
-        internal fun getPhotoPosition(photoId: String): Int = with(currentList.indexOfLast { it.id == photoId }) { if (this == -1) 0 else this }
-        internal fun refreshPhoto(sharedPhoto: Photo) {
-            notifyItemChanged(currentList.indexOfLast { it.id == sharedPhoto.id })
+        internal fun updateCover(sharedPhoto: Photo) {
+            //notifyItemChanged(currentList.indexOfLast { it.id == sharedPhoto.id })
             if (sharedPhoto.id == currentList[0].id) notifyItemChanged(0)
         }
 
-        internal fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
-        override fun getItemId(position: Int): Long = position.toLong()
-        class PhotoKeyProvider: ItemKeyProvider<Long>(SCOPE_CACHED) {
-            override fun getKey(position: Int): Long = position.toLong()
-            override fun getPosition(key: Long): Int = key.toInt()
+        internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
+        internal fun getPhotoId(position: Int): String = currentList[position].id
+        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+        class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
+            override fun getKey(position: Int): String = adapter.getPhotoId(position)
+            override fun getPosition(key: String): Int = with(adapter.getPhotoPosition(key)) { if (this >= 0) this else RecyclerView.NO_POSITION }
         }
-        class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<Long>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
+        class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     val holder = recyclerView.getChildViewHolder(it)
-                    return if (holder is PhotoViewHolder) holder.getItemDetails() else (holder as CoverViewHolder).getItemDetails()
+                    return if (holder is PhotoViewHolder) holder.getItemDetails() else null
                 }
                 return null
             }
@@ -768,7 +762,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.shareId == newItem.shareId && oldItem.mimeType == newItem.mimeType
     }
 
     companion object {
