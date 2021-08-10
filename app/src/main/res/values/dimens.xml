@@ -12,5 +12,6 @@
     <dimen name="camera_roll_date_grid_size">36dp</dimen>
     <dimen name="video_player_controls_right_margin">@dimen/extra_padding</dimen>
     <dimen name="chip_label_minimum_height">20dp</dimen>
-    <dimen name="player_control_layout_margin">@dimen/big_padding</dimen>
+    <dimen name="exoplayer_control_layout_horizontal_margin">@dimen/big_padding</dimen>
+    <dimen name="exoplayer_control_layout_vertical_margin">40dp</dimen>
 </resources>
