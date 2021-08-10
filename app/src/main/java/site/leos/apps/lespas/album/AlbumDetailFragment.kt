@@ -58,15 +58,18 @@ import java.util.*
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var album: Album
+    private var scrollTo = ""
+
     private var actionMode: ActionMode? = null
+
     private lateinit var stub: View
-    private lateinit var recyclerView: RecyclerView
     private lateinit var dateIndicator: MaterialButton
+    private lateinit var recyclerView: RecyclerView
     private lateinit var mAdapter: PhotoGridAdapter
 
     private lateinit var selectionTracker: SelectionTracker<String>
+    private lateinit var sharedSelection: MutableSet<String>
     private lateinit var lastSelection: MutableSet<String>
-    private var scrollTo = ""
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
@@ -74,12 +77,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
     private lateinit var sharedPhoto: Photo
-
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
-
-    private lateinit var sharedSelection: MutableSet<String>
-
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
     private val publishModel: NCShareViewModel by activityViewModels()
@@ -92,6 +91,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setHasOptionsMenu(true)
+
         album = arguments?.getParcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
 
@@ -102,7 +103,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
             sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
-        }
+        } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
@@ -117,8 +118,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         })
-
-        setHasOptionsMenu(true)
 
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
@@ -158,26 +157,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         // TODO publish status is not persistent locally
                         //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
-                    WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
+                    with(WorkManager.getInstance(requireContext())) {
+                        enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
-                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
-                        if (workInfo != null) {
-                            //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
-                            workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.let {
-                                imageLoaderModel.invalid(sharedPhoto.id)
-                                // Update cover if needed, cover id can be found only in adapter
-                                mAdapter.updateCover(sharedPhoto)
+                        getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                            if (workInfo != null) {
+                                // If replace original is on, remove old bitmaps from cache and take care of cover too
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                    imageLoaderModel.invalid(sharedPhoto.id)
+                                    // Update cover if needed, cover id can be found only in adapter
+                                    mAdapter.updateCover(sharedPhoto)
+                                }
                             }
-                        }
-                        /*
-                        if (workInfo != null && workInfo.state.isFinished) {
-                            if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
-                                imageLoaderModel.invalid(sharedPhoto)
-                                mAdapter.refreshPhoto(sharedPhoto)
-                            }
-                        }
-                         */
-                    })
+                        })
+                    }
+
                 }
 
                 requireContext().contentResolver.unregisterContentObserver(this)
@@ -224,8 +218,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             sharedSelection.clear()
         }
 
-        savedInstanceState ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
-
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
@@ -235,16 +227,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // View might not be destroy at all, reuse it here
-        val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
-        stub = vg.findViewById(R.id.stub)
-        dateIndicator = vg.findViewById(R.id.date_indicator)
-        recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
-            // Stop item from blinking when notifying changes
-            //(itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
+        stub = view.findViewById(R.id.stub)
+        dateIndicator = view.findViewById(R.id.date_indicator)
+        recyclerView = view.findViewById(R.id.photogrid)
+
+        postponeEnterTransition()
+        ViewCompat.setTransitionName(recyclerView, album.id)
+
+        with(recyclerView) {
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
             layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
@@ -252,47 +248,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
                 }
             }
-        }
 
-        return vg
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        postponeEnterTransition()
-        ViewCompat.setTransitionName(recyclerView, album.id)
-
-        // Register data observer first, try feeding adapter with latest data asap
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
-            // Cover might changed, photo might be deleted, so get updates from latest here
-            this.album = it.album
-
-            mAdapter.setAlbum(it)
-            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
-
-            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
-            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
-                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
-            }
-
-            // Scroll to designated photo at first run
-            if (scrollTo.isNotEmpty()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
-                scrollTo = ""
-            }
-
-            // Restore selection state
-            if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
-        })
-
-        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
-            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
-            mAdapter.setRecipient(sharedByMe)
-        })
-
-        with(recyclerView) {
             adapter = mAdapter
 
             selectionTracker = Builder(
@@ -364,6 +320,34 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
+            // Cover might changed, photo might be deleted, so get updates from latest here
+            this.album = it.album
+
+            mAdapter.setAlbum(it)
+            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
+
+            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
+            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
+                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
+            }
+
+            // Scroll to designated photo at first run
+            if (scrollTo.isNotEmpty()) {
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
+                scrollTo = ""
+            }
+
+            // Restore selection state
+            if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
+        })
+
+        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
+            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+            mAdapter.setRecipient(sharedByMe)
+        })
 
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
