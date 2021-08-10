@@ -141,32 +141,16 @@ class PhotoSlideFragment : Fragment() {
 
                     WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null) {
-                            //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem))
                             workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
-                                pAdapter.getPhotoAt(slider.currentItem).let {
-                                    //it.eTag = ""
-                                    //it.name = this
-                                    //imageLoaderModel.reloadPhoto(it)
-                                    imageLoaderModel.invalid(it.id)
-                                    //slider[0].findViewById<PhotoView>(R.id.media)?.invalidate()
-                                    pAdapter.refreshPhoto(it)
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                    pAdapter.getPhotoAt(slider.currentItem).let {
+                                        imageLoaderModel.invalid(it.id)
+                                        pAdapter.refreshPhoto(it)
+                                    }
                                 }
                                 currentPhotoModel.setCurrentPhotoName(this)
                             }
                         }
-                        /*
-                        if (workInfo != null && workInfo.state.isFinished) {
-                            if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
-                                with(pAdapter.getPhotoAt(slider.currentItem)) {
-                                    // Invalid cache, notify adapter change, and update current photo model value to show new photo
-                                    imageLoaderModel.invalid(this)
-                                    pAdapter.refreshPhoto(this)
-                                    // TODO what if the adapter is not updated yet, pAdapter.getPhotoAt will return old information
-                                    currentPhotoModel.setCurrentPhoto(this, null)
-                                }
-                            }
-                        }
-                         */
                     })
                 }
 

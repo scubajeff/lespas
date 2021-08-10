@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.album
 
-import android.content.Context
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
@@ -327,39 +326,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val itemClickListener: OnItemClickListener, private val avatarLoader: OnLoadAvatar, private val imageLoader: OnLoadImage): RecyclerView.Adapter<AlbumListAdapter.AlbumViewHolder>() {
-        private lateinit var ctx: Context
-        private var albums = emptyList<Album>()
+    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
         private var covers = mutableListOf<Photo>()
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<Long>
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
-        fun interface OnItemClickListener {
-            fun onItemClick(album: Album, imageView: ImageView)
-        }
-
-        fun interface OnLoadImage {
-            fun loadImage(photo: Photo, view: ImageView, type: String)
-        }
-
-        fun interface OnLoadAvatar {
-            fun loadAvatar(user: NCShareViewModel.Sharee, view: View)
-        }
-
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bindViewItems(album: Album, clickListener: OnItemClickListener, isActivated: Boolean) {
+            fun bindViewItems(album: Album, isActivated: Boolean) {
                 itemView.apply {
                     this.isActivated = isActivated
                     findViewById<ImageView>(R.id.coverart).let {coverImageview ->
-                        imageLoader.loadImage(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
+                        imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         /*
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
                          */
                         ViewCompat.setTransitionName(coverImageview, album.id)
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(album, coverImageview) }
-                        //if (album.eTag.isEmpty()) {
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
                             with(findViewById<ContentLoadingProgressBar>(R.id.sync_progress)) {
@@ -381,13 +366,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     findViewById<LinearLayoutCompat>(R.id.recipients).also { chipGroup->
                         chipGroup.removeAllViews()
                         recipients.find { it.fileId == album.id }?.let {
+                            val ctx = chipGroup.context
                             for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
                                 recipient.sharee.run {
                                     if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
                                         it.text = label
                                         it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
                                     }
-                                    avatarLoader.loadAvatar(this, it)
+                                    avatarLoader(this, it)
                                 }
                             })
                         }
@@ -401,55 +387,36 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  {
-            ctx = parent.context
-            return AlbumViewHolder(LayoutInflater.from(ctx).inflate(R.layout.recyclerview_item_album, parent,false))
-        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  =
+            AlbumViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false))
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
-            holder.bindViewItems(albums[position], itemClickListener, selectionTracker.isSelected(getItemId(position)))
+            holder.bindViewItems(currentList[position], selectionTracker.isSelected(getItemId(position)))
         }
 
         internal fun setAlbums(albums: List<Album>) {
-            val oldAlbums = mutableListOf<Album>()
-            oldAlbums.addAll(0, this.albums)
-
-            this.albums = albums
             this.covers.apply {
                 clear()
                 albums.forEach { album ->
                     this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                 }
             }
-            DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                override fun getOldListSize() = oldAlbums.size
-                override fun getNewListSize() = albums.size
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition].id == albums[newItemPosition].id
-                override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) = oldAlbums[oldItemPosition] == albums[newItemPosition]
-            }).dispatchUpdatesTo(this)
+            submitList(albums.toMutableList())
         }
 
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
             this.recipients = recipients
-
-            for (recipient in recipients) { notifyItemChanged(albums.indexOfFirst { it.id == recipient.fileId }) }
+            for (recipient in recipients) { notifyItemChanged(currentList.indexOfFirst { it.id == recipient.fileId }) }
         }
 
-        internal fun getItemBySelectionKey(key: Long): Album = (albums.find { it.id.toLong() == key })!!
-
-        override fun getItemCount() = albums.size
-
-        override fun getItemId(position: Int): Long = albums[position].id.toLong()
-
-        fun getPosition(key: Long): Int = albums.indexOfFirst { it.id.toLong() == key}
-
+        internal fun getItemBySelectionKey(key: Long): Album = (currentList.find { it.id.toLong() == key })!!
+        override fun getItemId(position: Int): Long = currentList[position].id.toLong()
+        fun getPosition(key: Long): Int = currentList.indexOfFirst { it.id.toLong() == key}
         fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
-
         class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<Long>(SCOPE_CACHED) {
             override fun getKey(position: Int): Long = adapter.getItemId(position)
             override fun getPosition(key: Long): Int = adapter.getPosition(key)
         }
-
         class AlbumDetailsLookup(private val recyclerView: RecyclerView) : ItemDetailsLookup<Long>() {
             override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
@@ -458,6 +425,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return null
             }
         }
+    }
+
+    class AlbumDiffCallback: DiffUtil.ItemCallback<Album>() {
+        override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate
     }
 
     companion object {

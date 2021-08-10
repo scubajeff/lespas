@@ -28,9 +28,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.selection.SelectionTracker.Builder
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.recyclerview.widget.*
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import androidx.work.*
@@ -60,15 +58,18 @@ import java.util.*
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var album: Album
+    private var scrollTo = ""
+
     private var actionMode: ActionMode? = null
+
     private lateinit var stub: View
-    private lateinit var recyclerView: RecyclerView
     private lateinit var dateIndicator: MaterialButton
+    private lateinit var recyclerView: RecyclerView
     private lateinit var mAdapter: PhotoGridAdapter
 
-    private lateinit var selectionTracker: SelectionTracker<Long>
-    private lateinit var lastSelection: MutableSet<Long>
-    private var scrollTo = ""
+    private lateinit var selectionTracker: SelectionTracker<String>
+    private lateinit var sharedSelection: MutableSet<String>
+    private lateinit var lastSelection: MutableSet<String>
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
@@ -76,12 +77,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
     private lateinit var sharedPhoto: Photo
-
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
-
-    private lateinit var sharedSelection: MutableSet<Long>
-
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
     private val publishModel: NCShareViewModel by activityViewModels()
@@ -94,6 +91,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setHasOptionsMenu(true)
+
         album = arguments?.getParcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
 
@@ -101,10 +100,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         lastSelection = mutableSetOf()
         sharedSelection = mutableSetOf()
         savedInstanceState?.let {
-            lastSelection = it.getLongArray(SELECTION)?.toMutableSet()!!
-            sharedSelection = it.getLongArray(SHARED_SELECTION)?.toMutableSet()!!
+            lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+            sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
             sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
-        }
+        } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
             { view, position ->
@@ -150,8 +149,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         })
 
-        setHasOptionsMenu(true)
-
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -190,30 +187,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         // TODO publish status is not persistent locally
                         //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
-                    WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
+                    with(WorkManager.getInstance(requireContext())) {
+                        enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
-                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
-                        if (workInfo != null) {
-                            //if (workInfo.progress.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) imageLoaderModel.invalid(sharedPhoto)
-                            workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.let {
-                                //sharedPhoto.name = it
-                                //sharedPhoto.eTag = ""
-                                //imageLoaderModel.reloadPhoto(sharedPhoto)
-                                //recyclerView.findViewHolderForAdapterPosition(mAdapter.findPhotoPosition(sharedPhoto))?.itemView?.findViewById<ImageView>(R.id.photo)?.invalidate()
-                                //mAdapter.refreshPhoto(sharedPhoto)
-                                imageLoaderModel.invalid(sharedPhoto.id)
-                                mAdapter.refreshPhoto(sharedPhoto)
+                        getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                            if (workInfo != null) {
+                                // If replace original is on, remove old bitmaps from cache and take care of cover too
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                    imageLoaderModel.invalid(sharedPhoto.id)
+                                    // Update cover if needed, cover id can be found only in adapter
+                                    mAdapter.updateCover(sharedPhoto)
+                                }
                             }
-                        }
-                        /*
-                        if (workInfo != null && workInfo.state.isFinished) {
-                            if (workInfo.outputData.getBoolean(SnapseedResultWorker.KEY_INVALID_OLD_PHOTO_CACHE, false)) {
-                                imageLoaderModel.invalid(sharedPhoto)
-                                mAdapter.refreshPhoto(sharedPhoto)
-                            }
-                        }
-                         */
-                    })
+                        })
+                    }
+
                 }
 
                 requireContext().contentResolver.unregisterContentObserver(this)
@@ -223,17 +211,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
                 val photos = mutableListOf<Photo>()
-                for (i in sharedSelection) {
-                    mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
-                }
+                for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                 // TODO publish status is not persistent locally
                 //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
             }
             sharedSelection.clear()
         }
-
-        savedInstanceState ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             if (uris.isNotEmpty()) {
@@ -244,16 +228,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // View might not be destroy at all, reuse it here
-        val vg = view ?: inflater.inflate(R.layout.fragment_albumdetail, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.fragment_albumdetail, container, false)
 
-        stub = vg.findViewById(R.id.stub)
-        dateIndicator = vg.findViewById(R.id.date_indicator)
-        recyclerView = vg.findViewById<RecyclerView>(R.id.photogrid).apply {
-            // Stop item from blinking when notifying changes
-            (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
+        stub = view.findViewById(R.id.stub)
+        dateIndicator = view.findViewById(R.id.date_indicator)
+        recyclerView = view.findViewById(R.id.photogrid)
+
+        postponeEnterTransition()
+        ViewCompat.setTransitionName(recyclerView, album.id)
+
+        with(recyclerView) {
             // Special span size to show cover at the top of the grid
             val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
             layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
@@ -261,58 +249,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
                 }
             }
-        }
 
-        return vg
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        postponeEnterTransition()
-        ViewCompat.setTransitionName(recyclerView, album.id)
-
-        // Register data observer first, try feeding adapter with latest data asap
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
-            // Cover might changed, photo might be deleted, so get updates from latest here
-            this.album = it.album
-
-            mAdapter.setAlbum(it)
-            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
-
-            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
-            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
-                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
-            }
-
-            // Scroll to designated photo at first run
-            if (scrollTo.isNotEmpty()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(mAdapter.findPhotoPosition(scrollTo))
-                scrollTo = ""
-            }
-        })
-
-        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
-            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
-            mAdapter.setRecipient(sharedByMe)
-        })
-
-        with(recyclerView) {
             adapter = mAdapter
 
             selectionTracker = Builder(
                 "photoSelection",
                 this,
-                PhotoGridAdapter.PhotoKeyProvider(),
+                PhotoGridAdapter.PhotoKeyProvider(mAdapter),
                 PhotoGridAdapter.PhotoDetailsLookup(this),
-                StorageStrategy.createLongStorage()
-            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
-                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = (key != 0L)
+                StorageStrategy.createStringStorage()
+            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = (key.isNotEmpty())
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
-                addObserver(object : SelectionTracker.SelectionObserver<Long>() {
+                addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
@@ -325,7 +276,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
                     }
 
-                    override fun onItemStateChanged(key: Long, selected: Boolean) {
+                    override fun onItemStateChanged(key: String, selected: Boolean) {
                         super.onItemStateChanged(key, selected)
                         if (selected) lastSelection.add(key)
                         else lastSelection.remove(key)
@@ -333,9 +284,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 })
             }
             mAdapter.setSelectionTracker(selectionTracker)
-
-            // Restore selection state
-            if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
 
             // Get scroll position after scroll idle
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -374,6 +322,34 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
+            // Cover might changed, photo might be deleted, so get updates from latest here
+            this.album = it.album
+
+            mAdapter.setAlbum(it)
+            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
+
+            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
+            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
+                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
+            }
+
+            // Scroll to designated photo at first run
+            if (scrollTo.isNotEmpty()) {
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
+                scrollTo = ""
+            }
+
+            // Restore selection state
+            if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
+        })
+
+        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
+            sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+            mAdapter.setRecipient(sharedByMe)
+        })
+
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
             if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
@@ -404,8 +380,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY) == DELETE_REQUEST_KEY) {
                     if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                         val photos = mutableListOf<Photo>()
-                        for (i in selectionTracker.selection)
-                            mAdapter.getPhotoAt(i.toInt()).run { if (id != album.cover) photos.add(this) }
+                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
                         // TODO publish status is not persistent locally
                         //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                         if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
@@ -424,8 +399,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLongArray(SELECTION, lastSelection.toLongArray())
-        outState.putLongArray(SHARED_SELECTION, sharedSelection.toLongArray())
+        outState.putStringArray(SELECTION, lastSelection.toTypedArray())
+        outState.putStringArray(SHARED_SELECTION, sharedSelection.toTypedArray())
         outState.putBoolean(SORT_ORDER_CHANGED, sortOrderChanged)
     }
 
@@ -540,9 +515,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 val authority = getString(R.string.file_authority)
 
                 sharedSelection.clear()
-                for (i in selectionTracker.selection) {
-                    sharedSelection.add(i.toLong())
-                    with(mAdapter.getPhotoAt(i.toInt())) {
+                for (photoId in selectionTracker.selection) {
+                    sharedSelection.add(photoId)
+                    //with(mAdapter.getPhotoAt(i.toInt())) {
+                    with(mAdapter.getPhotoBy(photoId)) {
                         // Synced file is named after id, not yet synced file is named after file's name
                         File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
                         uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
@@ -554,7 +530,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
                     else clipData.addItem(ClipData.Item(uris[i]))
 
-                sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
                 if (selectionTracker.selection.size() > 1) {
                     startActivity(
                         Intent.createChooser(
@@ -588,7 +565,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.select_all -> {
-                for (i in 0..mAdapter.itemCount) selectionTracker.select(i.toLong())
+                for (i in 1 until mAdapter.itemCount) selectionTracker.select(mAdapter.getPhotoId(i))
                 true
             }
             else -> false
@@ -606,78 +583,55 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(private val itemClickListener: OnItemClick, private val imageLoader: OnLoadImage, private val titleUpdater: OnTitleVisibility) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-        private var photos = mutableListOf<Photo>()
-        private lateinit var selectionTracker: SelectionTracker<Long>
+    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val titleUpdater: (Boolean) -> Unit
+    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+        private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var currentHolder = 0
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
 
-        init {
-            setHasStableIds(true)
-        }
-
-        fun interface OnItemClick {
-            fun onItemClick(view: View, position: Int)
-        }
-
-        fun interface OnLoadImage {
-            fun loadImage(photo: Photo, view: ImageView, type: String)
-        }
-
-        fun interface OnTitleVisibility {
-            fun setTitle(visible: Boolean)
-        }
-
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             fun bindViewItem() {
                 with(itemView) {
-                    photos.firstOrNull()?.let {
-                        imageLoader.loadImage(it, findViewById(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
-                    }
+                    currentList.firstOrNull()?.let { cover->
+                        imageLoader(cover, findViewById(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
+                        findViewById<TextView>(R.id.title).text = cover.name
 
-                    findViewById<TextView>(R.id.title).text = photos[0].name
-
-                    val days = Duration.between(
-                        photos[0].dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
-                        photos[0].lastModified.atZone(ZoneId.systemDefault()).toInstant()
-                    ).toDays().toInt()
-                    findViewById<TextView>(R.id.duration).text = when (days) {
-                        in 0..21 -> resources.getString(R.string.duration_days, days + 1)
-                        in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
-                        in 57..365 -> resources.getString(R.string.duration_months, days / 30)
-                        else -> resources.getString(R.string.duration_years, days / 365)
-                    }
-
-                    findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, photos.size - 1)
-
-                    if (recipients.size > 0) {
-                        var names = recipients[0].sharee.label
-                        for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
-                        findViewById<TextView>(R.id.recipients).apply {
-                            text = String.format(recipientText, names)
-                            visibility = View.VISIBLE
+                        val days = Duration.between(
+                            cover.dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
+                            cover.lastModified.atZone(ZoneId.systemDefault()).toInstant()
+                        ).toDays().toInt()
+                        findViewById<TextView>(R.id.duration).text = when (days) {
+                            in 0..21 -> resources.getString(R.string.duration_days, days + 1)
+                            in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
+                            in 57..365 -> resources.getString(R.string.duration_months, days / 30)
+                            else -> resources.getString(R.string.duration_years, days / 365)
                         }
-                    } else findViewById<TextView>(R.id.recipients).visibility = View.GONE
-                }
-            }
 
-            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
-                override fun getPosition(): Int = bindingAdapterPosition
-                override fun getSelectionKey(): Long = itemId
-                //override fun inSelectionHotspot(e: MotionEvent): Boolean = true
+                        findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, currentList.size - 1)
+
+                        if (recipients.size > 0) {
+                            var names = recipients[0].sharee.label
+                            for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
+                            findViewById<TextView>(R.id.recipients).apply {
+                                text = String.format(recipientText, names)
+                                visibility = View.VISIBLE
+                            }
+                        } else findViewById<TextView>(R.id.recipients).visibility = View.GONE
+                    }
+                }
             }
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            fun bindViewItem(photo: Photo, clickListener: OnItemClick, isActivated: Boolean) {
+            fun bindViewItem(photo: Photo, isActivated: Boolean) {
                 itemView.let {
                     it.isActivated = isActivated
 
                     with(it.findViewById<ImageView>(R.id.photo)) {
-                        imageLoader.loadImage(photo, this, ImageLoaderViewModel.TYPE_GRID)
+                        imageLoader(photo, this, ImageLoaderViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
@@ -689,24 +643,49 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         ViewCompat.setTransitionName(this, photo.id)
 
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener.onItemClick(this, bindingAdapterPosition) }
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
                     }
 
                     it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(photo.mimeType)) View.VISIBLE else View.GONE
                 }
             }
 
-            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<String>() {
                 override fun getPosition(): Int = bindingAdapterPosition
-                override fun getSelectionKey(): Long = itemId
+                override fun getSelectionKey(): String = getPhotoId(bindingAdapterPosition)
             }
         }
 
+        override fun getItemViewType(position: Int): Int = if (position == 0) TYPE_COVER else TYPE_PHOTO
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            recipientText = parent.context.getString(R.string.published_to)
+            return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
+            else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
+            else (holder as CoverViewHolder).bindViewItem()
+        }
+
+        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewAttachedToWindow(holder)
+            if (holder is CoverViewHolder) {
+                currentHolder = System.identityHashCode(holder)
+                titleUpdater(false)
+            }
+        }
+
+        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+            super.onViewDetachedFromWindow(holder)
+            if (holder is CoverViewHolder && System.identityHashCode(holder) == currentHolder) titleUpdater(true)
+        }
+
         internal fun setAlbum(album: AlbumWithPhotos) {
-            //val oldPhotos = mutableListOf<Photo>().apply { addAll(0, photos) }
-            photos.clear()
-            album.album.run { photos.add(Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, "", coverBaseline)) }
-            photos.addAll(1,
+            val photos = mutableListOf<Photo>()
+            photos.addAll(
                 when(album.album.sortOrder) {
                     Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
                     Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
@@ -717,100 +696,35 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     else-> album.photos
                 }
             )
-            notifyDataSetChanged()
-            /*
-            if (oldSortOrder != album.album.sortOrder) {
-                // sort order changes will change nearly all the position, so no need to use DiffUtil
-                notifyDataSetChanged()
-                oldSortOrder = album.album.sortOrder
-            } else {
-                DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                    override fun getOldListSize() = oldPhotos.size
-                    override fun getNewListSize() = photos.size
-                    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-                        if (oldItemPosition == 0 && newItemPosition == 0) true
-                        //else ((oldPhotos[oldItemPosition].id == photos[newItemPosition].id) && (oldPhotos[oldItemPosition].name == photos[newItemPosition].name))
-                        else oldPhotos[oldItemPosition].name == photos[newItemPosition].name
-
-                    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
-                        if (oldItemPosition == 0 && newItemPosition == 0)
-                            //oldPhotos[oldItemPosition].id == photos[newItemPosition].id &&              // cover's photo id, already checked in areItemsTheSame?
-                            oldPhotos[oldItemPosition].shareId == photos[newItemPosition].shareId &&    // cover baseline
-                            oldPhotos.size == photos.size                                               // photo added or deleted, photo count and duration affected
-                        else oldPhotos[oldItemPosition] == photos[newItemPosition]
-                }).dispatchUpdatesTo(this)
-            }
-
-             */
+            album.album.run { photos.add(0, Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, photos.size.toString(), coverBaseline)) }
+            submitList(photos)
         }
 
+        //internal fun getRecipient(): List<NCShareViewModel.Recipient> = recipients
         internal fun setRecipient(share: NCShareViewModel.ShareByMe) {
             this.recipients = share.with
             notifyItemChanged(0)
         }
 
-        //internal fun getRecipient(): List<NCShareViewModel.Recipient> = recipients
-
-        internal fun findPhotoPosition(photoId: String): Int {
-            for ((i, photo) in photos.withIndex()) {
-                if (photo.id == photoId) return i
-            }
-            return 0
+        internal fun getPhotoAt(position: Int): Photo = currentList[position]
+        internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
+        internal fun updateCover(sharedPhoto: Photo) {
+            //notifyItemChanged(currentList.indexOfLast { it.id == sharedPhoto.id })
+            if (sharedPhoto.id == currentList[0].id) notifyItemChanged(0)
         }
 
-        internal fun getPhotoAt(position: Int): Photo = photos[position]
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            recipientText = parent.context.getString(R.string.published_to)
-            return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
-                    else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
-
+        internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
+        internal fun getPhotoId(position: Int): String = currentList[position].id
+        internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+        class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
+            override fun getKey(position: Int): String = adapter.getPhotoId(position)
+            override fun getPosition(key: String): Int = with(adapter.getPhotoPosition(key)) { if (this >= 0) this else RecyclerView.NO_POSITION }
         }
-
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is PhotoViewHolder) holder.bindViewItem(photos[position], itemClickListener, selectionTracker.isSelected(position.toLong()))
-            else (holder as CoverViewHolder).bindViewItem()
-        }
-
-        override fun getItemCount() = photos.size
-
-        override fun getItemViewType(position: Int): Int {
-            return if (position == 0) TYPE_COVER else TYPE_PHOTO
-        }
-
-        override fun getItemId(position: Int): Long = position.toLong()
-
-        fun refreshPhoto(sharedPhoto: Photo) {
-            notifyItemChanged(photos.indexOfLast { it.id == sharedPhoto.id })
-            if (sharedPhoto.id == photos[0].id) notifyItemChanged(0)
-        }
-
-        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewAttachedToWindow(holder)
-            if (holder is CoverViewHolder) {
-                currentHolder = System.identityHashCode(holder)
-                titleUpdater.setTitle(false)
-            }
-        }
-
-        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewDetachedFromWindow(holder)
-            if (holder is CoverViewHolder)
-                if (System.identityHashCode(holder) == currentHolder) titleUpdater.setTitle(true)
-        }
-
-        fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
-
-        class PhotoKeyProvider: ItemKeyProvider<Long>(SCOPE_CACHED) {
-            override fun getKey(position: Int): Long = position.toLong()
-            override fun getPosition(key: Long): Int = key.toInt()
-        }
-
-        class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<Long>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
+        class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     val holder = recyclerView.getChildViewHolder(it)
-                    return if (holder is PhotoViewHolder) holder.getItemDetails() else (holder as CoverViewHolder).getItemDetails()
+                    return if (holder is PhotoViewHolder) holder.getItemDetails() else null
                 }
                 return null
             }
@@ -820,6 +734,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             private const val TYPE_COVER = 0
             private const val TYPE_PHOTO = 1
         }
+    }
+
+    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
+        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.shareId == newItem.shareId && oldItem.mimeType == newItem.mimeType
     }
 
     companion object {
