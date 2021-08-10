@@ -2,6 +2,7 @@ package site.leos.apps.lespas.album
 
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
@@ -321,7 +322,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             // Show notification badge
             newTimestamp = shareList[0].lastModified
             if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getLong(KEY_RECEIVED_SHARE_TIMESTAMP, 0L) < newTimestamp)
-                receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_share_with_me_notification)
+                with(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_new_share_coming_24) as AnimatedVectorDrawable) {
+                    receivedShareMenu?.icon = this
+                    this.start()
+                }
         }
     }
 
