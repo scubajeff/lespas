@@ -102,15 +102,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val view = inflater.inflate(R.layout.fragment_album, container, false)
-        recyclerView = view.findViewById(R.id.albumlist)
-        fab = view.findViewById(R.id.fab)
-        return view
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        inflater.inflate(R.layout.fragment_album, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        recyclerView = view.findViewById(R.id.albumlist)
+        fab = view.findViewById(R.id.fab)
 
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
@@ -401,9 +400,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun setAlbums(albums: List<Album>) {
             this.covers.apply {
                 clear()
-                albums.forEach { album ->
-                    this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
-                }
+                albums.forEach { album -> this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline)) }
             }
             submitList(albums.toMutableList())
         }
@@ -440,7 +437,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val SCROLL_POSITION = "SCROLL_POSITION"
         private const val SELECTION = "SELECTION"
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
