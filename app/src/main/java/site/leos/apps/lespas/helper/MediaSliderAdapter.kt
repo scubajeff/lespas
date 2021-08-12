@@ -25,7 +25,7 @@ import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
-abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: () -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
     lateinit var exoPlayer: SimpleExoPlayer
     private var currentVolume = 0f
@@ -58,7 +58,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         when(holder) {
             is MediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), clickListener, imageLoader)
             is MediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), clickListener, imageLoader)
-            else-> (holder as MediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position),clickListener, imageLoader)
+            else-> (holder as MediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), clickListener, imageLoader)
         }
     }
 
@@ -78,11 +78,11 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
     }
 
     inner class PhotoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-        fun <T> bind(photo: T, transitionName: String, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             itemView.findViewById<PhotoView>(R.id.media).apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                setOnPhotoTapListener { _, _, _ -> clickListener() }
-                setOnOutsidePhotoTapListener { clickListener() }
+                setOnPhotoTapListener { _, _, _ -> clickListener(null) }
+                setOnOutsidePhotoTapListener { clickListener(null) }
                 maximumScale = 5.0f
                 mediumScale = 2.5f
                 ViewCompat.setTransitionName(this, transitionName)
@@ -91,10 +91,10 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
     }
 
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun <T> bind(photo: T, transitionName: String, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             itemView.findViewById<ImageView>(R.id.media).apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                setOnClickListener { clickListener() }
+                setOnClickListener { clickListener(null) }
                 ViewCompat.setTransitionName(this, transitionName)
             }
         }
@@ -109,7 +109,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         private var stopPosition = 0L
 
         @SuppressLint("ClickableViewAccessibility")
-        fun <T> bind(item: T, video: VideoItem, clickListener: () -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             this.videoUri = video.uri
 
             if (savedPlayerState.stopPosition != FAKE_POSITION) {
@@ -121,7 +121,8 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             muteButton = itemView.findViewById(R.id.exo_mute)
             videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
                 controllerShowTimeoutMs = 3000
-                setOnClickListener { clickListener() }
+                setOnClickListener {
+                    clickListener(!videoView.isControllerVisible) }
                 hideController()
             }
 
@@ -135,7 +136,8 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                     applyTo(it)
                 }
 
-                it.setOnClickListener { clickListener() }
+                it.setOnClickListener {
+                    clickListener(!videoView.isControllerVisible) }
             }
 
             thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {

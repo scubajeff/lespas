@@ -62,7 +62,7 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             Tools.getLocalRoot(requireContext()),
-            { uiModel.toggleOnOff() },
+            { state-> uiModel.toggleOnOff(state) },
             { photo, imageView, type ->
                 if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
                 else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
@@ -299,7 +299,7 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
-    class PhotoSlideAdapter(private val rootPath: String, val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
+    class PhotoSlideAdapter(private val rootPath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
@@ -393,7 +393,9 @@ class PhotoSlideFragment : Fragment() {
     class UIViewModel : ViewModel() {
         private val showUI = MutableLiveData(true)
 
-        fun toggleOnOff() { showUI.value = !showUI.value!! }
+        fun toggleOnOff(state: Boolean?) {
+            state?.let { showUI.value = state } ?: run { showUI.value = !showUI.value!! }
+        }
         fun status(): LiveData<Boolean> { return showUI }
     }
 

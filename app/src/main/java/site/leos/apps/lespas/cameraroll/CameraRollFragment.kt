@@ -93,8 +93,7 @@ class CameraRollFragment : Fragment() {
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            { toggleControlView(controlViewGroup.visibility == View.GONE) },
-            //{ videoControlVisible-> toggleControlView(videoControlVisible) },
+            { _-> toggleControlView(controlViewGroup.visibility == View.GONE) },    // TODO what's the proper way to toggle quickscroll
             { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -524,7 +523,7 @@ class CameraRollFragment : Fragment() {
         fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
     }
 
-    class MediaPagerAdapter(val clickListener: () -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
+    class MediaPagerAdapter(val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))

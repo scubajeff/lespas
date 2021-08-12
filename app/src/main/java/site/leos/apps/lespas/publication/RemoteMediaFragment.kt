@@ -40,7 +40,7 @@ class RemoteMediaFragment: Fragment() {
 
         pAdapter = RemoteMediaAdapter(
             "${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
-            { toggleSystemUI() },
+            { state-> toggleSystemUI(state) },
             { media, view, type->
                 if (media.mimeType.startsWith("video")) startPostponedEnterTransition()
                 else shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
@@ -110,7 +110,7 @@ class RemoteMediaFragment: Fragment() {
                 addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             }
         }
-        toggleSystemUI()
+        toggleSystemUI(null)
     }
 
     override fun onStart() {
@@ -181,9 +181,10 @@ class RemoteMediaFragment: Fragment() {
 
     private var visible: Boolean = true
     private val hideHandler = Handler(Looper.getMainLooper())
-    private fun toggleSystemUI() {
+    private fun toggleSystemUI(state: Boolean?) {
         hideHandler.removeCallbacksAndMessages(null)
-        hideHandler.post(if (visible) hideSystemUI else showSystemUI)
+        val hide = state?.let { !state } ?: visible
+        hideHandler.post(if (hide) hideSystemUI else showSystemUI)
     }
 
     @Suppress("DEPRECATION")
@@ -225,7 +226,7 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class RemoteMediaAdapter(private val cachePath: String, val clickListener: () -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
+    class RemoteMediaAdapter(private val cachePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
             VideoItem(Uri.fromFile(File("$cachePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
