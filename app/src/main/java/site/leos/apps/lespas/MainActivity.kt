@@ -50,7 +50,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Make sure photo's folder existed
-        // TODO try clearing the cache folder
         Executors.newSingleThreadExecutor().execute { File(Tools.getLocalRoot(applicationContext)).mkdir() }
 
         toolbar = findViewById(R.id.toolbar)

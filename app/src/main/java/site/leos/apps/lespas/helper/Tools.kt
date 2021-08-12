@@ -133,8 +133,7 @@ object Tools {
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
                     }
                 }
-                else-> { // TODO
-                }
+                else-> {}
             }
 
             // Get image width and height
