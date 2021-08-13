@@ -3,7 +3,6 @@ package site.leos.apps.lespas.publication
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -98,7 +97,10 @@ class RemoteMediaFragment: Fragment() {
 
         val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
+
+        @Suppress("DEPRECATION")
         window.run {
+/*
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 previousNavBarColor = navigationBarColor
                 navigationBarColor = systemBarBackground
@@ -109,6 +111,10 @@ class RemoteMediaFragment: Fragment() {
                 addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
                 addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             }
+*/
+            statusBarColor = Color.TRANSPARENT
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
         toggleSystemUI(null)
     }
@@ -153,6 +159,7 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.removeCallbacksAndMessages(null)
 
         requireActivity().window.run {
+/*
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
                 clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
@@ -169,7 +176,12 @@ class RemoteMediaFragment: Fragment() {
                 setDecorFitsSystemWindows(true)
                 //decorView.setOnApplyWindowInsetsListener(null)
             }
-
+*/
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            statusBarColor = resources.getColor(R.color.color_primary)
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            decorView.setOnSystemUiVisibilityChangeListener(null)
         }
 
         (requireActivity() as AppCompatActivity).run {
@@ -190,6 +202,7 @@ class RemoteMediaFragment: Fragment() {
     @Suppress("DEPRECATION")
     private val hideSystemUI = Runnable {
         window.run {
+/*
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 decorView.systemUiVisibility = (
                     View.SYSTEM_UI_FLAG_IMMERSIVE
@@ -208,6 +221,18 @@ class RemoteMediaFragment: Fragment() {
                     hide(WindowInsets.Type.systemBars())
                 }
             }
+*/
+            decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+            )
         }
 
         visible = false
@@ -216,8 +241,11 @@ class RemoteMediaFragment: Fragment() {
     @Suppress("DEPRECATION")
     private val showSystemUI = Runnable {
         window.run {
+/*
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
             else insetsController?.show(WindowInsets.Type.systemBars())
+*/
+            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         }
 
         visible = true

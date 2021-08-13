@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -61,6 +60,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         this.window = requireActivity().window
 
         @Suppress("DEPRECATION")
+/*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
                 followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
@@ -71,6 +71,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 insets
             }
         }
+*/
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom) }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && currentPhotoModel.getCurrentPhotoId() != album.cover) currentPhotoModel.removePhoto() }
     }
@@ -223,12 +225,13 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         super.onDestroyView()
     }
 
-    @Suppress("DEPRECATION")
     override fun onDestroy() {
         // BACK TO NORMAL UI
         hideHandler.removeCallbacksAndMessages(null)
 
+        @Suppress("DEPRECATION")
         requireActivity().window.run {
+/*
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
                 decorView.setOnSystemUiVisibilityChangeListener(null)
@@ -241,6 +244,10 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 setDecorFitsSystemWindows(true)
                 decorView.setOnApplyWindowInsetsListener(null)
             }
+*/
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            decorView.setOnSystemUiVisibilityChangeListener(null)
+            statusBarColor = resources.getColor(R.color.color_primary)
         }
 
         super.onDestroy()
@@ -261,6 +268,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     private val hideSystemUI = Runnable {
+/*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
@@ -278,17 +286,34 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hide(WindowInsets.Type.systemBars())
             }
         }
+*/
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_IMMERSIVE
+            // Set the content to appear under the system bars so that the
+            // content doesn't resize when the system bars hide and show.
+            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            // Hide the nav bar and status bar
+            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            or View.SYSTEM_UI_FLAG_FULLSCREEN
+        )
         uiToggle.toggleOnOff(false)
     }
 
-    @Suppress("DEPRECATION")
     private val showSystemUI = Runnable {
+/*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
             window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         else window.insetsController?.show(WindowInsets.Type.systemBars())
+*/
+        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
     }
 
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
