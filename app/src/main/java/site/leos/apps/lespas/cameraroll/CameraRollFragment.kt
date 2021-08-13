@@ -99,7 +99,10 @@ class CameraRollFragment : Fragment() {
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
-            { photo -> mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))},
+            { photo ->
+                mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
+                toggleControlView(false)
+            },
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
