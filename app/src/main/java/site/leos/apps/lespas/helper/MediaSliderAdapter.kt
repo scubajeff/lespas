@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.helper
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
@@ -108,7 +107,6 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         private var videoMimeType = ""
         private var stopPosition = 0L
 
-        @SuppressLint("ClickableViewAccessibility")
         fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             this.videoUri = video.uri
 
@@ -119,11 +117,11 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                 if (savedPlayerState.isMuted) exoPlayer.volume = 0f
             }
             muteButton = itemView.findViewById(R.id.exo_mute)
-            videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
-                controllerShowTimeoutMs = 3000
-                setOnClickListener {
-                    clickListener(!videoView.isControllerVisible) }
+            videoView = itemView.findViewById(R.id.player_view)
+            with(videoView) {
                 hideController()
+                controllerShowTimeoutMs = 3000
+                setOnClickListener { clickListener(!videoView.isControllerVisible) }
             }
 
             videoMimeType = video.mimeType
@@ -136,8 +134,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                     applyTo(it)
                 }
 
-                it.setOnClickListener {
-                    clickListener(!videoView.isControllerVisible) }
+                it.setOnClickListener { clickListener(!videoView.isControllerVisible) }
             }
 
             thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {

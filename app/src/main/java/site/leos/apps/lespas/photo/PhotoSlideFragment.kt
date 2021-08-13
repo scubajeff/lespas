@@ -159,8 +159,11 @@ class PhotoSlideFragment : Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.fragment_photoslide, container, false)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         postponeEnterTransition()
 
@@ -185,12 +188,6 @@ class PhotoSlideFragment : Fragment() {
                 }
             })
         }
-
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos, album.sortOrder)
@@ -295,6 +292,7 @@ class PhotoSlideFragment : Fragment() {
         }
 
         currentPhotoModel.clearRemoveItem()
+        uiModel.toggleOnOff(false)
 
         super.onDestroy()
     }
@@ -391,11 +389,9 @@ class PhotoSlideFragment : Fragment() {
 
     // Share system ui visibility status with BottomControlsFragment
     class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData(true)
+        private val showUI = MutableLiveData(false)
 
-        fun toggleOnOff(state: Boolean?) {
-            state?.let { showUI.value = state } ?: run { showUI.value = !showUI.value!! }
-        }
+        fun toggleOnOff(state: Boolean?) { state?.let { if (state != showUI.value) showUI.value = state } ?: run { showUI.value = !showUI.value!! }}
         fun status(): LiveData<Boolean> { return showUI }
     }
 

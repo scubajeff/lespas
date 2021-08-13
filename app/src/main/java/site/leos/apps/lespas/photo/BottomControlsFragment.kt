@@ -49,7 +49,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var setAsButton: ImageButton
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
-    private var ignore = true
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
@@ -83,15 +82,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     @SuppressLint("ClickableViewAccessibility", "ShowToast")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        ignore = true
 
-        uiToggle.status().observe(viewLifecycleOwner, {
-            if (ignore) {
-                //hideHandler.postDelayed(hideSystemUI, INITIAL_AUTO_HIDE_DELAY_MILLIS)
-                ignore = false
-                visible = false
-            } else toggle()
-        })
+        uiToggle.status().observe(viewLifecycleOwner, { toggle(it) })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
             coverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             setAsButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
@@ -261,12 +253,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     }
 
     // Hide/Show controls, status bar, navigation bar
-    private var visible: Boolean = true
     private val hideHandler = Handler(Looper.getMainLooper())
 
-    private fun toggle() {
-        hideHandler.removeCallbacks(if (visible) showSystemUI else hideSystemUI)
-        hideHandler.post(if (visible) hideSystemUI else showSystemUI)
+    private fun toggle(state: Boolean) {
+        hideHandler.removeCallbacksAndMessages(null)
+        hideHandler.post(if (state) showSystemUI else hideSystemUI)
     }
 
     private val hideSystemUI = Runnable {
@@ -287,7 +278,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hide(WindowInsets.Type.systemBars())
             }
         }
-        visible = false
+        uiToggle.toggleOnOff(false)
     }
 
     @Suppress("DEPRECATION")
@@ -298,10 +289,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         else window.insetsController?.show(WindowInsets.Type.systemBars())
-        visible = true
-
-        // auto hide
-        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -319,13 +306,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             if (show) {
                 controlsContainer.updatePadding(bottom = bottomPadding)
                 controlsContainer.visibility = View.VISIBLE
-                visible = true
             } else {
                 controlsContainer.visibility = View.GONE
-                visible = false
             }
             moreControls.visibility = View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
+
+        // auto hide
+        if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     class InfoDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
@@ -387,7 +375,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
-        private const val INITIAL_AUTO_HIDE_DELAY_MILLIS = 1600L
 
         private const val ALBUM = "ALBUM"
         private const val INFO_DIALOG = "INFO_DIALOG"
