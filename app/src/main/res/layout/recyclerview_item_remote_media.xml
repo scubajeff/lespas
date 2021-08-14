@@ -28,7 +28,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintWidth_percent="0.25"
-        android:src="@drawable/ic_baseline_movie_open_play_24" />
+        android:src="@drawable/ic_baseline_play_mark_24" />
 
     <TextView
         android:id="@+id/meta"
