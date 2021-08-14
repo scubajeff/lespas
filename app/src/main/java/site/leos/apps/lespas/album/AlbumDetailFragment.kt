@@ -644,9 +644,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         ViewCompat.setTransitionName(this, photo.id)
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
-                    }
 
-                    it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(photo.mimeType)) View.VISIBLE else View.GONE
+                        it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(photo.mimeType) && !this.isActivated) View.VISIBLE else View.GONE
+                    }
                 }
             }
 

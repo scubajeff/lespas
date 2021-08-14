@@ -72,7 +72,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val localFileFolder = Tools.getLocalRoot(application)
 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_play_circle_24)
+    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_movie_open_play_24)
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()
