@@ -547,10 +547,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             sink.close()
         }
 
-        // Get frame at 1s
+        // Get frame at 0.1s
         MediaMetadataRetriever().apply {
             setDataSource("$localCacheFolder/$fileName")
-            bitmap = getFrameAtTime(1000000L) ?: videoThumbnail
+            bitmap = getFrameAtTime(100000L) ?: videoThumbnail
             release()
         }
 

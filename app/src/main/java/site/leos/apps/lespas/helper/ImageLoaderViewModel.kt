@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
+import android.media.MediaMetadataRetriever
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
@@ -281,17 +282,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             else {
-                /*
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) MediaMetadataRetriever().run {
+                // Get frame at 0.1s
+                val bitmap: Bitmap
+                MediaMetadataRetriever().apply {
                     setDataSource(fileName)
-                    getFrameAtIndex(0)
+                    bitmap = getFrameAtTime(100000L) ?: placeholderBitmap
+                    release()
                 }
-                 */
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    ThumbnailUtils.createVideoThumbnail(File(fileName), Size(photo.width, photo.height), null)
-                } else {
-                    ThumbnailUtils.createVideoThumbnail(fileName, MediaStore.Video.Thumbnails.MINI_KIND)
-                }
+                bitmap
             }
         } catch (e: Exception) {
             e.printStackTrace()
