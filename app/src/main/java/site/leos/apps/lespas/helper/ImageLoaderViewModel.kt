@@ -230,7 +230,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                callBack?.onLoadComplete()
+                withContext(Dispatchers.Main) { callBack?.onLoadComplete() }
             }
         }.apply {
             //invokeOnCompletion { jobMap.remove(jobKey) }
