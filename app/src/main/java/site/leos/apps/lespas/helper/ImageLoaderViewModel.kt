@@ -265,7 +265,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             null
         }
 
-    private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap? =
+    private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap =
         try {
             if (photo.albumId == FROM_CAMERA_ROLL) {
                 val photoId = photo.id.substringAfterLast('/').toLong()
@@ -282,18 +282,23 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             else {
-                // Get frame at 0.1s
-                val bitmap: Bitmap
-                MediaMetadataRetriever().apply {
-                    setDataSource(fileName)
-                    bitmap = getFrameAtTime(100000L) ?: placeholderBitmap
-                    release()
+                var bitmap: Bitmap?
+                val thumbnailFile = "$fileName.thumbnail"
+                bitmap = BitmapFactory.decodeFile(thumbnailFile)
+                if (bitmap == null) {
+                    MediaMetadataRetriever().apply {
+                        setDataSource(fileName)
+                        // Get frame at 0.1s
+                        bitmap = getFrameAtTime(100000L)
+                        release()
+                    }
+                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, File(thumbnailFile).outputStream())
                 }
-                bitmap
+                bitmap ?: placeholderBitmap
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            placeholderBitmap
         }
 
     override fun onCleared() {

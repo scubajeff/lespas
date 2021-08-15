@@ -174,6 +174,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 val newId = this.first.substring(0, 8).toInt().toString()
                                 // Rename image file name to fileId
                                 try { localFile.renameTo(File(localRootFolder, newId)) } catch (e: Exception) { e.printStackTrace() }
+                                // Rename video thumbnail file too
+                                if (action.folderId.startsWith("video")) try { File(localRootFolder, "${action.fileName}.thumbnail").renameTo(File(localRootFolder, "${newId}.thumbnail")) } catch (e: Exception) { e.printStackTrace() }
 
                                 // Update photo's id to the real fileId and latest eTag now. When called from Snapseed Replace, newEtag is what needs to be updated
                                 photoRepository.fixPhotoIdEtag(action.fileId, newId, this.second)
@@ -386,6 +388,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
                                     //Log.e(">>>>", "rename ${remotePhoto.name} to $remotePhotoId")
                                 } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                // Rename video thumbnail file too
+                                if (remotePhoto.contentType.startsWith("video")) try { File(localRootFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localRootFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { e.printStackTrace() }
 
                                 localPhotoNamesReverse[remotePhoto.name]?.apply {
                                     // Update it's id to the real fileId and also eTag now
@@ -485,7 +489,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                         try {
                             File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id))
-                            Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
+                            //Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
                         } catch (e: Exception) {
                             Log.e(">>>>Exception: ", e.stackTraceToString())
                         }
@@ -497,6 +501,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
                         //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
                     }
+                    // Remove old video thumbnail if any, let ImageLoaderViewModel create a new one during 1st loading
+                    if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch(e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
 
                     with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name)) {
                         changedPhoto.dateTaken = dateTaken

@@ -60,9 +60,13 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val actions = mutableListOf<Action>()
             val timestamp = System.currentTimeMillis()
 
-            photos.forEach {photo ->
+            photos.forEach { photo->
                 if (photo.eTag.isEmpty()) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
-                else try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                else {
+                    try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                    // Remove video thumbnail too
+                    if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                }
 
                 // For a synced photo, id can not be the same as name (sort of, in very rare case, filename can be the same as it's future fileid on server, if this ever happens,
                 // the only problem is that it would reappear after next sync, e.g. can only be deleted on server. This can be solved with adding another column in Photo table)
