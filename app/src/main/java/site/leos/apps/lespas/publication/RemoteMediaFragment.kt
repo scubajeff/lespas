@@ -16,7 +16,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
@@ -32,6 +34,8 @@ class RemoteMediaFragment: Fragment() {
     private var previousOrientationSetting = 0
     private var previousNavBarColor = 0
 
+    private var viewReCreated = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,9 +44,7 @@ class RemoteMediaFragment: Fragment() {
         pAdapter = RemoteMediaAdapter(
             "${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
             { state-> toggleSystemUI(state) },
-            { media, view, type->
-                if (media.mimeType.startsWith("video")) startPostponedEnterTransition()
-                else shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
+            { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -59,7 +61,44 @@ class RemoteMediaFragment: Fragment() {
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.also {
+            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
+            // Also we can transit to video thumbnail before starting playing it
+            it.addListener(object : Transition.TransitionListener {
+                var isVideo = false
+                override fun onTransitionStart(transition: Transition) {
+                    slider.getChildAt(0)?.apply {
+                        findViewById<ImageView>(R.id.media)?.let { mediaView->
+                            // media imageview in exoplayer item view is always in invisible state
+                            if (mediaView.visibility != View.VISIBLE) {
+                                isVideo = true
+                                findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
+                            }
+                            else {
+                                mediaView.visibility = View.INVISIBLE
+                                pAdapter.setAutoStart(true)
+                            }
+                        }
+                    }
+                }
+                override fun onTransitionEnd(transition: Transition) {
+                    (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                    }
+                }
+                override fun onTransitionCancel(transition: Transition) {
+                    (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                    }
+                }
+                override fun onTransitionPause(transition: Transition) {}
+                override fun onTransitionResume(transition: Transition) {}
+            })
         }
+
 
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
@@ -70,7 +109,10 @@ class RemoteMediaFragment: Fragment() {
             }
         })
 
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            pAdapter.setPlayerState(this)
+            pAdapter.setAutoStart(true)
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -94,6 +136,8 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        viewReCreated = true
 
         val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
@@ -129,7 +173,12 @@ class RemoteMediaFragment: Fragment() {
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
+            if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
+                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
+                    pAdapter.setAutoStart(true)
+                    resume()
+                }
+            }
         }
     }
 
@@ -139,6 +188,8 @@ class RemoteMediaFragment: Fragment() {
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
+
+        viewReCreated = false
 
         super.onPause()
     }

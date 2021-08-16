@@ -72,6 +72,7 @@ class CameraRollFragment : Fragment() {
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
+    private var viewReCreated = false
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -119,7 +120,10 @@ class CameraRollFragment : Fragment() {
             })
         }
 
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply { mediaPagerAdapter.setPlayerState(this) }
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            mediaPagerAdapter.setPlayerState(this)
+            mediaPagerAdapter.setAutoStart(true)
+        }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
 
@@ -151,6 +155,8 @@ class CameraRollFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        viewReCreated = true
 
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
 
@@ -303,6 +309,7 @@ class CameraRollFragment : Fragment() {
     override fun onStart() {
         super.onStart()
         mediaPagerAdapter.initializePlayer(requireContext())
+        mediaPagerAdapter.setAutoStart(true)
     }
 
     override fun onResume() {
@@ -319,8 +326,14 @@ class CameraRollFragment : Fragment() {
             }
         }
 
-        with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
+        val pos = (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+        with(mediaPager.findViewHolderForAdapterPosition(pos)) {
+            if (!viewReCreated && mediaPagerAdapter.currentList[pos].mimeType.startsWith("video")) {
+                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
+                    mediaPagerAdapter.setAutoStart(true)
+                    resume()
+                }
+            }
         }
     }
 
@@ -329,6 +342,8 @@ class CameraRollFragment : Fragment() {
         with(mediaPager.findViewHolderForAdapterPosition((mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition())) {
             if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
+
+        viewReCreated = false
 
         super.onPause()
     }

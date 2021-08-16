@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
+import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -54,6 +55,7 @@ class PhotoSlideFragment : Fragment() {
     private var autoRotate = false
     private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
+    private var viewReCreated = false
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -66,10 +68,7 @@ class PhotoSlideFragment : Fragment() {
         pAdapter = PhotoSlideAdapter(
             Tools.getLocalRoot(requireContext()),
             { state-> uiModel.toggleOnOff(state) },
-            { photo, imageView, type ->
-                if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
-                else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
-            },
+            { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -78,11 +77,37 @@ class PhotoSlideFragment : Fragment() {
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }.also {
-            // Prevent ViewPager from showing content before transition finished
+            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
+            // Also we can transit to video thumbnail before player start playing
             it.addListener(object : Transition.TransitionListener {
-                override fun onTransitionStart(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.INVISIBLE }
-                override fun onTransitionEnd(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
-                override fun onTransitionCancel(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
+                var isVideo = false
+                override fun onTransitionStart(transition: Transition) {
+                    slider.getChildAt(0)?.apply {
+                        findViewById<ImageView>(R.id.media)?.let { mediaView->
+                            // media imageview in exoplayer item view is always in invisible state
+                            if (mediaView.visibility != View.VISIBLE) {
+                                isVideo = true
+                                findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
+                            }
+                            else {
+                                mediaView.visibility = View.INVISIBLE
+                                pAdapter.setAutoStart(true)
+                            }
+                        }
+                    }
+                }
+                override fun onTransitionEnd(transition: Transition) {
+                    (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                    }
+                }
+                override fun onTransitionCancel(transition: Transition) {
+                    (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                    }
+                }
                 override fun onTransitionPause(transition: Transition) {}
                 override fun onTransitionResume(transition: Transition) {}
             })
@@ -100,7 +125,10 @@ class PhotoSlideFragment : Fragment() {
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
 
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply { pAdapter.setPlayerState(this) }
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
+            pAdapter.setPlayerState(this)
+            pAdapter.setAutoStart(true)
+        }
 
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
@@ -167,6 +195,8 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        viewReCreated = true
 
         postponeEnterTransition()
 
@@ -270,9 +300,13 @@ class PhotoSlideFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
-        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.resume()
+        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem)?.apply {
+            if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
+                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
+                    pAdapter.setAutoStart(true)
+                    resume()
+                }
+            }
         }
     }
 
@@ -282,6 +316,8 @@ class PhotoSlideFragment : Fragment() {
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
+
+        viewReCreated = false
 
         super.onPause()
     }

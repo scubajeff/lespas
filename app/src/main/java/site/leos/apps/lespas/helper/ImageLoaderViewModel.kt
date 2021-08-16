@@ -282,14 +282,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             else {
-                var bitmap: Bitmap?
+                var bitmap: Bitmap? = null
                 val thumbnailFile = "$fileName.thumbnail"
                 bitmap = BitmapFactory.decodeFile(thumbnailFile)
                 if (bitmap == null) {
                     MediaMetadataRetriever().apply {
                         setDataSource(fileName)
-                        // Get frame at 0.1s
-                        bitmap = getFrameAtTime(100000L)
+                        // Get first frame
+                        bitmap = getFrameAtTime(0L)
                         release()
                     }
                     bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, File(thumbnailFile).outputStream())
