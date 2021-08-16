@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
+import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -66,10 +67,7 @@ class PhotoSlideFragment : Fragment() {
         pAdapter = PhotoSlideAdapter(
             Tools.getLocalRoot(requireContext()),
             { state-> uiModel.toggleOnOff(state) },
-            { photo, imageView, type ->
-                if (photo.mimeType.startsWith("video")) startPostponedEnterTransition()
-                else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
-            },
+            { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -78,11 +76,41 @@ class PhotoSlideFragment : Fragment() {
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }.also {
-            // Prevent ViewPager from showing content before transition finished
+            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
+            // Also we can transit to video thumbnail before starting playing it
             it.addListener(object : Transition.TransitionListener {
-                override fun onTransitionStart(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.INVISIBLE }
-                override fun onTransitionEnd(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
-                override fun onTransitionCancel(transition: Transition) { slider.getChildAt(0).findViewById<ImageView>(R.id.media).visibility = View.VISIBLE }
+                var isVideo = false
+                override fun onTransitionStart(transition: Transition) {
+                    slider.getChildAt(0)?.apply {
+                        findViewById<ImageView>(R.id.media)?.let { mediaView->
+                            // media imageview in exoplayer item view is always in invisible state
+                            if (mediaView.visibility != View.VISIBLE) {
+                                isVideo = true
+                                findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
+                            }
+                            else mediaView.visibility = View.INVISIBLE
+                        }
+                    }
+                }
+                override fun onTransitionEnd(transition: Transition) {
+                    (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) {
+                            //(findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                            findViewById<PlayerView>(R.id.player_view)?.visibility = View.VISIBLE
+                            findViewById<ImageView>(R.id.media)?.visibility = View.INVISIBLE
+                        }
+                    }
+                }
+                override fun onTransitionCancel(transition: Transition) {
+                    slider.getChildAt(0)?.apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
+                        if (isVideo) {
+                            findViewById<PlayerView>(R.id.player_view)?.visibility = View.VISIBLE
+                            findViewById<ImageView>(R.id.media)?.visibility = View.INVISIBLE
+                        }
+                    }
+                }
                 override fun onTransitionPause(transition: Transition) {}
                 override fun onTransitionResume(transition: Transition) {}
             })

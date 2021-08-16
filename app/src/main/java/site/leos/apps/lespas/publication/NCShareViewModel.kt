@@ -547,10 +547,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             sink.close()
         }
 
-        // Get frame at 0.1s
+        // Get frame at 0.4s, close to default transition duration setting, so that video can start smoothly after entering transition end
         MediaMetadataRetriever().apply {
             setDataSource("$localCacheFolder/$fileName")
-            bitmap = getFrameAtTime(100000L) ?: videoThumbnail
+            bitmap = getFrameAtTime(400000L) ?: videoThumbnail
             release()
         }
 
@@ -620,14 +620,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
-                                    // only image files would be requested as TYPE_FULL
-                                    if (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                            animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
-                                        } else {
-                                            bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                    when {
+                                        photo.mimeType.startsWith("video")-> bitmap = getRemoteVideoThumbnail(it, photo)
+                                        (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif")-> {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
+                                            } else {
+                                                bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                            }
                                         }
-                                    } else bitmap = BitmapFactory.decodeStream(it, null, option)
+                                        else-> bitmap = BitmapFactory.decodeStream(it, null, option)
+                                    }
                                 }
                                 else-> {}
                             }

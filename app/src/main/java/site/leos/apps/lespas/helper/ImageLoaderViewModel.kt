@@ -285,15 +285,15 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 var bitmap: Bitmap?
                 val thumbnailFile = "$fileName.thumbnail"
                 bitmap = BitmapFactory.decodeFile(thumbnailFile)
-                if (bitmap == null) {
+                //if (bitmap == null) {
                     MediaMetadataRetriever().apply {
                         setDataSource(fileName)
-                        // Get frame at 0.1s
-                        bitmap = getFrameAtTime(100000L)
+                        // Get frame at 0.4s, close to default transition duration setting, so that video can start smoothly after entering transition end
+                        bitmap = getFrameAtTime(400000L)
                         release()
                     }
                     bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, File(thumbnailFile).outputStream())
-                }
+                //}
                 bitmap ?: placeholderBitmap
             }
         } catch (e: Exception) {

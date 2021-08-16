@@ -22,7 +22,9 @@ import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.ui.PlayerView
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
+import java.lang.Thread.sleep
 import java.time.LocalDateTime
+import java.util.*
 
 abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
@@ -146,9 +148,6 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             muteButton.setOnClickListener { toggleMute() }
         }
 
-        // Need to call this so that exit transition can happen
-        fun showThumbnail() { thumbnailView.visibility = View.INVISIBLE }
-
         fun hideControllers() { videoView.hideController() }
         fun setStopPosition(position: Long) {
             //Log.e(">>>","set stop position $position")
@@ -165,18 +164,17 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                     playWhenReady = false
                     stop()
                     oldVideoViewHolder?.apply {
-                        if (this != this@VideoViewHolder) {
-                            setStopPosition(currentPosition)
-                            showThumbnail()
-                        }
+                        if (this != this@VideoViewHolder) setStopPosition(currentPosition)
                     }
                 }
                 playWhenReady = true
                 setMediaItem(MediaItem.Builder().setUri(videoUri).setMimeType(videoMimeType).build(), stopPosition)
-                prepare()
+
                 oldVideoViewHolder?.resetVideoViewPlayer()
                 videoView.player = exoPlayer
                 oldVideoViewHolder = this@VideoViewHolder
+
+                prepare()
 
                 // Maintain mute status indicator
                 muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
@@ -202,6 +200,17 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
             savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
+        }
+
+        fun startOver() {
+            videoView.controllerAutoShow = false
+            exoPlayer.playWhenReady = false
+            exoPlayer.seekTo(0L)
+            sleep(200)
+            videoView.visibility = View.VISIBLE
+            exoPlayer.playWhenReady = true
+            videoView.controllerAutoShow = true
+            thumbnailView.visibility = View.INVISIBLE
         }
 
         private fun mute() {
@@ -241,10 +250,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
-                if (isPlaying) oldVideoViewHolder?.run {
-                    showThumbnail()
-                    hideControllers()
-                }
+                if (isPlaying) oldVideoViewHolder?.hideControllers()
             }
         })
 

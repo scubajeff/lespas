@@ -5,8 +5,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/videoview_container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
 
+    <!--
+    This image view is for entering/exit transition use, it's ok to be invisible all the time
+    -->
     <ImageView
         android:id="@+id/media"
         android:layout_width="0dp"
@@ -16,7 +20,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:scaleType="fitCenter"
-        android:visibility="gone"
+        android:visibility="invisible"
         tools:ignore="ContentDescription" />
 
     <com.google.android.exoplayer2.ui.PlayerView
