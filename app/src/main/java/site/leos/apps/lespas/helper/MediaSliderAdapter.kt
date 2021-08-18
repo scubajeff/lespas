@@ -4,10 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.os.Parcelable
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
+import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -206,11 +203,10 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
 
         fun startOver() {
             videoView.controllerAutoShow = false
-            videoView.visibility = View.VISIBLE
             setAutoStart(true)
+            videoView.visibility = View.VISIBLE
             exoPlayer.playWhenReady = true
             videoView.controllerAutoShow = true
-            thumbnailView.visibility = View.INVISIBLE
         }
 
         private fun mute() {

@@ -98,14 +98,14 @@ class PhotoSlideFragment : Fragment() {
                 }
                 override fun onTransitionEnd(transition: Transition) {
                     (slider.getChildAt(0) as RecyclerView).apply {
-                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                         if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                     }
                 }
                 override fun onTransitionCancel(transition: Transition) {
                     (slider.getChildAt(0) as RecyclerView).apply {
-                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                         if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                     }
                 }
                 override fun onTransitionPause(transition: Transition) {}
