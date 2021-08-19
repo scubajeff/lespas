@@ -92,7 +92,7 @@ class SearchResultFragment : Fragment() {
             { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() }}
         ).apply {
             // Get album's name for display
-            Thread { setAlbumNameList(albumModel.getAllAlbumName()) }.start()
+            GlobalScope.launch(Dispatchers.IO) { setAlbumNameList((albumModel.getAllAlbumName())) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
     }
