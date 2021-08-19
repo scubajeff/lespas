@@ -65,6 +65,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
+    private var showCameraRoll = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -103,6 +105,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
+
+        showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
@@ -118,10 +122,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums->
-            val albumWithCameraRoll = albums.toMutableList().apply { Tools.getCameraRollAlbum(requireContext().contentResolver)?.let { add(0, it) }}
-            mAdapter.setAlbums(albumWithCameraRoll)
-
-            //mAdapter.setAlbums(albums)
+            if (showCameraRoll) {
+                val albumWithCameraRoll = albums.toMutableList().apply { Tools.getCameraRollAlbum(requireContext().contentResolver)?.let { add(0, it) } }
+                mAdapter.setAlbums(albumWithCameraRoll)
+            } else mAdapter.setAlbums(albums)
         })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
@@ -251,6 +255,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
+
+        if (showCameraRoll) menu.findItem(R.id.option_menu_camera_roll).isVisible = false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

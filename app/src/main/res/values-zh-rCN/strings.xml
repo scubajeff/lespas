@@ -148,4 +148,5 @@
     <string name="prefer_random">任意（以上各项无果时亦采用此项）</string>
     <string name="prefer_latest">近期</string>
     <string name="http_toggle_helper_text">点击前缀切换非安全HTTP连接</string>
+    <string name="cameraroll_as_album_title">在相册列表中显示相机相册</string>
 </resources>
