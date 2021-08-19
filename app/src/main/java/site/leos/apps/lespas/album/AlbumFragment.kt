@@ -31,6 +31,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
@@ -89,12 +90,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                    .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+                if (album.id != FAKE_ALBUM_ID) {
+                    exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    parentFragmentManager.beginTransaction()
+                        .setReorderingAllowed(true)
+                        .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                        .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
+                } else parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
@@ -114,8 +117,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        // Register data observer first, try feeding adapter with latest data asap
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> mAdapter.setAlbums(albums) })
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums->
+            val albumWithCameraRoll = albums.toMutableList().apply { Tools.getCameraRollAlbum(requireContext().contentResolver)?.let { add(0, it) }}
+            mAdapter.setAlbums(albumWithCameraRoll)
+
+            //mAdapter.setAlbums(albums)
+        })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
@@ -163,7 +170,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumKeyProvider(mAdapter),
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createLongStorage()
-            ).withSelectionPredicate(SelectionPredicates.createSelectAnything()).build().apply {
+            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
+                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = key != 0L
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
+                override fun canSelectMultiple(): Boolean = true
+            }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
@@ -400,7 +411,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun setAlbums(albums: List<Album>) {
             this.covers.apply {
                 clear()
-                albums.forEach { album -> this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline)) }
+                albums.forEach { album ->
+                    if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                        album.id = FAKE_ALBUM_ID
+                        this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
+                    }
+                    else this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
+                }
             }
             submitList(albums.toMutableList())
         }
@@ -438,6 +455,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
+        private const val FAKE_ALBUM_ID = "0"
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 

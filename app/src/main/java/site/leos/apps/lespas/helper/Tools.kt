@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
@@ -231,7 +232,6 @@ object Tools {
     }
 
     fun getCameraRoll(cr: ContentResolver, imageOnly: Boolean): MutableList<Photo> = listMediaContent("DCIM", cr, imageOnly, false)
-
     fun listMediaContent(folder: String, cr: ContentResolver, imageOnly: Boolean, strict: Boolean): MutableList<Photo> {
         val medias = mutableListOf<Photo>()
         val externalStorageUri = MediaStore.Files.getContentUri("external")
@@ -293,6 +293,53 @@ object Tools {
         }
 
         return medias
+    }
+    fun getCameraRollAlbum(cr: ContentResolver): Album? {
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+        var startDate = LocalDateTime.MIN
+        var endDate = LocalDateTime.now()
+        var coverId = ""
+        var coverBaseline = 0
+        var coverWidth = 0
+        var coverHeight = 0
+        var mimeType = ""
+        var orientation = 0
+
+        @Suppress("DEPRECATION")
+        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            dateSelection,
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.WIDTH,
+            MediaStore.Files.FileColumns.HEIGHT,
+            "orientation",                  // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+        )
+        val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+
+        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC"
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val dateColumn = cursor.getColumnIndex(dateSelection)
+                val defaultZone = ZoneId.systemDefault()
+                mimeType = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE))
+                val externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+
+                // Get album's end date, cover
+                endDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
+                coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)).toLong()).toString()
+                coverWidth = cursor.getInt(cursor.getColumnIndex(MediaStore.Files.FileColumns.WIDTH))
+                coverHeight = cursor.getInt(cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT))
+                orientation = cursor.getInt(cursor.getColumnIndex("orientation"))
+
+                // Get album's start date
+                if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
+            } else return null
+        }
+
+        return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, "Camera Roll", startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
     }
 
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
