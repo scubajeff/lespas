@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.album
 
+import android.content.SharedPreferences
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -61,11 +62,23 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     private var receivedShareMenu: MenuItem? = null
+    private var cameraRollAsAlbumMenu: MenuItem? = null
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     private var showCameraRoll = true
+    private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, false).apply {
+            showCameraRoll = this
+            cameraRollAsAlbumMenu?.isEnabled = !this
+            cameraRollAsAlbumMenu?.isVisible = !this
+
+            // Selection based on bindingAdapterPosition, which will be changed
+            selectionTracker.clearSelection()
+        }
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +120,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
@@ -125,7 +139,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             if (showCameraRoll) {
                 val albumWithCameraRoll = albums.toMutableList().apply { Tools.getCameraRollAlbum(requireContext().contentResolver)?.let { add(0, it) } }
                 mAdapter.setAlbums(albumWithCameraRoll)
-            } else mAdapter.setAlbums(albums)
+            } else mAdapter.setAlbums(albums.toMutableList())
         })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
@@ -175,8 +189,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createLongStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
-                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = key != 0L
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
+                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = key != FAKE_ALBUM_ID_LONG
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = mAdapter.getItemId(position) != FAKE_ALBUM_ID_LONG
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
@@ -245,6 +259,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onDestroyView()
     }
 
+    override fun onDestroy() {
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        super.onDestroy()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_menu, menu)
@@ -256,7 +275,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
 
-        if (showCameraRoll) menu.findItem(R.id.option_menu_camera_roll).isVisible = false
+        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
+        cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
+        cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -358,7 +379,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 itemView.apply {
                     this.isActivated = isActivated
                     findViewById<ImageView>(R.id.coverart).let {coverImageview ->
-                        imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
+                        //imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
+                        covers.find { it.id == album.cover }?.let { imageLoader(it, coverImageview, ImageLoaderViewModel.TYPE_COVER) }
                         /*
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
@@ -414,7 +436,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             holder.bindViewItems(currentList[position], selectionTracker.isSelected(getItemId(position)))
         }
 
-        internal fun setAlbums(albums: List<Album>) {
+        internal fun setAlbums(albums: MutableList<Album>) {
             this.covers.apply {
                 clear()
                 albums.forEach { album ->
@@ -425,7 +447,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     else this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                 }
             }
-            submitList(albums.toMutableList())
+            submitList(albums)
         }
 
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
@@ -462,6 +484,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val SELECTION = "SELECTION"
         private const val FAKE_ALBUM_ID = "0"
+        private const val FAKE_ALBUM_ID_LONG = 0L
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 
