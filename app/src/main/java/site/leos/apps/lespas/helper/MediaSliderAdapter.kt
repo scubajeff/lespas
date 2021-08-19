@@ -246,7 +246,10 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
-                if (isPlaying) oldVideoViewHolder?.hideControllers()
+                if (isPlaying) {
+                    oldVideoViewHolder?.hideControllers()
+                    clickListener(false)
+                }
             }
         })
 

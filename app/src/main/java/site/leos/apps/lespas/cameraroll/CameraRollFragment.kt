@@ -94,7 +94,7 @@ class CameraRollFragment : Fragment() {
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            { _-> toggleControlView(controlViewGroup.visibility == View.GONE) },    // TODO what's the proper way to toggle quickscroll
+            { state-> state?.let { toggleControlView(state) } ?: run { toggleControlView(controlViewGroup.visibility == View.GONE) }},
             { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
