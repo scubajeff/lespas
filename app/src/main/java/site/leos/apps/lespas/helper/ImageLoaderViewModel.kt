@@ -151,12 +151,24 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     // cover baseline value passed in property shareId
                     val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
                     val rect = Rect(0, photo.shareId, photo.width, bottom)
+                    val options = BitmapFactory.Options().apply {
+                        this.inSampleSize = size
+                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                    }
                     try {
-                        (if (photo.albumId == FROM_CAMERA_ROLL) BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false) else BitmapRegionDecoder.newInstance(fileName, false))
-                        .decodeRegion(rect, BitmapFactory.Options().apply {
-                            this.inSampleSize = size
-                            this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                        }) ?: placeholderBitmap
+                        var bmp: Bitmap?
+                        if (photo.albumId == FROM_CAMERA_ROLL) {
+                            // cover orientation passed in property eTag
+                            (try {photo.eTag.toFloat()} catch (e: Exception) { 0.0F }).also { orientation->
+                                if (orientation != 0.0F) {
+                                    bmp = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, options)
+                                    bmp ?: run { bmp = Bitmap.createBitmap(bmp!!, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(orientation) }, true) }
+                                    bmp ?: run { bmp = Bitmap.createBitmap(bmp!!, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top) }
+                                } else bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
+                            }
+                        } else bmp = BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, options) ?: placeholderBitmap
+
+                        bmp ?: placeholderBitmap
                     } catch (e: IOException) {
                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                         e.printStackTrace()

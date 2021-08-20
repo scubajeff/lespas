@@ -442,6 +442,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 albums.forEach { album ->
                     if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                         album.id = FAKE_ALBUM_ID
+                        // Pass cover orientation in property eTag
                         this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                     }
                     else this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))

@@ -339,6 +339,7 @@ object Tools {
             } else return null
         }
 
+        // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
         return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
     }
 
