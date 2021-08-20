@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.album
 
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -18,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.widget.ContentLoadingProgressBar
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
@@ -398,7 +400,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                             findViewById<ContentLoadingProgressBar>(R.id.sync_progress).visibility = View.GONE
                         }
                     }
-                    findViewById<TextView>(R.id.title).text = album.name
+                    with(findViewById<TextView>(R.id.title)) {
+                        text = album.name
+
+                        val size = context.resources.getDimension(R.dimen.big_padding).toInt()
+                        compoundDrawablePadding = 16
+                        TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
+                        setCompoundDrawables(if (album.id == FAKE_ALBUM_ID) ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, size, size) } else null, null, null, null)
+                    }
                     findViewById<TextView>(R.id.duration).text = String.format(
                         "%s  -  %s",
                         album.startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
