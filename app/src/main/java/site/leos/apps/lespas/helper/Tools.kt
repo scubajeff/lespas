@@ -294,7 +294,7 @@ object Tools {
 
         return medias
     }
-    fun getCameraRollAlbum(cr: ContentResolver): Album? {
+    fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album? {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         var startDate = LocalDateTime.MIN
         var endDate = LocalDateTime.now()
@@ -339,7 +339,7 @@ object Tools {
             } else return null
         }
 
-        return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, "Camera Roll", startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+        return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
     }
 
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
