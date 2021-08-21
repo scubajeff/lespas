@@ -68,7 +68,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
-    //private val localCacheFolder = "${application.cacheDir}${lespasBase}"
+    private val localCacheFolder = "${application.cacheDir}${lespasBase}"
     private val localFileFolder = Tools.getLocalRoot(application)
 
     private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
@@ -542,7 +542,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
-        var bitmap: Bitmap?
+        var bitmap: Bitmap? = null
 /*
         // Download video file if necessary
         val fileName = "${OkHttpWebDav.VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
@@ -560,11 +560,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             release()
         }
 */
-        MediaMetadataRetriever().apply {
-            inputStream.close()
-            setDataSource("$resourceRoot${Uri.encode(photo.path, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
-            bitmap = getFrameAtTime(0L) ?: videoThumbnail
-            release()
+        val thumbnail = File(localCacheFolder, "${photo.fileId}.thumbnail")
+
+        // Load from local cache
+        if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
+
+        // Download from server
+        bitmap ?: run {
+            MediaMetadataRetriever().apply {
+                inputStream.close()
+                setDataSource("$resourceRoot${Uri.encode(photo.path, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
+                bitmap = getFrameAtTime(0L) ?: videoThumbnail
+                release()
+            }
+
+            // Cache thumbnail in local
+            bitmap?.let {
+                viewModelScope.launch(Dispatchers.IO) {
+                    it.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
+                }
+            }
         }
 
         return bitmap
