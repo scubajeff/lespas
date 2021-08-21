@@ -8,7 +8,6 @@ import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
@@ -16,8 +15,12 @@ import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import kotlinx.parcelize.Parcelize
+import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 import java.util.*
@@ -120,11 +123,13 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             with(videoView) {
                 hideController()
                 controllerShowTimeoutMs = 3000
+                //setShutterBackgroundColor(0)
                 setOnClickListener { clickListener(!videoView.isControllerVisible) }
             }
 
             videoMimeType = video.mimeType
 
+/*
             itemView.findViewById<ConstraintLayout>(R.id.videoview_container).let {
                 // Fix view aspect ratio
                 if (video.height != 0) with(ConstraintSet()) {
@@ -135,6 +140,8 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
 
                 it.setOnClickListener { clickListener(!videoView.isControllerVisible) }
             }
+*/
+            itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnClickListener { clickListener(!videoView.isControllerVisible) }
 
             thumbnailView = itemView.findViewById<ImageView>(R.id.media).apply {
                 // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
@@ -145,6 +152,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             muteButton.setOnClickListener { toggleMute() }
         }
 
+        fun hideThumbnailView() { thumbnailView.visibility = View.INVISIBLE }
         fun hideControllers() { videoView.hideController() }
         fun setStopPosition(position: Long) {
             //Log.e(">>>","set stop position $position")
@@ -226,9 +234,12 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         }
     }
 
-    fun initializePlayer(ctx: Context) {
+    fun initializePlayer(ctx: Context, callFactory: OkHttpClient?) {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        exoPlayer = SimpleExoPlayer.Builder(ctx).build()
+        val builder = SimpleExoPlayer.Builder(ctx)
+        callFactory?.let { builder.setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))) }
+        exoPlayer = builder.build()
+
         currentVolume = exoPlayer.volume
         exoPlayer.addListener(object: Player.Listener {
             override fun onPlaybackStateChanged(state: Int) {
@@ -247,6 +258,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
                 if (isPlaying) {
+                    oldVideoViewHolder?.hideThumbnailView()
                     oldVideoViewHolder?.hideControllers()
                     clickListener(false)
                 }

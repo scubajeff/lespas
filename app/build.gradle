@@ -94,6 +94,7 @@ dependencies {
 
     implementation 'com.google.android.exoplayer:exoplayer-core:2.15.0'
     implementation 'com.google.android.exoplayer:exoplayer-ui:2.15.0'
+    implementation 'com.google.android.exoplayer:extension-okhttp:2.15.0'
 
     // Chris Banes PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'

@@ -21,6 +21,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:scaleType="fitCenter"
         android:visibility="invisible"
+        android:elevation="1dp"
         tools:ignore="ContentDescription" />
 
     <com.google.android.exoplayer2.ui.PlayerView
@@ -32,6 +33,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:keep_content_on_player_reset="true"
+        app:resize_mode="fit"
         app:controller_layout_id="@layout/exoplayer_control_view"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

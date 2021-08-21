@@ -22,7 +22,6 @@ import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
-import java.io.File
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -32,7 +31,7 @@ class RemoteMediaFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
 
     private var previousOrientationSetting = 0
-    private var previousNavBarColor = 0
+    //private var previousNavBarColor = 0
 
     private var viewReCreated = false
 
@@ -42,7 +41,8 @@ class RemoteMediaFragment: Fragment() {
         this.window = requireActivity().window
 
         pAdapter = RemoteMediaAdapter(
-            "${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
+            //"${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
+            shareModel.getResourceRoot(),
             { state-> toggleSystemUI(state) },
             { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
@@ -84,14 +84,14 @@ class RemoteMediaFragment: Fragment() {
                 }
                 override fun onTransitionEnd(transition: Transition) {
                     (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                         if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                     }
                 }
                 override fun onTransitionCancel(transition: Transition) {
                     (slider.getChildAt(0) as RecyclerView).apply {
+                        findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                         if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
                     }
                 }
                 override fun onTransitionPause(transition: Transition) {}
@@ -165,7 +165,7 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onStart() {
         super.onStart()
-        pAdapter.initializePlayer(requireContext())
+        pAdapter.initializePlayer(requireContext(), shareModel.getCachedCallFactory())
     }
 
     override fun onResume() {
@@ -305,10 +305,11 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class RemoteMediaAdapter(private val cachePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
+    class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
-            VideoItem(Uri.fromFile(File("$cachePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
+            //VideoItem(Uri.fromFile(File("$basePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
+            VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId)
         }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType

@@ -47,7 +47,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         cachedHttpClient = builder.cache(Cache(File(cacheFolder), DISK_CACHE_SIZE)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build()
 
         // Make cache folder for video download
-        File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
+        //File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
     }
 
     fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
@@ -86,6 +86,8 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             else throw OkHttpWebDavException(response)
         }
     }
+
+    fun getCachedCallFactory() = cachedHttpClient
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
     fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {
@@ -316,7 +318,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     companion object {
         private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
         private const val MAX_AGE = "864000"                        // 10 days
-        const val VIDEO_CACHE_FOLDER = "videos"
+        //const val VIDEO_CACHE_FOLDER = "videos"
 
         private const val CHUNK_SIZE = 50L * 1024L * 1024L          // Default chunk size is 50MB
 
