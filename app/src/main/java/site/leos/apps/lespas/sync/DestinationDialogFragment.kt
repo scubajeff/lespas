@@ -177,6 +177,10 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                                 destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                                 // Return with album id field empty, calling party will know this is a new album
                                 destinationModel.setDestination(Album("", name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
+
+                                // Clear editing mode
+                                destinationModel.setEditMode(false)
+
                                 dismiss()
                             }
                         }
