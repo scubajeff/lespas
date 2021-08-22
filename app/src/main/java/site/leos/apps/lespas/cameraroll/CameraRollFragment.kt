@@ -42,6 +42,7 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.*
+import androidx.transition.Transition
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -130,7 +131,22 @@ class CameraRollFragment : Fragment() {
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
-        }
+        }.addListener(object: Transition.TransitionListener {
+            override fun onTransitionStart(transition: Transition) {
+                mediaPager.findChildViewUnder(500.0f, 500.0f)?.visibility = View.INVISIBLE
+            }
+
+            override fun onTransitionEnd(transition: Transition) {
+                mediaPager.findChildViewUnder(500.0f, 500.0f)?.visibility = View.VISIBLE
+            }
+
+            override fun onTransitionCancel(transition: Transition) {
+                mediaPager.findChildViewUnder(500.0f, 500.0f)?.visibility = View.VISIBLE
+            }
+
+            override fun onTransitionPause(transition: Transition) {}
+            override fun onTransitionResume(transition: Transition) {}
+        })
 
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {

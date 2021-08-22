@@ -117,17 +117,23 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                         .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
                 } else {
-                    exitTransition = MaterialContainerTransform().apply {
-                        duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                        scrimColor = Color.TRANSPARENT
+                    // Camera roll album's cover mime type is passed in property eTag
+                    if (album.eTag.startsWith("video")) {
+                        // Don't do transition for video cover
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
-                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    else {
+                        exitTransition = MaterialContainerTransform().apply {
+                            duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                            scrimColor = Color.TRANSPARENT
+                        }
+                        reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
 
-                    parentFragmentManager.beginTransaction()
-                        .setReorderingAllowed(true)
-                        .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                        .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
-                    //parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        parentFragmentManager.beginTransaction()
+                            .setReorderingAllowed(true)
+                            .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                            .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    }
                 }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
