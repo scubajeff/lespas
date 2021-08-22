@@ -162,8 +162,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             (try {photo.eTag.toFloat()} catch (e: Exception) { 0.0F }).also { orientation->
                                 if (orientation != 0.0F) {
                                     bmp = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, options)
-                                    bmp ?: run { bmp = Bitmap.createBitmap(bmp!!, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(orientation) }, true) }
-                                    bmp ?: run { bmp = Bitmap.createBitmap(bmp!!, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top) }
+                                    bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(orientation) }, true) }
+                                    bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, photo.shareId, bmp!!.width, (bmp!!.width.toFloat() * 9 / 21).toInt()) }
                                 } else bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
                             }
                         } else bmp = BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, options) ?: placeholderBitmap
