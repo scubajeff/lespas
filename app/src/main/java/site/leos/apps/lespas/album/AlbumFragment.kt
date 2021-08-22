@@ -2,6 +2,7 @@ package site.leos.apps.lespas.album
 
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -28,6 +29,7 @@ import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
@@ -109,12 +111,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             { album, imageView ->
                 if (album.id != FAKE_ALBUM_ID) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
                         .replace(R.id.container_root, AlbumDetailFragment.newInstance(album, ""), AlbumDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
-                } else parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                } else {
+                    exitTransition = MaterialContainerTransform().apply {
+                        duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                        scrimColor = Color.TRANSPARENT
+                    }
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+
+                    parentFragmentManager.beginTransaction()
+                        .setReorderingAllowed(true)
+                        .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
+                        .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    //parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
         ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
@@ -285,10 +299,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.option_menu_camera_roll-> {
-                parentFragmentManager.beginTransaction()
-                    .replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName)
-                    .addToBackStack(null)
-                    .commit()
+                exitTransition = null
+                reenterTransition = null
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_settings-> {
