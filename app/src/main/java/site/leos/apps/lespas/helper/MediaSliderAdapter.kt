@@ -19,19 +19,24 @@ import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import com.google.android.exoplayer2.upstream.cache.CacheDataSource
+import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor
+import com.google.android.exoplayer2.upstream.cache.SimpleCache
 import kotlinx.parcelize.Parcelize
 import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
+import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 
 abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
-    lateinit var exoPlayer: SimpleExoPlayer
+    private lateinit var exoPlayer: SimpleExoPlayer
     private var currentVolume = 0f
     private var oldVideoViewHolder: VideoViewHolder? = null
     private var savedPlayerState = PlayerState()
     private var autoStart = false
+    private var cache: SimpleCache? = null
 
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
@@ -237,7 +242,11 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
     fun initializePlayer(ctx: Context, callFactory: OkHttpClient?) {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
         val builder = SimpleExoPlayer.Builder(ctx)
-        callFactory?.let { builder.setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))) }
+        //callFactory?.let { builder.setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))) }
+        callFactory?.let {
+            cache = SimpleCache(File(ctx.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L))
+            builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))))
+        }
         exoPlayer = builder.build()
 
         currentVolume = exoPlayer.volume
@@ -274,7 +283,10 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         }
     }
 
-    fun cleanUp() { exoPlayer.release() }
+    fun cleanUp() {
+        cache?.release()
+        exoPlayer.release()
+    }
     fun setAutoStart(state: Boolean) { autoStart = state }
 
     fun setPlayerState(state: PlayerState) { savedPlayerState = state }
