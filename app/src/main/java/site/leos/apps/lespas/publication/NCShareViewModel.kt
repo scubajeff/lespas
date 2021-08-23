@@ -573,7 +573,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
                     try {
                         if (type == ImageLoaderViewModel.TYPE_GRID) {
-                            webDav.getStream("${baseUrl}/index.php/core/preview?x=1024&y=1024&a=true&fileId=${photo.fileId}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
+                            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${photo.fileId}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
                         }
                     } catch(e: Exception) {
                         // Catch all exception, give TYPE_GRID another chance below
@@ -802,6 +802,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
+        private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
 
         const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
