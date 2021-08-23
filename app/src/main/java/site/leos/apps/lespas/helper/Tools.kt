@@ -319,8 +319,7 @@ object Tools {
         )
         val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
 
-        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC"
-        )?.use { cursor ->
+        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val dateColumn = cursor.getColumnIndex(dateSelection)
                 val defaultZone = ZoneId.systemDefault()
@@ -336,11 +335,11 @@ object Tools {
 
                 // Get album's start date
                 if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
-            } else return null
-        }
 
-        // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
-        return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+                // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
+                return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+            } else return null
+        } ?: return null
     }
 
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {

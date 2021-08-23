@@ -158,10 +158,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums->
-            if (showCameraRoll) {
-                val albumWithCameraRoll = albums.toMutableList().apply { Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))?.let { add(0, it) } }
-                mAdapter.setAlbums(albumWithCameraRoll)
-            } else mAdapter.setAlbums(albums.toMutableList())
+            val albumWithCameraRoll = albums.toMutableList()
+            if (showCameraRoll) Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))?.let { albumWithCameraRoll.add(0, it) }
+            mAdapter.setAlbums(albumWithCameraRoll)
         })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
