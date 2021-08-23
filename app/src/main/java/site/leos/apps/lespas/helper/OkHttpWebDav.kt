@@ -87,7 +87,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun getCachedCallFactory() = cachedHttpClient
+    fun getCallFactory() = httpClient
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
     fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {

@@ -100,7 +100,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getCachedCallFactory() = webDav.getCachedCallFactory()
+    fun getCallFactory() = webDav.getCallFactory()
 
     fun getResourceRoot(): String = resourceRoot
 

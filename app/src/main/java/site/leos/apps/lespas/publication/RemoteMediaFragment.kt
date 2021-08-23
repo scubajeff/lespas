@@ -132,7 +132,7 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onStart() {
         super.onStart()
-        pAdapter.initializePlayer(requireContext(), shareModel.getCachedCallFactory())
+        pAdapter.initializePlayer(requireContext(), shareModel.getCallFactory())
     }
 
     override fun onResume() {
