@@ -1,0 +1,4 @@
+* Revolucionar el código para el tratamiento de los vídeos
+* Añadir la función de mostrar el Camera Roll como un álbum especial
+* Cambios menores en la interfaz de usuario
+* Otras mejoras y errores corregidos

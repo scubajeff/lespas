@@ -1,3 +1,8 @@
+## Version 2.3.1
+* Revamp code for video processing
+* Add feature to show Camera Roll as a special album
+* Minor UI changes
+
 ## Version 2.3.0
 * Support insecure HTTP connection to server
 * Upgrade to AGP 7.0

@@ -1,0 +1,4 @@
+* Révision du code pour le traitement des vidéos
+* Ajout d'une fonction permettant d'afficher Camera Roll comme un album spécial
+* Changements mineurs de l'interface utilisateur
+* Autres améliorations et corrections de bogues

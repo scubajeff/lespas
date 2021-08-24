@@ -1,0 +1,4 @@
+* Überarbeitung des Codes für die Videoverarbeitung
+* Funktion hinzufügen, um Camera Roll als spezielles Album anzuzeigen
+* Kleinere UI-Änderungen
+* Weitere Verbesserungen und Fehlerbehebungen
