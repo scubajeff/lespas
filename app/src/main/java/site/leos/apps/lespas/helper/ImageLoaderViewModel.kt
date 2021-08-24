@@ -24,6 +24,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.IOException
+import java.lang.Integer.max
 import kotlin.math.min
 
 class ImageLoaderViewModel(application: Application) : AndroidViewModel(application) {
@@ -147,15 +148,37 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         }) ?: placeholderBitmap
                     }
 */
-                    val size = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
                     // cover baseline value passed in property shareId
-                    val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                    val rect = Rect(0, photo.shareId, photo.width, bottom)
+                    val options = BitmapFactory.Options().apply {
+                        this.inSampleSize = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
+                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                    }
                     try {
-                        BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
-                            this.inSampleSize = size
-                            this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                        }) ?: placeholderBitmap
+                        var bmp: Bitmap?
+                        if (photo.albumId == FROM_CAMERA_ROLL) {
+                            // cover orientation passed in property eTag
+                            (try {photo.eTag.toFloat()} catch (e: Exception) { 0.0F }).also { orientation->
+
+                                val rect = when(orientation) {
+                                    0.0F-> Rect(0, photo.shareId, photo.width - 1, min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
+                                    90.0F-> Rect(photo.shareId, 0, min(photo.shareId + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
+                                    180.0F-> (photo.height - photo.shareId).let { Rect(0, max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
+                                    else-> (photo.width - photo.shareId).let { Rect(max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
+                                }
+
+                                // Decode region
+                                bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
+
+                                // Rotate if needed
+                                if (orientation != 0.0F) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(orientation) }, true) }
+                            }
+                        } else {
+                            val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
+                            val rect = Rect(0, photo.shareId, photo.width - 1, bottom)
+                            bmp = BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, options) ?: placeholderBitmap
+                        }
+
+                        bmp ?: placeholderBitmap
                     } catch (e: IOException) {
                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                         e.printStackTrace()

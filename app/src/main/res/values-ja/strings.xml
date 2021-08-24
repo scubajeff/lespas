@@ -148,4 +148,5 @@
     <string name="prefer_latest">最近の</string>
     <string name="prefer_random">ランダム (フォールバック)</string>
     <string name="http_toggle_helper_text">プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
+    <string name="cameraroll_as_album_title">カメラロールをアルバムとして表示</string>
 </resources>
