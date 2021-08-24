@@ -28,18 +28,13 @@ import androidx.lifecycle.ViewModel
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.MediaSliderAdapter
-import site.leos.apps.lespas.helper.SnapseedResultWorker
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 
@@ -71,47 +66,6 @@ class PhotoSlideFragment : Fragment() {
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
-
-        sharedElementEnterTransition = MaterialContainerTransform().apply {
-            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-            scrimColor = Color.TRANSPARENT
-            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }.also {
-            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
-            // Also we can transit to video thumbnail before player start playing
-            it.addListener(object : Transition.TransitionListener {
-                var isVideo = false
-                override fun onTransitionStart(transition: Transition) {
-                    slider.getChildAt(0)?.apply {
-                        findViewById<ImageView>(R.id.media)?.let { mediaView->
-                            // media imageview in exoplayer item view is always in invisible state
-                            if (mediaView.visibility != View.VISIBLE) {
-                                isVideo = true
-                                findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
-                            }
-                            else {
-                                mediaView.visibility = View.INVISIBLE
-                                pAdapter.setAutoStart(true)
-                            }
-                        }
-                    }
-                }
-                override fun onTransitionEnd(transition: Transition) {
-                    (slider.getChildAt(0) as RecyclerView).apply {
-                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-                    }
-                }
-                override fun onTransitionCancel(transition: Transition) {
-                    (slider.getChildAt(0) as RecyclerView).apply {
-                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-                    }
-                }
-                override fun onTransitionPause(transition: Transition) {}
-                override fun onTransitionResume(transition: Transition) {}
-            })
-        }
 
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
@@ -222,6 +176,16 @@ class PhotoSlideFragment : Fragment() {
             })
         }
 
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.also {
+            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
+            // Also we can transit to video thumbnail before player start playing
+            it.addListener(MediaSliderTransitionListener(slider))
+        }
+
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
             pAdapter.setPhotos(photos, album.sortOrder)
             currentPhotoModel.getCurrentPhotoId()?.let {
@@ -294,7 +258,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        pAdapter.initializePlayer(requireContext())
+        pAdapter.initializePlayer(requireContext(), null)
     }
 
     override fun onResume() {

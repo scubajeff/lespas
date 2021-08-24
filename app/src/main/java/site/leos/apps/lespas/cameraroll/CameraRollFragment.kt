@@ -324,7 +324,7 @@ class CameraRollFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        mediaPagerAdapter.initializePlayer(requireContext())
+        mediaPagerAdapter.initializePlayer(requireContext(), null)
         mediaPagerAdapter.setAutoStart(true)
     }
 

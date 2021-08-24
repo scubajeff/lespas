@@ -29,7 +29,6 @@ import okhttp3.FormBody
 import okio.IOException
 import okio.buffer
 import okio.sink
-import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -66,6 +65,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val baseUrl: String
     private val userName: String
+    private val token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
     private val localCacheFolder = "${application.cacheDir}${lespasBase}"
@@ -88,6 +88,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
+            token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}", "LesPas_${application.getString(R.string.lespas_version)}")
@@ -98,6 +99,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             getShareList()
         }
     }
+
+    fun getCallFactory() = webDav.getCallFactory()
+
+    fun getResourceRoot(): String = resourceRoot
 
     val themeColor: Flow<Int> = flow {
         var color = 0
@@ -537,7 +542,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
-        var bitmap: Bitmap?
+        var bitmap: Bitmap? = null
+/*
         // Download video file if necessary
         val fileName = "${OkHttpWebDav.VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
         val videoFile = File(localCacheFolder, fileName)
@@ -552,6 +558,28 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             setDataSource("$localCacheFolder/$fileName")
             bitmap = getFrameAtTime(0L) ?: videoThumbnail
             release()
+        }
+*/
+        val thumbnail = File(localCacheFolder, "${photo.fileId}.thumbnail")
+
+        // Load from local cache
+        if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
+
+        // Download from server
+        bitmap ?: run {
+            MediaMetadataRetriever().apply {
+                inputStream.close()
+                setDataSource("$resourceRoot${Uri.encode(photo.path, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
+                bitmap = getFrameAtTime(0L) ?: videoThumbnail
+                release()
+            }
+
+            // Cache thumbnail in local
+            bitmap?.let {
+                viewModelScope.launch(Dispatchers.IO) {
+                    it.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
+                }
+            }
         }
 
         return bitmap
@@ -610,7 +638,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         e.printStackTrace()
                                         it.close()
                                         webDav.getStream("$resourceRoot${photo.path}", true,null).use { vResp->
-                                            // TODO could take a long time to download the video file
                                             bitmap = getRemoteVideoThumbnail(vResp, photo)
                                         }
                                     }
@@ -732,7 +759,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     override fun onCleared() {
-        File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
+        //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
         super.onCleared()

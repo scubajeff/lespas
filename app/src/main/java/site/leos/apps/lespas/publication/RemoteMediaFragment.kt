@@ -16,13 +16,11 @@ import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
-import java.io.File
+import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -32,7 +30,7 @@ class RemoteMediaFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
 
     private var previousOrientationSetting = 0
-    private var previousNavBarColor = 0
+    //private var previousNavBarColor = 0
 
     private var viewReCreated = false
 
@@ -42,7 +40,8 @@ class RemoteMediaFragment: Fragment() {
         this.window = requireActivity().window
 
         pAdapter = RemoteMediaAdapter(
-            "${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
+            //"${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
+            shareModel.getResourceRoot(),
             { state-> toggleSystemUI(state) },
             { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
@@ -57,48 +56,6 @@ class RemoteMediaFragment: Fragment() {
                     requireActivity().requestedOrientation = if (this[0].width > this[0].height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
         }
-
-        sharedElementEnterTransition = MaterialContainerTransform().apply {
-            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-            scrimColor = Color.TRANSPARENT
-            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }.also {
-            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
-            // Also we can transit to video thumbnail before starting playing it
-            it.addListener(object : Transition.TransitionListener {
-                var isVideo = false
-                override fun onTransitionStart(transition: Transition) {
-                    slider.getChildAt(0)?.apply {
-                        findViewById<ImageView>(R.id.media)?.let { mediaView->
-                            // media imageview in exoplayer item view is always in invisible state
-                            if (mediaView.visibility != View.VISIBLE) {
-                                isVideo = true
-                                findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
-                            }
-                            else {
-                                mediaView.visibility = View.INVISIBLE
-                                pAdapter.setAutoStart(true)
-                            }
-                        }
-                    }
-                }
-                override fun onTransitionEnd(transition: Transition) {
-                    (slider.getChildAt(0) as RecyclerView).apply {
-                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-                    }
-                }
-                override fun onTransitionCancel(transition: Transition) {
-                    (slider.getChildAt(0) as RecyclerView).apply {
-                        if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
-                        else findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-                    }
-                }
-                override fun onTransitionPause(transition: Transition) {}
-                override fun onTransitionResume(transition: Transition) {}
-            })
-        }
-
 
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
@@ -129,6 +86,16 @@ class RemoteMediaFragment: Fragment() {
                 isAccessible = true
                 set(recyclerView, (get(recyclerView) as Int) * 4)
             }
+        }
+
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.also {
+            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
+            // Also we can transit to video thumbnail before starting playing it
+            it.addListener(MediaSliderTransitionListener(slider))
         }
 
         return view
@@ -165,7 +132,7 @@ class RemoteMediaFragment: Fragment() {
 
     override fun onStart() {
         super.onStart()
-        pAdapter.initializePlayer(requireContext())
+        pAdapter.initializePlayer(requireContext(), shareModel.getCallFactory())
     }
 
     override fun onResume() {
@@ -305,10 +272,11 @@ class RemoteMediaFragment: Fragment() {
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
-    class RemoteMediaAdapter(private val cachePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
+    class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
-            VideoItem(Uri.fromFile(File("$cachePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
+            //VideoItem(Uri.fromFile(File("$basePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
+            VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId)
         }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
