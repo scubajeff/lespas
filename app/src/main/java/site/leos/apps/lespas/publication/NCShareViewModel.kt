@@ -625,7 +625,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when (type) {
                                 ImageLoaderViewModel.TYPE_COVER -> {
                                     val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                                    val rect = Rect(0, photo.coverBaseLine, photo.width, bottom)
+                                    val rect = Rect(0, photo.coverBaseLine, photo.width - 1, bottom)
                                     val sampleSize = when (photo.width) {
                                         in (0..2000) -> 1
                                         in (2000..3000) -> 2
