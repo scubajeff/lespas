@@ -149,4 +149,6 @@
     <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
     <string name="http_toggle_helper_text">Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
     <string name="cameraroll_as_album_title">Filmrolle als Album anzeigen</string>
+    <string name="relogin_title">Neuanmeldung</string>
+    <string name="relogin_summary">Wenn Sie versehentlich den Zugangsschlüssel von Les Pas auf dem Server widerrufen haben.</string>
 </resources>

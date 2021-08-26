@@ -92,6 +92,12 @@
             app:defaultValue="false" />
 
         <Preference
+            app:key="@string/relogin_pref_key"
+            app:title="@string/relogin_title"
+            app:summary="@string/relogin_summary"
+            app:singleLineTitle="false" />
+
+        <Preference
             app:key="@string/logout_pref_key"
             app:title="@string/logout_title"
             app:singleLineTitle="false" />

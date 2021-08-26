@@ -149,4 +149,6 @@
     <string name="prefer_latest">近期</string>
     <string name="http_toggle_helper_text">点击前缀切换非安全HTTP连接</string>
     <string name="cameraroll_as_album_title">在相册列表中显示相机相册</string>
+    <string name="relogin_title">重新登录</string>
+    <string name="relogin_summary">假如你在服务器端意外撤销了Les Pas的应用授权。</string>
 </resources>

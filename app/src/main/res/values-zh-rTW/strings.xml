@@ -149,4 +149,6 @@
     <string name="prefer_random">隨意（以上各項無結果時亦使用此項）</string>
     <string name="http_toggle_helper_text">點擊前綴切換非安全HTTP連接</string>
     <string name="cameraroll_as_album_title">在相冊列表中顯示相機相冊</string>
+    <string name="relogin_title">重新登錄</string>
+    <string name="relogin_summary">假如你在伺服器端意外撤銷了Les Pas的應用授權。</string>
 </resources>
