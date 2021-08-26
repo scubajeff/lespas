@@ -1,0 +1,1 @@
+* quick fix for crash on startup

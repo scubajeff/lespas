@@ -1,0 +1,1 @@
+* Correction rapide du crash au démarrage
