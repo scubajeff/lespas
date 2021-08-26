@@ -22,7 +22,7 @@
             app:key="@string/cameraroll_as_album_perf_key"
             app:title="@string/cameraroll_as_album_title"
             app:singleLineTitle="false"
-            app:defaultValue="true" />
+            app:defaultValue="false" />
 
     </PreferenceCategory>
 
