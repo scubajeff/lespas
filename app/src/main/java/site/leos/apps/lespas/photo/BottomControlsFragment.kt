@@ -20,6 +20,7 @@ import androidx.core.view.updatePadding
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.transition.Fade
 import com.google.android.material.button.MaterialButton
@@ -27,11 +28,14 @@ import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.time.format.DateTimeFormatter
@@ -87,8 +91,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         uiToggle.status().observe(viewLifecycleOwner, { toggle(it) })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
-            coverButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            // Can't set video as avatar
             setAsButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
+            // Can't delete cover
             removeButton.isEnabled = it.id != album.cover
         })
 
@@ -103,12 +108,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                exitTransition = Fade().apply { duration = 80 }
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id), CoverSettingFragment::class.java.canonicalName)
-                    .addToBackStack(null)
-                    .commit()
+                val currentMedia = currentPhotoModel.getCurrentPhoto().value!!
+                if (Tools.isMediaPlayable(currentMedia.mimeType)) {
+                    ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
+                    // If album has not been uploaded yet, update the cover id in action table too
+                    ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(album.id, currentMedia.id)
+                    showCoverAppliedStatus(true)
+                } else {
+                    exitTransition = Fade().apply { duration = 80 }
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).replace(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
+                }
             }
         }
         view.findViewById<ImageButton>(R.id.share_button).run {
@@ -193,18 +202,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
             if (currentPhotoModel.forReal()) {
-                Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
-                    .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-                    //.setAnchorView(window.decorView.rootView)
-                    .setBackgroundTint(resources.getColor(R.color.color_primary, null))
-                    .setTextColor(resources.getColor(R.color.color_text_light, null))
-                    .addCallback(object: Snackbar.Callback() {
-                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                            super.onDismissed(transientBottomBar, event)
-                            hideHandler.post(showSystemUI)
-                        }
-                    })
-                    .show()
+                showCoverAppliedStatus(appliedStatus == true)
 
                 // Clear transition when coming back from CoverSettingFragment
                 exitTransition = null
@@ -251,6 +249,21 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         }
 
         super.onDestroy()
+    }
+
+    private fun showCoverAppliedStatus(appliedStatus: Boolean) {
+        Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+            .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+            //.setAnchorView(window.decorView.rootView)
+            .setBackgroundTint(resources.getColor(R.color.color_primary, null))
+            .setTextColor(resources.getColor(R.color.color_text_light, null))
+            .addCallback(object: Snackbar.Callback() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    super.onDismissed(transientBottomBar, event)
+                    hideHandler.post(showSystemUI)
+                }
+            })
+            .show()
     }
 
     // TODO: what is the usage scenario of this
