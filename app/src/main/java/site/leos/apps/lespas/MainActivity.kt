@@ -86,6 +86,7 @@ class MainActivity : AppCompatActivity() {
                 if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
                     putBoolean(getString(R.string.snapseed_pref_key), false)
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                 }
 
                 intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {

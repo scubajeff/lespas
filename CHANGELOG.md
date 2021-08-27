@@ -1,3 +1,6 @@
+## Version 2.3.2
+* quick fix for crash on startup
+
 ## Version 2.3.1
 * Revamp code for video processing
 * Add feature to show Camera Roll as a special album

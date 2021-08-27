@@ -203,6 +203,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 it.isEnabled = false
             }
         }
+
+        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.apply {
+            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) isChecked = false
+
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
+                if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM)
+                    false
+                } else true
+            }
+        }
     }
 
     override fun onStart() {
@@ -297,8 +309,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         when(requestCode) {
-            STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED -> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked =
-                grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED -> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM -> findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
             STORAGE_PERMISSION_REQUEST_FOR_BACKUP -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
@@ -393,6 +405,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         private const val PERMISSION_RATIONALE_REQUEST_DIALOG = "PERMISSION_RATIONALE_REQUEST_DIALOG"
         private const val STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED = 8989
         private const val STORAGE_PERMISSION_REQUEST_FOR_BACKUP = 9090
+        private const val STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM = 9091
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
