@@ -261,7 +261,8 @@ class NCLoginFragment: Fragment() {
                 setUserData(account, getString(R.string.nc_userdata_selfsigned), selfSigned.toString())
             }
 
-            if (!reLogin) {
+            if (reLogin) parentFragmentManager.popBackStack()
+            else {
                 val result = Bundle().apply {
                     putString(AccountManager.KEY_ACCOUNT_NAME, accountName)
                     putString(AccountManager.KEY_ACCOUNT_TYPE, getString(R.string.account_type_nc))
@@ -273,21 +274,8 @@ class NCLoginFragment: Fragment() {
                 }
 
                 requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(result)
+                requireActivity().finish()
             }
-            /*
-            val mAccountAuthenticatorResponse
-                    = intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)
-            if (mAccountAuthenticatorResponse != null) {
-                if (result != null) {
-                    mAccountAuthenticatorResponse.onResult(result)
-
-                }
-                else mAccountAuthenticatorResponse.onError(AccountManager.ERROR_CODE_CANCELED, "canceled")
-            }
-            */
-
-            if (reLogin) parentFragmentManager.popBackStack()
-            else requireActivity().finish()
         }
     }
 
