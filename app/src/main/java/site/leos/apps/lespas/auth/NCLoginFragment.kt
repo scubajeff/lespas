@@ -286,7 +286,8 @@ class NCLoginFragment: Fragment() {
             }
             */
 
-            parentFragmentManager.popBackStack()
+            if (reLogin) parentFragmentManager.popBackStack()
+            else requireActivity().finish()
         }
     }
 
