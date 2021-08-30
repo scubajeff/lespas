@@ -17,6 +17,7 @@ import android.util.Size
 import android.widget.ImageView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.Tools.getBitmapFromVector
@@ -34,6 +35,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
     private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
     private val jobMap = HashMap<Int, Job>()
+    private val sp = PreferenceManager.getDefaultSharedPreferences(application)
+    private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
 
     private val photoRepository = PhotoRepository(application)
 
@@ -248,7 +251,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 // If we are still active at this moment, set the imageview
                 if (isActive) {
                     withContext(Dispatchers.Main) {
-                        decodeResult.second?.let { view.setImageDrawable(it.apply { (this as AnimatedImageDrawable).start() }) } ?: run { view.setImageBitmap(bitmap) }
+                        decodeResult.second?.let {
+                            view.setImageDrawable(it.apply {
+                                (this as AnimatedImageDrawable).apply {
+                                    if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                    start()
+                                }
+                            })
+                        } ?: run { view.setImageBitmap(bitmap) }
                     }
                 }
             } catch (e: Exception) {
