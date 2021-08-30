@@ -1,0 +1,3 @@
+* Fonction de reconnexion, utile lorsque vous révoquez accidentellement le jeton d'accès de l'application Les Pas sur le serveur.
+* Possibilité de définir une vidéo ou un GIF animé comme couverture d'album.
+* Autres améliorations et corrections de bugs

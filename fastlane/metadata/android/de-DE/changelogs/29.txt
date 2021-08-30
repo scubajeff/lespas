@@ -1,0 +1,3 @@
+* Re-Login-Funktion, nützlich, wenn Sie versehentlich das Zugriffstoken der Les Pas App auf dem Server widerrufen haben
+* Video oder animiertes GIF kann jetzt als Albumcover eingestellt werden
+* Weitere Verbesserungen und behobene Bugs

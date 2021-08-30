@@ -1,0 +1,3 @@
+* Función de reinicio de sesión, útil cuando accidentalmente se revoca el token de acceso de la aplicación Les Pas en el servidor
+* Ahora se puede establecer un vídeo o un GIF animado como portada del álbum
+* Otras mejoras y errores corregidos

@@ -1,3 +1,7 @@
+## Version 2.3.3
+* Re-login function, useful when you accidentally revoke Les Pas app's access token on server
+* Can set video or animated GIF as album cover now
+
 ## Version 2.3.2
 * quick fix for crash on startup
 

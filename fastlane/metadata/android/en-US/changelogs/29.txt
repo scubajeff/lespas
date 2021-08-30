@@ -1,0 +1,3 @@
+* Re-login function, useful when you accidentally revoke Les Pas app's access token on server
+* Can set video or animated GIF as album cover now
+* Other improvements and bugs fixed
