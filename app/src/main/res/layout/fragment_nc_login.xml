@@ -6,8 +6,7 @@
     android:id="@+id/layout_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/login_background"
-    tools:context=".auth.NCLoginActivity">
+    android:background="@drawable/login_background">
 
     <WebView
         android:id="@+id/nc_auth_page"

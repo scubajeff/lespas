@@ -149,4 +149,6 @@
     <string name="prefer_random">Au hasard (solution de rechange à tout ce qui précède)</string>
     <string name="http_toggle_helper_text">Touchez le préfixe pour activer le HTTP non sécurisé.</string>
     <string name="cameraroll_as_album_title">Afficher le rouleau de Caméra comme un album</string>
+    <string name="relogin_title">Re-connexion</string>
+    <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
 </resources>

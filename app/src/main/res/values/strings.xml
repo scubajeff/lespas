@@ -137,6 +137,10 @@
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="proceed_request">Proceed</string>
 
+    <string name="relogin_pref_key" translatable="false">RELOGIN</string>
+    <string name="relogin_title">Re-login</string>
+    <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
+
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
     <string name="logout_dialog_msg">Log out of account %1$s?</string>

@@ -352,6 +352,6 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val RESPONSE_TAG = "response"
         private const val HREF_TAG = "href"
 
-        private const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
+        const val NEXTCLOUD_OCSAPI_HEADER = "OCS-APIRequest"
     }
 }

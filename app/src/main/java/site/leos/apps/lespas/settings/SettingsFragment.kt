@@ -33,6 +33,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.auth.NCLoginFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
@@ -229,6 +230,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         super.onResume()
 
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            // Re-login function will hide the toolbar
+            show()
+
             title = getString(R.string.settings_title)
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
@@ -294,6 +298,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             getString(R.string.storage_statistic_pref_key) -> {
                 summaryString ?: run { showStatistic(preference) }
+                true
+            }
+            getString(R.string.relogin_pref_key)-> {
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCLoginFragment.newInstance(true), NCLoginFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
