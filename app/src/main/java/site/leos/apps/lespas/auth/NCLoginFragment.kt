@@ -182,6 +182,7 @@ class NCLoginFragment: Fragment() {
                             visibility = View.VISIBLE
                             animate().alpha(1f).duration = duration
 
+                            requestFocus()
                             // Handle back key
                             setOnKeyListener(backPressedListener)
                         }
@@ -231,9 +232,10 @@ class NCLoginFragment: Fragment() {
                 welcomePage.visibility = View.VISIBLE
                 welcomePage.alpha = 1f
                 hostInputText.isEnabled = true
+                welcomePage.requestFocus()
+
                 // Load a blank page in webview, to prevent cross-fade effect when configuration changed
                 authWebpage.loadUrl("about:blank")
-
                 // Remove key listener when view become invisible
                 authWebpage.setOnKeyListener(null)
             } else authWebpage.goBack()
