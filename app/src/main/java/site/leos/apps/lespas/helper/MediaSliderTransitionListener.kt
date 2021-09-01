@@ -28,13 +28,17 @@ class MediaSliderTransitionListener(private val slider: ViewPager2): Transition.
     override fun onTransitionEnd(transition: Transition) {
         (slider.getChildAt(0) as RecyclerView).apply {
             findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-            if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+            try {
+                if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+            } catch(e: ClassCastException) { e.printStackTrace() }
         }
     }
     override fun onTransitionCancel(transition: Transition) {
         (slider.getChildAt(0) as RecyclerView).apply {
             findViewById<ImageView>(R.id.media)?.visibility = View.VISIBLE
-            if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+            try {
+                if (isVideo) (findViewHolderForAdapterPosition(slider.currentItem) as MediaSliderAdapter<*>.VideoViewHolder).startOver()
+            } catch(e: ClassCastException) { e.printStackTrace() }
         }
     }
     override fun onTransitionPause(transition: Transition) {}
