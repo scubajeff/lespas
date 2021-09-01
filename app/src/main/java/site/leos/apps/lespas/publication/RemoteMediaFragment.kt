@@ -10,7 +10,6 @@ import android.view.*
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
@@ -28,6 +27,7 @@ class RemoteMediaFragment: Fragment() {
     private lateinit var pAdapter: RemoteMediaAdapter
 
     private val shareModel: NCShareViewModel by activityViewModels()
+    private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
 
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
@@ -79,6 +79,7 @@ class RemoteMediaFragment: Fragment() {
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
+            arguments?.let { setCurrentItem(it.getInt(SCROLL_TO), false) }
 
             // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
             val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply { isAccessible = true }).get(this) as RecyclerView
@@ -86,6 +87,13 @@ class RemoteMediaFragment: Fragment() {
                 isAccessible = true
                 set(recyclerView, (get(recyclerView) as Int) * 4)
             }
+
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    super.onPageSelected(position)
+                    currentPositionModel.setCurrentPosition(position)
+                }
+            })
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -106,7 +114,7 @@ class RemoteMediaFragment: Fragment() {
 
         viewReCreated = true
 
-        val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
+        //val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
 
         @Suppress("DEPRECATION")
@@ -278,7 +286,7 @@ class RemoteMediaFragment: Fragment() {
             //VideoItem(Uri.fromFile(File("$basePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
             VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId)
         }
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
+        override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
     }
 
@@ -289,10 +297,16 @@ class RemoteMediaFragment: Fragment() {
 
     companion object {
         private const val REMOTE_MEDIA = "REMOTE_MEDIA"
+        private const val SCROLL_TO = "SCROLL_TO"
         private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         @JvmStatic
-        fun newInstance(media: List<NCShareViewModel.RemotePhoto>) = RemoteMediaFragment().apply { arguments = Bundle().apply { putParcelableArray(REMOTE_MEDIA, media.toTypedArray()) } }
+        fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int) = RemoteMediaFragment().apply {
+            arguments = Bundle().apply {
+                putParcelableArray(REMOTE_MEDIA, media.toTypedArray())
+                putInt(SCROLL_TO, position)
+            }
+        }
     }
 }
