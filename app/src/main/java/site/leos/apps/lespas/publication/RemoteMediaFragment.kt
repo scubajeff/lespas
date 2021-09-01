@@ -114,12 +114,12 @@ class RemoteMediaFragment: Fragment() {
 
         viewReCreated = true
 
-        //val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
 
         @Suppress("DEPRECATION")
         window.run {
 /*
+            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 previousNavBarColor = navigationBarColor
                 navigationBarColor = systemBarBackground
