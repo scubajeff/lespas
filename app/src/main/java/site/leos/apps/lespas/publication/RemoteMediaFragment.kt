@@ -40,7 +40,6 @@ class RemoteMediaFragment: Fragment() {
         this.window = requireActivity().window
 
         pAdapter = RemoteMediaAdapter(
-            //"${requireContext().cacheDir}/${getString(R.string.lespas_base_folder_name)}",
             shareModel.getResourceRoot(),
             { state-> toggleSystemUI(state) },
             { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
@@ -282,10 +281,7 @@ class RemoteMediaFragment: Fragment() {
 
     class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) {
-            //VideoItem(Uri.fromFile(File("$basePath/videos/${path.substringAfterLast('/')}")), mimeType, width, height, fileId)
-            VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId)
-        }
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
     }
