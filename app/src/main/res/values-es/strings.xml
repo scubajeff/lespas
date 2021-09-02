@@ -151,4 +151,5 @@
     <string name="cameraroll_as_album_title">Mostrar el rollo de la cámara como un álbum</string>
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
+    <string name="tooltip_text_download">Descargar</string>
 </resources>

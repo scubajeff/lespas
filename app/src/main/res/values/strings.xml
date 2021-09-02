@@ -228,6 +228,9 @@
     <string name="item_show_meta">Show meta</string>
     <string name="item_refresh_publication">Refresh publications</string>
 
+    <!-- Remote Media Fragment -->
+    <string name="tooltip_text_download">Download</string>
+
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="object_unknown">UNKNOWN</string>

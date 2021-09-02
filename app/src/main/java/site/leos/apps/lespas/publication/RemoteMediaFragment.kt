@@ -1,15 +1,21 @@
 package site.leos.apps.lespas.publication
 
+import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.transition.Slide
+import android.transition.TransitionManager
 import android.view.*
+import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
@@ -23,6 +29,7 @@ import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
+    private lateinit var controlsContainer: LinearLayoutCompat
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: RemoteMediaAdapter
 
@@ -69,16 +76,24 @@ class RemoteMediaFragment: Fragment() {
             pAdapter.setPlayerState(this)
             pAdapter.setAutoStart(true)
         }
+
+        @Suppress("DEPRECATION")
+        requireActivity().window.decorView.apply {
+            setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, rootWindowInsets.stableInsetBottom) }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_photoslide, container, false)
+        val view = inflater.inflate(R.layout.fragment_remote_media, container, false)
 
         postponeEnterTransition()
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
-            arguments?.let { setCurrentItem(it.getInt(SCROLL_TO), false) }
+            arguments?.getInt(SCROLL_TO)?.let {
+                setCurrentItem(it, false)
+                currentPositionModel.setCurrentPosition(it)
+            }
 
             // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
             val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply { isAccessible = true }).get(this) as RecyclerView
@@ -93,6 +108,15 @@ class RemoteMediaFragment: Fragment() {
                     currentPositionModel.setCurrentPosition(position)
                 }
             })
+        }
+
+        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        view.findViewById<ImageButton>(R.id.download_button).run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                shareModel.savePhoto(requireContext().contentResolver, pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+            }
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -277,6 +301,30 @@ class RemoteMediaFragment: Fragment() {
 
         // auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+    }
+
+    // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
+    @SuppressLint("ClickableViewAccessibility")
+    private val delayHideTouchListener = View.OnTouchListener { _, _ ->
+        hideHandler.removeCallbacks(hideSystemUI)
+        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        false
+    }
+
+    private fun followSystemBar(show: Boolean, bottomPadding: Int) {
+        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
+        try {
+            TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
+            if (show) {
+                controlsContainer.updatePadding(bottom = bottomPadding)
+                controlsContainer.visibility = View.VISIBLE
+            } else {
+                controlsContainer.visibility = View.GONE
+            }
+        } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
+
+        // auto hide
+        if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit

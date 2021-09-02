@@ -338,7 +338,8 @@ class PublicationDetailFragment: Fragment() {
         private var lastItem = -1
 
         fun setCurrentPosition(pos: Int) { currentPosition.value = pos }
-        fun getCurrentPosition() = currentPosition
+        fun getCurrentPosition(): SingleLiveEvent<Int> = currentPosition
+        fun getCurrentPositionValue(): Int = currentPosition.value ?: -1
 
         fun saveCurrentRange(start: Int, end: Int) {
             firstItem = start

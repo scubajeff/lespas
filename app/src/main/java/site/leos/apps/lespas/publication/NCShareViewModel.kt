@@ -4,6 +4,8 @@ import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Application
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
@@ -12,7 +14,9 @@ import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.Parcelable
+import android.provider.MediaStore
 import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
@@ -659,7 +663,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         else-> bitmap = BitmapFactory.decodeStream(it, null, option)
                                     }
                                 }
-                                else-> {}
                             }
                         }
 
@@ -765,6 +768,106 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         super.onCleared()
     }
 
+    fun savePhoto(cr: ContentResolver, photo: RemotePhoto) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val mediaDetails = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, photo.path.substringAfterLast('/'))
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                        put(MediaStore.MediaColumns.MIME_TYPE, photo.mimeType)
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+                    cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
+                        cr.openOutputStream(uri)?.use { local ->
+                            webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote->
+                                remote.copyTo(local, 8192)
+
+                                mediaDetails.clear()
+                                mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                cr.update(uri, mediaDetails, null, null)
+                            }
+                        }
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photo.path.substringAfterLast('/')).outputStream().use { local ->
+                        webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote->
+                            remote.copyTo(local, 8192)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+/*
+    fun savePhoto(context: Context, photo: RemotePhoto) {
+        // Clone a new HttpClient to avoid leaking webDav
+        WorkManager.getInstance(context).enqueueUniqueWork("DOWNLOAD_${photo.fileId}", ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<DownloadWorker>().setInputData(workDataOf(
+                DownloadWorker.REMOTE_PHOTO_PATH_KEY to photo.path, DownloadWorker.REMOTE_PHOTO_MIMETYPE_KEY to photo.mimeType, DownloadWorker.RESOURCE_ROOT_KEY to resourceRoot)
+            ).build()
+        )
+    }
+
+    class DownloadWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+            val cr = context.contentResolver
+            val photoPath = inputData.keyValueMap[REMOTE_PHOTO_PATH_KEY] as String
+            val photoMimetype = inputData.keyValueMap[REMOTE_PHOTO_MIMETYPE_KEY] as String
+            val resourceRoot = inputData.keyValueMap[RESOURCE_ROOT_KEY] as String
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val mediaDetails = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, photoPath.substringAfterLast('/'))
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                        put(MediaStore.MediaColumns.MIME_TYPE, photoMimetype)
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+                    cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
+                        cr.openOutputStream(uri)?.use { local ->
+                            httpClient.newCall(Request.Builder().url("$resourceRoot${photoPath}").build()).execute().body?.byteStream()?.use { remote->
+                                remote.copyTo(local, 8192)
+
+                                mediaDetails.clear()
+                                mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                cr.update(uri, mediaDetails, null, null)
+
+                                Result.success()
+                            }
+                        }
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photoPath.substringAfterLast('/')).outputStream().use { local ->
+                        httpClient.newCall(Request.Builder().url("$resourceRoot${photoPath}").build()).execute().body?.byteStream()?.use { remote->
+                            remote.copyTo(local, 8192)
+
+                            Result.success()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            Result.failure()
+        }
+
+        companion object {
+            const val REMOTE_PHOTO_PATH_KEY = "REMOTE_PHOTO_PATH_KEY"
+            const val REMOTE_PHOTO_MIMETYPE_KEY = "REMOTE_PHOTO_MIMETYPE_KEY"
+            const val WEBDAV_KEY = "WEBDAV_KEY"
+            const val RESOURCE_ROOT_KEY = "RESOURCE_ROOT_KEY"
+        }
+    }
+
+*/
     class ImageCache (maxSize: Int): LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
