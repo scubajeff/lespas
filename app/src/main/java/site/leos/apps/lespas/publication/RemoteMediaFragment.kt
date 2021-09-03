@@ -115,7 +115,7 @@ class RemoteMediaFragment: Fragment() {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                shareModel.savePhoto(requireContext().contentResolver, pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+                shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
             }
         }
 

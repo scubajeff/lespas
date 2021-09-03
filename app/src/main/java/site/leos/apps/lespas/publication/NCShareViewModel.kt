@@ -2,9 +2,10 @@ package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
-import android.content.ContentResolver
+import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
@@ -768,38 +769,50 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         super.onCleared()
     }
 
-    fun savePhoto(cr: ContentResolver, photo: RemotePhoto) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val mediaDetails = ContentValues().apply {
-                        put(MediaStore.MediaColumns.DISPLAY_NAME, photo.path.substringAfterLast('/'))
-                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                        put(MediaStore.MediaColumns.MIME_TYPE, photo.mimeType)
-                        put(MediaStore.MediaColumns.IS_PENDING, 1)
-                    }
-                    cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
-                        cr.openOutputStream(uri)?.use { local ->
-                            webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote->
-                                remote.copyTo(local, 8192)
+    fun savePhoto(context: Context, photo: RemotePhoto) {
+        if (photo.mimeType.startsWith("image")) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val cr = context.contentResolver
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val mediaDetails = ContentValues().apply {
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, photo.path.substringAfterLast('/'))
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                            put(MediaStore.MediaColumns.MIME_TYPE, photo.mimeType)
+                            put(MediaStore.MediaColumns.IS_PENDING, 1)
+                        }
+                        cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
+                            cr.openOutputStream(uri)?.use { local ->
+                                webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                                    remote.copyTo(local, 8192)
 
-                                mediaDetails.clear()
-                                mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
-                                cr.update(uri, mediaDetails, null, null)
+                                    mediaDetails.clear()
+                                    mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                    cr.update(uri, mediaDetails, null, null)
+                                }
+                            }
+                        }
+                    } else {
+                        @Suppress("DEPRECATION")
+                        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photo.path.substringAfterLast('/')).outputStream().use { local ->
+                            webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                                remote.copyTo(local, 8192)
                             }
                         }
                     }
-                } else {
-                    @Suppress("DEPRECATION")
-                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photo.path.substringAfterLast('/')).outputStream().use { local ->
-                        webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote->
-                            remote.copyTo(local, 8192)
-                        }
-                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
+        } else {
+            // Video is now streaming, there is no local cache available, and might take some time to download, so we resort to Download Manager
+            (context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
+                DownloadManager.Request(Uri.parse("$resourceRoot${photo.path}"))
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, photo.path.substringAfterLast('/'))
+                    .setTitle(photo.path.substringAfterLast('/'))
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .addRequestHeader("Authorization", "Basic $token")
+            )
         }
     }
 
