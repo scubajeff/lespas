@@ -2,6 +2,7 @@ package site.leos.apps.lespas.publication
 
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -12,9 +13,12 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -40,6 +44,8 @@ class RemoteMediaFragment: Fragment() {
     //private var previousNavBarColor = 0
 
     private var viewReCreated = false
+
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +87,11 @@ class RemoteMediaFragment: Fragment() {
         requireActivity().window.decorView.apply {
             setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, rootWindowInsets.stableInsetBottom) }
         }
+
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            if (isGranted) shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+        }
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -115,7 +126,8 @@ class RemoteMediaFragment: Fragment() {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+                if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) storagePermissionRequestLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                else shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
             }
         }
 
