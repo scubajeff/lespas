@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.publication
 
+import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -31,6 +33,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -46,6 +49,8 @@ class RemoteMediaFragment: Fragment() {
     //private var previousNavBarColor = 0
 
     private var viewReCreated = false
+
+    private var acquired = false
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
@@ -183,7 +188,10 @@ class RemoteMediaFragment: Fragment() {
         toggleSystemUI(null)
 
         destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
-            album?.let { shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it) }
+            album?.let {
+                shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it)
+                acquired = true
+            }
         })
     }
 
@@ -266,6 +274,12 @@ class RemoteMediaFragment: Fragment() {
 
         // Prevent destination from emitting again TODO: SingleLiveEvent?
         destinationModel.resetDestination()
+
+        // If new acquisition happened, sync with server at once
+        if (acquired) ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+            putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
+        })
 
         super.onDestroy()
     }
