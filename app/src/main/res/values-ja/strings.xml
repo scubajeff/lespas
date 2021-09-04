@@ -152,4 +152,5 @@
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
     <string name="tooltip_text_download">ダウンロード</string>
+    <string name="tooltip_add_to_lespas">私のアルバムに追加</string>
 </resources>

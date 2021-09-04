@@ -37,6 +37,14 @@
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
                 tools:ignore="UnusedAttribute" />
 
+            <ImageButton
+                android:id="@+id/lespas_button"
+                android:src="@drawable/ic_baseline_footprint_24"
+                android:tooltipText="@string/tooltip_add_to_lespas"
+                android:contentDescription="@string/tooltip_add_to_lespas"
+                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
+                tools:ignore="UnusedAttribute" />
+
         </androidx.appcompat.widget.LinearLayoutCompat>
     </androidx.appcompat.widget.LinearLayoutCompat>
 

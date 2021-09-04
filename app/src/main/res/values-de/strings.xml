@@ -152,4 +152,5 @@
     <string name="relogin_title">Neuanmeldung</string>
     <string name="relogin_summary">Wenn Sie versehentlich den Zugangsschlüssel von Les Pas auf dem Server widerrufen haben.</string>
     <string name="tooltip_text_download">Download</string>
+    <string name="tooltip_add_to_lespas">Zu meinem Album hinzufügen</string>
 </resources>

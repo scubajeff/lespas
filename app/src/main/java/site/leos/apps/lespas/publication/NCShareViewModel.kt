@@ -546,6 +546,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
+    fun acquireMediaFromShare(photo: RemotePhoto, toAlbum: Album) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                webDav.copy("$resourceRoot${photo.path}", "$resourceRoot$lespasBase/${toAlbum.name}/${photo.path.substringAfterLast('/')}")
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
     private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
         var bitmap: Bitmap? = null
 /*

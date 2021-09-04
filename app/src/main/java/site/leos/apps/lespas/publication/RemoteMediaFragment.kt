@@ -30,6 +30,7 @@ import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
+import site.leos.apps.lespas.sync.DestinationDialogFragment
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -39,6 +40,7 @@ class RemoteMediaFragment: Fragment() {
 
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
+    private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
@@ -130,6 +132,14 @@ class RemoteMediaFragment: Fragment() {
                 else shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
             }
         }
+        view.findViewById<ImageButton>(R.id.lespas_button).run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
+                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+            }
+        }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -171,6 +181,10 @@ class RemoteMediaFragment: Fragment() {
             addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
         toggleSystemUI(null)
+
+        destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
+            album?.let { shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it) }
+        })
     }
 
     override fun onStart() {
@@ -249,6 +263,10 @@ class RemoteMediaFragment: Fragment() {
             supportActionBar!!.show()
             requestedOrientation = previousOrientationSetting
         }
+
+        // Prevent destination from emitting again TODO: SingleLiveEvent?
+        destinationModel.resetDestination()
+
         super.onDestroy()
     }
 
@@ -356,6 +374,7 @@ class RemoteMediaFragment: Fragment() {
         private const val SCROLL_TO = "SCROLL_TO"
         private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+        private const val TAG_DESTINATION_DIALOG = "REMOTEMEDIA_DESTINATION_DIALOG"
 
         @JvmStatic
         fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int) = RemoteMediaFragment().apply {

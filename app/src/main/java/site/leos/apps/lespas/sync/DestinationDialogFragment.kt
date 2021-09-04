@@ -40,7 +40,6 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.time.LocalDateTime
-import java.util.*
 
 class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destination_dialog) {
     private lateinit var albumAdapter: DestinationAdapter
@@ -58,6 +57,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private lateinit var copyOrMoveToggleGroup: MaterialButtonToggleGroup
     private lateinit var newAlbumTextInputLayout: TextInputLayout
     private lateinit var newAlbumTitleTextInputEditText: TextInputEditText
+
+    private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,11 +92,15 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
-        clipDataAdapter = ClipDataAdapter { uri, view ->
+        clipDataAdapter = ClipDataAdapter { uri, view, position ->
             lifecycleScope.launch(Dispatchers.IO) {
                 val cr = requireContext().contentResolver
                 val bitmap: Bitmap? =
                     when {
+                        uri.scheme == "lespas"-> {
+                            publicationModel.getPhoto(remotePhotos[position], view, ImageLoaderViewModel.TYPE_GRID)
+                            null
+                        }
                         (cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: "image/*").startsWith("image") -> {
                             try {
                                 BitmapFactory.decodeStream(cr.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = 8 })
@@ -117,12 +122,21 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         else -> null
                     }
 
-                withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_imagefile_24)) }
+                if (uri.scheme != "lespas") withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: Tools.getBitmapFromVector(requireContext(), R.drawable.ic_baseline_imagefile_24)) }
             }
         }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
-        clipDataAdapter.submitList(arguments?.getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList())
+        clipDataAdapter.submitList(
+            requireArguments().getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
+                val uris = mutableListOf<Uri>()
+                remotePhotos = requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()
+                remotePhotos.forEach {
+                    uris.add(Uri.fromParts("lespas", "//${it.path}", ""))
+                }
+                uris
+            }
+        )
 
         jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
         albumNameModel.allAlbumsByEndDate.observe(this) {
@@ -303,11 +317,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         override fun areContentsTheSame(oldItem: Album, newItem: Album) = oldItem.id == newItem.id && oldItem.cover == newItem.cover
     }
 
-    class ClipDataAdapter(private val loadClipData: (Uri, ImageView)-> Unit): ListAdapter<Uri, ClipDataAdapter.MediaViewHolder>(ClipDataDiffCallback()) {
+    class ClipDataAdapter(private val loadClipData: (Uri, ImageView, Int)-> Unit): ListAdapter<Uri, ClipDataAdapter.MediaViewHolder>(ClipDataDiffCallback()) {
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bind(uri: Uri) {
+            fun bind(uri: Uri, position: Int) {
                 with(itemView.findViewById<ImageView>(R.id.media)) {
-                    loadClipData(uri, this)
+                    loadClipData(uri, this, position)
                 }
             }
         }
@@ -316,7 +330,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_clipdata, parent, false))
 
         override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
-            holder.bind(currentList[position])
+            holder.bind(currentList[position], position)
         }
     }
 
@@ -342,6 +356,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     companion object {
         const val KEY_URIS = "KEY_URIS"
         const val KEY_CAN_WRITE = "KEY_CAN_WRITE"
+        const val KEY_REMOTE_PHOTO = "KEY_REMOTE_PHOTO"
 
         private const val COPY_OR_MOVE = "COPY_OR_MOVE"
 
@@ -350,6 +365,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             arguments = Bundle().apply {
                 putParcelableArrayList(KEY_URIS, uris)
                 putBoolean(KEY_CAN_WRITE, canWrite)
+            }
+        }
+
+        @JvmStatic
+        fun newInstance(remotePhotos: ArrayList<NCShareViewModel.RemotePhoto>) = DestinationDialogFragment().apply {
+            arguments = Bundle().apply {
+                putParcelableArrayList(KEY_REMOTE_PHOTO, remotePhotos)
+                putBoolean(KEY_CAN_WRITE, false)        // TODO could be true for joint album
             }
         }
     }
