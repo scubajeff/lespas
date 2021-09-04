@@ -104,11 +104,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                                 null
                             }
                         }
-                        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P -> {
+                        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1 -> {
                             try {
                                 val retriever = MediaMetadataRetriever()
                                 retriever.setDataSource(requireContext(), uri)
-                                (retriever.getScaledFrameAtTime(1000000L, MediaMetadataRetriever.OPTION_PREVIOUS_SYNC, 64, 64)).also { retriever.release() }
+                                (retriever.getScaledFrameAtTime(0L, MediaMetadataRetriever.OPTION_PREVIOUS_SYNC, 64, 64)).also { retriever.release() }
                             } catch (e: Exception) {
                                 e.printStackTrace()
                                 null
