@@ -550,7 +550,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun acquireMediaFromShare(photo: RemotePhoto, toAlbum: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.copy("$resourceRoot${photo.path}", "$resourceRoot$lespasBase/${toAlbum.name}/${photo.path.substringAfterLast('/')}")
+                webDav.copy("$resourceRoot${photo.path}", "${if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) "$resourceRoot${toAlbum.name}" else "$resourceRoot$lespasBase/${toAlbum.name}"}/${photo.path.substringAfterLast('/')}")
             } catch (e: Exception) { e.printStackTrace() }
         }
     }

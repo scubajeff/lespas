@@ -198,10 +198,13 @@ class RemoteMediaFragment: Fragment() {
         }
         toggleSystemUI(null)
 
+        // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
             album?.let {
                 shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it)
-                acquired = true
+
+                // If destination is user's own album, trigger sync with server
+                if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) acquired = true
             }
         })
     }
