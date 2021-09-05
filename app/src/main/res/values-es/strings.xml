@@ -152,5 +152,5 @@
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
     <string name="tooltip_text_download">Descargar</string>
-    <string name="tooltip_add_to_lespas">Añadir a mi álbum</string>
+    <string name="tooltip_text_add_to_lespas">Añadir a mi álbum</string>
 </resources>
