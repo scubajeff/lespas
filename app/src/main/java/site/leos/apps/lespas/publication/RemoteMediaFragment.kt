@@ -32,6 +32,7 @@ import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
+import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 
@@ -143,6 +144,15 @@ class RemoteMediaFragment: Fragment() {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                     DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+            }
+        }
+        view.findViewById<ImageButton>(R.id.info_button).run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                if (parentFragmentManager.findFragmentByTag(TAG_INFO_DIALOG) == null) {
+                    MetaDataDialogFragment.newInstance(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]).show(parentFragmentManager, TAG_INFO_DIALOG)
+                }
             }
         }
 
@@ -388,7 +398,9 @@ class RemoteMediaFragment: Fragment() {
         private const val SCROLL_TO = "SCROLL_TO"
         private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+
         private const val TAG_DESTINATION_DIALOG = "REMOTEMEDIA_DESTINATION_DIALOG"
+        private const val TAG_INFO_DIALOG = "REMOTEMEDIA_INFO_DIALOG"
 
         @JvmStatic
         fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int) = RemoteMediaFragment().apply {

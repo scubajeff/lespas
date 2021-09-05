@@ -23,6 +23,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.chip.Chip
@@ -551,6 +552,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             try {
                 webDav.copy("$resourceRoot${photo.path}", "$resourceRoot$lespasBase/${toAlbum.name}/${photo.path.substringAfterLast('/')}")
             } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun getMediaExif(photo: RemotePhoto): ExifInterface = runBlocking {
+        withContext(viewModelScope.coroutineContext + Dispatchers.IO) {
+            val stream = webDav.getStream("$resourceRoot${photo.path}", true, null)
+            val exif = ExifInterface(stream)
+            stream.close()
+            exif
         }
     }
 

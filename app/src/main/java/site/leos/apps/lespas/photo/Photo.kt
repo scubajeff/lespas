@@ -1,8 +1,10 @@
 package site.leos.apps.lespas.photo
 
+import android.os.Parcelable
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.BaseDao
 import java.time.LocalDateTime
 
@@ -10,6 +12,7 @@ import java.time.LocalDateTime
     tableName = Photo.TABLE_NAME,
     indices = [Index(value = ["albumId"]), Index(value = ["dateTaken"])],
 )
+@Parcelize
 data class Photo(
     @PrimaryKey var id: String,
     var albumId: String,
@@ -20,7 +23,8 @@ data class Photo(
     var width: Int,
     var height: Int,
     var mimeType: String,
-    var shareId: Int) {
+    var shareId: Int,
+): Parcelable {
     companion object {
         const val TABLE_NAME = "photos"
     }
