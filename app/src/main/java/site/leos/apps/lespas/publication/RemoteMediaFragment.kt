@@ -53,6 +53,7 @@ class RemoteMediaFragment: Fragment() {
     private var viewReCreated = false
 
     private var acquired = false
+    private var albumId = ""
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
@@ -69,7 +70,7 @@ class RemoteMediaFragment: Fragment() {
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
-            (arguments?.getParcelableArray(REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+            (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
                 submitList(toMutableList())
 
                 previousOrientationSetting = requireActivity().requestedOrientation
@@ -101,6 +102,7 @@ class RemoteMediaFragment: Fragment() {
             if (isGranted) shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
         }
 
+        albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -110,7 +112,7 @@ class RemoteMediaFragment: Fragment() {
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
-            arguments?.getInt(SCROLL_TO)?.let {
+            arguments?.getInt(KEY_SCROLL_TO)?.let {
                 setCurrentItem(it, false)
                 currentPositionModel.setCurrentPosition(it)
             }
@@ -144,7 +146,7 @@ class RemoteMediaFragment: Fragment() {
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
         view.findViewById<ImageButton>(R.id.info_button).run {
@@ -398,8 +400,9 @@ class RemoteMediaFragment: Fragment() {
     }
 
     companion object {
-        private const val REMOTE_MEDIA = "REMOTE_MEDIA"
-        private const val SCROLL_TO = "SCROLL_TO"
+        private const val KEY_REMOTE_MEDIA = "REMOTE_MEDIA"
+        private const val KEY_SCROLL_TO = "SCROLL_TO"
+        private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
         private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
@@ -407,10 +410,11 @@ class RemoteMediaFragment: Fragment() {
         private const val TAG_INFO_DIALOG = "REMOTEMEDIA_INFO_DIALOG"
 
         @JvmStatic
-        fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int) = RemoteMediaFragment().apply {
+        fun newInstance(media: List<NCShareViewModel.RemotePhoto>, position: Int, albumId: String) = RemoteMediaFragment().apply {
             arguments = Bundle().apply {
-                putParcelableArray(REMOTE_MEDIA, media.toTypedArray())
-                putInt(SCROLL_TO, position)
+                putParcelableArray(KEY_REMOTE_MEDIA, media.toTypedArray())
+                putInt(KEY_SCROLL_TO, position)
+                putString(KEY_ALBUM_ID, albumId)
             }
         }
     }

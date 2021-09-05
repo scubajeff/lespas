@@ -88,7 +88,7 @@ class PublicationDetailFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position), RemoteMediaFragment::class.java.canonicalName)
+                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position, share.albumId), RemoteMediaFragment::class.java.canonicalName)
                     .addToBackStack(null)
                     .commit()
             },
