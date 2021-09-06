@@ -61,7 +61,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
     private var ignoreAlbum = ""
-    private var allowCreatingNew = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -142,7 +141,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         )
 
         ignoreAlbum = requireArguments().getString(KEY_IGNORE_ALBUM) ?: ""
-        allowCreatingNew = requireArguments().getBoolean(KEY_ALLOW_CREATE_NEW_ALBUM, true)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -194,7 +192,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
         albumNameModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer {
-            albumAdapter.submitList((if (allowCreatingNew) it.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f)) else it).toMutableList())
+            albumAdapter.submitList((it.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
             albumAdapter.setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
 
             jointAlbumLiveData.observe(viewLifecycleOwner, Observer { shared->
@@ -206,18 +204,10 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 }
                 if (jointAlbums.isNotEmpty()) {
                     val albums = albumAdapter.currentList.toMutableList()
-                    if (albums.isEmpty() || albums.last().id.isNotEmpty()) albums.addAll(jointAlbums)
-                    else albums.addAll(albums.size - 1, jointAlbums)
-/*
-                    if (albums.last().id.isEmpty()) albums.addAll(albums.size - 1, jointAlbums)
-                    else albums.addAll(jointAlbums)
-*/
-                    albumAdapter.submitList(albums)
-                    //albumAdapter.submitList((albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
+                    if (albums.last().id.isEmpty()) albums.removeLast()
+                    albums.addAll(jointAlbums)
+                    albumAdapter.submitList((albums.plus(Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 0f))).toMutableList())
                 }
-
-                // TODO when adding remote media, the destination list will be empty if there is no local and no joint albums at all
-
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
             })
         })
@@ -372,7 +362,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         const val KEY_CAN_WRITE = "KEY_CAN_WRITE"
         const val KEY_REMOTE_PHOTO = "KEY_REMOTE_PHOTO"
         const val KEY_IGNORE_ALBUM = "KEY_IGNORE_ALBUM"
-        const val KEY_ALLOW_CREATE_NEW_ALBUM = "KEY_ALLOW_CREATE_NEW_ALBUM"
 
         private const val COPY_OR_MOVE = "COPY_OR_MOVE"
 
@@ -380,7 +369,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         fun newInstance(uris: ArrayList<Uri>, canWrite: Boolean) = DestinationDialogFragment().apply {
             arguments = Bundle().apply {
                 putParcelableArrayList(KEY_URIS, uris)
-                putBoolean(KEY_ALLOW_CREATE_NEW_ALBUM, true)
                 putBoolean(KEY_CAN_WRITE, canWrite)
             }
         }
@@ -390,7 +378,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             arguments = Bundle().apply {
                 putParcelableArrayList(KEY_REMOTE_PHOTO, remotePhotos)
                 putString(KEY_IGNORE_ALBUM, ignoreAlbumId)
-                putBoolean(KEY_ALLOW_CREATE_NEW_ALBUM, false)
                 putBoolean(KEY_CAN_WRITE, false)        // TODO could be true for joint album
             }
         }
