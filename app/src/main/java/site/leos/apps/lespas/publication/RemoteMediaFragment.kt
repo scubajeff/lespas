@@ -391,11 +391,13 @@ class RemoteMediaFragment: Fragment() {
     private fun saveMedia() {
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
             shareModel.savePhoto(requireContext(), this)
-            Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.path.substringAfterLast('/')), Snackbar.LENGTH_LONG)
-                .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-                .setBackgroundTint(resources.getColor(R.color.color_primary, null))
-                .setTextColor(resources.getColor(R.color.color_text_light, null))
-                .show()
+            hideHandler.postDelayed({
+                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.path.substringAfterLast('/')), Snackbar.LENGTH_LONG)
+                    .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+                    .setBackgroundTint(resources.getColor(R.color.color_primary, null))
+                    .setTextColor(resources.getColor(R.color.color_text_light, null))
+                    .show()
+            }, 400L)
         }
     }
 
