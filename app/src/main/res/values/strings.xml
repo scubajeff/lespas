@@ -231,6 +231,7 @@
     <!-- Remote Media Fragment -->
     <string name="tooltip_text_download">Download</string>
     <string name="tooltip_text_add_to_lespas">Add to my album</string>
+    <string name="downloading_message">File %1$s will be saved to Download folder.</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

@@ -153,4 +153,5 @@
     <string name="relogin_summary">假如你在伺服器端意外撤銷了Les Pas的應用授權。</string>
     <string name="tooltip_text_download">下載</string>
     <string name="tooltip_text_add_to_lespas">加入我的相冊</string>
+    <string name="downloading_message">媒體文件%1$s將被保存到Download目錄下。</string>
 </resources>

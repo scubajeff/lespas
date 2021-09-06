@@ -153,4 +153,5 @@
     <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
     <string name="tooltip_text_download">Télécharger</string>
     <string name="tooltip_text_add_to_lespas">Ajouter à mon album</string>
+    <string name="downloading_message">Le fichier %1$s sera enregistré dans le répertoire de téléchargement.</string>
 </resources>

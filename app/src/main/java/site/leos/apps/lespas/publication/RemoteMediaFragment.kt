@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
@@ -99,7 +100,7 @@ class RemoteMediaFragment: Fragment() {
         }
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
-            if (isGranted) shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+            if (isGranted) saveMedia()
         }
 
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
@@ -138,7 +139,7 @@ class RemoteMediaFragment: Fragment() {
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) storagePermissionRequestLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                else shareModel.savePhoto(requireContext(), pAdapter.currentList[currentPositionModel.getCurrentPositionValue()])
+                else saveMedia()
             }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).run {
@@ -385,6 +386,17 @@ class RemoteMediaFragment: Fragment() {
 
         // auto hide
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+    }
+
+    private fun saveMedia() {
+        pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
+            shareModel.savePhoto(requireContext(), this)
+            Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.path.substringAfterLast('/')), Snackbar.LENGTH_LONG)
+                .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+                .setBackgroundTint(resources.getColor(R.color.color_primary, null))
+                .setTextColor(resources.getColor(R.color.color_text_light, null))
+                .show()
+        }
     }
 
     class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
