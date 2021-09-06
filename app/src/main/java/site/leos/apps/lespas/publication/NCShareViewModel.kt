@@ -550,7 +550,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun acquireMediaFromShare(photo: RemotePhoto, toAlbum: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.copy("$resourceRoot${photo.path}", "${if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) "$resourceRoot${toAlbum.name}" else "$resourceRoot$lespasBase/${toAlbum.name}"}/${photo.path.substringAfterLast('/')}")
+                val destFolder: String = when(toAlbum.id) {
+                    PublicationDetailFragment.JOINT_ALBUM_ID-> "$resourceRoot${toAlbum.name}"
+                    else-> "$resourceRoot$lespasBase/${toAlbum.name}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
+                }
+                webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${photo.path.substringAfterLast('/')}")
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
