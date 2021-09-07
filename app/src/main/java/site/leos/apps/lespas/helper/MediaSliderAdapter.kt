@@ -9,9 +9,11 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -281,6 +283,8 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                 exoPlayer.volume = 0f
             }
         }
+
+        exoPlayer.repeatMode = if (PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(ctx.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
     }
 
     fun cleanUp() {

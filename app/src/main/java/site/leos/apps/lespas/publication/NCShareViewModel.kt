@@ -20,6 +20,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -79,6 +80,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val downloadDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     private val photoRepository = PhotoRepository(application)
+
+    private val sp = PreferenceManager.getDefaultSharedPreferences(application)
+    private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
 
     fun interface LoadCompleteListener{
         fun onLoadComplete()
@@ -677,7 +681,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    animatedDrawable?.let { view.setImageDrawable(it.apply { (this as AnimatedImageDrawable).start() })} ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
+                    animatedDrawable?.let {
+                        view.setImageDrawable(it.apply {
+                            (this as AnimatedImageDrawable).apply {
+                                if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                start()
+                            }
+                        })
+                    } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     //view.imageAlpha = 255
                 }
                 callBack?.onLoadComplete()

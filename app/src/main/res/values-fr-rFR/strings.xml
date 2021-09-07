@@ -151,4 +151,5 @@
     <string name="cameraroll_as_album_title">Afficher le rouleau de Caméra comme un album</string>
     <string name="relogin_title">Re-connexion</string>
     <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
+    <string name="auto_replay_title">Reprise automatique de la vidéo.</string>
 </resources>

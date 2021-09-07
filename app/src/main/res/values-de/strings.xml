@@ -151,4 +151,5 @@
     <string name="cameraroll_as_album_title">Filmrolle als Album anzeigen</string>
     <string name="relogin_title">Neuanmeldung</string>
     <string name="relogin_summary">Wenn Sie versehentlich den Zugangsschlüssel von Les Pas auf dem Server widerrufen haben.</string>
+    <string name="auto_replay_title">Automatische Videowiedergabe.</string>
 </resources>
