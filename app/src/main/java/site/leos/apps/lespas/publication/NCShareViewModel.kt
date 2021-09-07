@@ -554,7 +554,30 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     PublicationDetailFragment.JOINT_ALBUM_ID-> "$resourceRoot${toAlbum.name}"
                     else-> "$resourceRoot$lespasBase/${toAlbum.name}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
                 }
+
+                // Copy media file on server. If file already exists in target folder, this will throw OkHttpWebDavException, it's OK since no more things need to do in this circumstance
                 webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${photo.path.substringAfterLast('/')}")
+
+                if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                    // Update joint album's content meta. For user's own album, it's content meta will be updated during next server sync
+                    // TODO: care for rollback if anything goes wrong?
+
+                    // Target album's id is passed in property eTag
+                    val targetShare = _shareWithMe.value.find { it.albumId == toAlbum.eTag }!!
+                    var mediaList: MutableList<RemotePhoto>
+
+                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                    if (!mediaList.isNullOrEmpty()) {
+                        mediaList.add(photo)
+                        when(targetShare.sortOrder) {
+                            Album.BY_NAME_ASC -> mediaList.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
+                            Album.BY_NAME_DESC -> mediaList.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
+                            Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+                            Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                        }
+                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                    }
+                }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
