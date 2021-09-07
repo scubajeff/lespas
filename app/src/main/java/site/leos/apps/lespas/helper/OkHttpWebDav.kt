@@ -89,6 +89,11 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getCallFactory() = httpClient
 
+    fun getRawResponse(source: String, useCache: Boolean): Response {
+        val reqBuilder = Request.Builder().url(source)
+        return (if (useCache) cachedHttpClient.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
+    }
+
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
     fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {
         val reqBuilder = Request.Builder().url(source)

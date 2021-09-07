@@ -49,7 +49,8 @@
                     android:id="@+id/info_shotat"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow>
+            <TableRow android:id="@+id/size_row"
+                android:visibility="gone">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -61,7 +62,8 @@
                     android:id="@+id/info_size"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow android:id="@+id/mfg_row">
+            <TableRow android:id="@+id/mfg_row"
+                android:visibility="gone">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -73,7 +75,8 @@
                     android:id="@+id/info_camera_mfg"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow android:id="@+id/model_row">
+            <TableRow android:id="@+id/model_row"
+                android:visibility="gone">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -84,7 +87,8 @@
                     android:id="@+id/info_camera_model"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow android:id="@+id/param_row">
+            <TableRow android:id="@+id/param_row"
+                android:visibility="gone">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"
@@ -96,7 +100,8 @@
                     android:id="@+id/info_parameter"
                     android:padding="@dimen/mini_padding"/>
             </TableRow>
-            <TableRow android:id="@+id/artist_row">
+            <TableRow android:id="@+id/artist_row"
+                android:visibility="gone">
                 <TextView
                     android:layout_column="1"
                     android:padding="@dimen/mini_padding"

@@ -32,6 +32,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
 import okhttp3.CacheControl
 import okhttp3.FormBody
+import okhttp3.Response
+import okhttp3.internal.headersContentLength
 import okio.IOException
 import okio.buffer
 import okio.sink
@@ -582,13 +584,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(photo: RemotePhoto): ExifInterface = runBlocking {
-        withContext(viewModelScope.coroutineContext + Dispatchers.IO) {
-            val stream = webDav.getStream("$resourceRoot${photo.path}", true, null)
-            val exif = ExifInterface(stream)
-            stream.close()
-            exif
-        }
+    fun getMediaExif(photo: RemotePhoto): Pair<ExifInterface, Long>? {
+        var response: Response? = null
+        var result: Pair<ExifInterface, Long>? = null
+
+        try {
+            response = webDav.getRawResponse("$resourceRoot${photo.path}", true)
+            result = Pair(ExifInterface(response.body!!.byteStream()), response.headersContentLength())
+        } catch (e: Exception) { e.printStackTrace() }
+        finally { response?.close() }
+
+        return result
     }
 
     private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
