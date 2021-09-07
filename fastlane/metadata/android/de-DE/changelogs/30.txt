@@ -1,0 +1,4 @@
+* Automatische Wiedergabe von Videos und Animationen GIF/WebP (Funktion vorgeschlagen von Github-Benutzer @MetalNeo)
+* Kann durch die Veröffentlichungen von Freunden wischen
+* Beim Betrachten der Publikation eines Freundes können Medienelemente heruntergeladen, zu anderen Alben hinzugefügt und die Metadaten der Medienelemente angezeigt werden
+* Andere Verbesserungen und behobene Bugs

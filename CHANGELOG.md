@@ -1,3 +1,8 @@
+## Version 2.3.4
+* Auto replay video and animation GIF/WebP (feature suggested by Github user @MetalNeo)
+* Can swipe through friend's publication's items
+* When viewing friend's publication, can download media item, add media item to other albums and view media item's meta data
+
 ## Version 2.3.3
 * Re-login function, useful when you accidentally revoke Les Pas app's access token on server
 * Can set video or animated GIF as album cover now

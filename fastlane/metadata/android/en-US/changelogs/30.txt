@@ -1,0 +1,4 @@
+* Auto replay video and animation GIF/WebP (feature suggested by Github user @MetalNeo)
+* Can swipe through friend's publication's items
+* When viewing friend's publication, can download media item, add media item to other albums and view media item's meta data
+* Other improvements and bugs fixed

@@ -1,0 +1,4 @@
+* Relecture automatique des vidéos et des animations GIF/WebP (fonctionnalité suggérée par l'utilisateur de Github @MetalNeo).
+* Possibilité de parcourir les éléments de la publication d'un ami.
+* Lorsque vous consultez la publication d'un ami, vous pouvez télécharger des éléments multimédias, ajouter des éléments multimédias à d'autres albums et afficher les métadonnées des éléments multimédias.
+* Autres améliorations et bogues corrigés

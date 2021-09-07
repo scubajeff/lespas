@@ -1,0 +1,4 @@
+* Reproducción automática de vídeos y animaciones GIF/WebP (característica sugerida por el usuario de Github @MetalNeo)
+* Puede deslizar a través de los elementos de la publicación de un amigo
+* Al ver la publicación de un amigo, se puede descargar el elemento multimedia, añadirlo a otros álbumes y ver los metadatos del elemento multimedia
+* Otras mejoras y errores corregidos
