@@ -691,7 +691,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         bitmap = BitmapRegionDecoder.newInstance(it, false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                     } catch (e: IOException) {
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
-                                        e.printStackTrace()
+                                        //e.printStackTrace()
                                         it.close()
                                         webDav.getStream("$resourceRoot${photo.path}", true,null).use { vResp->
                                             bitmap = getRemoteVideoThumbnail(vResp, photo)

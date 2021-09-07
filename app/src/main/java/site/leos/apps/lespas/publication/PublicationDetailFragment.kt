@@ -188,7 +188,6 @@ class PublicationDetailFragment: Fragment() {
         try {
             (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
         } catch (e: ClassCastException) {
-            e.printStackTrace()
             try {
                 (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
             } catch (e: Exception) {
