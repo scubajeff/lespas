@@ -184,7 +184,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         bmp ?: placeholderBitmap
                     } catch (e: IOException) {
                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
-                        e.printStackTrace()
+                        //e.printStackTrace()
                         getVideoThumbnail(photo, fileName)
                     }
                 }

@@ -13,17 +13,13 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.TableRow
-import android.widget.TextView
 import androidx.core.content.FileProvider
 import androidx.core.view.updatePadding
-import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.transition.Fade
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -31,16 +27,13 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.LesPasDialogFragment
+import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import kotlin.math.roundToInt
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
@@ -177,10 +170,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) {
-                    currentPhotoModel.getCurrentPhoto().value!!.run {
-                        InfoDialogFragment.newInstance(id, name, dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)), width.toString(), height.toString(), eTag
-                        ).show(parentFragmentManager, INFO_DIALOG)
-                    }
+                    currentPhotoModel.getCurrentPhoto().value!!.run { MetaDataDialogFragment.newInstance(this).show(parentFragmentManager, INFO_DIALOG) }
                 }
             }
         }
@@ -352,63 +342,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         // auto hide
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-    }
-
-    class InfoDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
-        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-            super.onViewCreated(view, savedInstanceState)
-
-            view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
-
-            try {
-                val fileName: String
-                val appRootFolder = Tools.getLocalRoot(requireContext())
-                fileName = "${appRootFolder}/${arguments?.getString(if (arguments?.getString(ETAG)?.isNotEmpty()!!) ID else NAME)}"
-                view.findViewById<TextView>(R.id.info_filename).text = arguments?.getString(NAME)
-                view.findViewById<TextView>(R.id.info_shotat).text = arguments?.getString(DATE)
-                view.findViewById<TextView>(R.id.info_size).text = String.format(
-                    "%s, %s",
-                    Tools.humanReadableByteCountSI(File(fileName).length()),
-                    String.format("%sw × %sh", arguments?.getString(WIDTH), arguments?.getString(HEIGHT))
-                )
-
-                val exif = ExifInterface(fileName)
-                var t = exif.getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-                if (t.isEmpty()) view.findViewById<TableRow>(R.id.mfg_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_camera_mfg).text = t
-                t = (exif.getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (exif.getAttribute(ExifInterface.TAG_LENS_MODEL)?.let { "\n${it.trim()}" } ?: "")
-                if (t.isEmpty()) view.findViewById<TableRow>(R.id.model_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_camera_model).text = t
-                t = (exif.getAttribute(ExifInterface.TAG_FOCAL_LENGTH)?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/").toInt()}mm  " } ?: "") +
-                        (exif.getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f$it  " } ?: "") +
-                        (exif.getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let {
-                            val exp = it.toFloat()
-                            if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
-                        } ?: "") +
-                        (exif.getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
-                if (t.trim().isEmpty()) view.findViewById<TableRow>(R.id.param_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_parameter).text = t
-                t = exif.getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
-                if (t.isEmpty()) view.findViewById<TableRow>(R.id.artist_row).visibility = View.GONE else view.findViewById<TextView>(R.id.info_artist).text = t
-            } catch (e:Exception) { e.printStackTrace() }
-        }
-
-        companion object {
-            const val ID = "ID"
-            const val NAME = "NAME"
-            const val DATE = "DATE"
-            const val WIDTH = "WIDTH"
-            const val HEIGHT = "HEIGHT"
-            const val ETAG = "ETAG"
-
-            @JvmStatic
-            fun newInstance(photoId: String, photoName: String, photoDate: String, photoWidth: String, photoHeight: String, eTag: String) = InfoDialogFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ID, photoId)
-                    putString(NAME, photoName)
-                    putString(DATE, photoDate)
-                    putString(WIDTH, photoWidth)
-                    putString(HEIGHT, photoHeight)
-                    putString(ETAG, eTag)
-            }}
-        }
     }
 
     companion object {

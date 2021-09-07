@@ -2,8 +2,11 @@ package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
+import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
@@ -12,12 +15,15 @@ import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.os.Parcelable
+import android.provider.MediaStore
 import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
@@ -27,6 +33,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
 import okhttp3.CacheControl
 import okhttp3.FormBody
+import okhttp3.Response
+import okhttp3.internal.headersContentLength
 import okio.IOException
 import okio.buffer
 import okio.sink
@@ -545,6 +553,54 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
+    fun acquireMediaFromShare(photo: RemotePhoto, toAlbum: Album) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val destFolder: String = when(toAlbum.id) {
+                    PublicationDetailFragment.JOINT_ALBUM_ID-> "$resourceRoot${toAlbum.name}"
+                    else-> "$resourceRoot$lespasBase/${toAlbum.name}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
+                }
+
+                // Copy media file on server. If file already exists in target folder, this will throw OkHttpWebDavException, it's OK since no more things need to do in this circumstance
+                webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${photo.path.substringAfterLast('/')}")
+
+                if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                    // Update joint album's content meta. For user's own album, it's content meta will be updated during next server sync
+                    // TODO: care for rollback if anything goes wrong?
+
+                    // Target album's id is passed in property eTag
+                    val targetShare = _shareWithMe.value.find { it.albumId == toAlbum.eTag }!!
+                    var mediaList: MutableList<RemotePhoto>
+
+                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                    if (!mediaList.isNullOrEmpty()) {
+                        mediaList.add(photo)
+                        when(targetShare.sortOrder) {
+                            Album.BY_NAME_ASC -> mediaList.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
+                            Album.BY_NAME_DESC -> mediaList.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
+                            Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
+                            Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                        }
+                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                    }
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    fun getMediaExif(photo: RemotePhoto): Pair<ExifInterface, Long>? {
+        var response: Response? = null
+        var result: Pair<ExifInterface, Long>? = null
+
+        try {
+            response = webDav.getRawResponse("$resourceRoot${photo.path}", true)
+            result = Pair(ExifInterface(response.body!!.byteStream()), response.headersContentLength())
+        } catch (e: Exception) { e.printStackTrace() }
+        finally { response?.close() }
+
+        return result
+    }
+
     private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
         var bitmap: Bitmap? = null
 /*
@@ -639,7 +695,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         bitmap = BitmapRegionDecoder.newInstance(it, false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                     } catch (e: IOException) {
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
-                                        e.printStackTrace()
+                                        //e.printStackTrace()
                                         it.close()
                                         webDav.getStream("$resourceRoot${photo.path}", true,null).use { vResp->
                                             bitmap = getRemoteVideoThumbnail(vResp, photo)
@@ -663,7 +719,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         else-> bitmap = BitmapFactory.decodeStream(it, null, option)
                                     }
                                 }
-                                else-> {}
                             }
                         }
 
@@ -776,6 +831,118 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         super.onCleared()
     }
 
+    fun savePhoto(context: Context, photo: RemotePhoto) {
+        if (photo.mimeType.startsWith("image")) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val cr = context.contentResolver
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val mediaDetails = ContentValues().apply {
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, photo.path.substringAfterLast('/'))
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                            put(MediaStore.MediaColumns.MIME_TYPE, photo.mimeType)
+                            put(MediaStore.MediaColumns.IS_PENDING, 1)
+                        }
+                        cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
+                            cr.openOutputStream(uri)?.use { local ->
+                                webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                                    remote.copyTo(local, 8192)
+
+                                    mediaDetails.clear()
+                                    mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                    cr.update(uri, mediaDetails, null, null)
+                                }
+                            }
+                        }
+                    } else {
+                        @Suppress("DEPRECATION")
+                        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photo.path.substringAfterLast('/')).outputStream().use { local ->
+                            webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                                remote.copyTo(local, 8192)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        } else {
+            // Video is now streaming, there is no local cache available, and might take some time to download, so we resort to Download Manager
+            (context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
+                DownloadManager.Request(Uri.parse("$resourceRoot${photo.path}"))
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, photo.path.substringAfterLast('/'))
+                    .setTitle(photo.path.substringAfterLast('/'))
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .addRequestHeader("Authorization", "Basic $token")
+            )
+        }
+    }
+
+/*
+    fun savePhoto(context: Context, photo: RemotePhoto) {
+        // Clone a new HttpClient to avoid leaking webDav
+        WorkManager.getInstance(context).enqueueUniqueWork("DOWNLOAD_${photo.fileId}", ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<DownloadWorker>().setInputData(workDataOf(
+                DownloadWorker.REMOTE_PHOTO_PATH_KEY to photo.path, DownloadWorker.REMOTE_PHOTO_MIMETYPE_KEY to photo.mimeType, DownloadWorker.RESOURCE_ROOT_KEY to resourceRoot)
+            ).build()
+        )
+    }
+
+    class DownloadWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+            val cr = context.contentResolver
+            val photoPath = inputData.keyValueMap[REMOTE_PHOTO_PATH_KEY] as String
+            val photoMimetype = inputData.keyValueMap[REMOTE_PHOTO_MIMETYPE_KEY] as String
+            val resourceRoot = inputData.keyValueMap[RESOURCE_ROOT_KEY] as String
+
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val mediaDetails = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, photoPath.substringAfterLast('/'))
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                        put(MediaStore.MediaColumns.MIME_TYPE, photoMimetype)
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                    }
+                    cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
+                        cr.openOutputStream(uri)?.use { local ->
+                            httpClient.newCall(Request.Builder().url("$resourceRoot${photoPath}").build()).execute().body?.byteStream()?.use { remote->
+                                remote.copyTo(local, 8192)
+
+                                mediaDetails.clear()
+                                mediaDetails.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                cr.update(uri, mediaDetails, null, null)
+
+                                Result.success()
+                            }
+                        }
+                    }
+                } else {
+                    @Suppress("DEPRECATION")
+                    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photoPath.substringAfterLast('/')).outputStream().use { local ->
+                        httpClient.newCall(Request.Builder().url("$resourceRoot${photoPath}").build()).execute().body?.byteStream()?.use { remote->
+                            remote.copyTo(local, 8192)
+
+                            Result.success()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            Result.failure()
+        }
+
+        companion object {
+            const val REMOTE_PHOTO_PATH_KEY = "REMOTE_PHOTO_PATH_KEY"
+            const val REMOTE_PHOTO_MIMETYPE_KEY = "REMOTE_PHOTO_MIMETYPE_KEY"
+            const val WEBDAV_KEY = "WEBDAV_KEY"
+            const val RESOURCE_ROOT_KEY = "RESOURCE_ROOT_KEY"
+        }
+    }
+
+*/
     class ImageCache (maxSize: Int): LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }

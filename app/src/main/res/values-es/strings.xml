@@ -152,4 +152,7 @@
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
     <string name="auto_replay_title">Reproducir el vídeo automáticamente.</string>
+    <string name="tooltip_text_download">Descargar</string>
+    <string name="tooltip_text_add_to_lespas">Añadir a mi álbum</string>
+    <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
 </resources>

@@ -152,4 +152,7 @@
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
     <string name="auto_replay_title">ビデオを自動的に再生する。</string>
+    <string name="tooltip_text_download">ダウンロード</string>
+    <string name="tooltip_text_add_to_lespas">私のアルバムに追加</string>
+    <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
 </resources>

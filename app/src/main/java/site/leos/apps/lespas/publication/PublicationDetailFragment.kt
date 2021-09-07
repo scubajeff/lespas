@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
@@ -30,6 +31,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import java.time.Instant
@@ -48,12 +50,13 @@ class PublicationDetailFragment: Fragment() {
     private lateinit var stub: View
 
     private val shareModel: NCShareViewModel by activityViewModels()
+    private val currentPositionModel: CurrentPublicationViewModel by activityViewModels()
 
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
     private var addPhotoMenuItem: MenuItem? = null
 
-    private var clickedItem = -1
+    private var currentItem = -1
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
@@ -62,11 +65,15 @@ class PublicationDetailFragment: Fragment() {
 
         share = arguments?.getParcelable(SHARE)!!
 
-        savedInstanceState?.apply { clickedItem = getInt(CLICKED_ITEM) }
+        savedInstanceState?.apply { currentItem = getInt(CURRENT_ITEM) }
 
         photoListAdapter = PhotoListAdapter(
-            { view, photo, position->
-                clickedItem = position
+            { view, mediaList, position->
+                currentItem = position
+
+                with (photoList.layoutManager as StaggeredGridLayoutManager) {
+                    currentPositionModel.saveCurrentRange(findFirstVisibleItemPositions(null)[0], findLastVisibleItemPositions(null)[spanCount-1])
+                }
 
                 // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
                 stub.background = (activity as MainActivity).getToolbarViewContent()
@@ -81,11 +88,11 @@ class PublicationDetailFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(arrayListOf(photo)), RemoteMediaFragment::class.java.canonicalName)
+                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position, share.albumId), RemoteMediaFragment::class.java.canonicalName)
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() } },
+            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -102,7 +109,7 @@ class PublicationDetailFragment: Fragment() {
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                photoList.findViewHolderForAdapterPosition(clickedItem)?.let {
+                photoList.findViewHolderForAdapterPosition(currentItem)?.let {
                     sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.media))
                 }
             }
@@ -140,6 +147,8 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner, { currentItem = it })
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
             photoListAdapter.submitList(it) {
                 // Setup UI in this submitList commitCallback
@@ -156,11 +165,15 @@ class PublicationDetailFragment: Fragment() {
                     isEnabled = true
                 }
             }
+
+            if (currentItem != -1) with (currentPositionModel.getLastRange()) {
+                if (currentItem <  this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
+            }
         })
 
         lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
 
-        if (photoListAdapter.itemCount > 0) postponeEnterTransition()
+        if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
 
     override fun onResume() {
@@ -175,7 +188,6 @@ class PublicationDetailFragment: Fragment() {
         try {
             (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
         } catch (e: ClassCastException) {
-            e.printStackTrace()
             try {
                 (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
             } catch (e: Exception) {
@@ -193,7 +205,7 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(CLICKED_ITEM, clickedItem)
+        outState.putInt(CURRENT_ITEM, currentItem)
         outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
     }
 
@@ -212,9 +224,8 @@ class PublicationDetailFragment: Fragment() {
         } catch (e: Exception) {
             e.printStackTrace()
             null
-        }?.run {
-            setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
-        }
+        }?.run { setCompoundDrawablesWithIntrinsicBounds(null, null, null, null) }
+
         super.onStop()
     }
 
@@ -259,7 +270,7 @@ class PublicationDetailFragment: Fragment() {
             else-> false
         }
 
-    class PhotoListAdapter(private val clickListener: (ImageView, NCShareViewModel.RemotePhoto, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
+    class PhotoListAdapter(private val clickListener: (ImageView, List<NCShareViewModel.RemotePhoto>, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val mBoundViewHolders = mutableSetOf<ViewHolder>()
         private var displayMeta = false
@@ -273,7 +284,7 @@ class PublicationDetailFragment: Fragment() {
                         setDimensionRatio(R.id.media, "H,${item.width}:${item.height}")
                         applyTo(itemView)
                     }
-                    setOnClickListener { clickListener(this, item, position) }
+                    setOnClickListener { clickListener(this, currentList, position) }
 
                     ViewCompat.setTransitionName(this, item.fileId)
                 }
@@ -320,20 +331,32 @@ class PublicationDetailFragment: Fragment() {
         override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
     }
 
+    class CurrentPublicationViewModel: ViewModel() {
+        private val currentPosition = SingleLiveEvent<Int>()
+        private var firstItem = -1
+        private var lastItem = -1
+
+        fun setCurrentPosition(pos: Int) { currentPosition.value = pos }
+        fun getCurrentPosition(): SingleLiveEvent<Int> = currentPosition
+        fun getCurrentPositionValue(): Int = currentPosition.value ?: -1
+
+        fun saveCurrentRange(start: Int, end: Int) {
+            firstItem = start
+            lastItem = end
+        }
+        fun getLastRange(): Pair<Int, Int> = Pair(firstItem, lastItem)
+    }
+
     companion object {
         private const val TAG_ACQUIRING_DIALOG = "JOINT_ALBUM_ACQUIRING_DIALOG"
 
         const val JOINT_ALBUM_ID = "joint"
 
         private const val SHARE = "SHARE"
-        private const val CLICKED_ITEM = "CLICKED_ITEM"
+        private const val CURRENT_ITEM = "CLICKED_ITEM"
         private const val SHOW_META = "SHOW_META"
 
         @JvmStatic
-        fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply {
-            arguments = Bundle().apply {
-                putParcelable(SHARE, share)
-            }
-        }
+        fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply { arguments = Bundle().apply { putParcelable(SHARE, share) }}
     }
 }
