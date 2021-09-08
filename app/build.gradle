@@ -6,13 +6,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '30.0.3'
+    compileSdk 30
 
     defaultConfig {
         applicationId 'site.leos.apps.lespas'
-        minSdkVersion 25
-        targetSdkVersion 30
+        minSdk 25
+        targetSdk 30
         versionCode 30
         versionName '2.3.4'
 
@@ -41,11 +40,6 @@ android {
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = '1.8'
     }
     packagingOptions {
         exclude 'META-INF/atomicfu.kotlin_module'
