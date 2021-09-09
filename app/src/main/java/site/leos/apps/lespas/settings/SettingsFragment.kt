@@ -17,6 +17,8 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
@@ -48,12 +50,45 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private lateinit var volume: MutableList<StorageVolume>
     private lateinit var accounts: Array<Account>
 
+    // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
+    private val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+    private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         savedInstanceState?.let {
             summaryString = it.getString(STATISTIC_SUMMARY_STRING)
             totalSize = it.getLong(STATISTIC_TOTAL_SIZE)
+        }
+
+        snapseedPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
+        }
+        showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = isGranted
+        }
+        backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            if (isGranted) {
+                findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+                    isChecked = true
+                    // Check and disable periodic sync setting if user enable camera roll backup
+                    findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                        it.isChecked = true
+                        it.isEnabled = false
+                    }
+                    // Note down the current timestamp, photos taken later on will be backup
+                    with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                        if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                            putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
+                            apply()
+                        }
+                    }
+                    toggleAutoSync(true)
+                }
+            }
         }
     }
 
@@ -71,9 +106,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             requireActivity().packageManager.setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
                             requireActivity().finish()
                         }
-                        PERMISSION_RATIONALE_REQUEST_DIALOG-> {
-                            requestPermissions(arrayOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
-                        }
+                        PERMISSION_RATIONALE_REQUEST_DIALOG-> snapseedPermissionRequestLauncher.launch(storagePermission)
                     }
                 } else {
                     if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "") == PERMISSION_RATIONALE_REQUEST_DIALOG)
@@ -127,18 +160,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.let {
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) it.isChecked = false
+            if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) it.isChecked = false
 
             it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
                 // Request WRITE_EXTERNAL_STORAGE permission if user want to integrate with Snapseed
-                if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                    if (shouldShowRequestPermissionRationale(permission)) {
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    if (shouldShowRequestPermissionRationale(storagePermission)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
                             ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, PERMISSION_RATIONALE_REQUEST_DIALOG)
                                 .show(parentFragmentManager, CONFIRM_DIALOG)
                         }
-                    } else requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED)
+                    } else snapseedPermissionRequestLauncher.launch(storagePermission)
 
                     // Set Snapseed integration to False if we don't have WRITE_EXTERNAL_STORAGE permission
                     (pref as SwitchPreferenceCompat).isChecked = false
@@ -157,15 +189,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
                 isChecked = false
                 toggleAutoSync(false)
             }
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
-                if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST_FOR_BACKUP)
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    backupCameraRollPermissionRequestLauncher.launch(storagePermission)
 
                     (pref as SwitchPreferenceCompat).isChecked = false
                     toggleAutoSync(false)
@@ -205,12 +236,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.apply {
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) isChecked = false
+            if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) isChecked = false
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
-                if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(arrayOf(permission), STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM)
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    showCameraRollPermissionRequestLauncher.launch(storagePermission)
                     false
                 } else true
             }
@@ -307,33 +337,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             else -> super.onPreferenceTreeClick(preference)
         }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        when(requestCode) {
-            STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED -> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM -> findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            STORAGE_PERMISSION_REQUEST_FOR_BACKUP -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
-                        isChecked = true
-                        // Check and disable periodic sync setting if user enable camera roll backup
-                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                            it.isChecked = true
-                            it.isEnabled = false
-                        }
-                        // Note down the current timestamp, photos taken later on will be backup
-                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
-                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
-                                putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
-                                apply()
-                            }
-                        }
-                        toggleAutoSync(true)
-                    }
-                }
-            }
-        }
-    }
-
     private fun toggleAutoSync(on: Boolean) {
         if (on) {
             ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
@@ -403,9 +406,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         private const val TRANSFER_FILES_DIALOG = "CONFIRM_MOVING_DIALOG"
         private const val LOGOUT_CONFIRM_DIALOG = "LOGOUT_CONFIRM_DIALOG"
         private const val PERMISSION_RATIONALE_REQUEST_DIALOG = "PERMISSION_RATIONALE_REQUEST_DIALOG"
-        private const val STORAGE_PERMISSION_REQUEST_FOR_SNAPSEED = 8989
-        private const val STORAGE_PERMISSION_REQUEST_FOR_BACKUP = 9090
-        private const val STORAGE_PERMISSION_REQUEST_FOR_CAMERAROLL_AS_ALBUM = 9091
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
