@@ -84,7 +84,7 @@
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <string name="selected_count">%1$d seleccionado</string>
-    <string name="tooltip_text_more">Más</string>
+    <string name="tooltip_text_edit_in_snapseed">Editar en Snapseed</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta DCIM/%1$s</string>
@@ -156,4 +156,5 @@
     <string name="tooltip_text_add_to_lespas">Añadir a mi álbum</string>
     <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
     <string name="strip_exif_title">Quitar los EXIF antes de compartirlos</string>
+    <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
 </resources>

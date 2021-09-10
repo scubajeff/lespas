@@ -3,11 +3,9 @@ package site.leos.apps.lespas.settings
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.app.ActivityManager
-import android.content.ComponentName
-import android.content.ContentResolver
-import android.content.Context
-import android.content.SharedPreferences
+import android.content.*
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -43,12 +41,12 @@ import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.sync.SyncAdapter
 
-
 class SettingsFragment : PreferenceFragmentCompat() {
     private var summaryString: String? = null
     private var totalSize = -1L
     private lateinit var volume: MutableList<StorageVolume>
     private lateinit var accounts: Array<Account>
+    private var isSnapseedNotInstalled = true
 
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
     private val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -99,7 +97,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
             if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
                 if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                    when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                    when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                         LOGOUT_CONFIRM_DIALOG -> {
                             AccountManager.get(context).apply { removeAccountExplicitly(getAccountsByType(getString(R.string.account_type_nc))[0]) }
                             (requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
@@ -107,10 +105,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             requireActivity().finish()
                         }
                         PERMISSION_RATIONALE_REQUEST_DIALOG-> snapseedPermissionRequestLauncher.launch(storagePermission)
+                        INSTALL_SNAPSEED_DIALOG->
+                            try {
+                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            } catch (e: ActivityNotFoundException) {
+                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            }
                     }
                 } else {
-                    if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "") == PERMISSION_RATIONALE_REQUEST_DIALOG)
-                        findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+                    when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                        INSTALL_SNAPSEED_DIALOG, PERMISSION_RATIONALE_REQUEST_DIALOG-> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+                    }
                 }
             }
         }
@@ -250,8 +255,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onStart() {
         super.onStart()
 
-        val tv = TypedValue()
-        if (requireActivity().theme.resolveAttribute(android.R.attr.actionBarSize, tv, true)) {
+        // Put preference list under app toolbar
+        TypedValue().also { tv-> if (requireActivity().theme.resolveAttribute(android.R.attr.actionBarSize, tv, true))
             (requireView().parent as ViewGroup).setPadding(0, TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics), 0, 0)
         }
     }
@@ -270,6 +275,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Set statistic summary if available
         summaryString?.let { findPreference<Preference>(getString(R.string.storage_statistic_pref_key))?.summary = it }
+
+        // Disable Snapseed integration setting if the app is not installed
+        isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
+        if (isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -332,6 +341,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             getString(R.string.relogin_pref_key)-> {
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, NCLoginFragment.newInstance(true), NCLoginFragment::class.java.canonicalName).addToBackStack(null).commit()
+                true
+            }
+            getString(R.string.snapseed_pref_key)-> {
+                if (preference.sharedPreferences.getBoolean(preference.key, false) && isSnapseedNotInstalled) {
+                    // Prompt user to install Snapseed
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
+                        ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), getString(android.R.string.ok), true, INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
@@ -406,12 +423,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
         private const val TRANSFER_FILES_DIALOG = "CONFIRM_MOVING_DIALOG"
         private const val LOGOUT_CONFIRM_DIALOG = "LOGOUT_CONFIRM_DIALOG"
         private const val PERMISSION_RATIONALE_REQUEST_DIALOG = "PERMISSION_RATIONALE_REQUEST_DIALOG"
+        private const val INSTALL_SNAPSEED_DIALOG = "INSTALL_SNAPSEED_DIALOG"
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
+
+        const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"
+        const val SNAPSEED_MAIN_ACTIVITY_CLASS_NAME = "com.google.android.apps.snapseed.MainActivity"
     }
 
 }

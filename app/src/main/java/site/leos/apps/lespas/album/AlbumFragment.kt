@@ -347,6 +347,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         menu?.let {
             it.removeItem(R.id.share)
             it.removeItem(R.id.select_all)
+            it.removeItem(R.id.snapseed_edit)
         }
         return true
     }

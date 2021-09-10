@@ -3,9 +3,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:id="@+id/select_all"
-        android:title="@string/action_select_all"
-        android:icon="@drawable/ic_baseline_select_all_24"
+    <item android:id="@+id/snapseed_edit"
+        android:title="@string/tooltip_text_edit_in_snapseed"
+        android:icon="@drawable/ic_baseline_snapseed_24"
+        app:showAsAction="ifRoom" />
+
+    <item android:id="@+id/remove"
+        android:title="@string/action_remove"
+        android:icon="@drawable/ic_baseline_delete_24"
         app:showAsAction="ifRoom" />
 
     <item android:id="@+id/share"
@@ -13,9 +18,9 @@
         android:icon="@drawable/ic_baseline_share_24"
         app:showAsAction="ifRoom" />
 
-    <item android:id="@+id/remove"
-        android:title="@string/action_remove"
-        android:icon="@drawable/ic_baseline_delete_24"
+    <item android:id="@+id/select_all"
+        android:title="@string/action_select_all"
+        android:icon="@drawable/ic_baseline_select_all_24"
         app:showAsAction="ifRoom" />
 
 </menu>

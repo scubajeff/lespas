@@ -84,7 +84,7 @@
     <string name="item_namedesc">按名称倒序</string>
     <string name="wifionly_off_title">使用移动网络同步</string>
     <string name="snapseed_add_title">添加Snapseed输出</string>
-    <string name="tooltip_text_more">更多</string>
+    <string name="tooltip_text_edit_in_snapseed">Snapseed编辑</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
     <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%1$s目录下。</string>
@@ -156,4 +156,5 @@
     <string name="tooltip_text_add_to_lespas">加入我的相册</string>
     <string name="downloading_message">媒体文件%1$s将被保存到Download目录下。</string>
     <string name="strip_exif_title">分享图片前删除图片EXIF隐私数据</string>
+    <string name="install_snapseed_dialog_msg">马上安装Snapseed应用吗？</string>
 </resources>

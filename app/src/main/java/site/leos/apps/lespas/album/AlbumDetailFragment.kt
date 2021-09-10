@@ -2,7 +2,6 @@ package site.leos.apps.lespas.album
 
 import android.app.PendingIntent
 import android.content.*
-import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.*
 import android.net.Uri
@@ -16,7 +15,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.app.SharedElementCallback
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -88,6 +86,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var stripExif = true
 
+    private var isSnapseedInstalled = false
+    private var snapseedEditAction: MenuItem? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -153,10 +154,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
-                    // Shared to Snapseed. Register content observer if we have storage permission and integration with snapseed option is on
-                    if (ContextCompat.checkSelfPermission(context!!, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                        PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
-                        context.contentResolver.apply {
+                    // Register content observer if integration with snapseed setting is on
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                        context!!.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
                             registerContentObserver(
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -267,13 +267,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
+                        val selectionSize = selectionTracker.selection.size()
+
+                        snapseedEditAction?.isEnabled = selectionSize == 1 && isSnapseedInstalled
+                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedInstalled
+
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection.size())}
+                            actionMode?.let { it.title = getString(R.string.selected_count, selectionSize) }
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
+                        } else actionMode?.title = getString(R.string.selected_count, selectionSize)
                     }
 
                     override fun onItemStateChanged(key: String, selected: Boolean) {
@@ -345,10 +350,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
         })
 
-        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { shares->
+        publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
             sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
             mAdapter.setRecipient(sharedByMe)
-        })
+        }
 
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
@@ -397,6 +402,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
+
+        isSnapseedInstalled = requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -496,13 +503,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // On special Actions of this fragment
-    override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+    override fun onCreateActionMode(mode: ActionMode?, menu: Menu): Boolean {
         mode?.menuInflater?.inflate(R.menu.actions_mode, menu)
+
+        snapseedEditAction = menu.findItem(R.id.snapseed_edit)
+
+        // Disable snapseed edit action menu if Snapseed is not installed
+        isSnapseedInstalled = requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null
+        snapseedEditAction?.isEnabled = isSnapseedInstalled
+        snapseedEditAction?.isVisible = isSnapseedInstalled
 
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu): Boolean = false
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
@@ -511,71 +525,111 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.share -> {
-                val uris = arrayListOf<Uri>()
-                val appRootFolder = Tools.getLocalRoot(requireContext())
-                val cachePath = requireActivity().cacheDir
-                val authority = getString(R.string.file_authority)
+                try {
+                    val uris = arrayListOf<Uri>()
+                    val appRootFolder = Tools.getLocalRoot(requireContext())
+                    val cachePath = requireActivity().cacheDir
+                    val authority = getString(R.string.file_authority)
 
-                sharedSelection.clear()
+                    sharedSelection.clear()
 
-                var sourceFile: File
-                var destFile: File
-                for (photoId in selectionTracker.selection) {
-                    sharedSelection.add(photoId)
-                    //with(mAdapter.getPhotoAt(i.toInt())) {
-                    with(mAdapter.getPhotoBy(photoId)) {
-                        // Synced file is named after id, not yet synced file is named after file's name
-                        sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
-                        destFile = File(cachePath, name)
+                    var sourceFile: File
+                    var destFile: File
+                    for (photoId in selectionTracker.selection) {
+                        sharedSelection.add(photoId)
+                        //with(mAdapter.getPhotoAt(i.toInt())) {
+                        with(mAdapter.getPhotoBy(photoId)) {
+                            // Synced file is named after id, not yet synced file is named after file's name
+                            sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
+                            destFile = File(cachePath, name)
 
-                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                        if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                        else sourceFile.copyTo(destFile, true, 4096)
-                        uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
+                            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                            if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                            else sourceFile.copyTo(destFile, true, 4096)
+                            uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
+                        }
                     }
-                }
 
-                val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-                for (i in 1 until uris.size)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                    else clipData.addItem(ClipData.Item(uris[i]))
+                    val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                    for (i in 1 until uris.size)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                        else clipData.addItem(ClipData.Item(uris[i]))
 
-                //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-                sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-                if (selectionTracker.selection.size() > 1) {
-                    startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_SEND_MULTIPLE
-                                type = sharedPhoto.mimeType
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                                this.clipData = clipData
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                            }, null
+                    //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+                    if (selectionTracker.selection.size() > 1) {
+                        startActivity(
+                            Intent.createChooser(
+                                Intent().apply {
+                                    action = Intent.ACTION_SEND_MULTIPLE
+                                    type = sharedPhoto.mimeType
+                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                    this.clipData = clipData
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                                }, null
+                            )
                         )
-                    )
-                } else {
-                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                    startActivity(
-                        Intent.createChooser(
-                            Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = sharedPhoto.mimeType
-                                putExtra(Intent.EXTRA_STREAM, uris[0])
-                                this.clipData = clipData
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                            }, null, PendingIntent.getBroadcast(context, 1, Intent(CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
+                    } else {
+                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                        startActivity(
+                            Intent.createChooser(
+                                Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = sharedPhoto.mimeType
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    this.clipData = clipData
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                                }, null, PendingIntent.getBroadcast(context, 1, Intent(CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
+                            )
                         )
-                    )
-                }
+                    }
 
-                selectionTracker.clearSelection()
+                    selectionTracker.clearSelection()
+                } catch (e: Exception) { e.printStackTrace() }
+
                 true
             }
             R.id.select_all -> {
                 for (i in 1 until mAdapter.itemCount) selectionTracker.select(mAdapter.getPhotoId(i))
+                true
+            }
+            R.id.snapseed_edit-> {
+                try {
+                    val uris = arrayListOf<Uri>()
+                    val appRootFolder = Tools.getLocalRoot(requireContext())
+                    val cachePath = requireActivity().cacheDir
+                    val authority = getString(R.string.file_authority)
+
+                    sharedSelection.clear()
+                    for (photoId in selectionTracker.selection) {
+                        sharedSelection.add(photoId)
+                        //with(mAdapter.getPhotoAt(i.toInt())) {
+                        with(mAdapter.getPhotoBy(photoId)) {
+                            // Synced file is named after id, not yet synced file is named after file's name
+                            File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
+                            uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
+                        }
+                    }
+
+                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+                    startActivity(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        data = uris[0]
+                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                    })
+                } catch (e: Exception) { e.printStackTrace() }
+
+                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
+                requireContext().sendBroadcast(Intent().apply {
+                    action = CHOOSER_SPY_ACTION
+                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                })
+
+                selectionTracker.clearSelection()
                 true
             }
             else -> false
