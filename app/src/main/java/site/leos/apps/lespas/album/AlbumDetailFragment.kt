@@ -267,8 +267,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         val selectionSize = selectionTracker.selection.size()
 
-                        snapseedEditAction?.isEnabled = selectionSize == 1 && isSnapseedEnabled
-                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled
+                        snapseedEditAction?.isEnabled = selectionSize == 1 && isSnapseedEnabled && !Tools.isMediaPlayable(mAdapter.getPhotoBy(selectionTracker.selection.first()).mimeType)
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
@@ -509,7 +508,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Disable snapseed edit action menu if Snapseed is not installed
         isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
         snapseedEditAction?.isEnabled = isSnapseedEnabled
-        snapseedEditAction?.isVisible = isSnapseedEnabled
 
         return true
     }
