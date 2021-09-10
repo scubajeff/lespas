@@ -44,6 +44,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var removeButton: ImageButton
     private lateinit var coverButton: ImageButton
     private lateinit var setAsButton: ImageButton
+    private lateinit var snapseedButton: ImageButton
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
 
@@ -87,10 +88,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         uiToggle.status().observe(viewLifecycleOwner, { toggle(it) })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
-            // Can't set video as avatar
-            setAsButton.isEnabled = !(Tools.isMediaPlayable(it.mimeType))
             // Can't delete cover
             removeButton.isEnabled = it.id != album.cover
+            with(!(Tools.isMediaPlayable(it.mimeType))) {
+                // Can't set video as avatar
+                setAsButton.isEnabled = this
+                // Can't Snapseed video
+                snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
+            }
         })
 
         // Controls
@@ -98,6 +103,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
         setAsButton = view.findViewById(R.id.set_as_button)
+        snapseedButton = view.findViewById(R.id.snapseed_button)
 
         coverButton.run {
             setOnTouchListener(delayHideTouchListener)
@@ -172,7 +178,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        view.findViewById<ImageButton>(R.id.snapseed_button).run {
+        snapseedButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
@@ -199,8 +205,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                     putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
                 })
             }
-
-            this.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
         }
         removeButton.run {
             setOnTouchListener(delayHideTouchListener)
