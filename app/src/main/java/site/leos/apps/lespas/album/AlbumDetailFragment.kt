@@ -201,9 +201,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         })
                     }
 
+                    requireContext().contentResolver.unregisterContentObserver(this)
                 }
-
-                requireContext().contentResolver.unregisterContentObserver(this)
             }
         }
 
