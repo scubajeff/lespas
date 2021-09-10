@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.album
 
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -71,9 +72,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var showCameraRoll = false
+    private var showCameraRoll = true
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, false).apply {
+        if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
             showCameraRoll = this
             cameraRollAsAlbumMenu?.isEnabled = !this
             cameraRollAsAlbumMenu?.isVisible = !this
@@ -82,7 +83,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             selectionTracker.clearSelection()
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,7 +141,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
-        showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+        showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
         PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
@@ -396,6 +396,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            @SuppressLint("InflateParams")
             fun bindViewItems(album: Album, isActivated: Boolean) {
                 itemView.apply {
                     this.isActivated = isActivated

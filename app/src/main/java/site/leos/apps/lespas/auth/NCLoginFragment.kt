@@ -11,6 +11,7 @@ import android.content.Context
 import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.Drawable
 import android.net.http.SslError
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -22,6 +23,8 @@ import android.view.inputmethod.InputMethodManager
 import android.webkit.*
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -57,10 +60,18 @@ class NCLoginFragment: Fragment() {
 
     private var reLogin = false
 
+    private var authResult: Bundle? = null
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         reLogin = arguments?.getBoolean(KEY_RELOGIN, false) ?: false
+
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
+            requireActivity().finish()
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -92,9 +103,9 @@ class NCLoginFragment: Fragment() {
             start()
         }
 
-        // Animate the welcome page on first run
         if (savedInstanceState == null) {
             if (reLogin) {
+                // Show welcome page without animation when it's called to do re-login
                 welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
                 inputArea.apply {
                     requestFocus()
@@ -109,6 +120,7 @@ class NCLoginFragment: Fragment() {
                 }
             }
             else with(welcomePage) {
+                // Animate the welcome page on first run
                 alpha = 0.3f
                 animate().alpha(1f).setDuration(1500).setInterpolator(AccelerateDecelerateInterpolator()).setListener(object: AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator?) {
@@ -130,10 +142,17 @@ class NCLoginFragment: Fragment() {
                 })
             }
         } else {
-            welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
-            useHttps = savedInstanceState.getBoolean(KEY_USE_HTTPS)
-            inputArea.prefixText = if (useHttps) "https://" else "http://"
-            inputArea.visibility = View.VISIBLE
+            authResult = savedInstanceState.getBundle(KEY_AUTH_RESULT)?.apply {
+                // If app restarts when permission request dialog show, show it again here
+                requestStoragePermission()
+            } ?: run {
+                // If app restarts during authentication
+                welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
+                useHttps = savedInstanceState.getBoolean(KEY_USE_HTTPS)
+                inputArea.prefixText = if (useHttps) "https://" else "http://"
+                inputArea.visibility = View.VISIBLE
+                null
+            }
         }
 
         hostInputText.run {
@@ -222,6 +241,7 @@ class NCLoginFragment: Fragment() {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_USE_HTTPS, useHttps)
         outState.putBoolean(KEY_WEBVIEW_VISIBLE, authWebpage.visibility == View.VISIBLE)
+        authResult?.let { outState.putBundle(KEY_AUTH_RESULT, it) }
         authWebpage.saveState(outState)
     }
 
@@ -265,7 +285,7 @@ class NCLoginFragment: Fragment() {
 
             if (reLogin) parentFragmentManager.popBackStack()
             else {
-                val result = Bundle().apply {
+                authResult = Bundle().apply {
                     putString(AccountManager.KEY_ACCOUNT_NAME, accountName)
                     putString(AccountManager.KEY_ACCOUNT_TYPE, getString(R.string.account_type_nc))
                     putString(AccountManager.KEY_AUTHTOKEN, token)
@@ -275,10 +295,16 @@ class NCLoginFragment: Fragment() {
                     putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
                 }
 
-                requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(result)
-                requireActivity().finish()
+                requestStoragePermission()
             }
         }
+    }
+
+    private fun requestStoragePermission() {
+        // Ask for storage access permission so that Camera Roll can be shown at first run
+        welcomePage.visibility = View.GONE
+        authWebpage.visibility = View.GONE
+        storagePermissionRequestLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 
     private fun prepareLogin() {
@@ -394,6 +420,7 @@ class NCLoginFragment: Fragment() {
     companion object {
         private const val KEY_WEBVIEW_VISIBLE = "KEY_WEBVIEW_VISIBLE"
         private const val KEY_USE_HTTPS = "KEY_USE_HTTPS"
+        private const val KEY_AUTH_RESULT = "KEY_AUTH_RESULT"
         private const val KEY_RELOGIN = "KEY_RELOGIN"
 
         @JvmStatic
