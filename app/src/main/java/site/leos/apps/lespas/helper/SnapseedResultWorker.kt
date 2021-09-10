@@ -31,6 +31,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         // TODO publish status is not persistent locally
         //val isPublished = inputData.keyValueMap[KEY_PUBLISHED] as Boolean
 
+        // Slow down a little bit so that Snapseed result is synced to disk
+        Thread.sleep(500)
+
         context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             cursor.moveToFirst()
             imagePath = cursor.getString(cursor.getColumnIndexOrThrow(pathColumn))
