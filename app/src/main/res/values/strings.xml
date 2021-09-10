@@ -71,13 +71,6 @@
     <string name="settings_title">Settings</string>
 
     <string name="view_header">View</string>
-    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
-    <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
-    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
-    <string name="auto_replay_title">Replay video automatically</string>
-    <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
-    <string name="cameraroll_as_album_title">Show camera roll as an album</string>
-
     <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
     <string name="auto_theme_title">App theme</string>
     <string name="theme_light_entries">Light theme</string>
@@ -86,9 +79,30 @@
     <string name="theme_light_values" translatable="false">1</string>
     <string name="theme_dark_values" translatable="false">2</string>
     <string name="theme_auto_values" translatable="false">-1</string>
+    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
+    <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
+    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
+    <string name="auto_replay_title">Replay video automatically</string>
+    <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
+    <string name="cameraroll_as_album_title">Show camera roll as an album</string>
+    <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
+    <string name="gallery_launcher_title">Gallery launcher icon</string>
+
+    <string name="edit_header">Edit</string>
+    <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
+    <string name="snapseed_integration_title">Snapseed integration</string>
+    <string name="snapseed_integration_summary">Note: please let Snapseed use JPEG output format</string>
+    <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
+    <string name="snapseed_replace_title">Replace original</string>
+    <string name="snapseed_add_title">Add Snapseed version</string>
+    <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s version.</string>
+    <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
+
+    <string name="privacy_header">Privacy</string>
+    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF</string>
+    <string name="strip_exif_title">Strip EXIF before sharing</string>
 
     <string name="storage_header">Storage</string>
-
     <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
     <string name="transfer_to_internal">Transfer albums to internal storage</string>
     <string name="transfer_to_external">Transfer albums to external SD card</string>
@@ -97,7 +111,6 @@
     <string name="not_enough_space_message">Not enough space left in %2$s to transfer %1$s photos.</string>
     <string name="is_syncing_message">Les Pas is syncing with server, it\'s not safe to transfer storage now, please try again a few minutes later.</string>
     <string name="yes_transfer">Proceed</string>
-
     <string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
     <string name="storage_statistic_title">Statistic</string>
     <string name="statistic_db_message">%1$,d photos in %2$,d albums</string>
@@ -107,50 +120,29 @@
     <string name="statistic_free_space_message">%1$s available in %2$s</string>
 
     <string name="sync_header">Synchronization</string>
-
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
     <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder DCIM/%1$s</string>
-
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check for server changes every 6 hours</string>
-
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi</string>
     <string name="wifionly_off_title">Sync on all networks</string>
     <string name="wifionly_summary_on">Will not consume mobile data.</string>
     <string name="wifionly_summary_off">Consumes mobile data – caution is advised when you have a large collection of photos.</string>
 
-    <string name="other_header">Miscellaneous</string>
-
-    <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
-    <string name="snapseed_integration_title">Snapseed integration</string>
-    <string name="snapseed_integration_summary">Note: please let Snapseed use JPEG output format</string>
-
-    <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
-    <string name="snapseed_replace_title">Replace original</string>
-    <string name="snapseed_add_title">Add Snapseed version</string>
-    <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s version.</string>
-    <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
-
-    <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
-    <string name="gallery_launcher_title">Gallery launcher icon</string>
-    <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
-    <string name="proceed_request">Proceed</string>
-
-    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF</string>
-    <string name="strip_exif_title">Strip EXIF before sharing</string>
-
+    <string name="account_header">Account</string>
     <string name="relogin_pref_key" translatable="false">RELOGIN</string>
     <string name="relogin_title">Re-login</string>
     <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
-
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
     <string name="logout_dialog_msg">Log out of account %1$s?</string>
     <string name="yes_logout">Yes, log out</string>
 
+    <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
+    <string name="proceed_request">Proceed</string>
     <string name="install_snapseed_dialog_msg">Install Snapseed now?</string>
 
     <!-- Destination DialogFragment -->

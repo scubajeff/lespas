@@ -30,7 +30,7 @@
     <string name="wifionly_title">只使用WiFi網絡同步</string>
     <string name="wifionly_summary_on">應用將不消耗流動網絡流量。</string>
     <string name="wifionly_summary_off">應用將消耗流動網絡流量。如果照片數量多，請謹慎選擇使用。</string>
-    <string name="other_header">其他</string>
+    <string name="account_header">帳戶</string>
     <string name="logout_title">登出伺服器</string>
     <string name="logout_dialog_msg">登出帳戶%1$s嗎？</string>
     <string name="copy_files">複製</string>
@@ -157,4 +157,6 @@
     <string name="downloading_message">媒體文件%1$s將被保存到Download目錄下。</string>
     <string name="strip_exif_title">分享圖片前先刪除圖片EXIF私隱數據</string>
     <string name="install_snapseed_dialog_msg">即時安裝Snapseed應用嗎？</string>
+    <string name="edit_header">圖片編輯</string>
+    <string name="privacy_header">私隱保護</string>
 </resources>

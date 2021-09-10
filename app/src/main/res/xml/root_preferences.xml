@@ -29,6 +29,45 @@
             app:singleLineTitle="false"
             app:defaultValue="false" />
 
+        <SwitchPreferenceCompat
+            app:key="@string/gallery_launcher_pref_key"
+            app:title="@string/gallery_launcher_title"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/edit_header"
+        app:icon="@drawable/ic_baseline_edit_24">
+
+        <SwitchPreferenceCompat
+            app:key="@string/snapseed_pref_key"
+            app:title="@string/snapseed_integration_title"
+            app:summaryOn="@string/snapseed_integration_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+        <SwitchPreferenceCompat
+            app:dependency="@string/snapseed_pref_key"
+            app:key="@string/snapseed_replace_pref_key"
+            app:title="@string/snapseed_replace_title"
+            app:summaryOn="@string/snapseed_replace_on_summary"
+            app:summaryOff="@string/snapseed_replace_off_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/privacy_header"
+        app:icon="@drawable/ic_baseline_privacy_24">
+        <SwitchPreferenceCompat
+            app:key="@string/strip_exif_pref_key"
+            app:title="@string/strip_exif_title"
+            app:singleLineTitle="false"
+            app:defaultValue="true" />
+
     </PreferenceCategory>
 
     <PreferenceCategory
@@ -72,36 +111,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        app:title="@string/other_header"
-        app:icon="@drawable/ic_baseline_miscellaneous_services_24">
-        <SwitchPreferenceCompat
-            app:key="@string/gallery_launcher_pref_key"
-            app:title="@string/gallery_launcher_title"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-        <SwitchPreferenceCompat
-            app:key="@string/strip_exif_pref_key"
-            app:title="@string/strip_exif_title"
-            app:singleLineTitle="false"
-            app:defaultValue="true" />
-
-        <SwitchPreferenceCompat
-            app:key="@string/snapseed_pref_key"
-            app:title="@string/snapseed_integration_title"
-            app:summaryOn="@string/snapseed_integration_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
-        <SwitchPreferenceCompat
-            app:dependency="@string/snapseed_pref_key"
-            app:key="@string/snapseed_replace_pref_key"
-            app:title="@string/snapseed_replace_title"
-            app:summaryOn="@string/snapseed_replace_on_summary"
-            app:summaryOff="@string/snapseed_replace_off_summary"
-            app:singleLineTitle="false"
-            app:defaultValue="false" />
-
+        app:title="@string/account_header"
+        app:icon="@drawable/ic_baseline_account_setting_24">
         <Preference
             app:key="@string/relogin_pref_key"
             app:title="@string/relogin_title"

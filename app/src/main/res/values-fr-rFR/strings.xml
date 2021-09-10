@@ -31,7 +31,7 @@
     <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
     <string name="wifionly_summary_on">Ne consommera pas de données mobiles.</string>
     <string name="wifionly_summary_off">Consommez des données mobiles, avec prudence lorsque vous avez une grande collection de photos.</string>
-    <string name="other_header">Autres</string>
+    <string name="account_header">Compte</string>
     <string name="logout_title">Déconnexion-vous</string>
     <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
     <string name="copy_files">Copier</string>
@@ -157,4 +157,6 @@
     <string name="downloading_message">Le fichier %1$s sera enregistré dans le répertoire de téléchargement.</string>
     <string name="strip_exif_title">Suppression des données EXIF avant le partage</string>
     <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
+    <string name="edit_header">Re-touche</string>
+    <string name="privacy_header">Vie privée</string>
 </resources>

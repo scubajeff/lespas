@@ -39,7 +39,7 @@
     <string name="wifionly_off_title">Sincronización en todas las redes</string>
     <string name="wifionly_summary_on">No consumirá datos móviles.</string>
     <string name="wifionly_summary_off">Consuma los datos del móvil, con precaución cuando tenga una gran colección de fotos.</string>
-    <string name="other_header">Otros</string>
+    <string name="account_header">Cuenta</string>
     <string name="snapseed_integration_title">Integración de las Snapseed</string>
     <string name="snapseed_integration_summary">Nota: Por favor, deja que Snapseed use el formato de salida JPEG</string>
     <string name="snapseed_replace_title">Reemplazar el original</string>
@@ -157,4 +157,6 @@
     <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
     <string name="strip_exif_title">Quitar los EXIF antes de compartirlos</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
+    <string name="edit_header">Retacear</string>
+    <string name="privacy_header">Privacidad</string>
 </resources>

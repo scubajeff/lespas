@@ -63,7 +63,7 @@
     <string name="wifionly_off_title">モバイルネットワークを利用した同期</string>
     <string name="wifionly_summary_on">このアプリは、モバイルネットワークのトラフィックを消費しません。</string>
     <string name="wifionly_summary_off">このアプリは、モバイルネットワークのトラフィックを消費します。 写真の枚数が多い場合は、用途を慎重に選んでください。</string>
-    <string name="other_header">その他</string>
+    <string name="account_header">アカウント</string>
     <string name="snapseed_integration_title">Snapseedとの統合</string>
     <string name="snapseed_integration_summary">注：SnapseedはJPEG形式で出力するように設定してください。</string>
     <string name="snapseed_replace_title">元の写真を置き換える</string>
@@ -157,4 +157,6 @@
     <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
     <string name="strip_exif_title">共有前にEXIFを除去</string>
     <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
+    <string name="edit_header">リタッチ</string>
+    <string name="privacy_header">個人情報保護</string>
 </resources>
