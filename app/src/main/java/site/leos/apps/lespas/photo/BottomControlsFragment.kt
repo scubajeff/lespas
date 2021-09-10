@@ -3,6 +3,7 @@ package site.leos.apps.lespas.photo
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
@@ -19,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.preference.PreferenceManager
 import androidx.transition.Fade
 import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.MainActivity
@@ -30,6 +32,7 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
@@ -39,7 +42,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private lateinit var album: Album
     private lateinit var window: Window
     private lateinit var controlsContainer: LinearLayout
-    private lateinit var moreControls: LinearLayout
     private lateinit var removeButton: ImageButton
     private lateinit var coverButton: ImageButton
     private lateinit var setAsButton: ImageButton
@@ -69,7 +71,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             }
         }
 */
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom) }
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
+        }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && currentPhotoModel.getCurrentPhotoId() != album.cover) currentPhotoModel.removePhoto() }
     }
@@ -92,7 +96,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         // Controls
         controlsContainer = view.findViewById(R.id.bottom_controls_container)
-        moreControls = view.findViewById(R.id.more_controls)
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
         setAsButton = view.findViewById(R.id.set_as_button)
@@ -174,12 +177,35 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 }
             }
         }
-        view.findViewById<ImageButton>(R.id.more_button).run {
+        view.findViewById<ImageButton>(R.id.snapseed_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                moreControls.visibility = View.VISIBLE
-                delayHideTouchListener
+                with(currentPhotoModel.getCurrentPhoto().value!!) {
+                    try {
+                        // Synced file is named after id, not yet synced file is named after file's name
+                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
+                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
+                        val mimeType = this.mimeType
+
+                        startActivity(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            data = uri
+                            type = mimeType
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                        })
+                    } catch (e: Exception) { e.printStackTrace() }
+                }
+
+                // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
+                it.context.sendBroadcast(Intent().apply {
+                    action = PhotoSlideFragment.CHOOSER_SPY_ACTION
+                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                })
             }
+
+            this.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
         }
         removeButton.run {
             setOnTouchListener(delayHideTouchListener)
@@ -337,7 +363,6 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             } else {
                 controlsContainer.visibility = View.GONE
             }
-            moreControls.visibility = View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
         // auto hide

@@ -88,6 +88,10 @@ class MainActivity : AppCompatActivity() {
                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                 }
+                // If Snapseed is not installed, disable Snapseed integration
+                packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
+                    sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
+                }
 
                 intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
                     Thread {

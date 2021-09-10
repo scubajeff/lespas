@@ -30,7 +30,7 @@
     <string name="tooltip_text_set_cover">アルバムカバーの設定</string>
     <string name="tooltip_text_set_as">に設定します。</string>
     <string name="tooltip_text_info">写真情報</string>
-    <string name="tooltip_text_more">より</string>
+    <string name="tooltip_text_edit_in_snapseed">Snapseedでの編集</string>
     <string name="toast_cover_applied">アルバムジャケットを更新しました。</string>
     <string name="toast_cover_set_canceled">操作がキャンセルされました。</string>
     <string name="settings_title">設定</string>
@@ -155,4 +155,5 @@
     <string name="tooltip_text_download">ダウンロード</string>
     <string name="tooltip_text_add_to_lespas">私のアルバムに追加</string>
     <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
+    <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
 </resources>
