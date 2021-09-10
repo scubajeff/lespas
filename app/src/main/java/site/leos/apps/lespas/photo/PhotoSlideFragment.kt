@@ -134,9 +134,9 @@ class PhotoSlideFragment : Fragment() {
                             }
                         }
                     })
-                }
 
-                requireContext().contentResolver.unregisterContentObserver(this)
+                    requireContext().contentResolver.unregisterContentObserver(this)
+                }
             }
         }
     }
