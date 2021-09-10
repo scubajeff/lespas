@@ -4,9 +4,7 @@ import android.app.PendingIntent
 import android.content.*
 import android.content.pm.PackageManager
 import android.database.ContentObserver
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
+import android.graphics.*
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
@@ -87,6 +85,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var sortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
+
+    private var stripExif = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -395,6 +395,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -515,13 +517,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 val authority = getString(R.string.file_authority)
 
                 sharedSelection.clear()
+
+                var sourceFile: File
+                var destFile: File
                 for (photoId in selectionTracker.selection) {
                     sharedSelection.add(photoId)
                     //with(mAdapter.getPhotoAt(i.toInt())) {
                     with(mAdapter.getPhotoBy(photoId)) {
                         // Synced file is named after id, not yet synced file is named after file's name
-                        File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
-                        uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
+                        sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
+                        destFile = File(cachePath, name)
+
+                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                        if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                        else sourceFile.copyTo(destFile, true, 4096)
+                        uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
                     }
                 }
 

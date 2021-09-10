@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.content.ClipData
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -19,6 +21,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.preference.PreferenceManager
 import androidx.transition.Fade
 import com.google.android.material.snackbar.Snackbar
 import site.leos.apps.lespas.MainActivity
@@ -47,6 +50,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     private val uiToggle: PhotoSlideFragment.UIViewModel by activityViewModels()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
+
+    private var stripExif = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +86,8 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     @SuppressLint("ClickableViewAccessibility", "ShowToast")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
 
         uiToggle.status().observe(viewLifecycleOwner, { toggle(it) })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
@@ -120,9 +127,18 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
                     try {
                         // Synced file is named after id, not yet synced file is named after file's name
-                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
-                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
-                        val mimeType = this.mimeType
+                        val sourceFile = File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name)
+                        val destFile = File(context.cacheDir, name)
+
+                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                        val mimeType: String = if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) {
+                            BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                            "image/jpeg"
+                        } else {
+                            sourceFile.copyTo(destFile, true, 4096)
+                            this.mimeType
+                        }
+                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), destFile)
 
                         startActivity(
                             Intent.createChooser(

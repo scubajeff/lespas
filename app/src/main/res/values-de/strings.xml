@@ -155,4 +155,5 @@
     <string name="tooltip_text_download">Download</string>
     <string name="tooltip_text_add_to_lespas">Zu meinem Album hinzufügen</string>
     <string name="downloading_message">Die Datei %1$s wird im Verzeichnis Download gespeichert.</string>
+    <string name="strip_exif_title">EXIF vor dem Teilen entfernen</string>
 </resources>

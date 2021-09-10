@@ -155,4 +155,5 @@
     <string name="tooltip_text_download">下載</string>
     <string name="tooltip_text_add_to_lespas">加入我的相冊</string>
     <string name="downloading_message">媒體文件%1$s將被保存到Download目錄下。</string>
+    <string name="strip_exif_title">分享圖片前刪除圖片EXIF隱私數據</string>
 </resources>

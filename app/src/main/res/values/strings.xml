@@ -139,6 +139,9 @@
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="proceed_request">Proceed</string>
 
+    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF</string>
+    <string name="strip_exif_title">Strip EXIF before sharing</string>
+
     <string name="relogin_pref_key" translatable="false">RELOGIN</string>
     <string name="relogin_title">Re-login</string>
     <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>

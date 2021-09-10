@@ -4,12 +4,15 @@ import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
+import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Matrix
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -34,6 +37,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -41,6 +45,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.*
 import androidx.transition.Transition
 import com.google.android.material.transition.MaterialContainerTransform
@@ -52,6 +57,7 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
 import java.lang.Integer.min
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -89,6 +95,8 @@ class CameraRollFragment : Fragment() {
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+
+    private var stripExif = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -196,14 +204,37 @@ class CameraRollFragment : Fragment() {
         shareButton.setOnClickListener {
             toggleControlView(false)
 
-            val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
-            startActivity(Intent.createChooser(Intent().apply {
-                action = Intent.ACTION_SEND
-                type = mediaToShare.mimeType
-                putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-            }, null))
+            try {
+                val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
+                if (stripExif) {
+                    val cr = requireContext().contentResolver
+                    val destFile = File(requireContext().cacheDir, mediaToShare.name)
+
+                    // Strip EXIF, rotate picture if needed
+                    BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {
+                        (if (mediaToShare.shareId != 0) Bitmap.createBitmap(this, 0, 0, mediaToShare.width, mediaToShare.height, Matrix().apply { preRotate(mediaToShare.shareId.toFloat()) }, true) else this)
+                            .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    }
+                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "image/jpeg"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = ClipData.newUri(cr, "", uri)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
+                } else {
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = mediaToShare.mimeType
+                        putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
             toggleControlView(false)
@@ -351,6 +382,8 @@ class CameraRollFragment : Fragment() {
                 }
             }
         }
+
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
     }
 
     override fun onPause() {
