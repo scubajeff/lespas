@@ -85,7 +85,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var isSnapseedInstalled = false
+    private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -268,8 +268,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         val selectionSize = selectionTracker.selection.size()
 
-                        snapseedEditAction?.isEnabled = selectionSize == 1 && isSnapseedInstalled
-                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedInstalled
+                        snapseedEditAction?.isEnabled = selectionSize == 1 && isSnapseedEnabled
+                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
@@ -400,7 +400,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        isSnapseedInstalled = requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null
+        isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -506,9 +506,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
 
         // Disable snapseed edit action menu if Snapseed is not installed
-        isSnapseedInstalled = requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null
-        snapseedEditAction?.isEnabled = isSnapseedInstalled
-        snapseedEditAction?.isVisible = isSnapseedInstalled
+        isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
+        snapseedEditAction?.isEnabled = isSnapseedEnabled
+        snapseedEditAction?.isVisible = isSnapseedEnabled
 
         return true
     }
