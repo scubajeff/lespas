@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.ClipData
 import android.content.ComponentName
 import android.content.Intent
@@ -142,18 +141,14 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                         }
                         val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), destFile)
 
-                        startActivity(
-                            Intent.createChooser(
-                                Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    type = mimeType
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    clipData = ClipData.newUri(context.contentResolver, "", uri)
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                                }, null, PendingIntent.getBroadcast(context, 0, Intent(PhotoSlideFragment.CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
-                            )
-                        )
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = mimeType
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            clipData = ClipData.newUri(context.contentResolver, "", uri)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
                     } catch(e: Exception) { e.printStackTrace() }
                 }
             }

@@ -1,6 +1,5 @@
 package site.leos.apps.lespas.album
 
-import android.app.PendingIntent
 import android.content.*
 import android.database.ContentObserver
 import android.graphics.*
@@ -572,18 +571,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         )
                     } else {
                         // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                        startActivity(
-                            Intent.createChooser(
-                                Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    type = sharedPhoto.mimeType
-                                    putExtra(Intent.EXTRA_STREAM, uris[0])
-                                    this.clipData = clipData
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                                }, null, PendingIntent.getBroadcast(context, 1, Intent(CHOOSER_SPY_ACTION), PendingIntent.FLAG_UPDATE_CURRENT).intentSender
-                            )
-                        )
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = sharedPhoto.mimeType
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                            this.clipData = clipData
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
                     }
 
                     selectionTracker.clearSelection()
