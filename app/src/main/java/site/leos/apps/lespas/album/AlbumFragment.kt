@@ -261,10 +261,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onResume() {
         super.onResume()
 
-        (activity as? AppCompatActivity)?.supportActionBar?.run {
-            setDisplayHomeAsUpEnabled(false)
-            setDisplayShowTitleEnabled(true)
-            title = getString(R.string.app_name)
+        (activity as? AppCompatActivity)?.run {
+            supportActionBar?.run {
+                setDisplayHomeAsUpEnabled(false)
+                setDisplayShowTitleEnabled(true)
+                title = getString(R.string.app_name)
+            }
+            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
         }
     }
 
