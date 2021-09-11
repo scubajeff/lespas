@@ -97,7 +97,7 @@ class CameraRollFragment : Fragment() {
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
-    private var stripExif = true
+    private var stripExif = "1"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -206,37 +206,10 @@ class CameraRollFragment : Fragment() {
         shareButton.setOnClickListener {
             toggleControlView(false)
 
-            try {
-                val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
-                if (stripExif) {
-                    val cr = requireContext().contentResolver
-                    val destFile = File(requireContext().cacheDir, mediaToShare.name)
-
-                    // Strip EXIF, rotate picture if needed
-                    BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {
-                        (if (mediaToShare.shareId != 0) Bitmap.createBitmap(this, 0, 0, mediaToShare.width, mediaToShare.height, Matrix().apply { preRotate(mediaToShare.shareId.toFloat()) }, true) else this)
-                            .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    }
-                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
-
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = "image/jpeg"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        clipData = ClipData.newUri(cr, "", uri)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                    }, null))
-                } else {
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = mediaToShare.mimeType
-                        putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                    }, null))
-                }
-            } catch (e: Exception) { e.printStackTrace() }
+            if (stripExif == getString(R.string.strip_ask_value)) {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+            }
+            else shareOut(stripExif == getString(R.string.strip_on_value))
         }
         view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
             toggleControlView(false)
@@ -250,7 +223,7 @@ class CameraRollFragment : Fragment() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).build())
             }
-            else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, CONFIRM_DIALOG)
+            else if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
         }
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
@@ -350,11 +323,17 @@ class CameraRollFragment : Fragment() {
             deleteMediaLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
                 if (result.resultCode == Activity.RESULT_OK) camerarollModel.removeCurrentMedia()
             }
-        } else {
-            parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-                if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) camerarollModel.removeCurrentMedia()
+        }
+
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                    DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) camerarollModel.removeCurrentMedia()
+                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+                }
             }
         }
+
     }
 
 
@@ -388,7 +367,7 @@ class CameraRollFragment : Fragment() {
             }
         }
 
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
     }
 
     override fun onPause() {
@@ -483,6 +462,40 @@ class CameraRollFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun shareOut(strip: Boolean) {
+        try {
+            val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
+            if (strip) {
+                val cr = requireContext().contentResolver
+                val destFile = File(requireContext().cacheDir, mediaToShare.name)
+
+                // Strip EXIF, rotate picture if needed
+                BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {
+                    (if (mediaToShare.shareId != 0) Bitmap.createBitmap(this, 0, 0, mediaToShare.width, mediaToShare.height, Matrix().apply { preRotate(mediaToShare.shareId.toFloat()) }, true) else this)
+                        .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                }
+                val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "image/jpeg"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newUri(cr, "", uri)
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            } else {
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = mediaToShare.mimeType
+                    putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -677,6 +690,8 @@ class CameraRollFragment : Fragment() {
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val DELETE_REQUEST_KEY = "CAMERA_ROLL_DELETE_REQUEST_KEY"
+        private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 
         private const val PLAYER_STATE = "PLAYER_STATE"
 

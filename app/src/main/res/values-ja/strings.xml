@@ -155,8 +155,14 @@
     <string name="tooltip_text_download">ダウンロード</string>
     <string name="tooltip_text_add_to_lespas">私のアルバムに追加</string>
     <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
-    <string name="strip_exif_title">共有前にEXIFを除去</string>
+    <string name="strip_exif_title">共有前にEXIFを削除</string>
     <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>
     <string name="edit_header">リタッチ</string>
     <string name="privacy_header">個人情報保護</string>
+    <string name="strip_exif_no">いいえ</string>
+    <string name="strip_ask_entry">常に問いかける。</string>
+    <string name="strip_exif_msg">%1$s?</string>
+    <string name="strip_off_entry">いや、それは置いておいて。</string>
+    <string name="strip_on_entry">はい、必ず削除してください。</string>
+    <string name="strip_exif_yes">はい。</string>
 </resources>

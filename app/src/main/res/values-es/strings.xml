@@ -155,8 +155,14 @@
     <string name="tooltip_text_download">Descargar</string>
     <string name="tooltip_text_add_to_lespas">Añadir a mi álbum</string>
     <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
-    <string name="strip_exif_title">Quitar los EXIF antes de compartirlos</string>
+    <string name="strip_exif_title">Eliminar EXIF antes de compartir</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>
     <string name="edit_header">Retacear</string>
     <string name="privacy_header">Privacidad</string>
+    <string name="strip_exif_no">No</string>
+    <string name="strip_ask_entry">Pregunte siempre.</string>
+    <string name="strip_exif_msg">%1$s?</string>
+    <string name="strip_off_entry">No, déjalo.</string>
+    <string name="strip_on_entry">Sí, siempre se quita.</string>
+    <string name="strip_exif_yes">Sí</string>
 </resources>

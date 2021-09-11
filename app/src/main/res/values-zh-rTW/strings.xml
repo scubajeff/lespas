@@ -159,4 +159,10 @@
     <string name="install_snapseed_dialog_msg">現在就安裝Snapseed嗎？</string>
     <string name="edit_header">圖片編輯</string>
     <string name="privacy_header">隱私保護</string>
+    <string name="strip_exif_no">不用</string>
+    <string name="strip_ask_entry">每次都詢問確定。</string>
+    <string name="strip_exif_msg">%1$s？</string>
+    <string name="strip_off_entry">不刪除，無法保護你的隱私。</string>
+    <string name="strip_on_entry">一律刪除，最大限度保護隱私。</string>
+    <string name="strip_exif_yes">好的</string>
 </resources>

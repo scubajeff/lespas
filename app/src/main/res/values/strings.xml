@@ -55,6 +55,9 @@
     <string name="duration_months">Months: %1$d</string>
     <string name="duration_years">Years: %1$d</string>
     <string name="published_to">Published to: %1$s</string>
+    <string name="strip_exif_msg">%1$s?</string>
+    <string name="strip_exif_yes">Yes</string>
+    <string name="strip_exif_no">No</string>
 
     <!-- PhotoSlide fragment -->
     <string name="tooltip_text_set_cover">Set cover art</string>
@@ -99,8 +102,14 @@
     <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
 
     <string name="privacy_header">Privacy</string>
-    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF</string>
+    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF_CHOICE</string>
     <string name="strip_exif_title">Strip EXIF before sharing</string>
+    <string name="strip_on_entry">Yes, always strip.</string>
+    <string name="strip_off_entry">No, leave it.</string>
+    <string name="strip_ask_entry">Always ask.</string>
+    <string name="strip_on_value" translatable="false">1</string>
+    <string name="strip_off_value" translatable="false">0</string>
+    <string name="strip_ask_value" translatable="false">2</string>
 
     <string name="storage_header">Storage</string>
     <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>

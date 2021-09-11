@@ -29,10 +29,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.MetaDataDialogFragment
-import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -52,7 +49,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
-    private var stripExif = true
+    private var stripExif = "1"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,7 +87,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
 
         uiToggle.status().observe(viewLifecycleOwner, { toggle(it) })
         currentPhotoModel.getCurrentPhoto().observe(viewLifecycleOwner, {
@@ -131,32 +128,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    try {
-                        // Synced file is named after id, not yet synced file is named after file's name
-                        val sourceFile = File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name)
-                        val destFile = File(context.cacheDir, name)
 
-                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                        val mimeType: String = if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) {
-                            BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                            "image/jpeg"
-                        } else {
-                            sourceFile.copyTo(destFile, true, 4096)
-                            this.mimeType
-                        }
-                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), destFile)
-
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = mimeType
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            clipData = ClipData.newUri(context.contentResolver, "", uri)
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
-                    } catch(e: Exception) { e.printStackTrace() }
+                if (stripExif == getString(R.string.strip_ask_value)) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
+                else shareOut(stripExif == getString(R.string.strip_on_value))
             }
         }
         setAsButton.run {
@@ -226,7 +202,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, REMOVE_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
             }
         }
 
@@ -243,7 +219,12 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
 
         // Remove photo confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) currentPhotoModel.removePhoto()
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                    DELETE_REQUEST_KEY-> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) currentPhotoModel.removePhoto()
+                    STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+                }
+            }
         }
     }
 
@@ -383,12 +364,44 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
+    private fun shareOut(strip: Boolean) {
+        with(currentPhotoModel.getCurrentPhoto().value!!) {
+            try {
+                // Synced file is named after id, not yet synced file is named after file's name
+                val sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
+                val destFile = File(requireActivity().cacheDir, name)
+
+                // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                val mimeType: String = if (strip && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) {
+                    BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    "image/jpeg"
+                } else {
+                    sourceFile.copyTo(destFile, true, 4096)
+                    this.mimeType
+                }
+                val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = mimeType
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    clipData = ClipData.newUri(requireContext().contentResolver, "", uri)
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            } catch(e: Exception) { e.printStackTrace() }
+        }
+    }
+
     companion object {
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         private const val ALBUM = "ALBUM"
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
+        private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
 
         @JvmStatic
         fun newInstance(album: Album) = BottomControlsFragment().apply { arguments = Bundle().apply{ putParcelable(ALBUM, album) }}

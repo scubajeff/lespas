@@ -83,7 +83,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var stripExif = true
+    private var stripExif = "1"
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
@@ -379,15 +379,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
             if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
-                if (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY) == DELETE_REQUEST_KEY) {
-                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                        val photos = mutableListOf<Photo>()
-                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                        // TODO publish status is not persistent locally
-                        //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
-                        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                    DELETE_REQUEST_KEY-> {
+                        if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                            val photos = mutableListOf<Photo>()
+                            for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
+                            // TODO publish status is not persistent locally
+                            //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
+                            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                        }
+                        selectionTracker.clearSelection()
                     }
-                    selectionTracker.clearSelection()
+                    STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, true))
                 }
             }
         }
@@ -398,7 +401,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.strip_exif_pref_key), true)
+        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
 
         isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
     }
@@ -521,65 +524,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.share -> {
-                try {
-                    val uris = arrayListOf<Uri>()
-                    val appRootFolder = Tools.getLocalRoot(requireContext())
-                    val cachePath = requireActivity().cacheDir
-                    val authority = getString(R.string.file_authority)
-
-                    sharedSelection.clear()
-
-                    var sourceFile: File
-                    var destFile: File
-                    for (photoId in selectionTracker.selection) {
-                        sharedSelection.add(photoId)
-                        //with(mAdapter.getPhotoAt(i.toInt())) {
-                        with(mAdapter.getPhotoBy(photoId)) {
-                            // Synced file is named after id, not yet synced file is named after file's name
-                            sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
-                            destFile = File(cachePath, name)
-
-                            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                            if (stripExif && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                            else sourceFile.copyTo(destFile, true, 4096)
-                            uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
-                        }
-                    }
-
-                    val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-                    for (i in 1 until uris.size)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                        else clipData.addItem(ClipData.Item(uris[i]))
-
-                    //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-                    if (selectionTracker.selection.size() > 1) {
-                        startActivity(
-                            Intent.createChooser(
-                                Intent().apply {
-                                    action = Intent.ACTION_SEND_MULTIPLE
-                                    type = sharedPhoto.mimeType
-                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                                    this.clipData = clipData
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                                }, null
-                            )
-                        )
-                    } else {
-                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = sharedPhoto.mimeType
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
-                    }
-
-                    selectionTracker.clearSelection()
-                } catch (e: Exception) { e.printStackTrace() }
+                if (stripExif == getString(R.string.strip_ask_value)) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+                else shareOut(stripExif == getString(R.string.strip_on_value))
 
                 true
             }
@@ -636,6 +584,68 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private fun updateSortOrder(newOrder: Int) {
         albumModel.setSortOrder(album.id, newOrder)
         sortOrderChanged = true
+    }
+
+    private fun shareOut(strip: Boolean) {
+        try {
+            val uris = arrayListOf<Uri>()
+            val appRootFolder = Tools.getLocalRoot(requireContext())
+            val cachePath = requireActivity().cacheDir
+            val authority = getString(R.string.file_authority)
+
+            sharedSelection.clear()
+
+            var sourceFile: File
+            var destFile: File
+            for (photoId in selectionTracker.selection) {
+                sharedSelection.add(photoId)
+                //with(mAdapter.getPhotoAt(i.toInt())) {
+                with(mAdapter.getPhotoBy(photoId)) {
+                    // Synced file is named after id, not yet synced file is named after file's name
+                    sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
+                    destFile = File(cachePath, name)
+
+                    // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                    if (strip && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    else sourceFile.copyTo(destFile, true, 4096)
+                    uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
+                }
+            }
+
+            val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+            for (i in 1 until uris.size)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                else clipData.addItem(ClipData.Item(uris[i]))
+
+            //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+            sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+            if (selectionTracker.selection.size() > 1) {
+                startActivity(
+                    Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND_MULTIPLE
+                            type = sharedPhoto.mimeType
+                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            this.clipData = clipData
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null
+                    )
+                )
+            } else {
+                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = sharedPhoto.mimeType
+                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                    this.clipData = clipData
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            }
+
+            selectionTracker.clearSelection()
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
     // Adapter for photo grid
@@ -806,6 +816,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"
 
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
+        private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"
 
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
 

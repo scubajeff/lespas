@@ -159,4 +159,10 @@
     <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
     <string name="edit_header">Re-touche</string>
     <string name="privacy_header">Vie privée</string>
+    <string name="strip_exif_no">Non</string>
+    <string name="strip_ask_entry">Demandez toujours.</string>
+    <string name="strip_exif_msg">%1$s?</string>
+    <string name="strip_off_entry">Non, laissez-le.</string>
+    <string name="strip_on_entry">Oui, toujours supprimer.</string>
+    <string name="strip_exif_yes">Oui</string>
 </resources>
