@@ -17,7 +17,7 @@ class LesPas : AppCompatActivity() {
             if (accounts.isEmpty()) {
                 am.addAccount(accountType, "", null, null, this, { passToMainActivity() }, null)
             } else passToMainActivity()
-        } catch (e: InterruptedException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 
