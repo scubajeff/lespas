@@ -100,6 +100,8 @@ class RemoteMediaFragment: Fragment() {
         }
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
             if (isGranted) saveMedia()
         }
 
@@ -138,7 +140,11 @@ class RemoteMediaFragment: Fragment() {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) storagePermissionRequestLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
+                    storagePermissionRequestLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
                 else saveMedia()
             }
         }

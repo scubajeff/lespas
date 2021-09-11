@@ -8,6 +8,7 @@ import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.Drawable
 import android.net.http.SslError
@@ -69,6 +70,7 @@ class NCLoginFragment: Fragment() {
         reLogin = arguments?.getBoolean(KEY_RELOGIN, false) ?: false
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
             requireActivity().finish()
         }
@@ -303,6 +305,7 @@ class NCLoginFragment: Fragment() {
 
     private fun requestStoragePermission() {
         // Ask for storage access permission so that Camera Roll can be shown at first run
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
         welcomePage.visibility = View.GONE
         authWebpage.visibility = View.GONE
         storagePermissionRequestLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE)

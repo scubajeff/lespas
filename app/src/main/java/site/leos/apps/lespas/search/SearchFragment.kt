@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -58,6 +59,8 @@ class SearchFragment : Fragment() {
         noAlbum = arguments?.getBoolean(NO_ALBUM) == true
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
             if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
             else if (noAlbum)
                 parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
@@ -116,6 +119,8 @@ class SearchFragment : Fragment() {
                     R.id.search_cameraroll-> {
                         val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
                         if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
                             storagePermissionRequestLauncher.launch(permission)
                             if (!noAlbum) this.check(R.id.search_album)
                         }

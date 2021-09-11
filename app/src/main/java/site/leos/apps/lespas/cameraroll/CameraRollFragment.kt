@@ -8,6 +8,7 @@ import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -166,6 +167,7 @@ class CameraRollFragment : Fragment() {
         })
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             when {
                 isGranted -> observeCameraRoll()
                 requireActivity() is MainActivity -> parentFragmentManager.popBackStack()
@@ -325,7 +327,10 @@ class CameraRollFragment : Fragment() {
             observeCameraRoll()
         } ?: run {
             val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) storagePermissionRequestLauncher.launch(permission)
+            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                storagePermissionRequestLauncher.launch(permission)
+            }
             else observeCameraRoll()
         }
 

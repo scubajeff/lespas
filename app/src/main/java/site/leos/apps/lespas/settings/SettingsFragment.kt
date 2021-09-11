@@ -4,6 +4,7 @@ import android.accounts.Account
 import android.accounts.AccountManager
 import android.app.ActivityManager
 import android.content.*
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -63,12 +64,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         snapseedPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
         }
         showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = isGranted
         }
         backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
             if (isGranted) {
                 findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
                     isChecked = true
@@ -104,7 +111,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             requireActivity().packageManager.setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
                             requireActivity().finish()
                         }
-                        PERMISSION_RATIONALE_REQUEST_DIALOG-> snapseedPermissionRequestLauncher.launch(storagePermission)
+                        PERMISSION_RATIONALE_REQUEST_DIALOG-> {
+                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
+                            snapseedPermissionRequestLauncher.launch(storagePermission)
+                        }
                         INSTALL_SNAPSEED_DIALOG->
                             try {
                                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
@@ -175,7 +186,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, PERMISSION_RATIONALE_REQUEST_DIALOG)
                                 .show(parentFragmentManager, CONFIRM_DIALOG)
                         }
-                    } else snapseedPermissionRequestLauncher.launch(storagePermission)
+                    } else {
+                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
+                        snapseedPermissionRequestLauncher.launch(storagePermission)
+                    }
 
                     // Set Snapseed integration to False if we don't have WRITE_EXTERNAL_STORAGE permission
                     (pref as SwitchPreferenceCompat).isChecked = false
@@ -201,6 +216,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
                 if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
                     backupCameraRollPermissionRequestLauncher.launch(storagePermission)
 
                     (pref as SwitchPreferenceCompat).isChecked = false
@@ -245,6 +262,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
                 if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
                     showCameraRollPermissionRequestLauncher.launch(storagePermission)
                     false
                 } else true
