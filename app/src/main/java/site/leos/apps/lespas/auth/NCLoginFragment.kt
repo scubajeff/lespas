@@ -293,6 +293,7 @@ class NCLoginFragment: Fragment() {
                     putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
                     putString(getString(R.string.nc_userdata_username), am.getUserData(account, getString(R.string.nc_userdata_username)))
                     putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
+                    putString(getString(R.string.nc_userdata_selfsigned), am.getUserData(account, getString(R.string.nc_userdata_selfsigned)))
                 }
 
                 requestStoragePermission()
