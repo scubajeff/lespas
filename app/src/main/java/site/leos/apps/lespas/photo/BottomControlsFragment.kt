@@ -172,6 +172,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             }
         }
         snapseedButton.run {
+            setImageResource(if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 with(currentPhotoModel.getCurrentPhoto().value!!) {

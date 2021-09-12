@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -508,9 +509,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
 
-        // Disable snapseed edit action menu if Snapseed is not installed
-        isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
-        snapseedEditAction?.isVisible = isSnapseedEnabled
+        // Disable snapseed edit action menu if Snapseed is not installed, update snapseed action menu icon too
+        with(PreferenceManager.getDefaultSharedPreferences(context)) {
+            isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
+            snapseedEditAction?.isVisible = isSnapseedEnabled
+            if (isSnapseedEnabled) snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
+        }
 
         return true
     }
