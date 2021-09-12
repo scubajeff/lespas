@@ -469,7 +469,7 @@ class CameraRollFragment : Fragment() {
     private fun shareOut(strip: Boolean) {
         try {
             val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
-            if (strip) {
+            if (strip && Tools.hasExif(mediaToShare.mimeType)) {
                 val cr = requireContext().contentResolver
                 val destFile = File(requireContext().cacheDir, mediaToShare.name)
 
