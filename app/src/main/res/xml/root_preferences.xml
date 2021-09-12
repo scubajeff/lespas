@@ -129,6 +129,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory>
-        <site.leos.apps.lespas.settings.AboutPreference />
+        <site.leos.apps.lespas.settings.AboutPreference
+            app:allowDividerBelow="false"
+            app:selectable="false"/>
     </PreferenceCategory>
 </PreferenceScreen>
