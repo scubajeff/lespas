@@ -318,12 +318,6 @@ class NCLoginFragment: Fragment() {
         if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\\[\\]]*[-a-zA-Z0-9\\]+&@#/%=~_|]").matcher(hostUrl).matches()) {
             hostInputText.error = getString(R.string.host_address_validation_error)
         } else {
-            // Clean up the input area
-            (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostInputText.windowToken, 0) }
-            hostInputText.run {
-                error = null
-                isEnabled = false
-            }
             // Set a loading spinner for text input view
             inputArea.run {
                 endIconDrawable = loadingSpinner
@@ -336,6 +330,14 @@ class NCLoginFragment: Fragment() {
                 when (result) {
                     HttpURLConnection.HTTP_OK -> {
                         // If everything ok, start loading the nextcloud authentication page in webview
+
+                        // Clean up the input area
+                        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostInputText.windowToken, 0) }
+                        hostInputText.run {
+                            error = null
+                            isEnabled = false
+                        }
+
                         // the webview will reveal after page loaded
                         authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
                     }
