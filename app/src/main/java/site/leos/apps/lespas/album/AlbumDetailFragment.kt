@@ -525,7 +525,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
             R.id.share -> {
                 if (stripExif == getString(R.string.strip_ask_value)) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (hasExifInSelection()) {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    } else shareOut(false)
                 }
                 else shareOut(stripExif == getString(R.string.strip_on_value))
 
@@ -586,6 +588,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         sortOrderChanged = true
     }
 
+    private fun hasExifInSelection(): Boolean {
+        for (photoId in selectionTracker.selection) {
+            if (Tools.hasExif(mAdapter.getPhotoBy(photoId).mimeType)) return true
+        }
+
+        return false
+    }
+
     private fun shareOut(strip: Boolean) {
         try {
             val uris = arrayListOf<Uri>()
@@ -606,7 +616,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     destFile = File(cachePath, name)
 
                     // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                    if (strip && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    if (strip && Tools.hasExif(this.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else sourceFile.copyTo(destFile, true, 4096)
                     uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
                 }

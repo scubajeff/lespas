@@ -207,7 +207,9 @@ class CameraRollFragment : Fragment() {
             toggleControlView(false)
 
             if (stripExif == getString(R.string.strip_ask_value)) {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                if (Tools.hasExif(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).mimeType)) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                } else shareOut(false)
             }
             else shareOut(stripExif == getString(R.string.strip_on_value))
         }

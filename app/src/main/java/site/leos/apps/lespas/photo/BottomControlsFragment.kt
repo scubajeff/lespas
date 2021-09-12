@@ -130,7 +130,9 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 hideHandler.post(hideSystemUI)
 
                 if (stripExif == getString(R.string.strip_ask_value)) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (Tools.hasExif(currentPhotoModel.getCurrentPhoto().value!!.mimeType)) {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    } else shareOut(false)
                 }
                 else shareOut(stripExif == getString(R.string.strip_on_value))
             }
@@ -372,7 +374,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
                 val destFile = File(requireActivity().cacheDir, name)
 
                 // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                val mimeType: String = if (strip && this.mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")) {
+                val mimeType: String = if (strip && Tools.hasExif(this.mimeType)) {
                     BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     "image/jpeg"
                 } else {

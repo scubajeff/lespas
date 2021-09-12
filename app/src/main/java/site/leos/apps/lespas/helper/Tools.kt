@@ -210,6 +210,8 @@ object Tools {
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
+    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")
+
     @SuppressLint("DefaultLocale")
     fun humanReadableByteCountSI(size: Long): String {
         var bytes = size
