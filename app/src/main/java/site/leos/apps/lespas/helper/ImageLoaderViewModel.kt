@@ -83,7 +83,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
                                 if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = size })
                                 else {
-                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
                                     else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { inSampleSize = size })
                                 }
                             }
@@ -93,7 +93,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                     @Suppress("DEPRECATION")
                                     (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(fileName) else BitmapRegionDecoder.newInstance(fileName, false)).decodeRegion(rect, BitmapFactory.Options().apply {
                                         this.inSampleSize = size
-                                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                                        this.inPreferredConfig = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                                     })
                             }
                             else-> BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
@@ -155,7 +155,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     // cover baseline value passed in property shareId
                     val options = BitmapFactory.Options().apply {
                         this.inSampleSize = if ((photo.height < 1600) || (photo.width < 1600)) 1 else if (type == TYPE_SMALL_COVER) 8 else 4
-                        this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
+                        this.inPreferredConfig = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                     }
                     try {
                         var bmp: Bitmap? = null
@@ -289,7 +289,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun getImageThumbnail(photo: Photo): Bitmap? =
         try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, Uri.parse(photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8)}
                 // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
                 //contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width/8, photo.height/8), null)
@@ -309,7 +309,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         try {
             if (photo.albumId == FROM_CAMERA_ROLL) {
                 val photoId = photo.id.substringAfterLast('/').toLong()
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     try {
                         contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width, photo.height), null)
                     } catch (e: ArithmeticException) {
