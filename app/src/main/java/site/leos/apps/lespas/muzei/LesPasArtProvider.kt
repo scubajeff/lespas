@@ -77,7 +77,10 @@ class LesPasArtProvider: MuzeiArtProvider() {
         }
 
         val out = ByteArrayOutputStream()
-        BitmapRegionDecoder.newInstance("${Tools.getLocalRoot(context!!)}/${artwork.token!!}", false).decodeRegion(rect, null).compress(Bitmap.CompressFormat.JPEG, 90, out)
+        with("${Tools.getLocalRoot(context!!)}/${artwork.token!!}") {
+            @Suppress("DEPRECATION")
+            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(this) else BitmapRegionDecoder.newInstance(this, false)).decodeRegion(rect, null).compress(Bitmap.CompressFormat.JPEG, 90, out)
+        }
         return ByteArrayInputStream(out.toByteArray())
 
         //File(Tools.getLocalRoot(context!!), artwork.token!!).inputStream()
@@ -93,7 +96,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
-        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private fun updateArtwork() {
