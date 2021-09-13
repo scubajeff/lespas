@@ -288,6 +288,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 // TODO: For photo captured in Sony Xperia machine, loadThumbnail will load very small size bitmap
                 //contentResolver.loadThumbnail(Uri.parse(photo.id), Size(photo.width/8, photo.height/8), null)
             } else {
+                @Suppress("DEPRECATION")
                 MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
                     if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(photo.shareId.toFloat()) }, true)
                     else this
@@ -308,14 +309,16 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     } catch (e: ArithmeticException) {
                         // Some Android Q Rom, like AEX for EMUI 9, throw this exception
                         e.printStackTrace()
+                        @Suppress("DEPRECATION")
                         MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
                     }
                 } else {
+                    @Suppress("DEPRECATION")
                     MediaStore.Video.Thumbnails.getThumbnail(contentResolver, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
                 }
             }
             else {
-                var bitmap: Bitmap? = null
+                var bitmap: Bitmap?
                 val thumbnailFile = "$fileName.thumbnail"
                 bitmap = BitmapFactory.decodeFile(thumbnailFile)
                 if (bitmap == null) {
