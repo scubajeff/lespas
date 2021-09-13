@@ -6,9 +6,9 @@ import android.widget.TableRow
 import android.widget.TextView
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
@@ -62,7 +62,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             view.findViewById<TextView>(R.id.info_filename).text = name
             view.findViewById<TextView>(R.id.info_shotat).text = dateString
 
-            GlobalScope.launch(Dispatchers.IO) {
+            lifecycleScope.launch(Dispatchers.IO) {
                 var exif: ExifInterface? = null
                 if (local) {
                     with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
