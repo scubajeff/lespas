@@ -90,7 +90,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             this == "image/jpeg" || this == "image/png" -> {
                                 if (photo.albumId == FROM_CAMERA_ROLL) getImageThumbnail(photo)
                                 else
-                                    BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, BitmapFactory.Options().apply {
+                                    @Suppress("DEPRECATION")
+                                    (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(fileName) else BitmapRegionDecoder.newInstance(fileName, false)).decodeRegion(rect, BitmapFactory.Options().apply {
                                         this.inSampleSize = size
                                         this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                                     })
@@ -157,7 +158,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         this.inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                     }
                     try {
-                        var bmp: Bitmap?
+                        var bmp: Bitmap? = null
                         if (photo.albumId == FROM_CAMERA_ROLL) {
                             // cover orientation passed in property eTag
                             (try {photo.eTag.toFloat()} catch (e: Exception) { 0.0F }).also { orientation->
@@ -170,7 +171,11 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                 }
 
                                 // Decode region
-                                bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
+                                //bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
+                                contentResolver.openInputStream(uri)?.let {
+                                    @Suppress("DEPRECATION")
+                                    bmp = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, options)
+                                }
 
                                 // Rotate if needed
                                 if (orientation != 0.0F) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(orientation) }, true) }
@@ -178,7 +183,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         } else {
                             val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
                             val rect = Rect(0, photo.shareId, photo.width - 1, bottom)
-                            bmp = BitmapRegionDecoder.newInstance(fileName, false).decodeRegion(rect, options) ?: placeholderBitmap
+                            @Suppress("DEPRECATION")
+                            bmp = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(fileName) else BitmapRegionDecoder.newInstance(fileName, false)).decodeRegion(rect, options) ?: placeholderBitmap
                         }
 
                         bmp ?: placeholderBitmap

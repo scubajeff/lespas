@@ -68,16 +68,20 @@ class CoverSettingFragment : Fragment() {
         constraintSet.clone(root)
 
         DisplayMetrics().run {
+            val screenWidth: Float
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 @Suppress("DEPRECATION")
                 requireActivity().windowManager.defaultDisplay.getRealMetrics(this)
+                screenWidth = widthPixels.toFloat()
+                screenHeight = heightPixels.toFloat()
             } else {
-                requireActivity().display?.getRealMetrics(this)
+                with(requireActivity().windowManager.currentWindowMetrics.bounds) {
+                    screenWidth = width().toFloat()
+                    screenHeight = height().toFloat()
+                }
             }
 
             val d = currentPhoto.getCurrentPhoto().value!!
-            val screenWidth = widthPixels.toFloat()
-            screenHeight = heightPixels.toFloat()
             val drawableWidth: Float
 
             if (screenHeight/d.height > screenWidth / d.width) {
@@ -94,7 +98,7 @@ class CoverSettingFragment : Fragment() {
             if (scrollTop < 0f) scrollTop = 0f
             scrollBottom = 1 - scrollTop
 
-            constraintSet.setDimensionRatio(R.id.croparea, "H,$widthPixels:$frameHeight")
+            constraintSet.setDimensionRatio(R.id.croparea, "H,${screenWidth.toInt()}:$frameHeight")
         }
 
         savedInstanceState?.let {

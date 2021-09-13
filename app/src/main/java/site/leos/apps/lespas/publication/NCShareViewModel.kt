@@ -692,7 +692,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         else -> 4
                                     }
                                     try  {
-                                        bitmap = BitmapRegionDecoder.newInstance(it, false).decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                        @Suppress("DEPRECATION")
+                                        bitmap = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                     } catch (e: IOException) {
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                                         //e.printStackTrace()
