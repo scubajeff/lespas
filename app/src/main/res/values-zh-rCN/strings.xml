@@ -165,4 +165,5 @@
     <string name="strip_off_entry">不删除，无法保护你的隐私。</string>
     <string name="strip_on_entry">一律删除，最大限度保护隐私。</string>
     <string name="strip_exif_yes">好的</string>
+    <string name="action_reuse">至相册…</string>
 </resources>

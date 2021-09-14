@@ -165,4 +165,5 @@
     <string name="strip_off_entry">Nein, lass es.</string>
     <string name="strip_on_entry">Ja, immer entfernen.</string>
     <string name="strip_exif_yes">Ja</string>
+    <string name="action_reuse">Zum Album...</string>
 </resources>

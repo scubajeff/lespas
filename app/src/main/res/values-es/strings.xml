@@ -165,4 +165,5 @@
     <string name="strip_off_entry">No, déjalo.</string>
     <string name="strip_on_entry">Sí, siempre se quita.</string>
     <string name="strip_exif_yes">Sí</string>
+    <string name="action_reuse">Al álbum...</string>
 </resources>
