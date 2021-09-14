@@ -340,20 +340,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_mode, menu)
+        mode?.menuInflater?.inflate(R.menu.album_actions_mode, menu)
         fab.isEnabled = false
 
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-        menu?.let {
-            it.removeItem(R.id.share)
-            it.removeItem(R.id.select_all)
-            it.removeItem(R.id.snapseed_edit)
-        }
-        return true
-    }
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {

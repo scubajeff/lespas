@@ -505,7 +505,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_mode, menu)
+        mode?.menuInflater?.inflate(R.menu.album_detail_actions_mode, menu)
 
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
 
