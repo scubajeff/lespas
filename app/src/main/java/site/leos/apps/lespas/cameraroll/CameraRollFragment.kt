@@ -534,9 +534,9 @@ class CameraRollFragment : Fragment() {
                         "content" -> {
                             cr.query(uri, null, null, null, null)?.use { cursor ->
                                 cursor.moveToFirst()
-                                cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
+                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
                                 // Store file size in property eTag
-                                cursor.getString(cursor.getColumnIndex(OpenableColumns.SIZE))?.let { photo.eTag = it }
+                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.eTag = it }
                             }
                         }
                         "file" -> uri.path?.let { photo.name = it.substringAfterLast('/') }
@@ -612,7 +612,7 @@ class CameraRollFragment : Fragment() {
         fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
     }
 
-    class MediaPagerAdapter(val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
+    class MediaPagerAdapter(val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
