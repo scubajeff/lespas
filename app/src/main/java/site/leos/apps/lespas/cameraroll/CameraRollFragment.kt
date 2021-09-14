@@ -407,6 +407,8 @@ class CameraRollFragment : Fragment() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.navigationBarDividerColor = savedNavigationBarDividerColor
         }
 
+        destinationModel.resetDestination()
+
         super.onDestroy()
     }
 

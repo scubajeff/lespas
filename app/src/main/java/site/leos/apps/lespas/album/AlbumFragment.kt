@@ -285,6 +285,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroy() {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        destinationModel.resetDestination()
+
         super.onDestroy()
     }
 
