@@ -4,8 +4,10 @@ import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import site.leos.apps.lespas.R
@@ -16,6 +18,8 @@ class ShareReceiverActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!! || intent.type?.startsWith("video/")!!)) {
             files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)

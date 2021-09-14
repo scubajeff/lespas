@@ -2,9 +2,11 @@ package site.leos.apps.lespas.cameraroll
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import site.leos.apps.lespas.MainActivity
@@ -37,5 +39,7 @@ class CameraRollActivity : AppCompatActivity() {
                 bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "") == MainActivity.CONFIRM_REQUIRE_SD_DIALOG
             ) finish()
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
 }

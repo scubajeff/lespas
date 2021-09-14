@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
+import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -116,6 +117,8 @@ class MainActivity : AppCompatActivity() {
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
             })
         })
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
 
     override fun onResume() {
