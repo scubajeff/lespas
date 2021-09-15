@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -35,6 +36,7 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
+import java.util.*
 
 class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
@@ -142,23 +144,16 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    try {
-                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
-                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
-                        val mimeType = this.mimeType
-
-                        startActivity(
-                            Intent.createChooser(
-                                Intent().apply {
-                                    action = Intent.ACTION_ATTACH_DATA
-                                    setDataAndType(uri, mimeType)
-                                    putExtra("mimeType", mimeType)
-                                    //clipData = ClipData.newUri(requireActivity().contentResolver, "", uri)
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                }, null
-                            )
-                        )
-                    } catch(e: Exception) { e.printStackTrace() }
+                    // TODO should call with strip true??
+                    prepareShares(this, false)?.let {
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_ATTACH_DATA
+                            setDataAndType(it.first, it.second)
+                            putExtra("mimeType", it.second)
+                            //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }, null))
+                    }
                 }
             }
         }
@@ -174,30 +169,25 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         snapseedButton.run {
             setImageResource(if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
             setOnTouchListener(delayHideTouchListener)
-            setOnClickListener {
+            setOnClickListener { view->
                 with(currentPhotoModel.getCurrentPhoto().value!!) {
-                    try {
-                        // Synced file is named after id, not yet synced file is named after file's name
-                        File(Tools.getLocalRoot(context), if (eTag.isNotEmpty()) id else name).copyTo(File(context.cacheDir, name), true, 4096)
-                        val uri = FileProvider.getUriForFile(context, getString(R.string.file_authority), File(context.cacheDir, name))
-                        val mimeType = this.mimeType
-
+                    prepareShares(this, false)?.let {
                         startActivity(Intent().apply {
                             action = Intent.ACTION_SEND
-                            data = uri
-                            type = mimeType
-                            putExtra(Intent.EXTRA_STREAM, uri)
+                            data = it.first
+                            type = it.second
+                            putExtra(Intent.EXTRA_STREAM, it.first)
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
                         })
-                    } catch (e: Exception) { e.printStackTrace() }
-                }
 
-                // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
-                it.context.sendBroadcast(Intent().apply {
-                    action = PhotoSlideFragment.CHOOSER_SPY_ACTION
-                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                })
+                        // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
+                        view.context.sendBroadcast(Intent().apply {
+                            action = PhotoSlideFragment.CHOOSER_SPY_ACTION
+                            putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                        })
+                    }
+                }
             }
         }
         removeButton.run {
@@ -367,32 +357,38 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
+    private fun prepareShares(photo: Photo, strip: Boolean): Pair<Uri, String>? {
+        try {
+            // Synced file is named after id, not yet synced file is named after file's name
+            val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag.isNotEmpty()) photo.id else photo.name)
+            val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+
+            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+            val mimeType = if (strip && Tools.hasExif(photo.mimeType)) {
+                BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                "image/jpeg"
+            } else {
+                sourceFile.copyTo(destFile, true, 4096)
+                photo.mimeType
+            }
+            val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+            return Pair(uri, mimeType)
+        } catch (e: Exception) { return null }
+    }
+
     private fun shareOut(strip: Boolean) {
         with(currentPhotoModel.getCurrentPhoto().value!!) {
-            try {
-                // Synced file is named after id, not yet synced file is named after file's name
-                val sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
-                val destFile = File(requireActivity().cacheDir, name)
-
-                // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                val mimeType: String = if (strip && Tools.hasExif(this.mimeType)) {
-                    BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    "image/jpeg"
-                } else {
-                    sourceFile.copyTo(destFile, true, 4096)
-                    this.mimeType
-                }
-                val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
-
+            prepareShares(this, strip)?.let {
                 startActivity(Intent.createChooser(Intent().apply {
                     action = Intent.ACTION_SEND
-                    type = mimeType
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newUri(requireContext().contentResolver, "", uri)
+                    type = it.second
+                    putExtra(Intent.EXTRA_STREAM, it.first)
+                    clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
                     flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                     putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                 }, null))
-            } catch(e: Exception) { e.printStackTrace() }
+            }
         }
     }
 

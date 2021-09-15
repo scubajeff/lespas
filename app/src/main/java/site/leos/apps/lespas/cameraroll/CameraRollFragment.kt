@@ -473,7 +473,7 @@ class CameraRollFragment : Fragment() {
             val mediaToShare = mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex())
             if (strip && Tools.hasExif(mediaToShare.mimeType)) {
                 val cr = requireContext().contentResolver
-                val destFile = File(requireContext().cacheDir, mediaToShare.name)
+                val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${mediaToShare.name.substringAfterLast('.')}" else mediaToShare.name)
 
                 // Strip EXIF, rotate picture if needed
                 BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {

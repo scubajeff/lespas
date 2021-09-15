@@ -611,9 +611,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun prepareShares(strip: Boolean): ArrayList<Uri> {
         val uris = arrayListOf<Uri>()
-        val appRootFolder = Tools.getLocalRoot(requireContext())
-        val cachePath = requireActivity().cacheDir
-        val authority = getString(R.string.file_authority)
         var sourceFile: File
         var destFile: File
 
@@ -624,13 +621,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 //with(mAdapter.getPhotoAt(i.toInt())) {
                 with(mAdapter.getPhotoBy(photoId)) {
                     // Synced file is named after id, not yet synced file is named after file's name
-                    sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
-                    destFile = File(cachePath, name)
+                    sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
+                    // This TEMP_CACHE_FOLDER is created by MainActivity
+                    destFile = File("${requireActivity().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${name.substringAfterLast('.')}" else name)
 
                     // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
                     if (strip && Tools.hasExif(this.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else sourceFile.copyTo(destFile, true, 4096)
-                    uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
+                    uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
                 }
             }
         } catch(e: Exception) { e.printStackTrace() }

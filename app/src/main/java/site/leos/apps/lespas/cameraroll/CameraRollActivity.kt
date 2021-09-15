@@ -8,11 +8,16 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.settings.SettingsFragment
+import java.io.File
 
 
 class CameraRollActivity : AppCompatActivity() {
@@ -21,6 +26,14 @@ class CameraRollActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         setSupportActionBar(findViewById(R.id.toolbar))
+
+        // Make sure photo's folder, temporary cache folder created
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                File(Tools.getLocalRoot(applicationContext)).mkdir()
+                File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").mkdir()
+            } catch (e: Exception) {}
+        }
 
         if (savedInstanceState == null) {
             if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
@@ -41,5 +54,12 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    }
+
+    override fun onDestroy() {
+        // Clean up temporary folder in app's cachePath
+        try {  File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
+
+        super.onDestroy()
     }
 }
