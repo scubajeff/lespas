@@ -10,10 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.Matrix
+import android.graphics.*
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -22,6 +19,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.transition.Slide
 import android.transition.TransitionManager
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -99,12 +97,14 @@ class CameraRollFragment : Fragment() {
 
     private var stripExif = "1"
 
+    private var sideTouchAreaWidth  = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            { state-> state?.let { toggleControlView(state) } ?: run { toggleControlView(controlViewGroup.visibility == View.GONE) }},
+            { state-> state?.let { toggleControlView(state) } ?: run { toggleControlView(controlViewGroup.visibility == View.INVISIBLE) }},
             { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -174,6 +174,8 @@ class CameraRollFragment : Fragment() {
                 else -> requireActivity().finish()
             }
         }
+
+        sideTouchAreaWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).roundToInt()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -439,7 +441,7 @@ class CameraRollFragment : Fragment() {
 
     private fun toggleControlView(show: Boolean) {
         TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() })
-        controlViewGroup.visibility = if (show) View.VISIBLE else View.GONE
+        controlViewGroup.visibility = if (show) View.VISIBLE else View.INVISIBLE
 
         if (mediaPagerAdapter.itemCount == 1) {
             // Disable quick scroll if there is only one media
@@ -447,6 +449,12 @@ class CameraRollFragment : Fragment() {
             divider.visibility = View.GONE
             // Disable share function if scheme of the uri shared with us is "file", this only happened when viewing a single file
             if (mediaPagerAdapter.getMediaAtPosition(0).id.startsWith("file")) shareButton.isEnabled = false
+        }
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            quickScroll.also {
+                it.systemGestureExclusionRects = if (show) listOf(Rect(it.left, it.top, sideTouchAreaWidth, it.bottom), Rect(it.right - sideTouchAreaWidth, it.top, it.right, it.bottom)) else listOf<Rect>()
+            }
         }
     }
 

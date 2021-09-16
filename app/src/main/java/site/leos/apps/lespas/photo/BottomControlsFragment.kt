@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -17,6 +18,8 @@ import android.view.*
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -75,7 +78,7 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         }
 */
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
+            followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0)
         }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && currentPhotoModel.getCurrentPhotoId() != album.cover) currentPhotoModel.removePhoto() }
@@ -104,7 +107,13 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         })
 
         // Controls
-        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        controlsContainer = view.findViewById<LinearLayout>(R.id.bottom_controls_container).apply {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+                @Suppress("DEPRECATION")
+                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                insets
+            }
+        }
         removeButton = view.findViewById(R.id.remove_button)
         coverButton = view.findViewById(R.id.cover_button)
         setAsButton = view.findViewById(R.id.set_as_button)
@@ -341,16 +350,11 @@ class BottomControlsFragment : Fragment(), MainActivity.OnWindowFocusChangedList
         false
     }
 
-    private fun followSystemBar(show: Boolean, bottomPadding: Int) {
+    private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
-            if (show) {
-                controlsContainer.updatePadding(bottom = bottomPadding)
-                controlsContainer.visibility = View.VISIBLE
-            } else {
-                controlsContainer.visibility = View.GONE
-            }
+            controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
         // auto hide

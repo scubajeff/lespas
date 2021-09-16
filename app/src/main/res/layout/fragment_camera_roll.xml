@@ -24,7 +24,7 @@
         android:paddingVertical="@dimen/small_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         android:background="@drawable/camera_roll_control_background"
-        android:visibility="gone">
+        android:visibility="invisible">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/quick_scroll"
