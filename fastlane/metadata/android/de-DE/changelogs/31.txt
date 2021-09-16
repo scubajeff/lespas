@@ -1,0 +1,4 @@
+* Funktion hinzufügen, um EXIF zu entfernen und den Dateinamen zu verschlüsseln, bevor Medienelemente freigegeben werden
+* Funktion zum Starten von Snapseed für die Bearbeitung hinzufügen
+* Funktion zum Kopieren oder Verschieben von Medienelementen in ein anderes Album hinzufügen
+* Weitere Verbesserungen und Fehlerbehebungen

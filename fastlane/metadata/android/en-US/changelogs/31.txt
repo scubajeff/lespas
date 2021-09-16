@@ -1,0 +1,4 @@
+* Add function to strip EXIF and scramble file name before sharing media items
+* Add dedicate function to launch Snapseed for editing
+* Add dedicate function to copy or move media items to another album
+* Other improvements and bugs fixed

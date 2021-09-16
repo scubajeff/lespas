@@ -1,3 +1,8 @@
+## Version 2.3.5
+* Add function to strip EXIF and scramble file name before sharing media items
+* Add dedicate function to launch Snapseed for editing
+* Add dedicate function to copy or move media items to another album
+
 ## Version 2.3.4
 * Auto replay video and animation GIF/WebP (feature suggested by Github user @MetalNeo)
 * Can swipe through friend's publication's items

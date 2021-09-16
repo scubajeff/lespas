@@ -1,0 +1,4 @@
+* Añadir la función de eliminar EXIF y codificar el nombre del archivo antes de compartir los elementos multimedia
+* Añadir una función para iniciar Snapseed para la edición
+* Añadir la función de dedicar para copiar o mover elementos multimedia a otro álbum
+* Otras mejoras y errores corregidos

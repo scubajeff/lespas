@@ -16,7 +16,7 @@ Features:
 - Search for photos by objects with AI
 - Integrate with Snapseed for photo editing on mobile devices
 - Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app
-- Share to social networks
+- Share to social networks，option provided to strip photo's EXIF before sharing
 - Theme design inspired by Wes Anderson's works
 - All files saved in App's private storage, stop being scanned by malicious apps
 - Open-source

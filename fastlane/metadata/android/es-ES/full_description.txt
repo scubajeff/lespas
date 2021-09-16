@@ -10,7 +10,7 @@ Características:
 - Búsqueda de fotos por objetos con IA
 - Integración con Snapseed para la edición de fotos en dispositivos móviles
 - Integración con la aplicación Muzei Live Wallpaper
-- Compartir en las redes sociales
+- Compartir en las redes sociales, opción para eliminar los datos EXIF de la foto antes de compartirla
 - Diseño del tema inspirado en las obras de Wes Anderson
 - Todos los archivos guardados en el almacenamiento privado de la App, dejan de ser escaneados por aplicaciones maliciosas
 - De código abierto

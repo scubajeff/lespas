@@ -1,0 +1,4 @@
+* Ajout d'une fonction permettant de supprimer les données EXIF et de brouiller le nom du fichier avant de partager des éléments multimédias.
+* Ajouter une fonction dédiée pour lancer Snapseed pour l'édition
+* Ajout d'une fonction de dédicace pour copier ou déplacer des éléments multimédias vers un autre album.
+* Autres améliorations et corrections de bogues
