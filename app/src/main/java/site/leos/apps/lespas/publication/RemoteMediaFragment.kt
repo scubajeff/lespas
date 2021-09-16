@@ -22,6 +22,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -95,9 +97,7 @@ class RemoteMediaFragment: Fragment() {
         }
 
         @Suppress("DEPRECATION")
-        requireActivity().window.decorView.apply {
-            setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, rootWindowInsets.stableInsetBottom) }
-        }
+        requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -135,7 +135,13 @@ class RemoteMediaFragment: Fragment() {
             })
         }
 
-        controlsContainer = view.findViewById(R.id.bottom_controls_container)
+        controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+                @Suppress("DEPRECATION")
+                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                insets
+            }
+        }
         view.findViewById<ImageButton>(R.id.download_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
@@ -378,16 +384,11 @@ class RemoteMediaFragment: Fragment() {
         false
     }
 
-    private fun followSystemBar(show: Boolean, bottomPadding: Int) {
+    private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
-            if (show) {
-                controlsContainer.updatePadding(bottom = bottomPadding)
-                controlsContainer.visibility = View.VISIBLE
-            } else {
-                controlsContainer.visibility = View.GONE
-            }
+            controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
         // auto hide

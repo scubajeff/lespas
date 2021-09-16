@@ -2,6 +2,6 @@
 <resources>
     <dimen name="camera_roll_grid_size">144dp</dimen>
     <dimen name="camera_roll_date_grid_size">56dp</dimen>
-    <dimen name="exoplayer_control_layout_vertical_margin">48dp</dimen>
+    <dimen name="exoplayer_control_layout_vertical_margin">64dp</dimen>
     <dimen name="bottom_control_minHeight">64dp</dimen>
 </resources>

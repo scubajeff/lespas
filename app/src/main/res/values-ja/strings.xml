@@ -165,4 +165,5 @@
     <string name="strip_off_entry">いや、それは置いておいて。</string>
     <string name="strip_on_entry">はい、必ず削除してください。</string>
     <string name="strip_exif_yes">はい。</string>
+    <string name="action_reuse">アルバムに...</string>
 </resources>

@@ -45,6 +45,7 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.time.Duration
@@ -71,6 +72,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val actionModel: ActionViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+    private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     private lateinit var sharedPhoto: Photo
     private lateinit var snapseedCatcher: BroadcastReceiver
@@ -88,6 +90,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
+
+    private var reuseUris = arrayListOf<Uri>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -353,6 +357,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             mAdapter.setRecipient(sharedByMe)
         }
 
+        destinationViewModel.getDestination().observe(viewLifecycleOwner, { album->
+            // Acquire files
+            album?.apply {
+                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, album, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            }
+        })
+
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
             if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
@@ -419,6 +430,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         recyclerView.adapter = null
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+
+        destinationViewModel.resetDestination()
 
         super.onDestroyView()
     }
@@ -505,7 +518,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     // On special Actions of this fragment
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu): Boolean {
-        mode?.menuInflater?.inflate(R.menu.actions_mode, menu)
+        mode?.menuInflater?.inflate(R.menu.album_detail_actions_mode, menu)
 
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
 
@@ -542,23 +555,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.snapseed_edit-> {
-                try {
-                    val uris = arrayListOf<Uri>()
-                    val appRootFolder = Tools.getLocalRoot(requireContext())
-                    val cachePath = requireActivity().cacheDir
-                    val authority = getString(R.string.file_authority)
+                val uris = prepareShares(false)
 
-                    sharedSelection.clear()
-                    for (photoId in selectionTracker.selection) {
-                        sharedSelection.add(photoId)
-                        //with(mAdapter.getPhotoAt(i.toInt())) {
-                        with(mAdapter.getPhotoBy(photoId)) {
-                            // Synced file is named after id, not yet synced file is named after file's name
-                            File(appRootFolder, if (eTag.isNotEmpty()) id else name).copyTo(File(cachePath, name), true, 4096)
-                            uris.add(FileProvider.getUriForFile(requireContext(), authority, File(cachePath, name)))
-                        }
-                    }
-
+                if (uris.isNotEmpty()) {
                     sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
                     startActivity(Intent().apply {
                         action = Intent.ACTION_SEND
@@ -567,13 +566,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                         setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
                     })
-                } catch (e: Exception) { e.printStackTrace() }
 
-                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
-                requireContext().sendBroadcast(Intent().apply {
-                    action = CHOOSER_SPY_ACTION
-                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                })
+                    // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
+                    requireContext().sendBroadcast(Intent().apply {
+                        action = CHOOSER_SPY_ACTION
+                        putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                    })
+                }
+
+                selectionTracker.clearSelection()
+                true
+            }
+            R.id.lespas_reuse-> {
+                reuseUris = prepareShares(false)
+
+                if (reuseUris.isNotEmpty()) {
+                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                }
 
                 selectionTracker.clearSelection()
                 true
@@ -600,32 +609,37 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         return false
     }
 
-    private fun shareOut(strip: Boolean) {
+    private fun prepareShares(strip: Boolean): ArrayList<Uri> {
+        val uris = arrayListOf<Uri>()
+        var sourceFile: File
+        var destFile: File
+
         try {
-            val uris = arrayListOf<Uri>()
-            val appRootFolder = Tools.getLocalRoot(requireContext())
-            val cachePath = requireActivity().cacheDir
-            val authority = getString(R.string.file_authority)
-
             sharedSelection.clear()
-
-            var sourceFile: File
-            var destFile: File
             for (photoId in selectionTracker.selection) {
                 sharedSelection.add(photoId)
                 //with(mAdapter.getPhotoAt(i.toInt())) {
                 with(mAdapter.getPhotoBy(photoId)) {
                     // Synced file is named after id, not yet synced file is named after file's name
-                    sourceFile = File(appRootFolder, if (eTag.isNotEmpty()) id else name)
-                    destFile = File(cachePath, name)
+                    sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
+                    // This TEMP_CACHE_FOLDER is created by MainActivity
+                    destFile = File("${requireActivity().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${name.substringAfterLast('.')}" else name)
 
                     // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
                     if (strip && Tools.hasExif(this.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else sourceFile.copyTo(destFile, true, 4096)
-                    uris.add(FileProvider.getUriForFile(requireContext(), authority, destFile))
+                    uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
                 }
             }
+        } catch(e: Exception) { e.printStackTrace() }
 
+        return uris
+    }
+
+    private fun shareOut(strip: Boolean) {
+        val uris = prepareShares(strip)
+
+        if (uris.isNotEmpty()) {
             val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
             for (i in 1 until uris.size)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
@@ -657,9 +671,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                 }, null))
             }
+        }
 
-            selectionTracker.clearSelection()
-        } catch (e: Exception) { e.printStackTrace() }
+        selectionTracker.clearSelection()
     }
 
     // Adapter for photo grid
@@ -832,6 +846,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"
 
+        private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"

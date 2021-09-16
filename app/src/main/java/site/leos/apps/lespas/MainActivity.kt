@@ -15,15 +15,19 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
+import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.drawToBitmap
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.google.android.material.appbar.MaterialToolbar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
@@ -35,7 +39,6 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
-import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
@@ -49,8 +52,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Make sure photo's folder existed
-        Executors.newSingleThreadExecutor().execute { File(Tools.getLocalRoot(applicationContext)).mkdir() }
+        // Make sure photo's folder, temporary cache folder created
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                File(Tools.getLocalRoot(applicationContext)).mkdir()
+                File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
+            } catch (e: Exception) {}
+        }
 
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -116,12 +124,21 @@ class MainActivity : AppCompatActivity() {
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
             })
         })
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
 
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
         if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
+    }
+
+    override fun onDestroy() {
+        // Clean up temporary folder in app's cachePath
+        try {  File("${cacheDir}${TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
+
+        super.onDestroy()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -193,5 +210,7 @@ class MainActivity : AppCompatActivity() {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
+
+        const val TEMP_CACHE_FOLDER = "/lespastemp"
     }
 }

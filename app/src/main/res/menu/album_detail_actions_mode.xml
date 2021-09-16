@@ -13,6 +13,11 @@
         android:icon="@drawable/ic_baseline_delete_24"
         app:showAsAction="ifRoom" />
 
+    <item android:id="@+id/lespas_reuse"
+        android:title="@string/action_reuse"
+        android:icon="@drawable/ic_baseline_footprint_24"
+        app:showAsAction="never" />
+
     <item android:id="@+id/snapseed_edit"
         android:title="@string/tooltip_text_edit_in_snapseed"
         android:icon="@drawable/ic_baseline_snapseed_24"

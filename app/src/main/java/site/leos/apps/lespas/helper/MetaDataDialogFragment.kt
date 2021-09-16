@@ -34,7 +34,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             var dateString = ""
             var widthString = ""
             var heightString = ""
-            var eTag = ""
+            //var eTag = ""
             var size = 0L
             var local = true
 
@@ -44,7 +44,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 dateString = this.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
                 widthString = this.width.toString()
                 heightString = this.height.toString()
-                eTag = this.eTag
+                //eTag = this.eTag
 
                 local = true
             } ?: run {
@@ -65,7 +65,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             lifecycleScope.launch(Dispatchers.IO) {
                 var exif: ExifInterface? = null
                 if (local) {
-                    with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
+                    with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
+                    //with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
                         size = File(this).length()
                         exif = try { ExifInterface(this) } catch (e: Exception) { null }
                     }

@@ -4,11 +4,18 @@ import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.Tools
+import java.io.File
 
 class ShareReceiverActivity: AppCompatActivity() {
     private val files = ArrayList<Uri>()
@@ -16,6 +23,15 @@ class ShareReceiverActivity: AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Make sure photo's folder created
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                File(Tools.getLocalRoot(applicationContext)).mkdir()
+            } catch (e: Exception) {}
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!! || intent.type?.startsWith("video/")!!)) {
             files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
