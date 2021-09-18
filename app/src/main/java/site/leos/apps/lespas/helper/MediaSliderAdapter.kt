@@ -17,6 +17,7 @@ import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.database.ExoDatabaseProvider
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.ui.PlayerView
@@ -246,7 +247,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         val builder = SimpleExoPlayer.Builder(ctx)
         //callFactory?.let { builder.setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))) }
         callFactory?.let {
-            cache = SimpleCache(File(ctx.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L))
+            cache = SimpleCache(File(ctx.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), ExoDatabaseProvider(ctx))
             builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))))
         }
         exoPlayer = builder.build()
