@@ -69,7 +69,7 @@ class NCLoginFragment: Fragment() {
 
         reLogin = arguments?.getBoolean(KEY_RELOGIN, false) ?: false
 
-        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
             requireActivity().finish()

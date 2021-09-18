@@ -617,6 +617,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             var lastTime = sp.getLong(SettingsFragment.LAST_BACKUP, 0L)
             val contentUri = MediaStore.Files.getContentUri("external")
+            @Suppress("DEPRECATION")
             val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,

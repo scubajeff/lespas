@@ -43,9 +43,9 @@ object Tools {
         val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
         var timeString: String?
         var mMimeType = mimeType
-        var width = 0
-        var height = 0
-        var tDate = LocalDateTime.MIN
+        var width: Int
+        var height: Int
+        var tDate: LocalDateTime
 
         // Update dateTaken, width, height fields
         val lastModified = Date(File(pathName).lastModified())
@@ -258,21 +258,21 @@ object Tools {
 
         cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC"
         )?.use { cursor ->
-            val idColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
-            val nameColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            //val pathColumn = cursor.getColumnIndex(pathSelection)
-            val dateColumn = cursor.getColumnIndex(dateSelection)
-            val typeColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
-            val sizeColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.SIZE)
-            val widthColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.WIDTH)
-            val heightColumn = cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT)
-            val orientationColumn = cursor.getColumnIndex("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+            val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
+            val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+            val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+            val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+            val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
             val defaultZone = ZoneId.systemDefault()
             var externalUri: Uri
             var mimeType: String
 
             while (cursor.moveToNext()) {
-                if ((strict) && (cursor.getString(cursor.getColumnIndex(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
+                if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
                 // Insert media
                 mimeType = cursor.getString(typeColumn)
                 externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -299,13 +299,13 @@ object Tools {
     fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album? {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         var startDate = LocalDateTime.MIN
-        var endDate = LocalDateTime.now()
-        var coverId = ""
+        var endDate: LocalDateTime
+        var coverId: String
         var coverBaseline = 0
-        var coverWidth = 0
-        var coverHeight = 0
-        var mimeType = ""
-        var orientation = 0
+        var coverWidth: Int
+        var coverHeight: Int
+        var mimeType: String
+        var orientation: Int
 
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -325,15 +325,15 @@ object Tools {
             if (cursor.moveToFirst()) {
                 val dateColumn = cursor.getColumnIndex(dateSelection)
                 val defaultZone = ZoneId.systemDefault()
-                mimeType = cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE))
+                mimeType = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE))
                 val externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
                 // Get album's end date, cover
                 endDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
-                coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)).toLong()).toString()
-                coverWidth = cursor.getInt(cursor.getColumnIndex(MediaStore.Files.FileColumns.WIDTH))
-                coverHeight = cursor.getInt(cursor.getColumnIndex(MediaStore.Files.FileColumns.HEIGHT))
-                orientation = cursor.getInt(cursor.getColumnIndex("orientation"))
+                coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)).toLong()).toString()
+                coverWidth = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH))
+                coverHeight = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT))
+                orientation = cursor.getInt(cursor.getColumnIndexOrThrow("orientation"))
 
                 // Get album's start date
                 if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
@@ -357,6 +357,7 @@ object Tools {
                     var id: String? = null
                     val folder = URLDecoder.decode(uriString.substringAfter(colon), "UTF-8").substringBeforeLast("/")
                     val externalStorageUri = MediaStore.Files.getContentUri("external")
+                    @Suppress("DEPRECATION")
                     val pathColumn = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                     val projection = arrayOf(
                         MediaStore.Files.FileColumns._ID,
@@ -375,6 +376,7 @@ object Tools {
                     var folderName: String? = null
                     val id = uriString.substringAfter(colon)
                     val externalStorageUri = MediaStore.Files.getContentUri("external")
+                    @Suppress("DEPRECATION")
                     val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
                     val projection = arrayOf(
                         MediaStore.Files.FileColumns._ID,
