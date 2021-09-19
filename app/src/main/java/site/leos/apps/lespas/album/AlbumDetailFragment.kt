@@ -38,7 +38,6 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
-import site.leos.apps.lespas.photo.BottomControlsFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -113,7 +112,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         mAdapter = PhotoGridAdapter(
             { view, position ->
                 currentPhotoModel.run {
-                    setCurrentPhoto(mAdapter.getPhotoAt(position), position)
+                    setCurrentPosition(position)
                     setLastPosition(position)
                 }
 
@@ -131,7 +130,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
-                    .add(R.id.container_bottom_toolbar, BottomControlsFragment.newInstance(album), BottomControlsFragment::class.java.canonicalName)
                     .addToBackStack(null)
                     .commit()
             },
@@ -327,7 +325,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             })
         }
 
-        LocalBroadcastManager.getInstance(requireContext().applicationContext).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
             // Cover might changed, photo might be deleted, so get updates from latest here

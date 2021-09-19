@@ -8,7 +8,6 @@ import android.provider.OpenableColumns
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import androidx.work.workDataOf
 import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.sync.Action
@@ -88,7 +87,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                 photoDao.update(newPhoto)
                 // Invalid image cache to show new image and change CurrentPhotoModel's filename
                 //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
-                setProgress(workDataOf( KEY_NEW_PHOTO_NAME to imageName))
 
                 // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
                 try {
@@ -172,7 +170,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
         const val KEY_ALBUM = "ALBUM"
         const val KEY_INVALID_OLD_PHOTO_CACHE = "INVALID_OLD_PHOTO_CACHE"
-        const val KEY_NEW_PHOTO_NAME = "NEW_PHOTO_NAME"
         const val KEY_PUBLISHED = "IS_ALBUM_PUBLISHED"
     }
 }

@@ -1,8 +1,11 @@
 package site.leos.apps.lespas.photo
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -10,48 +13,74 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
+import android.transition.Slide
+import android.transition.TransitionManager
+import android.view.*
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Fade
 import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
+import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
+import java.util.*
 
-class PhotoSlideFragment : Fragment() {
+class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
-    private lateinit var slider: ViewPager2
-    private lateinit var pAdapter: PhotoSlideAdapter
-    private val albumModel: AlbumViewModel by activityViewModels()
-    private val actionModel: ActionViewModel by viewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
-    private val uiModel: UIViewModel by activityViewModels()
-    private var autoRotate = false
+
+    private lateinit var window: Window
     private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
     private var viewReCreated = false
 
+    private lateinit var controlsContainer: LinearLayout
+    private lateinit var removeButton: ImageButton
+    private lateinit var coverButton: ImageButton
+    private lateinit var setAsButton: ImageButton
+    private lateinit var snapseedButton: ImageButton
+
+    private lateinit var slider: ViewPager2
+    private lateinit var pAdapter: PhotoSlideAdapter
+
+    private val albumModel: AlbumViewModel by activityViewModels()
+    private val actionModel: ActionViewModel by viewModels()
+    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
+
+    private var autoRotate = false
+    private var stripExif = "1"
+
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
+
+    private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +89,7 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             Tools.getLocalRoot(requireContext()),
-            { state-> uiModel.toggleOnOff(state) },
+            { state-> toggleSystemUI(state) },
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -75,7 +104,10 @@ class PhotoSlideFragment : Fragment() {
         })
 
         previousOrientationSetting = requireActivity().requestedOrientation
-        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+        with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
+            autoRotate = getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value)) ?: "0"
+        }
 
         savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
             pAdapter.setPlayerState(this)
@@ -90,11 +122,7 @@ class PhotoSlideFragment : Fragment() {
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
-                            registerContentObserver(
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                true,
-                                snapseedOutputObserver
-                            )
+                            registerContentObserver(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, snapseedOutputObserver)
                         }
                     }
                 }
@@ -123,14 +151,9 @@ class PhotoSlideFragment : Fragment() {
 
                     WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
                         if (workInfo != null) {
-                            workInfo[0]?.progress?.getString(SnapseedResultWorker.KEY_NEW_PHOTO_NAME)?.apply {
-                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                    pAdapter.getPhotoAt(slider.currentItem).let {
-                                        imageLoaderModel.invalid(it.id)
-                                        pAdapter.refreshPhoto(it)
-                                    }
-                                }
-                                currentPhotoModel.setCurrentPhotoName(this)
+                            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                // When replacing original with Snapseed result, refresh image cache of all size
+                                imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem).id)
                             }
                         }
                     })
@@ -139,6 +162,27 @@ class PhotoSlideFragment : Fragment() {
                 }
             }
         }
+
+        // Listener for our UI controls to show/hide with System UI
+        this.window = requireActivity().window
+        @Suppress("DEPRECATION")
+/*
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+                followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0, window.decorView.rootWindowInsets.stableInsetBottom)
+            }
+        } else {
+            window.decorView.setOnApplyWindowInsetsListener { _, insets ->
+                followSystemBar(insets.isVisible(WindowInsets.Type.navigationBars()), insets.getInsets(WindowInsets.Type.navigationBars()).bottom)
+                insets
+            }
+        }
+*/
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0)
+        }
+
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -148,8 +192,6 @@ class PhotoSlideFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewReCreated = true
-
-        postponeEnterTransition()
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -166,13 +208,23 @@ class PhotoSlideFragment : Fragment() {
                     super.onPageSelected(position)
 
                     pAdapter.getPhotoAt(position).run {
-                        currentPhotoModel.setCurrentPhoto(this, position + 1)
+                        currentPhotoModel.setCurrentPosition(position + 1)
                         if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+                        // Can't delete cover
+                        removeButton.isEnabled = this.id != album.cover
+                        with(!(Tools.isMediaPlayable(this.mimeType))) {
+                            // Can't set video as avatar
+                            setAsButton.isEnabled = this
+                            // Can't Snapseed video
+                            snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
+                        }
                     }
                 }
             })
         }
 
+        postponeEnterTransition()
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -183,33 +235,125 @@ class PhotoSlideFragment : Fragment() {
             it.addListener(MediaSliderTransitionListener(slider))
         }
 
-        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
-            pAdapter.setPhotos(photos, album.sortOrder)
-            currentPhotoModel.getCurrentPhotoId()?.let {
-                //imageLoaderModel.invalid(it)
-                slider.setCurrentItem(pAdapter.findPhotoPosition(it), false)
+        // Controls
+        controlsContainer = view.findViewById<LinearLayout>(R.id.bottom_controls_container).apply {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets->
+                @Suppress("DEPRECATION")
+                v.updatePadding(bottom = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) window.decorView.rootWindowInsets.stableInsetBottom else with(window.windowManager.currentWindowMetrics.windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars())) { bottom - top })
+                insets
             }
-        })
+        }
+        removeButton = view.findViewById(R.id.remove_button)
+        coverButton = view.findViewById(R.id.cover_button)
+        setAsButton = view.findViewById(R.id.set_as_button)
+        snapseedButton = view.findViewById(R.id.snapseed_button)
 
-        currentPhotoModel.getRemoveItem().observe(viewLifecycleOwner, { deleteItem->
-            deleteItem?.run {
-                pAdapter.getNextAvailablePhoto(deleteItem).apply {
-                    this.first?.let { photo->
-                        currentPhotoModel.setCurrentPhoto(photo, this.second)
-                        // TODO publish status is not persistent locally
-                        //actionModel.deletePhotos(listOf(deleteItem), album.name, publishModel.isShared(album.id))
-                        actionModel.deletePhotos(listOf(deleteItem), album.name)
-                        slider.beginFakeDrag()
-                        slider.fakeDragBy(-1f)
-                        slider.endFakeDrag()
-                    }
-                    ?: run {
-                        // TODO this seems never happen since user can't delete cover, so there is at least 1 photo in an album
-                        parentFragmentManager.popBackStack()
-                    }
+        coverButton.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
+                if (Tools.isMediaPlayable(currentMedia.mimeType)) {
+                    ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
+                    // If album has not been uploaded yet, update the cover id in action table too
+                    ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(album.id, currentMedia.id)
+                    showCoverAppliedStatus(true)
+                } else {
+                    exitTransition = Fade().apply { duration = 80 }
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             }
+        }
+        view.findViewById<ImageButton>(R.id.share_button).run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+
+                if (stripExif == getString(R.string.strip_ask_value)) {
+                    if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                    } else shareOut(false)
+                }
+                else shareOut(stripExif == getString(R.string.strip_on_value))
+            }
+        }
+        setAsButton.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                // TODO should call with strip true??
+                prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_ATTACH_DATA
+                        setDataAndType(it.first, it.second)
+                        putExtra("mimeType", it.second)
+                        //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    }, null))
+                }
+            }
+        }
+        view.findViewById<ImageButton>(R.id.info_button).run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(pAdapter.getPhotoAt(slider.currentItem)).show(parentFragmentManager, INFO_DIALOG)
+            }
+        }
+        snapseedButton.run {
+            setImageResource(if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener { view->
+                prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
+                    startActivity(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        data = it.first
+                        type = it.second
+                        putExtra(Intent.EXTRA_STREAM, it.first)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                    })
+
+                    // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
+                    view.context.sendBroadcast(Intent().apply {
+                        action = CHOOSER_SPY_ACTION
+                        putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                    })
+                }
+            }
+        }
+        removeButton.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+                if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
+            }
+        }
+
+        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
+            pAdapter.setPhotos(photos, album.sortOrder)
+            slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         })
+
+        currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
+            showCoverAppliedStatus(appliedStatus == true)
+
+            // Clear transition when coming back from CoverSettingFragment
+            exitTransition = null
+        })
+
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
+
+        // Remove photo confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
+            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                    DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) removePhoto()
+                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+                }
+            }
+        }
 
         // Setup basic UI here because BottomControlsFragment might be replaced by CoverSettingFragment
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
@@ -251,6 +395,7 @@ class PhotoSlideFragment : Fragment() {
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
             )
         }
+        toggleSystemUI(null)
     }
 
     override fun onStart() {
@@ -293,8 +438,37 @@ class PhotoSlideFragment : Fragment() {
         super.onStop()
     }
 
+    override fun onDestroyView() {
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+
+        super.onDestroyView()
+    }
+
     override fun onDestroy() {
-        requireActivity().window.navigationBarColor = previousNavBarColor
+        // BACK TO NORMAL UI
+        hideHandler.removeCallbacksAndMessages(null)
+
+        @Suppress("DEPRECATION")
+        requireActivity().window.run {
+/*
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                decorView.setOnSystemUiVisibilityChangeListener(null)
+            } else {
+                insetsController?.apply {
+                    show(WindowInsets.Type.systemBars())
+                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
+                }
+                statusBarColor = resources.getColor(R.color.color_primary)
+                setDecorFitsSystemWindows(true)
+                decorView.setOnApplyWindowInsetsListener(null)
+            }
+*/
+            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+            decorView.setOnSystemUiVisibilityChangeListener(null)
+            statusBarColor = resources.getColor(R.color.color_primary)
+            navigationBarColor = previousNavBarColor
+        }
 
         (requireActivity() as AppCompatActivity).run {
             supportActionBar!!.show()
@@ -306,13 +480,153 @@ class PhotoSlideFragment : Fragment() {
             contentResolver.unregisterContentObserver(snapseedOutputObserver)
         }
 
-        currentPhotoModel.clearRemoveItem()
-        uiModel.toggleOnOff(false)
-
         super.onDestroy()
     }
 
-    class PhotoSlideAdapter(private val rootPath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, val cancelLoader: (View) -> Unit
+    // TODO: what is the usage scenario of this
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        else hideHandler.removeCallbacks(hideSystemUI)
+    }
+
+    // Hide/Show controls, status bar, navigation bar
+    private var visible: Boolean = true
+    private val hideHandler = Handler(Looper.getMainLooper())
+    private fun toggleSystemUI(state: Boolean?) {
+        hideHandler.removeCallbacksAndMessages(null)
+        val hide = state?.let { !state } ?: visible
+        hideHandler.post(if (hide) hideSystemUI else showSystemUI)
+    }
+
+    private val hideSystemUI = Runnable {
+        @Suppress("DEPRECATION")
+/*
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                    // Set the content to appear under the system bars so that the
+                    // content doesn't resize when the system bars hide and show.
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    // Hide the nav bar and status bar
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        } else {
+            window.insetsController?.apply {
+                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                hide(WindowInsets.Type.systemBars())
+            }
+        }
+*/
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+            )
+
+        visible = false
+    }
+
+    private val showSystemUI = Runnable {
+        @Suppress("DEPRECATION")
+/*
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
+        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
+            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+        else window.insetsController?.show(WindowInsets.Type.systemBars())
+*/
+        // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+
+        visible = true
+
+        // auto hide
+        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+    }
+
+    // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
+    @SuppressLint("ClickableViewAccessibility")
+    private val delayHideTouchListener = View.OnTouchListener { _, _ ->
+        hideHandler.removeCallbacks(hideSystemUI)
+        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        false
+    }
+
+    private fun followSystemBar(show: Boolean) {
+        // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
+        try {
+            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 80 })
+            controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
+        } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
+
+        // auto hide
+        if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+    }
+
+    private fun showCoverAppliedStatus(appliedStatus: Boolean) {
+        Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
+            .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
+            //.setAnchorView(window.decorView.rootView)
+            .setBackgroundTint(resources.getColor(R.color.color_primary, null))
+            .setTextColor(resources.getColor(R.color.color_text_light, null))
+/*
+            .addCallback(object: Snackbar.Callback() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    super.onDismissed(transientBottomBar, event)
+                    hideHandler.post(showSystemUI)
+                }
+            })
+*/
+            .show()
+    }
+
+    private fun prepareShares(photo: Photo, strip: Boolean): Pair<Uri, String>? {
+        try {
+            // Synced file is named after id, not yet synced file is named after file's name
+            val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag.isNotEmpty()) photo.id else photo.name)
+            val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+
+            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+            val mimeType = if (strip && Tools.hasExif(photo.mimeType)) {
+                BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                "image/jpeg"
+            } else {
+                sourceFile.copyTo(destFile, true, 4096)
+                photo.mimeType
+            }
+            val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+            return Pair(uri, mimeType)
+        } catch (e: Exception) { return null }
+    }
+
+    private fun shareOut(strip: Boolean) {
+        with(pAdapter.getPhotoAt(slider.currentItem)) {
+            prepareShares(this, strip)?.let {
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = it.second
+                    putExtra(Intent.EXTRA_STREAM, it.first)
+                    clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            }
+        }
+    }
+
+    private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album.name) }
+
+    class PhotoSlideAdapter(private val rootPath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
     ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
@@ -335,82 +649,39 @@ class PhotoSlideFragment : Fragment() {
 
             submitList(photos.toMutableList())
         }
-        fun refreshPhoto(photo: Photo) { notifyItemChanged(findPhotoPosition(photo.id)) }
-        fun findPhotoPosition(photoId: String): Int {
-            with(currentList as List<Photo>) {
-                // If photo synced back from server, the id property will be changed from filename to fileId
-                forEachIndexed { index, photo -> if (photo.id == photoId || photo.name == photoId) return index }
-            }
-            return -1
-        }
+
         fun getPhotoAt(position: Int): Photo = currentList[position] as Photo
-        fun getNextAvailablePhoto(photo: Photo): Pair<Photo?, Int> {
-            with((currentList as List<Photo>).indexOf(photo)) {
-                return when(this) {
-                    -1-> Pair(null, -1)
-                    currentList.size - 1-> if (this > 0) Pair(currentList[this - 1] as Photo, this - 1) else Pair(null, -1)
-                    else-> Pair(currentList[this + 1] as Photo, this)
-                }
-            }
-        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name
     }
 
-    // Share current photo within this fragment and BottomControlsFragment and CropCoverFragment
     class CurrentPhotoViewModel : ViewModel() {
-        // AlbumDetail fragment grid item positions, this is for AlbumDetailFragment, nothing to do with other fragments
+        // AlbumDetail fragment grid item positions shared with AlbumDetailFragment
         private var currentPosition = 0
         private var lastPosition = 0
+        fun setCurrentPosition(position: Int) { currentPosition = position }
         fun getCurrentPosition(): Int = currentPosition
         fun setLastPosition(position: Int) { lastPosition = position }
         fun getLastPosition(): Int = lastPosition
 
-        // Current photo shared with CoverSetting and BottomControl fragments by PhotoSlider
-        private val photo = MutableLiveData<Photo>()
-        private val coverApplyStatus = MutableLiveData<Boolean>()
-        private var forReal = false     // TODO Dirty hack, should be SingleLiveEvent
-        fun getCurrentPhoto(): LiveData<Photo> { return photo }
-        fun getCurrentPhotoId(): String? = photo.value?.id
-        fun setCurrentPhotoName(newName: String) {
-            photo.value?.name = newName
-            photo.value?.eTag = ""
-        }
-        fun setCurrentPhoto(newPhoto: Photo, position: Int) {
-            //photo.postValue(newPhoto)
-            photo.value = newPhoto
-            currentPosition = position
-        }
-        fun coverApplied(applied: Boolean) {
-            coverApplyStatus.value = applied
-            forReal = true
-        }
-        fun getCoverAppliedStatus(): LiveData<Boolean> { return coverApplyStatus }
-        fun forReal(): Boolean {
-            val r = forReal
-            forReal = false
-            return r
-        }
-
-        // For removing photo
-        private val removeItem = MutableLiveData<Photo?>()
-        fun removePhoto() { removeItem.value = photo.value }
-        fun getRemoveItem(): LiveData<Photo?> { return removeItem }
-        fun clearRemoveItem() { removeItem.value = null }
-    }
-
-    // Share system ui visibility status with BottomControlsFragment
-    class UIViewModel : ViewModel() {
-        private val showUI = MutableLiveData(false)
-
-        fun toggleOnOff(state: Boolean?) { state?.let { if (state != showUI.value) showUI.value = state } ?: run { showUI.value = !showUI.value!! }}
-        fun status(): LiveData<Boolean> { return showUI }
+        // Cover applied status shared with CoverSettingFragment
+        private val coverAppliedStatus = SingleLiveEvent<Boolean>()
+        fun coverApplied(applied: Boolean) { coverAppliedStatus.value = applied}
+        fun getCoverAppliedStatus(): SingleLiveEvent<Boolean> = coverAppliedStatus
     }
 
     companion object {
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+
+        private const val INFO_DIALOG = "INFO_DIALOG"
+        private const val REMOVE_DIALOG = "REMOVE_DIALOG"
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
+        private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
+
         private const val PLAYER_STATE = "PLAYER_STATE"
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"

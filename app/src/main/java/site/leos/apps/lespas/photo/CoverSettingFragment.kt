@@ -28,12 +28,14 @@ import kotlin.math.roundToInt
 
 class CoverSettingFragment : Fragment() {
     private lateinit var albumId: String
+    private lateinit var currentPhoto: Photo
+
     private lateinit var root: ConstraintLayout
     private lateinit var applyButton: FloatingActionButton
     private lateinit var cropArea: ViewGroup
     private lateinit var cropFrameGestureDetector: GestureDetectorCompat
     private lateinit var layoutParams: ConstraintLayout.LayoutParams
-    private val currentPhoto: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
+    private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
 
     private var constraintSet = ConstraintSet()
     private var newBias = 0.5f
@@ -47,7 +49,8 @@ class CoverSettingFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        albumId = arguments?.getString(ALBUM_ID)!!
+        albumId = requireArguments().getString(KEY_ALBUM_ID)!!
+        currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -81,15 +84,14 @@ class CoverSettingFragment : Fragment() {
                 }
             }
 
-            val d = currentPhoto.getCurrentPhoto().value!!
             val drawableWidth: Float
 
-            if (screenHeight/d.height > screenWidth / d.width) {
-                drawableHeight = d.height * (screenWidth / d.width)
+            if (screenHeight/currentPhoto.height > screenWidth / currentPhoto.width) {
+                drawableHeight = currentPhoto.height * (screenWidth / currentPhoto.width)
                 drawableWidth = screenWidth
             } else {
                 drawableHeight = screenHeight
-                drawableWidth = d.width * (screenHeight / d.height)
+                drawableWidth = currentPhoto.width * (screenHeight / currentPhoto.height)
             }
             frameHeight = (drawableWidth * 9 / 21).roundToInt()
 
@@ -116,7 +118,7 @@ class CoverSettingFragment : Fragment() {
         cropFrameGestureDetector = GestureDetectorCompat(activity, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
                 //Handler(requireContext().mainLooper).post { Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT).show() }
-                currentPhoto.coverApplied(false)
+                currentPhotoModel.coverApplied(false)
                 parentFragmentManager.popBackStack()
                 return true
             }
@@ -167,14 +169,14 @@ class CoverSettingFragment : Fragment() {
         }
 
         applyButton.setOnClickListener {
-            currentPhoto.getCurrentPhoto().value!!.run {
+            currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
                 ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
                 // If album has not been uploaded yet, update the cover id in action table too
                 ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(albumId, id)
             }
-            currentPhoto.coverApplied(true)
+            currentPhotoModel.coverApplied(true)
 
             parentFragmentManager.popBackStack()
         }
@@ -276,9 +278,15 @@ class CoverSettingFragment : Fragment() {
         private const val FH = "FH"
         private const val DH = "DH"
 
-        private const val ALBUM_ID = "ALBUM_ID"
+        private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
+        private const val KEY_PHOTO = "KEY_PHOTO"
 
         @JvmStatic
-        fun newInstance(albumId: String) = CoverSettingFragment().apply { arguments = Bundle().apply{ putString(ALBUM_ID, albumId) }}
+        fun newInstance(albumId: String, photo: Photo) = CoverSettingFragment().apply {
+            arguments = Bundle().apply{
+                putString(KEY_ALBUM_ID, albumId)
+                putParcelable(KEY_PHOTO, photo)
+            }
+        }
     }
 }
