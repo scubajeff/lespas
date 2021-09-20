@@ -35,21 +35,18 @@
                 android:id="@+id/cover_button"
                 android:drawableTop="@drawable/ic_baseline_cover_24"
                 android:text="@string/button_text_set_cover"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/set_as_button"
                 android:drawableTop="@drawable/ic_baseline_wallpaper_24"
                 android:text="@string/button_text_set_as"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/info_button"
                 android:drawableTop="@drawable/ic_baseline_info_24"
                 android:text="@string/button_text_info"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
         </LinearLayout>
@@ -64,21 +61,18 @@
                 android:id="@+id/share_button"
                 android:drawableTop="@drawable/ic_baseline_share_24"
                 android:text="@string/button_text_share"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/remove_button"
                 android:drawableTop="@drawable/ic_baseline_delete_24"
                 android:text="@string/action_remove"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/snapseed_button"
                 android:drawableTop="@drawable/ic_baseline_snapseed_24"
                 android:text="@string/button_text_edit_in_snapseed"
-                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
         </LinearLayout>

@@ -5,11 +5,11 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:layout_gravity">center</item>
-        <item name="background">@android:color/transparent</item>
+        <item name="android:lines">2</item>
         <item name="android:background">@android:color/transparent</item>
         <item name="android:minHeight">@dimen/bottom_control_minHeight</item>
-        <item name="android:buttonBarStyle">?android:attr/buttonBarStyle</item>
-        <item name="tint">@color/color_text_light</item>
+        <item name="android:textColor">@color/bottom_control_button</item>
+        <item name="android:drawableTint">@color/bottom_control_button</item>
     </style>
 
     <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">

@@ -33,26 +33,19 @@
                 android:id="@+id/download_button"
                 android:drawableTop="@drawable/ic_baseline_cloud_download_24"
                 android:text="@string/button_text_download"
-                android:lines="2"
-                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
-                tools:ignore="UnusedAttribute" />
+                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/lespas_button"
                 android:drawableTop="@drawable/ic_baseline_footprint_24"
-                android:drawableTint="@color/bottom_control_button"
                 android:text="@string/button_text_add_to_lespas"
-                android:lines="2"
-                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
-                tools:ignore="UnusedAttribute" />
+                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
                 android:id="@+id/info_button"
                 android:drawableTop="@drawable/ic_baseline_info_24"
                 android:text="@string/button_text_info"
-                android:lines="2"
-                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
-                tools:ignore="UnusedAttribute" />
+                style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
         </androidx.appcompat.widget.LinearLayoutCompat>
     </androidx.appcompat.widget.LinearLayoutCompat>
