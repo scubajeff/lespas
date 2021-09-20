@@ -27,10 +27,10 @@
     <string name="duration_weeks">旅行 %1$d 週</string>
     <string name="duration_months">旅行 %1$d 月</string>
     <string name="duration_years">旅行 %1$d 年</string>
-    <string name="tooltip_text_set_cover">アルバムカバーの設定</string>
-    <string name="tooltip_text_set_as">に設定します。</string>
-    <string name="tooltip_text_info">写真情報</string>
-    <string name="tooltip_text_edit_in_snapseed">Snapseedでの編集</string>
+    <string name="button_text_set_cover">アルバムカバー</string>
+    <string name="button_text_set_as">壁紙設定</string>
+    <string name="button_text_info">写真情報</string>
+    <string name="button_text_edit_in_snapseed">Snapseedでの編集</string>
     <string name="toast_cover_applied">アルバムジャケットを更新しました。</string>
     <string name="toast_cover_set_canceled">操作がキャンセルされました。</string>
     <string name="settings_title">設定</string>
@@ -111,7 +111,7 @@
     <string name="item_nameasc">名前の順に</string>
     <string name="item_namedesc">名前の逆順</string>
     <string name="action_share">共有</string>
-    <string name="tooltip_text_share">共有</string>
+    <string name="button_text_share">共有</string>
     <string name="action_remove">削除</string>
     <string name="action_select_all">全てを選択</string>
     <string name="selected_count">項目 %1$d が選択されました。</string>
@@ -152,8 +152,8 @@
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
     <string name="auto_replay_title">ビデオを自動的に再生する</string>
-    <string name="tooltip_text_download">ダウンロード</string>
-    <string name="tooltip_text_add_to_lespas">私のアルバムに追加</string>
+    <string name="button_text_download">ダウンロード</string>
+    <string name="button_text_add_to_lespas">アルバムに追加</string>
     <string name="downloading_message">ファイル %1$s は Download ディレクトリに保存されます。</string>
     <string name="strip_exif_title">共有前にEXIFを削除</string>
     <string name="install_snapseed_dialog_msg">今すぐSnapseedをインストールしますか？</string>

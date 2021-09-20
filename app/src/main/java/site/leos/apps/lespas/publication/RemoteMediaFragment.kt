@@ -14,7 +14,7 @@ import android.os.Looper
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
-import android.widget.ImageButton
+import android.widget.Button
 import android.widget.ImageView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -142,7 +142,7 @@ class RemoteMediaFragment: Fragment() {
                 insets
             }
         }
-        view.findViewById<ImageButton>(R.id.download_button).run {
+        view.findViewById<Button>(R.id.download_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -154,7 +154,7 @@ class RemoteMediaFragment: Fragment() {
                 else saveMedia()
             }
         }
-        view.findViewById<ImageButton>(R.id.lespas_button).run {
+        view.findViewById<Button>(R.id.lespas_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -162,7 +162,7 @@ class RemoteMediaFragment: Fragment() {
                     DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
-        view.findViewById<ImageButton>(R.id.info_button).run {
+        view.findViewById<Button>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)

@@ -29,27 +29,28 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <ImageButton
+            <Button
                 android:id="@+id/download_button"
-                android:src="@drawable/ic_baseline_cloud_download_24"
-                android:tooltipText="@string/tooltip_text_download"
-                android:contentDescription="@string/tooltip_text_download"
+                android:drawableTop="@drawable/ic_baseline_cloud_download_24"
+                android:text="@string/button_text_download"
+                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
                 tools:ignore="UnusedAttribute" />
 
-            <ImageButton
+            <Button
                 android:id="@+id/lespas_button"
-                android:src="@drawable/ic_baseline_footprint_24"
-                android:tooltipText="@string/tooltip_text_add_to_lespas"
-                android:contentDescription="@string/tooltip_text_add_to_lespas"
+                android:drawableTop="@drawable/ic_baseline_footprint_24"
+                android:drawableTint="@color/bottom_control_button"
+                android:text="@string/button_text_add_to_lespas"
+                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
                 tools:ignore="UnusedAttribute" />
 
-            <ImageButton
+            <Button
                 android:id="@+id/info_button"
-                android:src="@drawable/ic_baseline_info_24"
-                android:tooltipText="@string/tooltip_text_info"
-                android:contentDescription="@string/tooltip_text_info"
+                android:drawableTop="@drawable/ic_baseline_info_24"
+                android:text="@string/button_text_info"
+                android:lines="2"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"
                 tools:ignore="UnusedAttribute" />
 

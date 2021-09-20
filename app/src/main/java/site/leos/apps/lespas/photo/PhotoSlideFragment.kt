@@ -16,11 +16,12 @@ import android.provider.MediaStore
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
-import android.widget.ImageButton
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -61,10 +62,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var viewReCreated = false
 
     private lateinit var controlsContainer: LinearLayout
-    private lateinit var removeButton: ImageButton
-    private lateinit var coverButton: ImageButton
-    private lateinit var setAsButton: ImageButton
-    private lateinit var snapseedButton: ImageButton
+    private lateinit var removeButton: Button
+    private lateinit var coverButton: Button
+    private lateinit var setAsButton: Button
+    private lateinit var snapseedButton: Button
 
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
@@ -264,7 +265,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-        view.findViewById<ImageButton>(R.id.share_button).run {
+        view.findViewById<Button>(R.id.share_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -293,7 +294,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-        view.findViewById<ImageButton>(R.id.info_button).run {
+        view.findViewById<Button>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
@@ -301,7 +302,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
         snapseedButton.run {
-            setImageResource(if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
+            setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24), null, null)
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener { view->
                 prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {

@@ -19,7 +19,7 @@
         app:showAsAction="never" />
 
     <item android:id="@+id/snapseed_edit"
-        android:title="@string/tooltip_text_edit_in_snapseed"
+        android:title="@string/button_text_edit_in_snapseed"
         android:icon="@drawable/ic_baseline_snapseed_24"
         app:showAsAction="ifRoom" />
 

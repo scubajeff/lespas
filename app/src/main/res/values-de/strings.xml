@@ -19,9 +19,9 @@
     <string name="duration_weeks">Wochen: %1$d</string>
     <string name="duration_months">Monate: %1$d</string>
     <string name="duration_years">Jahre: %1$d</string>
-    <string name="tooltip_text_set_cover">Cover setzen</string>
-    <string name="tooltip_text_share">Teilen</string>
-    <string name="tooltip_text_info">Informationen</string>
+    <string name="button_text_set_cover">Set als Albumcover</string>
+    <string name="button_text_share">Teilen</string>
+    <string name="button_text_info">Informationen</string>
     <string name="toast_cover_applied">Neues Cover gesetzt.</string>
     <string name="toast_cover_set_canceled">Kein neues Cover gesetzt.</string>
     <string name="settings_title">Einstellungen</string>
@@ -68,7 +68,7 @@
     <string name="error_preparing_files">Fehler beim Vorbereiten der Dateien</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="no_media_file_found">Unter den geteilten Dateien kann keine Bild- oder Videodatei gefunden werden.</string>
-    <string name="tooltip_text_set_as">Setzen als</string>
+    <string name="button_text_set_as">Hintergrundbild</string>
     <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas mobile Daten nutzt.</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
     <string name="snapseed_replace_title">Original ersetzen</string>
@@ -84,7 +84,7 @@
     <string name="item_namedesc">Name absteigend</string>
     <string name="wifionly_off_title">Synchronisieren in allen Netzwerken</string>
     <string name="snapseed_add_title">Original behalten</string>
-    <string name="tooltip_text_edit_in_snapseed">Bearbeiten in Snapseed</string>
+    <string name="button_text_edit_in_snapseed">Bearbeiten in Snapseed</string>
     <string name="item_camera_roll">Filmrolle</string>
     <string name="cameraroll_backup_title">Filmrolle synchronisieren</string>
     <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM/%1$s gesichert</string>
@@ -152,8 +152,8 @@
     <string name="relogin_title">Neuanmeldung</string>
     <string name="relogin_summary">Wenn Sie versehentlich den Zugangsschlüssel von Les Pas auf dem Server widerrufen haben.</string>
     <string name="auto_replay_title">Automatische Videowiedergabe</string>
-    <string name="tooltip_text_download">Download</string>
-    <string name="tooltip_text_add_to_lespas">Zu meinem Album hinzufügen</string>
+    <string name="button_text_download">Download</string>
+    <string name="button_text_add_to_lespas">Zum Album hinzufügen</string>
     <string name="downloading_message">Die Datei %1$s wird im Verzeichnis Download gespeichert.</string>
     <string name="strip_exif_title">EXIF vor dem Teilen entfernen</string>
     <string name="install_snapseed_dialog_msg">Snapseed jetzt installieren?</string>

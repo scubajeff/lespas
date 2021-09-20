@@ -19,10 +19,10 @@
     <string name="duration_weeks">Semanas: %1$d</string>
     <string name="duration_months">Meses: %1$d</string>
     <string name="duration_years">Años: %1$d</string>
-    <string name="tooltip_text_set_cover">El arte de la cubierta del set</string>
-    <string name="tooltip_text_share">Comparte esto</string>
-    <string name="tooltip_text_set_as">Fijado como…</string>
-    <string name="tooltip_text_info">Información</string>
+    <string name="button_text_set_cover">Portada del álbum</string>
+    <string name="button_text_share">Comparte esto</string>
+    <string name="button_text_set_as">Fondo de pantalla</string>
+    <string name="button_text_info">Información</string>
     <string name="toast_cover_applied">Se aplica una nueva cubierta.</string>
     <string name="toast_cover_set_canceled">Canceló el establecimiento de una nueva cubierta.</string>
     <string name="settings_title">Ajustes</string>
@@ -84,7 +84,7 @@
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <string name="selected_count">%1$d seleccionado</string>
-    <string name="tooltip_text_edit_in_snapseed">Editar en Snapseed</string>
+    <string name="button_text_edit_in_snapseed">Editar en Snapseed</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta DCIM/%1$s</string>
@@ -152,8 +152,8 @@
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
     <string name="auto_replay_title">Reproducir el vídeo automáticamente</string>
-    <string name="tooltip_text_download">Descargar</string>
-    <string name="tooltip_text_add_to_lespas">Añadir a mi álbum</string>
+    <string name="button_text_download">Descargar</string>
+    <string name="button_text_add_to_lespas">Añadir al álbum</string>
     <string name="downloading_message">El archivo %1$s se guardará en el directorio Download.</string>
     <string name="strip_exif_title">Eliminar EXIF antes de compartir</string>
     <string name="install_snapseed_dialog_msg">¿Instalar Snapseed ahora?</string>

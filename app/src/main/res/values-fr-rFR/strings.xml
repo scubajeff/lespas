@@ -18,9 +18,9 @@
     <string name="duration_weeks">Semaines: %1$d</string>
     <string name="duration_months">Mois: %1$d</string>
     <string name="duration_years">Années: %1$d</string>
-    <string name="tooltip_text_set_cover">Couverture</string>
-    <string name="tooltip_text_share">Partager</string>
-    <string name="tooltip_text_info">Informations</string>
+    <string name="button_text_set_cover">Couverture d\'album</string>
+    <string name="button_text_share">Partager</string>
+    <string name="button_text_info">Informations</string>
     <string name="toast_cover_applied">Nouvelle couverture mise en place.</string>
     <string name="toast_cover_set_canceled">Annulation de la mise en place d\'une nouvelle couverture.</string>
     <string name="settings_title">Paramètres</string>
@@ -68,7 +68,7 @@
     <string name="error_preparing_files">Erreur de préparation des fichiers</string>
     <string name="background_sync_summary">Vérifiez la mise à jour du serveur toutes les 6 heures</string>
     <string name="no_media_file_found">Aucun fichier image ou vidéo ne peut être trouvé parmi les données partagées.</string>
-    <string name="tooltip_text_set_as">Fixé en tant que</string>
+    <string name="button_text_set_as">Fond d\'écran</string>
     <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
     <string name="snapseed_integration_title">L\'intégration de Snapseed</string>
     <string name="snapseed_replace_title">Remplacer l\'original</string>
@@ -84,7 +84,7 @@
     <string name="item_namedesc">Nom Décroissante</string>
     <string name="wifionly_off_title">Synchronisation sur tous les réseaux</string>
     <string name="snapseed_add_title">Ajouter l\'édition de Snapseed</string>
-    <string name="tooltip_text_edit_in_snapseed">Modifier dans Snapseed</string>
+    <string name="button_text_edit_in_snapseed">Modifier dans Snapseed</string>
     <string name="item_camera_roll">Rouleau de Caméra</string>
     <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
     <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier DCIM/%1$s</string>
@@ -152,8 +152,8 @@
     <string name="relogin_title">Re-connexion</string>
     <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
-    <string name="tooltip_text_download">Télécharger</string>
-    <string name="tooltip_text_add_to_lespas">Ajouter à mon album</string>
+    <string name="button_text_download">Télécharger</string>
+    <string name="button_text_add_to_lespas">Ajouter à l\'album</string>
     <string name="downloading_message">Le fichier %1$s sera enregistré dans le répertoire de téléchargement.</string>
     <string name="strip_exif_title">Supprimer des données EXIF avant le partage</string>
     <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>

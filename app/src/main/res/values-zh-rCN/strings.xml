@@ -17,9 +17,9 @@
     <string name="duration_weeks">行程%1$d周</string>
     <string name="duration_months">行程%1$d个月</string>
     <string name="duration_years">行程%1$d年</string>
-    <string name="tooltip_text_set_cover">设置相册封面</string>
-    <string name="tooltip_text_share">分享</string>
-    <string name="tooltip_text_info">照片信息</string>
+    <string name="button_text_set_cover">设置为相册封面</string>
+    <string name="button_text_share">分享</string>
+    <string name="button_text_info">照片信息</string>
     <string name="toast_cover_applied">已更新相册封面。</string>
     <string name="toast_cover_set_canceled">操作已取消。</string>
     <string name="settings_title">设置</string>
@@ -68,7 +68,7 @@
     <string name="error_preparing_files">发生错误</string>
     <string name="background_sync_summary">每六小时检查一次服务器更新</string>
     <string name="no_media_file_found">分享来的数据中未找到任何图像或视频文件。</string>
-    <string name="tooltip_text_set_as">设置为</string>
+    <string name="button_text_set_as">设置为桌布</string>
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替换原照片</string>
@@ -84,7 +84,7 @@
     <string name="item_namedesc">按名称倒序</string>
     <string name="wifionly_off_title">使用移动网络同步</string>
     <string name="snapseed_add_title">添加Snapseed输出</string>
-    <string name="tooltip_text_edit_in_snapseed">Snapseed修图</string>
+    <string name="button_text_edit_in_snapseed">Snapseed修图</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
     <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%1$s目录下。</string>
@@ -152,8 +152,8 @@
     <string name="relogin_title">重新登录</string>
     <string name="relogin_summary">假如你在服务器端意外撤销了Les Pas的应用授权。</string>
     <string name="auto_replay_title">自动重复播放视频</string>
-    <string name="tooltip_text_download">下载</string>
-    <string name="tooltip_text_add_to_lespas">加入我的相册</string>
+    <string name="button_text_download">下载</string>
+    <string name="button_text_add_to_lespas">加入相册</string>
     <string name="downloading_message">媒体文件%1$s将被保存到Download目录下。</string>
     <string name="strip_exif_title">分享图片前删除图片EXIF隐私数据</string>
     <string name="install_snapseed_dialog_msg">马上安装Snapseed修图应用吗？</string>
