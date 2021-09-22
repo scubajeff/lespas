@@ -12,7 +12,6 @@ import android.webkit.MimeTypeMap
 import android.widget.TextView
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.ContentLoadingProgressBar
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
@@ -128,10 +127,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 action = BROADCAST_REMOVE_ORIGINAL
                 putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
             })
-
-            // Dirty hack to stop DestinationViewModel from emitting livedata again
-            val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-            destinationViewModel.resetDestination()
         }
 
         super.onDestroy()

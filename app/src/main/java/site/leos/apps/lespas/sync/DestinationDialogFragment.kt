@@ -32,10 +32,7 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
-import site.leos.apps.lespas.helper.AlbumNameValidator
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationDetailFragment
@@ -344,13 +341,12 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     }
 
     class DestinationViewModel: ViewModel() {
-        private var destination = MutableLiveData<Album?>()
+        private var destination = SingleLiveEvent<Album?>()
         private var inEditing = false
         private var removeOriginal = false
 
-        fun resetDestination() { destination.value = null }
-        fun setDestination(newDestination: Album) { this.destination.value = newDestination }
-        fun getDestination(): LiveData<Album?> = destination
+        fun setDestination(newDestination: Album) { destination.value = newDestination }
+        fun getDestination(): SingleLiveEvent<Album?> = destination
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
         fun setRemoveOriginal(remove: Boolean) { removeOriginal = remove }

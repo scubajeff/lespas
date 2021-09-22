@@ -301,9 +301,6 @@ class RemoteMediaFragment: Fragment() {
             requestedOrientation = previousOrientationSetting
         }
 
-        // Prevent destination from emitting again TODO: SingleLiveEvent?
-        destinationModel.resetDestination()
-
         // If new acquisition happened, sync with server at once
         if (acquired) ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
             putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)

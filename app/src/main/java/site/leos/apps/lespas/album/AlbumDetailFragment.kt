@@ -429,8 +429,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
 
-        destinationViewModel.resetDestination()
-
         super.onDestroyView()
     }
 
