@@ -17,10 +17,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.transition.Slide
-import android.transition.TransitionManager
 import android.util.TypedValue
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -37,6 +34,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.graphics.ColorUtils
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -47,6 +45,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.*
 import androidx.transition.Transition
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -67,14 +66,14 @@ import java.util.*
 import kotlin.math.roundToInt
 
 class CameraRollFragment : Fragment() {
-    private lateinit var controlViewGroup: ConstraintLayout
+    private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
     private lateinit var mediaPager: RecyclerView
     private lateinit var quickScroll: RecyclerView
-    private lateinit var divider: View
     private lateinit var nameTextView: TextView
     private lateinit var sizeTextView: TextView
     private lateinit var shareButton: ImageButton
     private lateinit var removeButton: ImageButton
+    private lateinit var lespasButton: ImageButton
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
@@ -104,7 +103,7 @@ class CameraRollFragment : Fragment() {
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            { state-> state?.let { toggleControlView(state) } ?: run { toggleControlView(controlViewGroup.visibility == View.INVISIBLE) }},
+            { state-> state?.let { toggleBottomSheet(state) } ?: run { toggleBottomSheet(bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN) }},
             { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -112,7 +111,7 @@ class CameraRollFragment : Fragment() {
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
-                toggleControlView(false)
+                toggleBottomSheet(false)
             },
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
         ).apply {
@@ -192,21 +191,14 @@ class CameraRollFragment : Fragment() {
 
         view.setBackgroundColor(Color.BLACK)
 
-        controlViewGroup = view.findViewById<ConstraintLayout>(R.id.control_container).apply {
-            // Prevent touch event passing to media pager underneath this
-            setOnTouchListener { _, _ ->
-                this.performClick()
-                true
-            }
-        }
         nameTextView = view.findViewById(R.id.name)
         sizeTextView = view.findViewById(R.id.size)
         shareButton = view.findViewById(R.id.share_button)
         removeButton = view.findViewById(R.id.remove_button)
-        divider = view.findViewById(R.id.divider)
+        lespasButton = view.findViewById(R.id.lespas_button)
 
         shareButton.setOnClickListener {
-            toggleControlView(false)
+            toggleBottomSheet(false)
 
             if (stripExif == getString(R.string.strip_ask_value)) {
                 if (Tools.hasExif(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).mimeType)) {
@@ -215,14 +207,14 @@ class CameraRollFragment : Fragment() {
             }
             else shareOut(stripExif == getString(R.string.strip_on_value))
         }
-        view.findViewById<ImageButton>(R.id.lespas_button).setOnClickListener {
-            toggleControlView(false)
+        lespasButton.setOnClickListener {
+            toggleBottomSheet(false)
 
             if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                 DestinationDialogFragment.newInstance(arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(camerarollModel.getCurrentMediaIndex()).id)!!), true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
         }
         removeButton.setOnClickListener {
-            toggleControlView(false)
+            toggleBottomSheet(false)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, mutableListOf(camerarollModel.getCurrentMediaUri()))).setFillInIntent(null).build())
@@ -288,7 +280,49 @@ class CameraRollFragment : Fragment() {
 
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> { newPositionSet() }
-                        RecyclerView.SCROLL_STATE_DRAGGING-> { toggleControlView(false) }
+                        RecyclerView.SCROLL_STATE_DRAGGING-> { toggleBottomSheet(false) }
+                    }
+                }
+            })
+        }
+        bottomSheet = BottomSheetBehavior.from(view.findViewById(R.id.bottom_sheet) as ConstraintLayout).apply {
+            state = BottomSheetBehavior.STATE_HIDDEN
+            saveFlags = BottomSheetBehavior.SAVE_ALL
+            skipCollapsed = true
+
+            addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
+                val primaryColor = ContextCompat.getColor(requireContext(), R.color.color_on_primary_invert)
+
+                override fun onStateChanged(view: View, newState: Int) {
+                    when(newState) {
+                        BottomSheetBehavior.STATE_EXPANDED-> {
+                            nameTextView.visibility = View.GONE
+                            sizeTextView.visibility = View.GONE
+                            removeButton.isEnabled = false
+                            shareButton.isEnabled = false
+                            lespasButton.isEnabled = false
+                        }
+                        BottomSheetBehavior.STATE_HIDDEN-> {
+                            if (nameTextView.visibility != View.VISIBLE) {
+                                nameTextView.visibility = View.VISIBLE
+                                sizeTextView.visibility = View.VISIBLE
+                                removeButton.isEnabled = true
+                                shareButton.isEnabled = true
+                                lespasButton.isEnabled = true
+                            }
+                        }
+                    }
+                }
+
+                override fun onSlide(view: View, slideOffset: Float) {
+                    if (slideOffset >= 0 && nameTextView.isEnabled) {
+                        val tAlpha = 255 - (255 * slideOffset).toInt()
+                        val iAlpha = (128 * slideOffset).toInt()
+                        nameTextView.setTextColor(ColorUtils.setAlphaComponent(primaryColor, tAlpha))
+                        sizeTextView.setTextColor(ColorUtils.setAlphaComponent(primaryColor, tAlpha))
+                        removeButton.setColorFilter(Color.argb(iAlpha, 0, 0 , 0))
+                        shareButton.setColorFilter(Color.argb(iAlpha, 0, 0 , 0))
+                        lespasButton.setColorFilter(Color.argb(iAlpha, 0, 0 , 0))
                     }
                 }
             })
@@ -422,7 +456,7 @@ class CameraRollFragment : Fragment() {
 
             // Set initial position if passed in arguments
             if (startWithThisMedia.isNotEmpty()) {
-                camerarollModel.setCurrentMediaIndex(it.indexOfFirst { it.id == startWithThisMedia })
+                camerarollModel.setCurrentMediaIndex(it.indexOfFirst { media -> media.id == startWithThisMedia })
                 startWithThisMedia = ""
             }
 
@@ -437,14 +471,12 @@ class CameraRollFragment : Fragment() {
         })
     }
 
-    private fun toggleControlView(show: Boolean) {
-        TransitionManager.beginDelayedTransition(controlViewGroup, Slide(Gravity.BOTTOM).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() })
-        controlViewGroup.visibility = if (show) View.VISIBLE else View.INVISIBLE
+    private fun toggleBottomSheet(show: Boolean) {
+        bottomSheet.state = if (show) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
 
         if (mediaPagerAdapter.itemCount == 1) {
             // Disable quick scroll if there is only one media
             quickScroll.visibility = View.GONE
-            divider.visibility = View.GONE
             // Disable share function if scheme of the uri shared with us is "file", this only happened when viewing a single file
             if (mediaPagerAdapter.getMediaAtPosition(0).id.startsWith("file")) shareButton.isEnabled = false
         }
