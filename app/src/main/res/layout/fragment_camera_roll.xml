@@ -30,18 +30,6 @@
         android:contextClickable="true"
         android:background="@color/color_background">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/quick_scroll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/lespas_button"
-            android:layout_marginTop="@dimen/big_padding"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/recyclerview_item_cameraroll"
-            tools:ignore="RtlHardcoded,RtlSymmetry">
-        </androidx.recyclerview.widget.RecyclerView>
-
         <View
             android:id="@+id/handler"
             android:layout_width="64dp"
@@ -122,6 +110,70 @@
             android:src="@drawable/ic_baseline_footprint_24"
             tools:ignore="ContentDescription,RtlHardcoded" />
 
+        <ImageButton
+            android:id="@+id/close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/handler"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:layout_marginTop="@dimen/small_padding"
+            android:paddingVertical="8dp"
+            android:background="@android:color/transparent"
+            android:tint="@color/color_on_primary_invert"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_baseline_arrow_downward_24"
+            android:visibility="gone"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/selection_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintLeft_toRightOf="@id/close_button"
+            app:layout_constraintTop_toTopOf="@id/close_button"
+            app:layout_constraintBottom_toBottomOf="@id/close_button"
+            android:paddingLeft="@dimen/big_padding"
+            android:textSize="16sp"
+            android:textColor="@color/color_on_primary_invert"
+            android:visibility="gone"
+            tools:text="1 selected"
+            tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="@dimen/big_padding"
+            app:layout_constraintTop_toBottomOf="@id/lespas_button"
+            android:background="@drawable/divider" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/quick_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            android:layout_marginTop="@dimen/big_padding"
+            android:paddingBottom="88dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="@integer/cameraroll_grid_span_count"
+            android:clipToPadding="true"
+            tools:listitem="@layout/recyclerview_item_photo" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+<!--
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/quick_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/lespas_button"
+            android:layout_marginTop="@dimen/big_padding"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:listitem="@layout/recyclerview_item_cameraroll"
+            tools:ignore="RtlHardcoded,RtlSymmetry">
+        </androidx.recyclerview.widget.RecyclerView>
+-->
