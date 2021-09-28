@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.view.*
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
@@ -209,12 +210,13 @@ class CameraRollFragment : Fragment() {
 
         // Detect swipe up gesture and show BottomSheet
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
-                if (isScrollUp(e1, e2)) bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
-                return super.onScroll(e1, e2, distanceX, distanceY)
-            }
+            // Overwrite onFling rathen than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-                if (isScrollUp(e1, e2)) bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+                if (isScrollUp(e1, e2)) {
+                    bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+                    return true
+                }
+
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
 
@@ -762,9 +764,10 @@ class CameraRollFragment : Fragment() {
             var medias = mutableListOf<Photo>()
 
             fileUri?.apply {
+                Log.e(">>>>>>", "$this")
                 Tools.getFolderFromUri(this, application.contentResolver)?.let { uri->
                     //Log.e(">>>>>", "${uri.first}   ${uri.second}")
-                    medias = Tools.listMediaContent(uri.first, cr, false, true)
+                    medias = Tools.listMediaContent(uri.first, cr, imageOnly = false, strict = true)
                     setStartPosition(medias.indexOfFirst { it.id.substringAfterLast('/') == uri.second })
                 } ?: run {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
