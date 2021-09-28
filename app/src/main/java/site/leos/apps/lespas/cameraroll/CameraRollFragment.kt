@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import android.view.*
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
@@ -72,8 +71,13 @@ import kotlin.math.atan2
 
 class CameraRollFragment : Fragment() {
     private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
+
     private lateinit var mediaPager: RecyclerView
     private lateinit var quickScroll: RecyclerView
+    private lateinit var mediaPagerAdapter: MediaPagerAdapter
+    private lateinit var quickScrollAdapter: QuickScrollAdapter
+    private var quickScrollGridSpanCount = 0
+
     private lateinit var divider: View
     private lateinit var nameTextView: TextView
     private lateinit var sizeTextView: TextView
@@ -82,34 +86,26 @@ class CameraRollFragment : Fragment() {
     private lateinit var lespasButton: ImageButton
     private lateinit var closeButton: ImageButton
     private lateinit var selectionText: TextView
+
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
+
     private var viewReCreated = false
 
+    private lateinit var startWithThisMedia: String
     private lateinit var selectionTracker: SelectionTracker<String>
     private var lastSelection = arrayListOf<Uri>()
+    private var stripExif = "1"
+    //private var sideTouchAreaWidth  = 0
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
 
-    private lateinit var mediaPagerAdapter: MediaPagerAdapter
-    private lateinit var quickScrollAdapter: QuickScrollAdapter
-
-    private lateinit var startWithThisMedia: String
-
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
-
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
-
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
-
-    private var stripExif = "1"
-
-    //private var sideTouchAreaWidth  = 0
-    private var quickScrollGridSpanCount = 0
-
     private lateinit var gestureDetector: GestureDetectorCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,12 +124,9 @@ class CameraRollFragment : Fragment() {
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
-        ).apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-        }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
-            //if (it) camerarollModel.removeCurrentMedia()
             if (it) camerarollModel.removeMedias(lastSelection)
 
             // Immediately sync with server after adding photo to local album
@@ -190,9 +183,6 @@ class CameraRollFragment : Fragment() {
             }
         }
 
-        //sideTouchAreaWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).roundToInt()
-        quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
-
         // Back key handler for BottomSheet
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             @SuppressLint("SwitchIntDef")
@@ -230,6 +220,9 @@ class CameraRollFragment : Fragment() {
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
         })
+
+        //sideTouchAreaWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).roundToInt()
+        quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -256,7 +249,7 @@ class CameraRollFragment : Fragment() {
         selectionText = view.findViewById(R.id.selection_text)
 
         shareButton.setOnClickListener {
-            prepareTargetUris()
+            saveTargetUris()
 
             if (stripExif == getString(R.string.strip_ask_value)) {
                 if (hasExifInSelection()) {
@@ -266,12 +259,12 @@ class CameraRollFragment : Fragment() {
             else shareOut(stripExif == getString(R.string.strip_on_value))
         }
         lespasButton.setOnClickListener {
-            prepareTargetUris()
+            saveTargetUris()
 
             if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
         }
         removeButton.setOnClickListener {
-            prepareTargetUris()
+            saveTargetUris()
 
             // Get confirmation from user
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -395,6 +388,12 @@ class CameraRollFragment : Fragment() {
             })
         }
 
+        // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
+        (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
+            isAccessible = true
+            set(mediaPager, (get(mediaPager) as Int) * 4)
+        }
+
         bottomSheet = BottomSheetBehavior.from(view.findViewById(R.id.bottom_sheet) as ConstraintLayout).apply {
             state = BottomSheetBehavior.STATE_HIDDEN
             saveFlags = BottomSheetBehavior.SAVE_ALL
@@ -472,12 +471,6 @@ class CameraRollFragment : Fragment() {
             })
         }
 
-        // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
-        (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
-            isAccessible = true
-            set(mediaPager, (get(mediaPager) as Int) * 4)
-        }
-
         savedInstanceState?.let {
             observeCameraRoll()
         } ?: run {
@@ -517,7 +510,6 @@ class CameraRollFragment : Fragment() {
                 }
             }
         }
-
     }
 
     override fun onStart() {
@@ -573,6 +565,7 @@ class CameraRollFragment : Fragment() {
 
     override fun onStop() {
         mediaPagerAdapter.cleanUp()
+
         super.onStop()
     }
 
@@ -611,7 +604,7 @@ class CameraRollFragment : Fragment() {
                 }
             }
 
-            // Set initial position if passed in arguments
+            // Set initial position if passed in arguments or restore from last session
             if (startWithThisMedia.isNotEmpty()) {
                 camerarollModel.setStartPosition(it.indexOfFirst { media -> media.id == startWithThisMedia })
                 startWithThisMedia = ""
@@ -623,7 +616,7 @@ class CameraRollFragment : Fragment() {
             (quickScroll.adapter as QuickScrollAdapter).submitList(it)
 
             // Disable delete function if it's launched as media viewer on Android 11
-            if (camerarollModel.shouldDisableRemove()) removeButton.isEnabled = false
+            //if (camerarollModel.shouldDisableRemove()) removeButton.isEnabled = false
         })
     }
 
@@ -640,7 +633,7 @@ class CameraRollFragment : Fragment() {
         return if (pos == RecyclerView.NO_POSITION) 0 else pos
     }
 
-    private fun prepareTargetUris() {
+    private fun saveTargetUris() {
         // Save target media item list here, since closing BottomSheet will clear media list selections
         lastSelection =
             if (selectionTracker.hasSelection()) {
@@ -766,7 +759,6 @@ class CameraRollFragment : Fragment() {
             var medias = mutableListOf<Photo>()
 
             fileUri?.apply {
-                Log.e(">>>>>>", "$this")
                 Tools.getFolderFromUri(this, application.contentResolver)?.let { uri->
                     //Log.e(">>>>>", "${uri.first}   ${uri.second}")
                     medias = Tools.listMediaContent(uri.first, cr, imageOnly = false, strict = true)
@@ -843,7 +835,7 @@ class CameraRollFragment : Fragment() {
         fun getStartPosition(): Int = startPosition
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
         fun removeMedias(removeList: List<Uri>) {
-            // Remove from system
+            // Remove from system if running on Android 10 or lower
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) removeList.forEach { media-> cr.delete(media, null, null) }
 
             // Remove from our list
