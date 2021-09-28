@@ -212,20 +212,22 @@ class CameraRollFragment : Fragment() {
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rathen than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-                if (isScrollUp(e1, e2)) {
-                    bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
-                    return true
+                if (e1 != null && e2 != null) {
+                    when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
+                        in 55.0..125.0-> {
+                            bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+                            return true
+                        }
+                        in -125.0..-55.0-> {
+                            if (bottomSheet.state == BottomSheetBehavior.STATE_EXPANDED || bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
+                                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                                return true
+                            }
+                        }
+                    }
                 }
 
                 return super.onFling(e1, e2, velocityX, velocityY)
-            }
-
-            private fun isScrollUp(e1: MotionEvent?, e2: MotionEvent?): Boolean {
-                if (e1 != null && e2 != null) {
-                    Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble()).apply { if (this > 55 && this <= 125) return true }
-                }
-
-                return false
             }
         })
     }
