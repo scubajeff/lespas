@@ -13,6 +13,7 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -857,15 +858,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     } else {
                         @Suppress("DEPRECATION")
-                        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), photo.path.substringAfterLast('/')).outputStream().use { local ->
+                        val fileName = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/${photo.path.substringAfterLast('/')}"
+                        File(fileName).outputStream().use { local ->
                             webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
                                 remote.copyTo(local, 8192)
                             }
                         }
+                        MediaScannerConnection.scanFile(context, arrayOf(fileName), arrayOf(photo.mimeType), null)
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                } catch (e: Exception) { e.printStackTrace() }
             }
         } else {
             // Video is now streaming, there is no local cache available, and might take some time to download, so we resort to Download Manager
