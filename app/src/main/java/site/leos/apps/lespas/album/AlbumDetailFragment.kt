@@ -643,30 +643,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
             sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-            if (selectionTracker.selection.size() > 1) {
-                startActivity(
-                    Intent.createChooser(
-                        Intent().apply {
-                            action = Intent.ACTION_SEND_MULTIPLE
-                            type = sharedPhoto.mimeType
-                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null
-                    )
-                )
-            } else {
-                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                startActivity(Intent.createChooser(Intent().apply {
+
+            startActivity(Intent.createChooser(Intent().apply {
+                if (selectionTracker.selection.size() == 1) {
+                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
                     action = Intent.ACTION_SEND
-                    type = sharedPhoto.mimeType
                     putExtra(Intent.EXTRA_STREAM, uris[0])
-                    this.clipData = clipData
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                }, null))
-            }
+                } else {
+                    action = Intent.ACTION_SEND_MULTIPLE
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                }
+                type = sharedPhoto.mimeType
+                this.clipData = clipData
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+            }, null))
         }
 
         selectionTracker.clearSelection()
