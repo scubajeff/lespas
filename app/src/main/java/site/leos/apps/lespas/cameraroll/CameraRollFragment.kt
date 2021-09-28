@@ -18,6 +18,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.util.Log
 import android.view.*
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
@@ -170,7 +171,8 @@ class CameraRollFragment : Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                if (names?.isNotEmpty() == true) sharedElements?.put(names[0], mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())?.itemView?.findViewById(R.id.media)!!)
+                if (names?.isNotEmpty() == true)
+                    mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())?.itemView?.findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
             }
         })
 
@@ -205,7 +207,7 @@ class CameraRollFragment : Fragment() {
                 if (e1 != null && e2 != null) {
                     when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
                         in 55.0..125.0-> {
-                            bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+                            bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
                             return true
                         }
                         in -125.0..-55.0-> {
@@ -249,7 +251,7 @@ class CameraRollFragment : Fragment() {
         selectionText = view.findViewById(R.id.selection_text)
 
         shareButton.setOnClickListener {
-            saveTargetUris()
+            copyTargetUris()
 
             if (stripExif == getString(R.string.strip_ask_value)) {
                 if (hasExifInSelection()) {
@@ -259,12 +261,12 @@ class CameraRollFragment : Fragment() {
             else shareOut(stripExif == getString(R.string.strip_on_value))
         }
         lespasButton.setOnClickListener {
-            saveTargetUris()
+            copyTargetUris()
 
             if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
         }
         removeButton.setOnClickListener {
-            saveTargetUris()
+            copyTargetUris()
 
             // Get confirmation from user
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -405,49 +407,50 @@ class CameraRollFragment : Fragment() {
 
                 @SuppressLint( "SwitchIntDef")
                 override fun onStateChanged(view: View, newState: Int) {
-                    if (newState == BottomSheetBehavior.STATE_COLLAPSED) {
-                        // Update media meta when in collapsed state, should do it here since when media list updated, like after deletion, list's addOnScrollListener callback won't be called
-                        // TODO any better way to detect mediaPager's scroll to event?
-                        updateMetaDisplay()
-                    }
+                    when (newState) {
+                        BottomSheetBehavior.STATE_EXPANDED -> {
+                            if (mediaPagerAdapter.itemCount == 1) {
+                                // If there is only 1 item in the list, user swipe up to reveal the expanded sheet, then we should update the text here
+                                // TODO any better way to detect mediaPager's scroll to event?
+                                updateMetaDisplay()
+                            } else {
+                                // If there are more than 1 media in the list, get ready to show BottomSheet expanded state
+                                if (!closeButton.isVisible) {
+                                    nameTextView.isVisible = false
+                                    sizeTextView.isVisible = false
+                                    removeButton.isEnabled = false
+                                    shareButton.isEnabled = false
+                                    lespasButton.isEnabled = false
 
-                    // If there are more than 1 media in the list, get ready to show BottomSheet expanded state
-                    if (mediaPagerAdapter.itemCount > 1) {
-                        when (newState) {
-                            BottomSheetBehavior.STATE_EXPANDED -> {
-                                nameTextView.isVisible = false
-                                sizeTextView.isVisible = false
-                                removeButton.isEnabled = false
-                                shareButton.isEnabled = false
-                                lespasButton.isEnabled = false
+                                    closeButton.isEnabled = true
+                                    closeButton.isVisible = true
+                                    selectionText.isVisible = true
 
-                                closeButton.isEnabled = true
-                                closeButton.isVisible = true
-                                selectionText.isVisible = true
-
-                                quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id))
-                                quickScroll.foreground = null
-                            }
-                            BottomSheetBehavior.STATE_HIDDEN -> {
-                                if (closeButton.isEnabled) {
-                                    selectionTracker.clearSelection()
-
-                                    nameTextView.isVisible = true
-                                    sizeTextView.isVisible = true
-                                    removeButton.isEnabled = !camerarollModel.shouldDisableRemove()
-                                    shareButton.isEnabled = !camerarollModel.shouldDisableShare()
-                                    lespasButton.isEnabled = true
-
-                                    closeButton.isEnabled = false
-                                    closeButton.isVisible = false
-                                    selectionText.isVisible = false
+                                    quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id))
+                                    quickScroll.foreground = null
                                 }
                             }
                         }
-                    } else if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                        // If there is only 1 item in the list, user swipe up to reveal the expanded sheet, then we should update the text here
-                        // TODO any better way to detect mediaPager's scroll to event?
-                        updateMetaDisplay()
+                        BottomSheetBehavior.STATE_HIDDEN -> {
+                            if (closeButton.isVisible) {
+                                nameTextView.isVisible = true
+                                sizeTextView.isVisible = true
+                                nameTextView.setTextColor(primaryColor)
+                                sizeTextView.setTextColor(primaryColor)
+                                removeButton.isEnabled = !camerarollModel.shouldDisableRemove()
+                                shareButton.isEnabled = !camerarollModel.shouldDisableShare()
+                                lespasButton.isEnabled = true
+
+                                closeButton.isEnabled = false
+                                closeButton.isVisible = false
+                                selectionText.isVisible = false
+                            }
+                        }
+                        BottomSheetBehavior.STATE_COLLAPSED -> {
+                            // Update media meta when in collapsed state, should do it here since when media list updated, like after deletion, list's addOnScrollListener callback won't be called
+                            // TODO any better way to detect mediaPager's scroll to event?
+                            updateMetaDisplay()
+                        }
                     }
                 }
 
@@ -598,6 +601,8 @@ class CameraRollFragment : Fragment() {
                     // Disable quick scroll if there is only one media
                     quickScroll.isVisible = false
                     divider.isVisible = false
+                    //if (bottomSheet.state == BottomSheetBehavior.STATE_EXPANDED) bottomSheet.state = BottomSheetBehavior.STATE_COLLAPSED
+                    bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
 
                     // Disable share function if scheme of the uri shared with us is "file", this only happened when viewing a single file
                     //if (mediaPagerAdapter.getMediaAtPosition(0).id.startsWith("file")) shareButton.isEnabled = false
@@ -622,7 +627,9 @@ class CameraRollFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun updateMetaDisplay() {
+        Log.e(">>>>>>>>>>", "${getCurrentVisibleItemPosition()} ${nameTextView.isVisible}")
         with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
+            Log.e(">>>>>>>", "$this")
             nameTextView.text = name
             sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
         }
@@ -633,17 +640,18 @@ class CameraRollFragment : Fragment() {
         return if (pos == RecyclerView.NO_POSITION) 0 else pos
     }
 
-    private fun saveTargetUris() {
-        // Save target media item list here, since closing BottomSheet will clear media list selections
+    private fun copyTargetUris() {
+        // Save target media item list
         lastSelection =
             if (selectionTracker.hasSelection()) {
                 val uris = arrayListOf<Uri>()
                 for (uri in selectionTracker.selection) uris.add(Uri.parse(uri))
+                selectionTracker.clearSelection()
                 uris
             } else arrayListOf(Uri.parse(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id))
 
-        // Dismiss BottomSheet, current selection will be clear after sheet hidden
-        bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+        // Dismiss BottomSheet when it's in collapsed mode, which means it's working on the current item
+        if (bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     private fun hasExifInSelection(): Boolean {
