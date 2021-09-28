@@ -28,7 +28,7 @@
         app:behavior_hideable="true"
         app:behavior_peekHeight="72dp"
         android:contextClickable="true"
-        android:background="@color/color_background">
+        android:background="@drawable/camera_roll_control_background">
 
         <View
             android:id="@+id/handler"
