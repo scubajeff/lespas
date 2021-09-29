@@ -23,10 +23,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
+import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -53,6 +50,7 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.util.*
+import kotlin.math.atan2
 
 //class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
 class PhotoSlideFragment : Fragment() {
@@ -84,6 +82,7 @@ class PhotoSlideFragment : Fragment() {
     private lateinit var snapseedOutputObserver: ContentObserver
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
+    private lateinit var gestureDetector: GestureDetectorCompat
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,6 +182,27 @@ class PhotoSlideFragment : Fragment() {
         }
 */
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
+
+        // Detect swipe up gesture and show bottom controls
+        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
+            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+                if (e1 != null && e2 != null) {
+                    when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
+                        in 55.0..125.0-> {
+                            hideHandler.post(showSystemUI)
+                            return true
+                        }
+                        in -125.0..-55.0-> {
+                            hideHandler.post(hideSystemUI)
+                            return true
+                        }
+                    }
+                }
+
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -225,6 +245,14 @@ class PhotoSlideFragment : Fragment() {
                             snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
                         }
                     }
+                }
+            })
+
+            // Detect swipe up gesture and show bottom controls
+            (getChildAt(0) as RecyclerView).addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    gestureDetector.onTouchEvent(e)
+                    return super.onInterceptTouchEvent(rv, e)
                 }
             })
         }
@@ -510,7 +538,7 @@ class PhotoSlideFragment : Fragment() {
     private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
-            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 80 })
+            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 

@@ -202,7 +202,7 @@ class CameraRollFragment : Fragment() {
 
         // Detect swipe up gesture and show BottomSheet
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            // Overwrite onFling rathen than onScroll, since onScroll will be called multiple times during one scroll
+            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
                 if (e1 != null && e2 != null) {
                     when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {

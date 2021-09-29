@@ -22,10 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
+import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.preference.PreferenceManager
@@ -41,6 +38,7 @@ import site.leos.apps.lespas.helper.MetaDataDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
+import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment() {
     private lateinit var window: Window
@@ -62,10 +60,12 @@ class RemoteMediaFragment: Fragment() {
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
+    private lateinit var gestureDetector: GestureDetectorCompat
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        this.window = requireActivity().window
+        albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
             shareModel.getResourceRoot(),
@@ -107,7 +107,28 @@ class RemoteMediaFragment: Fragment() {
             if (isGranted) saveMedia()
         }
 
-        albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
+        // Detect swipe up gesture and show bottom controls
+        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
+            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+                if (e1 != null && e2 != null) {
+                    when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
+                        in 55.0..125.0-> {
+                            hideHandler.post(showSystemUI)
+                            return true
+                        }
+                        in -125.0..-55.0-> {
+                            hideHandler.post(hideSystemUI)
+                            return true
+                        }
+                    }
+                }
+
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
+
+        this.window = requireActivity().window
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -133,6 +154,14 @@ class RemoteMediaFragment: Fragment() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentPositionModel.setCurrentPosition(position)
+                }
+            })
+
+            // Detect swipe up gesture and show bottom controls
+            (getChildAt(0) as RecyclerView).addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                    gestureDetector.onTouchEvent(e)
+                    return super.onInterceptTouchEvent(rv, e)
                 }
             })
         }
@@ -346,7 +375,7 @@ class RemoteMediaFragment: Fragment() {
     private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
-            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 80 })
+            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
