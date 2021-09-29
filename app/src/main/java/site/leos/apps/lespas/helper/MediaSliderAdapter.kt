@@ -218,11 +218,13 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
         }
 
         fun startOver() {
-            videoView.controllerAutoShow = false
-            setAutoStart(true)
-            videoView.visibility = View.VISIBLE
-            exoPlayer.playWhenReady = true
-            videoView.controllerAutoShow = true
+            try {
+                videoView.controllerAutoShow = false
+                setAutoStart(true)
+                videoView.visibility = View.VISIBLE
+                exoPlayer.playWhenReady = true
+                videoView.controllerAutoShow = true
+            } catch (e: Exception) {}
         }
 
         private fun mute() {
