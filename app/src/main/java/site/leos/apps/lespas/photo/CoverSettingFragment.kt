@@ -263,6 +263,7 @@ class CoverSettingFragment : Fragment() {
             }
         }
 */
+/*
         @Suppress("DEPRECATION")
         requireActivity().window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_IMMERSIVE
@@ -275,6 +276,7 @@ class CoverSettingFragment : Fragment() {
                 or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
             )
+*/
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
