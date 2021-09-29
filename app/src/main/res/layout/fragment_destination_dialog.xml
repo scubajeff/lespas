@@ -52,10 +52,10 @@
         <View
             android:id="@+id/divider"
             android:layout_width="match_parent"
-            android:layout_height="2dp"
+            android:layout_height="1dp"
             app:layout_constraintTop_toBottomOf="@id/clipdata_recyclerview"
             android:layout_marginVertical="@dimen/big_padding"
-            android:background="@drawable/divider"
+            android:background="@android:color/darker_gray"
             android:clickable="false" />
 
         <TextView
