@@ -24,6 +24,7 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -37,6 +38,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.MediaSliderAdapter
 import site.leos.apps.lespas.helper.MediaSliderTransitionListener
 import site.leos.apps.lespas.helper.MetaDataDialogFragment
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 
@@ -211,7 +213,6 @@ class RemoteMediaFragment: Fragment() {
             addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
             addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
-        toggleSystemUI(null)
 
         // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
@@ -232,6 +233,9 @@ class RemoteMediaFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+        // Get into immersive mode
+        Tools.goImmersive(window)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
@@ -310,53 +314,13 @@ class RemoteMediaFragment: Fragment() {
         super.onDestroy()
     }
 
-    private var visible: Boolean = true
     private val hideHandler = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
         hideHandler.removeCallbacksAndMessages(null)
-        val hide = state?.let { !state } ?: visible
-        hideHandler.post(if (hide) hideSystemUI else showSystemUI)
+        hideHandler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    @Suppress("DEPRECATION")
-    private val hideSystemUI = Runnable {
-        window.run {
-/*
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE
-                    // Set the content to appear under the system bars so that the
-                    // content doesn't resize when the system bars hide and show.
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    // Hide the nav bar and status bar
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                )
-            } else {
-                insetsController?.apply {
-                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                    hide(WindowInsets.Type.systemBars())
-                }
-            }
-*/
-            decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
-        }
-
-        visible = false
-    }
-
+    private val hideSystemUI = Runnable { Tools.goImmersive(window) }
     @Suppress("DEPRECATION")
     private val showSystemUI = Runnable {
         window.run {
@@ -366,8 +330,6 @@ class RemoteMediaFragment: Fragment() {
 */
             decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         }
-
-        visible = true
 
         // auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
@@ -384,7 +346,7 @@ class RemoteMediaFragment: Fragment() {
     private fun followSystemBar(show: Boolean) {
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
-            TransitionManager.beginDelayedTransition(controlsContainer, Slide(Gravity.BOTTOM).apply { duration = 80 })
+            TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 80 })
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 

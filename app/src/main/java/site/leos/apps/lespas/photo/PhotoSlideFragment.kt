@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -53,11 +54,12 @@ import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.util.*
 
-class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
+//class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
+class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
 
     private lateinit var window: Window
-    private var previousNavBarColor = 0
+    //private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
     private var viewReCreated = false
 
@@ -167,6 +169,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
         @Suppress("DEPRECATION")
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
 /*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
@@ -179,10 +182,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 */
-        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0)
-        }
-
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
     }
 
@@ -205,6 +204,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
 
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                    super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+                    hideHandler.post(hideSystemUI)
+                }
+
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
 
@@ -253,6 +257,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
+
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType)) {
                     ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
@@ -268,9 +273,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         view.findViewById<Button>(R.id.share_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
-
                 if (stripExif == getString(R.string.strip_ask_value)) {
+                    hideHandler.post(hideSystemUI)
+
                     if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
@@ -281,7 +286,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         setAsButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
                 // TODO should call with strip true??
                 prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
                     startActivity(Intent.createChooser(Intent().apply {
@@ -298,6 +302,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
+
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(pAdapter.getPhotoAt(slider.currentItem)).show(parentFragmentManager, INFO_DIALOG)
             }
         }
@@ -327,6 +332,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
+
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
                     ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
             }
@@ -356,47 +362,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        // Setup basic UI here because BottomControlsFragment might be replaced by CoverSettingFragment
+        // Get ready for immersive mode
         (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
+        @Suppress("DEPRECATION")
         requireActivity().window.run {
-            previousNavBarColor = navigationBarColor
-            navigationBarColor = Color.TRANSPARENT
-/*
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                insetsController?.let {
-                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                    it.hide(WindowInsets.Type.systemBars())
-                }
-                statusBarColor = Color.TRANSPARENT
-                setDecorFitsSystemWindows(false)
-            } else {
-                @Suppress("DEPRECATION")
-                decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        // Hide the nav bar and status bar
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN)
-            }
-*/
+            //previousNavBarColor = navigationBarColor
+            //navigationBarColor = Color.TRANSPARENT
             statusBarColor = Color.TRANSPARENT
-            @Suppress("DEPRECATION")
-            decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
-        toggleSystemUI(null)
     }
 
     override fun onStart() {
@@ -406,7 +381,12 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onResume() {
         super.onResume()
-        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+        // Get into immersive mode
+        Tools.goImmersive(window)
+
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem)?.apply {
             if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
                 (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
@@ -418,7 +398,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     override fun onPause() {
-        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
             if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
@@ -465,10 +445,12 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 decorView.setOnApplyWindowInsetsListener(null)
             }
 */
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            statusBarColor = resources.getColor(R.color.color_primary)
             decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
             decorView.setOnSystemUiVisibilityChangeListener(null)
-            statusBarColor = resources.getColor(R.color.color_primary)
-            navigationBarColor = previousNavBarColor
+            //navigationBarColor = previousNavBarColor
         }
 
         (requireActivity() as AppCompatActivity).run {
@@ -484,57 +466,22 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onDestroy()
     }
 
+/*
     // TODO: what is the usage scenario of this
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         else hideHandler.removeCallbacks(hideSystemUI)
     }
 
-    // Hide/Show controls, status bar, navigation bar
-    private var visible: Boolean = true
+*/
+    // Toggle visibility of bottom controls and system decoView
     private val hideHandler = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
         hideHandler.removeCallbacksAndMessages(null)
-        val hide = state?.let { !state } ?: visible
-        hideHandler.post(if (hide) hideSystemUI else showSystemUI)
+        hideHandler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
-    private val hideSystemUI = Runnable {
-        @Suppress("DEPRECATION")
-/*
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                    // Set the content to appear under the system bars so that the
-                    // content doesn't resize when the system bars hide and show.
-                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    // Hide the nav bar and status bar
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN)
-        } else {
-            window.insetsController?.apply {
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                hide(WindowInsets.Type.systemBars())
-            }
-        }
-*/
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
-
-        visible = false
-    }
-
+    private val hideSystemUI = Runnable { Tools.goImmersive(window) }
     private val showSystemUI = Runnable {
         @Suppress("DEPRECATION")
 /*
@@ -548,9 +495,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 
-        visible = true
-
-        // auto hide
+        // trigger auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
