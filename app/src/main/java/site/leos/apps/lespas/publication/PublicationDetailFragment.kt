@@ -109,8 +109,8 @@ class PublicationDetailFragment: Fragment() {
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                photoList.findViewHolderForAdapterPosition(currentItem)?.let {
-                    sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.media))
+                if (names?.isNotEmpty() == true) photoList.findViewHolderForAdapterPosition(currentItem)?.let {
+                    sharedElements?.put(names[0], it.itemView.findViewById(R.id.media))
                 }
             }
         })

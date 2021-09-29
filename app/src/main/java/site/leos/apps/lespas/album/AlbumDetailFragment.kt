@@ -146,8 +146,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Adjusting the shared element mapping
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                recyclerView.findViewHolderForAdapterPosition(currentPhotoModel.getCurrentPosition())?.let {
-                   sharedElements?.put(names?.get(0)!!, it.itemView.findViewById(R.id.photo))
+                if (names?.isNotEmpty() == true) recyclerView.findViewHolderForAdapterPosition(currentPhotoModel.getCurrentPosition())?.let {
+                   sharedElements?.put(names[0], it.itemView.findViewById(R.id.photo))
                 }
             }
         })

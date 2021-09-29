@@ -171,8 +171,7 @@ class CameraRollFragment : Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                if (names?.isNotEmpty() == true)
-                    mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())?.itemView?.findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
+                if (names?.isNotEmpty() == true) mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())?.itemView?.findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
             }
         })
 

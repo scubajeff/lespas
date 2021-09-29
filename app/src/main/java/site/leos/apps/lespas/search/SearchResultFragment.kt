@@ -74,7 +74,7 @@ class SearchResultFragment : Fragment() {
                     // Adjusting the shared element mapping
                     setExitSharedElementCallback(object : SharedElementCallback() {
                         override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                            sharedElements?.put(names?.get(0)!!, imageView)
+                            if (names?.isNotEmpty() == true) sharedElements?.put(names[0], imageView)
                         }
                     })
                     // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
