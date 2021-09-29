@@ -195,7 +195,7 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                 muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
 
                 // Keep screen on
-                (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                try { (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) } catch (e: Exception) {}
             }
         }
 
