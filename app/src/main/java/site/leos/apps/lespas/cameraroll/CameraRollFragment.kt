@@ -18,7 +18,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.util.Log
 import android.view.*
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
@@ -626,9 +625,7 @@ class CameraRollFragment : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private fun updateMetaDisplay() {
-        Log.e(">>>>>>>>>>", "${getCurrentVisibleItemPosition()} ${nameTextView.isVisible}")
         with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
-            Log.e(">>>>>>>", "$this")
             nameTextView.text = name
             sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
         }
