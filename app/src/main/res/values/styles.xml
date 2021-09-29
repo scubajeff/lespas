@@ -32,4 +32,8 @@
         <item name="android:windowAnimationStyle">@android:style/Animation</item>
         <item name="fontFamily">sans-serif-condensed</item>
     </style>
+
+    <style name="LightEdgeEffectColor">
+        <item name="android:colorEdgeEffect">@color/lespas_white</item>
+    </style>
 </resources>
