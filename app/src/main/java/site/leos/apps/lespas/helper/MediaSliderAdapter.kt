@@ -2,6 +2,7 @@ package site.leos.apps.lespas.helper
 
 import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.net.Uri
 import android.os.Parcelable
 import android.view.*
@@ -195,7 +196,12 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                 muteButton.setImageResource(if (exoPlayer.volume == 0f) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
 
                 // Keep screen on
-                try { (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) } catch (e: Exception) {}
+                (when(videoView.context) {
+                    is Activity-> videoView.context as Activity
+                    is ContextWrapper-> (videoView.context as ContextWrapper).baseContext as Activity
+                    else-> null
+                })?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                //try { (videoView.context as Activity).window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) } catch (e: Exception) {}
             }
         }
 
@@ -212,7 +218,11 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
             }
 
             // Resume auto screen off
-            (videoView.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            (when(videoView.context) {
+                is Activity-> videoView.context as Activity
+                is ContextWrapper-> (videoView.context as ContextWrapper).baseContext as Activity
+                else-> null
+            })?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
             savedPlayerState.setState(exoPlayer.volume == 0f, stopPosition)
         }
@@ -265,7 +275,12 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
                     oldVideoViewHolder?.setStopPosition(0L)
 
                     // Resume auto screen off
-                    (oldVideoViewHolder?.itemView?.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    (when(oldVideoViewHolder?.itemView?.context) {
+                        is Activity-> oldVideoViewHolder?.itemView?.context as Activity
+                        is ContextWrapper-> (oldVideoViewHolder?.itemView?.context as ContextWrapper).baseContext as Activity
+                        else-> null
+                    })?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    //(oldVideoViewHolder?.itemView?.context as Activity).window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
             }
 
