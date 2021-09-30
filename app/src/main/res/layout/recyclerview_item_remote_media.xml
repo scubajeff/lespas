@@ -8,6 +8,7 @@
     android:layout_marginRight="2dp"
     android:layout_marginBottom="2dp"
     android:foreground="?android:attr/selectableItemBackground"
+    android:background="@color/color_remote_media_grid_background"
     tools:ignore="RtlHardcoded">
 
     <ImageView
