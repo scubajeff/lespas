@@ -9,7 +9,6 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.SharedElementCallback
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -71,14 +70,9 @@ class SearchResultFragment : Fragment() {
                     }
                 }
                 else {
-                    // Adjusting the shared element mapping
-                    setExitSharedElementCallback(object : SharedElementCallback() {
-                        override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                            if (names?.isNotEmpty() == true) sharedElements?.put(names[0], imageView)
-                        }
-                    })
                     // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
                     stub.background = (activity as MainActivity).getToolbarViewContent()
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                     exitTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                         excludeTarget(R.id.stub, true)

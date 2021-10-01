@@ -858,7 +858,7 @@ class CameraRollFragment : Fragment() {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
         }
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id.substringAfterLast('/')
+        override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
         override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
 
         fun getMediaAtPosition(position: Int): Photo = currentList[position] as Photo
