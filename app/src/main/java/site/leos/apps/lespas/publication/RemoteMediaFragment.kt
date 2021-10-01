@@ -149,6 +149,11 @@ class RemoteMediaFragment: Fragment() {
             }
 
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                    super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+                    hideHandler.post(hideSystemUI)
+                }
+
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentPositionModel.setCurrentPosition(position)
