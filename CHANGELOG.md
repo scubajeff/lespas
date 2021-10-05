@@ -1,3 +1,10 @@
+## Version 2.3.6
+* Revamp camera roll management screen, swipe up to reveal camera roll media list
+* Android 12 compatible
+* fixed integration with Snapseed, now Les Pas will correctly load the Snapseed output file
+* fixed newly downloaded friend's photo not being scan by Media Store in Android 9 and below
+* fixed media creation date detection in camera roll when launched from file manager
+
 ## Version 2.3.5
 * Add function to strip EXIF and scramble file name before sharing media items
 * Add dedicate function to launch Snapseed for editing

@@ -1,0 +1,6 @@
+* Révision de l'écran de gestion de la liste d'appareils photo : glissez vers le haut pour afficher la liste des médias de la liste d'appareils photo
+* Compatible avec Android 12
+* Correction de l'intégration avec Snapseed, maintenant Les Pas chargera correctement le fichier de sortie Snapseed.
+* Correction de la photo d'un ami nouvellement téléchargée qui n'est pas analysée par Media Store sous Android 9 et moins.
+* Correction de la détection de la date de création du média dans le rouleau de l'appareil photo lorsqu'il est lancé à partir du gestionnaire de fichiers.
+* Autres améliorations et bogues corrigés

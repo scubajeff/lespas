@@ -1,0 +1,6 @@
+* Überarbeitung des Bildschirms für die Verwaltung der Kamerarolle, Wischen nach oben zum Aufrufen der Medienliste der Kamerarolle
+* Android 12 kompatibel
+* Die Integration mit Snapseed wurde korrigiert, Les Pas lädt jetzt die Snapseed-Ausgabedatei korrekt
+* neu heruntergeladene Fotos von Freunden werden in Android 9 und darunter nicht vom Media Store gescannt
+* Erkennung des Erstellungsdatums von Medien in der Kamerarolle beim Start aus dem Dateimanager behoben
+* Weitere Verbesserungen und Fehler behoben

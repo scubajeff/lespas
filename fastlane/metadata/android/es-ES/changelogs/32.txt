@@ -1,0 +1,6 @@
+* Renueva la pantalla de gestión del rollo de la cámara, desliza el dedo hacia arriba para mostrar la lista de medios del rollo de la cámara
+* Compatible con Android 12
+* Integración fija con Snapseed, ahora Les Pas cargará correctamente el archivo de salida de Snapseed
+* Arreglado que la foto de un amigo recién descargada no sea escaneada por la tienda de medios en Android 9 e inferior
+* Arreglada la detección de la fecha de creación de medios en el rollo de la cámara cuando se lanza desde el gestor de archivos
+* Otras mejoras y errores corregidos
