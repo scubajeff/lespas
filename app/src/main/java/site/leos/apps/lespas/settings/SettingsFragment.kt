@@ -167,14 +167,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        findPreference<SwitchPreferenceCompat>(getString(R.string.wifionly_pref_key))?.let {
-            it.title = getString(if (it.isChecked) R.string.wifionly_title else R.string.wifionly_off_title)
-            it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
-                it.title = getString(if (it.isChecked) R.string.wifionly_off_title else R.string.wifionly_title)
-                true
-            }
-        }
-
         findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.let {
             if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) it.isChecked = false
 
@@ -197,14 +189,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     false
 
                 } else true
-            }
-        }
-
-        findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_replace_pref_key))?.let {
-            it.title = getString(if (it.isChecked) R.string.snapseed_replace_title else R.string.snapseed_add_title)
-            it.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
-                it.title = getString(if (it.isChecked) R.string.snapseed_add_title else R.string.snapseed_replace_title)
-                true
             }
         }
 

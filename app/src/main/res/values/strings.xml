@@ -97,9 +97,8 @@
     <string name="snapseed_integration_summary">Note: please let Snapseed use JPEG output format</string>
     <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
     <string name="snapseed_replace_title">Replace original</string>
-    <string name="snapseed_add_title">Add Snapseed version</string>
-    <string name="snapseed_replace_on_summary">Automatically replace original photo with Snapseed\'s version.</string>
-    <string name="snapseed_replace_off_summary">Add Snapseed\'s version to album. Manage duplicates yourself.</string>
+    <string name="snapseed_replace_on_summary">Yes, replace original photo with Snapseed\'s version.</string>
+    <string name="snapseed_replace_off_summary">No, add Snapseed\'s version to album. Manage duplicates yourself.</string>
 
     <string name="privacy_header">Privacy</string>
     <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF_CHOICE</string>
@@ -137,9 +136,8 @@
     <string name="background_sync_summary">Check for server changes every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync only on WiFi</string>
-    <string name="wifionly_off_title">Sync on all networks</string>
-    <string name="wifionly_summary_on">Will not consume mobile data.</string>
-    <string name="wifionly_summary_off">Consumes mobile data – caution is advised when you have a large collection of photos.</string>
+    <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
+    <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
 
     <string name="account_header">Account</string>
     <string name="relogin_pref_key" translatable="false">RELOGIN</string>

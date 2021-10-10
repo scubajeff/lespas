@@ -29,8 +29,8 @@
     <string name="sync_header">Synchronisation</string>
     <string name="background_sync_title">Synchroniser périodiquement</string>
     <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
-    <string name="wifionly_summary_on">Ne consommera pas de données mobiles.</string>
-    <string name="wifionly_summary_off">Consommez des données mobiles, avec prudence lorsque vous avez une grande collection de photos.</string>
+    <string name="wifionly_summary_on">Oui, il ne consommera pas de données mobiles.</string>
+    <string name="wifionly_summary_off">Non, consomme des données mobiles - la prudence est de mise lorsque vous avez une grande collection de photos.</string>
     <string name="account_header">Compte</string>
     <string name="logout_title">Déconnexion-vous</string>
     <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
@@ -72,8 +72,8 @@
     <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
     <string name="snapseed_integration_title">L\'intégration de Snapseed</string>
     <string name="snapseed_replace_title">Remplacer l\'original</string>
-    <string name="snapseed_replace_on_summary">Remplacement automatique de la photo originale par l\'édition de Snapseed.</string>
-    <string name="snapseed_replace_off_summary">Ajoutez l\'édition de Snapseed à l\'album. Gérer la duplication par vous-même.</string>
+    <string name="snapseed_replace_on_summary">Oui, remplacez la photo originale par la version de Snapseed.</string>
+    <string name="snapseed_replace_off_summary">Non, ajoutez la version de Snapseed à l\'album. Gérez vous-même les doublons.</string>
     <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission d\'accéder à ces fichiers.</string>
     <string name="proceed_request">Continuer</string>
     <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
@@ -82,8 +82,6 @@
     <string name="item_datedesc">Date Décroissante</string>
     <string name="item_nameasc">Nom Croissante</string>
     <string name="item_namedesc">Nom Décroissante</string>
-    <string name="wifionly_off_title">Synchronisation sur tous les réseaux</string>
-    <string name="snapseed_add_title">Ajouter l\'édition de Snapseed</string>
     <string name="button_text_edit_in_snapseed">Modifier dans Snapseed</string>
     <string name="item_camera_roll">Rouleau de Caméra</string>
     <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>

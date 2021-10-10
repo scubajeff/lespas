@@ -30,8 +30,8 @@
     <string name="sync_header">Synchronisierung</string>
     <string name="background_sync_title">Periodisch synchronisieren</string>
     <string name="wifionly_title">Nur über WLAN synchronisieren</string>
-    <string name="wifionly_summary_on">Verbraucht keine mobilen Daten.</string>
-    <string name="wifionly_summary_off">Verbraucht mobile Daten – Vorsicht bei großen Fotosammlungen.</string>
+    <string name="wifionly_summary_on">Ja, verbraucht keine mobilen Daten.</string>
+    <string name="wifionly_summary_off">Nein, verbraucht mobile Daten - Vorsicht ist geboten, wenn Sie eine große Sammlung von Fotos haben.</string>
     <string name="account_header">Das Konto</string>
     <string name="logout_title">Abmelden</string>
     <string name="logout_dialog_msg">Vom Konto %1$s abmelden?</string>
@@ -72,8 +72,8 @@
     <string name="mind_network_setting">Bitte beachten Sie, dass die aktuelle Sync-Einstellung verhindert, dass Les Pas mobile Daten nutzt.</string>
     <string name="snapseed_integration_title">Snapseed-Integration</string>
     <string name="snapseed_replace_title">Original ersetzen</string>
-    <string name="snapseed_replace_on_summary">Ersetzt das Originalfoto automatisch durch die bearbeitete Version von Snapseed.</string>
-    <string name="snapseed_replace_off_summary">Originalfoto und geänderte Version speichern. Duplikate müssen selbst verwaltet werden.</string>
+    <string name="snapseed_replace_on_summary">Ja, ersetzen Sie das Originalfoto durch die Version von Snapseed.</string>
+    <string name="snapseed_replace_off_summary">Nein, fügen Sie die Version von Snapseed zum Album hinzu. Verwalten Sie Duplikate selbst.</string>
     <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung, um auf diese Dateien zuzugreifen.</string>
     <string name="proceed_request">Weiter</string>
     <string name="snapseed_integration_summary">Hinweis: Bitte lassen Sie Snapseed das JPEG-Ausgabeformat verwenden.</string>
@@ -82,8 +82,6 @@
     <string name="item_datedesc">Datum absteigend</string>
     <string name="item_nameasc">Name aufsteigend</string>
     <string name="item_namedesc">Name absteigend</string>
-    <string name="wifionly_off_title">Synchronisieren in allen Netzwerken</string>
-    <string name="snapseed_add_title">Original behalten</string>
     <string name="button_text_edit_in_snapseed">Bearbeiten in Snapseed</string>
     <string name="item_camera_roll">Filmrolle</string>
     <string name="cameraroll_backup_title">Filmrolle synchronisieren</string>
