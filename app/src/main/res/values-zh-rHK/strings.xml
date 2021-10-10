@@ -43,7 +43,7 @@
     <string name="preparing_files">正在處理照片</string>
     <string name="preparing_files_progress">正在處理%2$d張照片中的第%1$d張</string>
     <string name="finished_preparing_files">已完成上傳預處理</string>
-    <string name="it_takes_time">需要上傳共%1$s相片，可能需要過一段時間才能在伺服器上呈現。</string>
+    <string name="it_takes_time">需要上傳共%1$s相片，可能需要過一段時間才能在伺服器上呈現。亦需要獲得合作相冊所有者之確認。</string>
     <string name="file_name">文件名：</string>
     <string name="shot_at">創建時間：</string>
     <string name="size">大小：</string>

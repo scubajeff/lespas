@@ -44,7 +44,7 @@
     <string name="preparing_files">Préparation le photo</string>
     <string name="preparing_files_progress">Préparation le photo %1$d de %2$d</string>
     <string name="finished_preparing_files">Préparation des photos terminée</string>
-    <string name="it_takes_time">Envoi de données %1$s au serveur. Cela peut prendre un certain temps avant que de nouvelles photos n\'apparaissant sur le serveur.</string>
+    <string name="it_takes_time">Envoi de données %1$s au serveur. Cela peut prendre un certain temps avant que de nouvelles photos n\'apparaissant sur le serveur. La confirmation de album commun est également requise.</string>
     <string name="file_name">Fichier:</string>
     <string name="shot_at">Créé:</string>
     <string name="size">Taille:</string>

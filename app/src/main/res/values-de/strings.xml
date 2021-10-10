@@ -45,7 +45,7 @@
     <string name="preparing_files">Fotos werden vorbereitet</string>
     <string name="preparing_files_progress">Foto %1$d von %2$d wird vorbereitet</string>
     <string name="finished_preparing_files">Vorbereitung der Fotos abgeschlossen</string>
-    <string name="it_takes_time">%1$s an Daten werden an den Server gesendt. Es kann eine Weile dauern, bis neue Fotos auf dem Server erscheinen.</string>
+    <string name="it_takes_time">%1$s an Daten werden an den Server gesendt. Es kann eine Weile dauern, bis neue Fotos auf dem Server erscheinen. Die Bestätigung des joint Albumbesitzers ist ebenfalls erforderlich.</string>
     <string name="file_name">Name:</string>
     <string name="shot_at">Erstellt:</string>
     <string name="size">Größe:</string>
