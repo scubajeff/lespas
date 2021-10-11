@@ -6,6 +6,7 @@ import android.graphics.*
 import android.net.Uri
 import android.os.*
 import android.provider.MediaStore
+import android.util.TypedValue
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
@@ -17,6 +18,7 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
@@ -134,9 +136,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .commit()
             },
             { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
-        ) { visible -> (activity as? AppCompatActivity)?.supportActionBar?.setDisplayShowTitleEnabled(visible) }.apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-        }
+        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
@@ -294,31 +294,53 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 private val hideHandler = Handler(Looper.getMainLooper())
                 private val hideDateIndicator = Runnable {
-                    TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 500 })
+                    TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 800 })
                     dateIndicator.visibility = View.GONE
                 }
+                private val titleBar = (activity as? AppCompatActivity)?.supportActionBar
+                // Title text use TextAppearance.MaterialComponents.Headline5 style, which has textSize of 24sp
+                private val titleTextSizeInPixel = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 24f, requireContext().resources.displayMetrics).toInt()
 
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
-
-                    // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
-                    ((layoutManager as GridLayoutManager)).run {
-                        if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
-                            hideHandler.removeCallbacksAndMessages(null)
-                            dateIndicator.apply {
-                                text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC)
-                                    mAdapter.getPhotoAt((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).name.take(1)
-                                else
-                                    mAdapter.getPhotoAt((layoutManager as GridLayoutManager).findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
-                                visibility = View.VISIBLE
-                            }
-                        }
-                    }
 
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> {
                             // Hide the date indicator after showing it for 1 minute
                             if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
+                            if ((layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
+                        }
+                    }
+                }
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (dx == 0 && dy == 0) {
+                        // First entry false call, hide dataIndicator and title
+                        dateIndicator.isVisible = false
+                        titleBar?.setDisplayShowTitleEnabled(false)
+                    } else {
+                        ((layoutManager as GridLayoutManager)).run {
+                            // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
+                            if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
+                                hideHandler.removeCallbacksAndMessages(null)
+                                dateIndicator.let {
+                                    it.text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC) mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
+                                    else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
+                                    it.isVisible = true
+                                }
+                            }
+
+                            // Show/hide title text in titleBar base on visibility of cover view's title
+                            if (findFirstVisibleItemPosition() == 0) {
+                                val rect = Rect()
+                                (recyclerView.findViewHolderForAdapterPosition(0) as PhotoGridAdapter.CoverViewHolder).itemView.findViewById<TextView>(R.id.title).getGlobalVisibleRect(rect)
+
+                                if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
+                                else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
+                            }
                         }
                     }
                 }
@@ -664,11 +686,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val titleUpdater: (Boolean) -> Unit
-    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
-        private var currentHolder = 0
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
@@ -749,19 +769,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
             else (holder as CoverViewHolder).bindViewItem()
-        }
-
-        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewAttachedToWindow(holder)
-            if (holder is CoverViewHolder) {
-                currentHolder = System.identityHashCode(holder)
-                titleUpdater(false)
-            }
-        }
-
-        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-            super.onViewDetachedFromWindow(holder)
-            if (holder is CoverViewHolder && System.identityHashCode(holder) == currentHolder) titleUpdater(true)
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
