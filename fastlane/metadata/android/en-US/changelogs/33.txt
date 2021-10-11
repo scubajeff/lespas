@@ -1,0 +1,2 @@
+* Fixed bugs renaming album, uploading photo which name containing non ASCII characters
+* Other improvements and bugs fixed

@@ -1,0 +1,2 @@
+* Fehler bei der Umbenennung von Alben und beim Hochladen von Fotos, deren Name keine ASCII-Zeichen enthält, behoben
+* Andere Verbesserungen und behobene Bugs

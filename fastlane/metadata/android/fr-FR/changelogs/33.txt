@@ -1,0 +1,2 @@
+* Correction des bugs de renommage d'album, de téléchargement de photo dont le nom contient des caractères non ASCII.
+* Autres améliorations et bogues corrigés

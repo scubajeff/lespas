@@ -1,0 +1,2 @@
+* Se han corregido errores al renombrar el álbum, al subir fotos cuyo nombre contiene caracteres no ASCII
+* Otras mejoras y errores corregidos
