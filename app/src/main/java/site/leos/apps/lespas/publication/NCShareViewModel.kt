@@ -505,7 +505,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun renameShare(album: ShareByMe, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.move("$resourceRoot$lespasBase/${album.folderName}", "$resourceRoot$lespasBase/$newName")
+                webDav.move("$resourceRoot$lespasBase/${album.folderName}", "$resourceRoot$lespasBase/${Uri.encode(newName)}")
                 deleteShares(album.with)
                 album.folderName = newName
                 createShares(listOf(album))
