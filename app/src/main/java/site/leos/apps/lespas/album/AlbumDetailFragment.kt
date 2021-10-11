@@ -403,6 +403,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 }
                             }
                         }
+
+                        // Set title to new name
+                        (activity as? AppCompatActivity)?.supportActionBar?.title = newName
                     }
                 }
             }
