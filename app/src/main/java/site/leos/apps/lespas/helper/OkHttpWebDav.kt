@@ -275,7 +275,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
                 httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).callTimeout(7, TimeUnit.MINUTES).build()
-                    .newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                    .newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", Uri.encode(dest, "/")).add("OVERWRITE", "T").build()).build()).execute().use { response ->
                         if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                         else {
                             // Upload interrupted, delete uploaded chunks
