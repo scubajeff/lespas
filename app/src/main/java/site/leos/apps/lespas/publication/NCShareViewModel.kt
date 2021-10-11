@@ -558,12 +558,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val destFolder: String = when(toAlbum.id) {
-                    PublicationDetailFragment.JOINT_ALBUM_ID-> "$resourceRoot${toAlbum.name}"
-                    else-> "$resourceRoot$lespasBase/${toAlbum.name}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
+                    PublicationDetailFragment.JOINT_ALBUM_ID-> "$resourceRoot${Uri.encode(toAlbum.name, "/")}"
+                    else-> "$resourceRoot$lespasBase/${Uri.encode(toAlbum.name, "/")}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
                 }
 
                 // Copy media file on server. If file already exists in target folder, this will throw OkHttpWebDavException, it's OK since no more things need to do in this circumstance
-                webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${photo.path.substringAfterLast('/')}")
+                webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${Uri.encode(photo.path.substringAfterLast('/'))}")
 
                 if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
                     // Update joint album's content meta. For user's own album, it's content meta will be updated during next server sync
