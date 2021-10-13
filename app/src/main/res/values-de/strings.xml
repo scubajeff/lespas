@@ -164,4 +164,6 @@
     <string name="strip_on_entry">Ja, immer entfernen.</string>
     <string name="strip_exif_yes">Ja</string>
     <string name="action_reuse">Zum Album...</string>
+    <string name="preparing_shares">Vorbereiten von Dateifreigaben…</string>
+    <string name="striping_exif">Striping von EXIF-Daten…</string>
 </resources>

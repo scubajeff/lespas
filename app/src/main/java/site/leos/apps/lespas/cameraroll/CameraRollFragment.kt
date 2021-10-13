@@ -16,6 +16,8 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.view.*
@@ -52,6 +54,9 @@ import androidx.recyclerview.widget.*
 import androidx.transition.Transition
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
@@ -687,64 +692,88 @@ class CameraRollFragment : Fragment() {
     }
 
     private fun shareOut(strip: Boolean) {
-/*
-        try {
-            val mediaToShare = mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())
-            if (strip && Tools.hasExif(mediaToShare.mimeType)) {
-                val cr = requireContext().contentResolver
-                val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${mediaToShare.name.substringAfterLast('.')}" else mediaToShare.name)
+        val handler = Handler(Looper.getMainLooper())
 
-                // Strip EXIF, rotate picture if needed
-                BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {
-                    (if (mediaToShare.shareId != 0) Bitmap.createBitmap(this, 0, 0, mediaToShare.width, mediaToShare.height, Matrix().apply { preRotate(mediaToShare.shareId.toFloat()) }, true) else this)
-                        .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                }
-                val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Temporarily prevent screen rotation
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
-                startActivity(Intent.createChooser(Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "image/jpeg"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newUri(cr, "", uri)
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                }, null))
-            } else {
-                startActivity(Intent.createChooser(Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = mediaToShare.mimeType
-                    putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                }, null))
+            // Show a SnackBar if it takes too long (more than 300ms) preparing shares
+            val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip)
+            withContext(Dispatchers.Main) {
+                handler.removeCallbacksAndMessages(null)
+                handler.postDelayed({ waitingMsg.show() }, 300)
             }
-        } catch (e: Exception) { e.printStackTrace() }
-*/
-        val uris = prepareShares(strip)
 
-        if (uris.isNotEmpty()) {
-            val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-            for (i in 1 until uris.size)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                else clipData.addItem(ClipData.Item(uris[i]))
+/*
+            try {
+                val mediaToShare = mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())
+                if (strip && Tools.hasExif(mediaToShare.mimeType)) {
+                    val cr = requireContext().contentResolver
+                    val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${mediaToShare.name.substringAfterLast('.')}" else mediaToShare.name)
 
-            startActivity(Intent.createChooser(Intent().apply {
-                if (uris.size > 1) {
-                    action = Intent.ACTION_SEND_MULTIPLE
-                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    // Strip EXIF, rotate picture if needed
+                    BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(mediaToShare.id)))?.apply {
+                        (if (mediaToShare.shareId != 0) Bitmap.createBitmap(this, 0, 0, mediaToShare.width, mediaToShare.height, Matrix().apply { preRotate(mediaToShare.shareId.toFloat()) }, true) else this)
+                            .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    }
+                    val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "image/jpeg"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        clipData = ClipData.newUri(cr, "", uri)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
                 } else {
-                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = mediaToShare.mimeType
+                        putExtra(Intent.EXTRA_STREAM, Uri.parse(mediaToShare.id))
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
                 }
-                type = requireContext().contentResolver.getType(uris[0])
-                this.clipData = clipData
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-            }, null))
-        }
+            } catch (e: Exception) { e.printStackTrace() }
+*/
+            val uris = prepareShares(strip)
 
-        selectionTracker.clearSelection()
+            withContext(Dispatchers.Main) {
+                // Dismiss waiting SnackBar
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                // Call system share chooser
+                if (uris.isNotEmpty()) {
+                    val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                    for (i in 1 until uris.size)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                        else clipData.addItem(ClipData.Item(uris[i]))
+
+                    startActivity(Intent.createChooser(Intent().apply {
+                        if (uris.size > 1) {
+                            action = Intent.ACTION_SEND_MULTIPLE
+                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        } else {
+                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                        }
+                        type = requireContext().contentResolver.getType(uris[0])
+                        this.clipData = clipData
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
+                }
+
+                // Clear selection tracker
+                selectionTracker.clearSelection()
+            }
+
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

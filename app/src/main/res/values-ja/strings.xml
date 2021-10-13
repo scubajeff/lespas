@@ -164,4 +164,6 @@
     <string name="strip_on_entry">はい、必ず削除してください。</string>
     <string name="strip_exif_yes">はい。</string>
     <string name="action_reuse">アルバムに...</string>
+    <string name="preparing_shares">共有ファイルの準備……</string>
+    <string name="striping_exif">EXIFデータのストライピング……</string>
 </resources>

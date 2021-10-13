@@ -29,6 +29,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
@@ -38,6 +39,9 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -548,8 +552,8 @@ class PhotoSlideFragment : Fragment() {
         Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
             .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
             //.setAnchorView(window.decorView.rootView)
-            .setBackgroundTint(resources.getColor(R.color.color_primary, null))
-            .setTextColor(resources.getColor(R.color.color_text_light, null))
+            .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
+            .setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
 /*
             .addCallback(object: Snackbar.Callback() {
                 override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
@@ -582,17 +586,38 @@ class PhotoSlideFragment : Fragment() {
     }
 
     private fun shareOut(strip: Boolean) {
-        with(pAdapter.getPhotoAt(slider.currentItem)) {
-            prepareShares(this, strip)?.let {
-                startActivity(Intent.createChooser(Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = it.second
-                    putExtra(Intent.EXTRA_STREAM, it.first)
-                    clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
-                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                }, null))
+        val handler = Handler(Looper.getMainLooper())
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Temporarily prevent screen rotation
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+
+            // Show a SnackBar if it takes too long (more than 300ms) preparing shares
+            val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip)
+            withContext(Dispatchers.Main) {
+                handler.removeCallbacksAndMessages(null)
+                handler.postDelayed({ waitingMsg.show() }, 300)
             }
+
+            with(pAdapter.getPhotoAt(slider.currentItem)) {
+                prepareShares(this, strip)?.let {
+                    // Dismiss waiting SnackBar
+                    handler.removeCallbacksAndMessages(null)
+                    if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                    // Call system share chooser
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = it.second
+                        putExtra(Intent.EXTRA_STREAM, it.first)
+                        clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
+                }
+            }
+
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 

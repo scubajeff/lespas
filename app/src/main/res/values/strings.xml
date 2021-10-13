@@ -58,6 +58,8 @@
     <string name="strip_exif_msg">%1$s?</string>
     <string name="strip_exif_yes">Yes</string>
     <string name="strip_exif_no">No</string>
+    <string name="preparing_shares">Preparing shares…</string>
+    <string name="striping_exif">Striping EXIF data…</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
@@ -11,11 +12,18 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textview.MaterialTextView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.photo.Photo
@@ -34,6 +42,7 @@ import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 object Tools {
     fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
@@ -489,5 +498,20 @@ object Tools {
             }
         }
 */
+    }
+
+    fun getPreparingSharesSnackBar(anchorView: View, strip: Boolean): Snackbar {
+        val ctx = anchorView.context
+        return Snackbar.make(anchorView, if (strip) R.string.striping_exif else R.string.preparing_shares, Snackbar.LENGTH_INDEFINITE).apply {
+            (view.findViewById<MaterialTextView>(com.google.android.material.R.id.snackbar_text).parent as ViewGroup).addView(ProgressBar(ctx).apply {
+                // Android Snackbar text size is 14sp
+                val pbHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics).roundToInt()
+                layoutParams = (LinearLayout.LayoutParams(pbHeight, pbHeight)).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
+                indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
+            })
+            animationMode = Snackbar.ANIMATION_MODE_FADE
+            setBackgroundTint(ContextCompat.getColor(ctx, R.color.color_primary))
+            setTextColor(ContextCompat.getColor(ctx, R.color.color_text_light))
+        }
     }
 }

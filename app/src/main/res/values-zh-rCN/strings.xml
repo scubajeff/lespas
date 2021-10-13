@@ -164,4 +164,6 @@
     <string name="strip_on_entry">一律删除，最大限度保护隐私。</string>
     <string name="strip_exif_yes">好的</string>
     <string name="action_reuse">至相册…</string>
+    <string name="preparing_shares">正在准备分享文件……</string>
+    <string name="striping_exif">正在删除图片EXIF隐私数据……</string>
 </resources>

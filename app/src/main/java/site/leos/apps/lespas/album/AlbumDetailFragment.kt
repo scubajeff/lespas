@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.album
 
 import android.content.*
+import android.content.pm.ActivityInfo
 import android.database.ContentObserver
 import android.graphics.*
 import android.net.Uri
@@ -22,6 +23,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
@@ -652,40 +654,64 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
                 }
             }
-        } catch(e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { e.printStackTrace() }
 
         return uris
     }
 
     private fun shareOut(strip: Boolean) {
-        val uris = prepareShares(strip)
+        val handler = Handler(Looper.getMainLooper())
 
-        if (uris.isNotEmpty()) {
-            val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-            for (i in 1 until uris.size)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                else clipData.addItem(ClipData.Item(uris[i]))
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Temporarily prevent screen rotation
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
-            //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-            sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+            // Show a SnackBar if it takes too long (more than 300ms) preparing shares
+            val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip)
+            withContext(Dispatchers.Main) {
+                handler.removeCallbacksAndMessages(null)
+                handler.postDelayed({ waitingMsg.show()}, 300)
+            }
 
-            startActivity(Intent.createChooser(Intent().apply {
-                if (selectionTracker.selection.size() == 1) {
-                    // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_STREAM, uris[0])
-                } else {
-                    action = Intent.ACTION_SEND_MULTIPLE
-                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+            val uris = prepareShares(strip)
+
+            withContext(Dispatchers.Main) {
+                // Dismiss waiting SnackBar
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                // Call system share chooser
+                if (uris.isNotEmpty()) {
+                    val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                    for (i in 1 until uris.size)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                        else clipData.addItem(ClipData.Item(uris[i]))
+
+                    //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+
+                    startActivity(Intent.createChooser(Intent().apply {
+                        if (selectionTracker.selection.size() == 1) {
+                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                        } else {
+                            action = Intent.ACTION_SEND_MULTIPLE
+                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                        }
+                        type = sharedPhoto.mimeType
+                        this.clipData = clipData
+                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                    }, null))
                 }
-                type = sharedPhoto.mimeType
-                this.clipData = clipData
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-            }, null))
-        }
 
-        selectionTracker.clearSelection()
+                // Clear selection tracker
+                selectionTracker.clearSelection()
+            }
+
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
     }
 
     // Adapter for photo grid
