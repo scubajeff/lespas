@@ -56,7 +56,6 @@ import java.io.File
 import java.util.*
 import kotlin.math.atan2
 
-//class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
 class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
 
@@ -587,13 +586,13 @@ class PhotoSlideFragment : Fragment() {
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
+        val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip)
 
         lifecycleScope.launch(Dispatchers.IO) {
             // Temporarily prevent screen rotation
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
             // Show a SnackBar if it takes too long (more than 300ms) preparing shares
-            val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip)
             withContext(Dispatchers.Main) {
                 handler.removeCallbacksAndMessages(null)
                 handler.postDelayed({ waitingMsg.show() }, 300)
@@ -601,23 +600,24 @@ class PhotoSlideFragment : Fragment() {
 
             with(pAdapter.getPhotoAt(slider.currentItem)) {
                 prepareShares(this, strip)?.let {
-                    // Dismiss waiting SnackBar
-                    handler.removeCallbacksAndMessages(null)
-                    if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+                    withContext(Dispatchers.Main) {        // Call system share chooser
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = it.second
+                            putExtra(Intent.EXTRA_STREAM, it.first)
+                            clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
 
-                    // Call system share chooser
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = it.second
-                        putExtra(Intent.EXTRA_STREAM, it.first)
-                        clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                    }, null))
+                        if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
                 }
             }
-
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }.invokeOnCompletion {
+            // Dismiss waiting SnackBar
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
         }
     }
 

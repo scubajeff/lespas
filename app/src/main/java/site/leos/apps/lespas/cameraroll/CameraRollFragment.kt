@@ -693,13 +693,13 @@ class CameraRollFragment : Fragment() {
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
+        val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip)
 
         lifecycleScope.launch(Dispatchers.IO) {
             // Temporarily prevent screen rotation
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
             // Show a SnackBar if it takes too long (more than 300ms) preparing shares
-            val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip)
             withContext(Dispatchers.Main) {
                 handler.removeCallbacksAndMessages(null)
                 handler.postDelayed({ waitingMsg.show() }, 300)
@@ -741,10 +741,6 @@ class CameraRollFragment : Fragment() {
             val uris = prepareShares(strip)
 
             withContext(Dispatchers.Main) {
-                // Dismiss waiting SnackBar
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
                 // Call system share chooser
                 if (uris.isNotEmpty()) {
                     val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
@@ -770,9 +766,13 @@ class CameraRollFragment : Fragment() {
 
                 // Clear selection tracker
                 selectionTracker.clearSelection()
-            }
 
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }.invokeOnCompletion {
+            // Dismiss waiting SnackBar
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
         }
     }
 

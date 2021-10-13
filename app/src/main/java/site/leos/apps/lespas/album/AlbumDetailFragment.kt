@@ -35,10 +35,7 @@ import androidx.work.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
@@ -51,6 +48,7 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
+import java.lang.Runnable
 import java.time.Duration
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -661,13 +659,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
+        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip)
 
         lifecycleScope.launch(Dispatchers.IO) {
             // Temporarily prevent screen rotation
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
+            //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+            sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+
             // Show a SnackBar if it takes too long (more than 300ms) preparing shares
-            val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip)
             withContext(Dispatchers.Main) {
                 handler.removeCallbacksAndMessages(null)
                 handler.postDelayed({ waitingMsg.show()}, 300)
@@ -676,10 +677,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             val uris = prepareShares(strip)
 
             withContext(Dispatchers.Main) {
-                // Dismiss waiting SnackBar
-                handler.removeCallbacksAndMessages(null)
-                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
                 // Call system share chooser
                 if (uris.isNotEmpty()) {
                     val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
@@ -687,11 +684,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
                         else clipData.addItem(ClipData.Item(uris[i]))
 
-                    //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-
                     startActivity(Intent.createChooser(Intent().apply {
-                        if (selectionTracker.selection.size() == 1) {
+                        if (uris.size == 1) {
                             // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
                             action = Intent.ACTION_SEND
                             putExtra(Intent.EXTRA_STREAM, uris[0])
@@ -708,9 +702,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 // Clear selection tracker
                 selectionTracker.clearSelection()
-            }
 
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }.invokeOnCompletion {
+            // Dismiss waiting SnackBar
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
         }
     }
 
