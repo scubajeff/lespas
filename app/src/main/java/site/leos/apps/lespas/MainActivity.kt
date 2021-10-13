@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var toolbar: MaterialToolbar
     private lateinit var sp: SharedPreferences
+    private var coldExit = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         sp = PreferenceManager.getDefaultSharedPreferences(this)
@@ -134,9 +135,19 @@ class MainActivity : AppCompatActivity() {
         if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
     }
 
+    override fun onPause() {
+        coldExit = true
+        super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        coldExit = false
+        super.onSaveInstanceState(outState)
+    }
+
     override fun onDestroy() {
         // Clean up temporary folder in app's cachePath
-        try {  File("${cacheDir}${TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
+        if (coldExit) try {  File("${cacheDir}${TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
 
         super.onDestroy()
     }
@@ -151,17 +162,18 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+/*
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        supportFragmentManager.run {
-            if (backStackEntryCount > 0)
-                getBackStackEntryAt(backStackEntryCount - 1).let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
+        supportFragmentManager.fragments.apply {
+            if (this.isNotEmpty()) this[this.size - 1].let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
         }
     }
 
     interface OnWindowFocusChangedListener {
         fun onWindowFocusChanged(hasFocus: Boolean)
     }
+*/
 
     fun getToolbarViewContent(): Drawable {
         return BitmapDrawable(resources, toolbar.drawToBitmap(Bitmap.Config.ARGB_8888))
