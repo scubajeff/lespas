@@ -68,7 +68,7 @@
     <string name="error_preparing_files">發生錯誤</string>
     <string name="background_sync_summary">每六小時檢查一次伺服器更新</string>
     <string name="no_media_file_found">分享來的數據中未找到任何圖像或視頻文件。</string>
-    <string name="button_text_set_as">設置為Wallpaper</string>
+    <string name="button_text_set_as">設為Wallpaper</string>
     <string name="mind_network_setting">請留意，當前同步設置不允許Les Pas使用移動流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替換原照片</string>

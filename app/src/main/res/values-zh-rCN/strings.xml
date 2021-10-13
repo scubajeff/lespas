@@ -17,7 +17,7 @@
     <string name="duration_weeks">行程%1$d周</string>
     <string name="duration_months">行程%1$d个月</string>
     <string name="duration_years">行程%1$d年</string>
-    <string name="button_text_set_cover">设置为相册封面</string>
+    <string name="button_text_set_cover">设为相册封面</string>
     <string name="button_text_share">分享</string>
     <string name="button_text_info">照片信息</string>
     <string name="toast_cover_applied">已更新相册封面。</string>
