@@ -503,12 +503,14 @@ object Tools {
     fun getPreparingSharesSnackBar(anchorView: View, strip: Boolean): Snackbar {
         val ctx = anchorView.context
         return Snackbar.make(anchorView, if (strip) R.string.striping_exif else R.string.preparing_shares, Snackbar.LENGTH_INDEFINITE).apply {
-            (view.findViewById<MaterialTextView>(com.google.android.material.R.id.snackbar_text).parent as ViewGroup).addView(ProgressBar(ctx).apply {
-                // Android Snackbar text size is 14sp
-                val pbHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics).roundToInt()
-                layoutParams = (LinearLayout.LayoutParams(pbHeight, pbHeight)).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
-                indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
-            })
+            try {
+                (view.findViewById<MaterialTextView>(com.google.android.material.R.id.snackbar_text).parent as ViewGroup).addView(ProgressBar(ctx).apply {
+                    // Android Snackbar text size is 14sp
+                    val pbHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 14f, resources.displayMetrics).roundToInt()
+                    layoutParams = (LinearLayout.LayoutParams(pbHeight, pbHeight)).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
+                    indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
+                })
+            } catch (e: Exception) {}
             animationMode = Snackbar.ANIMATION_MODE_FADE
             setBackgroundTint(ContextCompat.getColor(ctx, R.color.color_primary))
             setTextColor(ContextCompat.getColor(ctx, R.color.color_text_light))
