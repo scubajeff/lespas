@@ -9,4 +9,6 @@
     style="@style/Widget.MaterialComponents.Chip.Entry"
     app:chipIcon="@drawable/ic_baseline_person_24"
     app:chipCornerRadius="4dp"
-    tools:text="chip"/>
+    android:lines="1"
+    android:ellipsize="end"
+    tools:text="chip" />
