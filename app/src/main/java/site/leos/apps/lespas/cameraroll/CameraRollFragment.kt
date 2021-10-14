@@ -131,17 +131,6 @@ class CameraRollFragment : Fragment() {
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
-        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
-            if (it) camerarollModel.removeMedias(lastSelection)
-
-            // Immediately sync with server after adding photo to local album
-            ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-            })
-        }
-
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
         savedInstanceState?.let {
             startWithThisMedia = it.getString(KEY_SCROLL_TO) ?: ""
@@ -178,6 +167,21 @@ class CameraRollFragment : Fragment() {
                 if (names?.isNotEmpty() == true) mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())?.itemView?.findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
             }
         })
+
+        removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
+            if (it) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, lastSelection)).setFillInIntent(null).build())
+                } else camerarollModel.removeMedias(lastSelection)
+            }
+
+            // Immediately sync with server after adding photo to local album
+            ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        }
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
