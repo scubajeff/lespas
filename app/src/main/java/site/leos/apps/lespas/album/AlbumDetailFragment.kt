@@ -300,6 +300,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 private val titleBar = (activity as? AppCompatActivity)?.supportActionBar
                 // Title text use TextAppearance.MaterialComponents.Headline5 style, which has textSize of 24sp
                 private val titleTextSizeInPixel = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 24f, requireContext().resources.displayMetrics).toInt()
+                private val lm = recyclerView.layoutManager as GridLayoutManager
 
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
@@ -308,7 +309,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         RecyclerView.SCROLL_STATE_IDLE-> {
                             // Hide the date indicator after showing it for 1 minute
                             if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
-                            if ((layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
+                            if (lm.findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
                         }
                     }
                 }
@@ -317,11 +318,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     super.onScrolled(recyclerView, dx, dy)
 
                     if (dx == 0 && dy == 0) {
-                        // First entry false call, hide dataIndicator and title
+                        // First entry or fragment resume false call, by layout re calculation, hide dataIndicator and title
                         dateIndicator.isVisible = false
-                        titleBar?.setDisplayShowTitleEnabled(false)
+                        showTitleText()
                     } else {
-                        ((layoutManager as GridLayoutManager)).run {
+                        lm.run {
                             // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
                             if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
@@ -333,15 +334,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 }
                             }
 
-                            // Show/hide title text in titleBar base on visibility of cover view's title
-                            if (findFirstVisibleItemPosition() == 0) {
-                                val rect = Rect()
-                                (recyclerView.findViewHolderForAdapterPosition(0) as PhotoGridAdapter.CoverViewHolder).itemView.findViewById<TextView>(R.id.title).getGlobalVisibleRect(rect)
-
-                                if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
-                                else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
-                            }
+                            showTitleText()
                         }
+                    }
+                }
+
+                private fun showTitleText() {
+                    // Show/hide title text in titleBar base on visibility of cover view's title
+                    if (lm.findFirstVisibleItemPosition() == 0) {
+                        val rect = Rect()
+                        (recyclerView.findViewHolderForAdapterPosition(0) as PhotoGridAdapter.CoverViewHolder).itemView.findViewById<TextView>(R.id.title).getGlobalVisibleRect(rect)
+
+                        if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
+                        else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
                     }
                 }
             })
