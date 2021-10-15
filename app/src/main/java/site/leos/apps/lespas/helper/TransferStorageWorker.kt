@@ -3,7 +3,6 @@ package site.leos.apps.lespas.helper
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
@@ -58,8 +57,8 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
             source.listFiles()?.let {
                 it.forEachIndexed { i, sFile ->
                     @Suppress("DEPRECATION")
-                    Notification.Builder(context).setProgress(100, ((i + 1.0) / it.size * 100).toInt(), false).setSmallIcon(R.drawable.ic_notification).setContentTitle(message).setTicker(message).setOngoing(true).apply {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) setChannelId(WORKER_NAME)
+                    (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) Notification.Builder(context) else Notification.Builder(context, WORKER_NAME)).apply {
+                        setProgress(100, ((i + 1.0) / it.size * 100).toInt(), false).setSmallIcon(R.drawable.ic_notification).setContentTitle(message).setTicker(message).setOngoing(true)
                         notificationManager.notify(NOTIFICATION_ID, build())
                     }
 
@@ -96,7 +95,8 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
 
     private fun createNotification(title: String): Notification {
         @Suppress("DEPRECATION")
-        val builder = Notification.Builder(context).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setTicker(title).setProgress(100, 0, false).setOngoing(true)
+        val builder = (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) Notification.Builder(context) else Notification.Builder(context, WORKER_NAME))
+            .setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setTicker(title).setProgress(100, 0, false).setOngoing(true)
 /*
             // TODO cancel transfer worker
             .addAction(
@@ -108,11 +108,12 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
             )
 */
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            NotificationChannel(WORKER_NAME, WORKER_NAME, NotificationManager.IMPORTANCE_LOW).also {
-                notificationManager.createNotificationChannel(it)
-                builder.setChannelId(it.id)
-            }
+/*
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannel(WORKER_NAME, WORKER_NAME, NotificationManager.IMPORTANCE_LOW).also {
+            notificationManager.createNotificationChannel(it)
+            builder.setChannelId(it.id)
+        }
+*/
 
         return builder.build()
     }

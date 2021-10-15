@@ -188,7 +188,7 @@ class MainActivity : AppCompatActivity() {
                             .show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
                     }
                 }
-            } catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
+            } catch (e: IndexOutOfBoundsException) {}
         })
     }
 
