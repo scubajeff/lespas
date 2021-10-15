@@ -1,0 +1,5 @@
+* Fehler behoben, durch den Fotos in der Kamerarolle nicht entfernt werden konnten, nachdem sie in ein Album verschoben wurden, wenn das Programm unter Android 11 oder höher läuft.
+* Anzeige eines Wartezeichens während des langen Prozesses des Abziehens von EXIF-Informationen
+* Update der deutschen Übersetzung, Dank an github Benutzer @raphaelporsche
+* Aktualisierung der taiwanesischen Übersetzung
+* Andere Verbesserungen und behobene Bugs

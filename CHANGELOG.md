@@ -1,3 +1,9 @@
+## Version 2.3.8
+* Fixed bug of failing to remove photos in camera roll after moving them to album when runs on Android 11 or above
+* Show a waiting sign during long process of striping EXIF info
+* Update German translation, thanks to github user @raphaelporsche
+* Update Taiwanese translation
+
 ## Version 2.3.7
 * Fixed bugs renaming album, uploading photo which name containing non ASCII characters
 * Updated screenshot

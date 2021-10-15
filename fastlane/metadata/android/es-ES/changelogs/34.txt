@@ -1,0 +1,5 @@
+* Se ha corregido el error de no eliminar las fotos en el rollo de la cámara después de moverlas al álbum cuando se ejecuta en Android 11 o superior
+* Mostrar una señal de espera durante el largo proceso de extracción de información EXIF
+* Actualización de la traducción al alemán, gracias al usuario de github @raphaelporsche
+* Actualización de la traducción al taiwanés
+* Otras mejoras y errores corregidos

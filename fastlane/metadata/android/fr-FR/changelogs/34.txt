@@ -1,0 +1,5 @@
+* Correction d'un bogue qui empêchait de supprimer les photos du rouleau de l'appareil photo après les avoir déplacées vers un album sous Android 11 ou supérieur.
+* Affichage d'un signe d'attente pendant le long processus de dépouillement des informations EXIF.
+* Mise à jour de la traduction allemande, merci à l'utilisateur de github @raphaelporsche.
+* Mise à jour de la traduction taïwanaise
+* Autres améliorations et corrections de bugs

@@ -1,0 +1,5 @@
+* Fixed bug of failing to remove photos in camera roll after moving them to album when runs on Android 11 or above
+* Show a waiting sign during long process of striping EXIF info
+* Update German translation, thanks to github user @raphaelporsche
+* Update Taiwanese translation
+* Other improvements and bugs fixed
