@@ -25,4 +25,29 @@
         android:title="@string/item_settings"
         android:orderInCategory="100"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_sortby"
+        android:title="@string/item_sortby"
+        android:orderInCategory="9"
+        app:showAsAction="never">
+        <menu>
+            <item
+                android:id="@+id/option_menu_sortbydateasc"
+                android:checkable="true"
+                android:title="@string/item_dateasc"/>
+            <item
+                android:id="@+id/option_menu_sortbydatedesc"
+                android:checkable="true"
+                android:checked="true"
+                android:title="@string/item_datedesc"/>
+            <item
+                android:id="@+id/option_menu_sortbynameasc"
+                android:checkable="true"
+                android:title="@string/item_nameasc"/>
+            <item
+                android:id="@+id/option_menu_sortbynamedesc"
+                android:checkable="true"
+                android:title="@string/item_namedesc"/>
+        </menu>
+    </item>
 </menu>
