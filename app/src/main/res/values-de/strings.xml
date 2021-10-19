@@ -218,4 +218,5 @@
     <string name="prefer_random">Zufällig (Rückgriff auf alle oben genannten Möglichkeiten)</string>
     <string name="exclude_albums">Fotos ausschließen:</string>
     <string name="prefer_latest">Letzte</string>
+    <string name="show_list_first">Medienliste beim Start der Kamerarolle anzeigen</string>
 </resources>

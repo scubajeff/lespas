@@ -166,4 +166,5 @@
     <string name="action_reuse">至相册…</string>
     <string name="preparing_shares">正在准备分享文件……</string>
     <string name="striping_exif">正在删除图片EXIF隐私数据……</string>
+    <string name="show_list_first">启动相机相册时显示文件列表</string>
 </resources>
