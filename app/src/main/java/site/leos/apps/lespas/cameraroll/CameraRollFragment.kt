@@ -121,6 +121,8 @@ class CameraRollFragment : Fragment() {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
             showListFirst = getBoolean(getString(R.string.roll_list_first_perf_key), false)
+            // If start as viewer then don't show list first
+            arguments?.getString(KEY_URI)?.let { showListFirst = false }
         }
 
         // Create adapter here so that it won't leak
