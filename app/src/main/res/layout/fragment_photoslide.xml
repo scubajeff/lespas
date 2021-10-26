@@ -29,8 +29,7 @@
             android:id="@+id/more_controls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="@dimen/small_padding">
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/cover_button"

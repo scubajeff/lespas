@@ -112,7 +112,7 @@ class PhotoSlideFragment : Fragment() {
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value)) ?: "0"
         }
 
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
+        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(KEY_PLAYER_STATE)?.apply {
             pAdapter.setPlayerState(this)
             pAdapter.setAutoStart(true)
         }
@@ -295,7 +295,7 @@ class PhotoSlideFragment : Fragment() {
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
-                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_bottom_toolbar, CoverSettingFragment.newInstance(album.id, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.id, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             }
         }
@@ -440,7 +440,7 @@ class PhotoSlideFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelable(PLAYER_STATE, pAdapter.getPlayerState())
+        outState.putParcelable(KEY_PLAYER_STATE, pAdapter.getPlayerState())
     }
 
     override fun onStop() {
@@ -495,14 +495,6 @@ class PhotoSlideFragment : Fragment() {
         super.onDestroy()
     }
 
-/*
-    // TODO: what is the usage scenario of this
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        if (hasFocus) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
-        else hideHandler.removeCallbacks(hideSystemUI)
-    }
-
-*/
     // Toggle visibility of bottom controls and system decoView
     private val hideHandler = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
@@ -628,7 +620,7 @@ class PhotoSlideFragment : Fragment() {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
             if (!(File(fileName).exists())) fileName = "$rootPath/${name}"
-            VideoItem(Uri.fromFile(File(fileName)), mimeType, width, height, id)
+            VideoItem(Uri.parse("file:///$fileName"), mimeType, width, height, id)
         }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
         override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
@@ -679,7 +671,8 @@ class PhotoSlideFragment : Fragment() {
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
 
-        private const val PLAYER_STATE = "PLAYER_STATE"
+        private const val KEY_PLAYER_STATE = "KEY_PLAYER_STATE"
+
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"
 
