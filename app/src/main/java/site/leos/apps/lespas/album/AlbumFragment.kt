@@ -32,6 +32,7 @@ import androidx.work.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
@@ -327,8 +328,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return true
             }
             R.id.option_menu_settings-> {
-                exitTransition = null
-                reenterTransition = null
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }

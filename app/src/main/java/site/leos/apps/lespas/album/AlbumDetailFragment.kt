@@ -33,8 +33,7 @@ import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import androidx.work.*
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.transition.MaterialContainerTransform
-import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.*
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -509,8 +508,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_settings-> {
-                exitTransition = null
-                reenterTransition = null
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
                 true
             }
