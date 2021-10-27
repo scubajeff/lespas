@@ -66,6 +66,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
+    private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var receivedShareMenu: MenuItem? = null
     private var cameraRollAsAlbumMenu: MenuItem? = null
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
@@ -73,6 +74,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     private var showCameraRoll = true
+    private var cameraRollAlbum: Album? = null
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
             showCameraRoll = this
@@ -87,7 +89,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lastSelection = savedInstanceState?.getLongArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
+        lastSelection = savedInstanceState?.getLongArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
+        currentSortOrder = savedInstanceState?.getInt(KEY_SORT_ORDER, Album.BY_DATE_TAKEN_DESC) ?: Album.BY_DATE_TAKEN_DESC
 
         setHasOptionsMenu(true)
 
@@ -142,6 +145,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))
         PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
@@ -157,11 +161,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums->
-            val albumWithCameraRoll = albums.toMutableList()
-            if (showCameraRoll) Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))?.let { albumWithCameraRoll.add(0, it) }
-            mAdapter.setAlbums(albumWithCameraRoll)
-        })
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
@@ -273,7 +273,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLongArray(SELECTION, lastSelection.toLongArray())
+        outState.putLongArray(KEY_SELECTION, lastSelection.toLongArray())
+        outState.putInt(KEY_SORT_ORDER, currentSortOrder)
     }
 
     override fun onDestroyView() {
@@ -303,6 +304,18 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
         cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
         cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
+
+        menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
+        menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
+
+        when(currentSortOrder) {
+            Album.BY_DATE_TAKEN_ASC-> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+            Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+            Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+            Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -332,6 +345,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 exitTransition = null
                 reenterTransition = null
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
+                return true
+            }
+            R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
+                changeSortOrder(item.itemId)
                 return true
             }
             else-> {
@@ -382,6 +399,36 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     this.start()
                 }
         }
+    }
+
+    private fun changeSortOrder(id: Int) {
+        currentSortOrder = when(id) {
+            R.id.option_menu_sortbydateasc-> Album.BY_DATE_TAKEN_ASC
+            R.id.option_menu_sortbydatedesc-> Album.BY_DATE_TAKEN_DESC
+            R.id.option_menu_sortbynameasc-> Album.BY_NAME_ASC
+            R.id.option_menu_sortbynamedesc-> Album.BY_NAME_DESC
+            else-> -1
+        }
+
+        sortAndSetAlbums(null)
+    }
+
+    private fun sortAndSetAlbums(original: List<Album>?) {
+        val albums = mutableListOf<Album>()
+        val sortedAlbums = mutableListOf<Album>()
+
+        albums.addAll(original ?: mAdapter.currentList)
+        if (showCameraRoll && albums[0].id == FAKE_ALBUM_ID) albums.removeAt(0)
+        sortedAlbums.addAll(when(currentSortOrder) {
+            Album.BY_DATE_TAKEN_ASC-> albums.sortedWith(compareBy { it.endDate })
+            Album.BY_DATE_TAKEN_DESC-> albums.sortedWith(compareByDescending { it.endDate })
+            Album.BY_NAME_ASC-> albums.sortedWith(compareBy { it.name })
+            Album.BY_NAME_DESC-> albums.sortedWith(compareByDescending { it.name })
+            else-> albums
+        })
+        if (showCameraRoll) cameraRollAlbum?.let { sortedAlbums.add(0, it) }
+
+        mAdapter.setAlbums(sortedAlbums)
     }
 
     // List adapter for Albums' recyclerView
@@ -509,7 +556,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
-        private const val SELECTION = "SELECTION"
+        private const val KEY_SELECTION = "KEY_SELECTION"
+        private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
         private const val FAKE_ALBUM_ID = "0"
         private const val FAKE_ALBUM_ID_LONG = 0L
 
