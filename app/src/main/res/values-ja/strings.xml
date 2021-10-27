@@ -166,4 +166,5 @@
     <string name="action_reuse">アルバムに...</string>
     <string name="preparing_shares">共有ファイルの準備……</string>
     <string name="striping_exif">EXIFデータのストライピング……</string>
+    <string name="show_list_first">カメラロール起動時のメディアリスト表示</string>
 </resources>

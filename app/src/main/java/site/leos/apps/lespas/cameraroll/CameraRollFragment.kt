@@ -96,12 +96,14 @@ class CameraRollFragment : Fragment() {
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
 
-    private var viewReCreated = false
+    private var viewReCreated = false   // Flag for resuming video playing after regained window focus
 
     private lateinit var startWithThisMedia: String
     private lateinit var selectionTracker: SelectionTracker<String>
     private var lastSelection = arrayListOf<Uri>()
     private var stripExif = "1"
+    private var showListFirst = false
+    private var ignoreHide = true
     //private var sideTouchAreaWidth  = 0
 
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
@@ -116,15 +118,27 @@ class CameraRollFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
+            showListFirst = getBoolean(getString(R.string.roll_list_first_perf_key), false)
+            // If start as viewer then don't show list first
+            arguments?.getString(KEY_URI)?.let { showListFirst = false }
+        }
+
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            { state-> bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN },
+            { state->
+                // When in "Show media list at startup" mode, ignore the first hide bottom sheet call which fired by video auto play
+                if (ignoreHide && showListFirst) ignoreHide = false
+                else bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
+            },
             { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
+                if (showListFirst) mediaPagerAdapter.setAutoStart(true)
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
@@ -139,6 +153,9 @@ class CameraRollFragment : Fragment() {
                 mediaPagerAdapter.setAutoStart(true)
             }
             lastSelection = it.getParcelableArrayList(KEY_LAST_SELECTION) ?: arrayListOf()
+
+            // Don't ignore call to hide bottom sheet after activity recreated
+            ignoreHide = false
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -197,13 +214,19 @@ class CameraRollFragment : Fragment() {
             @SuppressLint("SwitchIntDef")
             override fun handleOnBackPressed() {
                 when(bottomSheet.state) {
-                    BottomSheetBehavior.STATE_HIDDEN-> {
-                        isEnabled = false
-                        requireActivity().onBackPressed()
+                    BottomSheetBehavior.STATE_HIDDEN -> if (showListFirst) bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED else quit()
+                    BottomSheetBehavior.STATE_COLLAPSED -> bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                    BottomSheetBehavior.STATE_EXPANDED -> when {
+                        selectionTracker.hasSelection() -> selectionTracker.clearSelection()
+                        showListFirst -> quit()
+                        else -> bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                     }
-                    BottomSheetBehavior.STATE_COLLAPSED-> bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
-                    BottomSheetBehavior.STATE_EXPANDED-> if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 }
+            }
+
+            private fun quit() {
+                isEnabled = false
+                requireActivity().onBackPressed()
             }
         })
 
@@ -520,6 +543,20 @@ class CameraRollFragment : Fragment() {
                 }
             }
         }
+
+        savedInstanceState ?: run {
+            if (showListFirst) {
+                removeButton.isEnabled = false
+                shareButton.isEnabled = false
+                lespasButton.isEnabled = false
+                closeButton.isEnabled = true
+                closeButton.isVisible = true
+                selectionText.isVisible = true
+                quickScroll.foreground = null
+
+                bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
     }
 
     override fun onStart() {
@@ -551,8 +588,6 @@ class CameraRollFragment : Fragment() {
                 }
             }
         }
-
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
     }
 
     override fun onPause() {
@@ -620,6 +655,7 @@ class CameraRollFragment : Fragment() {
             if (startWithThisMedia.isNotEmpty()) {
                 camerarollModel.setStartPosition(it.indexOfFirst { media -> media.id == startWithThisMedia })
                 startWithThisMedia = ""
+                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             }
 
             // Populate list and scroll to correct position

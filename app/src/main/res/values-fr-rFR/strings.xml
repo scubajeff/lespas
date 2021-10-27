@@ -146,7 +146,7 @@
     <string name="prefer_latest">Récent</string>
     <string name="prefer_random">Au hasard (solution de rechange à tout ce qui précède)</string>
     <string name="http_toggle_helper_text">Touchez le préfixe pour activer le HTTP non sécurisé.</string>
-    <string name="cameraroll_as_album_title">Afficher le rouleau de Caméra comme un album</string>
+    <string name="cameraroll_as_album_title">Afficher le rouleau de la Caméra comme un album</string>
     <string name="relogin_title">Re-connexion</string>
     <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
@@ -166,4 +166,5 @@
     <string name="action_reuse">Vers l\'album…</string>
     <string name="striping_exif">Suppression des données EXIF…</string>
     <string name="preparing_shares">Préparation des partages de fichiers…</string>
+    <string name="show_list_first">Afficher la liste des médias au démarrage du rouleau de la caméra</string>
 </resources>

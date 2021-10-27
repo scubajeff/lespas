@@ -166,4 +166,5 @@
     <string name="action_reuse">Al álbum...</string>
     <string name="preparing_shares">Preparación de archivos compartidos…</string>
     <string name="striping_exif">Eliminación de datos EXIF…</string>
+    <string name="show_list_first">Mostrar la lista de medios cuando se inicia el rollo de la cámara</string>
 </resources>

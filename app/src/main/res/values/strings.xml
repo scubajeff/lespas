@@ -88,6 +88,8 @@
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
     <string name="auto_replay_title">Replay video automatically</string>
+    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
+    <string name="show_list_first">Display media list when camera roll start</string>
     <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="cameraroll_as_album_title">Show camera roll as an album</string>
     <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
