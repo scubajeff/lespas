@@ -1,0 +1,4 @@
+* Se ha corregido el error de subir un archivo grande en trozos.
+* Se ha añadido la función de clasificación de la lista de álbumes
+* Se ha añadido la opción de mostrar la lista de medios al entrar en el rollo de la cámara
+* Otras mejoras y errores corregidos

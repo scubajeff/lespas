@@ -1,0 +1,4 @@
+* Fehler beim Hochladen von großen Dateien behoben
+* Sortierfunktion für Albenliste hinzugefügt
+* Einstellungsoption zum Anzeigen der Medienliste beim Aufrufen der Kamerarolle hinzugefügt
+* Weitere Verbesserungen und Fehler behoben

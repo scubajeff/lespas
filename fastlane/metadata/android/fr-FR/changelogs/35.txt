@@ -1,0 +1,4 @@
+* Correction d'un bogue lié au téléchargement d'un gros fichier en morceaux.
+* Ajout d'une fonction de tri de la liste des albums
+* Ajout d'une option de réglage pour afficher la liste des médias lors de l'entrée dans la liste des photos.
+* Autres améliorations et bogues corrigés

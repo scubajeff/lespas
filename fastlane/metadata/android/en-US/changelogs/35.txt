@@ -1,0 +1,4 @@
+* Fixed bug of uploading chunked large file
+* Added album list sorting feature
+* Added setting option to show media list when entering camera roll
+* Other improvements and bugs fixed

@@ -1,3 +1,8 @@
+## Version 2.3.9
+* Fixed bug of uploading chunked large file (bugs introduced in version 2.3.7)
+* Added album list sorting feature
+* Added setting option to show media list when entering camera roll
+
 ## Version 2.3.8
 * Fixed bug of failing to remove photos in camera roll after moving them to album when runs on Android 11 or above
 * Show a waiting sign during long process of striping EXIF info
