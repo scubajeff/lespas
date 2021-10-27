@@ -23,9 +23,15 @@
             app:singleLineTitle="false"
             app:defaultValue="true" />
 
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:title="@string/item_camera_roll"
+        app:icon="@drawable/ic_baseline_camera_roll_setting_24">
+
         <SwitchPreferenceCompat
-            app:key="@string/roll_list_first_perf_key"
-            app:title="@string/show_list_first"
+            app:key="@string/gallery_launcher_pref_key"
+            app:title="@string/gallery_launcher_title"
             app:singleLineTitle="false"
             app:defaultValue="false" />
 
@@ -36,8 +42,8 @@
             app:defaultValue="true" />
 
         <SwitchPreferenceCompat
-            app:key="@string/gallery_launcher_pref_key"
-            app:title="@string/gallery_launcher_title"
+            app:key="@string/roll_list_first_perf_key"
+            app:title="@string/show_list_first"
             app:singleLineTitle="false"
             app:defaultValue="false" />
 
