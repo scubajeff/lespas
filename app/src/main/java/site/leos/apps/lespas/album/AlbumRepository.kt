@@ -10,7 +10,7 @@ class AlbumRepository(application: Application){
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
     fun getThisAlbum(albumId: String): List<Album> = albumDao.getThisAlbum(albumId)
-    fun getAlbumByName(albumName: String): Album = albumDao.getAlbumByName(albumName)
+    fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
     suspend fun insert(album: Album){ albumDao.insert(album) }
     fun upsertSync(album: Album) { albumDao.upsertSync(album) }
     suspend fun upsert(album: Album) { albumDao.upsert(album) }
@@ -22,7 +22,7 @@ class AlbumRepository(application: Application){
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
     suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
-    fun getAllAlbumIdAndCover(): List<IDandCover> = albumDao.getAllIdAndCover()
+    fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}

@@ -50,6 +50,7 @@ data class AlbumWithPhotos(
 @Parcelize
 data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int): Parcelable
 data class IDandCover(val id: String, val cover: String)
+data class IDandETag(val id: String, val eTag: String)
 data class IDandName(val id: String, val name: String)
 data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
@@ -70,10 +71,10 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract suspend fun getAlbumById(albumId: String): Album
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name = :albumName")
-    abstract fun getAlbumByName(albumName: String): Album
+    abstract fun getAlbumByName(albumName: String): Album?
 
-    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} ORDER BY id ASC")
-    abstract fun getAllIdAndCover(): List<IDandCover>
+    @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
+    abstract fun getAllIdAndETag(): List<IDandETag>
 
     @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)

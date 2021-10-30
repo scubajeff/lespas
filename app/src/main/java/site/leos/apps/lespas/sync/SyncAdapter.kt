@@ -182,7 +182,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                                 // Fix album cover id if this photo is the cover
                                 albumRepository.getAlbumByName(action.folderName).also { album ->
-                                    if (album.cover == action.fileId) {
+                                    if (album?.cover == action.fileId) {
                                         // Taking care the cover
                                         // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
                                         albumRepository.fixCoverId(album.id, newId)
@@ -205,6 +205,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 */
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                     webDav.createFolder("$resourceRoot/${Uri.encode(action.folderName)}").apply {
+                        // Recreating the existing folder will return empty string
                         if (this.isNotEmpty()) this.substring(0, 8).toInt().toString().also { fileId ->
                             // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
                             // mind that we purposely leave the eTag column empty
@@ -216,7 +217,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
-                        } else throw IOException()
+                        }
                     }
                 }
                 Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {}
@@ -331,10 +332,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
         }
 
-        // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with cover column empty
-        val localAlbumIdAndCover = albumRepository.getAllAlbumIdAndCover()
-        for (local in localAlbumIdAndCover) {
-            if (!remoteAlbumIds.contains(local.id) && local.cover.isNotEmpty()) {
+        // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with eTag column empty
+        for (local in albumRepository.getAllAlbumIdAndETag()) {
+            if (!remoteAlbumIds.contains(local.id) && local.eTag.isNotEmpty()) {
                 albumRepository.deleteByIdSync(local.id)
                 val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(local.id)
                 photoRepository.deletePhotosByAlbum(local.id)
@@ -552,11 +552,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 albumRepository.upsertSync(changedAlbum)
 
-                // Delete those photos not exist on server, happens when user delete photos on the server
+                // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server
                 var deletion = false
                 //localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                 for (localPhoto in localPhotoETags) {
-                    if (!remotePhotoIds.contains(localPhoto.key)) {
+                    if (localPhoto.value.isNotEmpty() && !remotePhotoIds.contains(localPhoto.key)) {
                         deletion = true
                         photoRepository.deleteByIdSync(localPhoto.key)
                         try {
@@ -744,7 +744,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateContentMeta(id: String?, albumName: String) {
-        val albumId = id ?: albumRepository.getAlbumByName(albumName).id
+        // TODO simply return if album by albumName doesn't exist
+        val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
         var content = "{\"lespas\":{\"photos\":["
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
             content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
@@ -752,75 +753,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         content = content.dropLast(1) + "]}}"
         webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}-content.json", NCShareViewModel.MIME_TYPE_JSON)
     }
-
-/*
-    private fun getMediaMetaFromUri(uri: String): NCShareViewModel.RemotePhoto? = getMediaMetaFromUri(Uri.parse(uri))
-    private fun getMediaMetaFromUri(uri: Uri): NCShareViewModel.RemotePhoto? {
-        val result = NCShareViewModel.RemotePhoto()
-        val cr = application.contentResolver
-
-        try {
-            // Get file name, last modified timestamp and MIME type from content resolver query
-            cr.query(uri, null, null, null, null, null)?.use { cursor ->
-                cursor.moveToFirst()
-                result.path = cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-                result.timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_LAST_MODIFIED)) / 1000
-                result.mimeType = cursor.getString(cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)).lowercase()
-            }
-
-            when {
-                result.mimeType.startsWith("video/", true) -> {
-                    with(MediaMetadataRetriever()) {
-                        setDataSource(application, uri)
-                        Tools.getVideoFileDate(this, result.path).apply { if (this != LocalDateTime.MIN) result.timestamp = this.toEpochSecond(OffsetDateTime.now().offset) }
-
-                        // Get video file dimension
-                        extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let {
-                            if (it == "90" || it == "270") {
-                                // Swap width and height if rotate 90 or 270 degree
-                                result.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                                result.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                            } else {
-                                result.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                                result.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
-                            }
-                        }
-                    }
-                }
-                result.mimeType.startsWith("image/", true) -> {
-                    val exif: ExifInterface
-                    cr.openInputStream(uri)?.use {
-                        exif = ExifInterface(it)
-                        Tools.getImageFileDate(exif, result.path)?.let { date -> SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.getDefault()).apply{ timeZone = TimeZone.getDefault() }.parse(date)?.run { result.timestamp = this.time / 1000 }}
-
-                        result.coverBaseLine = exif.rotationDegrees
-                    }
-
-                    // Detect animated GIF/WebP
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        when (result.mimeType) {
-                            "image/gif" -> if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) result.mimeType = "image/agif"
-                            "image/webp" -> if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr, uri)) is AnimatedImageDrawable) result.mimeType = "image/awebp"
-                        }
-                    }
-
-                    BitmapFactory.Options().apply {
-                        inJustDecodeBounds = true
-                        cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, this) }
-                        result.width = if (outWidth != -1) outWidth else return null
-                        result.height = if (outHeight != -1) outHeight else return null
-                    }
-                }
-                else -> return null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        }
-
-        return result
-    }
-*/
 
     data class Meta (
         val cover: String,
