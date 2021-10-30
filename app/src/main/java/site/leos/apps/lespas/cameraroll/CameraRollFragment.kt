@@ -818,7 +818,7 @@ class CameraRollFragment : Fragment() {
 
     @Suppress("UNCHECKED_CAST")
     class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
     }
 
     class CameraRollViewModel(application: Application, fileUri: String?): AndroidViewModel(application) {

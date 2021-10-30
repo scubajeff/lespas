@@ -162,7 +162,7 @@ class SearchResultFragment : Fragment() {
 
     @Suppress("UNCHECKED_CAST")
     class AdhocAdhocSearchViewModelFactory(private val application: Application, private val categoryId: String, private val searchCollection: Boolean): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchCollection) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchCollection) as T
     }
 
     class AdhocSearchViewModel(private val app: Application, private val categoryId: String, private val searchInAlbums: Boolean): AndroidViewModel(app) {

@@ -138,12 +138,12 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 /*
     // TODO publish status is not persistent locally
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val isPublished: Boolean): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album, isPublished) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album, isPublished) as T
     }
 */
     @Suppress("UNCHECKED_CAST")
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel?> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
     }
 
     // TODO publish status is not persistent locally
