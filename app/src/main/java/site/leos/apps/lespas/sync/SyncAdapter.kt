@@ -423,9 +423,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Syncing meta
+                // Syncing meta, mostly about album cover
                 if (changedAlbum.cover.isEmpty()) {
-                    // If new album is empty, process next one
+                    // New album created on server, cover not assigned yet
+
+                    // Safety check, if this new album is empty, process next album
                     if (changedPhotos.size <= 0) continue
 
                     // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
@@ -438,20 +440,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     // Find the cover in photo lists
-                    val coverPhoto = if (changedAlbum.cover.isNotEmpty()) {
+                    var coverPhoto: Photo? = null
+                    if (changedAlbum.cover.isNotEmpty()) {
                         // meta file is ready
-                        changedPhotos.find { it.id == changedAlbum.cover }!!
-                    } else {
-                        // no meta file, should be a album created on server
+                        coverPhoto = changedPhotos.find { it.id == changedAlbum.cover }
+                    }
+                    coverPhoto ?: run {
+                        // no meta file, should be a album created on server. Or the above element find failed
                         // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder API
                         // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder drawable though
                         changedPhotos.find { it.mimeType == "image/jpeg" || it.mimeType == "image/png" } ?: changedPhotos[0]
                     }
 
                     // Move cover photo to the first position of changedPhotos list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
-                    changedPhotos.remove(coverPhoto)
-                    changedPhotos.add(0, coverPhoto)
+                    coverPhoto?.let {
+                        changedPhotos.remove(it)
+                        changedPhotos.add(0, it)
+                    }
                 } else {
+                    // A new album created by Les Pas app running on other device, cover has been assigned
+
                     // Try to sync meta changes from other devices if this album existed on local device
                     remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->
                         //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
