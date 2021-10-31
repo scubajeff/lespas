@@ -57,7 +57,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
 
             prepare(account)
-            syncLocalChanges()
+            while(actionRepository.getAllPendingActions().isNotEmpty()) syncLocalChanges()
             syncRemoteChanges()
             backupCameraRoll()
 
@@ -141,11 +141,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
-        if (!webDav.isExisted(resourceRoot)) {
-            webDav.createFolder(resourceRoot)
-            // TODO is return really necessary?
-            return
-        }
+        if (!webDav.isExisted(resourceRoot)) webDav.createFolder(resourceRoot)
     }
 
     private fun syncLocalChanges() {
