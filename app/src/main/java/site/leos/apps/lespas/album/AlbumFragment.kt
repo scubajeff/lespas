@@ -419,7 +419,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         val sortedAlbums = mutableListOf<Album>()
 
         albums.addAll(original ?: mAdapter.currentList)
-        if (showCameraRoll && albums[0].id == FAKE_ALBUM_ID) albums.removeAt(0)
+        if (showCameraRoll && albums.isNotEmpty() && albums[0].id == FAKE_ALBUM_ID) albums.removeAt(0)
         sortedAlbums.addAll(when(currentSortOrder) {
             Album.BY_DATE_TAKEN_ASC-> albums.sortedWith(compareBy { it.endDate })
             Album.BY_DATE_TAKEN_DESC-> albums.sortedWith(compareByDescending { it.endDate })
