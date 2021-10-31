@@ -556,6 +556,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 albumRepository.upsertSync(changedAlbum)
 
+                // Create meta file if needed
+                with(changedAlbum) {
+                    // If album meta file is not exist, means it's a new album created on server side
+                    // We need to create meta file immediately, the first photo in the changedPhotos list should be the cover photo
+                    if (!File(localRootFolder, "${id}.json").exists()) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), changedPhotos[0].name, sortOrder)
+                }
+
                 // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server
                 var deletion = false
                 //localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
