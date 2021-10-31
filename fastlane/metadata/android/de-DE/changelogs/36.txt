@@ -1,0 +1,5 @@
+* Behobener http-Server-Zugriff
+* Behoben: Absturz, wenn kein lokales Album vorhanden ist
+* Behoben, dass der Synchronisierungsprozess hängen bleibt, wenn mehr als ein Album auf einmal erstellt wird
+* Versehentliches Löschen eines neu erstellten Albums/Fotos behoben
+* Weitere Verbesserungen und behobene Bugs

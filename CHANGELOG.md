@@ -1,3 +1,9 @@
+## Version 2.3.10
+* Fixed http server access
+* Fixed crash when there are no local album exist
+* Fixed sync process hang when creating more than one album at one time
+* Fixed accidental deletion of newly created album/photo
+
 ## Version 2.3.9
 * Fixed bug of uploading chunked large file (bugs introduced in version 2.3.7)
 * Added album list sorting feature

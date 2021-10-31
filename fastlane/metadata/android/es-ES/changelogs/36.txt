@@ -1,0 +1,5 @@
+* Corregido el acceso al servidor http
+* Corregido el fallo cuando no existe ningún álbum local
+* Corregido el bloqueo del proceso de sincronización cuando se crea más de un álbum a la vez
+* Corregido el borrado accidental de un álbum/foto recién creado
+* Otras mejoras y errores corregidos

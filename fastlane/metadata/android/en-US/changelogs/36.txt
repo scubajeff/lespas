@@ -1,0 +1,5 @@
+* Fixed http server access
+* Fixed crash when there are no local album exist
+* Fixed sync process hang when creating more than one album at one time
+* Fixed accidental deletion of newly created album/photo
+* Other improvements and bugs fixed

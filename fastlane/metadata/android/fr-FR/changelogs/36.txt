@@ -1,0 +1,5 @@
+* Correction de l'accès au serveur http
+* Correction du crash lorsqu'il n'y a pas d'album local existant
+* Correction du blocage du processus de synchronisation lors de la création de plus d'un album à la fois.
+* Correction de la suppression accidentelle d'un album/photo nouvellement créé.
+* Autres améliorations et bogues corrigés
