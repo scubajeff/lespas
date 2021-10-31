@@ -386,27 +386,37 @@ class NCLoginFragment: Fragment() {
         return withContext(Dispatchers.IO) {
             try {
                 var response = 0
-                (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpsURLConnection).apply {
-                    if (acceptSelfSign) setHostnameVerifier { _, _ -> true }
+                if (useHttps) {
+                    (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpsURLConnection).apply {
+                        if (acceptSelfSign) setHostnameVerifier { _, _ -> true }
+                        setRequestProperty(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
+                        connectTimeout = 2000
+                        readTimeout = 5000
+                        instanceFollowRedirects = false
+                        response = responseCode
+                        /*
+                        if (response == HttpURLConnection.HTTP_OK) {
+                            BufferedReader(InputStreamReader(this.inputStream)).apply {
+                                val result = StringBuffer()
+                                var line = readLine()
+                                while (line != null) {
+                                    result.append(line)
+                                    line = readLine()
+                                }
+                                // server should return this JSON object
+                                JSONObject(result.toString()).get("ocs")
+                            }
+                        }
+                        */
+                        disconnect()
+                    }
+                }
+                else (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpURLConnection).apply {
                     setRequestProperty(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
                     connectTimeout = 2000
                     readTimeout = 5000
                     instanceFollowRedirects = false
                     response = responseCode
-                    /*
-                    if (response == HttpURLConnection.HTTP_OK) {
-                        BufferedReader(InputStreamReader(this.inputStream)).apply {
-                            val result = StringBuffer()
-                            var line = readLine()
-                            while (line != null) {
-                                result.append(line)
-                                line = readLine()
-                            }
-                            // server should return this JSON object
-                            JSONObject(result.toString()).get("ocs")
-                        }
-                    }
-                    */
                     disconnect()
                 }
                 response
