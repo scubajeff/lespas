@@ -77,7 +77,7 @@
     <string name="storage_access_permission_rationale">Snapseed將修圖結果保存在名為\"Snapseed\"的目錄中，請授予存儲訪問權限以讀取這些檔案。</string>
     <string name="proceed_request">去授權</string>
     <string name="snapseed_integration_summary">注意：請設定Snapseed使用JPEG格式輸出。</string>
-    <string name="item_sortby">照片排序</string>
+    <string name="item_sortby">排序</string>
     <string name="item_dateasc">按時間順序</string>
     <string name="item_datedesc">按時間倒序</string>
     <string name="item_nameasc">按名稱順序</string>
