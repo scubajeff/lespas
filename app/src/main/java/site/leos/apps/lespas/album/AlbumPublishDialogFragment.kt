@@ -40,12 +40,12 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
     private val publishModel: NCShareViewModel by activityViewModels()
     private var shareeJob: Job? = null
     private lateinit var currentShare: NCShareViewModel.ShareByMe
-    private var selectedShaees = arrayListOf<NCShareViewModel.Sharee>()
+    private var selectedSharees = arrayListOf<NCShareViewModel.Sharee>()
     private var allSharees: List<NCShareViewModel.Sharee>? = null
 
     private lateinit var autoCompleteTextView: AppCompatAutoCompleteTextView
     private lateinit var recipientChipGroup: ChipGroup
-    private lateinit var publicatonTypeToggleGroup: MaterialButtonToggleGroup
+    private lateinit var publicationTypeToggleGroup: MaterialButtonToggleGroup
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +56,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         super.onViewCreated(view, savedInstanceState)
 
         recipientChipGroup = view.findViewById(R.id.recipient_chips)
-        publicatonTypeToggleGroup = view.findViewById(R.id.publication_type)
+        publicationTypeToggleGroup = view.findViewById(R.id.publication_type)
         view.findViewById<TextInputLayout>(R.id.recipient_textinputlayout).requestFocus()
         autoCompleteTextView = view.findViewById<AppCompatAutoCompleteTextView>(R.id.recipient_textinputedittext).apply {
             setOnEditorActionListener { v, actionId, event ->
@@ -73,7 +73,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener { dismiss() }
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener {
             val currentRecipients = currentShare.with
-            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedShaees) add(NCShareViewModel.Recipient("", if (publicatonTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
+            val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedSharees) add(NCShareViewModel.Recipient("", if (publicationTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
             val permissionUnChanged = if (currentShare.with.isNotEmpty() && newRecipients.isNotEmpty()) currentShare.with[0].permission == newRecipients[0].permission else false
             val removeRecipients = currentRecipients.toMutableList().apply {
                 if (permissionUnChanged) {
@@ -99,9 +99,9 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         }
 
         // Get selected recipients from calling argument or saved instance state
-        (savedInstanceState?.getParcelableArrayList<NCShareViewModel.Sharee>(SELECTED_RECIPIENTS)
+        (savedInstanceState?.getParcelableArrayList(SELECTED_RECIPIENTS)
             ?: run {
-                if (currentShare.with.isNotEmpty()) publicatonTypeToggleGroup.check( if (NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission) R.id.joint_album else R.id.solo_album)
+                if (currentShare.with.isNotEmpty()) publicationTypeToggleGroup.check( if (NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission) R.id.joint_album else R.id.solo_album)
                 arrayListOf<NCShareViewModel.Sharee>().apply {
                     for(recipient in currentShare.with) add(recipient.sharee)
                 }
@@ -125,7 +125,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putParcelableArrayList(SELECTED_RECIPIENTS, selectedShaees)
+        outState.putParcelableArrayList(SELECTED_RECIPIENTS, selectedSharees)
     }
 
     override fun onStop() {
@@ -139,7 +139,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
     private fun addRecipientChip(sharee: NCShareViewModel.Sharee?, newName: String?) {
         val recipient = sharee ?: run { NCShareViewModel.Sharee(newName!!, newName, NCShareViewModel.SHARE_TYPE_USER) }
 
-        selectedShaees.indexOfFirst { it.name == recipient.name && it.type == recipient.type }.let { index->
+        selectedSharees.indexOfFirst { it.name == recipient.name && it.type == recipient.type }.let { index->
             if (index == -1) {
                 // selected sharee not in selected recipients group yet
                 recipientChipGroup.addView(
@@ -156,7 +156,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                                         override fun onAnimationStart(animation: Animation?) {}
                                         override fun onAnimationEnd(animation: Animation?) {
                                             with(chipView as Chip) {
-                                                selectedShaees.find { i-> i.label == text }?.let { s-> selectedShaees.remove(s) }
+                                                selectedSharees.find { i-> i.label == text }?.let { s-> selectedSharees.remove(s) }
                                                 recipientChipGroup.removeView(this)
                                             }
                                         }
@@ -165,7 +165,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                         }
                     }
                 )
-                selectedShaees.add(recipient)
+                selectedSharees.add(recipient)
             } else {
                 // Flash it's chip if sharee is already selected
                 recipientChipGroup.getChildAt(index).startAnimation(AlphaAnimation(1f, 0f).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() })
