@@ -24,7 +24,7 @@
         android:elevation="1dp"
         tools:ignore="ContentDescription" />
 
-    <com.google.android.exoplayer2.ui.PlayerView
+    <androidx.media3.ui.PlayerView
         android:id="@+id/player_view"
         android:layout_width="0dp"
         android:layout_height="0dp"

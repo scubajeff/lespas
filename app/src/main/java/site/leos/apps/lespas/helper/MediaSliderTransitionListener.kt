@@ -1,11 +1,12 @@
 package site.leos.apps.lespas.helper
 
+import android.annotation.SuppressLint
 import android.view.View
 import android.widget.ImageView
+import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.exoplayer2.ui.PlayerView
 import site.leos.apps.lespas.R
 
 class MediaSliderTransitionListener(private val slider: ViewPager2): Transition.TransitionListener {
@@ -16,6 +17,7 @@ class MediaSliderTransitionListener(private val slider: ViewPager2): Transition.
                 // media imageview in exoplayer item view is always in invisible state
                 if (mediaView.visibility != View.VISIBLE) {
                     isVideo = true
+                    @SuppressLint("UnsafeOptInUsageError")
                     findViewById<PlayerView>(R.id.player_view)?.visibility = View.INVISIBLE
                 }
                 else {

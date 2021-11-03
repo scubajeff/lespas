@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.helper
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -10,22 +11,21 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.datasource.DefaultDataSource.Factory
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import com.github.chrisbanes.photoview.PhotoView
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.database.ExoDatabaseProvider
-import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSource
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.ui.PlayerView
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource
-import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor
-import com.google.android.exoplayer2.upstream.cache.SimpleCache
 import kotlinx.parcelize.Parcelize
 import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
@@ -33,9 +33,10 @@ import java.io.File
 import java.time.LocalDateTime
 import java.util.*
 
+@SuppressLint("UnsafeOptInUsageError")
 abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
-    private lateinit var exoPlayer: SimpleExoPlayer
+    private lateinit var exoPlayer: ExoPlayer
     private var currentVolume = 0f
     private var oldVideoViewHolder: VideoViewHolder? = null
     private var savedPlayerState = PlayerState()
@@ -256,11 +257,11 @@ abstract class MediaSliderAdapter<T>(diffCallback: ItemCallback<T>, private val 
 
     fun initializePlayer(ctx: Context, callFactory: OkHttpClient?) {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        val builder = SimpleExoPlayer.Builder(ctx)
+        val builder = ExoPlayer.Builder(ctx)
         //callFactory?.let { builder.setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))) }
         callFactory?.let {
-            cache = SimpleCache(File(ctx.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), ExoDatabaseProvider(ctx))
-            builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSourceFactory(ctx, OkHttpDataSource.Factory(callFactory)))))
+            cache = SimpleCache(File(ctx.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(ctx))
+            builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(Factory(ctx, OkHttpDataSource.Factory(callFactory)))))
         }
         exoPlayer = builder.build()
 
