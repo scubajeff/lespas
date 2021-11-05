@@ -97,6 +97,7 @@ dependencies {
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     implementation "androidx.media3:media3-ui:$media3_version"
+    //implementation "androidx.media3:media3-session:$media3_version"
 
     // Chris Banes PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'

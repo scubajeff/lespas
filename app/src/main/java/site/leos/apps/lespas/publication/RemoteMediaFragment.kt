@@ -25,22 +25,21 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.MediaSliderAdapter
-import site.leos.apps.lespas.helper.MediaSliderTransitionListener
-import site.leos.apps.lespas.helper.MetaDataDialogFragment
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import kotlin.math.atan2
 
-class RemoteMediaFragment: Fragment() {
+class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var window: Window
     private lateinit var controlsContainer: LinearLayoutCompat
     private lateinit var slider: ViewPager2
@@ -49,6 +48,7 @@ class RemoteMediaFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, shareModel.getCallFactory()) }
 
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
@@ -69,6 +69,7 @@ class RemoteMediaFragment: Fragment() {
 
         pAdapter = RemoteMediaAdapter(
             shareModel.getResourceRoot(),
+            playerViewModel,
             { state-> toggleSystemUI(state) },
             { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
@@ -90,11 +91,6 @@ class RemoteMediaFragment: Fragment() {
                 if (names?.isNotEmpty() == true) slider.getChildAt(0).findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
             }
         })
-
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(PLAYER_STATE)?.apply {
-            pAdapter.setPlayerState(this)
-            pAdapter.setAutoStart(true)
-        }
 
         @Suppress("DEPRECATION")
         requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
@@ -127,6 +123,7 @@ class RemoteMediaFragment: Fragment() {
         })
 
         this.window = requireActivity().window
+        playerViewModel.setWindow(this.window)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -257,48 +254,24 @@ class RemoteMediaFragment: Fragment() {
         })
     }
 
-    override fun onStart() {
-        super.onStart()
-        pAdapter.initializePlayer(requireContext(), shareModel.getCallFactory())
-    }
-
     override fun onResume() {
         super.onResume()
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
         // Get into immersive mode
         Tools.goImmersive(window)
-
-        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
-                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
-                    pAdapter.setAutoStart(true)
-                    resume()
-                }
-            }
-        }
     }
 
     override fun onPause() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
-        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
-        }
 
         viewReCreated = false
 
         super.onPause()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putParcelable(PLAYER_STATE, pAdapter.getPlayerState())
-    }
-
-    override fun onStop() {
-        pAdapter.cleanUp()
-        super.onStop()
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
     }
 
     @Suppress("DEPRECATION")
@@ -399,8 +372,8 @@ class RemoteMediaFragment: Fragment() {
         }
     }
 
-    class RemoteMediaAdapter(private val basePath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, val cancelLoader: (View) -> Unit
-    ): MediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
+    class RemoteMediaAdapter(private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
@@ -415,7 +388,6 @@ class RemoteMediaFragment: Fragment() {
         private const val KEY_REMOTE_MEDIA = "REMOTE_MEDIA"
         private const val KEY_SCROLL_TO = "SCROLL_TO"
         private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
-        private const val PLAYER_STATE = "PLAYER_STATE"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         private const val TAG_DESTINATION_DIALOG = "REMOTEMEDIA_DESTINATION_DIALOG"

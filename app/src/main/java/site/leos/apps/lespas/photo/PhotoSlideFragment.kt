@@ -56,7 +56,7 @@ import java.io.File
 import java.util.*
 import kotlin.math.atan2
 
-class PhotoSlideFragment : Fragment() {
+class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
 
     private lateinit var window: Window
@@ -77,6 +77,7 @@ class PhotoSlideFragment : Fragment() {
     private val actionModel: ActionViewModel by viewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
 
     private var autoRotate = false
     private var stripExif = "1"
@@ -94,6 +95,7 @@ class PhotoSlideFragment : Fragment() {
 
         pAdapter = PhotoSlideAdapter(
             Tools.getLocalRoot(requireContext()),
+            playerViewModel,
             { state-> toggleSystemUI(state) },
             { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelLoading(view as ImageView) }
@@ -110,11 +112,6 @@ class PhotoSlideFragment : Fragment() {
         with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
             autoRotate = getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value)) ?: "0"
-        }
-
-        savedInstanceState?.getParcelable<MediaSliderAdapter.PlayerState>(KEY_PLAYER_STATE)?.apply {
-            pAdapter.setPlayerState(this)
-            pAdapter.setAutoStart(true)
         }
 
         // Broadcast receiver listening on share destination
@@ -168,6 +165,7 @@ class PhotoSlideFragment : Fragment() {
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
+        playerViewModel.setWindow(this.window)
         @Suppress("DEPRECATION")
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
 /*
@@ -403,11 +401,6 @@ class PhotoSlideFragment : Fragment() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        pAdapter.initializePlayer(requireContext(), null)
-    }
-
     override fun onResume() {
         super.onResume()
 
@@ -416,36 +409,34 @@ class PhotoSlideFragment : Fragment() {
         // Get into immersive mode
         Tools.goImmersive(window)
 
+/*
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem)?.apply {
             if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
-                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
+                (this as SeamlessMediaSliderAdapter<*>.VideoViewHolder).apply {
                     pAdapter.setAutoStart(true)
                     resume()
                 }
             }
         }
+*/
     }
 
     override fun onPause() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
+/*
         (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
+            if (this is SeamlessMediaSliderAdapter<*>.VideoViewHolder) this.pause()
         }
+*/
 
         viewReCreated = false
 
         super.onPause()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putParcelable(KEY_PLAYER_STATE, pAdapter.getPlayerState())
-    }
-
-    override fun onStop() {
-        pAdapter.cleanUp()
-        super.onStop()
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
     }
 
     override fun onDestroyView() {
@@ -615,8 +606,10 @@ class PhotoSlideFragment : Fragment() {
 
     private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album.name) }
 
-    class PhotoSlideAdapter(private val rootPath: String, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
-    ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
+    class PhotoSlideAdapter(
+        private val rootPath: String, playerViewModel: VideoPlayerViewModel,
+        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<Photo>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
             if (!(File(fileName).exists())) fileName = "$rootPath/${name}"
@@ -670,8 +663,6 @@ class PhotoSlideFragment : Fragment() {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
-
-        private const val KEY_PLAYER_STATE = "KEY_PLAYER_STATE"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"

@@ -162,18 +162,16 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-/*
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         supportFragmentManager.fragments.apply {
-            if (this.isNotEmpty()) this[this.size - 1].let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
+            if (this.isNotEmpty()) this.last().let { if (it is OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
         }
     }
 
     interface OnWindowFocusChangedListener {
         fun onWindowFocusChanged(hasFocus: Boolean)
     }
-*/
 
     fun getToolbarViewContent(): Drawable {
         return BitmapDrawable(resources, toolbar.drawToBitmap(Bitmap.Config.ARGB_8888))

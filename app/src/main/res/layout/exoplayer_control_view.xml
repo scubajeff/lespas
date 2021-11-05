@@ -18,7 +18,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         android:padding="@dimen/small_padding"
         android:background="@android:color/transparent"
-        android:src="@drawable/ic_baseline_volume_on_24"
+        android:src="@drawable/ic_baseline_volume_24"
         tools:ignore="ContentDescription" />
 
     <ImageButton

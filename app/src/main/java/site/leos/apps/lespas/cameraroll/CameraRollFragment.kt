@@ -74,7 +74,7 @@ import java.time.format.TextStyle
 import java.util.*
 import kotlin.math.atan2
 
-class CameraRollFragment : Fragment() {
+class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
 
     private lateinit var mediaPager: RecyclerView
@@ -109,6 +109,7 @@ class CameraRollFragment : Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
@@ -127,6 +128,7 @@ class CameraRollFragment : Fragment() {
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
+            playerViewModel,
             { state->
                 // When in "Show media list at startup" mode, ignore the first hide bottom sheet call which fired by video auto play
                 if (ignoreHide && showListFirst) ignoreHide = false
@@ -138,7 +140,8 @@ class CameraRollFragment : Fragment() {
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
-                if (showListFirst) mediaPagerAdapter.setAutoStart(true)
+                // TODO test this
+                //if (showListFirst) mediaPagerAdapter.setAutoStart(true)
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
@@ -148,10 +151,6 @@ class CameraRollFragment : Fragment() {
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
         savedInstanceState?.let {
             startWithThisMedia = it.getString(KEY_SCROLL_TO) ?: ""
-            it.getParcelable<MediaSliderAdapter.PlayerState>(KEY_PLAYER_STATE)?.apply {
-                mediaPagerAdapter.setPlayerState(this)
-                mediaPagerAdapter.setAutoStart(true)
-            }
             lastSelection = it.getParcelableArrayList(KEY_LAST_SELECTION) ?: arrayListOf()
 
             // Don't ignore call to hide bottom sheet after activity recreated
@@ -255,6 +254,8 @@ class CameraRollFragment : Fragment() {
 
         //sideTouchAreaWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40f, resources.displayMetrics).roundToInt()
         quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
+
+        playerViewModel.setWindow(requireActivity().window)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -559,12 +560,6 @@ class CameraRollFragment : Fragment() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        mediaPagerAdapter.initializePlayer(requireContext(), null)
-        mediaPagerAdapter.setAutoStart(true)
-    }
-
     override fun onResume() {
         //Log.e(">>>>>", "onResume $videoStopPosition")
         super.onResume()
@@ -578,40 +573,23 @@ class CameraRollFragment : Fragment() {
                 navigationBarDividerColor = Color.BLACK
             }
         }
-
-        val pos = getCurrentVisibleItemPosition()
-        with(mediaPager.findViewHolderForAdapterPosition(pos)) {
-            if (!viewReCreated && mediaPagerAdapter.currentList[pos].mimeType.startsWith("video")) {
-                (this as MediaSliderAdapter<*>.VideoViewHolder).apply {
-                    mediaPagerAdapter.setAutoStart(true)
-                    resume()
-                }
-            }
-        }
     }
 
     override fun onPause() {
         //Log.e(">>>>>", "onPause")
-        with(mediaPager.findViewHolderForAdapterPosition(getCurrentVisibleItemPosition())) {
-            if (this is MediaSliderAdapter<*>.VideoViewHolder) this.pause()
-        }
-
         viewReCreated = false
 
         super.onPause()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putParcelable(KEY_PLAYER_STATE, mediaPagerAdapter.getPlayerState())
-        outState.putString(KEY_SCROLL_TO, mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id)
-        outState.putParcelableArrayList(KEY_LAST_SELECTION, lastSelection)
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
     }
 
-    override fun onStop() {
-        mediaPagerAdapter.cleanUp()
-
-        super.onStop()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_SCROLL_TO, mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id)
+        outState.putParcelableArrayList(KEY_LAST_SELECTION, lastSelection)
     }
 
     override fun onDestroyView() {
@@ -623,8 +601,10 @@ class CameraRollFragment : Fragment() {
     override fun onDestroy() {
         (requireActivity() as AppCompatActivity).run {
             supportActionBar!!.show()
-            window.statusBarColor = savedStatusBarColor
-            window.navigationBarColor = savedNavigationBarColor
+            with(window) {
+                statusBarColor = savedStatusBarColor
+                navigationBarColor = savedNavigationBarColor
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.navigationBarDividerColor = savedNavigationBarDividerColor
         }
 
@@ -922,8 +902,8 @@ class CameraRollFragment : Fragment() {
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
     }
 
-    class MediaPagerAdapter(val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
-    ): MediaSliderAdapter<Photo>(PhotoDiffCallback(), clickListener, imageLoader, cancelLoader) {
+    class MediaPagerAdapter(playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<Photo>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
         }
@@ -1067,7 +1047,6 @@ class CameraRollFragment : Fragment() {
     companion object {
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
         private const val KEY_URI = "KEY_URI"
-        private const val KEY_PLAYER_STATE = "KEY_PLAYER_STATE"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
 
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
