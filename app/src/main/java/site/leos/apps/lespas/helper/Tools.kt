@@ -251,12 +251,11 @@ object Tools {
 
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+        val dateSelection = MediaStore.Files.FileColumns.DATE_ADDED
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             pathSelection,
             dateSelection,
-            MediaStore.Files.FileColumns.DATE_ADDED,
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.DISPLAY_NAME,
@@ -272,8 +271,7 @@ object Tools {
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
             //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-            val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
-            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+            val dateAddedColumn = cursor.getColumnIndexOrThrow(dateSelection)
             val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
             val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
             val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
@@ -283,18 +281,12 @@ object Tools {
             var externalUri: Uri
             var mimeType: String
             var date: Long
-            var reSort = false
 
             while (cursor.moveToNext()) {
                 if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
                 // Insert media
                 mimeType = cursor.getString(typeColumn)
-                date = cursor.getLong(dateColumn)
-                if (date == 0L) {
-                    // Sometimes dateTaken is not available from system, use dateAdded instead
-                    date = cursor.getLong(dateAddedColumn) * 1000
-                    reSort = true
-                }
+                date = cursor.getLong(dateAddedColumn)
                 externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) continue
                 medias.add(
@@ -303,7 +295,7 @@ object Tools {
                         ImageLoaderViewModel.FROM_CAMERA_ROLL,
                         cursor.getString(nameColumn) ?: "",
                         cursor.getString(sizeColumn),
-                        LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                        LocalDateTime.ofInstant(Instant.ofEpochSecond(date), defaultZone),
                         LocalDateTime.MIN,
                         cursor.getInt(widthColumn),
                         cursor.getInt(heightColumn),
@@ -312,13 +304,11 @@ object Tools {
                     )
                 )
             }
-
-            // Resort the list if dateAdded used
-            if (reSort) medias.sortWith(compareByDescending { it.dateTaken })
         }
 
         return medias
     }
+
     fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album? {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         var startDate = LocalDateTime.MIN
