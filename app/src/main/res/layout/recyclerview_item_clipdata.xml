@@ -3,8 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/media"
-    android:layout_width="64dp"
-    android:layout_height="64dp"
+    android:layout_width="@dimen/destination_dialog_clipdata_grid_size"
+    android:layout_height="@dimen/destination_dialog_clipdata_grid_size"
     android:layout_marginRight="1dp"
     android:scaleType="centerCrop"
     tools:src="@drawable/login_background_gradient_2" />

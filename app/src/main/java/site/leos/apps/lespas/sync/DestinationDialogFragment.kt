@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,8 @@ import android.webkit.MimeTypeMap
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.doOnNextLayout
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
@@ -37,6 +40,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.time.LocalDateTime
+import kotlin.math.roundToInt
 
 class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destination_dialog) {
     private lateinit var albumAdapter: DestinationAdapter
@@ -143,7 +147,18 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rootLayout = view.findViewById(R.id.background)
+        rootLayout = view.findViewById<ConstraintLayout>(R.id.background).apply {
+            // Set the dialog maximum height to 70% of screen/window height
+            doOnNextLayout {
+                ConstraintSet().run {
+                    val height = with(resources.displayMetrics) { (heightPixels.toFloat() * 0.75 - copyOrMoveToggleGroup.measuredHeight - clipDataRecyclerView.measuredHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 88f, this)).roundToInt() }
+                    clone(rootLayout)
+                    constrainHeight(R.id.destination_recyclerview, ConstraintSet.MATCH_CONSTRAINT)
+                    constrainMaxHeight(R.id.destination_recyclerview, height)
+                    applyTo(rootLayout)
+                }
+            }
+        }
         clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
         copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)

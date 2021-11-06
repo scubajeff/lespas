@@ -5,5 +5,4 @@
     <integer name="cameraroll_grid_span_count">12</integer>
     <integer name="search_category_grid_span_count">6</integer>
     <integer name="publication_detail_grid_span_count">4</integer>
-    <integer name="dialog_width_ratio">45</integer>
 </resources>
