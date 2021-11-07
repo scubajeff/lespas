@@ -115,7 +115,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             { album, imageView ->
                 if (album.id != FAKE_ALBUM_ID) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
-                    //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
                         .setReorderingAllowed(true)
                         .addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
