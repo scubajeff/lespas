@@ -34,4 +34,5 @@ class PhotoRepository(application: Application) {
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
     fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto> = photoDao.getMuzeiArtwork(exclusion, portraitMode)
+    fun getAlbumDuration(albumId: String): Pair<LocalDateTime, LocalDateTime> = with(photoDao.getAlbumDuration(albumId)) { Pair(this.first(), this.last()) }
 }
