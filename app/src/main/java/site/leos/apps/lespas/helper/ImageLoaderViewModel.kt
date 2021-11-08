@@ -240,7 +240,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 // Give error another chance
                 if (bitmap == null || bitmap == errorBitmap) {
                     if (type == TYPE_FULL && photo.albumId == FROM_CAMERA_ROLL && !Tools.isMediaPlayable(photo.mimeType)) {
-                        // Load thumbnail for external storage file
                         getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) {
                             view.setImageBitmap(it)
                             callBack?.onLoadComplete()
@@ -358,6 +357,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
 
-        const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
+        //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
+        const val FROM_CAMERA_ROLL = "0"
     }
 }

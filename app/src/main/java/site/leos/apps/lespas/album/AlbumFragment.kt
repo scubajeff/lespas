@@ -113,7 +113,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                if (album.id != FAKE_ALBUM_ID) {
+                if (album.id != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
@@ -419,7 +419,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         val sortedAlbums = mutableListOf<Album>()
 
         albums.addAll(original ?: mAdapter.currentList)
-        if (showCameraRoll && albums.isNotEmpty() && albums[0].id == FAKE_ALBUM_ID) albums.removeAt(0)
+        if (showCameraRoll && albums.isNotEmpty() && albums[0].id == ImageLoaderViewModel.FROM_CAMERA_ROLL) albums.removeAt(0)
         sortedAlbums.addAll(when(currentSortOrder) {
             Album.BY_DATE_TAKEN_ASC-> albums.sortedWith(compareBy { it.endDate })
             Album.BY_DATE_TAKEN_DESC-> albums.sortedWith(compareByDescending { it.endDate })
@@ -471,7 +471,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         val size = context.resources.getDimension(R.dimen.big_padding).toInt()
                         compoundDrawablePadding = 16
                         TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
-                        setCompoundDrawables(if (album.id == FAKE_ALBUM_ID) ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, size, size) } else null, null, null, null)
+                        setCompoundDrawables(if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, size, size) } else null, null, null, null)
                     }
                     findViewById<TextView>(R.id.duration).text = String.format(
                         "%s  -  %s",
@@ -515,7 +515,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 clear()
                 albums.forEach { album ->
                     if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
-                        album.id = FAKE_ALBUM_ID
                         // Pass cover orientation in property eTag
                         this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                     }
@@ -559,7 +558,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
-        private const val FAKE_ALBUM_ID = "0"
         private const val FAKE_ALBUM_ID_LONG = 0L
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
