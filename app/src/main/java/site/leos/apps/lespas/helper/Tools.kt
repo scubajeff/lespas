@@ -268,54 +268,56 @@ object Tools {
         val selection = if (imageOnly) "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE}) AND ($pathSelection LIKE '%${folder}%')"
             else "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%${folder}%')"
 
-        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-            val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
-            val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
-            val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
-            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-            val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
-            val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
-            val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
-            val defaultZone = ZoneId.systemDefault()
-            var externalUri: Uri
-            var mimeType: String
-            var date: Long
-            var reSort = false
+        try {
+            cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+                val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+                //val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+                val dateColumn = cursor.getColumnIndexOrThrow(dateSelection)
+                val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+                val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+                val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+                val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
+                val defaultZone = ZoneId.systemDefault()
+                var externalUri: Uri
+                var mimeType: String
+                var date: Long
+                var reSort = false
 
-            while (cursor.moveToNext()) {
-                if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
-                // Insert media
-                mimeType = cursor.getString(typeColumn)
-                date = cursor.getLong(dateColumn)
-                if (date == 0L) {
-                    // Sometimes dateTaken is not available from system, use dateAdded instead
-                    date = cursor.getLong(dateAddedColumn) * 1000
-                    reSort = true
-                }
-                externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) continue
-                medias.add(
-                    Photo(
-                        ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
-                        ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                        cursor.getString(nameColumn) ?: "",
-                        cursor.getString(sizeColumn),
-                        LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
-                        LocalDateTime.MIN,
-                        cursor.getInt(widthColumn),
-                        cursor.getInt(heightColumn),
-                        mimeType,
-                        cursor.getInt(orientationColumn)
+                while (cursor.moveToNext()) {
+                    if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
+                    // Insert media
+                    mimeType = cursor.getString(typeColumn)
+                    date = cursor.getLong(dateColumn)
+                    if (date == 0L) {
+                        // Sometimes dateTaken is not available from system, use dateAdded instead
+                        date = cursor.getLong(dateAddedColumn) * 1000
+                        reSort = true
+                    }
+                    externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) continue
+                    medias.add(
+                        Photo(
+                            ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
+                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                            cursor.getString(nameColumn) ?: "",
+                            cursor.getString(sizeColumn),
+                            LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                            LocalDateTime.MIN,
+                            cursor.getInt(widthColumn),
+                            cursor.getInt(heightColumn),
+                            mimeType,
+                            cursor.getInt(orientationColumn)
+                        )
                     )
-                )
-            }
+                }
 
-            // Resort the list if dateAdded used
-            if (reSort) medias.sortWith(compareByDescending { it.dateTaken })
-        }
+                // Resort the list if dateAdded used
+                if (reSort) medias.sortWith(compareByDescending { it.dateTaken })
+            }
+        } catch (e: Exception) {}
 
         return medias
     }
@@ -332,7 +334,7 @@ object Tools {
 
         @Suppress("DEPRECATION")
         val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-        val dateSelection = MediaStore.Files.FileColumns.DATE_ADDED
+        val dateSelection = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             dateSelection,
@@ -344,27 +346,29 @@ object Tools {
         )
         val selection ="(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%') AND (${MediaStore.Files.FileColumns.WIDTH}!=0)"
 
-        cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val dateColumn = cursor.getColumnIndex(dateSelection)
-                val defaultZone = ZoneId.systemDefault()
-                mimeType = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE))
-                val externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        try {
+            cr.query(externalStorageUri, projection, selection, null, "$dateSelection DESC")?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val dateColumn = cursor.getColumnIndex(dateSelection)
+                    val defaultZone = ZoneId.systemDefault()
+                    mimeType = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE))
+                    val externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 
-                // Get album's end date, cover
-                endDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
-                coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)).toLong()).toString()
-                coverWidth = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH))
-                coverHeight = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT))
-                orientation = cursor.getInt(cursor.getColumnIndexOrThrow("orientation"))
+                    // Get album's end date, cover
+                    endDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
+                    coverId = ContentUris.withAppendedId(externalUri, cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)).toLong()).toString()
+                    coverWidth = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH))
+                    coverHeight = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT))
+                    orientation = cursor.getInt(cursor.getColumnIndexOrThrow("orientation"))
 
-                // Get album's start date
-                if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(cursor.getLong(dateColumn)), defaultZone)
+                    // Get album's start date
+                    if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
 
-                // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
-                return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
-            } else return null
-        } ?: return null
+                    // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
+                    return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+                } else return null
+            } ?: return null
+        } catch (e: Exception) { return null }
     }
 
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
