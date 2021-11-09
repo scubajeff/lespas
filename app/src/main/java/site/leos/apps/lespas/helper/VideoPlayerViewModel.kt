@@ -63,7 +63,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         }
 
         // Mute the video sound during late night hours
-        with(LocalDateTime.now().hour) { if (this > 22 || this < 7) mute() }
+        with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
 
     fun addListener(listener: Player.Listener) {
