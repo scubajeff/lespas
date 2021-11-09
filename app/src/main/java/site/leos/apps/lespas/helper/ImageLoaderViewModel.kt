@@ -15,12 +15,13 @@ import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
 import android.widget.ImageView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.Tools.getBitmapFromVector
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
@@ -32,8 +33,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val rootPath = Tools.getLocalRoot(application)
     private val contentResolver = application.contentResolver
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / 8 * 1024 * 1024)
-    private val errorBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_broken_image_24)
-    private val placeholderBitmap = getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
+    private val errorBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_broken_image_24)!!.toBitmap()
+    private val placeholderBitmap =  ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
     private val jobMap = HashMap<Int, Job>()
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)

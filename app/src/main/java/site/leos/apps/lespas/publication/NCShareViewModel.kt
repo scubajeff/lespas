@@ -24,6 +24,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -81,8 +82,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val localCacheFolder = "${application.cacheDir}${lespasBase}"
     private val localFileFolder = Tools.getLocalRoot(application)
 
-    private val placeholderBitmap = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_placeholder_24)
-    private val videoThumbnail = Tools.getBitmapFromVector(application, R.drawable.ic_baseline_movie_open_play_24)
+    private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
+    private val videoThumbnail = ContextCompat.getDrawable(application, R.drawable.ic_baseline_movie_open_play_24)!!.toBitmap()
 
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()

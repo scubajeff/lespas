@@ -425,16 +425,6 @@ object Tools {
         }
     }
 
-    fun getBitmapFromVector(context: Context, vectorResource: Int): Bitmap {
-        val vectorDrawable = ContextCompat.getDrawable(context, vectorResource)!!
-        val bitmap = Bitmap.createBitmap(vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
-        Canvas(bitmap).run {
-            vectorDrawable.setBounds(0, 0, width, height)
-            vectorDrawable.draw(this)
-        }
-        return bitmap
-    }
-
     fun getLocalRoot(context: Context): String {
         return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}/${context.getString(R.string.lespas_base_folder_name)}"
     }
