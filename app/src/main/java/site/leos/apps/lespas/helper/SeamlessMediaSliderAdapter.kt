@@ -119,6 +119,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     muteButton.isActivated = muteButton.isActivated == false
                 }
             }
+            // Muted by default during late night hours
+            muteButton.isActivated = !playerViewModel.isMuted()
+
             videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
                 hideController()
                 controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
