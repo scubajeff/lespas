@@ -40,14 +40,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
 
 class NCLoginFragment: Fragment() {
@@ -160,6 +163,7 @@ class NCLoginFragment: Fragment() {
         hostInputText.run {
             setOnEditorActionListener { _, id, _ ->
                 if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
+                    error = null
                     prepareLogin()
                     true
                 } else false
@@ -342,7 +346,6 @@ class NCLoginFragment: Fragment() {
                         authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
                     }
                     998 -> {
-                        // Use
                         AlertDialog.Builder(hostInputText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                             .setIcon(ContextCompat.getDrawable(hostInputText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))})
                             .setTitle(getString(R.string.verify_ssl_certificate_title))
@@ -358,7 +361,7 @@ class NCLoginFragment: Fragment() {
                                     } else showError(result)
                                 }
                             }
-                            .setNegativeButton(android.R.string.cancel) { _, _ ->  showError(1001)}
+                            .setNegativeButton(android.R.string.cancel) { _, _ -> showError(1001) }
                             .create().show()
                     }
                     else -> showError(result)
@@ -385,44 +388,19 @@ class NCLoginFragment: Fragment() {
     private suspend fun pingServer(serverUrl: String, acceptSelfSign: Boolean): Int {
         return withContext(Dispatchers.IO) {
             try {
-                var response = 0
-                if (useHttps) {
-                    (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpsURLConnection).apply {
-                        if (acceptSelfSign) setHostnameVerifier { _, _ -> true }
-                        setRequestProperty(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
-                        connectTimeout = 2000
-                        readTimeout = 5000
-                        instanceFollowRedirects = false
-                        response = responseCode
-                        /*
-                        if (response == HttpURLConnection.HTTP_OK) {
-                            BufferedReader(InputStreamReader(this.inputStream)).apply {
-                                val result = StringBuffer()
-                                var line = readLine()
-                                while (line != null) {
-                                    result.append(line)
-                                    line = readLine()
-                                }
-                                // server should return this JSON object
-                                JSONObject(result.toString()).get("ocs")
-                            }
-                        }
-                        */
-                        disconnect()
-                    }
-                }
-                else (URL("$serverUrl${getString(R.string.server_capabilities_endpoint)}").openConnection() as HttpURLConnection).apply {
-                    setRequestProperty(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
-                    connectTimeout = 2000
-                    readTimeout = 5000
-                    instanceFollowRedirects = false
-                    response = responseCode
-                    disconnect()
-                }
+                var response: Int
+                OkHttpClient.Builder().apply {
+                    if (acceptSelfSign) hostnameVerifier { _, _ -> true }
+                    readTimeout(20, TimeUnit.SECONDS)
+                    writeTimeout(20, TimeUnit.SECONDS)
+                }.build().newCall(Request.Builder().url("$serverUrl${getString(R.string.server_capabilities_endpoint)}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response = it.code }
                 response
             } catch (e: SSLPeerUnverifiedException) {
                 // This certificate is issued by user installed CA, let user decided whether to trust it or not
                 998
+            } catch (e: SSLHandshakeException) {
+                // SSL related error generally means wrong SSL certificate
+                1001
             } catch (e: UnknownHostException) {
                 e.printStackTrace()
                 1000
