@@ -182,8 +182,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                 if (orientation != 0.0F) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(orientation) }, true) }
                             }
                         } else {
-                            val bottom = min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
-                            val rect = Rect(0, photo.shareId, photo.width - 1, bottom)
+                            // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
+                            // TODO better way to handle this
+                            val top = if (photo.shareId > photo.height - 1) 0 else photo.shareId
+
+                            val bottom = min(top + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
+                            val rect = Rect(0, top, photo.width - 1, bottom)
+
                             @Suppress("DEPRECATION")
                             bmp = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(fileName) else BitmapRegionDecoder.newInstance(fileName, false)).decodeRegion(rect, options) ?: placeholderBitmap
                         }

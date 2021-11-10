@@ -686,8 +686,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         webDav.getStream("$resourceRoot${photo.path}", true,null).use {
                             when (type) {
                                 ImageLoaderViewModel.TYPE_COVER -> {
-                                    val bottom = min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height)
-                                    val rect = Rect(0, photo.coverBaseLine, photo.width - 1, bottom)
+                                    // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
+                                    // TODO better way to handle this
+                                    val top = if (photo.coverBaseLine > photo.height - 1) 0 else photo.coverBaseLine
+
+                                    val bottom = min(top + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
+                                    val rect = Rect(0, top, photo.width - 1, bottom)
                                     val sampleSize = when (photo.width) {
                                         in (0..2000) -> 1
                                         in (2000..3000) -> 2
