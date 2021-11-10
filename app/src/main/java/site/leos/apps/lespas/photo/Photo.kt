@@ -101,7 +101,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getETag(photoId: String): String
 
-    @Query("SELECT id, name, dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    @Query("SELECT id, name, dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != ''")
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
     //@Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE width < height AND (mimeType LIKE '%jpeg%' OR mimeType LIKE '%png%')")

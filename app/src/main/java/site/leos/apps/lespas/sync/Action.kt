@@ -32,6 +32,8 @@ data class Action (
        const val ACTION_UPDATE_PHOTO_META = 10
        const val ACTION_ADD_FILES_TO_JOINT_ALBUM = 11
        const val ACTION_UPDATE_JOINT_ALBUM_PHOTO_META = 12
+       const val ACTION_UPDATE_THIS_ALBUM_META = 13
+       const val ACTION_UPDATE_THIS_CONTENT_META = 14
    }
 }
 
@@ -56,6 +58,6 @@ abstract class ActionDao: BaseDao<Action>() {
     @Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
     abstract suspend fun fileInUse(photoName: String): Boolean
 
-    suspend fun updateMeta(albumId: String, coverFileName: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", coverFileName, System.currentTimeMillis(), 1)) }
-    suspend fun updatePhotoMeta(albumId: String, albumName: String) { insert(Action(null, Action.ACTION_UPDATE_PHOTO_META, albumId, albumName, "", "", System.currentTimeMillis(), 1)) }
+    suspend fun updateAlbumMeta(albumId: String, coverFileName: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", coverFileName, System.currentTimeMillis(), 1)) }
+    //suspend fun updatePhotoMeta(albumId: String, albumName: String) { insert(Action(null, Action.ACTION_UPDATE_PHOTO_META, albumId, albumName, "", "", System.currentTimeMillis(), 1)) }
 }

@@ -73,9 +73,11 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 // folderName field can be empty in these actions
                 if (photo.id != photo.name) {
                     actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.id, photo.name, timestamp, 1))
+/*
                     // TODO publish status is not persistent locally
                     //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, photo.albumId, albumName, "", "", timestamp, 1))
                     actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, photo.albumId, albumName, "", "", timestamp, 1))
+*/
                 }
             }
 
@@ -107,5 +109,5 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun updateCover(albumId: String, coverId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateCover(albumId, coverId) }}
 
-    fun updateMeta(album: Album) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateMeta(album) }}
+    fun updateAlbumMeta(album: Album) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateAlbumMeta(album) }}
 }

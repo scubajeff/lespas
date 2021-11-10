@@ -51,6 +51,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val actionRepository = ActionRepository(application)
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val wifionlyKey = application.getString(R.string.wifionly_pref_key)
+    private val metaUpdatedNeeded = mutableSetOf<String>()
+    private val contentMetaUpdatedNeeded = mutableSetOf<String>()
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
         try {
@@ -58,7 +60,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             prepare(account)
             while(actionRepository.getAllPendingActions().isNotEmpty()) syncLocalChanges()
+            //Log.e(">>>>>>>>", "local changes: $metaUpdatedNeeded  $contentMetaUpdatedNeeded")
             syncRemoteChanges()
+            //Log.e(">>>>>>>>", "remote changes: $metaUpdatedNeeded  $contentMetaUpdatedNeeded")
+            updateMeta()
             backupCameraRoll()
 
             // Clear status counters
@@ -122,6 +127,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             Log.e(">>>>NetworkErrorException: ", e.stackTraceToString())
         } catch (e:Exception) {
             Log.e(">>>>Exception: ", e.stackTraceToString())
+        } finally {
+            // Make sure meta get updated by adding them to action database
+            metaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", it, "", "", 0, 0)) }
+            contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
         }
     }
 
@@ -156,10 +165,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_FILES_ON_SERVER -> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
                     // TODO need to update album's etag to reduce network usage during next remote sync
+                    contentMetaUpdatedNeeded.add(action.folderName)
                 }
+
                 Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}")
                 }
+
                 Action.ACTION_ADD_FILES_ON_SERVER -> {
                     // MIME type passed in folderId property
                     val localFile = File(localRootFolder, action.fileName)
@@ -183,22 +195,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
                                         albumRepository.fixCoverId(album.id, newId)
 
+/*
                                         // cover's fileId is ready, create and sync album meta file. When called from Snapseed Replace, new file name passed in action.fileName is what needs to be updated
                                         with(album) { updateAlbumMeta(id, name, Cover(newId, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder) }
+*/
+                                        metaUpdatedNeeded.add(action.folderName)
                                     }
-
                                 }
+
+                                contentMetaUpdatedNeeded.add(action.folderName)
                             }
                         }
                     }
                 }
-/*
-                Action.ACTION_UPDATE_FILE -> {
-                    // MIME type is passed in folderId property
-                    val localFile = File(localRootFolder, action.fileName)
-                    if (localFile.exists()) webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId)
-                }
-*/
+
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
                     webDav.createFolder("$resourceRoot/${Uri.encode(action.folderName)}").apply {
                         // Recreating the existing folder will return empty string
@@ -213,20 +223,31 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             } catch (e: Exception) {
                                 e.printStackTrace()
                             }
+
+                            // Mark meta update later
+                            metaUpdatedNeeded.add(action.folderName)
                         }
                     }
                 }
-                Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {}
+
+                //Action.ACTION_MODIFY_ALBUM_ON_SERVER -> {}
+
                 Action.ACTION_RENAME_DIRECTORY -> {
                     // Action's folderName property is the old name, fileName property is the new name
                     webDav.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
                     //albumRepository.changeName(action.folderId, action.fileName)
                 }
+
                 Action.ACTION_RENAME_FILE -> {
                     // Action's fileId property is the old name, fileName property is the new name
                     webDav.move("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+
+                    // Always follow by a ACTION_ADD_FILES_ON_SERVER, no need to trigger meta update
                 }
+
                 Action.ACTION_UPDATE_ALBUM_META -> {
+                    // Property folderId holds id of the album needed meta update
+                    // Property fileName holds filename of the album's cover
                     albumRepository.getThisAlbum(action.folderId)[0].apply {
                         if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                             // Touch file to avoid re-download
@@ -234,9 +255,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } else throw IOException()
                     }
                 }
-                Action.ACTION_UPDATE_PHOTO_META -> {
-                    updateContentMeta(null, action.folderName)
-                }
+
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
@@ -264,18 +283,31 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // Don't keep the media file, other user owns the album after all
                             localFile.delete()
                         }
-
                     }
                 }
+
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
                     // Property folderId holds joint album's id
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
+                    // Actual album meta json file is created by ACTION_ADD_FILES_TO_JOINT_ALBUM
                     val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
                         if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON, application)
                         this.delete()
                     }
+                }
+
+                Action.ACTION_UPDATE_THIS_ALBUM_META-> {
+                    // This action only fired if last sync process quit on exceptions
+                    // Property folderName holds name of the album deemed meta update
+                    metaUpdatedNeeded.add(action.folderName)
+                }
+
+                Action.ACTION_UPDATE_THIS_CONTENT_META-> {
+                    // This action only fired if last sync process quit on exceptions
+                    // Property folderName holds name of the album deemed meta update
+                    contentMetaUpdatedNeeded.add(action.folderName)
                 }
             }
 
@@ -286,11 +318,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     private fun syncRemoteChanges() {
         //Log.e(">>>>>>>>**", "sync remote changes")
-        val changedAlbums: MutableList<Album> = mutableListOf()
+        val changedAlbums = mutableListOf<Album>()
         val remoteAlbumIds = arrayListOf<String>()
 
         // Merge changed and/or new album from server
         var localAlbum: List<Album>
+
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
             if (remoteAlbum.isFolder) {
                 remoteAlbumIds.add(remoteAlbum.fileId)
@@ -338,6 +371,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try { File(localRootFolder, it.id).delete() } catch (e: Exception) { e.printStackTrace() }
                     try { File(localRootFolder, it.name).delete() } catch(e: Exception) { e.printStackTrace() }
                 }
+                try { File(localRootFolder, "${local.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
                 //Log.e(">>>>", "Deleted album: ${local.id}")
             }
         }
@@ -358,7 +392,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var remotePhotoId: String
                 var localImageFileName: String
                 val metaFileName = "${changedAlbum.id}.json"
-                var needUpdateContentMeta = false
 
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
@@ -397,16 +430,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
                                         changedAlbum.cover = remotePhotoId
 
-                                        // cover's fileId is ready, create and sync album meta file
-                                        changedAlbum.apply { updateAlbumMeta(id, name, Cover(changedAlbum.cover, coverBaseline, coverWidth, coverHeight), remotePhoto.name, sortOrder) }
+                                        metaUpdatedNeeded.add(changedAlbum.name)
                                     }
                                 }
                             } else {
                                 // Either a new photo created on server or an existing photo updated on server
                                 changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
-
-                                // Published album's content meta needs update
-                                if (changedAlbum.shareId == 1) needUpdateContentMeta = true
                             }
                         } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                             // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
@@ -414,7 +443,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             photoRepository.changeName(remotePhotoId, remotePhoto.name)
 
                             // Published album's content meta needs update
-                            if (changedAlbum.shareId == 1) needUpdateContentMeta = true
+                            contentMetaUpdatedNeeded.add(changedAlbum.name)
+                            if (remotePhoto.name == photoRepository.getPhotoName(changedAlbum.cover)) metaUpdatedNeeded.add(changedAlbum.name)
                         }
                     }
                 }
@@ -433,7 +463,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverWidth = width
                         changedAlbum.coverHeight = height
                         changedAlbum.sortOrder = sortOrder
-                    }
+                    } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
 
                     // Find the cover in photo lists
                     var coverPhoto: Photo? = null
@@ -461,8 +491,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
                         //Log.e(">>>>>", "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
                         if (remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli() - File("$localRootFolder/${metaFileName}").lastModified() > 180000) {
-                            // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices
-                            // TODO more proper way to do this
+                            // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices, otherwise this is the same
+                            // version of local. If more than one client update the cover during the same short period of less than 3 minutes, the last update will be the final, but all the other clients won't
+                            // get updated cover setting, and if this album gets modified later, the cover setting will change!!
+                            // TODO more proper way to handle conflict
                             downloadAlbumMeta(changedAlbum)?.apply {
                                 changedAlbum.cover = cover
                                 changedAlbum.coverBaseline = baseline
@@ -557,17 +589,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.startDate = first
                         changedAlbum.endDate = second
                     }
+
+                    // There are photo changes, update meta
+                    contentMetaUpdatedNeeded.add(changedAlbum.name)
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 albumRepository.upsertSync(changedAlbum)
-
-                // Create meta file if needed
-                with(changedAlbum) {
-                    // If album meta file is not exist, means it's a new album created on server side
-                    // We need to create meta file immediately, the first photo in the changedPhotos list should be the cover photo
-                    if (!File(localRootFolder, "${id}.json").exists()) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), changedPhotos[0].name, sortOrder)
-                }
 
                 // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server
                 var deletion = false
@@ -597,14 +625,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 coverWidth = photosLeft[0].width
                                 coverHeight = photosLeft[0].height
 
-                                // Update cover meta
-                                updateAlbumMeta(id, name, Cover(this.cover, coverBaseline, coverWidth, coverHeight), photosLeft[0].name, sortOrder)
+                                metaUpdatedNeeded.add(changedAlbum.name)
                             }
                             albumRepository.updateSync(this)
                         }
 
                         // Published album's content meta needs update
-                        if (changedAlbum.shareId == 1) needUpdateContentMeta = true
+                        contentMetaUpdatedNeeded.add(changedAlbum.name)
                     } else {
                         // All photos under this album removed, delete album on both local and remote
                         albumRepository.deleteByIdSync(changedAlbum.id)
@@ -615,10 +642,25 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Recycle the list
                 remotePhotoIds.clear()
                 changedPhotos.clear()
-
-                // If published album's content changed from somewhere else, update it's content meta file now
-                if (needUpdateContentMeta) updateContentMeta(changedAlbum.id, changedAlbum.name)
             }
+        }
+    }
+
+    private fun updateMeta() {
+        mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
+            albumRepository.getAlbumByName(albumName)?.apply {
+                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
+            }
+
+            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
+            metaUpdatedNeeded.remove(albumName)
+        }
+
+        mutableListOf<String>().apply { addAll(contentMetaUpdatedNeeded) }.forEach { albumName->
+            albumRepository.getAlbumByName(albumName)?.apply { updateContentMeta(id, name) }
+
+            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
+            contentMetaUpdatedNeeded.remove(albumName)
         }
     }
 
@@ -752,7 +794,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
         }
         // TODO consolidate these exception handling codes
-        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ", e.stackTraceToString()) }
+        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString) }
         catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
         catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
         catch (e: Exception) { e.printStackTrace() }
@@ -760,15 +802,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return result
     }
 
-    private fun updateContentMeta(id: String?, albumName: String) {
+    private fun updateContentMeta(albumId: String, albumName: String) {
         // TODO simply return if album by albumName doesn't exist
-        val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
+        //val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
         var content = "{\"lespas\":{\"photos\":["
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
             content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
         }
         content = content.dropLast(1) + "]}}"
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}-content.json", NCShareViewModel.MIME_TYPE_JSON)
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
     }
 
     data class Meta (

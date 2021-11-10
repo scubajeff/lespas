@@ -103,9 +103,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
 
+/*
                         // TODO publish status is not persistent locally
                         //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+*/
 
                         actionDao.insert(this)
                     }
@@ -135,9 +137,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
 
+/*
                         // TODO publish status is not persistent locally
                         //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+*/
 
                         actionDao.insert(this)
                     }

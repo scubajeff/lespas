@@ -19,7 +19,7 @@ class ActionRepository(application: Application){
     fun addAction(action: Action) = actionDao.insertSync(action)
     suspend fun updateCover(albumId: String, coverId: String) { actionDao.updateCover(albumId, coverId) }
     suspend fun safeToRemoveFile(photoName: String): Boolean = !actionDao.fileInUse(photoName)
-    suspend fun updateMeta(album: Album) { actionDao.updateMeta(album.id, photoDao.getName(album.cover)) }
-    suspend fun updateMeta(albumId: String, coverId: String) { actionDao.updateMeta(albumId, photoDao.getName(coverId)) }
+    suspend fun updateAlbumMeta(album: Album) { actionDao.updateAlbumMeta(album.id, photoDao.getName(album.cover)) }
+    suspend fun updateAlbumMeta(albumId: String, coverId: String) { actionDao.updateAlbumMeta(albumId, photoDao.getName(coverId)) }
     fun discardCurrentWorkingAction() { actionDao.deleteSync(actionDao.getAllPendingActions()[0]) }
 }

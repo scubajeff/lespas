@@ -463,7 +463,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroy() {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateMeta(album)
+        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumMeta(album)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
