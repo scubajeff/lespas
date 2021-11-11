@@ -73,8 +73,6 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
     }
 
     fun resume(view: PlayerView, uri: Uri) {
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
         if (uri == currentVideo) {
             // Resuming the same video
             if (videoPlayer.isPlaying) {
@@ -103,11 +101,13 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
 
         // Hide controller view by default
         view.hideController()
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     fun pause(uri: Uri?) {
         // Fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
-        if ((uri == currentVideo || uri == Uri.EMPTY) && videoPlayer.isPlaying) {
+        if (uri == currentVideo || uri == Uri.EMPTY && videoPlayer.playbackState != Player.STATE_IDLE) {
             // Only pause if current playing video is the same as the argument
             videoPlayer.pause()
             saveVideoPosition(currentVideo)
