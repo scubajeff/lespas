@@ -83,12 +83,13 @@ object Tools {
             }
         } else {
             when(mimeType) {
-                "image/jpeg", "image/png"-> {
+                "image/jpeg", "image/png", "image/heic"-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
 
-                    try { ExifInterface(pathName) }
-                    catch (e: Exception) {
+                    try {
+                        ExifInterface(pathName)
+                    } catch (e: Exception) {
                         Log.e("****Exception", e.stackTraceToString())
                         null
                     }?.let { exif->
@@ -297,7 +298,7 @@ object Tools {
                         reSort = true
                     }
                     externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heif")) continue
+                    if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heic")) continue
                     medias.add(
                         Photo(
                             ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
