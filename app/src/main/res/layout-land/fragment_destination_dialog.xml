@@ -31,14 +31,18 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/copy_files"
-                style="?attr/materialButtonOutlinedStyle" />
+                style="?attr/materialButtonOutlinedStyle"
+                android:drawableLeft="@drawable/ic_baseline_file_copy_24"
+                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/move"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/move_files"
-                style="?attr/materialButtonOutlinedStyle" />
+                style="?attr/materialButtonOutlinedStyle"
+                android:drawableLeft="@drawable/ic_baseline_file_move_24"
+                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <androidx.recyclerview.widget.RecyclerView
