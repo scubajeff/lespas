@@ -84,11 +84,11 @@ class MainActivity : AppCompatActivity() {
                 if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
                     .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
             } else {
-                // Syncing server changes at startup
+                // Sync with server at startup
                 ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                     putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                     //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
                 })
 
                 // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup

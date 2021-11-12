@@ -1,5 +1,7 @@
 package site.leos.apps.lespas.cameraroll
 
+import android.accounts.AccountManager
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -17,6 +19,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 
 
@@ -36,6 +39,13 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState == null) {
+            // Sync with server at startup
+            ContentResolver.requestSync(AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+            })
+
             if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
                 if (supportFragmentManager.findFragmentByTag(MainActivity.CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, MainActivity.CONFIRM_REQUIRE_SD_DIALOG)
