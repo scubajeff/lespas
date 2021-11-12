@@ -569,21 +569,25 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip)
+        val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip, null)
 
         lifecycleScope.launch(Dispatchers.IO) {
             // Temporarily prevent screen rotation
             if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
-            // Show a SnackBar if it takes too long (more than 300ms) preparing shares
+            // Show a SnackBar if it takes too long (more than 500ms) preparing shares
             withContext(Dispatchers.Main) {
                 handler.removeCallbacksAndMessages(null)
-                handler.postDelayed({ waitingMsg.show() }, 300)
+                handler.postDelayed({ waitingMsg.show() }, 500)
             }
 
             with(pAdapter.getPhotoAt(slider.currentItem)) {
                 prepareShares(this, strip)?.let {
-                    withContext(Dispatchers.Main) {        // Call system share chooser
+                    withContext(Dispatchers.Main) {
+                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                        // Call system share chooser
                         startActivity(Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
                             type = it.second
@@ -592,8 +596,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
                         }, null))
-
-                        if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                     }
                 }
             }
@@ -601,6 +603,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             // Dismiss waiting SnackBar
             handler.removeCallbacksAndMessages(null)
             if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 

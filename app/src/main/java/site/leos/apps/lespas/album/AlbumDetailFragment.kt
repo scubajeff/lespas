@@ -585,7 +585,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.snapseed_edit-> {
-                val uris = prepareShares(false)
+                val uris = prepareShares(false, null)
 
                 if (uris.isNotEmpty()) {
                     sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
@@ -608,7 +608,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.lespas_reuse-> {
-                reuseUris = prepareShares(false)
+                reuseUris = prepareShares(false, null)
 
                 if (reuseUris.isNotEmpty()) {
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
@@ -639,7 +639,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         return false
     }
 
-    private fun prepareShares(strip: Boolean): ArrayList<Uri> {
+    private fun prepareShares(strip: Boolean, job: Job?): ArrayList<Uri> {
         val uris = arrayListOf<Uri>()
         var sourceFile: File
         var destFile: File
@@ -647,6 +647,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         try {
             sharedSelection.clear()
             for (photoId in selectionTracker.selection) {
+                // Quit asap when job cancelled
+                job?.let { if (it.isCancelled) return arrayListOf() }
+
                 sharedSelection.add(photoId)
                 //with(mAdapter.getPhotoAt(i.toInt())) {
                 with(mAdapter.getPhotoBy(photoId)) {
@@ -668,56 +671,70 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip)
+        var job: Job? = null
+        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { job?.cancel(cause = null) }
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Temporarily prevent screen rotation
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+        job = lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // Temporarily prevent screen rotation
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
 
-            //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-            sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+                //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
+                sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
 
-            // Show a SnackBar if it takes too long (more than 300ms) preparing shares
-            withContext(Dispatchers.Main) {
-                handler.removeCallbacksAndMessages(null)
-                handler.postDelayed({ waitingMsg.show()}, 300)
-            }
-
-            val uris = prepareShares(strip)
-
-            withContext(Dispatchers.Main) {
-                // Call system share chooser
-                if (uris.isNotEmpty()) {
-                    val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-                    for (i in 1 until uris.size)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                        else clipData.addItem(ClipData.Item(uris[i]))
-
-                    startActivity(Intent.createChooser(Intent().apply {
-                        if (uris.size == 1) {
-                            // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_STREAM, uris[0])
-                        } else {
-                            action = Intent.ACTION_SEND_MULTIPLE
-                            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                        }
-                        type = sharedPhoto.mimeType
-                        this.clipData = clipData
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                    }, null))
+                // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+                withContext(Dispatchers.Main) {
+                    handler.removeCallbacksAndMessages(null)
+                    handler.postDelayed({ waitingMsg.show() }, 500)
                 }
 
-                // Clear selection tracker
-                selectionTracker.clearSelection()
+                val uris = prepareShares(strip, job!!)
 
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                withContext(Dispatchers.Main) {
+                    // Call system share chooser
+                    if (uris.isNotEmpty()) {
+                        val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                        for (i in 1 until uris.size) {
+                            if (isActive) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                                else clipData.addItem(ClipData.Item(uris[i]))
+                            }
+                        }
+
+                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                        if (isActive) startActivity(Intent.createChooser(Intent().apply {
+                            if (uris.size == 1) {
+                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_STREAM, uris[0])
+                            } else {
+                                action = Intent.ACTION_SEND_MULTIPLE
+                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            }
+                            type = sharedPhoto.mimeType
+                            this.clipData = clipData
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
+                    }
+                }
+            } catch (e: CancellationException) {
+                e.printStackTrace()
+            } finally {
+                withContext(NonCancellable) {
+                    withContext(Dispatchers.Main) { selectionTracker.clearSelection() }
+                }
             }
-        }.invokeOnCompletion {
-            // Dismiss waiting SnackBar
+        }
+
+        job.invokeOnCompletion {
+            // Make sure we dismiss waiting SnackBar
             handler.removeCallbacksAndMessages(null)
             if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 
