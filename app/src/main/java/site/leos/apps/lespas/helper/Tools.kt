@@ -8,7 +8,6 @@ import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
@@ -45,6 +44,8 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 object Tools {
+    val SUPPORTED_PICTURE_FORMAT = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
+
     fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
         return getPhotoParams(pathName, mimeType, fileName, false)
     }
@@ -82,8 +83,8 @@ object Tools {
                 }
             }
         } else {
-            when(mimeType) {
-                "image/jpeg", "image/png", "image/heic"-> {
+            when(mimeType.substringAfterLast('/')) {
+                "jpeg", "png", "heic", "heif"-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
 
@@ -134,13 +135,13 @@ object Tools {
                         }
                     }
                 }
-                "image/gif"-> {
+                "gif"-> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/agif"
                     }
                 }
-                "image/webp"-> {
+                "webp"-> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/awebp mimetype for animated WebP
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
@@ -282,26 +283,27 @@ object Tools {
                 val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
                 val orientationColumn = cursor.getColumnIndexOrThrow("orientation")    // MediaStore.Files.FileColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
                 val defaultZone = ZoneId.systemDefault()
-                var externalUri: Uri
                 var mimeType: String
                 var date: Long
                 var reSort = false
 
                 while (cursor.moveToNext()) {
                     if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
+
                     // Insert media
                     mimeType = cursor.getString(typeColumn)
+                    // Make sure image type is supported
+                    if (mimeType.substringAfter("image/") !in SUPPORTED_PICTURE_FORMAT) continue
+
                     date = cursor.getLong(dateColumn)
                     if (date == 0L) {
                         // Sometimes dateTaken is not available from system, use dateAdded instead
                         date = cursor.getLong(dateAddedColumn) * 1000
                         reSort = true
                     }
-                    externalUri = if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    if (mimeType.startsWith("image") && mimeType.substringAfter('/') !in setOf("jpeg", "png", "gif", "webp", "bmp", "heic")) continue
                     medias.add(
                         Photo(
-                            ContentUris.withAppendedId(externalUri, cursor.getString(idColumn).toLong()).toString(),
+                            ContentUris.withAppendedId(if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
                             ImageLoaderViewModel.FROM_CAMERA_ROLL,
                             cursor.getString(nameColumn) ?: "",
                             cursor.getString(sizeColumn),
