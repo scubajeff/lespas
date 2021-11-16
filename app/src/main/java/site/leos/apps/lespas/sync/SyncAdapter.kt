@@ -268,7 +268,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
-                            val metaString = String.format(PHOTO_META_JSON, this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
+                            val metaString = String.format(
+                                ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}",
+                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3]
+                            )
                             //val metaString = String.format(PHOTO_META_JSON, "fake", action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
                             val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
                             if (!contentMetaFile.exists()) {
@@ -828,8 +831,5 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_BOTH_WAY = 3
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
-
-        private const val PHOTO_META_JSON = ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}"
-
     }
 }
