@@ -647,10 +647,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String) { getPhoto(photo, view, type, null) }
     @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener?) {
+    @JvmOverloads
+    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         //view.imageAlpha = 0

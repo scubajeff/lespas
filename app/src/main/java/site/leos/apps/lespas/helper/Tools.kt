@@ -44,15 +44,14 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 object Tools {
-    val SUPPORTED_PICTURE_FORMAT = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
-
-    fun getPhotoParams(pathName: String, mimeType: String, fileName: String): Photo {
-        return getPhotoParams(pathName, mimeType, fileName, false)
-    }
+    const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
+    val PICTURE_FORMATS_HAVE_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
+    val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
 
     @SuppressLint("SimpleDateFormat")
-    fun getPhotoParams(pathName: String, mimeType: String, fileName: String, updateCreationDate: Boolean): Photo {
-        val dateFormatter = SimpleDateFormat("yyyy:MM:dd HH:mm:ss").apply { timeZone = TimeZone.getDefault() }
+    @JvmOverloads
+    fun getPhotoParams(pathName: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false): Photo {
+        val dateFormatter = SimpleDateFormat(DATE_FORMAT_PATTERN).apply { timeZone = TimeZone.getDefault() }
         var timeString: String?
         var mMimeType = mimeType
         var width: Int
@@ -70,7 +69,7 @@ object Tools {
                 tDate = getVideoFileDate(this, fileName)
 
                 // If the above fail, set creation date to the same as last modified date
-                if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
 
                 width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
                 height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
@@ -83,8 +82,8 @@ object Tools {
                 }
             }
         } else {
-            when(mimeType.substringAfterLast('/')) {
-                "jpeg", "png", "heic", "heif"-> {
+            when(mimeType.substringAfter("image/", "")) {
+                in PICTURE_FORMATS_HAVE_EXIF-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
 
@@ -158,7 +157,7 @@ object Tools {
             width = options.outWidth
             height = options.outHeight
             tDate = try {
-                LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
             } catch (e: DateTimeParseException) {
                 dateToLocalDateTime(lastModified)
             }
@@ -205,7 +204,7 @@ object Tools {
             // Could not get creation date from exif, try guessing from file name
             timeString = if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
                 (LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset))
-                    .format(DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                    .format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
             } else null
         }
 
@@ -223,7 +222,7 @@ object Tools {
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
-    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in setOf("jpeg", "png", "webp")
+    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in PICTURE_FORMATS_HAVE_EXIF
 
     @SuppressLint("DefaultLocale")
     fun humanReadableByteCountSI(size: Long): String {
@@ -293,7 +292,7 @@ object Tools {
                     // Insert media
                     mimeType = cursor.getString(typeColumn)
                     // Make sure image type is supported
-                    if (mimeType.substringAfter("image/") !in SUPPORTED_PICTURE_FORMAT) continue
+                    if (mimeType.substringAfter("image/", "") !in SUPPORTED_PICTURE_FORMATS) continue
 
                     date = cursor.getLong(dateColumn)
                     if (date == 0L) {

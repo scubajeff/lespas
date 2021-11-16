@@ -208,7 +208,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
                         // If it's not image, skip it
-                        if (!(mimeType.substringAfter("image/") in Tools.SUPPORTED_PICTURE_FORMAT || mimeType.startsWith("video/", true))) return@forEachIndexed
+                        if (!(mimeType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || mimeType.startsWith("video/", true))) return@forEachIndexed
                         // Copy the file to our private storage
                         try {
                             application.contentResolver.openInputStream(uri)?.use { input ->

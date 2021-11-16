@@ -828,14 +828,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             release()
                         }
                     } else {
-                        when (photo.mimeType) {
-                            "image/jpeg", "image/tiff" -> {
+                        when (photo.mimeType.substringAfter("image/", "")) {
+                            in Tools.PICTURE_FORMATS_HAVE_EXIF-> {
                                 val exif = ExifInterface(cr.openInputStream(uri)!!)
 
                                 // Get date
                                 photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
                                     try {
-                                        LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
+                                        LocalDateTime.parse(it, DateTimeFormatter.ofPattern(Tools.DATE_FORMAT_PATTERN))
                                     } catch (e: Exception) {
                                         e.printStackTrace()
                                         LocalDateTime.now()
