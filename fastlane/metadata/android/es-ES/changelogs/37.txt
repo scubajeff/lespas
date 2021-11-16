@@ -1,0 +1,7 @@
+* Corregido el error de la falta de la portada del álbum de Camera Roll
+* Corregido el soporte del formato HEIF/HEIC
+* Cambio de la fecha de inicio y fin del álbum cuando la fecha de toma de la foto fue cambiada en el servidor
+* Mensaje de error de certificación SSL más significativo durante el inicio de sesión
+* Ahora se puede cancelar el largo proceso de eliminación de EXIF.
+* Refactorización del código de reproducción de vídeo con la nueva biblioteca Media3
+* Otras mejoras y errores corregidos

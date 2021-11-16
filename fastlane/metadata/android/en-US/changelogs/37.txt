@@ -1,0 +1,7 @@
+* Fixed bug of missing Camera Roll album cover
+* Fixed HEIF/HEIC format support
+* Change album start and end date when photo's taken date were changed on server
+* More meaningful SSL certification error message during login
+* Can cancel long EXIF stripping process now
+* Refactored video playing codebase with new Media3 library
+* Other improvements and bugs fixed

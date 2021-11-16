@@ -1,0 +1,7 @@
+* Fehler bei fehlendem Album-Cover der Camera Roll behoben
+* Unterstützung des HEIF/HEIC-Formats behoben
+* Änderung des Start- und Enddatums des Albums, wenn das Aufnahmedatum der Fotos auf dem Server geändert wurde
+* Aussagekräftigere Fehlermeldung bei der SSL-Zertifizierung während der Anmeldung
+* Lange EXIF-Stripping-Prozesse können jetzt abgebrochen werden
+* Überarbeitete Codebasis für die Videowiedergabe mit neuer Media3-Bibliothek
+* Weitere Verbesserungen und Fehlerbehebungen

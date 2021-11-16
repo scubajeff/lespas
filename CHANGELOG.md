@@ -1,3 +1,12 @@
+## Version 2.3.11
+* Fixed bug of missing Camera Roll album cover
+* Fixed HEIF/HEIC format support
+* Change album start and end date when photo's taken date were changed on server
+* More meaningful SSL certification error message during login
+* Can cancel long EXIF stripping process now
+* Refactored video playing codebase with new Media3 library
+* Refactored album meta data file update codebase, now not just published ones but every album's meta data are synced to server immediately after changes
+
 ## Version 2.3.10
 * Fixed http server access
 * Fixed crash when there are no local album exist
