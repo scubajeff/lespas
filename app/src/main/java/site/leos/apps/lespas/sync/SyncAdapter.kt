@@ -466,25 +466,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverWidth = width
                         changedAlbum.coverHeight = height
                         changedAlbum.sortOrder = sortOrder
-                    } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
+                    } ?: run {
+                        // If there isn't meta on server, create it
+                        metaUpdatedNeeded.add(changedAlbum.name)
+                    }
 
                     // Find the cover in photo lists
-                    var coverPhoto: Photo? = null
-                    if (changedAlbum.cover.isNotEmpty()) {
-                        // meta file is ready
-                        coverPhoto = changedPhotos.find { it.id == changedAlbum.cover }
-                    }
-                    coverPhoto ?: run {
-                        // no meta file, should be a album created on server. Or the above element find failed
-                        // Get first JPEG or PNG file, only these two format can be set as coverart because they are supported by BitmapRegionDecoder API
-                        // If we just can't find one single photo of these two formats in this new album, fall back to the first one in the list, cover will be shown as placeholder drawable though
-                        changedPhotos.find { it.mimeType == "image/jpeg" || it.mimeType == "image/png" } ?: changedPhotos[0]
-                    }
-
-                    // Move cover photo to the first position of changedPhotos list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
-                    coverPhoto?.let {
-                        changedPhotos.remove(it)
-                        changedPhotos.add(0, it)
+                    (changedPhotos.find { it.id == changedAlbum.cover })?.let { cover->
+                        // Move cover photo to the first position of changedPhotos list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
+                        changedPhotos.remove(cover)
+                        changedPhotos.add(0, cover)
                     }
                 } else {
                     // A new album created by Les Pas app running on other device, cover has been assigned
