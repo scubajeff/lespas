@@ -116,7 +116,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             requireActivity().finish()
                         }
                         PERMISSION_RATIONALE_REQUEST_DIALOG-> {
-                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                             snapseedPermissionRequestLauncher.launch(storagePermission)
                         }
@@ -183,7 +183,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                                 .show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     } else {
-                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                         snapseedPermissionRequestLauncher.launch(storagePermission)
                     }
@@ -204,7 +204,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { pref, _ ->
                 if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                     backupCameraRollPermissionRequestLauncher.launch(storagePermission)
 
@@ -250,7 +250,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, _ ->
                 if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                     showCameraRollPermissionRequestLauncher.launch(storagePermission)
                     false

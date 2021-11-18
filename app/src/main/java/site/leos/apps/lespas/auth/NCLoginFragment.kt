@@ -309,7 +309,7 @@ class NCLoginFragment: Fragment() {
 
     private fun requestStoragePermission() {
         // Ask for storage access permission so that Camera Roll can be shown at first run
-        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         welcomePage.visibility = View.GONE
         authWebpage.visibility = View.GONE
         storagePermissionRequestLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE)

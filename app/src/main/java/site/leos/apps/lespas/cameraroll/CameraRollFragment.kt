@@ -508,7 +508,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         } ?: run {
             val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
             if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 storagePermissionRequestLauncher.launch(permission)
             }
             else observeCameraRoll()
