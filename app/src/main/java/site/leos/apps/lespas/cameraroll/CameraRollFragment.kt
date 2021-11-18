@@ -829,7 +829,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         }
                     } else {
                         when (photo.mimeType.substringAfter("image/", "")) {
-                            in Tools.PICTURE_FORMATS_HAVE_EXIF-> {
+                            in Tools.FORMATS_WITH_EXIF-> {
                                 val exif = ExifInterface(cr.openInputStream(uri)!!)
 
                                 // Get date

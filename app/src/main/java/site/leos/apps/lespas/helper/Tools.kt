@@ -45,7 +45,7 @@ import kotlin.math.roundToInt
 
 object Tools {
     const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
-    val PICTURE_FORMATS_HAVE_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
+    val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
 
     @SuppressLint("SimpleDateFormat")
@@ -83,7 +83,7 @@ object Tools {
             }
         } else {
             when(mimeType.substringAfter("image/", "")) {
-                in PICTURE_FORMATS_HAVE_EXIF-> {
+                in FORMATS_WITH_EXIF-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
 
@@ -222,7 +222,7 @@ object Tools {
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
-    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in PICTURE_FORMATS_HAVE_EXIF
+    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in FORMATS_WITH_EXIF
 
     @SuppressLint("DefaultLocale")
     fun humanReadableByteCountSI(size: Long): String {
