@@ -573,7 +573,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         lifecycleScope.launch(Dispatchers.IO) {
             // Temporarily prevent screen rotation
-            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
             // Show a SnackBar if it takes too long (more than 500ms) preparing shares
             withContext(Dispatchers.Main) {

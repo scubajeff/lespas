@@ -677,7 +677,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         job = lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Temporarily prevent screen rotation
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                 //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
                 sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())

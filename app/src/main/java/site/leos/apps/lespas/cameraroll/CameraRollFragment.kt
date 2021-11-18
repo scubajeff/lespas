@@ -720,7 +720,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         job = lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Temporarily prevent screen rotation
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                 // Show a SnackBar if it takes too long (more than 500ms) preparing shares
                 withContext(Dispatchers.Main) {
