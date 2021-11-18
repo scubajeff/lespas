@@ -82,7 +82,7 @@ object Tools {
                 }
             }
         } else {
-            when(mimeType.substringAfter("image/", "")) {
+            when(val imageFormat = mimeType.substringAfter("image/", "")) {
                 in FORMATS_WITH_EXIF-> {
                     // Try extracting photo's capture date from EXIF, try rotating the photo if EXIF tell us to, save EXIF if we rotated the photo
                     var saveExif = false
@@ -133,17 +133,18 @@ object Tools {
                             }
                         }
                     }
+
+                    if (imageFormat == "webp") {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            // Set my own image/awebp mimetype for animated WebP
+                            if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                        }
+                    }
                 }
                 "gif"-> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
                         if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/agif"
-                    }
-                }
-                "webp"-> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        // Set my own image/awebp mimetype for animated WebP
-                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
                     }
                 }
                 else-> {}
