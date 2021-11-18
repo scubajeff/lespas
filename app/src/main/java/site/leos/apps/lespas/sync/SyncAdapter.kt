@@ -60,9 +60,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             prepare(account)
             while(actionRepository.getAllPendingActions().isNotEmpty()) syncLocalChanges()
-            //Log.e(">>>>>>>>", "local changes: $metaUpdatedNeeded  $contentMetaUpdatedNeeded")
             syncRemoteChanges()
-            //Log.e(">>>>>>>>", "remote changes: $metaUpdatedNeeded  $contentMetaUpdatedNeeded")
             updateMeta()
             backupCameraRoll()
 
@@ -358,7 +356,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
                     }
                 } else {
-                    // No hit on local, a new album from server, make sure the cover property is set to "", a sign shows it's a new album
+                    // No hit on local, a new album from server, make sure the 'cover' property is set to "", a sign shows it's a new album
                     changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
                 }
             }
@@ -531,14 +529,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
                         //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
                     }
-                    // Remove old video thumbnail if any, let ImageLoaderViewModel create a new one during 1st loading
+                    // Remove old video thumbnail if any, let ImageLoaderViewModel create a new one
                     if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch(e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
 
                     with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name)) {
-                        changedPhoto.dateTaken = dateTaken
-                        changedPhoto.width = width
-                        changedPhoto.height = height
-                        changedPhoto.mimeType = mimeType
+                        // Preserve lastModified date from server if more accurate taken date can't be found
+                        changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
+                        changedPhoto.width = this.width
+                        changedPhoto.height = this.height
+                        changedPhoto.mimeType = this.mimeType
                     }
 
                     // Update album's startDate, endDate fields

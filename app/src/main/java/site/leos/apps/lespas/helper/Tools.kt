@@ -69,7 +69,7 @@ object Tools {
                 tDate = getVideoFileDate(this, fileName)
 
                 // If the above fail, set creation date to the same as last modified date
-                if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+                //if (tDate == LocalDateTime.MIN) tDate = LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
 
                 width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
                 height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
