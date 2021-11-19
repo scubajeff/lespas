@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         // Sync when receiving network tickle
         ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
         // Setup observer to fire up SyncAdapter
-        actionsPendingModel.allActions.observe(this, { actions ->
+        actionsPendingModel.allPendingActions.observe(this, { actions ->
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                 putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)

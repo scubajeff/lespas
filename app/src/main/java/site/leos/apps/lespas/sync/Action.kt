@@ -1,9 +1,6 @@
 package site.leos.apps.lespas.sync
 
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.BaseDao
 
@@ -45,12 +42,6 @@ abstract class ActionDao: BaseDao<Action>() {
     @Query("SELECT * FROM ${Action.TABLE_NAME} ORDER BY id ASC")
     abstract fun getAllPendingActions(): List<Action>
 
-    @Query("DELETE FROM ${Action.TABLE_NAME}")
-    abstract fun deleteAllSync()
-
-    @Query("SELECT COUNT(*) FROM ${Action.TABLE_NAME}")
-    abstract fun getPendingTotal(): Int
-
     @Query("UPDATE ${Action.TABLE_NAME} SET fileName = :coverId WHERE folderId = :albumId AND action = ${Action.ACTION_ADD_DIRECTORY_ON_SERVER}")
     // cover id is stored in fileName property
     abstract fun updateCover(albumId: String, coverId: String)
@@ -60,4 +51,9 @@ abstract class ActionDao: BaseDao<Action>() {
 
     fun updateAlbumMeta(albumId: String, coverFileName: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", coverFileName, System.currentTimeMillis(), 1)) }
     //fun updatePhotoMeta(albumId: String, albumName: String) { insert(Action(null, Action.ACTION_UPDATE_PHOTO_META, albumId, albumName, "", "", System.currentTimeMillis(), 1)) }
+
+    @Query("SELECT * FROM ${Action.TABLE_NAME} LIMIT 1")
+    abstract fun getFirstRow(): Action
+    @Transaction
+    open fun deleteFirstRow() { delete(getFirstRow()) }
 }

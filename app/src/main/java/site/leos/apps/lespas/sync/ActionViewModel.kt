@@ -20,9 +20,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val photoRepository = PhotoRepository(application)
     private val localRootFolder = Tools.getLocalRoot(application)
 
-    val allActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
-    //suspend fun addActions(actions: List<Action>) = actionRepository.addActions(actions)
-    //suspend fun addAction(actions: Action) = actionRepository.addActions(actions)
+    val allPendingActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
 
     fun deleteAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -50,7 +48,6 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     }
 
     // TODO publish status is not persistent locally
-    //fun deletePhotos(photos: List<Photo>, albumName: String, isPublished: Boolean)  {
     fun deletePhotos(photos: List<Photo>, albumName: String)  {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete from local database
