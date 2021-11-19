@@ -130,7 +130,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                         }
                     }
                 }?.let { photo -> setArtwork(Artwork(
-                    title = AlbumRepository(it).getThisAlbum(photo.albumId)[0].name,
+                    title = AlbumRepository(it).getThisAlbum(photo.albumId).name,
                     token = photo.id,
                     metadata = "${photo.albumId},${photo.width},${photo.height}",
                     byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",

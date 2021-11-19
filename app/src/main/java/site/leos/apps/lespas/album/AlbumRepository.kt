@@ -9,9 +9,9 @@ class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
-    fun getThisAlbum(albumId: String): List<Album> = albumDao.getThisAlbum(albumId)
+    fun getThisAlbum(albumId: String): Album = albumDao.getThisAlbum(albumId)
+    fun getThisAlbumList(albumId: String): List<Album> = albumDao.getThisAlbumList(albumId)
     fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
-    fun insert(album: Album){ albumDao.insert(album) }
     fun upsert(album: Album) { albumDao.upsert(album) }
     fun update(album: Album){ albumDao.update(album) }
     fun deleteById(albumId: String) { albumDao.deleteById(albumId) }
@@ -28,5 +28,4 @@ class AlbumRepository(application: Application){
     fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumName(): List<IDandName> = albumDao.getAllAlbumName()
     fun getAlbumTotal(): Int = albumDao.getAlbumTotal()
-    //suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumDao.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
 }

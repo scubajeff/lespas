@@ -250,7 +250,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_UPDATE_ALBUM_META -> {
                     // Property folderId holds id of the album needed meta update
                     // Property fileName holds filename of the album's cover
-                    albumRepository.getThisAlbum(action.folderId)[0].apply {
+                    albumRepository.getThisAlbum(action.folderId).apply {
                         if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                             // Touch file to avoid re-download
                             try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
@@ -333,7 +333,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             if (remoteAlbum.isFolder) {
                 remoteAlbumIds.add(remoteAlbum.fileId)
 
-                localAlbum = albumRepository.getThisAlbum(remoteAlbum.fileId)
+                localAlbum = albumRepository.getThisAlbumList(remoteAlbum.fileId)
                 if (localAlbum.isNotEmpty()) {
                     // We have hit in local table, which means it's a existing album
                     if (localAlbum[0].eTag != remoteAlbum.eTag) {
@@ -612,7 +612,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Maintaining album cover and duration if deletion happened
                     val photosLeft = photoRepository.getAlbumPhotos(changedAlbum.id)
                     if (photosLeft.isNotEmpty()) {
-                        albumRepository.getThisAlbum(changedAlbum.id)[0].run {
+                        albumRepository.getThisAlbum(changedAlbum.id).run {
                             startDate = photosLeft[0].dateTaken
                             endDate = photosLeft.last().dateTaken
                             photosLeft.find { it.id == this.cover } ?: run {

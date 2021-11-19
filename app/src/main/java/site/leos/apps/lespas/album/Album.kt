@@ -64,11 +64,11 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
 
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getThisAlbum(albumId: String): List<Album>
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId LIMIT 1")
+    abstract fun getThisAlbum(albumId: String): Album
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun getAlbumById(albumId: String): Album
+    abstract fun getThisAlbumList(albumId: String): List<Album>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name = :albumName")
     abstract fun getAlbumByName(albumName: String): Album?
@@ -103,9 +103,6 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET sortOrder = :sortOrder WHERE id = :albumId")
     abstract fun setSortOrder(albumId: String, sortOrder: Int)
-
-    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId, coverBaseline = :newBaseline, coverWidth = :newWidth, coverHeight = :newHeight WHERE id = :albumId")
-    abstract fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int)
 
     @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
     abstract fun getAllAlbumName(): List<IDandName>

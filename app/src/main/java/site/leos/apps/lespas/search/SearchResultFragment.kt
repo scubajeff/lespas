@@ -57,7 +57,7 @@ class SearchResultFragment : Fragment() {
             { result, imageView ->
                 if (arguments?.getBoolean(SEARCH_COLLECTION)!!) {
                     lifecycleScope.launch(Dispatchers.IO) {
-                        val album = albumModel.getThisAlbum(result.photo.albumId)[0]
+                        val album: Album = albumModel.getThisAlbum(result.photo.albumId)
                         withContext(Dispatchers.Main) {
                             exitTransition = MaterialElevationScale(false).apply {
                                 duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()

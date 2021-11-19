@@ -33,7 +33,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val actionDao = LespasDatabase.getDatabase(context).actionDao()
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
-        val album = albumDao.getAlbumById(inputData.keyValueMap[KEY_ALBUM] as String)
+        val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
         // TODO publish status is not persistent locally
         //val isPublished = inputData.keyValueMap[KEY_PUBLISHED] as Boolean
 

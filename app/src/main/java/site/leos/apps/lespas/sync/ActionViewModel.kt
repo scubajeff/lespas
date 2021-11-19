@@ -82,9 +82,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val photosLeft = photoRepository.getAlbumPhotos(photos[0].albumId)
             if (photosLeft.isNotEmpty()) {
                 val album = albumRepository.getThisAlbum(photos[0].albumId)
-                album[0].startDate = photosLeft.first().dateTaken
-                album[0].endDate = photosLeft.last().dateTaken
-                albumRepository.update(album[0])
+                album.startDate = photosLeft.first().dateTaken
+                album.endDate = photosLeft.last().dateTaken
+                albumRepository.update(album)
             } else {
                 // All photos under this album removed, delete album
                 albumRepository.deleteById(photos[0].albumId)
