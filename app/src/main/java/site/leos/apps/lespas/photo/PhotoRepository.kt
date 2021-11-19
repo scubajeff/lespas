@@ -9,8 +9,8 @@ class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
 
     fun getAlbumPhotosFlow(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosFlow(albumId)
-    fun upsertSync(photo: Photo) { photoDao.upsertSync(photo) }
-    fun deleteByIdSync(photoId: String) { photoDao.deleteByIdSync(photoId) }
+    fun upsert(photo: Photo) { photoDao.upsert(photo) }
+    fun deleteById(photoId: String) { photoDao.deleteById(photoId) }
     fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
     fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
     fun changeName(photoId: String, newName: String) { photoDao.changeName(photoId, newName) }
@@ -30,7 +30,7 @@ class PhotoRepository(application: Application) {
     //fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
     fun getAllImage(): List<Photo> = photoDao.getAllImage()
-    suspend fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
+    fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
     fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto> = photoDao.getMuzeiArtwork(exclusion, portraitMode)

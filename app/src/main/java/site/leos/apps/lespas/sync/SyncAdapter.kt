@@ -313,7 +313,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
-            actionRepository.deleteSync(action)
+            actionRepository.delete(action)
         }
     }
 
@@ -365,7 +365,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with eTag column empty
         for (local in albumRepository.getAllAlbumIdAndETag()) {
             if (!remoteAlbumIds.contains(local.id) && local.eTag.isNotEmpty()) {
-                albumRepository.deleteByIdSync(local.id)
+                albumRepository.deleteById(local.id)
                 val allPhotoIds = photoRepository.getAllPhotoIdsByAlbum(local.id)
                 photoRepository.deletePhotosByAlbum(local.id)
                 allPhotoIds.forEach {
@@ -545,7 +545,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (changedPhoto.dateTaken < changedAlbum.startDate) changedAlbum.startDate = changedPhoto.dateTaken
 
                     // update row when everything's fine. any thing that broke before this point will be captured by exception handler and will be worked on again in next round of sync
-                    photoRepository.upsertSync(changedPhoto)
+                    photoRepository.upsert(changedPhoto)
 
                     // Time to show updated album in AlbumFragment
                     // If it's a new album without meta file, create default cover because width and height information are ready now
@@ -560,7 +560,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     if (i == 0) {
                         // eTag property should be "", means it's syncing
-                        albumRepository.upsertSync(changedAlbum.copy(eTag = "", syncProgress = 0f))
+                        albumRepository.upsert(changedAlbum.copy(eTag = "", syncProgress = 0f))
                     } else {
                         // Update sync status. AlbumFragment will show changes to user
                         albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
@@ -588,7 +588,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
-                albumRepository.upsertSync(changedAlbum)
+                albumRepository.upsert(changedAlbum)
 
                 // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server
                 var deletion = false
@@ -596,7 +596,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 for (localPhoto in localPhotoETags) {
                     if (localPhoto.value.isNotEmpty() && !remotePhotoIds.contains(localPhoto.key)) {
                         deletion = true
-                        photoRepository.deleteByIdSync(localPhoto.key)
+                        photoRepository.deleteById(localPhoto.key)
                         try {
                             File(localRootFolder, localPhoto.key).delete()
                             //Log.e(">>>>", "Deleted photo: ${localPhoto.key}")
@@ -620,14 +620,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                                 metaUpdatedNeeded.add(changedAlbum.name)
                             }
-                            albumRepository.updateSync(this)
+                            albumRepository.update(this)
                         }
 
                         // Published album's content meta needs update
                         contentMetaUpdatedNeeded.add(changedAlbum.name)
                     } else {
                         // All photos under this album removed, delete album on both local and remote
-                        albumRepository.deleteByIdSync(changedAlbum.id)
+                        albumRepository.deleteById(changedAlbum.id)
                         actionRepository.addAction(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, changedAlbum.id, changedAlbum.name, "", "", System.currentTimeMillis(), 1))
                     }
                 }

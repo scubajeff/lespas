@@ -87,10 +87,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 val album = albumRepository.getThisAlbum(photos[0].albumId)
                 album[0].startDate = photosLeft.first().dateTaken
                 album[0].endDate = photosLeft.last().dateTaken
-                albumRepository.updateSync(album[0])
+                albumRepository.update(album[0])
             } else {
                 // All photos under this album removed, delete album
-                albumRepository.deleteByIdSync(photos[0].albumId)
+                albumRepository.deleteById(photos[0].albumId)
                 // Delete folder instead of deleting photos 1 by 1
                 actions.clear()
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, photos[0].albumId, albumName, "", "", timestamp, 1))

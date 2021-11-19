@@ -39,7 +39,7 @@ data class MuzeiPhoto(val id: String, val albumId: String, val dateTaken: LocalD
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
-    abstract fun deleteByIdSync(photoId: String): Int
+    abstract fun deleteById(photoId: String): Int
 
     @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getETagsMap(albumId: String): List<PhotoETag>
@@ -80,23 +80,25 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     //@Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newName, albumId = :newAlbumId, dateTaken = :newDateTaken, lastModified = :newLastModified, width = :newWidth, height = :newHeight, mimeType = :newMimeType, shareId = :newShareId WHERE id = :oldPhotoId")
     //abstract suspend fun replacePhoto(oldPhotoId: String, newId: String, newName: String, newAlbumId: String, newDateTaken: LocalDateTime, newLastModified: LocalDateTime, newWidth: Int, newHeight: Int, newMimeType: String, newShareId: Int)
+/*
     @Transaction
     open suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) {
         delete(oldPhoto)
         insert(newPhoto)
     }
+*/
 
     @Query("SELECT name FROM ${Photo.TABLE_NAME} WHERE id = :id")
     abstract fun getName(id: String): String
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
-    abstract suspend fun getPhotoById(photoId: String): Photo
+    abstract fun getPhotoById(photoId: String): Photo
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE (mimeType LIKE '%image/%')  ORDER BY dateTaken DESC")
     abstract fun getAllImage(): List<Photo>
 
     @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME}")
-    abstract suspend fun getPhotoTotal(): Int
+    abstract fun getPhotoTotal(): Int
 
     @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getETag(photoId: String): String

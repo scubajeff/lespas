@@ -58,7 +58,7 @@ data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, v
 @Dao
 abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract fun deleteByIdSync(albumId: String): Int
+    abstract fun deleteById(albumId: String): Int
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
@@ -68,7 +68,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getThisAlbum(albumId: String): List<Album>
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
-    abstract suspend fun getAlbumById(albumId: String): Album
+    abstract fun getAlbumById(albumId: String): Album
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name = :albumName")
     abstract fun getAlbumByName(albumName: String): Album?
@@ -102,7 +102,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun fixCoverId(albumId: String, newCoverId: String)
 
     @Query("UPDATE ${Album.TABLE_NAME} SET sortOrder = :sortOrder WHERE id = :albumId")
-    abstract suspend fun setSortOrder(albumId: String, sortOrder: Int)
+    abstract fun setSortOrder(albumId: String, sortOrder: Int)
 
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId, coverBaseline = :newBaseline, coverWidth = :newWidth, coverHeight = :newHeight WHERE id = :albumId")
     abstract fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int)
@@ -111,7 +111,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAllAlbumName(): List<IDandName>
 
     @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME}")
-    abstract suspend fun getAlbumTotal(): Int
+    abstract fun getAlbumTotal(): Int
 
     @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != ''")
     abstract fun getAllSyncedAlbum(): List<IDandCover>

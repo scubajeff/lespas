@@ -11,24 +11,22 @@ class AlbumRepository(application: Application){
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
     fun getThisAlbum(albumId: String): List<Album> = albumDao.getThisAlbum(albumId)
     fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
-    suspend fun insert(album: Album){ albumDao.insert(album) }
-    fun upsertSync(album: Album) { albumDao.upsertSync(album) }
-    suspend fun upsert(album: Album) { albumDao.upsert(album) }
-    fun updateSync(album: Album) { albumDao.updateSync(album) }
-    suspend fun update(album: Album){ albumDao.update(album) }
-    fun deleteByIdSync(albumId: String) { albumDao.deleteByIdSync(albumId) }
+    fun insert(album: Album){ albumDao.insert(album) }
+    fun upsert(album: Album) { albumDao.upsert(album) }
+    fun update(album: Album){ albumDao.update(album) }
+    fun deleteById(albumId: String) { albumDao.deleteById(albumId) }
     fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
     fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight) }
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
-    suspend fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
+    fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun isAlbumExisted(name: String) = albumDao.isAlbumExisted(name)
     fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()
     fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos> = albumDao.getAlbumDetail(albumId)
     fun updateAlbumSyncStatus(albumId: String, progress: Float, startDate: LocalDateTime, endDate: LocalDateTime) { albumDao.updateAlbumSyncStatus(albumId, progress, startDate, endDate)}
     fun fixNewLocalAlbumId(oldId: String, newId: String, coverId: String) { albumDao.fixNewLocalAlbumId(oldId, newId, coverId)}
     fun fixCoverId(albumId: String, newCoverId: String) { albumDao.fixCoverId(albumId, newCoverId)}
-    suspend fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
+    fun setSortOrder(albumId: String, sortOrder: Int) { albumDao.setSortOrder(albumId, sortOrder) }
     fun getAllAlbumName(): List<IDandName> = albumDao.getAllAlbumName()
-    suspend fun getAlbumTotal(): Int = albumDao.getAlbumTotal()
+    fun getAlbumTotal(): Int = albumDao.getAlbumTotal()
     //suspend fun replaceCover(albumId: String, newCoverId: String, newWidth: Int, newHeight: Int, newBaseline: Int) { albumDao.replaceCover(albumId, newCoverId, newWidth, newHeight, newBaseline) }
 }
