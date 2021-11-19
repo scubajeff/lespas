@@ -59,7 +59,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
 
             prepare(account)
-            while(actionRepository.getAllPendingActions().isNotEmpty()) syncLocalChanges()
+            while (true) {
+                val actions = actionRepository.getAllPendingActions()
+                if (actions.isEmpty()) break
+                syncLocalChanges(actions)
+            }
             syncRemoteChanges()
             updateMeta()
             backupCameraRoll()
@@ -151,9 +155,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         if (!webDav.isExisted(resourceRoot)) webDav.createFolder(resourceRoot)
     }
 
-    private fun syncLocalChanges() {
+    private fun syncLocalChanges(pendingActions: List<Action>) {
         // Sync local changes, e.g., processing pending actions
-        actionRepository.getAllPendingActions().forEach { action ->
+        pendingActions.forEach { action ->
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
 
