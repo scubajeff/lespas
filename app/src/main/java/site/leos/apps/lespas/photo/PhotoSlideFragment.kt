@@ -28,7 +28,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
@@ -287,9 +286,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType)) {
-                    ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
+                    albumModel.setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
                     // If album has not been uploaded yet, update the cover id in action table too
-                    ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(album.id, currentMedia.id)
+                    actionModel.updateCover(album.id, currentMedia.id)
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
