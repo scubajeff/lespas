@@ -1,3 +1,7 @@
+## Version 2.3.12
+* Fixed crash when sharing media while phone is in landscape orientation
+* Use last modified date if EXIF doesn't contain taken date when syncing photo from server
+
 ## Version 2.3.11
 * Fixed bug of missing Camera Roll album cover
 * Fixed HEIF/HEIC format support

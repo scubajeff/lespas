@@ -1,0 +1,3 @@
+* Correction d'une erreur lors du partage d'un média lorsque le téléphone est en orientation paysage.
+* Utilisation de la date de dernière modification si l'EXIF ne contient pas la date de prise de vue lors de la synchronisation de la photo à partir du serveur.
+* Autres améliorations et bogues corrigés

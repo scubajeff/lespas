@@ -1,0 +1,3 @@
+* Corregido el fallo al compartir medios mientras el teléfono está en orientación horizontal
+* Uso de la última fecha modificada si EXIF no contiene la fecha de toma al sincronizar la foto desde el servidor
+* Otras mejoras y errores corregidos

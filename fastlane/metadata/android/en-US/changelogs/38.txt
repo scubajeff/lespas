@@ -1,0 +1,3 @@
+* Fixed crash when sharing media while phone is in landscape orientation
+* Use last modified date if EXIF doesn't contain taken date when syncing photo from server
+* Other improvements and bugs fixed

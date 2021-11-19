@@ -1,0 +1,3 @@
+* Absturz bei der Freigabe von Medien im Querformat des Telefons behoben
+* Verwendet das Datum der letzten Änderung, wenn die EXIF-Datei kein Aufnahmedatum enthält, wenn ein Foto vom Server synchronisiert wird
+* Weitere Verbesserungen und behobene Bugs
