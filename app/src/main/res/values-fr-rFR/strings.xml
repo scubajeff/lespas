@@ -90,7 +90,6 @@
     <string name="gallery_app_name">Galerie</string>
     <string name="gallery_launcher_title">Icône du lanceur de galerie</string>
     <string name="same_file_found">Le même fichier existait déjà.</string>
-    <string name="name_existed">Ne peut pas être renommé en \"%1$s\", le même nom existait.</string>
     <string name="verify_ssl_certificate_title">Mauvais certificat SSL</string>
     <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
     <string name="accept_certificate">Faites-lui confiance !</string>

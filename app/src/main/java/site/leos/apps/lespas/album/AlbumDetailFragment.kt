@@ -392,25 +392,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
             if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
                 bundle.getString(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
-                    if (newName != album.name) {
-                        CoroutineScope(Dispatchers.Main).launch(Dispatchers.IO) {
-                            if (albumModel.isAlbumExisted(newName)) {
-                                withContext(Dispatchers.Main) {
-                                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.name_existed, newName), getString(android.R.string.ok), false).show(parentFragmentManager, CONFIRM_DIALOG)
-                                }
-                            } else {
-                                with(sharedByMe.with.isNotEmpty()) {
-                                    actionModel.renameAlbum(album.id, album.name, newName, this)
+                    with(sharedByMe.with.isNotEmpty()) {
+                        actionModel.renameAlbum(album.id, album.name, newName, this)
 
-                                    // TODO What if sharedByMe is not available when working offline
-                                    if (this) publishModel.renameShare(sharedByMe, newName)
-                                }
-                            }
-                        }
-
-                        // Set title to new name
-                        (activity as? AppCompatActivity)?.supportActionBar?.title = newName
+                        // TODO What if sharedByMe is not available when working offline
+                        if (this) publishModel.renameShare(sharedByMe, newName)
                     }
+
+                    // Set title to new name
+                    (activity as? AppCompatActivity)?.supportActionBar?.title = newName
                 }
             }
         }
@@ -504,7 +494,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_rename-> {
-                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name).show(parentFragmentManager, RENAME_DIALOG)
+                lifecycleScope.launch(Dispatchers.IO) {
+                    albumModel.getAllAlbumName().also { names->
+                        if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name, names).show(parentFragmentManager, RENAME_DIALOG)
+                    }
+                }
                 true
             }
             R.id.option_menu_settings-> {
@@ -701,7 +695,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             }
                         }
 
-                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                        // Dismiss Snackbar before showing system share chooser, avoid unpleasant screen flicker
                         if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
 
                         if (isActive) startActivity(Intent.createChooser(Intent().apply {

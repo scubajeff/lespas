@@ -90,7 +90,6 @@
     <string name="gallery_launcher_title">「相冊」啟動圖標</string>
     <string name="gallery_app_name">相機相冊</string>
     <string name="same_file_found">同名檔案已存在。</string>
-    <string name="name_existed">相冊\'%1$s\'已存在，無法改名。</string>
     <string name="verify_ssl_certificate_title">SSL證書驗證失敗</string>
     <string name="verify_ssl_certificate_message">伺服器%1$s的證書無法通過驗證，是否信任該伺服器並繼續？</string>
     <string name="accept_certificate">信任</string>

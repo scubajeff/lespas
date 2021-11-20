@@ -47,7 +47,6 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
     <string name="yes_delete">Yes, delete</string>
-    <string name="name_existed">"Can not rename to '%1$s', name already exists."</string>
     <string name="rename_to">Change album name to</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Days: %1$d</string>
@@ -161,6 +160,8 @@
     <string name="move_files">Move</string>
     <string name="create_new_album">Create new album</string>
     <string name="to_album">To Album:</string>
+
+    <!-- Album Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>

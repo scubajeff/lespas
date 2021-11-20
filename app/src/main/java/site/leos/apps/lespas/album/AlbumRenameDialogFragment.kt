@@ -11,6 +11,13 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 
 class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumrename_dialog) {
     private lateinit var renameTextInputLayout: TextInputLayout
+    private lateinit var usedNames: ArrayList<String>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        usedNames = requireArguments().getStringArrayList(USED_NAMES) ?: arrayListOf()
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -22,7 +29,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
             // Use append to move cursor to the end of text
             if (savedInstanceState == null) append(arguments?.getString(OLD_NAME))
 
-            addTextChangedListener(AlbumNameValidator(this, context))
+            addTextChangedListener(AlbumNameValidator(this, usedNames))
 
             setOnEditorActionListener { _, actionId, _ ->
                 if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
@@ -40,10 +47,17 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
     }
 
     companion object {
-        const val OLD_NAME = "OLD_NAME"
+        private const val OLD_NAME = "OLD_NAME"
+        private const val USED_NAMES = "USED_NAMES"
+
         const val RESULT_KEY_NEW_NAME = "RESULT_KEY_NEW_NAME"
 
         @JvmStatic
-        fun newInstance(albumName: String) = AlbumRenameDialogFragment().apply {arguments = Bundle().apply { putString(OLD_NAME, albumName) }}
+        fun newInstance(albumName: String, usedNames: List<String>) = AlbumRenameDialogFragment().apply {
+            arguments = Bundle().apply {
+                putString(OLD_NAME, albumName)
+                putStringArrayList(USED_NAMES, ArrayList(usedNames))
+            }
+        }
     }
 }

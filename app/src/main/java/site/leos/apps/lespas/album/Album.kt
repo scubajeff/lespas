@@ -85,9 +85,6 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getMeta(albumId: String): Meta
 
-    @Query("SELECT EXISTS (SELECT name FROM ${Album.TABLE_NAME} WHERE name = :name)")
-    abstract fun isAlbumExisted(name: String): Boolean
-
     @Transaction
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getAlbumDetail(albumId: String): Flow<AlbumWithPhotos>
@@ -105,11 +102,14 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun setSortOrder(albumId: String, sortOrder: Int)
 
     @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
-    abstract fun getAllAlbumName(): List<IDandName>
+    abstract fun getAllAlbumIdName(): List<IDandName>
 
     @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME}")
     abstract fun getAlbumTotal(): Int
 
     @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != ''")
     abstract fun getAllSyncedAlbum(): List<IDandCover>
+
+    @Query("SELECT name FROM ${Album.TABLE_NAME}")
+    abstract fun getAllAlbumName(): List<String>
 }

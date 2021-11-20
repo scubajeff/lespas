@@ -185,23 +185,19 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     error ?: run {
                         val name = this.text.toString().trim()    // Trim the leading and trailing blank
                         if (name.isNotEmpty()) {
-                            if (isAlbumExisted(name)) this.error = getString(R.string.album_existed)
-                            else {
-                                destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
-                                // Return with album id field empty, calling party will know this is a new album
-                                destinationModel.setDestination(Album("", name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
+                            destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
+                            // Return with album id field empty, calling party will know this is a new album
+                            destinationModel.setDestination(Album("", name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", 0, 1f))
 
-                                // Clear editing mode
-                                destinationModel.setEditMode(false)
+                            // Clear editing mode
+                            destinationModel.setEditMode(false)
 
-                                dismiss()
-                            }
+                            dismiss()
                         }
                     }
                     true
                 } else false
             }
-            addTextChangedListener(AlbumNameValidator(this, context))
         }
 
         // Maintain current mode after screen rotation
@@ -227,6 +223,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 }
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
             })
+
+            newAlbumTitleTextInputEditText.addTextChangedListener(AlbumNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { it.forEach { album-> this.add(album.name)} }))
         })
     }
 
@@ -266,12 +264,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             visibility = View.VISIBLE
             requestFocus()
         }
-    }
-
-    private fun isAlbumExisted(name: String): Boolean {
-        var existed = false
-        albumNameModel.allAlbumsByEndDate.value!!.forEach { if (it.name == name) existed = true }
-        return existed
     }
 
     class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Photo, ImageView)-> Unit, private val publicationCoverLoader: (Photo, ImageView)-> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View)-> Unit, private val cancelLoading: (ImageView)-> Unit)

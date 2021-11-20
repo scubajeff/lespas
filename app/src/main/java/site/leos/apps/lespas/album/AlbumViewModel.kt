@@ -25,7 +25,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     }
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
-    fun isAlbumExisted(name: String) = albumRepository.isAlbumExisted(name)
-    fun getAllAlbumName(): List<IDandName> = albumRepository.getAllAlbumName()
+    fun getAllAlbumIdName(): List<IDandName> = albumRepository.getAllAlbumIdName()
     fun getThisAlbum(albumId: String): Album = albumRepository.getThisAlbum(albumId)
+    fun getAllAlbumName(): List<String> = albumRepository.getAllAlbumName()
 }
