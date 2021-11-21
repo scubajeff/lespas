@@ -143,8 +143,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     lastId = uri.lastPathSegment!!
 
                     snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
-                        // TODO publish status is not persistent locally
-                        //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 

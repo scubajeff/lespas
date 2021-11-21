@@ -34,9 +34,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
         val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
-        // TODO publish status is not persistent locally
-        //val isPublished = inputData.keyValueMap[KEY_PUBLISHED] as Boolean
-
 
         withContext(Dispatchers.IO) {
             cr.query(uri, null, null, null, null)?.use { cursor ->
@@ -103,12 +100,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
 
-/*
-                        // TODO publish status is not persistent locally
-                        //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-*/
-
                         actionDao.insert(this)
                     }
                 } else {
@@ -136,12 +127,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     with(mutableListOf<Action>()) {
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
-
-/*
-                        // TODO publish status is not persistent locally
-                        //if (isPublished) add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-*/
 
                         actionDao.insert(this)
                     }

@@ -47,7 +47,6 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    // TODO publish status is not persistent locally
     fun deletePhotos(photos: List<Photo>, albumName: String)  {
         viewModelScope.launch(Dispatchers.IO) {
             // Delete from local database
@@ -68,14 +67,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 // For a synced photo, id can not be the same as name (sort of, in very rare case, filename can be the same as it's future fileid on server, if this ever happens,
                 // the only problem is that it would reappear after next sync, e.g. can only be deleted on server. This can be solved with adding another column in Photo table)
                 // folderName field can be empty in these actions
-                if (photo.id != photo.name) {
-                    actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.id, photo.name, timestamp, 1))
-/*
-                    // TODO publish status is not persistent locally
-                    //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, photo.albumId, albumName, "", "", timestamp, 1))
-                    actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, photo.albumId, albumName, "", "", timestamp, 1))
-*/
-                }
+                if (photo.id != photo.name) actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, albumName, photo.id, photo.name, timestamp, 1))
             }
 
             // Get remaining photos in album, the return list is sort by dateTaken ASC

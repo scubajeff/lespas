@@ -185,8 +185,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     lastId = uri.lastPathSegment!!
 
                     snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
-                        // TODO publish status is not persistent locally
-                        //workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id, SnapseedResultWorker.KEY_PUBLISHED to publishModel.isShared(album.id))).build()
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     with(WorkManager.getInstance(requireContext())) {
                         enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
@@ -212,8 +210,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             if (it) {
                 val photos = mutableListOf<Photo>()
                 for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                // TODO publish status is not persistent locally
-                //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
             }
             sharedSelection.clear()
@@ -395,6 +391,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     with(sharedByMe.with.isNotEmpty()) {
                         actionModel.renameAlbum(album.id, album.name, newName, this)
 
+                        // Nextcloud server won't propagate folder name changes to shares for a reason, see https://github.com/nextcloud/server/issues/2063
+                        // In our case, I think it's a better UX to do it because name is a key aspect of album, so...
                         // TODO What if sharedByMe is not available when working offline
                         if (this) publishModel.renameShare(sharedByMe, newName)
                     }
@@ -413,8 +411,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                             val photos = mutableListOf<Photo>()
                             for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                            // TODO publish status is not persistent locally
-                            //if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name, publishModel.isShared(album.id))
                             if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
                         }
                         selectionTracker.clearSelection()

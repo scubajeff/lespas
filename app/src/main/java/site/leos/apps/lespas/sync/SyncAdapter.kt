@@ -166,7 +166,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             when (action.action) {
                 Action.ACTION_DELETE_FILES_ON_SERVER -> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
-                    // TODO need to update album's etag to reduce network usage during next remote sync
                     contentMetaUpdatedNeeded.add(action.folderName)
                 }
 
@@ -571,7 +570,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // TODO: The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
+                // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
                 if (changedPhotos.isNotEmpty()) {
                     with(albumRepository.getMeta(changedAlbum.id)) {
                         changedAlbum.sortOrder = this.sortOrder

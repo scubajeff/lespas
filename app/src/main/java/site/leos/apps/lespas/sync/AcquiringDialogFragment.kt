@@ -42,9 +42,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     private var total = -1
     private lateinit var album: Album
 
-    // TODO publish status is not persistent locally
-    //private val publishModel: NCShareViewModel by activityViewModels()
-    //private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!, publishModel.isShared(arguments?.getParcelable<Album>(KEY_ALBUM)!!.id)) }
     private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
 
     private lateinit var progressLinearLayout: LinearLayoutCompat
@@ -135,19 +132,11 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         if (tag == ShareReceiverActivity.TAG_ACQUIRING_DIALOG) activity?.finish()
     }
 
-/*
-    // TODO publish status is not persistent locally
-    class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album, private val isPublished: Boolean): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album, isPublished) as T
-    }
-*/
     @Suppress("UNCHECKED_CAST")
     class AcquiringViewModelFactory(private val application: Application, private val uris: ArrayList<Uri>, private val album: Album): ViewModelProvider.NewInstanceFactory() {
         override fun <T : ViewModel> create(modelClass: Class<T>): T = AcquiringViewModel(application, uris, album) as T
     }
 
-    // TODO publish status is not persistent locally
-    //class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album, isPublished: Boolean): AndroidViewModel(application) {
     class AcquiringViewModel(application: Application, private val uris: ArrayList<Uri>, private val album: Album): AndroidViewModel(application) {
         private var currentProgress = MutableLiveData<Int>()
         private var currentName: String = ""
@@ -273,12 +262,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             // Create new album first, store cover, e.g. first photo in new album, in property filename
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                         }
-
-/*
-                        // TODO publish status is not persistent locally
-                        //if (isPublished) actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-                        actions.add(Action(null, Action.ACTION_UPDATE_PHOTO_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
-*/
 
                         photoRepository.insert(newPhotos)
                         albumRepository.upsert(album)
