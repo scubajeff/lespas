@@ -36,7 +36,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
                     error ?: run {
                         val name = this.text.toString().trim()    // Trim the leading and trailing blank
                         if (name.isNotEmpty()) {
-                            parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply { putString(RESULT_KEY_NEW_NAME, name) })
+                            if (requireArguments().getString(OLD_NAME)?.equals(name) != true) parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_NAME, Bundle().apply { putString(RESULT_KEY_NEW_NAME, name) })
                             dismiss()
                         }
                     }
