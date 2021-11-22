@@ -8,6 +8,7 @@ import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
@@ -286,14 +287,18 @@ object Tools {
                 var mimeType: String
                 var date: Long
                 var reSort = false
+                var contentUri: Uri
 
-                while (cursor.moveToNext()) {
+                cursorLoop@ while (cursor.moveToNext()) {
                     if ((strict) && (cursor.getString(cursor.getColumnIndexOrThrow(pathSelection)) ?: folder).substringAfter(folder).contains('/')) continue
 
                     // Insert media
                     mimeType = cursor.getString(typeColumn)
                     // Make sure image type is supported
-                    if (mimeType.substringAfter("image/", "") !in SUPPORTED_PICTURE_FORMATS) continue
+                    contentUri = if (mimeType.startsWith("image")) {
+                        if (mimeType.substringAfter("image/", "") !in SUPPORTED_PICTURE_FORMATS) continue@cursorLoop
+                        else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    } else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
 
                     date = cursor.getLong(dateColumn)
                     if (date == 0L) {
@@ -303,7 +308,7 @@ object Tools {
                     }
                     medias.add(
                         Photo(
-                            ContentUris.withAppendedId(if (mimeType.startsWith("video")) MediaStore.Video.Media.EXTERNAL_CONTENT_URI else MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cursor.getString(idColumn).toLong()).toString(),
+                            ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
                             ImageLoaderViewModel.FROM_CAMERA_ROLL,
                             cursor.getString(nameColumn) ?: "",
                             cursor.getString(sizeColumn),
