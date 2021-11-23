@@ -21,6 +21,19 @@ Features:
 - All files saved in App's private storage, stop being scanned by malicious apps
 - Open-source
 
+<p float="left">
+  <img alt="Welcom Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_Welcome.png" width="200" />
+  <img alt="Album List" src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_album.png" width="200" /> 
+  <img alt="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/3_album_detail.png" width="200" />
+  <img alt="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/4_photo.png" width="200" />
+</p>
+
+<p float="left">
+  <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_adding_photos.png" width="200" />
+  <img alt="Browing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/6_camera_roll.png" width="200" /> 
+  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/7_search.png" width="200" />
+  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/8_publish.png" width="200" />
+</p>
 
 This project build using the following open source software:
 - <a href=https://square.github.io/okhttp>OkHttp</a>
