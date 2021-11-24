@@ -114,6 +114,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var gestureDetector: GestureDetectorCompat
 
+    private var shareOutJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -208,8 +210,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Back key handler for BottomSheet
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
-            @SuppressLint("SwitchIntDef")
             override fun handleOnBackPressed() {
+                // Cancel EXIF stripping job if it's running
+                shareOutJob?.let {
+                    if (it.isActive) {
+                        it.cancel(cause = null)
+                        return
+                    }
+                }
+
+                @SuppressLint("SwitchIntDef")
                 when(bottomSheet.state) {
                     BottomSheetBehavior.STATE_HIDDEN -> if (showListFirst) bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED else quit()
                     BottomSheetBehavior.STATE_COLLAPSED -> bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
@@ -223,7 +233,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             private fun quit() {
                 isEnabled = false
-                requireActivity().onBackPressed()
+
+                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
+                else parentFragmentManager.popBackStack()
             }
         })
 
@@ -714,10 +726,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
-        var job: Job? = null
-        val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip) { job?.cancel(cause = null) }
+        val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip) { shareOutJob?.cancel(cause = null) }
 
-        job = lifecycleScope.launch(Dispatchers.IO) {
+        shareOutJob = lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Temporarily prevent screen rotation
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
@@ -728,7 +739,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     handler.postDelayed({ waitingMsg.show() }, 500)
                 }
 
-                val uris = prepareShares(strip, job)
+                val uris = prepareShares(strip, shareOutJob)
 
                 withContext(Dispatchers.Main) {
                     // Call system share chooser
@@ -766,7 +777,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        job.invokeOnCompletion {
+        shareOutJob?.invokeOnCompletion {
             // Dismiss waiting SnackBar
             handler.removeCallbacksAndMessages(null)
             if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
@@ -1035,7 +1046,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(scrollTo: String) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
+        @JvmOverloads
+        fun newInstance(scrollTo: String = "") = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
 
         @JvmStatic
         fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}

@@ -105,7 +105,7 @@ class MainActivity : AppCompatActivity() {
                 intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
                     Thread {
                         val album = AlbumRepository(this.application).getThisAlbum(it)
-                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: "")).commit()
+                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit()
                     }.start()
                 } ?: run {
                     supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()

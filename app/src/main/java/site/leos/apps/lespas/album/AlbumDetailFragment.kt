@@ -11,6 +11,7 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -92,6 +93,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var snapseedEditAction: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
+
+    private var shareOutJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -222,6 +225,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Cancel EXIF stripping job if it's running
+                shareOutJob?.let {
+                    if (it.isActive) {
+                        it.cancel(cause = null)
+                        return
+                    }
+                }
+
+                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -635,13 +653,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         var destFile: File
 
         try {
-            sharedSelection.clear()
-            for (photoId in selectionTracker.selection) {
+            for (photoId in sharedSelection) {
                 // Quit asap when job cancelled
                 job?.let { if (it.isCancelled) return arrayListOf() }
 
-                sharedSelection.add(photoId)
-                //with(mAdapter.getPhotoAt(i.toInt())) {
                 with(mAdapter.getPhotoBy(photoId)) {
                     // Synced file is named after id, not yet synced file is named after file's name
                     sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
@@ -661,24 +676,26 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
-        var job: Job? = null
-        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { job?.cancel(cause = null) }
+        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { shareOutJob?.cancel(cause = null) }
 
-        job = lifecycleScope.launch(Dispatchers.IO) {
+        shareOutJob = lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Temporarily prevent screen rotation
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                 //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
                 sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+                sharedSelection.clear()
+                for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
 
                 // Show a SnackBar if it takes too long (more than 500ms) preparing shares
                 withContext(Dispatchers.Main) {
+                    selectionTracker.clearSelection()
                     handler.removeCallbacksAndMessages(null)
                     handler.postDelayed({ waitingMsg.show() }, 500)
                 }
 
-                val uris = prepareShares(strip, job!!)
+                val uris = prepareShares(strip, shareOutJob!!)
 
                 withContext(Dispatchers.Main) {
                     // Call system share chooser
@@ -719,7 +736,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        job.invokeOnCompletion {
+        shareOutJob?.invokeOnCompletion {
             // Make sure we dismiss waiting SnackBar
             handler.removeCallbacksAndMessages(null)
             if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
