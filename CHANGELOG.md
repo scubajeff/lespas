@@ -1,3 +1,6 @@
+## Version 2.3.13
+* Fixed not able to list video file in external storage
+
 ## Version 2.3.12
 * Fixed crash when sharing media while phone is in landscape orientation
 * Use last modified date if EXIF doesn't contain taken date when syncing photo from server

@@ -1,0 +1,2 @@
+* Behoben, dass die Videodatei im externen Speicher nicht aufgelistet werden kann
+* Andere Verbesserungen und behobene Bugs

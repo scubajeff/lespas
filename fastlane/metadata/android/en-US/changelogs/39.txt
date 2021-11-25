@@ -1,0 +1,2 @@
+* Fixed not able to list video file in external storage
+* Other improvements and bugs fixed

@@ -1,0 +1,2 @@
+* Correction de l'impossibilité de lister les fichiers vidéo dans le stockage externe
+* Autres améliorations et bogues corrigés

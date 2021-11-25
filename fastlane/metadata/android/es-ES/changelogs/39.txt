@@ -1,0 +1,2 @@
+* Se ha corregido la imposibilidad de listar los archivos de vídeo en el almacenamiento externo
+* Otras mejoras y errores corregidos
