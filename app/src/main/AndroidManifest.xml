@@ -18,6 +18,12 @@
             <data android:mimeType="image/jpeg" />
         </intent>
     </queries>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+    </queries>
 
     <application
         android:networkSecurityConfig="@xml/network_security_config"

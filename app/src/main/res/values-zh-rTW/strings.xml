@@ -166,4 +166,5 @@
     <string name="preparing_shares">正在準備分享檔案……</string>
     <string name="striping_exif">正在洗掉圖片EXIF隱私資料……</string>
     <string name="show_list_first">啟動相機相冊時顯示檔案列表</string>
+    <string name="button_text_map">顯示拍照地點</string>
 </resources>

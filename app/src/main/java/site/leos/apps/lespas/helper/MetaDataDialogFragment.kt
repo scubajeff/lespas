@@ -1,9 +1,12 @@
 package site.leos.apps.lespas.helper
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.TableRow
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -23,10 +26,14 @@ import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
 class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
+    private var mapIntent = Intent(Intent.ACTION_VIEW)
+    private lateinit var mapButton: MaterialButton
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
+        mapButton = view.findViewById(R.id.map_button)
 
         try {
             var id = ""
@@ -112,6 +119,47 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
                             view.findViewById<TextView>(R.id.info_artist).text = t
                         }
+
+                        // View in map button
+                        val longitudeRef: String?
+                        val latitude: String?
+                        val latitudeRef: String?
+                        val longitude = getAttribute(ExifInterface.TAG_GPS_LONGITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE)
+                        var long = FAKE_COORDINATE
+                        var lat = FAKE_COORDINATE
+                        longitude?.run {
+                            longitudeRef = getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF)
+                            latitude = getAttribute(ExifInterface.TAG_GPS_LATITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE)
+                            latitudeRef = getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF)
+
+                            val coordinatePattern = "(.*)/(.*),(.*)/(.*),(.*)/(.*)".toRegex()
+                            coordinatePattern.matchEntire(longitude)?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
+                                try { long = d0.toFloat()/d1.toFloat() + (m0.toFloat() / m1.toFloat()) / 60 + (s0.toFloat() / s1.toFloat()) / 3600 } catch (e: NumberFormatException) {}
+                            }
+
+                            if (long != FAKE_COORDINATE) {
+                                coordinatePattern.matchEntire(latitude ?: "1000/1,0/1,0/1")?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
+                                    try { lat = d0.toFloat()/d1.toFloat() + (m0.toFloat() / m1.toFloat()) / 60 + (s0.toFloat() / s1.toFloat()) / 3600 } catch (e: NumberFormatException) {}
+                                }
+
+                                if (lat != FAKE_COORDINATE) {
+                                    if (longitudeRef == "W") long = -long
+                                    if (latitudeRef == "S") lat = -lat
+
+                                    mapIntent.data = Uri.parse("geo:${lat},${long}?z=20")
+                                    mapIntent.resolveActivity(requireActivity().packageManager)?.let {
+                                        mapButton.apply {
+                                            setOnClickListener {
+                                                startActivity(mapIntent)
+                                                dismiss()
+                                            }
+
+                                            isVisible = true
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -121,6 +169,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     companion object {
         const val KEY_MEDIA = "KEY_MEDIA"
         const val KEY_REMOTE_MEDIA = "KEY_REMOTE_MEDIA"
+        private const val FAKE_COORDINATE = 1000f
 
         @JvmStatic
         fun newInstance(media: Photo) = MetaDataDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_MEDIA, media) }}
