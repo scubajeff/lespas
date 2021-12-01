@@ -21,7 +21,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
@@ -156,55 +155,31 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
 
                         // View in map button
-                        val longitudeRef: String?
-                        val latitude: String?
-                        val latitudeRef: String?
-                        val longitude = getAttribute(ExifInterface.TAG_GPS_LONGITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE)
-                        longitude?.run {
-                            val poi = GeoPoint(FAKE_COORDINATE, FAKE_COORDINATE)
-                            longitudeRef = getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF)
-                            latitude = getAttribute(ExifInterface.TAG_GPS_LATITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE)
-                            latitudeRef = getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF)
+                        val poi = Tools.getGeoPoint(this)
+                        if (poi.longitude != Tools.FAKE_COORDINATE) {
+                            with(map) {
+                                controller.setZoom(18.5)
+                                controller.setCenter(poi)
+                                Marker(this).let {
+                                    it.position = poi
+                                    it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
+                                    this.overlays.add(it)
+                                }
+                                if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                                invalidate()
 
-                            val coordinatePattern = "(.*)/(.*),(.*)/(.*),(.*)/(.*)".toRegex()
-                            coordinatePattern.matchEntire(longitude)?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
-                                try { poi.longitude = d0.toDouble()/d1.toInt() + (m0.toDouble() / m1.toInt()) / 60 + (s0.toDouble() / s1.toInt()) / 3600 } catch (e: NumberFormatException) {}
+                                isVisible = true
                             }
 
-                            if (poi.longitude != FAKE_COORDINATE) {
-                                coordinatePattern.matchEntire(latitude ?: "1000/1,0/1,0/1")?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
-                                    try { poi.latitude = d0.toDouble()/d1.toInt() + (m0.toDouble() / m1.toInt()) / 60 + (s0.toDouble() / s1.toInt()) / 3600 } catch (e: NumberFormatException) {}
-                                }
-
-                                if (poi.latitude != FAKE_COORDINATE) {
-                                    if (longitudeRef == "W") poi.longitude = -poi.longitude
-                                    if (latitudeRef == "S") poi.latitude = -poi.latitude
-
-                                    with(map) {
-                                        controller.setZoom(18.5)
-                                        controller.setCenter(poi)
-                                        Marker(this).let {
-                                            it.position = poi
-                                            it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-                                            this.overlays.add(it)
-                                        }
-                                        if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
-                                        invalidate()
-
-                                        isVisible = true
+                            mapIntent.data = Uri.parse("geo:${poi.latitude},${poi.longitude}?z=22")
+                            mapIntent.resolveActivity(requireActivity().packageManager)?.let {
+                                mapButton.apply {
+                                    setOnClickListener {
+                                        startActivity(mapIntent)
+                                        dismiss()
                                     }
 
-                                    mapIntent.data = Uri.parse("geo:${poi.latitude},${poi.longitude}?z=22")
-                                    mapIntent.resolveActivity(requireActivity().packageManager)?.let {
-                                        mapButton.apply {
-                                            setOnClickListener {
-                                                startActivity(mapIntent)
-                                                dismiss()
-                                            }
-
-                                            isVisible = true
-                                        }
-                                    }
+                                    isVisible = true
                                 }
                             }
                         }

@@ -24,6 +24,7 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
+import org.osmdroid.util.GeoPoint
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.photo.Photo
@@ -46,6 +47,7 @@ import kotlin.math.roundToInt
 
 object Tools {
     const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
+    const val FAKE_COORDINATE = 1000.0
     val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
 
@@ -520,5 +522,38 @@ object Tools {
                 setActionTextColor(ContextCompat.getColor(anchorView.context, R.color.color_error))
             }
         }
+    }
+
+    fun getGeoPoint(exifInterface: ExifInterface): GeoPoint {
+        val poi = GeoPoint(FAKE_COORDINATE, FAKE_COORDINATE)
+
+        with(exifInterface) {
+            val longitude = getAttribute(ExifInterface.TAG_GPS_LONGITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE)
+            longitude?.run {
+                val longitudeRef = getAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LONGITUDE_REF)
+                val latitude = getAttribute(ExifInterface.TAG_GPS_LATITUDE) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE)
+                val latitudeRef = getAttribute(ExifInterface.TAG_GPS_LATITUDE_REF) ?: getAttribute(ExifInterface.TAG_GPS_DEST_LATITUDE_REF)
+
+                val coordinatePattern = "(.*)/(.*),(.*)/(.*),(.*)/(.*)".toRegex()
+                coordinatePattern.matchEntire(longitude)?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
+                    try { poi.longitude = d0.toDouble() / d1.toInt() + (m0.toDouble() / m1.toInt()) / 60 + (s0.toDouble() / s1.toInt()) / 3600 } catch (e: NumberFormatException) {}
+                }
+
+                if (poi.longitude != FAKE_COORDINATE) {
+                    coordinatePattern.matchEntire(latitude ?: "1000/1,0/1,0/1")?.destructured?.let { (d0, d1, m0, m1, s0, s1) ->
+                        try { poi.latitude = d0.toDouble() / d1.toInt() + (m0.toDouble() / m1.toInt()) / 60 + (s0.toDouble() / s1.toInt()) / 3600 } catch (e: NumberFormatException) {}
+                    }
+
+                    if (poi.latitude != FAKE_COORDINATE) {
+                        if (longitudeRef == "W") poi.longitude = -poi.longitude
+                        if (latitudeRef == "S") poi.latitude = -poi.latitude
+                    } else {
+                        poi.longitude = FAKE_COORDINATE
+                    }
+                }
+            }
+        }
+
+        return poi
     }
 }
