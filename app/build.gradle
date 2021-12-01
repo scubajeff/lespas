@@ -108,6 +108,9 @@ dependencies {
     // Muzei api
     implementation 'com.google.android.apps.muzei:muzei-api:3.4.0'
 
+    // OSMdroid
+    implementation 'org.osmdroid:osmdroid-android:6.1.11'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
