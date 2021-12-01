@@ -2,6 +2,8 @@ package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.Configuration.UI_MODE_NIGHT_MASK
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.net.Uri
 import android.os.Bundle
 import android.view.MotionEvent
@@ -23,6 +25,8 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.TilesOverlay
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -184,6 +188,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                             it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
                                             this.overlays.add(it)
                                         }
+                                        if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
                                         invalidate()
 
                                         isVisible = true
