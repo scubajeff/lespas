@@ -166,5 +166,5 @@
     <string name="striping_exif">Suppression des données EXIF…</string>
     <string name="preparing_shares">Préparation des partages de fichiers…</string>
     <string name="show_list_first">Afficher la liste des médias au démarrage du rouleau de la caméra</string>
-    <string name="button_text_map">Voir sur la carte</string>
+    <string name="button_text_map">App. de carte</string>
 </resources>

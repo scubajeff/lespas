@@ -187,7 +187,7 @@
     <string name="camera_model">Model:</string>
     <string name="parameter">Param.:</string>
     <string name="artist">Artist:</string>
-    <string name="button_text_map">View in Map</string>
+    <string name="button_text_map">Map App</string>
 
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publish to:</string>

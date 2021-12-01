@@ -166,5 +166,5 @@
     <string name="preparing_shares">共有ファイルの準備……</string>
     <string name="striping_exif">EXIFデータのストライピング……</string>
     <string name="show_list_first">カメラロール起動時のメディアリスト表示</string>
-    <string name="button_text_map">地図で見る</string>
+    <string name="button_text_map">地図アプリ</string>
 </resources>

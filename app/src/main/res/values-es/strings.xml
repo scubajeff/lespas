@@ -166,5 +166,5 @@
     <string name="preparing_shares">Preparación de archivos compartidos…</string>
     <string name="striping_exif">Eliminación de datos EXIF…</string>
     <string name="show_list_first">Mostrar la lista de medios cuando se inicia el rollo de la cámara</string>
-    <string name="button_text_map">Ver en el mapa</string>
+    <string name="button_text_map">App de mapas</string>
 </resources>
