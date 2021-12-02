@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
@@ -155,9 +156,9 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
 
                         // View in map button
-                        val poi = Tools.getGeoPoint(this)
-                        if (poi.longitude != Tools.FAKE_COORDINATE) {
+                        latLong?.also { latLong ->
                             with(map) {
+                                val poi = GeoPoint(latLong[0], latLong[1])
                                 controller.setZoom(18.5)
                                 controller.setCenter(poi)
                                 Marker(this).let {
@@ -171,7 +172,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 isVisible = true
                             }
 
-                            mapIntent.data = Uri.parse("geo:${poi.latitude},${poi.longitude}?z=22")
+                            mapIntent.data = Uri.parse("geo:${latLong[0]},${latLong[1]}?z=22")
                             mapIntent.resolveActivity(requireActivity().packageManager)?.let {
                                 mapButton.apply {
                                     setOnClickListener {
