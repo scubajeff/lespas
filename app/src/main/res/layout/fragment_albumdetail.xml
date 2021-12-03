@@ -20,8 +20,6 @@
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="@integer/photo_grid_span_count"
             tools:ignore="RtlHardcoded,RtlSymmetry"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="-32dp"
             tools:listitem="@layout/recyclerview_item_photo" />
 
         <com.google.android.material.button.MaterialButton

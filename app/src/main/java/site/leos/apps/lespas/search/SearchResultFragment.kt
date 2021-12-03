@@ -86,7 +86,7 @@ class SearchResultFragment : Fragment() {
             { photo: Photo, view: ImageView-> imageLoaderModel.loadPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
         ).apply {
             // Get album's name for display
-            lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList((albumModel.getAllAlbumIdName())) }
+            lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
     }

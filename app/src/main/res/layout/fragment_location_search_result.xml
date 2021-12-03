@@ -5,23 +5,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="?attr/actionBarSize"
-    tools:context="site.leos.apps.lespas.search.SearchFragment">
+    android:background="@color/color_background">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/category_list"
+        android:id="@+id/photogrid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingLeft="@dimen/extra_padding"
-        android:transitionGroup="true"
+        android:paddingLeft="1dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="@integer/search_category_grid_span_count"
-        tools:listitem="@layout/recyclerview_item_search_category"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-    <FrameLayout
-        android:id="@+id/container_child_fragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        app:spanCount="@integer/photo_grid_span_count"
+        tools:listitem="@layout/recyclerview_item_photo"
+        tools:ignore="RtlHardcoded,RtlSymmetry"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
