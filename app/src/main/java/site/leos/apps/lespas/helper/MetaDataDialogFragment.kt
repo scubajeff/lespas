@@ -157,30 +157,40 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                         // View in map button
                         latLong?.also { latLong ->
-                            with(map) {
-                                val poi = GeoPoint(latLong[0], latLong[1])
-                                controller.setZoom(18.5)
-                                controller.setCenter(poi)
-                                Marker(this).let {
-                                    it.position = poi
-                                    it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-                                    this.overlays.add(it)
-                                }
-                                if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
-                                invalidate()
+                            when {
+                                latLong[0] == 0.0 -> {}
+                                latLong[0] >= 90.0 -> {}
+                                latLong[0] <= -90.0 -> {}
+                                latLong[1] == 0.0 -> {}
+                                latLong[1] >= 180.0 -> {}
+                                latLong[1] <= -180.0 -> {}
+                                else -> {
+                                    with(map) {
+                                        val poi = GeoPoint(latLong[0], latLong[1])
+                                        controller.setZoom(18.5)
+                                        controller.setCenter(poi)
+                                        Marker(this).let {
+                                            it.position = poi
+                                            it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
+                                            this.overlays.add(it)
+                                        }
+                                        if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                                        invalidate()
 
-                                isVisible = true
-                            }
-
-                            mapIntent.data = Uri.parse("geo:${latLong[0]},${latLong[1]}?z=22")
-                            mapIntent.resolveActivity(requireActivity().packageManager)?.let {
-                                mapButton.apply {
-                                    setOnClickListener {
-                                        startActivity(mapIntent)
-                                        dismiss()
+                                        isVisible = true
                                     }
 
-                                    isVisible = true
+                                    mapIntent.data = Uri.parse("geo:${latLong[0]},${latLong[1]}?z=22")
+                                    mapIntent.resolveActivity(requireActivity().packageManager)?.let {
+                                        mapButton.apply {
+                                            setOnClickListener {
+                                                startActivity(mapIntent)
+                                                dismiss()
+                                            }
+
+                                            isVisible = true
+                                        }
+                                    }
                                 }
                             }
                         }
