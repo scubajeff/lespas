@@ -203,6 +203,7 @@
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_search">Search</string>
+    <string name="item_location_search">Search by Location</string>
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
@@ -249,6 +250,7 @@
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="object_unknown">UNKNOWN</string>
+    <string name="object_location">Location</string>
     <string name="object_animal">Animal</string>
     <string name="object_plant">Plant</string>
     <string name="object_food">Food</string>

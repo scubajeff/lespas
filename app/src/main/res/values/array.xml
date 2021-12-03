@@ -29,6 +29,7 @@
         <item>@string/object_plant</item>
         <item>@string/object_food</item>
         <item>@string/object_vehicle</item>
+        <item>@string/object_location</item>
     </string-array>
 
     <integer-array name="object_drawable_ids">
@@ -37,5 +38,6 @@
         <item>@drawable/ic_baseline_plant_24</item>
         <item>@drawable/ic_baseline_food_24</item>
         <item>@drawable/ic_baseline_vehicle_24</item>
+        <item>@drawable/ic_baseline_places_24</item>
     </integer-array>
 </resources>

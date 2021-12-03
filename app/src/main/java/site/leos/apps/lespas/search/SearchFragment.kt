@@ -37,20 +37,16 @@ class SearchFragment : Fragment() {
         setHasOptionsMenu(true)
 
         categoryAdapter = CategoryAdapter { category ->
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName)
-                .addToBackStack(null)
-                .commit()
-        }.apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-        }
+            when(category.id.toInt()) {
+                in 1..4-> parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                5-> parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchFragment(), LocationSearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+            }
+        }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         val objectLabels = resources.getStringArray(R.array.objects)
         val objectDrawableIds = resources.obtainTypedArray(R.array.object_drawable_ids)
         val categories = mutableListOf<SearchCategory>()
-        for(i in 1 until objectLabels.size) {
-            categories.add(SearchCategory(""+i, objectLabels[i], Classification.TYPE_OBJECT, ResourcesCompat.getDrawable(resources, objectDrawableIds.getResourceId(i, 0), null)!!))
-        }
+        for(i in 1 until objectLabels.size) categories.add(SearchCategory(""+i, objectLabels[i], Classification.TYPE_OBJECT, ResourcesCompat.getDrawable(resources, objectDrawableIds.getResourceId(i, 0), null)!!))
         categoryAdapter.submitList(categories)
         objectDrawableIds.recycle()
 
@@ -62,10 +58,9 @@ class SearchFragment : Fragment() {
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
             if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
-            else if (noAlbum)
-                parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
+            else if (noAlbum) parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
                     ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).show(parentFragmentManager, CONFIRM_DIALOG)
-                }
+            }
         }
     }
 
@@ -75,9 +70,7 @@ class SearchFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<RecyclerView>(R.id.category_list).apply {
-            adapter = categoryAdapter
-        }
+        view.findViewById<RecyclerView>(R.id.category_list).adapter = categoryAdapter
 
         // Not ready to search confirm exit dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
@@ -182,7 +175,6 @@ class SearchFragment : Fragment() {
         private const val NO_ALBUM = "NO_ALBUM"
         private const val LAST_SELECTION = "LAST_SELECTION"
 
-//        private const val STORAGE_PERMISSION_REQUEST = 8900
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
 
         @JvmStatic

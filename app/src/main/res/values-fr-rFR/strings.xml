@@ -167,4 +167,6 @@
     <string name="preparing_shares">Préparation des partages de fichiers…</string>
     <string name="show_list_first">Afficher la liste des médias au démarrage du rouleau de la caméra</string>
     <string name="button_text_map">App. de carte</string>
+    <string name="object_location">Lieu</string>
+    <string name="item_location_search">Recherche par lieu</string>
 </resources>

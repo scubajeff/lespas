@@ -167,4 +167,6 @@
     <string name="striping_exif">正在删除图片EXIF隐私数据……</string>
     <string name="show_list_first">启动相机相册时显示文件列表</string>
     <string name="button_text_map">地图应用</string>
+    <string name="object_location">拍摄地点</string>
+    <string name="item_location_search">搜索拍摄地点</string>
 </resources>

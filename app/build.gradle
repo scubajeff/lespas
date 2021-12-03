@@ -108,8 +108,13 @@ dependencies {
     // Muzei api
     implementation 'com.google.android.apps.muzei:muzei-api:3.4.0'
 
-    // OSMdroid
-    implementation 'org.osmdroid:osmdroid-android:6.1.11'
+    // OSMdroid and OSMbonuspack
+    implementation('org.osmdroid:osmdroid-android:6.1.11')  {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
+    implementation('com.github.MKergall:osmbonuspack:6.7.0') {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+    }
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

@@ -167,4 +167,6 @@
     <string name="striping_exif">正在刪除圖片EXIF私隱數據……</string>
     <string name="show_list_first">啟動相機相冊時顯示文檔列表</string>
     <string name="button_text_map">地圖App</string>
+    <string name="object_location">影相地點</string>
+    <string name="item_location_search">搜索影相地點</string>
 </resources>

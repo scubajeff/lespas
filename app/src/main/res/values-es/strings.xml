@@ -167,4 +167,6 @@
     <string name="striping_exif">Eliminación de datos EXIF…</string>
     <string name="show_list_first">Mostrar la lista de medios cuando se inicia el rollo de la cámara</string>
     <string name="button_text_map">App de mapas</string>
+    <string name="object_location">Ubicación</string>
+    <string name="item_location_search">Buscar por ubicación</string>
 </resources>

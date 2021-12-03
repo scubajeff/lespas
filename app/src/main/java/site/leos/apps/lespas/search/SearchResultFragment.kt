@@ -83,7 +83,7 @@ class SearchResultFragment : Fragment() {
                         .replace(R.id.container_root, CameraRollFragment.newInstance(result.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
-            { photo: Photo, view: ImageView, type: String -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() }}
+            { photo: Photo, view: ImageView-> imageLoaderModel.loadPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
         ).apply {
             // Get album's name for display
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList((albumModel.getAllAlbumIdName())) }
@@ -99,7 +99,7 @@ class SearchResultFragment : Fragment() {
 
         searchResultRecyclerView = view.findViewById(R.id.photogrid)
         searchResultRecyclerView.adapter = searchResultAdapter
-        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult) })
+        adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 
         stub = view.findViewById(R.id.stub)
         emptyView = view.findViewById(R.id.emptyview)
@@ -165,7 +165,7 @@ class SearchResultFragment : Fragment() {
         override fun <T : ViewModel> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchCollection) as T
     }
 
-    class AdhocSearchViewModel(private val app: Application, private val categoryId: String, private val searchInAlbums: Boolean): AndroidViewModel(app) {
+    class AdhocSearchViewModel(app: Application, categoryId: String, searchInAlbums: Boolean): AndroidViewModel(app) {
         private val finished = MutableLiveData(false)
         private val resultList = mutableListOf<Result>()
         private val result = MutableLiveData<List<Result>>()
@@ -223,7 +223,7 @@ class SearchResultFragment : Fragment() {
         fun getResultList(): LiveData<List<Result>> = result
     }
 
-    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
     ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -231,7 +231,7 @@ class SearchResultFragment : Fragment() {
             @SuppressLint("SetTextI18n")
             fun bind(item: Result) {
                 with(itemView.findViewById<ImageView>(R.id.photo)) {
-                    imageLoader(item.photo, this, ImageLoaderViewModel.TYPE_GRID)
+                    imageLoader(item.photo, this)
                     setOnClickListener { clickListener(item, this) }
                     ViewCompat.setTransitionName(this, item.photo.id)
                 }
@@ -247,10 +247,6 @@ class SearchResultFragment : Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(getItem(position))
-        }
-
-        override fun submitList(list: List<Result>?) {
-            super.submitList(list?.toMutableList())
         }
 
         fun setAlbumNameList(list: List<IDandName>) {
