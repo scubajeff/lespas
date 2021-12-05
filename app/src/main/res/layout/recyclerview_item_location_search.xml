@@ -10,7 +10,8 @@
     android:padding="@dimen/big_padding"
     android:foreground="?android:attr/selectableItemBackground"
     android:background="@drawable/album_item_background"
-    tools:ignore="RtlHardcoded">
+    tools:ignore="RtlHardcoded"
+    android:transitionGroup="true">
 
     <site.leos.apps.lespas.helper.DullConstraintLayout
         android:id="@+id/item_container"
@@ -28,6 +29,7 @@
             app:spanCount="2"
             android:scrollbars="none"
             android:nestedScrollingEnabled="false"
+            android:transitionGroup="true"
             tools:listitem="@layout/recyclerview_item_photo"/>
 
         <TextView

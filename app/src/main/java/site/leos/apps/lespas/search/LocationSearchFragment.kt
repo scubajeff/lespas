@@ -2,11 +2,14 @@ package site.leos.apps.lespas.search
 
 import android.app.Application
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.doOnPreDraw
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -17,9 +20,11 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
@@ -48,11 +53,16 @@ class LocationSearchFragment: Fragment() {
         setHasOptionsMenu(true)
 
         resultAdapter = LocationSearchResultAdapter(
-            { result ->
-                childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationSearchResultFragment.newInstance(result.locality, result.country), LocationSearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
-                (activity as? AppCompatActivity)?.supportActionBar?.title = result.locality
-                enableMapOptionMenu()
+            { result, view ->
                 searchViewModel.putCurrentLocality(result.locality)
+                (activity as? AppCompatActivity)?.supportActionBar?.title = result.locality
+
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                childFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, view.transitionName)
+                    .replace(R.id.container_child_fragment, LocationSearchResultFragment.newInstance(result.locality, result.country), LocationSearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { photo, imageView -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_GRID) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -60,10 +70,10 @@ class LocationSearchFragment: Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when(childFragmentManager.backStackEntryCount) {
+                    2-> childFragmentManager.popBackStack()
                     1-> {
                         childFragmentManager.popBackStack()
                         (activity as? AppCompatActivity)?.supportActionBar?.title = getString(R.string.item_location_search)
-                        disableMapOptionMenu()
                     }
                     0-> parentFragmentManager.popBackStack()
                 }
@@ -75,13 +85,16 @@ class LocationSearchFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        postponeEnterTransition()
+        view.doOnPreDraw { startPostponedEnterTransition() }
+
         resultView = view.findViewById<RecyclerView>(R.id.category_list).apply {
             adapter = resultAdapter
         }
 
         searchViewModel.getResult().observe(viewLifecycleOwner, Observer { result ->
             val items = mutableListOf<LocationSearchResult>()
-            var photoList: List<Photo>
+            var photoList: List<PhotoWithCoordinate>
 
             // General a new result list, this is crucial for DiffUtil to detect changes
             result.forEach {
@@ -101,7 +114,7 @@ class LocationSearchFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        (activity as? AppCompatActivity)?.supportActionBar?.run {
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
             title = if (childFragmentManager.backStackEntryCount > 0) searchViewModel.getCurrentLocality() else getString(R.string.item_location_search)
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
@@ -149,10 +162,10 @@ class LocationSearchFragment: Fragment() {
                                     val city = this.locality ?: this.adminArea ?: ""
                                     resultList.find { result-> result.country == this.countryName && result.locality == city }
                                         ?.let { existed ->
-                                            existed.photos.add(photo)
+                                            existed.photos.add(PhotoWithCoordinate(photo, it[0], it[1]))
                                             existed.total++
                                         }
-                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(photo), 1, this.countryName, city)) }
+                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(PhotoWithCoordinate(photo, it[0], it[1])), 1, this.countryName, city)) }
 
                                     // Update UI
                                     result.postValue(resultList)
@@ -185,17 +198,18 @@ class LocationSearchFragment: Fragment() {
         fun putCurrentLocality(locality: String) { currentLocality = locality }
     }
 
-    class LocationSearchResultAdapter(private val clickListener: (LocationSearchResult) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    class LocationSearchResultAdapter(private val clickListener: (LocationSearchResult, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
     ): ListAdapter<LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var photoAdapter = PhotoAdapter { photo, imageView ->  imageLoader(photo, imageView) }
             private val tvCountry = itemView.findViewById<TextView>(R.id.country)
             private val tvLocality = itemView.findViewById<TextView>(R.id.locality)
             private val tvCount = itemView.findViewById<TextView>(R.id.count)
+            private val rvPhoto = itemView.findViewById<RecyclerView>(R.id.items)
             private val photoRVViewPool = RecyclerView.RecycledViewPool()
 
             init {
-                itemView.findViewById<RecyclerView>(R.id.items)?.apply {
+                rvPhoto.apply {
                     adapter = photoAdapter
                     setRecycledViewPool(photoRVViewPool)
                     (layoutManager as RecyclerView.LayoutManager).isItemPrefetchEnabled = false
@@ -209,7 +223,12 @@ class LocationSearchFragment: Fragment() {
 
                 photoAdapter.submitList(item.photos)
 
-                itemView.setOnClickListener { clickListener(item) }
+                itemView.setOnClickListener { clickListener(item, tvLocality) }
+                ViewCompat.setTransitionName(tvLocality, item.locality)
+/*
+                itemView.setOnClickListener { clickListener(item, rvPhoto) }
+                ViewCompat.setTransitionName(rvPhoto, item.locality)
+*/
             }
         }
 
@@ -219,15 +238,15 @@ class LocationSearchFragment: Fragment() {
 
     class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchResult>() {
         override fun areItemsTheSame(oldItem: LocationSearchResult, newItem: LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
-        override fun areContentsTheSame(oldItem: LocationSearchResult, newItem: LocationSearchResult): Boolean = oldItem.photos.last().id == newItem.photos.last().id
+        override fun areContentsTheSame(oldItem: LocationSearchResult, newItem: LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
     }
 
-    class PhotoAdapter(private val imageLoader: (Photo, ImageView) -> Unit): ListAdapter<Photo, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoAdapter(private val imageLoader: (Photo, ImageView) -> Unit): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
 
-            fun bind(item: Photo) {
-                imageLoader(item, ivPhoto)
+            fun bind(item: PhotoWithCoordinate) {
+                imageLoader(item.photo, ivPhoto)
             }
         }
 
@@ -235,13 +254,20 @@ class LocationSearchFragment: Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
-        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.eTag == newItem.eTag
+    class PhotoDiffCallback: DiffUtil.ItemCallback<PhotoWithCoordinate>() {
+        override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
+    @Parcelize
+    data class PhotoWithCoordinate(
+        val photo: Photo,
+        val lat: Double,
+        val long: Double,
+    ): Parcelable
+
     data class LocationSearchResult (
-        var photos: MutableList<Photo>,
+        var photos: MutableList<PhotoWithCoordinate>,
         var total: Int,
         val country: String,
         val locality: String,

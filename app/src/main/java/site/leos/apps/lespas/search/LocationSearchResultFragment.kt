@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -36,7 +38,12 @@ class LocationSearchResultFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         photoAdapter = PhotoAdapter(
-            { photo -> },
+            { photo, view ->
+                parentFragmentManager.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .addSharedElement(view, view.transitionName)
+                    .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+            },
             { photo, imageView -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
         ).apply {
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
@@ -47,14 +54,22 @@ class LocationSearchResultFragment: Fragment() {
             locality = getString(KEY_LOCALITY)!!
             country = getString(KEY_COUNTRY)!!
         }
+
+        postponeEnterTransition()
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+            //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_location_search_result, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<RecyclerView>(R.id.photogrid).apply {
+        view.findViewById<RecyclerView>(R.id.photogrid)?.apply {
             adapter = photoAdapter
+            ViewCompat.setTransitionName(this, locality)
         }
 
         searchViewModel.getResult().observe(viewLifecycleOwner, { resultList->
@@ -62,20 +77,33 @@ class LocationSearchResultFragment: Fragment() {
         })
     }
 
-    class PhotoAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
-    ): ListAdapter<Photo, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    override fun onResume() {
+        super.onResume()
+        //(parentFragment as LocationSearchFragment).enableMapOptionMenu()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        //(parentFragment as LocationSearchFragment).disableMapOptionMenu()
+    }
+
+    class PhotoAdapter(private val clickListener: (LocationSearchFragment.PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    ): ListAdapter<LocationSearchFragment.PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
-            fun bind(item: Photo) {
-                imageLoader(item, ivPhoto)
-                ivPhoto.setOnClickListener { clickListener(item) }
-                ViewCompat.setTransitionName(ivPhoto, item.id)
+            fun bind(item: LocationSearchFragment.PhotoWithCoordinate) {
+                with(item.photo) {
+                    imageLoader(this, ivPhoto)
+                    ivPhoto.setOnClickListener { clickListener(item, ivPhoto) }
+                    ViewCompat.setTransitionName(ivPhoto, this.id)
 
-                tvLabel.text = albumNames[item.albumId]
+                    tvLabel.text = albumNames[this.albumId]
+                }
+
             }
         }
 
@@ -85,9 +113,9 @@ class LocationSearchResultFragment: Fragment() {
         fun setAlbumNameList(list: List<IDandName>) { for (album in list) { albumNames[album.id] = album.name }}
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
-        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.eTag == newItem.eTag
+    class PhotoDiffCallback: DiffUtil.ItemCallback<LocationSearchFragment.PhotoWithCoordinate>() {
+        override fun areItemsTheSame(oldItem: LocationSearchFragment.PhotoWithCoordinate, newItem: LocationSearchFragment.PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: LocationSearchFragment.PhotoWithCoordinate, newItem: LocationSearchFragment.PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
     companion object {

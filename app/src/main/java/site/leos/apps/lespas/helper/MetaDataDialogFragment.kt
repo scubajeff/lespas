@@ -52,6 +52,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
         map = view.findViewById<MapView>(R.id.map).apply {
             // TODO user setting?
+            setMultiTouchControls(true)
             setUseDataConnection(true)
             setTileSource(TileSourceFactory.MAPNIK)
             isFlingEnabled = false

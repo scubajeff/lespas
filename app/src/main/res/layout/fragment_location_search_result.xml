@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/color_background">
+    android:background="@drawable/album_item_background">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/photogrid"
@@ -14,6 +14,7 @@
         android:paddingLeft="1dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/photo_grid_span_count"
+        android:transitionGroup="true"
         tools:listitem="@layout/recyclerview_item_photo"
         tools:ignore="RtlHardcoded,RtlSymmetry"/>
 
