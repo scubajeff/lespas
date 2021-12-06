@@ -29,7 +29,6 @@
             app:spanCount="2"
             android:scrollbars="none"
             android:nestedScrollingEnabled="false"
-            android:transitionGroup="true"
             tools:listitem="@layout/recyclerview_item_photo"/>
 
         <TextView

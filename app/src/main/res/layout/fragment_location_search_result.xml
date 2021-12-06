@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.recyclerview.widget.RecyclerView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/photogrid"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/album_item_background">
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/photogrid"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingLeft="1dp"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="@integer/photo_grid_span_count"
-        android:transitionGroup="true"
-        tools:listitem="@layout/recyclerview_item_photo"
-        tools:ignore="RtlHardcoded,RtlSymmetry"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    android:paddingLeft="1dp"
+    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+    app:spanCount="@integer/photo_grid_span_count"
+    android:background="@drawable/album_item_background"
+    tools:listitem="@layout/recyclerview_item_photo"
+    tools:ignore="RtlHardcoded,RtlSymmetry"/>

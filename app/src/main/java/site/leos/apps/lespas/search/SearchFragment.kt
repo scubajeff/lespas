@@ -39,7 +39,7 @@ class SearchFragment : Fragment() {
         categoryAdapter = CategoryAdapter { category ->
             when(category.id.toInt()) {
                 in 1..4-> parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
-                5-> parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchFragment(), LocationSearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                5-> parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment(), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
         }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 

@@ -31,19 +31,18 @@ class PhotoWithMapFragment: Fragment() {
         super.onCreate(savedInstanceState)
         photo = requireArguments().getParcelable(KEY_PHOTO)!!
 
+        sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+            scrimColor = Color.TRANSPARENT
+            //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }
         requireActivity().requestedOrientation = if (photo.photo.width < photo.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         postponeEnterTransition()
-        sharedElementEnterTransition = MaterialContainerTransform().apply {
-            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-            scrimColor = Color.TRANSPARENT
-            //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }
 
         view.findViewById<PhotoView>(R.id.photo)?.apply {
             imageLoaderViewModel.loadPhoto(photo.photo, this, ImageLoaderViewModel.TYPE_FULL) { startPostponedEnterTransition() }

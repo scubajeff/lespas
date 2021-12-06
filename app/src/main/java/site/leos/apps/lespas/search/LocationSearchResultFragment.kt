@@ -3,10 +3,12 @@ package site.leos.apps.lespas.search
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -32,10 +34,11 @@ class LocationSearchResultFragment: Fragment() {
     private lateinit var photoAdapter: PhotoAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchFragment.LocationSearchViewModelFactory(requireActivity().application) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
 
         photoAdapter = PhotoAdapter(
             { photo, view ->
@@ -55,7 +58,6 @@ class LocationSearchResultFragment: Fragment() {
             country = getString(KEY_COUNTRY)!!
         }
 
-        postponeEnterTransition()
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -66,6 +68,7 @@ class LocationSearchResultFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_location_search_result, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        postponeEnterTransition()
 
         view.findViewById<RecyclerView>(R.id.photogrid)?.apply {
             adapter = photoAdapter
@@ -79,12 +82,21 @@ class LocationSearchResultFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        //(parentFragment as LocationSearchFragment).enableMapOptionMenu()
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            title = locality
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowTitleEnabled(true)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        //(parentFragment as LocationSearchFragment).disableMapOptionMenu()
+        (parentFragment as LocationSearchHostFragment).disableMenuItem(R.id.option_menu_in_map)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        (parentFragment as LocationSearchHostFragment).enableMenuItem(R.id.option_menu_in_map)
     }
 
     class PhotoAdapter(private val clickListener: (LocationSearchFragment.PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
