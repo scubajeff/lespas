@@ -25,21 +25,22 @@
 
     <TextView
         android:id="@+id/label"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/photo"
+        app:layout_constraintRight_toRightOf="parent"
         android:paddingVertical="@dimen/tiny_padding"
         android:paddingHorizontal="@dimen/small_padding"
         android:elevation="2dp"
         android:ellipsize="middle"
         android:singleLine="true"
-        style="@style/TextAppearance.MaterialComponents.Body2"
-        android:textSize="12sp"
+        style="@style/TextAppearance.MaterialComponents.Caption"
         android:textColor="@color/color_text_light"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="1"
         android:shadowColor="@color/dark_gray_overlay_background"
-        android:textAlignment="textEnd" />
+        android:textAlignment="textEnd"
+        tools:text="album"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
