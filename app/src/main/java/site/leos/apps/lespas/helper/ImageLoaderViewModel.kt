@@ -101,7 +101,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         }
                     }
                 }
-                TYPE_FULL -> {
+                TYPE_FULL, TYPE_QUATER -> {
                     if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     else {
                         var bmp =
@@ -118,7 +118,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName)))
                                     null
                                 }
-                                else BitmapFactory.decodeFile(fileName)
+                                else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { if (type == TYPE_QUATER) inSampleSize = 2 })
                             }
 
                         // If image is too large
@@ -254,7 +254,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     decodeResult = decodeBitmap(photo, type)
                     bitmap = decodeResult.first
                     if (bitmap == null) bitmap = errorBitmap
-                    else if (type != TYPE_FULL) imageCache.put(key, bitmap)
+                    else if (type != TYPE_FULL && type != TYPE_QUATER) imageCache.put(key, bitmap)
                 }
 
                 //Log.e(">>>", "${bitmap.allocationByteCount} aa ${imageCache.putCount()} ${imageCache.snapshot().size}")
@@ -362,6 +362,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
+        const val TYPE_QUATER = "_quater"
 
         //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
         const val FROM_CAMERA_ROLL = "0"

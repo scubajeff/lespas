@@ -45,7 +45,7 @@ class PhotoWithMapFragment: Fragment() {
         postponeEnterTransition()
 
         view.findViewById<PhotoView>(R.id.photo)?.apply {
-            imageLoaderViewModel.loadPhoto(photo.photo, this, ImageLoaderViewModel.TYPE_FULL) { startPostponedEnterTransition() }
+            imageLoaderViewModel.loadPhoto(photo.photo, this, ImageLoaderViewModel.TYPE_QUATER) { startPostponedEnterTransition() }
             ViewCompat.setTransitionName(this, photo.photo.id)
         }
 
