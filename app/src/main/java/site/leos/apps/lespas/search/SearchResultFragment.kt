@@ -222,15 +222,18 @@ class SearchResultFragment : Fragment() {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
+            private val tvLabel = itemView.findViewById<TextView>(R.id.label)
+
             @SuppressLint("SetTextI18n")
             fun bind(item: Result) {
-                with(itemView.findViewById<ImageView>(R.id.photo)) {
+                with(ivPhoto) {
                     imageLoader(item.photo, this)
                     setOnClickListener { clickListener(item, this) }
                     ViewCompat.setTransitionName(this, item.photo.id)
                 }
-                //itemView.findViewById<TextView>(R.id.label).text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
-                itemView.findViewById<TextView>(R.id.label).text =
+                //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
+                tvLabel.text =
                     if (item.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[item.photo.albumId]
                     else item.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
             }

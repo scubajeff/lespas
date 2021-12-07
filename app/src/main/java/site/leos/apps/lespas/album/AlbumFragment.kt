@@ -441,11 +441,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
+            private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
+            private val tvTitle = itemView.findViewById<TextView>(R.id.title)
+            private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
+            private val llRecipients = itemView.findViewById<LinearLayoutCompat>(R.id.recipients)
+
             @SuppressLint("InflateParams")
             fun bindViewItems(album: Album, isActivated: Boolean) {
                 itemView.apply {
                     this.isActivated = isActivated
-                    findViewById<ImageView>(R.id.coverart).let {coverImageview ->
+                    ivCover.let {coverImageview ->
                         //imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
                         covers.find { it.id == album.cover }?.let { imageLoader(it, coverImageview, ImageLoaderViewModel.TYPE_COVER) }
                         /*
@@ -456,16 +462,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
-                            with(findViewById<ContentLoadingProgressBar>(R.id.sync_progress)) {
+                            with(pbSync) {
                                 visibility = View.VISIBLE
                                 progress = (album.syncProgress * 100).toInt()
                             }
                         } else {
                             coverImageview.clearColorFilter()
-                            findViewById<ContentLoadingProgressBar>(R.id.sync_progress).visibility = View.GONE
+                            pbSync.visibility = View.GONE
                         }
                     }
-                    with(findViewById<TextView>(R.id.title)) {
+                    with(tvTitle) {
                         text = album.name
 
                         val size = context.resources.getDimension(R.dimen.big_padding).toInt()
@@ -473,13 +479,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
                         setCompoundDrawables(if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, size, size) } else null, null, null, null)
                     }
-                    findViewById<TextView>(R.id.duration).text = String.format(
+                    tvDuration.text = String.format(
                         "%s  -  %s",
                         album.startDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
                         album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                     )
 
-                    findViewById<LinearLayoutCompat>(R.id.recipients).also { chipGroup->
+                    llRecipients.also { chipGroup->
                         chipGroup.removeAllViews()
                         recipients.find { it.fileId == album.id }?.let {
                             val ctx = chipGroup.context

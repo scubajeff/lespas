@@ -911,24 +911,28 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
+            private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
+            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+
             fun bind(item: Photo, isActivated: Boolean) {
                 itemView.let {
                     it.isActivated = isActivated
 
-                    with(itemView.findViewById<ImageView>(R.id.photo)) {
+                    with(ivPhoto) {
                         imageLoader(item, this, ImageLoaderViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
-                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.VISIBLE
+                            ivSelectionMark.visibility = View.VISIBLE
                         } else {
                             clearColorFilter()
-                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.GONE
+                            ivSelectionMark.visibility = View.GONE
                         }
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
                     }
-                    it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
+                    ivPlayMark.visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
                 }
             }
 
@@ -950,11 +954,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 */
 
         inner class HorizontalDateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val tvDate = itemView.findViewById<TextView>(R.id.date)
+
             @SuppressLint("SetTextI18n")
             fun bind(item: Photo) {
                 with(item.dateTaken) {
                     //itemView.findViewById<TextView>(R.id.date).text = "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}   |   ${String.format(itemView.context.getString(R.string.total_photo), item.shareId)}"
-                    itemView.findViewById<TextView>(R.id.date).text = "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
+                    tvDate.text = "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
                 }
             }
         }

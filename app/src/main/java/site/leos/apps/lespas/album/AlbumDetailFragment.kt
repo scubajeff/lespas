@@ -741,7 +741,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
@@ -749,59 +750,69 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private var recipientText = ""
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
+            private val tvTitle = itemView.findViewById<TextView>(R.id.title)
+            private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
+            private val tvTotal = itemView.findViewById<TextView>(R.id.total)
+            private val tvRecipients = itemView.findViewById<TextView>(R.id.recipients)
+
             fun bindViewItem() {
                 with(itemView) {
                     currentList.firstOrNull()?.let { cover->
-                        imageLoader(cover, findViewById(R.id.cover), ImageLoaderViewModel.TYPE_COVER)
-                        findViewById<TextView>(R.id.title).text = cover.name
+                        imageLoader(cover, ivCover, ImageLoaderViewModel.TYPE_COVER)
+                        tvTitle.text = cover.name
 
                         val days = Duration.between(
                             cover.dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
                             cover.lastModified.atZone(ZoneId.systemDefault()).toInstant()
                         ).toDays().toInt()
-                        findViewById<TextView>(R.id.duration).text = when (days) {
+                        tvDuration.text = when (days) {
                             in 0..21 -> resources.getString(R.string.duration_days, days + 1)
                             in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
                             in 57..365 -> resources.getString(R.string.duration_months, days / 30)
                             else -> resources.getString(R.string.duration_years, days / 365)
                         }
 
-                        findViewById<TextView>(R.id.total).text = resources.getString(R.string.total_photo, currentList.size - 1)
+                        tvTotal.text = resources.getString(R.string.total_photo, currentList.size - 1)
 
                         if (recipients.size > 0) {
                             var names = recipients[0].sharee.label
                             for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
-                            findViewById<TextView>(R.id.recipients).apply {
+                            tvRecipients.apply {
                                 text = String.format(recipientText, names)
                                 visibility = View.VISIBLE
                             }
-                        } else findViewById<TextView>(R.id.recipients).visibility = View.GONE
+                        } else tvRecipients.visibility = View.GONE
                     }
                 }
             }
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
+            private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
+            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+
             fun bindViewItem(photo: Photo, isActivated: Boolean) {
                 itemView.let {
                     it.isActivated = isActivated
 
-                    with(it.findViewById<ImageView>(R.id.photo)) {
+                    with(ivPhoto) {
                         imageLoader(photo, this, ImageLoaderViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
-                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.VISIBLE
+                            ivSelectionMark.visibility = View.VISIBLE
                         } else {
                             clearColorFilter()
-                            it.findViewById<ImageView>(R.id.selection_mark).visibility = View.GONE
+                            ivSelectionMark.visibility = View.GONE
                         }
 
                         ViewCompat.setTransitionName(this, photo.id)
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
 
-                        it.findViewById<ImageView>(R.id.play_mark).visibility = if (Tools.isMediaPlayable(photo.mimeType) && !this.isActivated) View.VISIBLE else View.GONE
+                        ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !this.isActivated) View.VISIBLE else View.GONE
                     }
                 }
             }

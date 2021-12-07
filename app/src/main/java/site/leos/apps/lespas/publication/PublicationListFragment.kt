@@ -107,14 +107,18 @@ class PublicationListFragment: Fragment() {
     class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivCover = itemView.findViewById<AppCompatImageView>(R.id.coverart)
+            private val tvTitle = itemView.findViewById<TextView>(R.id.title)
+            private val ivIndicator = itemView.findViewById<ImageView>(R.id.joint_album_indicator)
+
             fun bind(item: NCShareViewModel.ShareWithMe) {
-                imageLoader(item, itemView.findViewById(R.id.coverart))
+                imageLoader(item, ivCover)
                 //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
-                itemView.findViewById<TextView>(R.id.title).apply {
+                tvTitle.apply {
                     text = item.albumName
                     avatarLoader(NCShareViewModel.Sharee(item.shareBy, item.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this)
                 }
-                itemView.findViewById<ImageView>(R.id.joint_album_indicator).visibility = if (item.permission == NCShareViewModel.PERMISSION_JOINT) View.VISIBLE else View.INVISIBLE
+                ivIndicator.visibility = if (item.permission == NCShareViewModel.PERMISSION_JOINT) View.VISIBLE else View.INVISIBLE
                 itemView.setOnClickListener { clickListener(item) }
             }
         }

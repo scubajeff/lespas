@@ -80,8 +80,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class PhotoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
+
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
-            itemView.findViewById<PhotoView>(R.id.media).apply {
+            ivMedia.apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                 setOnPhotoTapListener { _, _, _ -> clickListener(null) }
                 setOnOutsidePhotoTapListener { clickListener(null) }
@@ -93,8 +95,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
+
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
-            itemView.findViewById<ImageView>(R.id.media).apply {
+            ivMedia.apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
                 setOnClickListener { clickListener(null) }
                 ViewCompat.setTransitionName(this, transitionName)
@@ -104,9 +108,12 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var videoUri: Uri = Uri.EMPTY
+        private var videoMimeType = ""
+
         lateinit var videoView: PlayerView
         private lateinit var muteButton: ImageButton
-        private var videoMimeType = ""
+        private val clVideoViewContainer = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
+        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
 
         fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             this.videoUri = video.uri
@@ -127,9 +134,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
                 setOnClickListener { clickListener(!videoView.isControllerVisible) }
             }
-            itemView.findViewById<ConstraintLayout>(R.id.videoview_container).setOnClickListener { clickListener(!videoView.isControllerVisible) }
+            clVideoViewContainer.setOnClickListener { clickListener(!videoView.isControllerVisible) }
 
-            itemView.findViewById<ImageView>(R.id.media).apply {
+            ivMedia.apply {
                 // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
                 imageLoader(item, this, ImageLoaderViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, video.transitionName)

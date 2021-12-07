@@ -272,30 +272,30 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         private var coverType: String = ImageLoaderViewModel.TYPE_SMALL_COVER
 
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
+            private val tvName = itemView.findViewById<TextView>(R.id.name)
+
             fun bindViewItems(album: Album) {
-                with(itemView) {
-                    if (album.id.isEmpty()) {
-                        findViewById<ImageView>(R.id.cover).apply {
-                            cancelLoading(this)
-                            setImageResource(R.drawable.ic_baseline_add_24)
-                            scaleType = ImageView.ScaleType.FIT_CENTER
-                        }
-                        findViewById<TextView>(R.id.name).text = resources.getString(R.string.create_new_album)
-                        setOnClickListener { itemClickListener(album) }
-                    } else {
-                        findViewById<ImageView>(R.id.cover).apply {
-                            cancelLoading(this)
-                            if (album.shareId == NCShareViewModel.PERMISSION_JOINT) {
-                                publicationCoverLoader(covers[bindingAdapterPosition], this)
-                                avatarLoader(NCShareViewModel.Sharee(album.eTag, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
-                            }
-                            else imageLoader(covers[bindingAdapterPosition], this)
-                            scaleType = ImageView.ScaleType.CENTER_CROP
-                        }
-                        findViewById<TextView>(R.id.name).text = album.name
-                        setOnClickListener { itemClickListener(album) }
+                if (album.id.isEmpty()) {
+                    ivCover.apply {
+                        cancelLoading(this)
+                        setImageResource(R.drawable.ic_baseline_add_24)
+                        scaleType = ImageView.ScaleType.FIT_CENTER
                     }
+                    tvName.text = itemView.resources.getString(R.string.create_new_album)
+                } else {
+                    ivCover.apply {
+                        if (album.shareId == NCShareViewModel.PERMISSION_JOINT) {
+                            publicationCoverLoader(covers[bindingAdapterPosition], this)
+                            avatarLoader(NCShareViewModel.Sharee(album.eTag, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
+                        }
+                        else imageLoader(covers[bindingAdapterPosition], this)
+                        scaleType = ImageView.ScaleType.CENTER_CROP
+                    }
+                    tvName.text = album.name
                 }
+
+                itemView.setOnClickListener { itemClickListener(album) }
             }
         }
 

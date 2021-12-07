@@ -140,8 +140,9 @@ class SearchFragment : Fragment() {
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val ivCat = itemView.findViewById<ImageView>(R.id.category)
             fun bind(category: SearchCategory) {
-                itemView.findViewById<ImageView>(R.id.category).setImageDrawable(category.drawable)
+                ivCat.setImageDrawable(category.drawable)
                 itemView.setOnClickListener { clickListener(category) }
             }
         }

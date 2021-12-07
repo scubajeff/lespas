@@ -69,8 +69,9 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
 
     class ExclusionAdapter: ListAdapter<Album, ExclusionAdapter.ExclusionViewHolder>(AlbumDiffCallback()) {
         inner class ExclusionViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private val cbName = itemView.findViewById<CheckBox>(R.id.album_name)
             fun bind(item: Album) {
-                itemView.findViewById<CheckBox>(R.id.album_name).apply {
+                cbName.apply {
                     text = item.name
                     isChecked = item.shareId == 1
                     setOnCheckedChangeListener { _, isChecked ->
