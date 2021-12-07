@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
-import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -256,15 +255,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     false
                 } else true
             }
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        // Put preference list under app toolbar
-        TypedValue().also { tv-> if (requireActivity().theme.resolveAttribute(android.R.attr.actionBarSize, tv, true))
-            (requireView().parent as ViewGroup).setPadding(0, TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics), 0, 0)
         }
     }
 

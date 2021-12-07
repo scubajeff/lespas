@@ -59,7 +59,7 @@ class LocationSearchHostFragment: Fragment() {
                 isIndeterminate = false
             }
 
-            if (searchViewModel.getProgress().value!! == 100) this.disable()
+            searchViewModel.getProgress().value?.also { progress-> if (progress == 100) this.disable() }
         }
     }
 

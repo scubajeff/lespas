@@ -7,9 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -21,11 +18,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.view.drawToBitmap
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.work.*
-import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.AlbumDetailFragment
@@ -42,7 +37,6 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
-    private lateinit var toolbar: MaterialToolbar
     private lateinit var sp: SharedPreferences
     private var coldExit = true
 
@@ -60,9 +54,6 @@ class MainActivity : AppCompatActivity() {
                 File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
             } catch (e: Exception) {}
         }
-
-        toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
 
         supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
             if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
@@ -171,10 +162,6 @@ class MainActivity : AppCompatActivity() {
 
     interface OnWindowFocusChangedListener {
         fun onWindowFocusChanged(hasFocus: Boolean)
-    }
-
-    fun getToolbarViewContent(): Drawable {
-        return BitmapDrawable(resources, toolbar.drawToBitmap(Bitmap.Config.ARGB_8888))
     }
 
     fun observeTransferWorker() {

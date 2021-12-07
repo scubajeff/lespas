@@ -23,11 +23,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -47,7 +45,6 @@ class PublicationDetailFragment: Fragment() {
 
     private lateinit var photoListAdapter: PhotoListAdapter
     private lateinit var photoList: RecyclerView
-    private lateinit var stub: View
 
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: CurrentPublicationViewModel by activityViewModels()
@@ -75,14 +72,11 @@ class PublicationDetailFragment: Fragment() {
                     currentPositionModel.saveCurrentRange(findFirstVisibleItemPositions(null)[0], findLastVisibleItemPositions(null)[spanCount-1])
                 }
 
-                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
-                stub.background = (activity as MainActivity).getToolbarViewContent()
-
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                    excludeTarget(R.id.stub, true)
                     excludeTarget(view, true)
+                    excludeTarget(androidx.appcompat.app.ActionBar::class.java, true)
                 }
 
                 parentFragmentManager.beginTransaction()
@@ -136,7 +130,6 @@ class PublicationDetailFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val vg = inflater.inflate(R.layout.fragment_publication_detail, container, false)
 
-        stub = vg.findViewById(R.id.stub)
         photoList = vg.findViewById<RecyclerView>(R.id.photo_list).apply {
             layoutManager = StaggeredGridLayoutManager(resources.getInteger(R.integer.publication_detail_grid_span_count), StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
             adapter = photoListAdapter
@@ -179,27 +172,15 @@ class PublicationDetailFragment: Fragment() {
     override fun onResume() {
         super.onResume()
 
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = share.albumName
-            setDisplayHomeAsUpEnabled(true)
-        }
-
-        // TODO dirty hack to get title view
-        try {
-            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
-        } catch (e: ClassCastException) {
-            try {
-                (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }?.run {
+        val titleView = layoutInflater.inflate(R.layout.textview_actionbar_title_with_icon, null)
+        titleView.findViewById<TextView>(R.id.title).apply {
+            text = share.albumName
             shareModel.getAvatar(NCShareViewModel.Sharee(share.shareBy, share.shareByLabel, NCShareViewModel.SHARE_TYPE_USER), this, null)
             compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
+        }
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            customView = titleView
+            displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_CUSTOM
         }
     }
 
@@ -209,27 +190,13 @@ class PublicationDetailFragment: Fragment() {
         outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
     }
 
-    override fun onStop() {
-        // TODO dirty hack to get title view
-        try {
-            (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(0) as TextView)
-        } catch (e: ClassCastException) {
-            try {
-                (requireActivity().findViewById<MaterialToolbar>(R.id.toolbar).getChildAt(1) as TextView)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }?.run { setCompoundDrawablesWithIntrinsicBounds(null, null, null, null) }
-
-        super.onStop()
-    }
-
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE
+            customView = null
+        }
+
         super.onDestroy()
     }
 

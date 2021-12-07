@@ -6,6 +6,7 @@ import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +19,7 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
@@ -221,28 +223,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         viewReCreated = true
 
-        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-
-        @Suppress("DEPRECATION")
-        window.run {
-/*
-            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                previousNavBarColor = navigationBarColor
-                navigationBarColor = systemBarBackground
-                statusBarColor = systemBarBackground
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                setDecorFitsSystemWindows(false)
-            } else {
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            }
-*/
-            statusBarColor = Color.TRANSPARENT
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        }
-
         // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
             album?.let {
@@ -256,15 +236,17 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onResume() {
         super.onResume()
-        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
 
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
         // Get into immersive mode
         Tools.goImmersive(window)
     }
 
     override fun onPause() {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
         viewReCreated = false
 
         super.onPause()
@@ -306,7 +288,10 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         (requireActivity() as AppCompatActivity).run {
-            supportActionBar!!.show()
+            supportActionBar?.apply {
+                displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
+                setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
+            }
             requestedOrientation = previousOrientationSetting
         }
 
@@ -334,6 +319,25 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             else insetsController?.show(WindowInsets.Type.systemBars())
 */
             decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+
+/*
+            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                previousNavBarColor = navigationBarColor
+                navigationBarColor = systemBarBackground
+                statusBarColor = systemBarBackground
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                setDecorFitsSystemWindows(false)
+            } else {
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            }
+*/
+            //previousNavBarColor = navigationBarColor
+            //navigationBarColor = Color.TRANSPARENT
+            statusBarColor = Color.TRANSPARENT
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
 
         // auto hide

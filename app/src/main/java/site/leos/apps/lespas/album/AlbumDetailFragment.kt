@@ -60,7 +60,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var actionMode: ActionMode? = null
 
-    private lateinit var stub: View
     private lateinit var dateIndicator: MaterialButton
     private lateinit var recyclerView: RecyclerView
     private lateinit var mAdapter: PhotoGridAdapter
@@ -120,14 +119,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     setLastPosition(position)
                 }
 
-                // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
-                stub.background = (activity as MainActivity).getToolbarViewContent()
-
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                    excludeTarget(R.id.stub, true)
                     excludeTarget(view, true)
+                    excludeTarget(androidx.appcompat.app.ActionBar::class.java, true)
                 }
 
                 parentFragmentManager.beginTransaction()
@@ -248,7 +244,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        stub = view.findViewById(R.id.stub)
         dateIndicator = view.findViewById(R.id.date_indicator)
         recyclerView = view.findViewById(R.id.photogrid)
 

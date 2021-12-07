@@ -28,8 +28,6 @@ class CameraRollActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setSupportActionBar(findViewById(R.id.toolbar))
-
         // Make sure photo's folder, temporary cache folder created
         lifecycleScope.launch(Dispatchers.IO) {
             try {

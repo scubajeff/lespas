@@ -1,6 +1,6 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.LesPas" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.LesPas" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/color_primary</item>
         <item name="colorPrimaryVariant">@color/color_primary_variant</item>
@@ -14,6 +14,8 @@
         <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimary</item>
+
+        <item name="actionBarStyle">@style/Theme.LesPas.ActionBar</item>
         <item name="actionMenuTextColor">@color/color_on_primary_invert</item>
         <item name="android:actionMenuTextColor">@color/color_on_primary_invert</item>
 
@@ -22,8 +24,7 @@
 
         <!-- Customize your theme here. -->
         <item name="android:windowActivityTransitions">true</item>
-        <item name="windowActionBarOverlay">true</item>
-        <item name="windowActionModeOverlay">true</item>
+        <item name="android:windowSharedElementsUseOverlay">false</item>
 
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>

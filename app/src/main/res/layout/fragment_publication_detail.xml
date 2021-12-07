@@ -11,16 +11,8 @@
         android:id="@+id/photo_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize"
         app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
         app:spanCount="@integer/publication_detail_grid_span_count"
         tools:listitem="@layout/recyclerview_item_remote_media"/>
-
-    <View
-        android:id="@+id/stub"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
-        android:background="@android:color/transparent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

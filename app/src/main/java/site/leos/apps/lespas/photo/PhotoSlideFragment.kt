@@ -7,6 +7,7 @@ import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,7 @@ import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
@@ -385,48 +387,21 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-
-        // Get ready for immersive mode
-        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-        @Suppress("DEPRECATION")
-        requireActivity().window.run {
-            //previousNavBarColor = navigationBarColor
-            //navigationBarColor = Color.TRANSPARENT
-            statusBarColor = Color.TRANSPARENT
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        }
     }
 
     override fun onResume() {
         super.onResume()
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
         // Get into immersive mode
         Tools.goImmersive(window)
-
-/*
-        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem)?.apply {
-            if (!viewReCreated && pAdapter.currentList[slider.currentItem].mimeType.startsWith("video")) {
-                (this as SeamlessMediaSliderAdapter<*>.VideoViewHolder).apply {
-                    pAdapter.setAutoStart(true)
-                    resume()
-                }
-            }
-        }
-*/
     }
 
     override fun onPause() {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
-
-/*
-        (slider.getChildAt(0) as RecyclerView).findViewHolderForAdapterPosition(slider.currentItem).apply {
-            if (this is SeamlessMediaSliderAdapter<*>.VideoViewHolder) this.pause()
-        }
-*/
-
         viewReCreated = false
 
         super.onPause()
@@ -471,7 +446,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         (requireActivity() as AppCompatActivity).run {
-            supportActionBar!!.show()
+            supportActionBar?.run {
+                displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
+                setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
+            }
             requestedOrientation = previousOrientationSetting
         }
 
@@ -502,7 +480,28 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         else window.insetsController?.show(WindowInsets.Type.systemBars())
 */
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+        window.apply {
+            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+
+/*
+            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                previousNavBarColor = navigationBarColor
+                navigationBarColor = systemBarBackground
+                statusBarColor = systemBarBackground
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                setDecorFitsSystemWindows(false)
+            } else {
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            }
+*/
+            //previousNavBarColor = navigationBarColor
+            //navigationBarColor = Color.TRANSPARENT
+            statusBarColor = Color.TRANSPARENT
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        }
 
         // trigger auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)

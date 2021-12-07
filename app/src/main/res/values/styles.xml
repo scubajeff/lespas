@@ -36,4 +36,8 @@
     <style name="LightEdgeEffectColor">
         <item name="android:colorEdgeEffect">@color/lespas_white</item>
     </style>
+
+    <style name="Theme.LesPas.ActionBar" parent="@style/Widget.MaterialComponents.ActionBar.Primary">
+        <item name="android:textColor">@color/color_text_light</item>
+    </style>
 </resources>

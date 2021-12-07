@@ -5,5 +5,4 @@
     android:id="@+id/container_child_fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="?attr/actionBarSize"
     tools:context=".search.LocationSearchHostFragment" />

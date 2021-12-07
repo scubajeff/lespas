@@ -77,6 +77,8 @@ class NCLoginFragment: Fragment() {
             requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
             requireActivity().finish()
         }
+
+        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -85,9 +87,6 @@ class NCLoginFragment: Fragment() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Should hide the toolbar when launched from Setting screen
-        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
         val root = view.findViewById<ConstraintLayout>(R.id.layout_background)
         welcomePage = view.findViewById(R.id.welcome_page)

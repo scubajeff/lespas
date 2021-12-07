@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
@@ -39,7 +38,6 @@ import kotlin.collections.HashMap
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
-    private lateinit var stub: View
     private lateinit var emptyView: ImageView
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
@@ -70,12 +68,9 @@ class SearchResultFragment : Fragment() {
                     }
                 }
                 else {
-                    // Get a stub as fake toolbar since the toolbar belongs to MainActivity and it will disappear during fragment transaction
-                    stub.background = (activity as MainActivity).getToolbarViewContent()
                     reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                     exitTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                        excludeTarget(R.id.stub, true)
                         excludeTarget(imageView, true)
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
@@ -101,7 +96,6 @@ class SearchResultFragment : Fragment() {
         searchResultRecyclerView.adapter = searchResultAdapter
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 
-        stub = view.findViewById(R.id.stub)
         emptyView = view.findViewById(R.id.emptyview)
         if (arguments?.getBoolean(SEARCH_COLLECTION)!!) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
 
