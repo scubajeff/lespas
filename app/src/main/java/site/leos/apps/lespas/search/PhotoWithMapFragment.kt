@@ -51,19 +51,20 @@ class PhotoWithMapFragment: Fragment() {
 
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         view.findViewById<MapView>(R.id.map).apply {
+            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
             setMultiTouchControls(true)
             setUseDataConnection(true)
             setTileSource(TileSourceFactory.MAPNIK)
             overlays.add(CopyrightOverlay(requireContext()))
-            val poi = GeoPoint(photo.lat, photo.long)
             controller.setZoom(17.5)
+
+            val poi = GeoPoint(photo.lat, photo.long)
             controller.setCenter(poi)
-            Marker(this).let {
+            overlays.add(Marker(this).let {
                 it.position = poi
                 it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-                this.overlays.add(it)
-            }
-            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                it
+            })
             invalidate()
         }
     }

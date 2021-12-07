@@ -431,7 +431,7 @@ object Tools {
     }
 
     fun getLocalRoot(context: Context): String {
-        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}/${context.getString(R.string.lespas_base_folder_name)}"
+        return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
     }
 
     fun getStorageSize(context: Context): Long {

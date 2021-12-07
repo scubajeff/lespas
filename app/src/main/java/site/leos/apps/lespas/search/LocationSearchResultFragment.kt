@@ -2,10 +2,7 @@ package site.leos.apps.lespas.search
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +15,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -97,6 +95,18 @@ class LocationSearchResultFragment: Fragment() {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         (parentFragment as LocationSearchHostFragment).enableMenuItem(R.id.option_menu_in_map)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId) {
+            R.id.option_menu_in_map-> {
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = 800 }
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                true
+            }
+            else-> false
+        }
     }
 
     class PhotoAdapter(private val clickListener: (LocationSearchFragment.PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
