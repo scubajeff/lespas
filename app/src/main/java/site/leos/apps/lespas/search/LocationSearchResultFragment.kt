@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -23,7 +24,6 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
-import java.util.*
 
 class LocationSearchResultFragment: Fragment() {
     private lateinit var locality: String
@@ -82,8 +82,7 @@ class LocationSearchResultFragment: Fragment() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             title = locality
-            setDisplayHomeAsUpEnabled(true)
-            setDisplayShowTitleEnabled(true)
+            displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
     }
 
@@ -102,7 +101,7 @@ class LocationSearchResultFragment: Fragment() {
             R.id.option_menu_in_map-> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = 800 }
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -133,6 +132,7 @@ class LocationSearchResultFragment: Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
 
         fun setAlbumNameList(list: List<IDandName>) { for (album in list) { albumNames[album.id] = album.name }}
+        fun getAlbumNameList(): HashMap<String, String> = albumNames
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<LocationSearchFragment.PhotoWithCoordinate>() {

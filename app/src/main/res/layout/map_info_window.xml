@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/mini_padding"
+    android:background="@color/color_primary">
+
+    <ImageView
+        android:id="@+id/photo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:layout_gravity="center"
+        tools:src="@drawable/ic_footprint"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/tiny_padding"
+        android:layout_gravity="bottom|end"
+        android:lines="1"
+        android:ellipsize="marquee"
+        android:textAppearance="?attr/textAppearanceCaption"
+        android:textColor="@color/color_text_light"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:shadowRadius="1"
+        android:shadowColor="@color/dark_gray_overlay_background"
+        tools:text="album"/>
+</FrameLayout>
