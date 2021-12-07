@@ -55,10 +55,7 @@ class LocationSearchHostFragment: Fragment() {
         inflater.inflate(R.menu.location_search_menu, menu)
         this.menu = menu
         menu.findItem(R.id.option_menu_search_progress)?.apply {
-            loadingProgressBar = actionView.findViewById<CircularProgressIndicator>(R.id.search_progress).apply {
-                isIndeterminate = false
-            }
-
+            loadingProgressBar = actionView.findViewById(R.id.search_progress)
             searchViewModel.getProgress().value?.also { progress-> if (progress == 100) this.disable() }
         }
     }

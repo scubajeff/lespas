@@ -18,12 +18,14 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -46,6 +48,7 @@ class SearchResultFragment : Fragment() {
     }
 
     private var loadingIndicator: MenuItem? = null
+    private var loadingProgressBar: CircularProgressIndicator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -123,8 +126,9 @@ class SearchResultFragment : Fragment() {
             }
         })
 
-        adhocSearchViewModel.isFinished().observe(viewLifecycleOwner, Observer { finished ->
-            if (finished) loadingIndicator?.apply {
+        adhocSearchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
+            loadingProgressBar?.setProgressCompat(progress, true)
+            if (progress == 100) loadingIndicator?.apply {
                 isVisible = false
                 isEnabled = false
             }
@@ -146,11 +150,14 @@ class SearchResultFragment : Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_result_menu, menu)
-        loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
-
-        if (adhocSearchViewModel.isFinished().value!!) loadingIndicator?.apply {
-            isVisible = false
-            isEnabled = false
+        loadingIndicator = menu.findItem(R.id.option_menu_search_progress).also {
+            loadingProgressBar = it.actionView.findViewById(R.id.search_progress)
+            adhocSearchViewModel.getProgress().value?.also { progress->
+                if (progress == 100) {
+                    it.isVisible = false
+                    it.isEnabled = false
+                }
+            }
         }
     }
 
@@ -160,7 +167,6 @@ class SearchResultFragment : Fragment() {
     }
 
     class AdhocSearchViewModel(app: Application, categoryId: String, searchInAlbums: Boolean): AndroidViewModel(app) {
-        private val finished = MutableLiveData(false)
         private val resultList = mutableListOf<Result>()
         private val result = MutableLiveData<List<Result>>()
         private var job: Job? = null
@@ -175,8 +181,9 @@ class SearchResultFragment : Fragment() {
                 var size: Int
                 val option = BitmapFactory.Options()
 
-                for(photo in photos) {
+                photos.forEachIndexed { i, photo ->
                     if (!isActive) return@launch
+                    progress.postValue((i * 100.0 / photos.size).toInt())
 
                     // Decode file with dimension just above 300
                     size = 1
@@ -199,10 +206,12 @@ class SearchResultFragment : Fragment() {
                         }
                     }
                 }
-                // Inform caller that search is finished
-                finished.postValue(true)
 
                 od.close()
+
+                // Show progress to the end
+                delay(500)
+                progress.postValue(100)
             }
         }
 
@@ -213,8 +222,10 @@ class SearchResultFragment : Fragment() {
             super.onCleared()
         }
 
-        fun isFinished(): LiveData<Boolean> = finished
         fun getResultList(): LiveData<List<Result>> = result
+
+        private val progress = SingleLiveEvent<Int>()
+        fun getProgress(): SingleLiveEvent<Int> = progress
     }
 
     class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
