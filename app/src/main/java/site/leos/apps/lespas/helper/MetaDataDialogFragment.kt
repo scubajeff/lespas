@@ -40,7 +40,7 @@ import kotlin.math.roundToInt
 
 class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
     private var mapIntent = Intent(Intent.ACTION_VIEW)
-    private lateinit var map: MapView
+    private lateinit var mapView: MapView
     private lateinit var mapButton: MaterialButton
 
     @SuppressLint("ClickableViewAccessibility")
@@ -50,7 +50,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
         mapButton = view.findViewById(R.id.map_button)
 
-        map = view.findViewById<MapView>(R.id.map).apply {
+        mapView = view.findViewById<MapView>(R.id.map).apply {
             // TODO user setting?
             setMultiTouchControls(true)
             setUseDataConnection(true)
@@ -166,7 +166,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 latLong[1] >= 180.0 -> {}
                                 latLong[1] <= -180.0 -> {}
                                 else -> {
-                                    with(map) {
+                                    with(mapView) {
                                         val poi = GeoPoint(latLong[0], latLong[1])
                                         controller.setZoom(18.5)
                                         controller.setCenter(poi)
@@ -199,6 +199,16 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 }
             }
         } catch (e:Exception) { e.printStackTrace() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
     }
 
     companion object {

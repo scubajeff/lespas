@@ -27,6 +27,7 @@ import site.leos.apps.lespas.photo.PhotoWithCoordinate
 class PhotoWithMapFragment: Fragment() {
     private lateinit var photo: PhotoWithCoordinate
     private val imageLoaderViewModel by activityViewModels<ImageLoaderViewModel>()
+    private lateinit var mapView: MapView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +52,7 @@ class PhotoWithMapFragment: Fragment() {
         }
 
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
-        view.findViewById<MapView>(R.id.map).apply {
+        mapView = view.findViewById<MapView>(R.id.map).apply {
             if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
             setMultiTouchControls(true)
             setUseDataConnection(true)
@@ -68,6 +69,16 @@ class PhotoWithMapFragment: Fragment() {
             })
             invalidate()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
     }
 
     override fun onDestroy() {

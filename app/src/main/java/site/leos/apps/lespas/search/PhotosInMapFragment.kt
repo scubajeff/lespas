@@ -121,6 +121,12 @@ class PhotosInMapFragment: Fragment() {
             title = locality
             displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
+        mapView.onResume()
+    }
+
+    override fun onPause() {
+        mapView.onPause()
+        super.onPause()
     }
 
     private fun loadImage(marker: Marker, photoId: String) {
