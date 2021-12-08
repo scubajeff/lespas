@@ -2,7 +2,10 @@ package site.leos.apps.lespas.search
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.ActionBar
@@ -98,16 +101,6 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
-    override fun onStop() {
-        (parentFragment as LocationSearchHostFragment).disableMenuItem(R.id.option_menu_in_map)
-        super.onStop()
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-        (parentFragment as LocationSearchHostFragment).enableMenuItem(R.id.option_menu_in_map)
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_in_map-> {
@@ -138,7 +131,6 @@ class LocationResultSingleLocalityFragment: Fragment() {
                         if (this.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[this.albumId]
                         else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
-
             }
         }
 

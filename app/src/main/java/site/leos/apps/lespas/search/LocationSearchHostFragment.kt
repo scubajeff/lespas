@@ -62,6 +62,9 @@ class LocationSearchHostFragment: Fragment() {
             loadingProgressBar = actionView.findViewById(R.id.search_progress)
             searchViewModel.getProgress().value?.also { progress-> if (progress == 100) this.disable() }
         }
+        when(childFragmentManager.backStackEntryCount) {
+            2-> menu.findItem(R.id.option_menu_in_map).enable()
+        }
     }
 
     fun enableMenuItem(itemId: Int): MenuItem? = menu.findItem(itemId).apply { this?.enable() }
