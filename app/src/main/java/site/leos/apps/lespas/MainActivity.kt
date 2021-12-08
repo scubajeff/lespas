@@ -75,22 +75,24 @@ class MainActivity : AppCompatActivity() {
                 if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
                     .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
             } else {
-                // Sync with server at startup
-                ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-                })
+                lifecycleScope.launch {
+                    // Sync with server at startup
+                    ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+                    })
 
-                // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                if (ContextCompat.checkSelfPermission(this, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
-                    putBoolean(getString(R.string.snapseed_pref_key), false)
-                    putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
-                }
-                // If Snapseed is not installed, disable Snapseed integration
-                packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
-                    sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
+                    // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
+                    if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
+                        putBoolean(getString(R.string.snapseed_pref_key), false)
+                        putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                        putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                    }
+                    // If Snapseed is not installed, disable Snapseed integration
+                    packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
+                        sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
+                    }
                 }
 
                 intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
