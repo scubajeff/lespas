@@ -711,7 +711,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            webDav.upload(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)), "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application)
+                            webDav.upload(
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))) else ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn)),
+                                "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application
+                            )
                             break
                         } catch (e: OkHttpWebDavException) {
                             Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)

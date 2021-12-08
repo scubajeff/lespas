@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -200,7 +202,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         if (!(mimeType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || mimeType.startsWith("video/", true))) return@forEachIndexed
                         // Copy the file to our private storage
                         try {
-                            application.contentResolver.openInputStream(uri)?.use { input ->
+                            application.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && uri.host == "media") MediaStore.setRequireOriginal(uri) else uri)?.use { input ->
                                 File(if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
                                     totalBytes += input.copyTo(output, 8192)
                                 }
