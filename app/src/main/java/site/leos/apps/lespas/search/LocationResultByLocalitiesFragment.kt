@@ -21,7 +21,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
-class LocationSearchFragment: Fragment() {
+class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application) }
 
@@ -38,13 +38,13 @@ class LocationSearchFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, LocationSearchResultFragment.newInstance(result.locality, result.country), LocationSearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { photo, imageView -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_GRID) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_location_search, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_location_result_by_localities, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()

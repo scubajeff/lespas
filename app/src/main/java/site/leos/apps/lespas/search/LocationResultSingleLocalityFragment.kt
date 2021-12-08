@@ -26,7 +26,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
-class LocationSearchResultFragment: Fragment() {
+class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var locality: String
     private lateinit var country: String
 
@@ -64,7 +64,7 @@ class LocationSearchResultFragment: Fragment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_location_search_result, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_location_result_single_locality, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
@@ -146,7 +146,7 @@ class LocationSearchResultFragment: Fragment() {
         const val KEY_COUNTRY = "KEY_COUNTRY"
 
         @JvmStatic
-        fun newInstance(locality: String, country: String) = LocationSearchResultFragment().apply {
+        fun newInstance(locality: String, country: String) = LocationResultSingleLocalityFragment().apply {
             arguments = Bundle().apply {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
