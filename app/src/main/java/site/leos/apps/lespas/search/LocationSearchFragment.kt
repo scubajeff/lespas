@@ -12,7 +12,6 @@ import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -55,7 +54,7 @@ class LocationSearchFragment: Fragment() {
             adapter = resultAdapter
         }
 
-        searchViewModel.getResult().observe(viewLifecycleOwner, Observer { result ->
+        searchViewModel.getResult().observe(viewLifecycleOwner, { result ->
             val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
             var photoList: List<PhotoWithCoordinate>
 

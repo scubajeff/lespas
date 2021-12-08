@@ -75,7 +75,7 @@ class LocationSearchResultFragment: Fragment() {
         }
 
         searchViewModel.getResult().observe(viewLifecycleOwner, { resultList->
-            resultList.find { it.locality == locality && it.country == country }?.photos?.apply { photoAdapter.submitList(toMutableList()) }
+            resultList.find { it.locality == locality && it.country == country }?.photos?.apply { photoAdapter.submitList(asReversed().toMutableList()) }
         })
     }
 

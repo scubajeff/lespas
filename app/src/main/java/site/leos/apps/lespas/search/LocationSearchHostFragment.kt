@@ -84,7 +84,7 @@ class LocationSearchHostFragment: Fragment() {
         private var job = viewModelScope.launch(Dispatchers.IO) {
             PhotoRepository(application).getAllImage().run {
                 total = this.size
-                this.forEachIndexed { i, photo ->
+                this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) try { ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}") } catch (e: Exception) { null }?.latLong?.also {
                         when {
