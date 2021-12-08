@@ -22,9 +22,10 @@ import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
 class PhotoWithMapFragment: Fragment() {
-    private lateinit var photo: LocationSearchFragment.PhotoWithCoordinate
+    private lateinit var photo: PhotoWithCoordinate
     private val imageLoaderViewModel by activityViewModels<ImageLoaderViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,6 +79,6 @@ class PhotoWithMapFragment: Fragment() {
         const val KEY_PHOTO = "KEY_PHOTO"
 
         @JvmStatic
-        fun newInstance(photo: LocationSearchFragment.PhotoWithCoordinate) = PhotoWithMapFragment().apply { arguments = Bundle().apply { putParcelable(KEY_PHOTO, photo) }}
+        fun newInstance(photo: PhotoWithCoordinate) = PhotoWithMapFragment().apply { arguments = Bundle().apply { putParcelable(KEY_PHOTO, photo) }}
     }
 }

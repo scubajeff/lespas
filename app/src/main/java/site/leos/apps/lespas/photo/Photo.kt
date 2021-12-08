@@ -35,6 +35,12 @@ data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
 data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int)
 data class MuzeiPhoto(val id: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int)
+@Parcelize
+data class PhotoWithCoordinate(
+    val photo: Photo,
+    val lat: Double,
+    val long: Double,
+): Parcelable
 
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {

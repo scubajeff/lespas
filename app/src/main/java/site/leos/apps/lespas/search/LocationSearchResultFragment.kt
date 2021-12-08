@@ -24,6 +24,7 @@ import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
 class LocationSearchResultFragment: Fragment() {
     private lateinit var locality: String
@@ -108,15 +109,15 @@ class LocationSearchResultFragment: Fragment() {
         }
     }
 
-    class PhotoAdapter(private val clickListener: (LocationSearchFragment.PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
-    ): ListAdapter<LocationSearchFragment.PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoAdapter(private val clickListener: (PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    ): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
-            fun bind(item: LocationSearchFragment.PhotoWithCoordinate) {
+            fun bind(item: PhotoWithCoordinate) {
                 with(item.photo) {
                     imageLoader(this, ivPhoto)
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto) }
@@ -135,9 +136,9 @@ class LocationSearchResultFragment: Fragment() {
         fun getAlbumNameList(): HashMap<String, String> = albumNames
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<LocationSearchFragment.PhotoWithCoordinate>() {
-        override fun areItemsTheSame(oldItem: LocationSearchFragment.PhotoWithCoordinate, newItem: LocationSearchFragment.PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
-        override fun areContentsTheSame(oldItem: LocationSearchFragment.PhotoWithCoordinate, newItem: LocationSearchFragment.PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
+    class PhotoDiffCallback: DiffUtil.ItemCallback<PhotoWithCoordinate>() {
+        override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
     companion object {

@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.search
 
 import android.os.Bundle
-import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,10 +17,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
-import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
 class LocationSearchFragment: Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
@@ -57,14 +56,14 @@ class LocationSearchFragment: Fragment() {
         }
 
         searchViewModel.getResult().observe(viewLifecycleOwner, Observer { result ->
-            val items = mutableListOf<LocationSearchResult>()
+            val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
             var photoList: List<PhotoWithCoordinate>
 
             // General a new result list, this is crucial for DiffUtil to detect changes
             result.forEach {
                 // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
                 photoList = it.photos.takeLast(4)
-                items.add(LocationSearchResult(photoList.toMutableList(), it.total, it.country, it.locality))
+                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.toMutableList(), it.total, it.country, it.locality))
             }
 
             resultAdapter.submitList(items.sortedWith(compareBy({it.country}, {it.locality})))
@@ -81,8 +80,8 @@ class LocationSearchFragment: Fragment() {
         }
     }
 
-    class LocationSearchResultAdapter(private val clickListener: (LocationSearchResult, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
-    ): ListAdapter<LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
+    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    ): ListAdapter<LocationSearchHostFragment.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var photoAdapter = PhotoAdapter { photo, imageView ->  imageLoader(photo, imageView) }
             private val tvCountry = itemView.findViewById<TextView>(R.id.country)
@@ -99,7 +98,7 @@ class LocationSearchFragment: Fragment() {
                 }
             }
 
-            fun bind(item: LocationSearchResult) {
+            fun bind(item: LocationSearchHostFragment.LocationSearchResult) {
                 tvLocality.text = item.locality
                 tvCountry.text = item.country
                 tvCount.text = if (item.total > 4) item.total.toString() else ""
@@ -115,9 +114,9 @@ class LocationSearchFragment: Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
     }
 
-    class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchResult>() {
-        override fun areItemsTheSame(oldItem: LocationSearchResult, newItem: LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
-        override fun areContentsTheSame(oldItem: LocationSearchResult, newItem: LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
+    class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchHostFragment.LocationSearchResult>() {
+        override fun areItemsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
+        override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
     }
 
     class PhotoAdapter(private val imageLoader: (Photo, ImageView) -> Unit): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
@@ -137,18 +136,4 @@ class LocationSearchFragment: Fragment() {
         override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
         override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
-
-    @Parcelize
-    data class PhotoWithCoordinate(
-        val photo: Photo,
-        val lat: Double,
-        val long: Double,
-    ): Parcelable
-
-    data class LocationSearchResult (
-        var photos: MutableList<PhotoWithCoordinate>,
-        var total: Int,
-        val country: String,
-        val locality: String,
-    )
 }

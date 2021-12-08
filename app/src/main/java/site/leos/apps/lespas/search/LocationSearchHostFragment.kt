@@ -19,6 +19,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -98,10 +99,10 @@ class LocationSearchHostFragment: Fragment() {
                                     val city = this.locality ?: this.adminArea ?: ""
                                     resultList.find { result-> result.country == this.countryName && result.locality == city }
                                         ?.let { existed ->
-                                            existed.photos.add(LocationSearchFragment.PhotoWithCoordinate(photo, it[0], it[1]))
+                                            existed.photos.add(PhotoWithCoordinate(photo, it[0], it[1]))
                                             existed.total++
                                         }
-                                        ?: run { resultList.add(LocationSearchFragment.LocationSearchResult(arrayListOf(LocationSearchFragment.PhotoWithCoordinate(photo, it[0], it[1])), 1, this.countryName, city)) }
+                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(PhotoWithCoordinate(photo, it[0], it[1])), 1, this.countryName, city)) }
 
                                     // Update UI
                                     result.postValue(resultList)
@@ -122,9 +123,9 @@ class LocationSearchHostFragment: Fragment() {
             super.onCleared()
         }
 
-        private val resultList = mutableListOf<LocationSearchFragment.LocationSearchResult>()
-        private val result = MutableLiveData<List<LocationSearchFragment.LocationSearchResult>>()
-        fun getResult(): LiveData<List<LocationSearchFragment.LocationSearchResult>> = result
+        private val resultList = mutableListOf<LocationSearchResult>()
+        private val result = MutableLiveData<List<LocationSearchResult>>()
+        fun getResult(): LiveData<List<LocationSearchResult>> = result
 
         private val progress = SingleLiveEvent<Int>()
         fun getProgress(): SingleLiveEvent<Int> = progress
@@ -135,4 +136,11 @@ class LocationSearchHostFragment: Fragment() {
         fun putCurrentLocality(locality: String) { currentLocality = locality }
 */
     }
+
+    data class LocationSearchResult (
+        var photos: MutableList<PhotoWithCoordinate>,
+        var total: Int,
+        val country: String,
+        val locality: String,
+    )
 }
