@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialContainerTransform
-import com.google.android.material.transition.MaterialSharedAxis
+import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -40,7 +40,13 @@ class LocationResultSingleLocalityFragment: Fragment() {
         setHasOptionsMenu(true)
 
         photoAdapter = PhotoAdapter(
-            { photo, view ->
+            { photo, view, labelView ->
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(false).apply {
+                    duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                    excludeTarget(view, true)
+                    excludeTarget(labelView, true)
+                }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
@@ -100,8 +106,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_in_map-> {
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = 800 }
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
@@ -109,7 +115,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
-    class PhotoAdapter(private val clickListener: (PhotoWithCoordinate, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    class PhotoAdapter(private val clickListener: (PhotoWithCoordinate, View, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
     ): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -120,7 +126,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
             fun bind(item: PhotoWithCoordinate) {
                 with(item.photo) {
                     imageLoader(this, ivPhoto)
-                    ivPhoto.setOnClickListener { clickListener(item, ivPhoto) }
+                    ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
                     ViewCompat.setTransitionName(ivPhoto, this.id)
 
                     tvLabel.text = albumNames[this.albumId]
