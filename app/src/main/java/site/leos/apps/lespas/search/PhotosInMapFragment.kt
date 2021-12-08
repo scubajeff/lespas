@@ -1,8 +1,11 @@
 package site.leos.apps.lespas.search
 
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -32,7 +35,11 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 
 class PhotosInMapFragment: Fragment() {
@@ -44,7 +51,7 @@ class PhotosInMapFragment: Fragment() {
     private lateinit var poisBoundingBox: BoundingBox
     private lateinit var mapView: MapView
 
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +69,9 @@ class PhotosInMapFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        mapView = view.findViewById(R.id.map)
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
-        mapView = view.findViewById<MapView>(R.id.map)
+
         mapView.apply {
             if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
             setMultiTouchControls(true)
@@ -80,12 +88,14 @@ class PhotosInMapFragment: Fragment() {
                 val marker = Marker(this).apply {
                     position = poi
                     icon = pin
-                    loadImage(this, photo.photo.id)
+                    loadImage(this, photo.photo)
                 }
                 marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                     override fun onOpen(item: Any?) {
                         mView.findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
-                        mView.findViewById<TextView>(R.id.title).text = albumNames[photo.photo.albumId]
+                        mView.findViewById<TextView>(R.id.title).text =
+                            if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                            else albumNames[photo.photo.albumId]
                         mView.setOnClickListener { close() }
                     }
 
@@ -129,9 +139,17 @@ class PhotosInMapFragment: Fragment() {
         super.onPause()
     }
 
-    private fun loadImage(marker: Marker, photoId: String) {
+    private fun loadImage(marker: Marker, photo: Photo) {
         lifecycleScope.launch(Dispatchers.IO) {
-            marker.image = BitmapDrawable(resources, BitmapFactory.decodeFile("$rootPath/$photoId", BitmapFactory.Options().apply { inSampleSize = 8 }))
+            val option = BitmapFactory.Options().apply { inSampleSize = 8 }
+            marker.image = BitmapDrawable(resources,
+                if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                    var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
+                    if (photo.shareId != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
+                    bmp
+                }
+                else BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
+            )
         }
     }
 

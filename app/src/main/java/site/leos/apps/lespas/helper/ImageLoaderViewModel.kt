@@ -104,21 +104,27 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 TYPE_FULL, TYPE_QUATER -> {
                     if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     else {
+                        val option = BitmapFactory.Options().apply { if (type == TYPE_QUATER) inSampleSize = 2 }
                         var bmp =
                             if (photo.albumId == FROM_CAMERA_ROLL) {
                                 // Photo from camera roll doesn't support image/awebp, image/agif
-                                if ((photo.mimeType == "image/webp" || photo.mimeType == "image/gif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                if (type == TYPE_FULL && (photo.mimeType == "image/webp" || photo.mimeType == "image/gif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(contentResolver, uri))
                                     null
                                 }
-                                else BitmapFactory.decodeStream(contentResolver.openInputStream(uri))
+                                else {
+                                    var b = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
+                                    // Rotate according to EXIF when this photo comes from camera roll
+                                    if (photo.shareId != 0) b?.let { b = Bitmap.createBitmap(b!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
+                                    b
+                                }
                             }
                             else {
-                                if ((photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                if (type == TYPE_FULL && (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName)))
                                     null
                                 }
-                                else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { if (type == TYPE_QUATER) inSampleSize = 2 })
+                                else BitmapFactory.decodeFile(fileName, option)
                             }
 
                         // If image is too large
@@ -126,14 +132,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         bmp?.let {
                             if (bmp!!.allocationByteCount > 100000000) {
                                 bmp!!.recycle()
-                                val option = BitmapFactory.Options().apply { inSampleSize = 2 }
+                                option.inSampleSize = 2
                                 bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
                             }
-                        }
-
-                        // Rotate according to EXIF when this photo comes from camera roll
-                        bmp?.let {
-                            if (photo.albumId == FROM_CAMERA_ROLL && photo.shareId != 0) bmp = Bitmap.createBitmap(bmp!!, 0, 0, photo.width, photo.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true)
                         }
 
                         bmp

@@ -23,7 +23,7 @@ import site.leos.apps.lespas.photo.PhotoWithCoordinate
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView

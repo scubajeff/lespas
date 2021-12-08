@@ -44,7 +44,7 @@ class SearchResultFragment : Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
-        AdhocAdhocSearchViewModelFactory(requireActivity().application, arguments?.getString(CATEGORY_ID)!!, arguments?.getBoolean(SEARCH_COLLECTION)!!)
+        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getBoolean(SEARCH_COLLECTION))
     }
 
     private var loadingIndicator: MenuItem? = null
@@ -56,7 +56,7 @@ class SearchResultFragment : Fragment() {
 
         searchResultAdapter = SearchResultAdapter(
             { result, imageView ->
-                if (arguments?.getBoolean(SEARCH_COLLECTION)!!) {
+                if (requireArguments().getBoolean(SEARCH_COLLECTION)) {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val album: Album = albumModel.getThisAlbum(result.photo.albumId)
                         withContext(Dispatchers.Main) {

@@ -25,6 +25,11 @@ import site.leos.apps.lespas.album.IDandName
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.*
+import kotlin.collections.HashMap
 
 class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var locality: String
@@ -33,7 +38,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var photoAdapter: PhotoAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,9 +98,9 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
         (parentFragment as LocationSearchHostFragment).disableMenuItem(R.id.option_menu_in_map)
+        super.onStop()
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -129,7 +134,9 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
                     ViewCompat.setTransitionName(ivPhoto, this.id)
 
-                    tvLabel.text = albumNames[this.albumId]
+                    tvLabel.text =
+                        if (this.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[this.albumId]
+                        else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
 
             }

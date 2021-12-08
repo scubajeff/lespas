@@ -38,7 +38,9 @@ class PhotoWithMapFragment: Fragment() {
             scrimColor = Color.TRANSPARENT
             //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }
-        requireActivity().requestedOrientation = if (photo.photo.width < photo.photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        with(photo.photo) {
+            requireActivity().requestedOrientation = if ((width < height) || (albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL && (shareId == 90 || shareId == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)

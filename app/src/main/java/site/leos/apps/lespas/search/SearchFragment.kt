@@ -31,22 +31,36 @@ class SearchFragment : Fragment() {
     private var onMenuCreation = true
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var exifPermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
 
         categoryAdapter = CategoryAdapter { category ->
-            when(category.id.toInt()) {
-                in 1..4-> parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
-                5-> parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment(), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
+            when (category.id.toInt()) {
+                in 1..4 -> parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                5 -> {
+                    when {
+                        destinationToggleGroup?.checkedButtonId == R.id.search_album -> launchLocationSearch()
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> launchLocationSearch()
+                        else -> {
+                            val permission = android.Manifest.permission.ACCESS_MEDIA_LOCATION
+                            if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) launchLocationSearch()
+                            else {
+                                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                                exifPermissionRequestLauncher.launch(permission)
+                            }
+                        }
+                    }
+                }
             }
         }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         val objectLabels = resources.getStringArray(R.array.objects)
         val objectDrawableIds = resources.obtainTypedArray(R.array.object_drawable_ids)
         val categories = mutableListOf<SearchCategory>()
-        for(i in 1 until objectLabels.size) categories.add(SearchCategory(""+i, objectLabels[i], Classification.TYPE_OBJECT, ResourcesCompat.getDrawable(resources, objectDrawableIds.getResourceId(i, 0), null)!!))
+        for (i in 1 until objectLabels.size) categories.add(SearchCategory("" + i, objectLabels[i], Classification.TYPE_OBJECT, ResourcesCompat.getDrawable(resources, objectDrawableIds.getResourceId(i, 0), null)!!))
         categoryAdapter.submitList(categories)
         objectDrawableIds.recycle()
 
@@ -59,8 +73,12 @@ class SearchFragment : Fragment() {
 
             if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
             else if (noAlbum) parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
-                    ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).show(parentFragmentManager, CONFIRM_DIALOG)
+                ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).show(parentFragmentManager, CONFIRM_DIALOG)
             }
+        }
+        exifPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            if (isGranted) launchLocationSearch()
         }
     }
 
@@ -136,6 +154,10 @@ class SearchFragment : Fragment() {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
         if (lastSelection != 0) destinationToggleGroup?.check(lastSelection)
+    }
+
+    private fun launchLocationSearch() {
+        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId == R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {

@@ -1,7 +1,10 @@
 package site.leos.apps.lespas.search
 
 import android.app.Application
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.*
 import androidx.activity.OnBackPressedCallback
 import androidx.exifinterface.media.ExifInterface
@@ -27,7 +30,7 @@ import java.util.*
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
     private lateinit var menu: Menu
-    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application) }
+    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getBoolean(SEARCH_COLLECTION)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,35 +77,41 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class LocationSearchViewModelFactory(private val application: Application): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application) as T
+    class LocationSearchViewModelFactory(private val application: Application, private val searchCollection: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchCollection) as T
     }
 
-    class LocationSearchViewModel(application: Application): AndroidViewModel(application) {
+    class LocationSearchViewModel(application: Application, searchCollection: Boolean): AndroidViewModel(application) {
         private val baseFolder = Tools.getLocalRoot(application)
+        private val cr = application.contentResolver
         private var total = 0
         private var job = viewModelScope.launch(Dispatchers.IO) {
-            PhotoRepository(application).getAllImage().run {
+            (if (searchCollection) PhotoRepository(application).getAllImage() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
                 total = this.size
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
-                    if (Tools.hasExif(photo.mimeType)) try { ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}") } catch (e: Exception) { null }?.latLong?.also {
+                    if (Tools.hasExif(photo.mimeType)) try {
+                        if (searchCollection) ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
+                        else cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))?.use { ExifInterface(it) }
+                    } catch (e: Exception) {
+                        null
+                    }?.latLong?.also { latLong->
                         when {
-                            it[0] == 0.0 -> {}
-                            it[0] >= 90.0 -> {}
-                            it[0] <= -90.0 -> {}
-                            it[1] == 0.0 -> {}
-                            it[1] >= 180.0 -> {}
-                            it[1] <= -180.0 -> {}
+                            latLong[0] == 0.0 -> {}
+                            latLong[0] >= 90.0 -> {}
+                            latLong[0] <= -90.0 -> {}
+                            latLong[1] == 0.0 -> {}
+                            latLong[1] >= 180.0 -> {}
+                            latLong[1] <= -180.0 -> {}
                             else -> {
-                                try { GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(it[0], it[1], 1) } catch (e: IOException) { null }?.get(0)?.apply {
+                                try { GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latLong[0], latLong[1], 1) } catch (e: IOException) { null }?.get(0)?.apply {
                                     val city = this.locality ?: this.adminArea ?: ""
                                     resultList.find { result-> result.country == this.countryName && result.locality == city }
                                         ?.let { existed ->
-                                            existed.photos.add(PhotoWithCoordinate(photo, it[0], it[1]))
+                                            existed.photos.add(PhotoWithCoordinate(photo, latLong[0], latLong[1]))
                                             existed.total++
                                         }
-                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(PhotoWithCoordinate(photo, it[0], it[1])), 1, this.countryName, city)) }
+                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(PhotoWithCoordinate(photo, latLong[0], latLong[1])), 1, this.countryName, city)) }
 
                                     // Update UI
                                     result.postValue(resultList)
@@ -143,4 +152,11 @@ class LocationSearchHostFragment: Fragment() {
         val country: String,
         val locality: String,
     )
+
+    companion object {
+        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+
+        @JvmStatic
+        fun newInstance(searchCollection: Boolean) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
+    }
 }
