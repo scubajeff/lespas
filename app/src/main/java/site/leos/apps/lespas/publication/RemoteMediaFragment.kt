@@ -55,8 +55,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
 
-    private var viewReCreated = false
-
     private var acquired = false
     private var albumId = ""
 
@@ -126,6 +124,12 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         this.window = requireActivity().window
         playerViewModel.setWindow(this.window)
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -166,6 +170,10 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                     return super.onInterceptTouchEvent(rv, e)
                 }
             })
+        }
+        slider.doOnLayout {
+            // Get into immersive mode
+            Tools.goImmersive(window)
         }
 
         controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
@@ -221,8 +229,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewReCreated = true
-
         // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
             album?.let {
@@ -232,24 +238,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) acquired = true
             }
         })
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-        // Get into immersive mode
-        Tools.goImmersive(window)
-    }
-
-    override fun onPause() {
-        viewReCreated = false
-
-        super.onPause()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

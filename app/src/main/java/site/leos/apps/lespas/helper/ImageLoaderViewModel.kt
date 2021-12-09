@@ -246,11 +246,21 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 bitmap = imageCache.get(key)
                 // Give error another chance
                 if (bitmap == null || bitmap == errorBitmap) {
-                    if (type == TYPE_FULL && photo.albumId == FROM_CAMERA_ROLL && !Tools.isMediaPlayable(photo.mimeType)) {
-                        getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) {
-                            view.setImageBitmap(it)
-                            callBack?.onLoadComplete()
-                        }}}
+                    when {
+                        type != TYPE_FULL -> {}
+                        photo.albumId != FROM_CAMERA_ROLL -> {
+                            // Black placeholder for full image view so that the layout can be stable during transition to immersive mode
+                            if (isActive) { withContext(Dispatchers.Main) {
+                                view.setImageBitmap(Bitmap.createBitmap(photo.width / 8, photo.height / 8, Bitmap.Config.RGB_565))
+                                callBack?.onLoadComplete()
+                            }}
+                        }
+                        !Tools.isMediaPlayable(photo.mimeType) -> {
+                            getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) {
+                                view.setImageBitmap(it)
+                                callBack?.onLoadComplete()
+                            }}}
+                        }
                     }
                     decodeResult = decodeBitmap(photo, type)
                     bitmap = decodeResult.first

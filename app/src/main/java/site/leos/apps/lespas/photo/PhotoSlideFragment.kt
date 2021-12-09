@@ -63,7 +63,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var window: Window
     //private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
-    private var viewReCreated = false
 
     private lateinit var controlsContainer: LinearLayout
     private lateinit var removeButton: Button
@@ -201,14 +200,19 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
         })
+
         postponeEnterTransition()
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photoslide, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        viewReCreated = true
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
@@ -252,6 +256,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     return super.onInterceptTouchEvent(rv, e)
                 }
             })
+        }
+
+        slider.doOnLayout {
+            // Get into immersive mode
+            Tools.goImmersive(window)
         }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -385,24 +394,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-        // Get into immersive mode
-        Tools.goImmersive(window)
-    }
-
-    override fun onPause() {
-        viewReCreated = false
-
-        super.onPause()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

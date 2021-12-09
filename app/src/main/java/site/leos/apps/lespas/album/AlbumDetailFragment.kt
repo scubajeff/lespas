@@ -128,7 +128,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                     excludeTarget(view, true)
-                    excludeTarget(androidx.appcompat.app.ActionBar::class.java, true)
                 }
                 ViewCompat.setTransitionName(recyclerView, null)
 
