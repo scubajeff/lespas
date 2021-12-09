@@ -43,6 +43,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import java.lang.Double.max
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
@@ -76,7 +77,7 @@ class PhotosInMapFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                mapView.controller.zoomTo(1, 400)
+                mapView.controller.zoomTo(max(mapView.zoomLevelDouble - 5, 0.0), 400)
                 Handler(Looper.getMainLooper()).postDelayed({
                     parentFragmentManager.popBackStack()
                 }, 300)
