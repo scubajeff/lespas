@@ -77,7 +77,7 @@ class PhotosInMapFragment: Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 mapView.controller.zoomTo(1, 400)
-                Handler(Looper.getMainLooper()).postDelayed(Runnable {
+                Handler(Looper.getMainLooper()).postDelayed({
                     parentFragmentManager.popBackStack()
                 }, 300)
             }
@@ -117,11 +117,13 @@ class PhotosInMapFragment: Fragment() {
                             findViewById<TextView>(R.id.label).text =
                                 if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
                                 else albumNames?.get(photo.photo.albumId)
-                            setOnClickListener { close() }
+                            setOnClickListener(InfoWindowClickListener(mapView))
                         }
                     }
 
-                    override fun onClose() {}
+                    override fun onClose() {
+                        setOnClickListener(null)
+                    }
                 }
                 marker.setOnMarkerClickListener(markerClickListener)
                 overlays.add(marker)
@@ -140,11 +142,14 @@ class PhotosInMapFragment: Fragment() {
                             mView.apply {
                                 findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
                                 findViewById<TextView>(R.id.label).isVisible = false
-                                setOnClickListener { close() }
+                                setOnClickListener(InfoWindowClickListener(mapView))
                             }
+                            relatedObject = marker
                         }
 
-                        override fun onClose() {}
+                        override fun onClose() {
+                            setOnClickListener(null)
+                        }
                     }
                     marker.setOnMarkerClickListener(markerClickListener)
                     overlays.add(marker)
@@ -205,6 +210,24 @@ class PhotosInMapFragment: Fragment() {
             }
 
             return true
+        }
+    }
+
+    class InfoWindowClickListener(private val mapView: MapView): View.OnClickListener {
+        override fun onClick(v: View) {
+            val marker = (v.tag as InfoWindow).relatedObject as Marker
+            for (i in mapView.overlays.indexOf(marker) - 1 downTo 0) {
+                mapView.overlays[i].apply {
+                    if (this is Marker) {
+                        if (this.position == marker.position) {
+                            marker.closeInfoWindow()
+                            this.showInfoWindow()
+                            return
+                        }
+                    }
+                }
+            }
+            marker.closeInfoWindow()
         }
     }
 
