@@ -16,8 +16,9 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,28 +39,34 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import kotlin.collections.ArrayList
 
 class PhotosInMapFragment: Fragment() {
+    private var locality: String? = null
+    private var country: String? = null
+    private var albumNames: HashMap<String, String>? = null
+    private var albumName: String? = null
+    private var photos = mutableListOf<PhotoWithCoordinate>()
+
     private lateinit var rootPath: String
-    private lateinit var locality: String
-    private lateinit var country: String
-    private lateinit var albumNames: HashMap<String, String>
 
-    private lateinit var poisBoundingBox: BoundingBox
     private lateinit var mapView: MapView
-
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
+    private lateinit var poisBoundingBox: BoundingBox
+    private val markerClickListener = MarkerClickListener()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         requireArguments().apply {
-            locality = getString(KEY_LOCALITY)!!
-            country = getString(KEY_COUNTRY)!!
-            albumNames = (getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?)!!
+            locality = getString(KEY_LOCALITY)
+            country = getString(KEY_COUNTRY)
+            getSerializable(KEY_ALBUM_NAMES)?.let { albumNames = it as HashMap<String, String> }
+            albumName = getString(KEY_ALBUM)
+            getParcelableArrayList<PhotoWithCoordinate>(KEY_PHOTOS)?.let { photos.addAll(it) }
         }
 
         rootPath = Tools.getLocalRoot(requireContext())
@@ -83,7 +90,8 @@ class PhotosInMapFragment: Fragment() {
             var poi: GeoPoint
             val points = arrayListOf<IGeoPoint>()
 
-            searchViewModel.getResult().value?.find { it.locality == locality && it.country == country }?.photos?.forEach { photo->
+
+            if (locality != null) ViewModelProvider(requireParentFragment(), LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true))[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos?.forEach { photo->
                 poi = GeoPoint(photo.lat, photo.long)
                 val marker = Marker(this).apply {
                     position = poi
@@ -92,31 +100,53 @@ class PhotosInMapFragment: Fragment() {
                 }
                 marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                     override fun onOpen(item: Any?) {
-                        mView.findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
-                        mView.findViewById<TextView>(R.id.title).text =
-                            if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
-                            else albumNames[photo.photo.albumId]
-                        mView.setOnClickListener { close() }
+                        mView.apply {
+                            findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                            findViewById<TextView>(R.id.label).text =
+                                if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                else albumNames?.get(photo.photo.albumId)
+                            setOnClickListener { close() }
+                        }
                     }
 
                     override fun onClose() {}
                 }
-                marker.setOnMarkerClickListener { theMarker, mapView ->
-                    if (theMarker.isInfoWindowShown) theMarker.closeInfoWindow()
-                    else {
-                        mapView.overlays.forEach { if (it is Marker) it.closeInfoWindow() }
-                        theMarker.showInfoWindow()
-                        mapView.controller.animateTo(theMarker.position)
-                    }
-                    true
-                }
+                marker.setOnMarkerClickListener(markerClickListener)
                 overlays.add(marker)
 
                 points.add(poi)
+            } else photos.forEach { photo->
+                if (photo.lat != 0.0 && photo.long != 0.0) {
+                    poi = GeoPoint(photo.lat, photo.long)
+                    val marker = Marker(this).apply {
+                        position = poi
+                        icon = pin
+                        loadImage(this, photo.photo)
+                    }
+                    marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
+                        override fun onOpen(item: Any?) {
+                            mView.apply {
+                                findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                                findViewById<TextView>(R.id.label).isVisible = false
+                                setOnClickListener { close() }
+                            }
+                        }
+
+                        override fun onClose() {}
+                    }
+                    marker.setOnMarkerClickListener(markerClickListener)
+                    overlays.add(marker)
+
+                    points.add(poi)
+                }
             }
+
+            // Get bounding box for all pois for zoom level setting and show them
             poisBoundingBox = SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox
             invalidate()
         }
+
+        // Set zoom after mapview been layout
         mapView.doOnLayout {
             (it as MapView).apply {
                 controller.setCenter(boundingBox.centerWithDateLine)
@@ -128,7 +158,7 @@ class PhotosInMapFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = locality
+            title = locality ?: albumName
             displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
         mapView.onResume()
@@ -153,10 +183,25 @@ class PhotosInMapFragment: Fragment() {
         }
     }
 
+    class MarkerClickListener: Marker.OnMarkerClickListener {
+        override fun onMarkerClick(marker: Marker, mapView: MapView): Boolean {
+            if (marker.isInfoWindowShown) marker.closeInfoWindow()
+            else {
+                mapView.overlays.forEach { if (it is Marker) it.closeInfoWindow() }
+                marker.showInfoWindow()
+                mapView.controller.animateTo(marker.position)
+            }
+
+            return true
+        }
+    }
+
     companion object {
-        const val KEY_LOCALITY = "KEY_LOCALITY"
-        const val KEY_COUNTRY = "KEY_COUNTRY"
-        const val KEY_ALBUM_NAMES = "KEY_ALBUM_NAMES"
+        private const val KEY_LOCALITY = "KEY_LOCALITY"
+        private const val KEY_COUNTRY = "KEY_COUNTRY"
+        private const val KEY_ALBUM_NAMES = "KEY_ALBUM_NAMES"
+        private const val KEY_ALBUM = "KEY_ALBUM"
+        private const val KEY_PHOTOS = "KEY_PHOTOS"
 
         @JvmStatic
         fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>) = PhotosInMapFragment().apply {
@@ -164,6 +209,14 @@ class PhotosInMapFragment: Fragment() {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
                 putSerializable(KEY_ALBUM_NAMES, albumNames)
+            }
+        }
+
+        @JvmStatic
+        fun newInstance(albumName: String, photos: MutableList<PhotoWithCoordinate>) = PhotosInMapFragment().apply {
+            arguments = Bundle().apply {
+                putString(KEY_ALBUM, albumName)
+                putParcelableArrayList(KEY_PHOTOS, ArrayList(photos))
             }
         }
     }

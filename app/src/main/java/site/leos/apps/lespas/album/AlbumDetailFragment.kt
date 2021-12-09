@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
@@ -41,7 +42,9 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
+import site.leos.apps.lespas.photo.PhotoWithCoordinate
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -93,7 +96,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var reuseUris = arrayListOf<Uri>()
 
-    private var shareOutJob: Job? = null
+    private lateinit var mapOptionMenu: MenuItem
+    private var photosWithCoordinate = mutableListOf<PhotoWithCoordinate>()
+    private var getCoordinateJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -238,9 +243,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         })
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_albumdetail, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_albumdetail, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -383,6 +386,35 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             // Restore selection state
             if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
+
+            // Search for location in photos, enable 'show in map' option menu
+            getCoordinateJob?.cancel()
+            getCoordinateJob = lifecycleScope.launch(Dispatchers.IO) {
+                val baseFolder = Tools.getLocalRoot(requireContext())
+                var coordinate: DoubleArray
+                var hit = false
+
+                photosWithCoordinate.clear()
+                it.photos.forEach { photo->
+                    coordinate = doubleArrayOf(0.0, 0.0)
+                    if (Tools.hasExif(photo.mimeType)) try {
+                        ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
+                    } catch (e: Exception) {
+                        null
+                    }?.latLong?.apply {
+                        hit = true
+                        coordinate = this
+                    }
+                    photosWithCoordinate.add(PhotoWithCoordinate(photo, coordinate[0], coordinate[1]))
+                }
+
+                withContext(Dispatchers.Main) {
+                    mapOptionMenu.apply {
+                        isEnabled = hit
+                        isVisible = hit
+                    }
+                }
+            }
         })
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
@@ -493,6 +525,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Disable publish function when this is a newly created album which does not exist on server yet
         if (album.eTag.isEmpty()) menu.findItem(R.id.option_menu_publish).isEnabled = false
 
+        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+
         super.onPrepareOptionsMenu(menu)
     }
 
@@ -543,6 +577,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).show(parentFragmentManager, PUBLISH_DIALOG)
 
+                true
+            }
+            R.id.option_menu_in_map-> {
+                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album.name, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -669,6 +709,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         return uris
     }
 
+    private var shareOutJob: Job? = null
     private fun shareOut(strip: Boolean) {
         val handler = Handler(Looper.getMainLooper())
         val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { shareOutJob?.cancel(cause = null) }
@@ -756,34 +797,33 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             private val tvTotal = itemView.findViewById<TextView>(R.id.total)
             private val tvRecipients = itemView.findViewById<TextView>(R.id.recipients)
 
-            fun bindViewItem() {
+            fun bindViewItem(cover: Photo) {
                 with(itemView) {
-                    currentList.firstOrNull()?.let { cover->
-                        imageLoader(cover, ivCover, ImageLoaderViewModel.TYPE_COVER)
-                        tvTitle.text = cover.name
+                    imageLoader(cover, ivCover, ImageLoaderViewModel.TYPE_COVER)
 
-                        val days = Duration.between(
-                            cover.dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
-                            cover.lastModified.atZone(ZoneId.systemDefault()).toInstant()
-                        ).toDays().toInt()
-                        tvDuration.text = when (days) {
-                            in 0..21 -> resources.getString(R.string.duration_days, days + 1)
-                            in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
-                            in 57..365 -> resources.getString(R.string.duration_months, days / 30)
-                            else -> resources.getString(R.string.duration_years, days / 365)
-                        }
+                    tvTitle.text = cover.name
 
-                        tvTotal.text = resources.getString(R.string.total_photo, currentList.size - 1)
-
-                        if (recipients.size > 0) {
-                            var names = recipients[0].sharee.label
-                            for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
-                            tvRecipients.apply {
-                                text = String.format(recipientText, names)
-                                visibility = View.VISIBLE
-                            }
-                        } else tvRecipients.visibility = View.GONE
+                    val days = Duration.between(
+                        cover.dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
+                        cover.lastModified.atZone(ZoneId.systemDefault()).toInstant()
+                    ).toDays().toInt()
+                    tvDuration.text = when (days) {
+                        in 0..21 -> resources.getString(R.string.duration_days, days + 1)
+                        in 22..56 -> resources.getString(R.string.duration_weeks, days / 7)
+                        in 57..365 -> resources.getString(R.string.duration_months, days / 30)
+                        else -> resources.getString(R.string.duration_years, days / 365)
                     }
+
+                    tvTotal.text = resources.getString(R.string.total_photo, currentList.size - 1)
+
+                    if (recipients.size > 0) {
+                        var names = recipients[0].sharee.label
+                        for (i in 1 until recipients.size) names += ", ${recipients[i].sharee.label}"
+                        tvRecipients.apply {
+                            text = String.format(recipientText, names)
+                            visibility = View.VISIBLE
+                        }
+                    } else tvRecipients.visibility = View.GONE
                 }
             }
         }
@@ -834,7 +874,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
-            else (holder as CoverViewHolder).bindViewItem()
+            else (holder as CoverViewHolder).bindViewItem(currentList.first())  // List will never be empty, no need to check for NoSuchElementException
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
