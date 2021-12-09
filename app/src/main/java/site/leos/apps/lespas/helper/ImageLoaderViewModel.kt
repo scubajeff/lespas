@@ -251,7 +251,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         photo.albumId != FROM_CAMERA_ROLL -> {
                             // Black placeholder for full image view so that the layout can be stable during transition to immersive mode
                             if (isActive) { withContext(Dispatchers.Main) {
-                                view.setImageBitmap(Bitmap.createBitmap(photo.width / 8, photo.height / 8, Bitmap.Config.RGB_565))
+                                view.setImageBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565))
                                 callBack?.onLoadComplete()
                             }}
                         }
