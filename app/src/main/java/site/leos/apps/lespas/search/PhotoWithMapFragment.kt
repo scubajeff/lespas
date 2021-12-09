@@ -89,7 +89,7 @@ class PhotoWithMapFragment: Fragment() {
     }
 
     companion object {
-        const val KEY_PHOTO = "KEY_PHOTO"
+        private const val KEY_PHOTO = "KEY_PHOTO"
 
         @JvmStatic
         fun newInstance(photo: PhotoWithCoordinate) = PhotoWithMapFragment().apply { arguments = Bundle().apply { putParcelable(KEY_PHOTO, photo) }}

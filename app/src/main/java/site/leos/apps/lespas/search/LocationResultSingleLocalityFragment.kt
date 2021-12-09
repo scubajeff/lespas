@@ -147,8 +147,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
     }
 
     companion object {
-        const val KEY_LOCALITY = "KEY_LOCALITY"
-        const val KEY_COUNTRY = "KEY_COUNTRY"
+        private const val KEY_LOCALITY = "KEY_LOCALITY"
+        private const val KEY_COUNTRY = "KEY_COUNTRY"
 
         @JvmStatic
         fun newInstance(locality: String, country: String) = LocationResultSingleLocalityFragment().apply {
