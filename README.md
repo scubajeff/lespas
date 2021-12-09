@@ -10,10 +10,11 @@ Features:
 - Simple, beautiful and fast photos & videos viewing
 - Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
-- Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously 
+- Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
 - Share albums with other Nextcloud users
 - Joint album which you and other Nextcloud users can edit together
 - Search for photos by objects with AI
+- Search photos by location, show album in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
 - Integrate with Snapseed for photo editing on mobile devices
 - Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app
 - Share to social networks，option provided to strip photo's EXIF before sharing
@@ -31,14 +32,22 @@ Features:
 <p float="left">
   <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_adding_photos.png" width="200" />
   <img alt="Browing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/6_camera_roll.png" width="200" /> 
-  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/7_search.png" width="200" />
-  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/8_publish.png" width="200" />
+  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/7_publish.png" width="200" />
+  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/8_search.png" width="200" />
+</p>
+
+<p float="left">
+  <img alt="Search by Location" src="fastlane//metadata/android/en-US/images/phoneScreenshots/9_by_location.png" width="200" />
+  <img alt="Show Album in Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
+  <img alt="Show Photo with Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
 </p>
 
 This project build using the following open source software:
 - <a href=https://square.github.io/okhttp>OkHttp</a>
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
+- <a href=https://github.com/osmdroid/osmdroid>osmdroid</a>
 - <a href=https://www.tensorflow.org>TensorFlow</a>
+- <a href=https://www.openstreetmap.org>OpenStreetMap</a>
 
 <a id="faq"></a>
 ## Faq

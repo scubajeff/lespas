@@ -1,0 +1,3 @@
+* Actualización mayor para soportar los datos GPS de la foto, mostrar la foto con el mapa, mostrar todo el álbum en el mapa, buscar por ubicación
+* Corregida la copia de seguridad del rollo de la cámara que no carga la foto original (el sistema proporciona una versión modificada sin coordenadas GPS) en Android 10 y superior
+* Otras mejoras y errores corregidos

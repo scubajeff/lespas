@@ -1,3 +1,7 @@
+## Version 2.4.0
+* Major update to support photo's GPS data, show photo with map, show whole album in map, search by location
+* Fixed camera roll backup not uploading original photo (system provides a modified version without GPS coordinate) on Android 10 and up
+
 ## Version 2.3.13
 * Fixed not able to list video file in external storage
 

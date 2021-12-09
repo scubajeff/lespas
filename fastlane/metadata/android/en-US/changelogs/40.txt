@@ -1,0 +1,3 @@
+* Major update to support photo's GPS data, show photo with map, show whole album in map, search by location
+* Fixed camera roll backup not uploading original photo (system provides a modified version without GPS coordinate) on Android 10 and up
+* Other improvements and bugs fixed

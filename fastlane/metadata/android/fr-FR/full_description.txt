@@ -8,6 +8,7 @@ Caractéristiques :
 - Partager des albums avec d'autres utilisateurs Nextcloud (vérifier les conditions préalables à l'adresse https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Album commun que vous et d'autres utilisateurs Nextcloud pouvez modifier ensemble.
 - Recherchez des photos par objets avec l'IA
+- Recherche de photos par lieu, affichage de l'album sur la carte (données cartographiques fournies par le projet OpenStreetMap)
 - Intégration avec Snapseed pour la retouche photo sur les appareils mobiles
 - Intégration à l'application Muzei Live Wallpaper
 - Partager sur les réseaux sociaux, option permettant de supprimer l'EXIF de la photo avant de la partager
@@ -18,5 +19,7 @@ Caractéristiques :
 Ce projet a été élaboré à l'aide des logiciels libres suivants :
 - OkHttp https://square.github.io/okhttp
 - PhotoView https://github.com/chrisbanes/PhotoView
+- osmdroid https://github.com/osmdroid/osmdroid
 - Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
+- OpenStreetMap https://www.openstreetmap.org

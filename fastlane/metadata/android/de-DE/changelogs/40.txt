@@ -1,0 +1,3 @@
+* Großes Update zur Unterstützung der GPS-Daten von Fotos, Anzeige von Fotos mit Karte, Anzeige des gesamten Albums in der Karte, Suche nach Standort
+* Behoben: Backup der Kamerarolle lädt das Originalfoto nicht hoch (das System liefert eine modifizierte Version ohne GPS-Koordinaten) auf Android 10 und höher
+* Weitere Verbesserungen und behobene Bugs

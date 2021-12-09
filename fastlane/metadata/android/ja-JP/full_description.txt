@@ -8,6 +8,7 @@ Les Pas」は、無料のオープンソースで、シンプルで効率的、�
 - 他のNextcloudユーザーとアルバムを共有 (https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server で前提条件を確認します)
 - 自分と他のNextcloudユーザーが一緒に編集できるジョイントアルバム
 - AIを活用した被写体別の写真検索
+- 写真の位置検索、地図上でのアルバム表示（地図データはOpenStreetMapプロジェクトによるものです）
 - Snapseedと連携してモバイル端末での写真編集が可能
 - ライブ壁紙アプリ「Muzei」との連携
 - ソーシャルネットワークでの共有, 写真のEXIFを削除して共有するオプションを提供
@@ -18,5 +19,7 @@ Les Pas」は、無料のオープンソースで、シンプルで効率的、�
 このプロジェクトでは、以下のオープンソース・ソフトウェアを使用しています。
 - OkHttp https://square.github.io/okhttp
 - PhotoView https://github.com/chrisbanes/PhotoView
-- Android Opensource https://source.android.com
+- osmdroid https://github.com/osmdroid/osmdroid
+- Android Open Source Project https://source.android.com
 - TensorFlow https://www.tensorflow.org
+- OpenStreetMap https://www.openstreetmap.org
