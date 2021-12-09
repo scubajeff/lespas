@@ -461,8 +461,8 @@ object Tools {
         }
     }
 
+    @Suppress("DEPRECATION")
     fun goImmersive(window: Window) {
-        @Suppress("DEPRECATION")
         if (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN != View.SYSTEM_UI_FLAG_FULLSCREEN) window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_IMMERSIVE or
             // Set the content to appear under the system bars so that the
@@ -474,6 +474,26 @@ object Tools {
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
             View.SYSTEM_UI_FLAG_FULLSCREEN
         )
+        window.apply {
+/*
+            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                previousNavBarColor = navigationBarColor
+                navigationBarColor = systemBarBackground
+                statusBarColor = systemBarBackground
+                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                setDecorFitsSystemWindows(false)
+            } else {
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+            }
+*/
+            //previousNavBarColor = navigationBarColor
+            //navigationBarColor = Color.TRANSPARENT
+            //statusBarColor = Color.TRANSPARENT
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
+        }
 /*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             @Suppress("DEPRECATION")

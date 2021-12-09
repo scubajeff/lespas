@@ -282,7 +282,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 */
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            statusBarColor = resources.getColor(R.color.color_primary)
+            //statusBarColor = resources.getColor(R.color.color_primary)
             decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
             decorView.setOnSystemUiVisibilityChangeListener(null)
         }
@@ -319,25 +319,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             else insetsController?.show(WindowInsets.Type.systemBars())
 */
             decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-
-/*
-            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                previousNavBarColor = navigationBarColor
-                navigationBarColor = systemBarBackground
-                statusBarColor = systemBarBackground
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                setDecorFitsSystemWindows(false)
-            } else {
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            }
-*/
-            //previousNavBarColor = navigationBarColor
-            //navigationBarColor = Color.TRANSPARENT
-            statusBarColor = Color.TRANSPARENT
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
 
         // auto hide

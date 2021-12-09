@@ -201,6 +201,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
         })
+        postponeEnterTransition()
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -255,7 +257,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             })
         }
 
-        postponeEnterTransition()
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -439,7 +440,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 */
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            statusBarColor = resources.getColor(R.color.color_primary)
+            //statusBarColor = resources.getColor(R.color.color_primary)
             decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
             decorView.setOnSystemUiVisibilityChangeListener(null)
             //navigationBarColor = previousNavBarColor
@@ -480,28 +481,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         else window.insetsController?.show(WindowInsets.Type.systemBars())
 */
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
-        window.apply {
-            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
-
-/*
-            val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                previousNavBarColor = navigationBarColor
-                navigationBarColor = systemBarBackground
-                statusBarColor = systemBarBackground
-                insetsController?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                setDecorFitsSystemWindows(false)
-            } else {
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-                addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            }
-*/
-            //previousNavBarColor = navigationBarColor
-            //navigationBarColor = Color.TRANSPARENT
-            statusBarColor = Color.TRANSPARENT
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        }
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 
         // trigger auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
