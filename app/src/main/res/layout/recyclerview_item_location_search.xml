@@ -25,10 +25,6 @@
             android:id="@+id/items"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-            app:spanCount="2"
-            android:scrollbars="none"
-            android:nestedScrollingEnabled="false"
             tools:listitem="@layout/recyclerview_item_photo"/>
 
         <TextView

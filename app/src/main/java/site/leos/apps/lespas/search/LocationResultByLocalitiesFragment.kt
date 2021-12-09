@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
@@ -93,7 +94,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 rvPhoto.apply {
                     adapter = photoAdapter
                     setRecycledViewPool(photoRVViewPool)
-                    (layoutManager as RecyclerView.LayoutManager).isItemPrefetchEnabled = false
+                    layoutManager = object : GridLayoutManager(this.context, 2) {
+                        override fun canScrollHorizontally(): Boolean = false
+                        override fun canScrollVertically(): Boolean = false
+                    }.apply {
+                        isItemPrefetchEnabled = false
+                    }
                 }
             }
 
