@@ -95,7 +95,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
+        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             ivMedia.apply {
