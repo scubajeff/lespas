@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -49,8 +51,9 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
         photoAdapter = PhotoAdapter(
             { photo, view, labelView ->
+                labelView.isVisible = false
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply {
+                exitTransition = MaterialElevationScale(true).apply {
                     duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                     excludeTarget(view, true)
                     excludeTarget(labelView, true)
@@ -104,8 +107,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_in_map-> {
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }

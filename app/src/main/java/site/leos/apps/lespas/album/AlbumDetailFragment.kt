@@ -130,6 +130,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     excludeTarget(view, true)
                     excludeTarget(androidx.appcompat.app.ActionBar::class.java, true)
                 }
+                ViewCompat.setTransitionName(recyclerView, null)
 
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
@@ -470,10 +471,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
-
-        isSnapseedEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
+            isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -580,8 +581,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_in_map-> {
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                ViewCompat.setTransitionName(recyclerView, null)
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album.name, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
