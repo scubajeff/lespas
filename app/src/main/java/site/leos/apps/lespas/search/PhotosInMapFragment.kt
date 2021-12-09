@@ -68,7 +68,7 @@ class PhotosInMapFragment: Fragment() {
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
-            getSerializable(KEY_ALBUM_NAMES)?.let { albumNames = it as HashMap<String, String> }
+            albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
             albumName = getString(KEY_ALBUM)
             getParcelableArrayList<PhotoWithCoordinate>(KEY_PHOTOS)?.let { photos.addAll(it) }
         }
@@ -189,7 +189,7 @@ class PhotosInMapFragment: Fragment() {
 
     private fun loadImage(marker: Marker, photo: Photo) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val option = BitmapFactory.Options().apply { inSampleSize = 8 }
+            val option = BitmapFactory.Options().apply { inSampleSize = if (photo.width > 4000 || photo.height > 4000) 8 else 4 }
             marker.image = BitmapDrawable(resources,
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
