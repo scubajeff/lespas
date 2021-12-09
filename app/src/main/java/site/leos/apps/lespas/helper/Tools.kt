@@ -10,6 +10,8 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.TypedValue
@@ -462,18 +464,7 @@ object Tools {
     }
 
     @Suppress("DEPRECATION")
-    fun goImmersive(window: Window) {
-        if (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN != View.SYSTEM_UI_FLAG_FULLSCREEN) window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE or
-            // Set the content to appear under the system bars so that the
-            // content doesn't resize when the system bars hide and show.
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            // Hide the nav bar and status bar
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_FULLSCREEN
-        )
+    fun goImmersive(window: Window, delayTranslucentEffect: Boolean = false) {
         window.apply {
 /*
             val systemBarBackground = ContextCompat.getColor(requireContext(), R.color.dark_gray_overlay_background)
@@ -491,9 +482,20 @@ object Tools {
             //previousNavBarColor = navigationBarColor
             //navigationBarColor = Color.TRANSPARENT
             //statusBarColor = Color.TRANSPARENT
+            if (delayTranslucentEffect) Handler(Looper.getMainLooper()).postDelayed({ addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) }, 1000) else addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
             addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
         }
+        if (window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN != View.SYSTEM_UI_FLAG_FULLSCREEN) window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_IMMERSIVE or
+            // Set the content to appear under the system bars so that the
+            // content doesn't resize when the system bars hide and show.
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+            // Hide the nav bar and status bar
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+            View.SYSTEM_UI_FLAG_FULLSCREEN
+        )
 /*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             @Suppress("DEPRECATION")

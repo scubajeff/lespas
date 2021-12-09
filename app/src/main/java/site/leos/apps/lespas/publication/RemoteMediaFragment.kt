@@ -124,12 +124,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         this.window = requireActivity().window
         playerViewModel.setWindow(this.window)
-
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -152,9 +146,9 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
 
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-                override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-                    super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-                    hideHandler.post(hideSystemUI)
+                override fun onPageScrollStateChanged(state: Int) {
+                    super.onPageScrollStateChanged(state)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) hideHandler.post(hideSystemUI)
                 }
 
                 override fun onPageSelected(position: Int) {
@@ -173,7 +167,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         slider.doOnLayout {
             // Get into immersive mode
-            Tools.goImmersive(window)
+            Tools.goImmersive(window, savedInstanceState == null)
         }
 
         controlsContainer = view.findViewById<LinearLayoutCompat>(R.id.bottom_controls_container).apply {
@@ -322,6 +316,12 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     private fun followSystemBar(show: Boolean) {
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
+
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
