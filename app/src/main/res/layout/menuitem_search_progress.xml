@@ -14,8 +14,9 @@
         android:paddingRight="16dp"
         android:layout_centerInParent="true"
         app:indicatorSize="20dp"
-        app:trackThickness="2dp"
+        app:trackThickness="10dp"
         app:indicatorColor="@color/color_text_light"
+        app:trackColor="#28ffffff"
         android:max="100"
         tools:ignore="RtlHardcoded,RtlSymmetry" />
 </RelativeLayout>
