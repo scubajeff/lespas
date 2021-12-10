@@ -181,7 +181,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                         isVisible = true
                                     }
 
-                                    mapIntent.data = Uri.parse("geo:${latLong[0]},${latLong[1]}?z=22")
+                                    mapIntent.data = Uri.parse("geo:${latLong[0]},${latLong[1]}?z=20")
                                     mapIntent.resolveActivity(requireActivity().packageManager)?.let {
                                         mapButton.apply {
                                             setOnClickListener {
