@@ -39,8 +39,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
 
-    private val photoRepository = PhotoRepository(application)
-
     fun interface LoadCompleteListener{
         fun onLoadComplete()
     }
@@ -52,16 +50,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         var uri = Uri.EMPTY
 
         if (photo.albumId == FROM_CAMERA_ROLL) uri = Uri.parse(photo.id)
-        else {
-            if (type == TYPE_SMALL_COVER || type == TYPE_COVER) {
-                // Cover photo is created from Album record in runtime, therefore does not contain name and eTag property
-                fileName = "${rootPath}/${photo.id}"
-                if (!(File(fileName).exists())) {
-                    fileName = "${rootPath}/${photoRepository.getPhotoName(photo.id)}"
-                    if (!File(fileName).exists()) return Pair(errorBitmap, null)
-                }
-            } else fileName = "${rootPath}/${if (photo.eTag.isNotEmpty()) photo.id else photo.name}"
-        }
+        else fileName = "${rootPath}/${photo.id}"
 
         try {
             bitmap = when (type) {
