@@ -763,7 +763,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 action = Intent.ACTION_SEND
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
                             }
-                            type = requireContext().contentResolver.getType(uris[0])
+                            type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                            if (type!!.startsWith("image")) type = "image/*"
                             this.clipData = clipData
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)

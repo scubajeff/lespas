@@ -759,7 +759,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 action = Intent.ACTION_SEND_MULTIPLE
                                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                             }
-                            type = sharedPhoto.mimeType
+                            //type = sharedPhoto.mimeType
+                            type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
                             this.clipData = clipData
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
