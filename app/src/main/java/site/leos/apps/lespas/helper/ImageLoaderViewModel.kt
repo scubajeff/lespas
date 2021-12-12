@@ -8,7 +8,6 @@ import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -23,7 +22,6 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
 import java.io.IOException
 import java.lang.Integer.max
@@ -55,38 +53,14 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         try {
             bitmap = when (type) {
                 TYPE_GRID -> {
-                    val size = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8
-                    val rect: Rect = if (photo.height > photo.width) {
-                        val top = (photo.height - photo.width) / 2
-                        val bottom = top + photo.width
-                        Rect(0, top, photo.width, bottom)
-                    } else {
-                        val left = (photo.width - photo.height) / 2
-                        val right = left + photo.height
-                        Rect(left, 0, right, photo.height)
-                    }
+                    val option = BitmapFactory.Options().apply { inSampleSize = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8 }
                     with(photo.mimeType) {
                         when {
-                            this.startsWith("video")-> {
-                                getVideoThumbnail(photo, fileName)
-                            }
-                            this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> {
-                                if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, BitmapFactory.Options().apply { inSampleSize = size })
-                                else {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ThumbnailUtils.createImageThumbnail(File(fileName), Size(300, 300), null)
-                                    else BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { inSampleSize = size })
-                                }
-                            }
-                            this == "image/jpeg" || this == "image/png" -> {
-                                if (photo.albumId == FROM_CAMERA_ROLL) getImageThumbnail(photo)
-                                else
-                                    @Suppress("DEPRECATION")
-                                    (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(fileName) else BitmapRegionDecoder.newInstance(fileName, false)).decodeRegion(rect, BitmapFactory.Options().apply {
-                                        this.inSampleSize = size
-                                        this.inPreferredConfig = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
-                                    })
-                            }
-                            else-> BitmapFactory.decodeFile(fileName, BitmapFactory.Options().apply { this.inSampleSize = size })
+                            this.startsWith("video") -> getVideoThumbnail(photo, fileName)
+                            photo.albumId != FROM_CAMERA_ROLL -> BitmapFactory.decodeFile(fileName, option)
+                            this == "image/jpeg" || this == "image/png" -> getImageThumbnail(photo)
+                            this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
+                            else-> BitmapFactory.decodeFile(fileName, option)
                         }
                     }
                 }
@@ -239,16 +213,24 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                         type != TYPE_FULL -> {}
                         photo.albumId != FROM_CAMERA_ROLL -> {
                             // Black placeholder for full image view so that the layout can be stable during transition to immersive mode
-                            if (isActive) { withContext(Dispatchers.Main) {
-                                view.setImageBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565))
-                                callBack?.onLoadComplete()
-                            }}
+                            if (isActive) {
+                                withContext(Dispatchers.Main) {
+                                    imageCache.get("${photo.id}${TYPE_GRID}")?.let {
+                                        view.setImageBitmap(it)
+                                        callBack?.onLoadComplete()
+                                    }
+                                }
+                            }
                         }
                         !Tools.isMediaPlayable(photo.mimeType) -> {
-                            getImageThumbnail(photo)?.let { if (isActive) { withContext(Dispatchers.Main) {
-                                view.setImageBitmap(it)
-                                callBack?.onLoadComplete()
-                            }}}
+                            getImageThumbnail(photo)?.let {
+                                if (isActive) {
+                                    withContext(Dispatchers.Main) {
+                                        view.setImageBitmap(it)
+                                        callBack?.onLoadComplete()
+                                    }
+                                }
+                            }
                         }
                     }
                     decodeResult = decodeBitmap(photo, type)
@@ -277,8 +259,6 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             } finally {
                 withContext(Dispatchers.Main) { callBack?.onLoadComplete() }
             }
-        }.apply {
-            //invokeOnCompletion { jobMap.remove(jobKey) }
         }
 
         // Replacing previous job
