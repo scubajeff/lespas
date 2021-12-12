@@ -47,7 +47,6 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.OkHttpWebDav
-import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -110,7 +109,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         viewModelScope.launch(Dispatchers.IO) {
             _sharees.value = getSharees()
-            getShareList()
+            _shareByMe.value = getShareByMe()
+            getShareWithMe()
         }
     }
 
@@ -131,120 +131,30 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }.flowOn(Dispatchers.IO)
 
-    private fun getShareList() {
-        val sharesBy = mutableListOf<ShareByMe>()
-        val sharesWith = mutableListOf<ShareWithMe>()
-        var sharee: Recipient
-        var backOff = 2500L
-        val lespasBaseLength = lespasBase.length
-        val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
-
-        while(true) {
-            try {
-                webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
-                    var shareType: Int
-                    var idString: String
-                    var labelString: String
-                    var pathString: String
-                    var recipientString: String
-
-                    val data = getJSONArray("data")
-                    for (i in 0 until data.length()) {
-                        data.getJSONObject(i).apply {
-                            shareType = when (getString("type")) {
-                                SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
-                                SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
-                                else -> -1
-                            }
-                            pathString = getString("path")
-                            if (shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
-                                // Only interested in shares of subfolders under /lespas
-
-                                recipientString = getString("recipient")
-                                if (getString("owner") == userName) {
-                                    // This is a share by me, get recipient's label
-                                    idString = recipientString
-                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-
-                                    sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
-
-                                    @Suppress("SimpleRedundantLet")
-                                    sharesBy.find { share -> share.fileId == getString("file_id") }?.let { item ->
-                                        // If this folder existed in result, add new sharee only
-                                        item.with.add(sharee)
-                                    } ?: run {
-                                        // Create new share by me item
-                                        sharesBy.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
-                                    }
-                                } else if (sharesWith.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
-                                    // This is a share with me, either direct to me or to my groups, get owner's label
-                                    idString = getString("owner")
-                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-
-                                    sharesWith.add(ShareWithMe(getString("id"),"", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0),"", Album.BY_DATE_TAKEN_ASC, 0L))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                _shareByMe.value = sharesBy
-
-                if (sharesWith.isNotEmpty()) _shareWithMe.value = getAlbumMetaForShareWithMe(sharesWith).apply { sort() }
-
-                break
-            }
-            catch (e: UnknownHostException) {
-                // Retry for network unavailable, hope it's temporarily
-                backOff *= 2
-                sleep(backOff)
-            }
-            catch (e: SocketTimeoutException) {
-                // Retry for network unavailable, hope it's temporarily
-                backOff *= 2
-                sleep(backOff)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                break
-            }
-        }
-    }
-
-    private fun updateShareByMe(): MutableList<ShareByMe> {
+    private fun getShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
         var sharee: Recipient
 
         try {
-            webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
-                var shareType: Int
-                var idString: String
-                var labelString: String
+            webDav.ocsGet("$baseUrl$SHARED_BY_ME_ENDPOINT")?.apply {
                 var pathString: String
                 val lespasBaseLength = lespasBase.length
 
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
-                        shareType = when(getString("type")) {
-                            SHARE_TYPE_USER_STRING-> SHARE_TYPE_USER
-                            SHARE_TYPE_GROUP_STRING-> SHARE_TYPE_GROUP
-                            else-> -1
-                        }
                         pathString = getString("path")
-                        if (shareType >= 0 && getString("owner") == userName && getBoolean("is_directory") && pathString.startsWith("/lespas") && pathString.length > lespasBaseLength) {
+                        if (getString("item_type") == "folder" && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
                             // Only interested in shares of subfolders under lespas/
-
-                            idString = getString("recipient")
-                            labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-                            sharee = Recipient(getString("id"), getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Sharee(idString, labelString, shareType))
+                            sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname"), getInt("share_type")))
 
                             @Suppress("SimpleRedundantLet")
-                            result.find { share-> share.fileId == getString("file_id") }?.let { item->
+                            result.find { share-> share.fileId == getString("item_source") }?.let { item->
                                 // If this folder existed in result, add new sharee only
                                 item.with.add(sharee)
                             } ?: run {
                                 // Create new folder share item
-                                result.add(ShareByMe(getString("file_id"), getString("name"), mutableListOf(sharee)))
+                                result.add(ShareByMe(getString("item_source"), pathString.substringAfterLast('/'), mutableListOf(sharee)))
                             }
                         }
                     }
@@ -260,39 +170,45 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return arrayListOf()
     }
 
-    fun updateShareWithMe() {
+    fun getShareWithMe() {
         val result = mutableListOf<ShareWithMe>()
-        val group = _sharees.value.filter { it.type == SHARE_TYPE_GROUP }
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.ocsGet("$baseUrl$SHARE_LISTING_ENDPOINT")?.apply {
-                    var shareType: Int
-                    var idString: String
-                    var labelString: String
+                webDav.ocsGet("$baseUrl$SHARED_WITH_ME_ENDPOINT")?.apply {
+                    var folderId: String
+                    var permission: Int
                     var pathString: String
-                    var recipientString: String
                     val lespasBaseLength = lespasBase.length
 
                     val data = getJSONArray("data")
                     for (i in 0 until data.length()) {
                         data.getJSONObject(i).apply {
-                            shareType = when (getString("type")) {
-                                SHARE_TYPE_USER_STRING -> SHARE_TYPE_USER
-                                SHARE_TYPE_GROUP_STRING -> SHARE_TYPE_GROUP
-                                else -> -1
-                            }
                             pathString = getString("path")
-                            if (getString("owner") != userName && shareType >= 0 && getBoolean("is_directory") && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
+                            if (getString("item_type") == "folder") {
                                 // Only interested in shares of subfolders under lespas/
-
-                                recipientString = getString("recipient")
-                                if (result.indexOfFirst { it.albumId == getString("file_id") } == -1 && (recipientString == userName || group.indexOfFirst { it.name == recipientString } != -1)) {
-                                    // This is a share with me, either direct to me or to my groups, get owner's label
-                                    idString = getString("owner")
-                                    labelString = _sharees.value.find { it.name == idString }?.label ?: idString
-
-                                    result.add(ShareWithMe(getString("id"), "", getString("file_id"), getString("name"), idString, labelString, getInt("permissions"), OffsetDateTime.parse(getString("time")).toInstant().epochSecond, Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L))
+                                folderId = getString("item_source")
+                                permission = getInt("permissions")
+                                result.find { existed-> existed.albumId == folderId }?.let { existed->
+                                    // Existing sharedWithMe entry, we should keep the one with more permission bits set
+                                    if (existed.permission < permission) {
+                                        existed.shareId = getString("id")
+                                        existed.permission = permission
+                                        existed.sharedTime = getLong("stime")
+                                    }
+                                } ?: run {
+                                    // New sharedWithMe entry
+                                    result.add(ShareWithMe(
+                                        getString("id"),
+                                        getString("file_target"),
+                                        folderId,
+                                        pathString.substringAfterLast('/'),
+                                        getString("uid_owner"),
+                                        getString("displayname_owner"),
+                                        permission,
+                                        getLong("stime"),
+                                        Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L
+                                    ))
                                 }
                             }
                         }
@@ -314,16 +230,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun getAlbumMetaForShareWithMe(shares: List<ShareWithMe>): MutableList<ShareWithMe> {
         val result = shares.toMutableList()
 
-        // Avoid flooding http calls to server, cache share path, since in most cases, user won't change share path often
-        var sPath = getSharePath(result[0].shareId) ?: ""
-
-        // Get shares' last modified timestamp by PROPFIND share path
+        // Get shares' last modified timestamp by PROPFIND each individual share path
         val lastModified = HashMap<String, Long>()
         val offset = OffsetDateTime.now().offset
-        webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+        var sPath: String = ""
+        shares.forEach { share->
+            (share.sharePath.split('/'))[0].apply {
+                if (this != sPath) {
+                    sPath = this
+                    webDav.list("${resourceRoot}/${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+                }
+            }
+        }
 
+        // Retrieve share's meta data
         for (share in result) {
-            share.sharePath = "${sPath}/${share.albumName}"
             share.lastModified = lastModified[share.albumId] ?: 0L
             try {
                 webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
@@ -336,25 +257,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
 
                 }
-            } catch (e: OkHttpWebDavException) {
-                e.printStackTrace()
-                if (e.statusCode == 404) {
-                    // If we the meta file is not found on server, share path might be different, try again after updating the share path from server
-                    sPath = getSharePath(share.shareId) ?: ""
-                    webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
-
-                    share.sharePath = "${sPath}/${share.albumName}"
-                    share.lastModified = lastModified[share.albumId] ?: 0L
-                    webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
-                        JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
-                            meta.getJSONObject("cover").apply {
-                                share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                                share.coverFileName = getString("filename")
-                            }
-                            share.sortOrder = meta.getInt("sort")
-                        }
-                    }
-                }
+            } catch (e: Exception) {
+                // Either there is no folderId.json file in the folder, or json parse error means it's not a lespas share
             }
         }
 
@@ -428,32 +332,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun getSharePath(shareId: String): String? {
-        var path: String? = null
-
-        try {
-            webDav.ocsGet("$baseUrl$PUBLISH_ENDPOINT/${shareId}?format=json")?.apply {
-                path = getJSONArray("data").getJSONObject(0).getString("path").substringBeforeLast('/')
-            }
-        }
-        catch (e: java.io.IOException) { e.printStackTrace() }
-        catch (e: IllegalStateException) { e.printStackTrace() }
-        catch (e: JSONException) { e.printStackTrace() }
-
-        return path
-    }
-
     fun publish(albums: List<ShareByMe>) {
         viewModelScope.launch(Dispatchers.IO) {
             createShares(albums)
-            _shareByMe.value = updateShareByMe()
+            _shareByMe.value = getShareByMe()
         }
     }
 
     fun unPublish(recipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteShares(recipients)
-            _shareByMe.value = updateShareByMe()
+            _shareByMe.value = getShareByMe()
         }
     }
 
@@ -497,7 +386,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
 
                 // Update _shareByMe hence update UI
-                if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = updateShareByMe()
+                if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = getShareByMe()
             }
             catch (e: Exception) { e.printStackTrace() }
         }
@@ -1009,7 +898,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     companion object {
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
 
-        private const val SHARE_LISTING_ENDPOINT = "/ocs/v2.php/apps/sharelisting/api/v1/sharedSubfolders?format=json&path="
+        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json"
+        private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
