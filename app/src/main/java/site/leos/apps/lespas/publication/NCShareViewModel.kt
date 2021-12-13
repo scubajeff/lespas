@@ -229,12 +229,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // Get shares' last modified timestamp by PROPFIND each individual share path
         val lastModified = HashMap<String, Long>()
         val offset = OffsetDateTime.now().offset
-        var sPath = ""
+        var sPath = "."     // A string that could never be a folder's name
         shares.forEach { share->
-            (share.sharePath.split('/'))[1].apply {
+            share.sharePath.substringBeforeLast('/').apply {
                 if (this != sPath) {
                     sPath = this
-                    webDav.list("${resourceRoot}/${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
+                    webDav.list("${resourceRoot}${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { if (it.isFolder) lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
                 }
             }
         }
@@ -261,7 +261,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
         _shareWithMeProgress.value = 100
 
-        return result
+        return result.filter { it.cover.cover.isNotEmpty() }.toMutableList()
     }
 
     private fun getSharees(): MutableList<Sharee> {
