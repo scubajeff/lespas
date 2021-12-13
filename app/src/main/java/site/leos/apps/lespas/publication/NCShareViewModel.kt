@@ -174,13 +174,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 webDav.ocsGet("$baseUrl$SHARED_WITH_ME_ENDPOINT")?.apply {
                     var folderId: String
                     var permission: Int
-                    var pathString: String
-                    val lespasBaseLength = lespasBase.length
 
                     val data = getJSONArray("data")
                     for (i in 0 until data.length()) {
                         data.getJSONObject(i).apply {
-                            pathString = getString("path")
                             if (getString("item_type") == "folder") {
                                 // Only interested in shares of subfolders under lespas/
                                 folderId = getString("item_source")
@@ -198,7 +195,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         getString("id"),
                                         getString("file_target"),
                                         folderId,
-                                        pathString.substringAfterLast('/'),
+                                        getString("path").substringAfterLast('/'),
                                         getString("uid_owner"),
                                         getString("displayname_owner"),
                                         permission,
