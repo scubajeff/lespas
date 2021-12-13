@@ -233,9 +233,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // Get shares' last modified timestamp by PROPFIND each individual share path
         val lastModified = HashMap<String, Long>()
         val offset = OffsetDateTime.now().offset
-        var sPath: String = ""
+        var sPath = ""
         shares.forEach { share->
-            (share.sharePath.split('/'))[0].apply {
+            (share.sharePath.split('/'))[1].apply {
                 if (this != sPath) {
                     sPath = this
                     webDav.list("${resourceRoot}/${sPath}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach { lastModified[it.fileId] = it.modified.toEpochSecond(offset) }
