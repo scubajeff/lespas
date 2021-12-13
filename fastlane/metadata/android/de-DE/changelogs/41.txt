@@ -1,0 +1,2 @@
+* Behobene Veröffentlichungsfunktion auf Nextcloud 22 und höher
+* Andere Verbesserungen und Fehler behoben

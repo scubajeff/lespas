@@ -23,21 +23,21 @@ Features:
 - Open-source
 
 <p float="left">
-  <img alt="Welcom Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_Welcome.png" width="200" />
-  <img alt="Album List" src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_album.png" width="200" /> 
-  <img alt="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/3_album_detail.png" width="200" />
-  <img alt="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/4_photo.png" width="200" />
+  <img alt="Welcom Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
+  <img alt="Album List" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" /> 
+  <img alt="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/03_album_detail.png" width="200" />
+  <img alt="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/04_photo.png" width="200" />
 </p>
 
 <p float="left">
-  <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_adding_photos.png" width="200" />
-  <img alt="Browing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/6_camera_roll.png" width="200" /> 
-  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/7_publish.png" width="200" />
-  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/8_search.png" width="200" />
+  <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
+  <img alt="Browing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
+  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
+  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
 </p>
 
 <p float="left">
-  <img alt="Search by Location" src="fastlane//metadata/android/en-US/images/phoneScreenshots/9_by_location.png" width="200" />
+  <img alt="Search by Location" src="fastlane//metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
   <img alt="Show Album in Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
   <img alt="Show Photo with Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
 </p>
@@ -75,8 +75,7 @@ If synchronization doesn't seem to work, especially when you phone is a Chinese 
  
 ### Checklist for enabling sharing on Nextcloud server
 To enable publishing (e.g. sharing album to other users on Nextcloud server), there are several things you need to take care beforehand:
-- Make sure your are using LesPas version 2.0+
-- Install and enable [Share Listing](https://apps.nextcloud.com/apps/sharelisting) on your Nextcloud server
+- Make sure your are using LesPas version 2.4.1+
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. User not belongs to any group can not download sharee list from server, this is a limitation of Nextcloud Sharee API
 - Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
 - Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [document](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for detail.

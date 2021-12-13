@@ -1,0 +1,2 @@
+* Correction de la fonction de publication sur Nextcloud 22 et plus
+* Autres améliorations et bogues corrigés

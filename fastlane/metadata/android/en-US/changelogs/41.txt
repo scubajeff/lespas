@@ -1,0 +1,2 @@
+* Fixed publishing feature on Nextcloud 22 and up
+* Other improvements and bugs fixed

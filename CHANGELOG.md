@@ -1,3 +1,6 @@
+## Version 2.4.1
+* Fixed publishing feature on Nextcloud 22 and up. From now on, no need to install Share List app on server
+
 ## Version 2.4.0
 * Major update to support photo's GPS data, show photo with map, show whole album in map, search by location
 * Fixed camera roll backup not uploading original photo (system provides a modified version without GPS coordinate) on Android 10 and up
