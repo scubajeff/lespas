@@ -11,12 +11,12 @@
         android:id="@+id/search_progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingRight="16dp"
         android:layout_centerInParent="true"
-        app:indicatorSize="20dp"
-        app:trackThickness="10dp"
-        app:indicatorColor="@color/color_text_light"
-        app:trackColor="#28ffffff"
+        android:paddingRight="12dp"
         android:max="100"
+        app:indicatorColor="@color/color_text_light"
+        app:indicatorSize="18dp"
+        app:trackColor="#28ffffff"
+        app:trackThickness="9dp"
         tools:ignore="RtlHardcoded,RtlSymmetry" />
 </RelativeLayout>

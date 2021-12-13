@@ -64,10 +64,12 @@ import kotlin.math.roundToInt
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
     private val _shareWithMe = MutableStateFlow<List<ShareWithMe>>(arrayListOf())
+    private val _shareWithMeProgress = MutableStateFlow<Int>(0)
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
+    val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
 
@@ -170,6 +172,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val result = mutableListOf<ShareWithMe>()
 
         viewModelScope.launch(Dispatchers.IO) {
+            _shareWithMeProgress.value = 0
             try {
                 webDav.ocsGet("$baseUrl$SHARED_WITH_ME_ENDPOINT")?.apply {
                     var folderId: String
@@ -237,7 +240,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         // Retrieve share's meta data
-        for (share in result) {
+        val total = shares.size
+        shares.forEachIndexed { i, share->
+            _shareWithMeProgress.value = ((i * 100.0) / total).toInt()
             share.lastModified = lastModified[share.albumId] ?: 0L
             try {
                 webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
@@ -254,6 +259,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Either there is no folderId.json file in the folder, or json parse error means it's not a lespas share
             }
         }
+        _shareWithMeProgress.value = 100
 
         return result
     }

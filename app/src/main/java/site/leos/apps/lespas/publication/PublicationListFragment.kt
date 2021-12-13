@@ -14,6 +14,7 @@ import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -25,6 +26,10 @@ class PublicationListFragment: Fragment() {
     private lateinit var shareListRecyclerView: RecyclerView
 
     private var shareSelected: NCShareViewModel.ShareWithMe? = null
+
+    private var activateRefresh: MenuItem? = null
+    private var refreshProgress: MenuItem? = null
+    private var progressIndicator: CircularProgressIndicator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +66,28 @@ class PublicationListFragment: Fragment() {
         }
 
         shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { shareListAdapter.submitList(it) })
+        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner, {
+            when(it) {
+                0 -> {
+                    activateRefresh?.isVisible = false
+                    refreshProgress?.isVisible = true
+                }
+                100 -> {
+                    activateRefresh?.isVisible = true
+                    refreshProgress?.isVisible = false
+                    progressIndicator?.isIndeterminate = true
+                }
+                else -> {
+                    if (refreshProgress?.isVisible == false) {
+                        activateRefresh?.isVisible = false
+                        progressIndicator?.isIndeterminate = false
+                        refreshProgress?.isVisible = true
+                    }
+                    progressIndicator?.isIndeterminate = false
+                    progressIndicator?.progress = it
+                }
+            }
+        })
 /*
 
         lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}
@@ -89,12 +116,15 @@ class PublicationListFragment: Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.publication_list_menu, menu)
+        activateRefresh = menu.findItem(R.id.option_menu_refresh_publication)
+        refreshProgress = menu.findItem(R.id.option_menu_refresh_progress)
+        progressIndicator = refreshProgress?.actionView?.findViewById<CircularProgressIndicator>(R.id.search_progress)?.apply { isIndeterminate = true }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
             R.id.option_menu_refresh_publication-> {
-                shareModel.updateShareWithMe()
+                shareModel.getShareWithMe()
                 true
             }
             else-> false
