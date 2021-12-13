@@ -18,16 +18,15 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
@@ -59,7 +58,6 @@ class PhotosInMapFragment: Fragment() {
     private lateinit var rootPath: String
 
     private lateinit var mapView: MapView
-    private lateinit var poisBoundingBox: BoundingBox
     private val markerClickListener = MarkerClickListener()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,44 +94,22 @@ class PhotosInMapFragment: Fragment() {
             if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
             setMultiTouchControls(true)
             setUseDataConnection(true)
-            setTileSource(TileSourceFactory.MAPNIK)
             overlays.add(CopyrightOverlay(requireContext()))
 
-            val pin = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-            var poi: GeoPoint
-            val points = arrayListOf<IGeoPoint>()
+            // Create POI markers
+            lifecycleScope.launch(Dispatchers.IO) {
+                setTileSource(TileSourceFactory.MAPNIK)
 
+                val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
+                var poi: GeoPoint
+                val points = arrayListOf<IGeoPoint>()
 
-            if (locality != null) ViewModelProvider(requireParentFragment(), LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true))[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos?.forEach { photo->
-                poi = GeoPoint(photo.lat, photo.long)
-                val marker = Marker(this).apply {
-                    position = poi
-                    icon = pin
-                    loadImage(this, photo.photo)
-                }
-                marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
-                    override fun onOpen(item: Any?) {
-                        mView.apply {
-                            findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
-                            findViewById<TextView>(R.id.label).text =
-                                if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
-                                else albumNames?.get(photo.photo.albumId)
-                            setOnClickListener(InfoWindowClickListener(mapView))
-                        }
-                    }
-
-                    override fun onClose() {
-                        setOnClickListener(null)
-                    }
-                }
-                marker.setOnMarkerClickListener(markerClickListener)
-                overlays.add(marker)
-
-                points.add(poi)
-            } else photos.forEach { photo->
-                if (photo.lat != 0.0 && photo.long != 0.0) {
+                if (locality != null) ViewModelProvider(
+                    requireParentFragment(),
+                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true)
+                )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos?.forEach { photo ->
                     poi = GeoPoint(photo.lat, photo.long)
-                    val marker = Marker(this).apply {
+                    val marker = Marker(mapView).apply {
                         position = poi
                         icon = pin
                         loadImage(this, photo.photo)
@@ -142,10 +118,11 @@ class PhotosInMapFragment: Fragment() {
                         override fun onOpen(item: Any?) {
                             mView.apply {
                                 findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
-                                findViewById<TextView>(R.id.label).isVisible = false
+                                findViewById<TextView>(R.id.label).text =
+                                    if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    else albumNames?.get(photo.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }
-                            relatedObject = marker
                         }
 
                         override fun onClose() {
@@ -156,29 +133,57 @@ class PhotosInMapFragment: Fragment() {
                     overlays.add(marker)
 
                     points.add(poi)
+                } else photos.forEach { photo ->
+                    if (photo.lat != 0.0 && photo.long != 0.0) {
+                        poi = GeoPoint(photo.lat, photo.long)
+                        val marker = Marker(mapView).apply {
+                            position = poi
+                            icon = pin
+                            loadImage(this, photo.photo)
+                        }
+                        marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
+                            override fun onOpen(item: Any?) {
+                                mView.apply {
+                                    findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                                    findViewById<TextView>(R.id.label).isVisible = false
+                                    setOnClickListener(InfoWindowClickListener(mapView))
+                                }
+                                relatedObject = marker
+                            }
+
+                            override fun onClose() {
+                                setOnClickListener(null)
+                            }
+                        }
+                        marker.setOnMarkerClickListener(markerClickListener)
+                        overlays.add(marker)
+
+                        points.add(poi)
+                    }
                 }
-            }
 
-            // Get bounding box for all pois for zoom level setting and show them
-            poisBoundingBox = SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox
-            invalidate()
-        }
+                invalidate()
 
-        // Set zoom after mapview been layout
-        mapView.doOnLayout {
-            (it as MapView).apply {
-                controller.setCenter(boundingBox.centerWithDateLine)
-                zoomToBoundingBox(poisBoundingBox, savedInstanceState == null, 100, 19.5, 800)
+                // Start zooming to the bounding box
+                if (points.isNotEmpty()) withContext(Dispatchers.Main) {
+                    controller.setCenter(boundingBox.centerWithDateLine)
+                    zoomToBoundingBox(
+                        SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox,
+                        savedInstanceState == null, 100, 19.5, 800
+                    )
+                }
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
+
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             title = locality ?: albumName
             displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
+
         mapView.onResume()
     }
 
