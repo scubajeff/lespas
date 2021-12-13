@@ -137,14 +137,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         try {
             webDav.ocsGet("$baseUrl$SHARED_BY_ME_ENDPOINT")?.apply {
-                var pathString: String
-                val lespasBaseLength = lespasBase.length
-
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
-                        pathString = getString("path")
-                        if (getString("item_type") == "folder" && pathString.startsWith(lespasBase) && pathString.length > lespasBaseLength) {
+                        if (getString("item_type") == "folder") {
                             // Only interested in shares of subfolders under lespas/
                             sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname"), getInt("share_type")))
 
@@ -154,7 +150,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 item.with.add(sharee)
                             } ?: run {
                                 // Create new folder share item
-                                result.add(ShareByMe(getString("item_source"), pathString.substringAfterLast('/'), mutableListOf(sharee)))
+                                result.add(ShareByMe(getString("item_source"), getString("path").substringAfterLast('/'), mutableListOf(sharee)))
                             }
                         }
                     }
@@ -898,7 +894,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     companion object {
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
 
-        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?format=json"
+        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=lespas&subfiles=true&reshares=false&format=json"
         private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
