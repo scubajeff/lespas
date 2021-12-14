@@ -397,7 +397,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 var hit = false
 
                 photosWithCoordinate.clear()
-                it.photos.forEach { photo->
+                mAdapter.getPhotos().forEach { photo->
                     coordinate = doubleArrayOf(0.0, 0.0)
                     if (Tools.hasExif(photo.mimeType)) try {
                         ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
@@ -788,6 +788,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     // Adapter for photo grid
     class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+        var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
@@ -882,7 +883,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
-            val photos = mutableListOf<Photo>()
+            photos = mutableListOf()
             photos.addAll(
                 when(album.album.sortOrder) {
                     Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
@@ -904,6 +905,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             notifyItemChanged(0)
         }
 
+        internal fun getPhotos(): List<Photo> = photos.drop(1)
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
         internal fun updateCover(sharedPhoto: Photo) {
