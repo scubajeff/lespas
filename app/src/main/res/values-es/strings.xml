@@ -168,7 +168,7 @@
     <string name="show_list_first">Mostrar la lista de medios cuando se inicia el rollo de la cámara</string>
     <string name="button_text_map">App de mapas</string>
     <string name="object_location">Ubicación</string>
-    <string name="item_location_search">Buscar por ubicación</string>
+    <string name="item_location_search">Ubicación</string>
     <string name="option_menu_in_map">Todo en el mapa</string>
     <string name="object_face">Facial</string>
 </resources>

@@ -220,7 +220,7 @@
     <string name="show_list_first">Medienliste beim Start der Kamerarolle anzeigen</string>
     <string name="button_text_map">Karten-App</string>
     <string name="object_location">Standort</string>
-    <string name="item_location_search">Suche nach Standort</string>
+    <string name="item_location_search">Standort</string>
     <string name="option_menu_in_map">Alle in Karte</string>
     <string name="object_face">Gesicht</string>
 </resources>

@@ -28,6 +28,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
+    private lateinit var emptyView: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +52,36 @@ class LocationResultByLocalitiesFragment: Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
+        emptyView = view.findViewById(R.id.emptyview)
+        if (requireArguments().getBoolean(SEARCH_COLLECTION)) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
+
         resultView = view.findViewById<RecyclerView>(R.id.category_list).apply {
             adapter = resultAdapter
         }
+
+        resultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            init {
+                if (resultAdapter.itemCount == 0) {
+                    resultView.visibility = View.GONE
+                    emptyView.visibility = View.VISIBLE
+                }
+            }
+
+            private fun hideEmptyView() {
+                resultView.visibility = View.VISIBLE
+                emptyView.visibility = View.GONE
+            }
+
+            override fun onChanged() {
+                super.onChanged()
+                hideEmptyView()
+            }
+
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+                hideEmptyView()
+            }
+        })
 
         searchViewModel.getResult().observe(viewLifecycleOwner, { result ->
             val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
@@ -74,7 +102,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = getString(R.string.item_location_search)
+            title = getString(if (requireArguments().getBoolean(SEARCH_COLLECTION)) R.string.title_in_album else R.string.title_in_cameraroll, getString(R.string.item_location_search))
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
@@ -140,5 +168,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
     class PhotoDiffCallback: DiffUtil.ItemCallback<PhotoWithCoordinate>() {
         override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
         override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
+    }
+
+    companion object {
+        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+
+        @JvmStatic
+        fun newInstance(searchCollection: Boolean) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
     }
 }

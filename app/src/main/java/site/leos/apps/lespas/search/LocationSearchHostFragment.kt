@@ -51,7 +51,7 @@ class LocationSearchHostFragment: Fragment() {
             if (progress == 100) disableMenuItem(R.id.option_menu_search_progress)
         })
 
-        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment(), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
+        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getBoolean(SEARCH_COLLECTION)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
