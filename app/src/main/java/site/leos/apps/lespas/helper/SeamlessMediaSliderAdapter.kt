@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
+import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
@@ -90,6 +91,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 maximumScale = 5.0f
                 mediumScale = 2.5f
                 ViewCompat.setTransitionName(this, transitionName)
+                setOnScaleChangeListener { _, _, _ -> setAllowParentInterceptOnEdge(abs(1.0 - scale) < 0.005) }
             }
         }
     }
