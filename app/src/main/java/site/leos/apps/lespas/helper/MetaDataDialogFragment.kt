@@ -5,7 +5,9 @@ import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.MotionEvent
 import android.view.View
 import android.widget.TableRow
@@ -77,17 +79,19 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             var dateString = ""
             var widthString = ""
             var heightString = ""
-            //var eTag = ""
+            var eTag = ""
+            var albumId = ""
             var size = 0L
             var local = true
 
             requireArguments().getParcelable<Photo>(KEY_MEDIA)?.apply {
                 id = this.id
                 name = this.name
+                albumId = this.albumId
                 dateString = this.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
                 widthString = this.width.toString()
                 heightString = this.height.toString()
-                //eTag = this.eTag
+                eTag = this.eTag
 
                 local = true
             } ?: run {
@@ -108,10 +112,20 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             lifecycleScope.launch(Dispatchers.IO) {
                 var exif: ExifInterface? = null
                 if (local) {
-                    with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
-                    //with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
-                        size = File(this).length()
-                        exif = try { ExifInterface(this) } catch (e: Exception) { null }
+                    if (albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                        with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
+                            //with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
+                            size = File(this).length()
+                            exif = try {
+                                ExifInterface(this)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                    } else {
+                        size = eTag.toLong()
+                        //exif = (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))?.use { ExifInterface(it) }
+                        exif = (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))?.use { ExifInterface(it) }
                     }
                 }
                 else {

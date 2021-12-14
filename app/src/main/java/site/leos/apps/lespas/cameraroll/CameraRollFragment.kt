@@ -82,8 +82,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var quickScrollGridSpanCount = 0
 
     private lateinit var divider: View
-    private lateinit var nameTextView: TextView
+    private lateinit var dateTextView: TextView
     private lateinit var sizeTextView: TextView
+    private lateinit var infoButton: ImageButton
     private lateinit var shareButton: ImageButton
     private lateinit var removeButton: ImageButton
     private lateinit var lespasButton: ImageButton
@@ -268,9 +269,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         playerViewModel.setWindow(requireActivity().window)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_camera_roll, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_camera_roll, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -283,14 +282,19 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         view.setBackgroundColor(Color.BLACK)
 
         divider = view.findViewById(R.id.divider)
-        nameTextView = view.findViewById(R.id.name)
+        dateTextView = view.findViewById(R.id.date)
         sizeTextView = view.findViewById(R.id.size)
+        infoButton = view.findViewById(R.id.info_button)
         shareButton = view.findViewById(R.id.share_button)
         removeButton = view.findViewById(R.id.remove_button)
         lespasButton = view.findViewById(R.id.lespas_button)
         closeButton = view.findViewById(R.id.close_button)
         selectionText = view.findViewById(R.id.selection_text)
 
+        infoButton.setOnClickListener {
+            bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+            if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())).show(parentFragmentManager, INFO_DIALOG)
+        }
         shareButton.setOnClickListener {
             copyTargetUris()
 
@@ -457,11 +461,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             } else {
                                 // If there are more than 1 media in the list, get ready to show BottomSheet expanded state
                                 if (!closeButton.isVisible) {
-                                    nameTextView.isVisible = false
+                                    dateTextView.isVisible = false
                                     sizeTextView.isVisible = false
                                     removeButton.isEnabled = false
                                     shareButton.isEnabled = false
                                     lespasButton.isEnabled = false
+
+                                    infoButton.isVisible = false
+                                    infoButton.isEnabled = false
 
                                     closeButton.isEnabled = true
                                     closeButton.isVisible = true
@@ -474,13 +481,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             if (closeButton.isVisible) {
-                                nameTextView.isVisible = true
+                                dateTextView.isVisible = true
                                 sizeTextView.isVisible = true
-                                nameTextView.setTextColor(primaryColor)
+                                dateTextView.setTextColor(primaryColor)
                                 sizeTextView.setTextColor(primaryColor)
                                 removeButton.isEnabled = !camerarollModel.shouldDisableRemove()
                                 shareButton.isEnabled = !camerarollModel.shouldDisableShare()
                                 lespasButton.isEnabled = true
+
+                                infoButton.isVisible = !camerarollModel.shouldDisableShare()
+                                infoButton.isEnabled = !camerarollModel.shouldDisableShare()
 
                                 closeButton.isEnabled = false
                                 closeButton.isVisible = false
@@ -496,11 +506,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
 
                 override fun onSlide(view: View, slideOffset: Float) {
-                    if (mediaPagerAdapter.itemCount > 1 && slideOffset >= 0 && nameTextView.isEnabled) {
+                    if (mediaPagerAdapter.itemCount > 1 && slideOffset >= 0 && dateTextView.isEnabled) {
                         val alpha = 255 - (255 * slideOffset).toInt()
 
                         with(ColorUtils.setAlphaComponent(primaryColor, alpha)) {
-                            nameTextView.setTextColor(this)
+                            dateTextView.setTextColor(this)
                             sizeTextView.setTextColor(this)
                         }
 
@@ -661,8 +671,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     @SuppressLint("SetTextI18n")
     private fun updateMetaDisplay() {
         with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
-            nameTextView.text = name
-            sizeTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}   |   ${Tools.humanReadableByteCountSI(eTag.toLong())}"
+            dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
+            sizeTextView.text = Tools.humanReadableByteCountSI(eTag.toLong())
         }
     }
 
@@ -1049,6 +1059,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val INFO_DIALOG = "INFO_DIALOG"
         private const val DELETE_REQUEST_KEY = "CAMERA_ROLL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 

@@ -41,12 +41,12 @@
             android:background="@drawable/handle"/>
 
         <TextView
-            android:id="@+id/name"
+            android:id="@+id/date"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/handler"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/remove_button"
+            app:layout_constraintRight_toLeftOf="@id/info_button"
             android:layout_marginTop="@dimen/small_padding"
             android:textColor="@color/color_on_primary_invert"
             android:autoSizeTextType="uniform"
@@ -59,9 +59,9 @@
             android:id="@+id/size"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/name"
-            app:layout_constraintLeft_toLeftOf="@id/name"
-            app:layout_constraintRight_toRightOf="@id/name"
+            app:layout_constraintTop_toBottomOf="@id/date"
+            app:layout_constraintLeft_toLeftOf="@id/date"
+            app:layout_constraintRight_toRightOf="@id/date"
             android:textColor="@color/color_on_primary_invert"
             android:autoSizeTextType="uniform"
             android:textSize="14sp"
@@ -69,6 +69,20 @@
             tools:text="2MB"
             tools:ignore="UnusedAttribute" />
 
+        <ImageButton
+            android:id="@+id/info_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@id/lespas_button"
+            app:layout_constraintRight_toLeftOf="@id/remove_button"
+            android:layout_marginRight="@dimen/big_padding"
+            android:padding="8dp"
+            android:background="@android:color/transparent"
+            android:tint="@color/color_on_primary_invert"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_baseline_info_24"
+            android:contentDescription="@string/button_text_info"
+            tools:ignore="RtlHardcoded" />
         <ImageButton
             android:id="@+id/remove_button"
             android:layout_width="wrap_content"
