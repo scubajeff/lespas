@@ -14,4 +14,5 @@
     <dimen name="exoplayer_control_layout_horizontal_margin">@dimen/big_padding</dimen>
     <dimen name="exoplayer_control_layout_vertical_margin">56dp</dimen>
     <dimen name="destination_dialog_clipdata_grid_size">64dp</dimen>
+    <dimen name="login_screen_logo_size">140dp</dimen>
 </resources>

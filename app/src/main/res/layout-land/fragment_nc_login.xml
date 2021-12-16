@@ -31,21 +31,29 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <ImageView
-            android:id="@+id/logo"
-            android:layout_width="@dimen/login_screen_logo_size"
-            android:layout_height="@dimen/login_screen_logo_size"
-            android:src="@drawable/ic_logo"
-            tools:ignore="ContentDescription" />
-
-        <TextView
-            android:id="@+id/welcome_message_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginVertical="@dimen/small_padding"
-            style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:textColor="@color/color_text_light"
-            android:text="@string/welcome_message_title" />
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/logo"
+                android:layout_width="@dimen/login_screen_logo_size"
+                android:layout_height="@dimen/login_screen_logo_size"
+                android:layout_marginRight="@dimen/extra_padding"
+                android:src="@drawable/ic_logo"
+                tools:ignore="ContentDescription,RtlHardcoded" />
+
+            <TextView
+                android:id="@+id/welcome_message_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/small_padding"
+                style="@style/TextAppearance.MaterialComponents.Headline6"
+                android:textColor="@color/color_text_light"
+                android:text="@string/welcome_message_title" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/welcome_message"
