@@ -86,8 +86,20 @@ abstract class SeamlessMediaSliderAdapter<T>(
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
-                setOnPhotoTapListener { _, _, _ -> clickListener(null) }
-                setOnOutsidePhotoTapListener { clickListener(null) }
+                setOnPhotoTapListener { _, _, _ ->
+                    if (scale > 1.0f) {
+                        scale = 1.0f
+                        setAllowParentInterceptOnEdge(true)
+                    }
+                    else clickListener(null)
+                }
+                setOnOutsidePhotoTapListener {
+                    if (scale > 1.0f) {
+                        scale = 1.0f
+                        setAllowParentInterceptOnEdge(true)
+                    }
+                    else clickListener(null)
+                }
                 maximumScale = 5.0f
                 mediumScale = 2.5f
                 ViewCompat.setTransitionName(this, transitionName)
