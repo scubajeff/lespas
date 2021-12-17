@@ -103,7 +103,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 maximumScale = 5.0f
                 mediumScale = 2.5f
                 ViewCompat.setTransitionName(this, transitionName)
-                setOnScaleChangeListener { _, _, _ -> setAllowParentInterceptOnEdge(abs(1.0 - scale) < 0.005) }
+                setOnScaleChangeListener { _, _, _ -> setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f) }
             }
         }
     }
