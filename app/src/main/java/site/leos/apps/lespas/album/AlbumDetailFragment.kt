@@ -691,6 +691,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         var destFile: File
 
         try {
+            sharedSelection.clear()
+            for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
+
             for (photoId in sharedSelection) {
                 // Quit asap when job cancelled
                 job?.let { if (it.isCancelled) return arrayListOf() }
@@ -724,8 +727,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
                 sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-                sharedSelection.clear()
-                for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
 
                 // Show a SnackBar if it takes too long (more than 500ms) preparing shares
                 withContext(Dispatchers.Main) {
