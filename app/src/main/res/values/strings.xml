@@ -203,7 +203,7 @@
     <!-- Toolbar actions -->
     <string name="item_settings">Settings</string>
     <string name="item_search">Search</string>
-    <string name="item_location_search">Search by Location</string>
+    <string name="item_location_search">Location</string>
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
