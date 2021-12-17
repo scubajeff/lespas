@@ -82,6 +82,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     inner class PhotoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
+        private var baseWidth = 0f
+        private var currentWidth = 0f
+        private var edgeDetected = 0
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             ivMedia.apply {
@@ -103,7 +106,28 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 maximumScale = 5.0f
                 mediumScale = 2.5f
                 ViewCompat.setTransitionName(this, transitionName)
-                setOnScaleChangeListener { _, _, _ -> setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f) }
+
+                edgeDetected = 0
+                setOnMatrixChangeListener {
+                    if (currentWidth > display.width) {
+                        when {
+                            it.right.toInt() == display.width -> edgeDetected++
+                            it.left.toInt() == 0 -> edgeDetected++
+                            else -> {
+                                edgeDetected = 0
+                                setAllowParentInterceptOnEdge(false)
+                            }
+                        }
+
+                        // Allow swipe to next when moving from edge multiple times
+                        if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
+                    }
+                }
+                setOnScaleChangeListener { _, _, _ ->
+                    setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
+                    if (scale == 1.0f) baseWidth = displayRect.width()
+                    currentWidth = baseWidth * scale
+                }
             }
         }
     }
