@@ -213,7 +213,7 @@ class PhotosInMapFragment: Fragment() {
     override fun onDestroy() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        albumName?.run { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
         super.onDestroy()
     }
 
