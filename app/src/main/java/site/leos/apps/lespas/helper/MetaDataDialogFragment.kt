@@ -124,8 +124,11 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                         }
                     } else {
                         size = eTag.toLong()
-                        //exif = (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))?.use { ExifInterface(it) }
-                        exif = (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))?.use { ExifInterface(it) }
+                        exif = try {
+                            (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))
+                        } catch (e: SecurityException) {
+                            requireContext().contentResolver.openInputStream(Uri.parse(id))
+                        }?.use { ExifInterface(it) }
                     }
                 }
                 else {
