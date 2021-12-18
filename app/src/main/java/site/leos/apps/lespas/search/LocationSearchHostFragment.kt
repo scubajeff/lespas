@@ -95,7 +95,11 @@ class LocationSearchHostFragment: Fragment() {
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) try {
                         if (searchCollection) ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                        else cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))?.use { ExifInterface(it) }
+                        else try {
+                            cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
+                        } catch (e: SecurityException) {
+                            cr.openInputStream(Uri.parse(photo.id))
+                        }?.use { ExifInterface(it) }
                     } catch (e: Exception) {
                         null
                     }?.latLong?.also { latLong->
