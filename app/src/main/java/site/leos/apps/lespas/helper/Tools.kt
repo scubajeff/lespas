@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
 import android.view.*
@@ -536,6 +537,18 @@ object Tools {
             cancelAction?.let {
                 setAction(android.R.string.cancel, it)
                 setActionTextColor(ContextCompat.getColor(anchorView.context, R.color.color_error))
+            }
+        }
+    }
+
+    fun getDisplayWidth(wm: WindowManager): Int {
+        return DisplayMetrics().run {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealMetrics(this)
+                widthPixels
+            } else {
+                wm.currentWindowMetrics.bounds.width()
             }
         }
     }

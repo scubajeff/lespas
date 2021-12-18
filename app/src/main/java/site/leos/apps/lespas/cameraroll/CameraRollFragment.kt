@@ -129,6 +129,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
+            Tools.getDisplayWidth(requireActivity().windowManager),
             playerViewModel,
             { state->
                 // When in "Show media list at startup" mode, ignore the first hide bottom sheet call which fired by video auto play
@@ -903,8 +904,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
     }
 
-    class MediaPagerAdapter(playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<Photo>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    class MediaPagerAdapter(displayWidth: Int, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
         }

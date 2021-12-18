@@ -94,6 +94,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         album = arguments?.getParcelable(KEY_ALBUM)!!
 
         pAdapter = PhotoSlideAdapter(
+            Tools.getDisplayWidth(requireActivity().windowManager),
             Tools.getLocalRoot(requireContext()),
             playerViewModel,
             { state-> toggleSystemUI(state) },
@@ -575,9 +576,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album.name) }
 
     class PhotoSlideAdapter(
-        private val rootPath: String, playerViewModel: VideoPlayerViewModel,
+        displayWidth: Int, private val rootPath: String, playerViewModel: VideoPlayerViewModel,
         clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<Photo>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             var fileName = "$rootPath/${id}"
             if (!(File(fileName).exists())) fileName = "$rootPath/${name}"

@@ -21,10 +21,12 @@ import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
+    private val displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
     private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
+
 
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
@@ -42,7 +44,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when(viewType) {
-            TYPE_PHOTO -> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false))
+            TYPE_PHOTO -> PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_photo, parent, false), displayWidth)
             TYPE_ANIMATED -> AnimatedViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_gif, parent, false))
             else-> VideoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.viewpager_item_exoplayer, parent, false))
         }
@@ -80,10 +82,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
-    inner class PhotoViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+    inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
         private var baseWidth = 0f
-        private var currentWidth = 0f
+        private var currentWidth = 0
         private var edgeDetected = 0
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
@@ -109,9 +111,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
                 edgeDetected = 0
                 setOnMatrixChangeListener {
-                    if (currentWidth > display.width) {
+                    if (currentWidth > displayWidth) {
                         when {
-                            it.right.toInt() == display.width -> edgeDetected++
+                            it.right.toInt() == displayWidth -> edgeDetected++
                             it.left.toInt() == 0 -> edgeDetected++
                             else -> {
                                 edgeDetected = 0
@@ -126,7 +128,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 setOnScaleChangeListener { _, _, _ ->
                     setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
                     if (scale == 1.0f) baseWidth = displayRect.width()
-                    currentWidth = baseWidth * scale
+                    currentWidth = (baseWidth * scale).toInt()
                 }
             }
         }

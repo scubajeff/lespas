@@ -68,6 +68,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
+            Tools.getDisplayWidth(requireActivity().windowManager),
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },
@@ -345,8 +346,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class RemoteMediaAdapter(private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
