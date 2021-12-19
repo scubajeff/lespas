@@ -245,38 +245,43 @@ class PhotosInMapFragment: Fragment() {
                         var lastPos = (mapView.overlays[1] as Marker).position
                         var poiCenter: Int
 
-                        for (i in 1 until mapView.overlays.size) {
-                            if (!isActive) break
-                            (mapView.overlays[i] as Marker).let { stop ->
-                                // Pan map to reveal full image
-                                poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
+                        try {
+                            for (i in 1 until mapView.overlays.size) {
+                                if (!isActive) break
+                                    (mapView.overlays[i] as Marker).let { stop ->
+                                    // Pan map to reveal full image
+                                    poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
 
-                                if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
-                                    // If next POI is 3km away, use jump animation
-                                    animationController.setOnAnimationEndListener {
+                                    if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
+                                        // If next POI is 3km away, use jump animation
                                         animationController.setOnAnimationEndListener {
                                             animationController.setOnAnimationEndListener {
-                                                stop.showInfoWindow()
+                                                animationController.setOnAnimationEndListener {
+                                                    stop.showInfoWindow()
+                                                }
+                                                animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
                                             }
-                                            animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                            mapView.setMapCenterOffset(0, poiCenter)
+                                            animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
                                         }
+                                        animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
+                                        delay(6400)     // 4000 + 3 * 800
+                                    } else {
                                         mapView.setMapCenterOffset(0, poiCenter)
-                                        animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
+                                        animationController.setOnAnimationEndListener {
+                                            stop.showInfoWindow()
+                                        }
+                                        animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                        delay(4000)
                                     }
-                                    animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
-                                    delay(6400)     // 4000 + 3 * 800
-                                } else {
-                                    mapView.setMapCenterOffset(0, poiCenter)
-                                    animationController.setOnAnimationEndListener {
-                                        stop.showInfoWindow()
-                                    }
-                                    animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
-                                    delay(4000)
+                                    stop.closeInfoWindow()
+                                    lastPos = stop.position
                                 }
-                                stop.closeInfoWindow()
-                                lastPos = stop.position
                             }
+                        } catch (e: Exception) {
+                            // Race condition might happen when user press back key while slideshow is playing
                         }
+
                         if (isActive) stopSlideshow()
                     }
                 }
