@@ -75,6 +75,22 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         return@withContext
                     }
 
+                    // Replace content of file name after photo ID too, since ImageLoaderViewModel recognize photo ID only
+                    // We can't simply change this photo ID to imageName, since that will reorder the photo list
+                    try {
+                        @Suppress("BlockingMethodInNonBlockingContext")
+                        File(appRootFolder, imageName).inputStream().use { input ->
+                            File(appRootFolder, originalPhoto.id).outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Quit when exception happens during file copy
+                        return@withContext
+                    }
+
                     // Update local database
                     val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
@@ -85,11 +101,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
                     //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
+/*
                     // Remove file name after photo id, ImageLoaderViewModel will load file named after photo name instead
                     try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
+*/
 
                     // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any
-                    try { File(appRootFolder, originalPhoto.name).delete() } catch (e: Exception) { e.printStackTrace() }
+                    try { File(appRootFolder, originalPhoto.name).delete() } catch (e: Exception) {}
 
 
                     // Update server
