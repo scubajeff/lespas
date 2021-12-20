@@ -214,6 +214,7 @@
     <string name="item_namedesc">Name Descending</string>
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
+    <string name="action_hide">Hide</string>
     <string name="action_reuse">To album…</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>

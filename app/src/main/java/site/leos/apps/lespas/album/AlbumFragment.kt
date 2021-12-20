@@ -373,11 +373,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, "CONFIRM_DIALOG")
                 true
             }
+            R.id.hide -> {
+                val albums = mutableListOf<Album>()
+                selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
+                actionModel.hideAlbums(albums)
+                publishViewModel.unPublish(albums)
+                true
+            }
+/*
             R.id.share -> {
                 selectionTracker.selection.forEach { _ -> }
                 selectionTracker.clearSelection()
                 true
             }
+*/
             else -> false
         }
     }

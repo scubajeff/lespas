@@ -338,9 +338,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun unPublish(recipients: List<Recipient>) {
+    fun unPublish(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
+            val recipients = mutableListOf<Recipient>()
+            for (album in albums) { _shareByMe.value.find { it.fileId == album.id }?.apply { recipients.addAll(this.with) }}
             deleteShares(recipients)
+
             _shareByMe.value = getShareByMe()
         }
     }
