@@ -88,6 +88,10 @@ abstract class SeamlessMediaSliderAdapter<T>(
         private var currentWidth = 0
         private var edgeDetected = 0
 
+        init {
+            ivMedia.setAllowParentInterceptOnEdge(true)
+        }
+
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
@@ -98,14 +102,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
                 setOnPhotoTapListener { _, _, _ ->
                     if (scale > 1.0f) {
-                        scale = 1.0f
+                        setScale(1.0f, true)
                         setAllowParentInterceptOnEdge(true)
                     }
                     else clickListener(null)
                 }
                 setOnOutsidePhotoTapListener {
                     if (scale > 1.0f) {
-                        scale = 1.0f
+                        setScale(1.0f, true)
                         setAllowParentInterceptOnEdge(true)
                     }
                     else clickListener(null)
