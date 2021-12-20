@@ -329,7 +329,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var localAlbum: List<Album>
 
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
-            if (remoteAlbum.isFolder) {
+            if (remoteAlbum.isFolder && !remoteAlbum.name.startsWith('.')) {
                 remoteAlbumIds.add(remoteAlbum.fileId)
 
                 localAlbum = albumRepository.getThisAlbumList(remoteAlbum.fileId)
@@ -400,7 +400,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
-                    if (remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) {
+                    if ((remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.')) {
                         remotePhotoId = remotePhoto.fileId
                         // Accumulate remote photos list
                         remotePhotoIds.add(remotePhotoId)
