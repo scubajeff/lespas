@@ -91,6 +91,11 @@ abstract class SeamlessMediaSliderAdapter<T>(
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                ViewCompat.setTransitionName(this, transitionName)
+                maximumScale = 5.0f
+                mediumScale = 2.5f
+
+                // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
                 setOnPhotoTapListener { _, _, _ ->
                     if (scale > 1.0f) {
                         scale = 1.0f
@@ -105,10 +110,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     }
                     else clickListener(null)
                 }
-                maximumScale = 5.0f
-                mediumScale = 2.5f
-                ViewCompat.setTransitionName(this, transitionName)
 
+                // Disable viewpager2 swipe when in zoom mode
+                setOnScaleChangeListener { _, _, _ ->
+                    setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
+                    if (scale == 1.0f) baseWidth = displayRect.width()
+                    currentWidth = (baseWidth * scale).toInt()
+                }
+
+                // Keep swiping on edge will enable viewpager2 swipe again
                 edgeDetected = 0
                 setOnMatrixChangeListener {
                     if (currentWidth > displayWidth) {
@@ -121,14 +131,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
                             }
                         }
 
-                        // Allow swipe to next when moving from edge multiple times
                         if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
                     }
-                }
-                setOnScaleChangeListener { _, _, _ ->
-                    setAllowParentInterceptOnEdge(abs(1.0f - scale) < 0.05f)
-                    if (scale == 1.0f) baseWidth = displayRect.width()
-                    currentWidth = (baseWidth * scale).toInt()
                 }
             }
         }
