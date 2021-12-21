@@ -21,12 +21,11 @@ import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
-    private val displayWidth: Int,
+    private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
     private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
-
 
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
@@ -82,6 +81,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
+    fun setDisplayWidth(width: Int) { displayWidth = width }
+
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
         private var baseWidth = 0f
@@ -125,8 +126,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 setOnMatrixChangeListener {
                     if (currentWidth > displayWidth) {
                         when {
-                            it.right.toInt() == displayWidth -> edgeDetected++
-                            it.left.toInt() == 0 -> edgeDetected++
+                            it.right.toInt() <= displayWidth -> edgeDetected++
+                            it.left.toInt() >= 0 -> edgeDetected++
                             else -> {
                                 edgeDetected = 0
                                 setAllowParentInterceptOnEdge(false)

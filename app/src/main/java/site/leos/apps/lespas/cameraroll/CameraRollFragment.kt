@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
@@ -432,6 +433,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             })
         }
+
+        // Since we are not in immersive mode, set correct photo display width so that right edge can be detected
+        mediaPager.doOnLayout { mediaPagerAdapter.setDisplayWidth(mediaPager.width) }
 
         // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
         (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
