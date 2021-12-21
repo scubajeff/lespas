@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/option_menu_map_slideshow"
+        android:title="@string/option_menu_map_slideshow"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_play_arrow_24" />
+</menu>

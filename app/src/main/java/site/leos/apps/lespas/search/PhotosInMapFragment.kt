@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,25 +10,25 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.util.TypedValue
+import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
@@ -47,6 +48,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 class PhotosInMapFragment: Fragment() {
     private var locality: String? = null
@@ -54,11 +56,18 @@ class PhotosInMapFragment: Fragment() {
     private var albumNames: HashMap<String, String>? = null
     private var albumName: String? = null
     private var photos = mutableListOf<PhotoWithCoordinate>()
+    private var poiBoundingBox: BoundingBox? = null
 
     private lateinit var rootPath: String
 
     private lateinit var mapView: MapView
     private val markerClickListener = MarkerClickListener()
+
+    private lateinit var window: Window
+    private lateinit var playMenuItem: MenuItem
+    private var slideshowJob: Job? = null
+    private var isSlideshowPlaying = false
+    private var spaceHeight = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,12 +84,19 @@ class PhotosInMapFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                closeAllInfoWindow()
+                mapView.overlayManager.clear()
                 mapView.controller.zoomTo(max(mapView.zoomLevelDouble - 5, 0.0), 400)
                 Handler(Looper.getMainLooper()).postDelayed({
                     parentFragmentManager.popBackStack()
                 }, 300)
             }
         })
+
+        albumName?.run {
+            setHasOptionsMenu(true)
+            window = requireActivity().window
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photos_in_map, container, false)
@@ -95,14 +111,16 @@ class PhotosInMapFragment: Fragment() {
             setMultiTouchControls(true)
             setUseDataConnection(true)
             overlays.add(CopyrightOverlay(requireContext()))
+            setTileSource(TileSourceFactory.MAPNIK)
+        }
 
+        mapView.doOnLayout {
             // Create POI markers
             lifecycleScope.launch(Dispatchers.IO) {
-                setTileSource(TileSourceFactory.MAPNIK)
-
-                val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
                 var poi: GeoPoint
                 val points = arrayListOf<IGeoPoint>()
+                val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
+                spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt()
 
                 if (locality != null) ViewModelProvider(
                     requireParentFragment(),
@@ -113,6 +131,7 @@ class PhotosInMapFragment: Fragment() {
                         position = poi
                         icon = pin
                         loadImage(this, photo.photo)
+                        relatedObject = spaceHeight
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
@@ -126,11 +145,11 @@ class PhotosInMapFragment: Fragment() {
                         }
 
                         override fun onClose() {
-                            setOnClickListener(null)
+                            mView.setOnClickListener(null)
                         }
                     }
                     marker.setOnMarkerClickListener(markerClickListener)
-                    overlays.add(marker)
+                    mapView.overlays.add(marker)
 
                     points.add(poi)
                 } else photos.forEach { photo ->
@@ -140,6 +159,7 @@ class PhotosInMapFragment: Fragment() {
                             position = poi
                             icon = pin
                             loadImage(this, photo.photo)
+                            relatedObject = spaceHeight
                         }
                         marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                             override fun onOpen(item: Any?) {
@@ -152,25 +172,23 @@ class PhotosInMapFragment: Fragment() {
                             }
 
                             override fun onClose() {
-                                setOnClickListener(null)
+                                mView.setOnClickListener(null)
                             }
                         }
                         marker.setOnMarkerClickListener(markerClickListener)
-                        overlays.add(marker)
+                        mapView.overlays.add(marker)
 
                         points.add(poi)
                     }
                 }
 
-                invalidate()
+                mapView.invalidate()
 
                 // Start zooming to the bounding box
                 if (points.isNotEmpty()) withContext(Dispatchers.Main) {
-                    controller.setCenter(boundingBox.centerWithDateLine)
-                    zoomToBoundingBox(
-                        SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox,
-                        savedInstanceState == null, 100, 19.5, 800
-                    )
+                    //while(!mapView.isLayoutOccurred) { delay(50) }
+                    poiBoundingBox = SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox
+                    mapView.zoomToBoundingBox(poiBoundingBox,savedInstanceState == null, 100, MAXIMUM_ZOOM, 800)
                 }
             }
         }
@@ -190,6 +208,101 @@ class PhotosInMapFragment: Fragment() {
     override fun onPause() {
         mapView.onPause()
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        slideshowJob?.cancel()
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        albumName?.run { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+        super.onDestroy()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.photo_in_map_menu, menu)
+        playMenuItem = menu.findItem(R.id.option_menu_map_slideshow)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId) {
+            R.id.option_menu_map_slideshow -> {
+                if (isSlideshowPlaying) {
+                    slideshowJob?.cancel()
+                    stopSlideshow()
+                } else {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                    isSlideshowPlaying = true
+                    playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
+
+                    slideshowJob?.cancel()
+                    slideshowJob = lifecycleScope.launch {
+                        closeAllInfoWindow()
+                        mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
+
+                        val allZoomLevel = (mapView.zoomLevelDouble + MAXIMUM_ZOOM) / 2
+                        val animationController = AnimationMapController(mapView)
+                        var lastPos = (mapView.overlays[1] as Marker).position
+                        var poiCenter: Int
+
+                        try {
+                            for (i in 1 until mapView.overlays.size) {
+                                if (!isActive) break
+                                    (mapView.overlays[i] as Marker).let { stop ->
+                                    // Pan map to reveal full image
+                                    poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
+
+                                    if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
+                                        // If next POI is 3km away, use jump animation
+                                        animationController.setOnAnimationEndListener {
+                                            animationController.setOnAnimationEndListener {
+                                                animationController.setOnAnimationEndListener {
+                                                    stop.showInfoWindow()
+                                                }
+                                                animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                            }
+                                            mapView.setMapCenterOffset(0, poiCenter)
+                                            animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
+                                        }
+                                        animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
+                                        delay(6400)     // 4000 + 3 * 800
+                                    } else {
+                                        mapView.setMapCenterOffset(0, poiCenter)
+                                        animationController.setOnAnimationEndListener {
+                                            stop.showInfoWindow()
+                                        }
+                                        animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                        delay(4000)
+                                    }
+                                    stop.closeInfoWindow()
+                                    lastPos = stop.position
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Race condition might happen when user press back key while slideshow is playing
+                        }
+
+                        if (isActive) stopSlideshow()
+                    }
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun stopSlideshow() {
+        closeAllInfoWindow()
+        mapView.setMapCenterOffset(0, 0)
+        mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        isSlideshowPlaying = false
+        playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
+    }
+
+    private fun closeAllInfoWindow() {
+        mapView.overlays.forEach { if (it is Marker) it.closeInfoWindow() }
     }
 
     private fun loadImage(marker: Marker, photo: Photo) {
@@ -212,6 +325,7 @@ class PhotosInMapFragment: Fragment() {
             else {
                 mapView.overlays.forEach { if (it is Marker) it.closeInfoWindow() }
                 marker.showInfoWindow()
+                (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                 mapView.controller.animateTo(marker.position)
             }
 
@@ -237,12 +351,28 @@ class PhotosInMapFragment: Fragment() {
         }
     }
 
+    class AnimationMapController(mapView: MapView): MapController(mapView) {
+        private lateinit var animationListener: ()-> Unit?
+
+        override fun onAnimationEnd() {
+            super.onAnimationEnd()
+            animationListener()
+        }
+
+        fun setOnAnimationEndListener(animationListener: ()-> Unit) {
+            this.animationListener = animationListener
+        }
+    }
+
     companion object {
         private const val KEY_LOCALITY = "KEY_LOCALITY"
         private const val KEY_COUNTRY = "KEY_COUNTRY"
         private const val KEY_ALBUM_NAMES = "KEY_ALBUM_NAMES"
         private const val KEY_ALBUM = "KEY_ALBUM"
         private const val KEY_PHOTOS = "KEY_PHOTOS"
+
+        private const val MAXIMUM_ZOOM = 19.5
+        private const val ANIMATION_TIME = 800L
 
         @JvmStatic
         fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>) = PhotosInMapFragment().apply {

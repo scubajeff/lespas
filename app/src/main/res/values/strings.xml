@@ -251,6 +251,9 @@
     <!-- Location Search Fragment -->
     <string name="option_menu_in_map">All in Map</string>
 
+    <!-- Photo in Map Fragment -->
+    <string name="option_menu_map_slideshow">Slideshow</string>
+
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="object_unknown">UNKNOWN</string>
