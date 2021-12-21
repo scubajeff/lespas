@@ -102,7 +102,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun hideAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteAlbums(albums)
+            deleteAlbums(albums, true)
 
             val actions = mutableListOf<Action>()
             albums.forEach {
