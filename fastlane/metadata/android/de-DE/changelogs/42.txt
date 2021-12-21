@@ -1,0 +1,9 @@
+* Neue Funktion: Automatische Diashow in der Karte für das gesamte Album
+* Neue Funktion: Teilen von Fotos im Kartenmodus möglich
+* Neue Funktion: Scannen des QR-Codes für das Nextcloud-App-Passwort bei der Anmeldung möglich
+* Neue Funktion: Info-Button beim Anzeigen der Kamerarolle, um Foto-Metadaten anzuzeigen
+* Behoben: Foto-Zoom, über Scrollen am Rand zum nächsten Bild wischen
+* Verschiedene Abstürze im Zusammenhang mit dem Lesen der EXIF-Daten von Fotos behoben
+* Behoben, dass das Bild nach der Bearbeitung mit Snapseed nicht mehr funktioniert
+* Sync beachtet jetzt das versteckte Attribut von Dateien gemäß der Linux-Dateinamenskonvention
+* Weitere Verbesserungen und behobene Bugs

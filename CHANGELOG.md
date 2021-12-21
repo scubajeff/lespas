@@ -1,3 +1,13 @@
+## Version 2.4.2
+* New feature: auto play slideshow in map for entire album
+* New feature: able to share in photo with map mode
+* New feature: able to scan Nextcloud's app password QR code when login
+* New feature: Info button when viewing camera roll to reveal photo meta data
+* Fixed photo zoom, over scroll on edge to swipe to next
+* Fixed various crashes related to reading photo's EXIF
+* Fixed image broken after Snapseed editing
+* Sync now respect file hidden attribute following linux file name convention
+
 ## Version 2.4.1
 * Fixed publishing feature on Nextcloud 22 and up. From now on, no need to install Share List app on server
 

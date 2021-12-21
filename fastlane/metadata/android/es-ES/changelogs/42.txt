@@ -1,0 +1,9 @@
+* Nueva función: reproducción automática de diapositivas en el mapa para todo el álbum
+* Nueva función: poder compartir en foto con el modo de mapa
+* Nueva función: poder escanear el código QR de la contraseña de la aplicación Nextcloud al iniciar sesión
+* Nueva función: Botón de información al ver el rollo de la cámara para revelar los metadatos de la foto
+* Corregido el zoom de la foto, sobre el desplazamiento en el borde para deslizar a la siguiente
+* Corregidos varios fallos relacionados con la lectura de los EXIF de las fotos
+* Corregida la imagen rota después de la edición de Snapseed
+* Sincronización ahora respeta el atributo oculto del archivo siguiendo la convención de nombres de archivo de Linux
+* Otras mejoras y errores corregidos
