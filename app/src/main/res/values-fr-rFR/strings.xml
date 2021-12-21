@@ -172,4 +172,6 @@
     <string name="option_menu_in_map">Tout sur la carte</string>
     <string name="object_face">Visage</string>
     <string name="action_hide">Cacher</string>
+    <string name="hidden_albums">Albums cachés :</string>
+    <string name="item_unhide">Dévoiler</string>
 </resources>

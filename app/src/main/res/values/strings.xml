@@ -44,6 +44,9 @@
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
 
+    <!-- Album fragment, UnhideDialog fragment -->
+    <string name="hidden_albums">Hidden Albums:</string>
+
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
     <string name="yes_delete">Yes, delete</string>
@@ -205,6 +208,7 @@
     <string name="item_search">Search</string>
     <string name="item_location_search">Location</string>
     <string name="item_camera_roll">Camera Roll</string>
+    <string name="item_unhide">Unhide</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
     <string name="item_sortby">Sort by</string>

@@ -172,4 +172,6 @@
     <string name="option_menu_in_map">地図で見る</string>
     <string name="object_face">顔</string>
     <string name="action_hide">隠す</string>
+    <string name="hidden_albums">隠れたアルバム</string>
+    <string name="item_unhide">公開</string>
 </resources>

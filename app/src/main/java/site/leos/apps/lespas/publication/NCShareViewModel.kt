@@ -67,11 +67,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _shareWithMeProgress = MutableStateFlow<Int>(0)
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
+    private val _hiddenAlbums = MutableStateFlow<List<String>>(arrayListOf())
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
+    val hiddenAlbums: StateFlow<List<String>> = _hiddenAlbums
 
     private var webDav: OkHttpWebDav
 
@@ -113,6 +115,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             _sharees.value = getSharees()
             _shareByMe.value = getShareByMe()
             getShareWithMe()
+            getHiddenList()
         }
     }
 
@@ -338,13 +341,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun unPublish(albums: List<Album>) {
+    fun unPublish(albums: List<Album>, updateHiddenList: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             val recipients = mutableListOf<Recipient>()
             for (album in albums) { _shareByMe.value.find { it.fileId == album.id }?.apply { recipients.addAll(this.with) }}
             deleteShares(recipients)
 
             _shareByMe.value = getShareByMe()
+
+            if (updateHiddenList) getHiddenList()
         }
     }
 
@@ -720,6 +725,30 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun replacePrevious(key: Int, newJob: Job) {
         decoderJobMap[key]?.cancel()
         decoderJobMap[key] = newJob
+    }
+
+    private fun getHiddenList() {
+        val list = mutableListOf<String>()
+
+        webDav.list("${resourceRoot}${lespasBase}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).forEach {
+            if (it.name.startsWith('.')) list.add(it.name.drop(1))
+        }
+
+        _hiddenAlbums.value = list
+    }
+
+    fun hideAlbums(albums: List<Album>) { unPublish(albums, true) }
+
+    fun unHideAlbums(albums: List<String>, callBack: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (name in albums) {
+                Uri.encode(name).apply { webDav.move("${resourceRoot}${lespasBase}/.${this}", "${resourceRoot}${lespasBase}/${this}") }
+            }
+
+            getHiddenList()
+        }.invokeOnCompletion {
+            callBack()
+        }
     }
 
     override fun onCleared() {

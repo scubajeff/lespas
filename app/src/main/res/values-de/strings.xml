@@ -224,4 +224,6 @@
     <string name="option_menu_in_map">Alle in Karte</string>
     <string name="object_face">Gesicht</string>
     <string name="action_hide">Ausblenden</string>
+    <string name="hidden_albums">Versteckte Alben:</string>
+    <string name="item_unhide">Einblenden</string>
 </resources>

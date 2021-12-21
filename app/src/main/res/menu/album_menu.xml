@@ -5,7 +5,7 @@
     <item
         android:id="@+id/option_menu_received_shares"
         android:title="@string/publication_list_fragment_title"
-        android:orderInCategory="97"
+        android:orderInCategory="50"
         android:icon="@drawable/ic_baseline_shared_with_me_24"
         android:enabled="false"
         app:showAsAction="ifRoom" />
@@ -21,9 +21,15 @@
         android:orderInCategory="98"
         app:showAsAction="never" />
     <item
+        android:id="@+id/option_menu_unhide"
+        android:title="@string/item_unhide"
+        android:orderInCategory="97"
+        android:enabled="false"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/option_menu_settings"
         android:title="@string/item_settings"
-        android:orderInCategory="100"
+        android:orderInCategory="200"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_sortby"

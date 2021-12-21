@@ -172,4 +172,6 @@
     <string name="option_menu_in_map">顯示全圖</string>
     <string name="object_face">人臉</string>
     <string name="action_hide">隱藏</string>
+    <string name="hidden_albums">已隱藏相冊：</string>
+    <string name="item_unhide">重現</string>
 </resources>

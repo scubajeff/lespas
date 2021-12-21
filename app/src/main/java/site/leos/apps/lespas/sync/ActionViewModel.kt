@@ -111,4 +111,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             actionRepository.addActions(actions)
         }
     }
+
+    fun refreshAlbumList() {
+        viewModelScope.launch(Dispatchers.IO) {
+            actionRepository.addAction(Action(null, Action.ACTION_REFRESH_ALBUM_LIST, "", "", "", "", System.currentTimeMillis(), 1))
+        }
+    }
 }

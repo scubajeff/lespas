@@ -172,4 +172,6 @@
     <string name="option_menu_in_map">Todo en el mapa</string>
     <string name="object_face">Facial</string>
     <string name="action_hide">Ocultar</string>
+    <string name="hidden_albums">Álbumes ocultos:</string>
+    <string name="item_unhide">Deshacer</string>
 </resources>

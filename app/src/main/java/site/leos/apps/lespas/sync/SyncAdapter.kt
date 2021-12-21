@@ -313,6 +313,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds name of the album deemed meta update
                     contentMetaUpdatedNeeded.add(action.folderName)
                 }
+                Action.ACTION_REFRESH_ALBUM_LIST-> {
+                    // Do nothing, this action is for launching remote sync
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.

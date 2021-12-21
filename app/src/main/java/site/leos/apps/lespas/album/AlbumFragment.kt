@@ -10,6 +10,7 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -29,6 +30,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
@@ -38,6 +40,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -70,6 +73,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var receivedShareMenu: MenuItem? = null
     private var cameraRollAsAlbumMenu: MenuItem? = null
+    private var unhideMenu: MenuItem? = null
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
@@ -166,6 +170,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
+        publishViewModel.hiddenAlbums.asLiveData().observe(viewLifecycleOwner, { unhideMenu?.isEnabled = it.isNotEmpty() })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -246,15 +251,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
         // Delete album confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
-                if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                    val albums = mutableListOf<Album>()
-                    // Selection key is Album.id
-                    for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
-                    actionModel.deleteAlbums(albums)
-                }
-                selectionTracker.clearSelection()
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                val albums = mutableListOf<Album>()
+                // Selection key is Album.id
+                for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
+                actionModel.deleteAlbums(albums)
+            }
+            selectionTracker.clearSelection()
+        }
+        // Unhide dialog result handler
+        parentFragmentManager.setFragmentResultListener(UnhideDialogFragment.UNHIDE_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            bundle.getStringArrayList(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
+                if (this.isNotEmpty()) publishViewModel.unHideAlbums(this.toList()) { actionModel.refreshAlbumList() }
             }
         }
     }
@@ -298,6 +307,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
+
+        unhideMenu = menu.findItem(R.id.option_menu_unhide)
+        publishViewModel.hiddenAlbums.value.let { unhideMenu?.isEnabled = it.isNotEmpty() }
 
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
@@ -352,6 +364,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 changeSortOrder(item.itemId)
                 return true
             }
+            R.id.option_menu_unhide-> {
+                if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(publishViewModel.hiddenAlbums.value).show(parentFragmentManager, UNHIDE_DIALOG)
+                return true
+            }
             else-> {
                 return false
             }
@@ -370,14 +386,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, "CONFIRM_DIALOG")
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.hide -> {
                 val albums = mutableListOf<Album>()
                 selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
                 actionModel.hideAlbums(albums)
-                publishViewModel.unPublish(albums)
+                publishViewModel.hideAlbums(albums)
                 true
             }
 /*
@@ -567,10 +583,76 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress
     }
 
+    class UnhideDialogFragment: LesPasDialogFragment(R.layout.fragment_unhide_dialog) {
+        private lateinit var unhideButton: MaterialButton
+        private val choices = arrayListOf<String>()
+        private val hiddenAdapter = NameAdapter { name, checked ->
+            if (checked) choices.add(name)
+            else choices.remove(name)
+
+            unhideButton.isEnabled = choices.isNotEmpty()
+        }
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            requireArguments().getStringArrayList(NAME_LIST)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+        }
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+
+            view.findViewById<RecyclerView>(R.id.hidden_albums).adapter = hiddenAdapter
+            unhideButton = view.findViewById<MaterialButton>(R.id.unhide_button).apply {
+                setOnClickListener {
+                    parentFragmentManager.setFragmentResult(UNHIDE_DIALOG_REQUEST_KEY, Bundle().apply {
+                        putStringArrayList(KEY_UNHIDE_THESE, choices)
+                    })
+                    dismiss()
+                }
+            }
+
+            view.findViewById<MaterialButton>(R.id.cancel_button).apply {
+                setOnClickListener { dismiss() }
+            }
+        }
+
+        class NameAdapter(private val updateChoice: (String, Boolean) -> Unit): ListAdapter<String, NameAdapter.ViewHolder>(NameDiffCallback()) {
+            inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+                private val tvName = itemView.findViewById<CheckedTextView>(android.R.id.text1)
+
+                fun bind(item: String) {
+                    tvName.text = item
+
+                    tvName.setOnClickListener {
+                        tvName.isChecked = !tvName.isChecked
+                        updateChoice(item, tvName.isChecked)
+                    }
+                }
+            }
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_multiple_choice, parent, false))
+            override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(currentList[position]) }
+        }
+
+        class NameDiffCallback: DiffUtil.ItemCallback<String>() {
+            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
+            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
+        }
+
+        companion object {
+            const val UNHIDE_DIALOG_REQUEST_KEY = "UNHIDE_DIALOG_REQUEST_KEY"
+            const val KEY_UNHIDE_THESE = "KEY_UNHIDE_THESE"
+
+            private const val NAME_LIST = "NAME_LIST"
+            @JvmStatic
+            fun newInstance(names: List<String>) = UnhideDialogFragment().apply { arguments = Bundle().apply { putStringArrayList(NAME_LIST, ArrayList(names)) }}
+        }
+    }
+
     companion object {
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
         private const val FAKE_ALBUM_ID_LONG = 0L
