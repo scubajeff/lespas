@@ -6,8 +6,10 @@ import android.accounts.AccountManager
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.Drawable
@@ -34,6 +36,7 @@ import androidx.fragment.app.Fragment
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import androidx.transition.AutoTransition
 import androidx.transition.TransitionManager
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -67,6 +70,10 @@ class NCLoginFragment: Fragment() {
     private var authResult: Bundle? = null
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
+    private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
+    private lateinit var scanButton: MaterialButton
+    private lateinit var scanRequestLauncher: ActivityResultLauncher<Intent>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -77,12 +84,23 @@ class NCLoginFragment: Fragment() {
             requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
             requireActivity().finish()
         }
+        scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
+                    ("nc://login/user:(.*)&password:(.*)&server:(.*)").toRegex().matchEntire(scanResult)?.destructured?.let { (username, token, server) ->
+                        hostInputText.setText(server.substringAfter("://"))
+                        checkServer(server, username, token)
+                    }
+                }
+            }
+
+            // TODO Show scan error
+        }
 
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_nc_login, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_nc_login, container, false)
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -93,6 +111,7 @@ class NCLoginFragment: Fragment() {
         authWebpage = view.findViewById(R.id.nc_auth_page)
         inputArea = view.findViewById(R.id.input_area)
         hostInputText = view.findViewById(R.id.host)
+        scanButton = view.findViewById(R.id.scan)
         loadingSpinner = CircularProgressDrawable(requireContext()).apply {
             strokeWidth = 6.0f
             centerRadius = 16.0f
@@ -110,17 +129,9 @@ class NCLoginFragment: Fragment() {
         if (savedInstanceState == null) {
             if (reLogin) {
                 // Show welcome page without animation when it's called to do re-login
-                welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
-                inputArea.apply {
-                    requestFocus()
-                    visibility = View.VISIBLE
-                }
+                showInputArea()
                 AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).apply {
-                    if (this.isNotEmpty()) hostInputText.let {
-                        it.setText(AccountManager.get(requireContext()).getUserData(this[0], getString(R.string.nc_userdata_server)).substringAfter("://"))
-                        it.requestFocus()
-                        it.isEnabled = true
-                    }
+                    if (this.isNotEmpty()) hostInputText.setText(AccountManager.get(requireContext()).getUserData(this[0], getString(R.string.nc_userdata_server)).substringAfter("://"))
                 }
             }
             else with(welcomePage) {
@@ -137,11 +148,7 @@ class NCLoginFragment: Fragment() {
                             TransitionManager.beginDelayedTransition(root, t)
                             applyTo(root)
                         }
-                        welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
-                        inputArea.apply {
-                            requestFocus()
-                            visibility = View.VISIBLE
-                        }
+                        showInputArea()
                     }
                 })
             }
@@ -151,10 +158,9 @@ class NCLoginFragment: Fragment() {
                 requestStoragePermission()
             } ?: run {
                 // If app restarts during authentication
-                welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
                 useHttps = savedInstanceState.getBoolean(KEY_USE_HTTPS)
                 inputArea.prefixText = if (useHttps) "https://" else "http://"
-                inputArea.visibility = View.VISIBLE
+                showInputArea()
                 null
             }
         }
@@ -162,8 +168,7 @@ class NCLoginFragment: Fragment() {
         hostInputText.run {
             setOnEditorActionListener { _, id, _ ->
                 if (id == EditorInfo.IME_ACTION_GO || id == EditorInfo.IME_ACTION_DONE || id == EditorInfo.IME_NULL) {
-                    error = null
-                    prepareLogin()
+                    checkServer((if (useHttps) "https://" else "http://") + text.toString().trim())
                     true
                 } else false
             }
@@ -185,7 +190,16 @@ class NCLoginFragment: Fragment() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     request?.url?.apply {
                         // Detect nextcloud's special credential url scheme to retrieve token
-                        if (this.scheme.equals(resources.getString(R.string.nextcloud_credential_scheme))) saveTokenAndFinish(this.path.toString())
+                        if (this.scheme.equals(resources.getString(R.string.nextcloud_credential_scheme)))
+                            ("/server:(.*)&user:(.*)&password:(.*)").toRegex().matchEntire(this.path.toString())?.destructured?.let { (server, username, token) ->
+                                // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
+                                // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
+                                val host = if (server.startsWith("http")) server else "https://${server}"
+                                saveTokenAndFinish(host, username, token)
+                            } ?: run {
+                                backToWelcomePage()
+                                showError(999)
+                            }
                     }
                     return false
                 }
@@ -252,57 +266,85 @@ class NCLoginFragment: Fragment() {
 
     private val backPressedListener = View.OnKeyListener { _, keyCode, event ->
         if (keyCode == KeyEvent.KEYCODE_BACK && event.action == MotionEvent.ACTION_UP) {
-            if (authWebpage.url!!.contains(getString(R.string.login_flow_endpoint))) {  // TODO: better first page detection
-                authWebpage.visibility = View.GONE
-                welcomePage.visibility = View.VISIBLE
-                welcomePage.alpha = 1f
-                hostInputText.isEnabled = true
-                welcomePage.requestFocus()
+            // TODO: better first page detection
+            if (authWebpage.url!!.contains(getString(R.string.login_flow_endpoint))) backToWelcomePage()
+            else authWebpage.goBack()
 
-                // Load a blank page in webview, to prevent cross-fade effect when configuration changed
-                authWebpage.loadUrl("about:blank")
-                // Remove key listener when view become invisible
-                authWebpage.setOnKeyListener(null)
-            } else authWebpage.goBack()
             true
         } else false
     }
 
-    private fun saveTokenAndFinish(path: String) {
+    private fun showInputArea() {
+        welcomePage.findViewById<TextView>(R.id.welcome_message).visibility = View.VISIBLE
+        scanIntent.resolveActivity(requireActivity().packageManager)?.let {
+            scanButton.apply {
+                visibility = View.VISIBLE
+                setOnClickListener {
+                    scanRequestLauncher.launch(scanIntent)
+                }
+            }
+        }
+        enableInput()
+    }
+
+    private fun disableInput() {
+        inputArea.isEnabled = false
+        scanButton.isEnabled = false
+        hostInputText.error = null
+    }
+
+    private fun enableInput() {
+        inputArea.isEnabled = true
+        inputArea.visibility = View.VISIBLE
+        inputArea.requestFocus()
+        scanButton.isEnabled = true
+    }
+
+    private fun backToWelcomePage() {
+        authWebpage.visibility = View.GONE
+        welcomePage.visibility = View.VISIBLE
+        welcomePage.alpha = 1f
+        enableInput()
+
+        // Load a blank page in webview, to prevent cross-fade effect when configuration changed
+        authWebpage.loadUrl("about:blank")
+        // Remove key listener when view become invisible
+        authWebpage.setOnKeyListener(null)
+    }
+
+    private fun saveTokenAndFinish(server: String, username: String, token: String) {
         authWebpage.stopLoading()
 
-        ("/server:(.*)&user:(.*)&password:(.*)").toRegex().matchEntire(path)?.destructured?.let { (server, username, token) ->
-            val url = URL(server)
-            val accountName = "$username@${url.host}"
-            val account = Account(accountName, getString(R.string.account_type_nc))
-            val am = AccountManager.get(requireContext())
-            am.run {
-                addAccountExplicitly(account, "", null)
-                setAuthToken(account, server, token)    // authTokenType set to server address
-                setUserData(account, getString(R.string.nc_userdata_server), server)
-                setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
-                setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
-                setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
-                setUserData(account, getString(R.string.nc_userdata_username), username)
-                setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("$username:$token".encodeToByteArray(), Base64.NO_WRAP))
-                setUserData(account, getString(R.string.nc_userdata_selfsigned), selfSigned.toString())
+        val url = URL(server)
+        val accountName = "$username@${url.host}"
+        val account = Account(accountName, getString(R.string.account_type_nc))
+        val am = AccountManager.get(requireContext())
+        am.run {
+            addAccountExplicitly(account, "", null)
+            setAuthToken(account, server, token)    // authTokenType set to server address
+            setUserData(account, getString(R.string.nc_userdata_server), server)
+            setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
+            setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
+            setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
+            setUserData(account, getString(R.string.nc_userdata_username), username)
+            setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("$username:$token".encodeToByteArray(), Base64.NO_WRAP))
+            setUserData(account, getString(R.string.nc_userdata_selfsigned), selfSigned.toString())
+        }
+
+        if (reLogin) parentFragmentManager.popBackStack()
+        else {
+            authResult = Bundle().apply {
+                putString(AccountManager.KEY_ACCOUNT_NAME, accountName)
+                putString(AccountManager.KEY_ACCOUNT_TYPE, getString(R.string.account_type_nc))
+                putString(AccountManager.KEY_AUTHTOKEN, token)
+                //putString("TOKEN", token)
+                putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
+                putString(getString(R.string.nc_userdata_username), am.getUserData(account, getString(R.string.nc_userdata_username)))
+                putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
+                putString(getString(R.string.nc_userdata_selfsigned), am.getUserData(account, getString(R.string.nc_userdata_selfsigned)))
             }
 
-            if (reLogin) parentFragmentManager.popBackStack()
-            else {
-                authResult = Bundle().apply {
-                    putString(AccountManager.KEY_ACCOUNT_NAME, accountName)
-                    putString(AccountManager.KEY_ACCOUNT_TYPE, getString(R.string.account_type_nc))
-                    putString(AccountManager.KEY_AUTHTOKEN, token)
-                    //putString("TOKEN", token)
-                    putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
-                    putString(getString(R.string.nc_userdata_username), am.getUserData(account, getString(R.string.nc_userdata_username)))
-                    putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
-                    putString(getString(R.string.nc_userdata_selfsigned), am.getUserData(account, getString(R.string.nc_userdata_selfsigned)))
-                }
-
-                requestStoragePermission()
-            }
+            requestStoragePermission()
         }
     }
 
@@ -314,13 +356,13 @@ class NCLoginFragment: Fragment() {
         storagePermissionRequestLauncher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
 
-    private fun prepareLogin() {
-        val hostUrl = (if (useHttps) "https://" else "http://") + hostInputText.text.toString().trim()
+    private fun checkServer(hostUrl: String, username: String = "", token: String = "") {
         var result: Int
 
         if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\\[\\]]*[-a-zA-Z0-9\\]+&@#/%=~_|]").matcher(hostUrl).matches()) {
             hostInputText.error = getString(R.string.host_address_validation_error)
         } else {
+            disableInput()
             // Set a loading spinner for text input view
             inputArea.run {
                 endIconDrawable = loadingSpinner
@@ -332,19 +374,19 @@ class NCLoginFragment: Fragment() {
 
                 when (result) {
                     HttpURLConnection.HTTP_OK -> {
-                        // If everything ok, start loading the nextcloud authentication page in webview
+                        // If host verification ok, start loading the nextcloud authentication page in webview
+                        if (username.isEmpty()) {
+                            // Clean up the input area
+                            (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostInputText.windowToken, 0) }
+                            disableInput()
 
-                        // Clean up the input area
-                        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostInputText.windowToken, 0) }
-                        hostInputText.run {
-                            error = null
-                            isEnabled = false
+                            // the webview will reveal after page loaded
+                            authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
                         }
-
-                        // the webview will reveal after page loaded
-                        authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                        else saveTokenAndFinish(hostUrl, username, token)
                     }
                     998 -> {
+                        // Ask user to accept self-signed certificate
                         AlertDialog.Builder(hostInputText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                             .setIcon(ContextCompat.getDrawable(hostInputText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark))})
                             .setTitle(getString(R.string.verify_ssl_certificate_title))
@@ -356,7 +398,8 @@ class NCLoginFragment: Fragment() {
 
                                     if (result == HttpURLConnection.HTTP_OK) {
                                         selfSigned = true
-                                        authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                                        if (username.isEmpty()) authWebpage.loadUrl("$hostUrl${getString(R.string.login_flow_endpoint)}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                                        else saveTokenAndFinish(hostUrl, username, token)
                                     } else showError(result)
                                 }
                             }
@@ -370,15 +413,13 @@ class NCLoginFragment: Fragment() {
     }
 
     private fun showError(errorCode: Int) {
+        enableInput()
         inputArea.endIconMode = TextInputLayout.END_ICON_NONE
-        hostInputText.apply {
-            isEnabled = true
-            error = when(errorCode) {
-                999-> getString(R.string.network_error)
-                404, 1000-> getString(R.string.unknown_host)
-                1001-> getString(R.string.certificate_error)
-                else-> getString(R.string.host_not_valid)
-            }
+        hostInputText.error = when(errorCode) {
+            999-> getString(R.string.network_error)
+            404, 1000-> getString(R.string.unknown_host)
+            1001-> getString(R.string.certificate_error)
+            else-> getString(R.string.host_not_valid)
         }
     }
 
@@ -409,6 +450,31 @@ class NCLoginFragment: Fragment() {
             }
         }
     }
+
+/*
+    private fun getCredential(url: String): HashMap<String, String>? {
+        val credential = HashMap<String, String>()
+        // Login flow v1 result: nc://login/server:<server>&user:<loginname>&password:<password>
+        // QR code scanning result: nc://login/user:<loginname>&password:<password>&server:<server>
+        // In case Nextcloud will ever change the return url
+        return if (url.startsWith(resources.getString(R.string.nextcloud_credential_scheme))) {
+            ("(.*):(.*)&(.*):(.*)&(.*):(.*)").toRegex().matchEntire(url.substringAfter("nc://login/"))?.destructured?.let { (k1, v1, k2, v2, k3, v3) ->
+                try {
+                    credential[k1] = v1
+                    credential[k2] = v2
+                    credential[k3] = v3
+
+                    when {
+                        credential["server"] == null -> null
+                        credential["user"] == null -> null
+                        credential["password"] == null -> null
+                        else -> credential
+                    }
+                } catch (e: Exception) { null }
+            }
+        } else null
+    }
+*/
 
     companion object {
         private const val KEY_WEBVIEW_VISIBLE = "KEY_WEBVIEW_VISIBLE"

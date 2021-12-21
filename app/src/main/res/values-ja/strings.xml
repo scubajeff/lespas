@@ -171,4 +171,5 @@
     <string name="item_location_search">所在地</string>
     <string name="option_menu_in_map">地図で見る</string>
     <string name="object_face">顔</string>
+    <string name="button_text_scan">スキャンアプリのパスワード</string>
 </resources>

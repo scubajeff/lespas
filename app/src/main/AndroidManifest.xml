@@ -25,6 +25,12 @@
             <data android:scheme="geo" />
         </intent>
     </queries>
+    <queries>
+        <intent>
+            <action android:name="com.google.zxing.client.android.SCAN" />
+            <category android:name="android.intent.category.DEFAULT" />
+        </intent>
+    </queries>
 
     <application
         android:networkSecurityConfig="@xml/network_security_config"

@@ -171,4 +171,5 @@
     <string name="item_location_search">影相地點</string>
     <string name="option_menu_in_map">顯示全圖</string>
     <string name="object_face">人面</string>
+    <string name="button_text_scan">掃描應用密碼</string>
 </resources>
