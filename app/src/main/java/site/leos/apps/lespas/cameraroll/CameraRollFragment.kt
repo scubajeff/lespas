@@ -416,10 +416,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             // Detect swipe up gesture and show BottomSheet
             addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
-                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                    gestureDetector.onTouchEvent(e)
-                    return super.onInterceptTouchEvent(rv, e)
-                }
+                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean = gestureDetector.onTouchEvent(e)
             })
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {
