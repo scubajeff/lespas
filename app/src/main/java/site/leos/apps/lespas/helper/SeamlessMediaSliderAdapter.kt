@@ -21,12 +21,11 @@ import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
-    private val displayWidth: Int,
+    private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
     private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
-
 
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
@@ -82,6 +81,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
+    fun setDisplayWidth(width: Int) { displayWidth = width }
+
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
         private var baseWidth = 0f
@@ -101,18 +102,16 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
                 // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
                 setOnPhotoTapListener { _, _, _ ->
-                    if (scale > 1.0f) {
-                        setScale(1.0f, true)
-                        setAllowParentInterceptOnEdge(true)
-                    }
-                    else clickListener(null)
+                    if (scale != 1.0f) setScale(1.0f, true)
+                    setAllowParentInterceptOnEdge(true)
+                    currentWidth = baseWidth.toInt()
+                    clickListener(null)
                 }
                 setOnOutsidePhotoTapListener {
-                    if (scale > 1.0f) {
-                        setScale(1.0f, true)
-                        setAllowParentInterceptOnEdge(true)
-                    }
-                    else clickListener(null)
+                    if (scale != 1.0f) setScale(1.0f, true)
+                    setAllowParentInterceptOnEdge(true)
+                    currentWidth = baseWidth.toInt()
+                    clickListener(null)
                 }
 
                 // Disable viewpager2 swipe when in zoom mode
@@ -127,8 +126,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 setOnMatrixChangeListener {
                     if (currentWidth > displayWidth) {
                         when {
-                            it.right.toInt() == displayWidth -> edgeDetected++
-                            it.left.toInt() == 0 -> edgeDetected++
+                            it.right.toInt() <= displayWidth -> edgeDetected++
+                            it.left.toInt() >= 0 -> edgeDetected++
                             else -> {
                                 edgeDetected = 0
                                 setAllowParentInterceptOnEdge(false)
@@ -136,7 +135,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                         }
 
                         if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
-                    }
+                    } else edgeDetected = 0
                 }
             }
         }
