@@ -101,18 +101,16 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
                 // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
                 setOnPhotoTapListener { _, _, _ ->
-                    if (scale > 1.0f) {
-                        setScale(1.0f, true)
-                        setAllowParentInterceptOnEdge(true)
-                    }
-                    else clickListener(null)
+                    if (scale != 1.0f) setScale(1.0f, true)
+                    setAllowParentInterceptOnEdge(true)
+                    currentWidth = baseWidth.toInt()
+                    clickListener(null)
                 }
                 setOnOutsidePhotoTapListener {
-                    if (scale > 1.0f) {
-                        setScale(1.0f, true)
-                        setAllowParentInterceptOnEdge(true)
-                    }
-                    else clickListener(null)
+                    if (scale != 1.0f) setScale(1.0f, true)
+                    setAllowParentInterceptOnEdge(true)
+                    currentWidth = baseWidth.toInt()
+                    clickListener(null)
                 }
 
                 // Disable viewpager2 swipe when in zoom mode
@@ -136,7 +134,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                         }
 
                         if (edgeDetected > 30) setAllowParentInterceptOnEdge(true)
-                    }
+                    } else edgeDetected = 0
                 }
             }
         }
