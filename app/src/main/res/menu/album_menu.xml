@@ -18,12 +18,12 @@
     <item
         android:id="@+id/option_menu_camera_roll"
         android:title="@string/item_camera_roll"
-        android:orderInCategory="98"
+        android:orderInCategory="97"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_unhide"
         android:title="@string/item_unhide"
-        android:orderInCategory="97"
+        android:orderInCategory="98"
         android:enabled="false"
         app:showAsAction="never" />
     <item
