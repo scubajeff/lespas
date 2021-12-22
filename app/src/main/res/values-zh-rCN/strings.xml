@@ -174,4 +174,6 @@
     <string name="action_hide">隐藏</string>
     <string name="hidden_albums">已隐藏相册：</string>
     <string name="item_unhide">重现</string>
+    <string name="button_text_scan">扫描应用密码</string>
+    <string name="option_menu_map_slideshow">自动播放</string>
 </resources>

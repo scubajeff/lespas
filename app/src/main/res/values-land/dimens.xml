@@ -4,4 +4,5 @@
     <dimen name="exoplayer_control_layout_horizontal_margin">56dp</dimen>
     <dimen name="exoplayer_control_layout_vertical_margin">40dp</dimen>
     <dimen name="destination_dialog_clipdata_grid_size">32dp</dimen>
+    <dimen name="login_screen_logo_size">80dp</dimen>
 </resources>

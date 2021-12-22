@@ -174,4 +174,6 @@
     <string name="action_hide">Ocultar</string>
     <string name="hidden_albums">Álbumes ocultos:</string>
     <string name="item_unhide">Deshacer</string>
+    <string name="button_text_scan">Escanear la contraseña</string>
+    <string name="option_menu_map_slideshow">Presentación de diapositivas</string>
 </resources>

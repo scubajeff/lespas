@@ -1,0 +1,9 @@
+* Nouvelle fonctionnalité : lecture automatique du diaporama sur la carte pour l'ensemble de l'album.
+* Nouvelle fonctionnalité : possibilité de partager une photo en mode carte.
+* Nouvelle fonctionnalité : possibilité de scanner le code QR du mot de passe de l'application Nextcloud lors de la connexion.
+* Nouvelle fonctionnalité : Bouton d'information lors de l'affichage du rouleau d'appareil photo pour révéler les métadonnées de la photo.
+* Correction du zoom des photos, le défilement sur le bord permet de passer à la photo suivante.
+* Correction de divers problèmes liés à la lecture des données EXIF des photos.
+* Correction de l'image cassée après l'édition Snapseed
+* La synchronisation respecte désormais l'attribut caché du fichier selon la convention de nom de fichier Linux.
+* Autres améliorations et bogues corrigés

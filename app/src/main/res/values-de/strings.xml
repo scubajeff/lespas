@@ -226,4 +226,6 @@
     <string name="action_hide">Ausblenden</string>
     <string name="hidden_albums">Versteckte Alben:</string>
     <string name="item_unhide">Einblenden</string>
+    <string name="button_text_scan">App-Passwort scannen</string>
+    <string name="option_menu_map_slideshow">Diashow</string>
 </resources>

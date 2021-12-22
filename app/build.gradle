@@ -12,8 +12,8 @@ android {
         applicationId 'site.leos.apps.lespas'
         minSdk 25
         targetSdk 31
-        versionCode 41
-        versionName '2.4.1'
+        versionCode 43
+        versionName '2.4.3'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         archivesBaseName = "LesPas-v$versionName"
@@ -61,7 +61,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.4.0'
 
     // Room components
-    def roomVersion = "2.3.0"
+    def roomVersion = "2.4.0"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"

@@ -174,4 +174,6 @@
     <string name="action_hide">Cacher</string>
     <string name="hidden_albums">Albums cachés :</string>
     <string name="item_unhide">Dévoiler</string>
+    <string name="button_text_scan">Scanner le mot de passe</string>
+    <string name="option_menu_map_slideshow">Diaporama</string>
 </resources>
