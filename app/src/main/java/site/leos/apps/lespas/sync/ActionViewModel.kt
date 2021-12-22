@@ -22,7 +22,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     val allPendingActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
 
-    fun deleteAlbums(albums: List<Album>, localOnly: Boolean = false) {
+    fun deleteAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.deleteAlbums(albums)
 
@@ -43,7 +43,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
 
             }
-            if (!localOnly) actionRepository.addActions(actions)
+
+            actionRepository.addActions(actions)
         }
     }
 
@@ -102,11 +103,21 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun hideAlbums(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
-            deleteAlbums(albums, true)
-
             val actions = mutableListOf<Action>()
             albums.forEach {
+                albumRepository.changeName(it.id, ".${it.name}")
                 actions.add(Action(null, Action.ACTION_RENAME_DIRECTORY, it.id, it.name, "", ".${it.name}", System.currentTimeMillis(), 1))
+            }
+            actionRepository.addActions(actions)
+        }
+    }
+
+    fun unhideAlbums(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val actions = mutableListOf<Action>()
+            albums.forEach {
+                albumRepository.changeName(it.id, it.name.substring(1))
+                actions.add(Action(null, Action.ACTION_RENAME_DIRECTORY, it.id, it.name, "", it.name.substring(1), System.currentTimeMillis(), 1))
             }
             actionRepository.addActions(actions)
         }

@@ -330,17 +330,25 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Merge changed and/or new album from server
         var localAlbum: List<Album>
+        var hidden = false
 
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
-            if (remoteAlbum.isFolder && !remoteAlbum.name.startsWith('.')) {
+            if (remoteAlbum.isFolder) {
+                // Collecting remote album ids, including hidden albums, for deletion syncing
                 remoteAlbumIds.add(remoteAlbum.fileId)
+                hidden = remoteAlbum.name.startsWith('.')
 
                 localAlbum = albumRepository.getThisAlbumList(remoteAlbum.fileId)
                 if (localAlbum.isNotEmpty()) {
                     // We have hit in local table, which means it's a existing album
                     if (localAlbum[0].eTag != remoteAlbum.eTag) {
-                        // eTag mismatched, this album changed on server
-                        changedAlbums.add(
+                        // eTag mismatched, this album changed on server, could be name changed (hidden state toggled) plus other changes
+
+                        if (hidden) {
+                            // Sync name change for hidden album and/or hide operation done on server
+                            if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
+                        }
+                        else changedAlbums.add(
                             Album(
                                 remoteAlbum.fileId,             // Either local or remote version is fine
                                 remoteAlbum.name,               // Use remote version, since it might be changed on server
@@ -352,16 +360,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 localAlbum[0].coverHeight,      // Preserve local data
                                 remoteAlbum.modified,           // Use remote version
                                 localAlbum[0].sortOrder,        // Preserve local data
-                                remoteAlbum.eTag,               // Use remote version
+                                remoteAlbum.eTag,               // Use remote eTag for unhidden albums
                                 if (remoteAlbum.isShared) 1 else 0,
                                 1f,
                             )
                         )
                     } else {
-                        // Rename operation on server would not change item's own eTag, have to sync name changes here
+                        // Rename operation (including hidden state toggled) on server would not change item's own eTag, have to sync name change here
                         if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
                     }
                 } else {
+                    // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
+                    if (hidden) return@forEach
+
                     // No hit on local, a new album from server, make sure the 'cover' property is set to "", a sign shows it's a new album
                     changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
                 }
@@ -369,6 +380,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with eTag column empty
+        // Include hidden albums
         for (local in albumRepository.getAllAlbumIdAndETag()) {
             if (!remoteAlbumIds.contains(local.id) && local.eTag.isNotEmpty()) {
                 albumRepository.deleteById(local.id)

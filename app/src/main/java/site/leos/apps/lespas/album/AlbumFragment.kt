@@ -167,10 +167,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         view.doOnPreDraw { startPostponedEnterTransition() }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
+        albumsModel.allHiddenAlbums.observe(viewLifecycleOwner, { hidden-> unhideMenu?.isEnabled = hidden.isNotEmpty() })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
-        publishViewModel.hiddenAlbums.asLiveData().observe(viewLifecycleOwner, { unhideMenu?.isEnabled = it.isNotEmpty() })
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -262,8 +262,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
         // Unhide dialog result handler
         parentFragmentManager.setFragmentResultListener(UnhideDialogFragment.UNHIDE_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            bundle.getStringArrayList(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
-                if (this.isNotEmpty()) publishViewModel.unHideAlbums(this.toList()) { actionModel.refreshAlbumList() }
+            bundle.getParcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
+                if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
     }
@@ -309,7 +309,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onPrepareOptionsMenu(menu)
 
         unhideMenu = menu.findItem(R.id.option_menu_unhide)
-        publishViewModel.hiddenAlbums.value.let { unhideMenu?.isEnabled = it.isNotEmpty() }
+        albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
 
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
@@ -365,7 +365,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return true
             }
             R.id.option_menu_unhide-> {
-                if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(publishViewModel.hiddenAlbums.value).show(parentFragmentManager, UNHIDE_DIALOG)
+                albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
                 return true
             }
             else-> {
@@ -390,10 +390,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.hide -> {
-                val albums = mutableListOf<Album>()
-                selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
-                actionModel.hideAlbums(albums)
-                publishViewModel.hideAlbums(albums)
+                mutableListOf<Album>().let { albums ->
+                    selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
+                    selectionTracker.clearSelection()
+
+                    actionModel.hideAlbums(albums)
+                    publishViewModel.unPublish(albums)
+                }
+
                 true
             }
 /*
@@ -585,17 +589,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     class UnhideDialogFragment: LesPasDialogFragment(R.layout.fragment_unhide_dialog) {
         private lateinit var unhideButton: MaterialButton
-        private val choices = arrayListOf<String>()
-        private val hiddenAdapter = NameAdapter { name, checked ->
-            if (checked) choices.add(name)
-            else choices.remove(name)
+        private val choices = arrayListOf<Album>()
+        private val hiddenAdapter = NameAdapter { album, checked ->
+            if (checked) choices.add(album)
+            else choices.remove(album)
 
             unhideButton.isEnabled = choices.isNotEmpty()
         }
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
-            requireArguments().getStringArrayList(NAME_LIST)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+            requireArguments().getParcelableArrayList<Album>(KEY_ALBUMS)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -605,7 +609,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             unhideButton = view.findViewById<MaterialButton>(R.id.unhide_button).apply {
                 setOnClickListener {
                     parentFragmentManager.setFragmentResult(UNHIDE_DIALOG_REQUEST_KEY, Bundle().apply {
-                        putStringArrayList(KEY_UNHIDE_THESE, choices)
+                        putParcelableArrayList(KEY_UNHIDE_THESE, choices)
                     })
                     dismiss()
                 }
@@ -616,16 +620,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        class NameAdapter(private val updateChoice: (String, Boolean) -> Unit): ListAdapter<String, NameAdapter.ViewHolder>(NameDiffCallback()) {
+        class NameAdapter(private val updateChoice: (Album, Boolean) -> Unit): ListAdapter<Album, NameAdapter.ViewHolder>(NameDiffCallback()) {
             inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
                 private val tvName = itemView.findViewById<CheckedTextView>(android.R.id.text1)
 
-                fun bind(item: String) {
-                    tvName.text = item
+                fun bind(album: Album) {
+                    tvName.text = album.name.substring(1)
 
                     tvName.setOnClickListener {
                         tvName.isChecked = !tvName.isChecked
-                        updateChoice(item, tvName.isChecked)
+                        updateChoice(album, tvName.isChecked)
                     }
                 }
             }
@@ -633,18 +637,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(currentList[position]) }
         }
 
-        class NameDiffCallback: DiffUtil.ItemCallback<String>() {
-            override fun areItemsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
-            override fun areContentsTheSame(oldItem: String, newItem: String): Boolean = oldItem == newItem
+        class NameDiffCallback: DiffUtil.ItemCallback<Album>() {
+            override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.eTag == newItem.eTag
         }
 
         companion object {
             const val UNHIDE_DIALOG_REQUEST_KEY = "UNHIDE_DIALOG_REQUEST_KEY"
             const val KEY_UNHIDE_THESE = "KEY_UNHIDE_THESE"
 
-            private const val NAME_LIST = "NAME_LIST"
+            private const val KEY_ALBUMS = "KEY_ALBUMS"
+
             @JvmStatic
-            fun newInstance(names: List<String>) = UnhideDialogFragment().apply { arguments = Bundle().apply { putStringArrayList(NAME_LIST, ArrayList(names)) }}
+            fun newInstance(albums: List<Album>) = UnhideDialogFragment().apply { arguments = Bundle().apply { putParcelableArrayList(KEY_ALBUMS, ArrayList(albums)) }}
         }
     }
 

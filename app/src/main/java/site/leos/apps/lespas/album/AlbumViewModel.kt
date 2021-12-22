@@ -28,4 +28,5 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getAllAlbumIdName(): List<IDandName> = albumRepository.getAllAlbumIdName()
     fun getThisAlbum(albumId: String): Album = albumRepository.getThisAlbum(albumId)
     fun getAllAlbumName(): List<String> = albumRepository.getAllAlbumName()
+    val allHiddenAlbums: LiveData<List<Album>> = albumRepository.getAllHiddenAlbumsFlow().asLiveData()
 }
