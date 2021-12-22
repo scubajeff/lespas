@@ -1,3 +1,6 @@
+## Version 2.4.3
+* Quick fix to sharing out selected photos in album detail screen
+
 ## Version 2.4.2
 * New feature: auto play slideshow in map for entire album
 * New feature: able to share in photo with map mode
