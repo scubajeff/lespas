@@ -61,7 +61,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.4.0'
 
     // Room components
-    def roomVersion = "2.3.0"
+    def roomVersion = "2.4.0"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"
