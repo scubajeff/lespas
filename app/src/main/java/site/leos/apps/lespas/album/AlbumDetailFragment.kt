@@ -730,7 +730,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 // Show a SnackBar if it takes too long (more than 500ms) preparing shares
                 withContext(Dispatchers.Main) {
-                    selectionTracker.clearSelection()
                     handler.removeCallbacksAndMessages(null)
                     handler.postDelayed({ waitingMsg.show() }, 500)
                 }
