@@ -67,40 +67,35 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 TYPE_FULL, TYPE_QUATER -> {
                     if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     else {
-                        val option = BitmapFactory.Options().apply { if (type == TYPE_QUATER) inSampleSize = 2 }
-                        var bmp =
-                            if (photo.albumId == FROM_CAMERA_ROLL) {
-                                // Photo from camera roll doesn't support image/awebp, image/agif
-                                if (type == TYPE_FULL && (photo.mimeType == "image/webp" || photo.mimeType == "image/gif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(contentResolver, uri))
-                                    null
-                                }
-                                else {
-                                    var b = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
-                                    // Rotate according to EXIF when this photo comes from camera roll
-                                    if (photo.shareId != 0) b?.let { b = Bitmap.createBitmap(b!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
-                                    b
-                                }
-                            }
-                            else {
-                                if (type == TYPE_FULL && (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName)))
-                                    null
-                                }
-                                else BitmapFactory.decodeFile(fileName, option)
-                            }
-
-                        // If image is too large
-                        // TODO hardcoded size
-                        bmp?.let {
-                            if (bmp!!.allocationByteCount > 100000000) {
-                                bmp!!.recycle()
-                                option.inSampleSize = 2
-                                bmp = if (photo.albumId == FROM_CAMERA_ROLL) BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option) else BitmapFactory.decodeFile(fileName, option)
+                        val option = BitmapFactory.Options().apply {
+                            when {
+                                type == TYPE_QUATER -> inSampleSize = 2
+                                // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
+                                // TODO hard coded size limit
+                                photo.width * photo.height > 33333334 -> inSampleSize = 2
                             }
                         }
 
-                        bmp
+                        if (photo.albumId == FROM_CAMERA_ROLL) {
+                            // Photo from camera roll doesn't support image/awebp, image/agif
+                            if (type == TYPE_FULL && (photo.mimeType == "image/webp" || photo.mimeType == "image/gif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(contentResolver, uri))
+                                null
+                            }
+                            else {
+                                var b = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
+                                // Rotate according to EXIF when this photo comes from camera roll
+                                if (photo.shareId != 0) b?.let { b = Bitmap.createBitmap(b!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
+                                b
+                            }
+                        }
+                        else {
+                            if (type == TYPE_FULL && (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(fileName)))
+                                null
+                            }
+                            else BitmapFactory.decodeFile(fileName, option)
+                        }
                     }
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
