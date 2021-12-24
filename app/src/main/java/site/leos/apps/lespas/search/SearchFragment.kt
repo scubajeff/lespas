@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
@@ -12,12 +13,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 
@@ -39,12 +42,17 @@ class SearchFragment : Fragment() {
 
         categoryAdapter = CategoryAdapter { category ->
             when (category.id.toInt()) {
-                in 1..4 -> parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                in 1..4 -> {
+                    exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                    reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                    parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                }
                 5 -> {
                     when {
                         destinationToggleGroup?.checkedButtonId == R.id.search_album -> launchLocationSearch()
                         Build.VERSION.SDK_INT < Build.VERSION_CODES.Q -> launchLocationSearch()
                         else -> {
+                            @SuppressLint("InlinedApi")
                             val permission = android.Manifest.permission.ACCESS_MEDIA_LOCATION
                             if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) launchLocationSearch()
                             else {
@@ -80,13 +88,17 @@ class SearchFragment : Fragment() {
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             if (isGranted) launchLocationSearch()
         }
+
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.fragment_search, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_search, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        postponeEnterTransition()
+        view.doOnPreDraw { startPostponedEnterTransition() }
 
         view.findViewById<RecyclerView>(R.id.category_list).adapter = categoryAdapter
 
