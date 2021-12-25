@@ -174,4 +174,5 @@
     <string name="button_text_scan">Scanner le mot de passe</string>
     <string name="option_menu_map_slideshow">Diaporama</string>
     <string name="item_bgm">Album BGM</string>
+    <string name="option_menu_mute">Basculer la sourdine</string>
 </resources>

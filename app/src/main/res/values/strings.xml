@@ -254,6 +254,7 @@
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
+    <string name="option_menu_mute">Toggle mute</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->
