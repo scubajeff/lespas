@@ -173,4 +173,5 @@
     <string name="object_face">人脸</string>
     <string name="button_text_scan">扫描应用密码</string>
     <string name="option_menu_map_slideshow">自动播放</string>
+    <string name="item_bgm">背景音乐</string>
 </resources>

@@ -588,6 +588,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album.name, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
+            R.id.option_menu_bgm-> {
+                if (parentFragmentManager.findFragmentByTag(BGM_DIALOG) == null) BGMDialogFragment.newInstance(album).show(parentFragmentManager, BGM_DIALOG)
+                true
+            }
             else-> false
         }
     }
@@ -945,6 +949,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val BGM_DIALOG = "BGM_DIALOG"
         private const val SELECTION = "SELECTION"
         private const val SHARED_SELECTION = "SHARED_SELECTION"
         private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"
