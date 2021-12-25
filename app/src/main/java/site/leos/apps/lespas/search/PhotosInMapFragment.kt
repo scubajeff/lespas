@@ -97,7 +97,7 @@ class PhotosInMapFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                album?.let { if (hasBGM) bgmPlayer.stop() }
+                album?.let { if (hasBGM) fadeOutBGM(true) }
                 closeAllInfoWindow()
                 mapView.overlayManager.clear()
                 mapView.controller.zoomTo(max(mapView.zoomLevelDouble - 5, 0.0), 400)
@@ -123,6 +123,8 @@ class PhotosInMapFragment: Fragment() {
 
                 // Mute the video sound during late night hours
                 with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
+
+                playerHandler = Handler(bgmPlayer.applicationLooper)
             }
         }
     }
@@ -335,16 +337,52 @@ class PhotosInMapFragment: Fragment() {
                 isMuted = !isMuted
                 muteMenuItem.setIcon(
                     if (isMuted) {
-                        bgmPlayer.volume = 0f
+                        fadeOutBGM()
                         R.drawable.ic_baseline_volume_off_24
                     } else {
-                        bgmPlayer.volume = 1f
+                        fadeInBGM()
                         R.drawable.ic_baseline_volume_on_24
                     }
                 )
                 true
             }
             else -> false
+        }
+    }
+
+    private lateinit var playerHandler: Handler
+    private fun fadeInBGM() {
+        Timer().also { timer ->
+            timer.schedule(object : TimerTask() {
+                override fun run() {
+                    if (bgmPlayer.volume < 1f) {
+                        playerHandler.post { bgmPlayer.volume += 0.05f }
+                    } else {
+                        playerHandler.post { bgmPlayer.volume = 1f }
+                        timer.cancel()
+                    }
+                }
+            }, 0, 75)
+        }
+    }
+    private fun fadeOutBGM(stopPlaying: Boolean = false) {
+        Timer().also { timer ->
+            timer.schedule(object : TimerTask() {
+                override fun run() {
+                    if (bgmPlayer.volume > 0f) {
+                        playerHandler.post { bgmPlayer.volume -= 0.05f }
+                    } else {
+                        playerHandler.post {
+                            bgmPlayer.volume = 0f
+                            if (stopPlaying) {
+                                bgmPlayer.stop()
+                                bgmPlayer.seekTo(0)
+                            }
+                        }
+                        timer.cancel()
+                    }
+                }
+            }, 0, 75)
         }
     }
 
@@ -356,10 +394,7 @@ class PhotosInMapFragment: Fragment() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
-        if (hasBGM) {
-            bgmPlayer.stop()
-            bgmPlayer.seekTo(0)
-        }
+        if (hasBGM) fadeOutBGM(true)
     }
 
     private fun closeAllInfoWindow() {
