@@ -261,7 +261,13 @@ class PhotosInMapFragment: Fragment() {
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        muteMenuItem.setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+        with(muteMenuItem) {
+            if (hasBGM) setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+            else {
+                isVisible = false
+                isEnabled = false
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
