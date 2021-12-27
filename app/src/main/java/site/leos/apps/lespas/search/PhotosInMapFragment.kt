@@ -413,8 +413,7 @@ class PhotosInMapFragment: Fragment() {
                 val vW = mapView.width - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, mapView.context.resources.displayMetrics).roundToInt()
                 val vH = mapView.height * 3 / 5
                 inSampleSize = 1
-                while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize *= 2 }
-                //inSampleSize = if (photo.width > 4320 || photo.height > 4320) 8 else 4
+                while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize += 2 }
             }
             marker.image = BitmapDrawable(resources,
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
