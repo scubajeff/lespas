@@ -6,6 +6,7 @@ import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
+import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -14,6 +15,7 @@ import androidx.media3.ui.PlayerControlView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -26,6 +28,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
     private lateinit var pauseButton: ImageButton
 
     private lateinit var replaceBGMLauncher: ActivityResultLauncher<String>
+    private var mimeType = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,10 +40,9 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
 
         replaceBGMLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) {
             it?.let { uri ->
-                requireContext().contentResolver.openInputStream(uri)?.use { input ->
-                    File(bgmMedia).outputStream().use { output ->
-                        input.copyTo(output, 8192)
-                    }
+                requireContext().contentResolver.run {
+                    openInputStream(uri)?.use { input -> File(bgmMedia).outputStream().use { output -> input.copyTo(output, 8192) }}
+                    mimeType = getType(uri) ?: GENERAL_AUDIO_MIMETYPE
                 }
 
                 prepareMedia()
@@ -52,6 +54,8 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
         bgmPlayer.stop()
         bgmPlayer.release()
 
+        if (mimeType.isNotEmpty()) ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateBGM(album.name, mimeType, bgmMedia.substringAfterLast('/'))
+
         super.onDestroy()
     }
 
@@ -60,7 +64,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
 
         view.apply {
             findViewById<ImageButton>(R.id.replace_bgm).apply {
-                setOnClickListener { replaceBGMLauncher.launch("audio/*")}
+                setOnClickListener { replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)}
             }
 
             pauseButton = findViewById(R.id.exo_pause)
@@ -108,8 +112,10 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
     }
 
     companion object {
-        private const val KEY_ALBUM = "KEY_ALBUM"
         const val BGM_FILE_SUFFIX = "_bgm"
+
+        private const val GENERAL_AUDIO_MIMETYPE = "audio/*"
+        private const val KEY_ALBUM = "KEY_ALBUM"
 
         @JvmStatic
         fun newInstance(album: Album) = BGMDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_ALBUM, album) } }
