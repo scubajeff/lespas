@@ -409,7 +409,13 @@ class PhotosInMapFragment: Fragment() {
 
     private fun loadImage(marker: Marker, photo: Photo) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val option = BitmapFactory.Options().apply { inSampleSize = if (photo.width > 4000 || photo.height > 4000) 8 else 4 }
+            val option = BitmapFactory.Options().apply {
+                val vW = mapView.width - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, mapView.context.resources.displayMetrics).roundToInt()
+                val vH = mapView.height * 3 / 5
+                inSampleSize = 1
+                while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize *= 2 }
+                //inSampleSize = if (photo.width > 4320 || photo.height > 4320) 8 else 4
+            }
             marker.image = BitmapDrawable(resources,
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
