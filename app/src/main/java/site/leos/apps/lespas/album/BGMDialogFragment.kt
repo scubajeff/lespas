@@ -26,6 +26,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
 
     private lateinit var playButton: ImageButton
     private lateinit var pauseButton: ImageButton
+    private lateinit var removeButton: ImageButton
 
     private lateinit var replaceBGMLauncher: ActivityResultLauncher<String>
     private var mimeType = ""
@@ -46,6 +47,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                 }
 
                 prepareMedia()
+                bgmPlayer.play()
             }
         }
     }
@@ -63,8 +65,19 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
         super.onViewCreated(view, savedInstanceState)
 
         view.apply {
-            findViewById<ImageButton>(R.id.replace_bgm).apply {
-                setOnClickListener { replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)}
+            findViewById<ImageButton>(R.id.replace_bgm).setOnClickListener { replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)}
+            removeButton = findViewById<ImageButton>(R.id.remove_bgm).apply {
+                setOnClickListener {
+                    bgmPlayer.stop()
+                    bgmPlayer.playWhenReady = false
+                    bgmPlayer.clearMediaItems()
+                    playButton.isEnabled = false
+                    removeButton.isEnabled = false
+                    mimeType = ""
+
+                    File(bgmMedia).delete()
+                    ViewModelProvider(requireActivity())[ActionViewModel::class.java].removeBGM(album.name)
+                }
             }
 
             pauseButton = findViewById(R.id.exo_pause)
@@ -94,7 +107,10 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                     }
                 })
                 if (hasBGM()) prepareMedia()
-                else playButton.isEnabled = false
+                else {
+                    playButton.isEnabled = false
+                    removeButton.isEnabled = false
+                }
             }
 
             findViewById<PlayerControlView>(R.id.bgm_control_view).apply {
@@ -109,6 +125,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
         bgmPlayer.setMediaItem(MediaItem.fromUri(bgmMedia))
         bgmPlayer.prepare()
         playButton.isEnabled = true
+        removeButton.isEnabled = true
     }
 
     companion object {

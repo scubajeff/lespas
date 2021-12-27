@@ -173,6 +173,6 @@
     <string name="object_face">Facial</string>
     <string name="button_text_scan">Escanear la contraseña</string>
     <string name="option_menu_map_slideshow">Presentación de diapositivas</string>
-    <string name="item_bgm">BGM del álbum</string>
+    <string name="item_bgm">Gestionar la BGM</string>
     <string name="option_menu_mute">Activar el silencio</string>
 </resources>

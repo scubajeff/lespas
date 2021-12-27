@@ -173,6 +173,6 @@
     <string name="object_face">顔</string>
     <string name="button_text_scan">スキャンアプリのパスワード</string>
     <string name="option_menu_map_slideshow">スライドショー</string>
-    <string name="item_bgm">アルバムBGM</string>
+    <string name="item_bgm">BGMの管理</string>
     <string name="option_menu_mute">トグルミュート</string>
 </resources>

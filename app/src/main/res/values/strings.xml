@@ -208,7 +208,7 @@
     <string name="item_camera_roll">Camera Roll</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
-    <string name="item_bgm">Album BGM</string>
+    <string name="item_bgm">Manage BGM</string>
     <string name="item_sortby">Sort by</string>
     <string name="item_dateasc">Date Ascending</string>
     <string name="item_datedesc">Date Descending</string>

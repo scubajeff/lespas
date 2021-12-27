@@ -32,6 +32,7 @@ data class Action (
        const val ACTION_UPDATE_THIS_ALBUM_META = 13
        const val ACTION_UPDATE_THIS_CONTENT_META = 14
        const val ACTION_UPDATE_ALBUM_BGM = 15
+       const val ACTION_DELETE_ALBUM_BGM = 16
    }
 }
 

@@ -318,6 +318,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}", action.folderId, application)
                 }
+                Action.ACTION_DELETE_ALBUM_BGM-> {
+                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
