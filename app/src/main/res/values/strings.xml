@@ -153,6 +153,10 @@
     <string name="yes_logout">Yes, log out</string>
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
+    <string name="backup_exif_location_permission_rationale">To backup GPS data saved in photo</string>
+    <string name="search_exif_location_permission_rationale">To search for location information in camera roll</string>
+    <string name="read_exif_location_permission_rationale">To show location information of photos</string>
+    <string name="need_access_media_location_permission">, Les Pas needs Access Media Location permission.</string>
     <string name="proceed_request">Proceed</string>
     <string name="install_snapseed_dialog_msg">Install Snapseed now?</string>
 
