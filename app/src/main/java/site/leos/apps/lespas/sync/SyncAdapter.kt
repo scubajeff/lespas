@@ -716,7 +716,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))) else ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
                                 } catch (e: SecurityException) {
                                     ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
-                                },
+                                } catch (e: UnsupportedOperationException) {
+                                    ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
+                               },
                                 "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application
                             )
                             break
