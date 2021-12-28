@@ -99,7 +99,12 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
-            if (isGranted) saveMedia()
+            if (isGranted) {
+                // Explicitly request ACCESS_MEDIA_LOCATION permission
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+
+                saveMedia()
+            }
         }
 
         // Detect swipe up gesture and show bottom controls

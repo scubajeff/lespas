@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -84,11 +85,13 @@ class MainActivity : AppCompatActivity() {
                     })
 
                     // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                    if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
-                        putBoolean(getString(R.string.snapseed_pref_key), false)
-                        putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                        putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
-                    }
+                    if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                        sp.edit {
+                            putBoolean(getString(R.string.snapseed_pref_key), false)
+                            putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                            putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                        }
+                    else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
                     // If Snapseed is not installed, disable Snapseed integration
                     packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
                         sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }

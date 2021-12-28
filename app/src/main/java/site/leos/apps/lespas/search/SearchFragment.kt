@@ -28,7 +28,7 @@ class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
-    // Flag indicating if we have exsting albums or not
+    // Flag indicating if we have existing albums or not
     private var noAlbum = true
     // Flag indicating showing Snackbar when clicking search album button
     private var onMenuCreation = true
@@ -56,8 +56,12 @@ class SearchFragment : Fragment() {
                             val permission = android.Manifest.permission.ACCESS_MEDIA_LOCATION
                             if (ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED) launchLocationSearch()
                             else {
-                                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                                exifPermissionRequestLauncher.launch(permission)
+                                if (shouldShowRequestPermissionRationale(permission))
+                                    ConfirmDialogFragment.newInstance(getString(R.string.search_exif_location_permission_rationale) + getString(R.string.need_access_media_location_permission), null, true, EXIF_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                                else {
+                                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                                    exifPermissionRequestLauncher.launch(permission)
+                                }
                             }
                         }
                     }
@@ -79,9 +83,14 @@ class SearchFragment : Fragment() {
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
-            if (isGranted) destinationToggleGroup?.check(R.id.search_cameraroll)
+            if (isGranted) {
+                destinationToggleGroup?.check(R.id.search_cameraroll)
+
+                // Explicitly request ACCESS_MEDIA_LOCATION permission
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+            }
             else if (noAlbum) parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
-                ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false).show(parentFragmentManager, CONFIRM_DIALOG)
+                ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false, LEAVE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
             }
         }
         exifPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -94,6 +103,7 @@ class SearchFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_search, container, false)
+    @SuppressLint("InlinedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -103,8 +113,16 @@ class SearchFragment : Fragment() {
         view.findViewById<RecyclerView>(R.id.category_list).adapter = categoryAdapter
 
         // Not ready to search confirm exit dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) parentFragmentManager.popBackStack()
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                    LEAVE_REQUEST_DIALOG -> parentFragmentManager.popBackStack()
+                    EXIF_PERMISSION_RATIONALE_REQUEST_DIALOG -> {
+                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                        exifPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                    }
+                }
+            }
         }
     }
 
@@ -211,6 +229,8 @@ class SearchFragment : Fragment() {
         private const val LAST_SELECTION = "LAST_SELECTION"
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val LEAVE_REQUEST_DIALOG = "LEAVE_REQUEST_DIALOG"
+        private const val EXIF_PERMISSION_RATIONALE_REQUEST_DIALOG = "EXIF_PERMISSION_RATIONALE_REQUEST_DIALOG"
 
         @JvmStatic
         fun newInstance(noAlbum: Boolean) = SearchFragment().apply { arguments = Bundle().apply { putBoolean(NO_ALBUM, noAlbum) }}
