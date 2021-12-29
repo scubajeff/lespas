@@ -89,7 +89,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var stripExif = "1"
+    private var stripExif = "2"
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
@@ -473,7 +473,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
             isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
         }
     }
