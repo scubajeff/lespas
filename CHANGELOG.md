@@ -1,3 +1,7 @@
+## Version 2.4.4
+* Fixed bug of reading EXIF from camera roll photos, which will crash app when viewing detail meta data of camera roll photos, brick camera roll auto backup, prevent adding photo to Les Pas from camera roll, etc.
+* Fixed bug that allowing search in album while there are no albums at all
+
 ## Version 2.4.3
 * Quick fix to sharing out selected photos in album detail screen
 

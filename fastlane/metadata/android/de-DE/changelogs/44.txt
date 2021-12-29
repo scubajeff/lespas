@@ -1,0 +1,3 @@
+* Fehler beim Lesen der EXIF-Daten von Fotos aus der Kamerarolle behoben, der zum Absturz der App führt, wenn detaillierte Metadaten von Fotos aus der Kamerarolle angezeigt werden, automatische Sicherung der Kamerarolle, Hinzufügen von Fotos zu Les Pas aus der Kamerarolle verhindern usw.
+* Fehler behoben, der die Suche in Alben erlaubte, obwohl es gar keine Alben gab
+* Weitere Verbesserungen und Fehler behoben
