@@ -150,9 +150,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.fragment_album, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -162,7 +160,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums->
+            sortAndSetAlbums(albums)
+        })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
@@ -257,6 +257,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 selectionTracker.clearSelection()
             }
         }
+
+        if (savedInstanceState == null) (requireActivity() as AppCompatActivity).reportFullyDrawn()
     }
 
     override fun onResume() {

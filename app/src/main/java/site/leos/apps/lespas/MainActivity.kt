@@ -48,14 +48,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Make sure photo's folder, temporary cache folder created
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                File(Tools.getLocalRoot(applicationContext)).mkdir()
-                File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
-            } catch (e: Exception) {}
-        }
-
         supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
             if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
@@ -70,32 +62,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         val account: Account = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0]
+
         if (savedInstanceState == null) {
             if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
                 if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
                     .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
             } else {
-                lifecycleScope.launch {
-                    // Sync with server at startup
-                    ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-                    })
-
-                    // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                    if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                        sp.edit {
-                            putBoolean(getString(R.string.snapseed_pref_key), false)
-                            putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                            putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
-                        }
-                    else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
-                    // If Snapseed is not installed, disable Snapseed integration
-                    packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
-                        sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
-                    }
+                lifecycleScope.launch(Dispatchers.IO) {
+                    // Make sure photo's folder, temporary cache folder created
+                    try {
+                        File(Tools.getLocalRoot(applicationContext)).mkdir()
+                        File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
+                    } catch (e: Exception) {}
                 }
 
                 intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
@@ -105,6 +84,30 @@ class MainActivity : AppCompatActivity() {
                     }.start()
                 } ?: run {
                     supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
+                        if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                            sp.edit {
+                                putBoolean(getString(R.string.snapseed_pref_key), false)
+                                putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                                putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                            }
+                        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                        // If Snapseed is not installed, disable Snapseed integration
+                        packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
+                            sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
+                        }
+
+                        // Sync when receiving network tickle
+                        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
+                        // Sync with server at startup
+                        ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
+                            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                            //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                            putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+                        })
+                    }
                 }
             }
 
@@ -112,8 +115,6 @@ class MainActivity : AppCompatActivity() {
             WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
         }
 
-        // Sync when receiving network tickle
-        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
         // Setup observer to fire up SyncAdapter
         actionsPendingModel.allPendingActions.observe(this, { actions ->
             if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
