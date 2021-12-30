@@ -111,12 +111,6 @@ class MainActivity : AppCompatActivity() {
 
                             // Sync when receiving network tickle
                             ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
-                            // Sync with server at startup
-                            ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
-                                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-                            })
                         }
                     }
                 }
