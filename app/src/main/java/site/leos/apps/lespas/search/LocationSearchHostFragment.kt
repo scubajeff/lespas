@@ -99,6 +99,8 @@ class LocationSearchHostFragment: Fragment() {
                             cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
                         } catch (e: SecurityException) {
                             cr.openInputStream(Uri.parse(photo.id))
+                        } catch (e: UnsupportedOperationException) {
+                            cr.openInputStream(Uri.parse(photo.id))
                         }?.use { ExifInterface(it) }
                     } catch (e: Exception) {
                         null

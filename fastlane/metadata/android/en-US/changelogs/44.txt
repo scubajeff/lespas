@@ -1,0 +1,3 @@
+* Fixed bug of reading EXIF from camera roll photos, which will crash app when viewing detail meta data of camera roll photos, brick camera roll auto backup, prevent adding photo to Les Pas from camera roll, etc.
+* Fixed bug that allowing search in album while there are no albums at all
+* Other improvements and bugs fixed

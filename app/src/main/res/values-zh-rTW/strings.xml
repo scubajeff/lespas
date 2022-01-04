@@ -176,4 +176,8 @@
     <string name="item_unhide">重現</string>
     <string name="button_text_scan">掃描應用密碼</string>
     <string name="option_menu_map_slideshow">自動輪播</string>
+    <string name="backup_exif_location_permission_rationale">為了備份照片地理資訊</string>
+    <string name="search_exif_location_permission_rationale">為了搜尋照片地理資訊</string>
+    <string name="read_exif_location_permission_rationale">為了檢視照片地理資訊</string>
+    <string name="need_access_media_location_permission">，Les Pas需要獲得讀取媒體地理資訊權限。</string>
 </resources>

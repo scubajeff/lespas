@@ -80,7 +80,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
 
     private var autoRotate = false
-    private var stripExif = "1"
+    private var stripExif = "2"
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -112,7 +112,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         previousOrientationSetting = requireActivity().requestedOrientation
         with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
             autoRotate = getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value)) ?: "0"
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value)) ?: "0"
         }
 
         // Broadcast receiver listening on share destination

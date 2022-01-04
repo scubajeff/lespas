@@ -176,4 +176,8 @@
     <string name="item_unhide">Dévoiler</string>
     <string name="button_text_scan">Scanner le mot de passe</string>
     <string name="option_menu_map_slideshow">Diaporama</string>
+    <string name="backup_exif_location_permission_rationale">Pour sauvegarder les données GPS enregistrées dans une photo</string>
+    <string name="search_exif_location_permission_rationale">Pour rechercher des informations de localisation dans le rouleau de l\'appareil photo</string>
+    <string name="read_exif_location_permission_rationale">Pour afficher les informations de localisation des photos</string>
+    <string name="need_access_media_location_permission">Les Pas a besoin de l\'autorisation d\'Access Media Location.</string>
 </resources>

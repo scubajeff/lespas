@@ -1,0 +1,3 @@
+* Se ha corregido el error de lectura de los datos EXIF de las fotos del rollo de la cámara, que bloquea la aplicación al ver los metadatos detallados de las fotos del rollo de la cámara, impide añadir fotos a Les Pas desde el rollo de la cámara, etc.
+* Se ha corregido el error que permitía buscar en el álbum cuando no había ningún álbum.
+* Otras mejoras y errores corregidos
