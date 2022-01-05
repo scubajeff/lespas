@@ -96,7 +96,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var reuseUris = arrayListOf<Uri>()
 
-    private lateinit var mapOptionMenu: MenuItem
+    private var mapOptionMenu: MenuItem? = null
     private var photosWithCoordinate = mutableListOf<PhotoWithCoordinate>()
     private var getCoordinateJob: Job? = null
 
@@ -411,7 +411,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
 
                 withContext(Dispatchers.Main) {
-                    mapOptionMenu.apply {
+                    mapOptionMenu?.apply {
                         isEnabled = hit
                         isVisible = hit
                     }
@@ -509,6 +509,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)
+        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -526,8 +527,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         // Disable publish function when this is a newly created album which does not exist on server yet
         if (album.eTag.isEmpty()) menu.findItem(R.id.option_menu_publish).isEnabled = false
-
-        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
 
         super.onPrepareOptionsMenu(menu)
     }

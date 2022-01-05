@@ -294,15 +294,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_menu, menu)
+        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
+        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
 
-        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
         cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
         cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
 
