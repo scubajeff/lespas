@@ -101,7 +101,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var startWithThisMedia: String
     private lateinit var selectionTracker: SelectionTracker<String>
     private var lastSelection = arrayListOf<Uri>()
-    private var stripExif = "1"
+    private var stripExif = "2"
     private var showListFirst = false
     private var ignoreHide = true
     //private var sideTouchAreaWidth  = 0
@@ -122,7 +122,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onCreate(savedInstanceState)
 
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
             showListFirst = getBoolean(getString(R.string.roll_list_first_perf_key), false)
             // If start as viewer then don't show list first
             arguments?.getString(KEY_URI)?.let { showListFirst = false }
