@@ -180,4 +180,5 @@
     <string name="search_exif_location_permission_rationale">为了搜索照片中的地理信息</string>
     <string name="read_exif_location_permission_rationale">为了显示照片中的地理信息</string>
     <string name="need_access_media_location_permission">，Les Pas需要获取访问媒体地理信息权限。</string>
+    <string name="unlock_please">解锁隐藏相册</string>
 </resources>

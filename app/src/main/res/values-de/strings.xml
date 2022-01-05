@@ -232,4 +232,5 @@
     <string name="search_exif_location_permission_rationale">So suchen Sie nach Standortinformationen in der Kamerarolle</string>
     <string name="read_exif_location_permission_rationale">So zeigen Sie Standortinformationen von Fotos an</string>
     <string name="need_access_media_location_permission">Les Pas benötigt eine Genehmigung für den Zugriff auf den Medienstandort.</string>
+    <string name="unlock_please">Versteckte Alben freischalten</string>
 </resources>

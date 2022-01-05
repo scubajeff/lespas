@@ -180,4 +180,5 @@
     <string name="search_exif_location_permission_rationale">カメラロールの位置情報を検索するには</string>
     <string name="read_exif_location_permission_rationale">写真の位置情報を表示する</string>
     <string name="need_access_media_location_permission">Les Pasは、Access Media Locationの許可を必要とします。</string>
+    <string name="unlock_please">隠しアルバムを解除する</string>
 </resources>

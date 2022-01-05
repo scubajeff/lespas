@@ -180,4 +180,5 @@
     <string name="search_exif_location_permission_rationale">Pour rechercher des informations de localisation dans le rouleau de l\'appareil photo</string>
     <string name="read_exif_location_permission_rationale">Pour afficher les informations de localisation des photos</string>
     <string name="need_access_media_location_permission">Les Pas a besoin de l\'autorisation d\'Access Media Location.</string>
+    <string name="unlock_please">Déverrouiller les albums cachés</string>
 </resources>

@@ -18,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
@@ -365,7 +367,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return true
             }
             R.id.option_menu_unhide-> {
-                albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
+                if (BiometricManager.from(requireContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS) {
+                    BiometricPrompt(requireActivity(), ContextCompat.getMainExecutor(requireContext()), object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                            super.onAuthenticationSucceeded(result)
+                            unhide()
+                        }
+                    }).authenticate(BiometricPrompt.PromptInfo.Builder()
+                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                        .setConfirmationRequired(false)
+                        .setTitle(getString(R.string.unlock_please))
+                        .build()
+                    )
+                } else unhide()
+
                 return true
             }
             else-> {
@@ -415,6 +430,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
         actionMode = null
         fab.isEnabled = true
+    }
+
+    private fun unhide() {
+        albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
     }
 
     private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {

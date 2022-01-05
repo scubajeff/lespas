@@ -44,6 +44,7 @@
 
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
+    <string name="unlock_please">Unlock hidden albums</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>

@@ -180,4 +180,5 @@
     <string name="search_exif_location_permission_rationale">Para buscar información sobre la ubicación en el rollo de la cámara</string>
     <string name="read_exif_location_permission_rationale">Para mostrar la información de ubicación de las fotos</string>
     <string name="need_access_media_location_permission">, Les Pas necesita el permiso de acceso a la ubicación de los medios de comunicación.</string>
+    <string name="unlock_please">Desbloquear álbumes ocultos</string>
 </resources>
