@@ -19,6 +19,7 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.doOnNextLayout
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
@@ -172,6 +173,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         clipDataRecyclerView.adapter = clipDataAdapter
         destinationRecyclerView.adapter = albumAdapter
+        destinationRecyclerView.doOnPreDraw {
+            if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG && savedInstanceState == null) {
+                publicationModel.refresh()
+            }
+        }
 
         view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
         savedInstanceState?.let {

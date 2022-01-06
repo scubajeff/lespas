@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.album
 
+import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -52,6 +54,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -156,9 +159,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.fragment_album, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -166,7 +167,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab = view.findViewById(R.id.fab)
 
         postponeEnterTransition()
-        view.doOnPreDraw { startPostponedEnterTransition() }
+        view.doOnPreDraw {
+            startPostponedEnterTransition()
+            if (savedInstanceState == null) {
+                // TODO: seems like flooding the server
+                publishViewModel.refresh()
+
+                // Sync with server at startup
+                ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+                })
+            }
+        }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner, { hidden-> unhideMenu?.isEnabled = hidden.isNotEmpty() })
@@ -268,6 +282,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
+
+        if (savedInstanceState == null) (requireActivity() as AppCompatActivity).reportFullyDrawn()
     }
 
     override fun onResume() {

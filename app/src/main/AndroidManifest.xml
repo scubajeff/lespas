@@ -43,19 +43,15 @@
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".LesPas"
+            android:name=".MainActivity"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.LesPas.NoDisplay"
+            android:windowSoftInputMode="adjustPan"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity"
-            android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustPan"/>
         <activity
             android:name=".cameraroll.CameraRollActivity"
             android:taskAffinity=""
@@ -102,11 +98,11 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".auth.NCLoginActivity"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustPan" />
-
         <service
             android:name=".auth.NCAuthenticatorService"
             android:enabled="true"

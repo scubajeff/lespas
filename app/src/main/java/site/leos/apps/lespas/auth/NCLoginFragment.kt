@@ -1,7 +1,6 @@
 package site.leos.apps.lespas.auth
 
 import android.accounts.Account
-import android.accounts.AccountAuthenticatorResponse
 import android.accounts.AccountManager
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -16,6 +15,8 @@ import android.graphics.drawable.Drawable
 import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Base64
@@ -66,7 +67,6 @@ class NCLoginFragment: Fragment() {
 
     private var reLogin = false
 
-    private var authResult: Bundle? = null
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
 
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
@@ -80,8 +80,16 @@ class NCLoginFragment: Fragment() {
 
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            requireActivity().intent.getParcelableExtra<AccountAuthenticatorResponse>(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE)?.onResult(authResult)
-            requireActivity().finish()
+            Handler(Looper.getMainLooper()).post {
+                requireActivity().apply {
+                    val myIntent = intent.apply { addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION) }
+                    overridePendingTransition(0, 0)
+                    finish()
+
+                    overridePendingTransition(0, 0)
+                    startActivity(myIntent)
+                }
+            }
         }
         scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -150,16 +158,10 @@ class NCLoginFragment: Fragment() {
                 })
             }
         } else {
-            authResult = savedInstanceState.getBundle(KEY_AUTH_RESULT)?.apply {
-                // If app restarts when permission request dialog show, show it again here
-                requestStoragePermission()
-            } ?: run {
-                // If app restarts during authentication
-                useHttps = savedInstanceState.getBoolean(KEY_USE_HTTPS)
-                inputArea.prefixText = if (useHttps) "https://" else "http://"
-                showInputArea()
-                null
-            }
+            // If app restarts during authentication
+            useHttps = savedInstanceState.getBoolean(KEY_USE_HTTPS)
+            inputArea.prefixText = if (useHttps) "https://" else "http://"
+            if (!savedInstanceState.getBoolean(KEY_WEBVIEW_VISIBLE)) showInputArea()
         }
 
         hostInputText.run {
@@ -257,7 +259,6 @@ class NCLoginFragment: Fragment() {
         super.onSaveInstanceState(outState)
         outState.putBoolean(KEY_USE_HTTPS, useHttps)
         outState.putBoolean(KEY_WEBVIEW_VISIBLE, authWebpage.visibility == View.VISIBLE)
-        authResult?.let { outState.putBundle(KEY_AUTH_RESULT, it) }
         authWebpage.saveState(outState)
     }
 
@@ -317,7 +318,7 @@ class NCLoginFragment: Fragment() {
         val account = Account(accountName, getString(R.string.account_type_nc))
         val am = AccountManager.get(requireContext())
         am.run {
-            addAccountExplicitly(account, "", null)
+            if (!reLogin) addAccountExplicitly(account, "", null)
             setAuthToken(account, server, token)    // authTokenType set to server address
             setUserData(account, getString(R.string.nc_userdata_server), server)
             setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
@@ -326,23 +327,11 @@ class NCLoginFragment: Fragment() {
             setUserData(account, getString(R.string.nc_userdata_username), username)
             setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("$username:$token".encodeToByteArray(), Base64.NO_WRAP))
             setUserData(account, getString(R.string.nc_userdata_selfsigned), selfSigned.toString())
+            notifyAccountAuthenticated(account)
         }
 
         if (reLogin) parentFragmentManager.popBackStack()
-        else {
-            authResult = Bundle().apply {
-                putString(AccountManager.KEY_ACCOUNT_NAME, accountName)
-                putString(AccountManager.KEY_ACCOUNT_TYPE, getString(R.string.account_type_nc))
-                putString(AccountManager.KEY_AUTHTOKEN, token)
-                //putString("TOKEN", token)
-                putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
-                putString(getString(R.string.nc_userdata_username), am.getUserData(account, getString(R.string.nc_userdata_username)))
-                putString(getString(R.string.nc_userdata_secret), am.getUserData(account, getString(R.string.nc_userdata_secret)))
-                putString(getString(R.string.nc_userdata_selfsigned), am.getUserData(account, getString(R.string.nc_userdata_selfsigned)))
-            }
-
-            requestStoragePermission()
-        }
+        else requestStoragePermission()
     }
 
     private fun requestStoragePermission() {
