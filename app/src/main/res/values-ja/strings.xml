@@ -181,4 +181,6 @@
     <string name="read_exif_location_permission_rationale">写真の位置情報を表示する</string>
     <string name="need_access_media_location_permission">Les Pasは、Access Media Locationの許可を必要とします。</string>
     <string name="unlock_please">隠しアルバムを解除する</string>
+    <string name="item_bgm">BGMの管理</string>
+    <string name="option_menu_mute">トグルミュート</string>
 </resources>

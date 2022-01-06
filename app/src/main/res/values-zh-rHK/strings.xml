@@ -181,4 +181,6 @@
     <string name="read_exif_location_permission_rationale">為了顯示相片地理資訊</string>
     <string name="need_access_media_location_permission">，Les Pas需要獲得讀取媒體地理資訊權限。</string>
     <string name="unlock_please">解鎖隱藏相冊</string>
+    <string name="item_bgm">背景音樂</string>
+    <string name="option_menu_mute">切換靜音</string>
 </resources>

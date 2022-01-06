@@ -22,6 +22,7 @@ import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
@@ -316,6 +317,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_REFRESH_ALBUM_LIST-> {
                     // Do nothing, this action is for launching remote sync
                 }
+                Action.ACTION_UPDATE_ALBUM_BGM-> {
+                    val localFile = File(localRootFolder, action.fileName)
+                    if (localFile.exists()) webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}", action.folderId, application)
+                }
+                Action.ACTION_DELETE_ALBUM_BGM-> {
+                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
@@ -411,10 +419,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var remotePhotoId: String
                 var localImageFileName: String
                 val metaFileName = "${changedAlbum.id}.json"
+                val bgmFileName = "${changedAlbum.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
 
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
+                    // Download album BGM file if file size is different to local's, since we don't cache this file's id, eTag at local, size is the most reliable way. TODO: bgm file eTag column in Album table
+                    if ((remotePhoto.contentType.startsWith("audio/") || remotePhoto.contentType == "application/octet-stream") && remotePhoto.name == BGM_FILENAME_ON_SERVER) {
+                        if (File("${localRootFolder}/${bgmFileName}").length() != remotePhoto.size) {
+                            webDav.download("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${BGM_FILENAME_ON_SERVER}", "$localRootFolder/${bgmFileName}", null)
+                        }
+                        return@forEach
+                    }
+
                     if ((remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.')) {
                         remotePhotoId = remotePhoto.fileId
                         // Accumulate remote photos list
@@ -848,5 +865,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_BOTH_WAY = 3
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
+
+        const val BGM_FILENAME_ON_SERVER = ".bgm"
     }
 }

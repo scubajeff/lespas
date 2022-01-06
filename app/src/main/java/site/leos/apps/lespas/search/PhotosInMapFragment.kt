@@ -23,6 +23,9 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -39,22 +42,27 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import java.io.File
 import java.lang.Double.max
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
+@androidx.annotation.OptIn(UnstableApi::class)
 class PhotosInMapFragment: Fragment() {
     private var locality: String? = null
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
-    private var albumName: String? = null
+    private var album: Album? = null
     private var photos = mutableListOf<PhotoWithCoordinate>()
     private var poiBoundingBox: BoundingBox? = null
 
@@ -69,6 +77,11 @@ class PhotosInMapFragment: Fragment() {
     private var isSlideshowPlaying = false
     private var spaceHeight = 0
 
+    private lateinit var muteMenuItem: MenuItem
+    private var hasBGM = false
+    private var isMuted = false
+    private lateinit var bgmPlayer: ExoPlayer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -76,7 +89,7 @@ class PhotosInMapFragment: Fragment() {
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
-            albumName = getString(KEY_ALBUM)
+            album = getParcelable(KEY_ALBUM)
             getParcelableArrayList<PhotoWithCoordinate>(KEY_PHOTOS)?.let { photos.addAll(it) }
         }
 
@@ -84,6 +97,7 @@ class PhotosInMapFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                album?.let { if (hasBGM) fadeOutBGM(true) }
                 closeAllInfoWindow()
                 mapView.overlayManager.clear()
                 mapView.controller.zoomTo(max(mapView.zoomLevelDouble - 5, 0.0), 400)
@@ -93,9 +107,25 @@ class PhotosInMapFragment: Fragment() {
             }
         })
 
-        albumName?.run {
+        album?.run {
             setHasOptionsMenu(true)
             window = requireActivity().window
+            bgmPlayer = ExoPlayer.Builder(requireContext()).build()
+            bgmPlayer.run {
+                repeatMode = ExoPlayer.REPEAT_MODE_ONE
+                playWhenReady = true
+
+                val bgmFile = "$rootPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                if (File(bgmFile).exists()) {
+                    bgmPlayer.setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
+                    hasBGM = true
+                }
+
+                // Mute the video sound during late night hours
+                with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
+
+                playerHandler = Handler(bgmPlayer.applicationLooper)
+            }
         }
     }
 
@@ -198,7 +228,7 @@ class PhotosInMapFragment: Fragment() {
         super.onResume()
 
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = locality ?: albumName
+            title = locality ?: album?.name
             displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
 
@@ -213,7 +243,11 @@ class PhotosInMapFragment: Fragment() {
     override fun onDestroy() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        albumName?.run { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+        album?.run {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            bgmPlayer.release()
+        }
+
         super.onDestroy()
     }
 
@@ -221,6 +255,19 @@ class PhotosInMapFragment: Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_in_map_menu, menu)
         playMenuItem = menu.findItem(R.id.option_menu_map_slideshow)
+        muteMenuItem = menu.findItem(R.id.option_menu_mute)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+
+        with(muteMenuItem) {
+            if (hasBGM) setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+            else {
+                isVisible = false
+                isEnabled = false
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -244,6 +291,11 @@ class PhotosInMapFragment: Fragment() {
                         val animationController = AnimationMapController(mapView)
                         var lastPos = (mapView.overlays[1] as Marker).position
                         var poiCenter: Int
+
+                        if (hasBGM) {
+                            bgmPlayer.volume = if (isMuted) 0f else 1f
+                            bgmPlayer.prepare()
+                        }
 
                         try {
                             for (i in 1 until mapView.overlays.size) {
@@ -287,7 +339,56 @@ class PhotosInMapFragment: Fragment() {
                 }
                 true
             }
+            R.id.option_menu_mute -> {
+                isMuted = !isMuted
+                muteMenuItem.setIcon(
+                    if (isMuted) {
+                        fadeOutBGM()
+                        R.drawable.ic_baseline_volume_off_24
+                    } else {
+                        fadeInBGM()
+                        R.drawable.ic_baseline_volume_on_24
+                    }
+                )
+                true
+            }
             else -> false
+        }
+    }
+
+    private lateinit var playerHandler: Handler
+    private fun fadeInBGM() {
+        Timer().also { timer ->
+            timer.schedule(object : TimerTask() {
+                override fun run() {
+                    if (bgmPlayer.volume < 1f) {
+                        playerHandler.post { bgmPlayer.volume += 0.05f }
+                    } else {
+                        playerHandler.post { bgmPlayer.volume = 1f }
+                        timer.cancel()
+                    }
+                }
+            }, 0, 75)
+        }
+    }
+    private fun fadeOutBGM(stopPlaying: Boolean = false) {
+        Timer().also { timer ->
+            timer.schedule(object : TimerTask() {
+                override fun run() {
+                    if (bgmPlayer.volume > 0f) {
+                        playerHandler.post { bgmPlayer.volume -= 0.05f }
+                    } else {
+                        playerHandler.post {
+                            bgmPlayer.volume = 0f
+                            if (stopPlaying) {
+                                bgmPlayer.stop()
+                                bgmPlayer.seekTo(0)
+                            }
+                        }
+                        timer.cancel()
+                    }
+                }
+            }, 0, 75)
         }
     }
 
@@ -299,6 +400,7 @@ class PhotosInMapFragment: Fragment() {
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
+        if (hasBGM) fadeOutBGM(true)
     }
 
     private fun closeAllInfoWindow() {
@@ -307,7 +409,12 @@ class PhotosInMapFragment: Fragment() {
 
     private fun loadImage(marker: Marker, photo: Photo) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val option = BitmapFactory.Options().apply { inSampleSize = if (photo.width > 4000 || photo.height > 4000) 8 else 4 }
+            val option = BitmapFactory.Options().apply {
+                val vW = mapView.width - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24f, mapView.context.resources.displayMetrics).roundToInt()
+                val vH = mapView.height * 3 / 5
+                inSampleSize = 1
+                while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize += 2 }
+            }
             marker.image = BitmapDrawable(resources,
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
@@ -384,9 +491,9 @@ class PhotosInMapFragment: Fragment() {
         }
 
         @JvmStatic
-        fun newInstance(albumName: String, photos: MutableList<PhotoWithCoordinate>) = PhotosInMapFragment().apply {
+        fun newInstance(album: Album, photos: MutableList<PhotoWithCoordinate>) = PhotosInMapFragment().apply {
             arguments = Bundle().apply {
-                putString(KEY_ALBUM, albumName)
+                putParcelable(KEY_ALBUM, album)
                 putParcelableArrayList(KEY_PHOTOS, ArrayList(photos))
             }
         }
