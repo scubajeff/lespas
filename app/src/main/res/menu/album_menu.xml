@@ -5,20 +5,20 @@
     <item
         android:id="@+id/option_menu_received_shares"
         android:title="@string/publication_list_fragment_title"
-        android:orderInCategory="97"
+        android:orderInCategory="87"
         android:icon="@drawable/ic_baseline_shared_with_me_24"
         android:enabled="false"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
     <item
         android:id="@+id/option_menu_search"
         android:title="@string/item_search"
-        android:orderInCategory="99"
+        android:orderInCategory="89"
         android:icon="@drawable/ic_baseline_image_search_24"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_camera_roll"
         android:title="@string/item_camera_roll"
-        android:orderInCategory="98"
+        android:orderInCategory="88"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_settings"
@@ -28,7 +28,7 @@
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="9"
+        android:orderInCategory="90"
         app:showAsAction="never">
         <menu>
             <item
