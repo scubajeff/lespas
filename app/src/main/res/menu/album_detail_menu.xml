@@ -6,7 +6,7 @@
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="7"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:icon="@drawable/ic_baseline_map_24"
         android:visible="false"
         android:enabled="false" />
@@ -14,7 +14,7 @@
         android:id="@+id/option_menu_add_photo"
         android:title="@string/fab_add_photos"
         android:orderInCategory="8"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         android:icon="@drawable/ic_baseline_add_photo_24" />
     <item
         android:id="@+id/option_menu_sortby"
