@@ -19,7 +19,7 @@
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="9"
+        android:orderInCategory="13"
         app:showAsAction="never">
         <menu>
             <item
@@ -43,12 +43,12 @@
     <item
         android:id="@+id/option_menu_rename"
         android:title="@string/item_rename"
-        android:orderInCategory="10"
+        android:orderInCategory="11"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_publish"
         android:title="@string/item_publish"
-        android:orderInCategory="11"
+        android:orderInCategory="10"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_bgm"
