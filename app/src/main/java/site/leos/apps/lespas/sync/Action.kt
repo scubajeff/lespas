@@ -31,6 +31,7 @@ data class Action (
        const val ACTION_UPDATE_JOINT_ALBUM_PHOTO_META = 12
        const val ACTION_UPDATE_THIS_ALBUM_META = 13
        const val ACTION_UPDATE_THIS_CONTENT_META = 14
+       const val ACTION_REFRESH_ALBUM_LIST = 15
    }
 }
 

@@ -171,10 +171,14 @@
     <string name="item_location_search">所在地</string>
     <string name="option_menu_in_map">地図で見る</string>
     <string name="object_face">顔</string>
+    <string name="action_hide">隠す</string>
+    <string name="hidden_albums">隠れたアルバム</string>
+    <string name="item_unhide">公開</string>
     <string name="button_text_scan">スキャンアプリのパスワード</string>
     <string name="option_menu_map_slideshow">スライドショー</string>
     <string name="backup_exif_location_permission_rationale">写真に保存されたGPSデータをバックアップするには</string>
     <string name="search_exif_location_permission_rationale">カメラロールの位置情報を検索するには</string>
     <string name="read_exif_location_permission_rationale">写真の位置情報を表示する</string>
     <string name="need_access_media_location_permission">Les Pasは、Access Media Locationの許可を必要とします。</string>
+    <string name="unlock_please">隠しアルバムを解除する</string>
 </resources>

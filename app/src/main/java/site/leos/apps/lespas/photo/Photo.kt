@@ -47,9 +47,11 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun deleteById(photoId: String): Int
 
+    // Including photos from hidden albums
     @Query("SELECT id, eTag FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getETagsMap(albumId: String): List<PhotoETag>
 
+    // Including photos from hidden albums
     @Query("SELECT id, name FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getNamesMap(albumId: String): List<PhotoName>
 
@@ -78,6 +80,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag WHERE id = :oldId")
     abstract fun fixPhotoIdEtag(oldId: String, newId: String, eTag: String)
 
+    // Including photos from hidden albums
     @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")
     abstract fun getAllPhotoNameMap(): List<AlbumPhotoName>
 
@@ -100,9 +103,11 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getPhotoById(photoId: String): Photo
 
+    // Including photos from hidden albums
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE (mimeType LIKE '%image/%')  ORDER BY dateTaken DESC")
     abstract fun getAllImage(): List<Photo>
 
+    // Including photos from hidden albums
     @Query("SELECT COUNT(*) FROM ${Photo.TABLE_NAME}")
     abstract fun getPhotoTotal(): Int
 
@@ -112,7 +117,6 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT id, name, dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != ''")
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
-    //@Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE width < height AND (mimeType LIKE '%jpeg%' OR mimeType LIKE '%png%')")
     @Query("SELECT id, albumId, dateTaken, width, height FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion )")
     abstract fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto>
 

@@ -28,4 +28,6 @@ class AlbumRepository(application: Application){
     fun getAllAlbumIdName(): List<IDandName> = albumDao.getAllAlbumIdName()
     fun getAlbumTotal(): Int = albumDao.getAlbumTotal()
     fun getAllAlbumName(): List<String> = albumDao.getAllAlbumName()
+    fun getAllHiddenAlbumsFlow(): Flow<List<Album>> = albumDao.getAllHiddenAlbumsFlow()
+    fun getAllHiddenAlbumIds(): List<String> = albumDao.getAllHiddenAlbumIds()
 }

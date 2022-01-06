@@ -43,6 +43,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
 
             }
+
             actionRepository.addActions(actions)
         }
     }
@@ -99,4 +100,32 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun updateCover(albumId: String, coverId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateCover(albumId, coverId) }}
 
     fun updateAlbumMeta(album: Album) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateAlbumMeta(album) }}
+
+    fun hideAlbums(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val actions = mutableListOf<Action>()
+            albums.forEach {
+                albumRepository.changeName(it.id, ".${it.name}")
+                actions.add(Action(null, Action.ACTION_RENAME_DIRECTORY, it.id, it.name, "", ".${it.name}", System.currentTimeMillis(), 1))
+            }
+            actionRepository.addActions(actions)
+        }
+    }
+
+    fun unhideAlbums(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val actions = mutableListOf<Action>()
+            albums.forEach {
+                albumRepository.changeName(it.id, it.name.substring(1))
+                actions.add(Action(null, Action.ACTION_RENAME_DIRECTORY, it.id, it.name, "", it.name.substring(1), System.currentTimeMillis(), 1))
+            }
+            actionRepository.addActions(actions)
+        }
+    }
+
+    fun refreshAlbumList() {
+        viewModelScope.launch(Dispatchers.IO) {
+            actionRepository.addAction(Action(null, Action.ACTION_REFRESH_ALBUM_LIST, "", "", "", "", System.currentTimeMillis(), 1))
+        }
+    }
 }

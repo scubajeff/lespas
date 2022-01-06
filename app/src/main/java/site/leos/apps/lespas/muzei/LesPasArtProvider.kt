@@ -103,7 +103,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
         Thread {
             (context?.applicationContext as Application).let {
                 val sp = PreferenceManager.getDefaultSharedPreferences(it)
-                PhotoRepository(it).getMuzeiArtwork((sp.getStringSet(LesPasArtProviderSettingActivity.EXCLUSION_LIST_KEY, mutableSetOf<String>()) ?: mutableSetOf<String>()).toList(), it.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
+                val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.EXCLUSION_LIST_KEY, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
+                PhotoRepository(it).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(AlbumRepository(it).getAllHiddenAlbumIds()) }, it.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()

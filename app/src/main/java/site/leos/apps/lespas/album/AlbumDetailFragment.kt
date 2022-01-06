@@ -539,7 +539,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
             R.id.option_menu_rename-> {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    albumModel.getAllAlbumName().also { names->
+                    albumModel.getAllAlbumName().also {
+                        val names = mutableListOf<String>()
+                        // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
+                        // name check should include hidden ones
+                        it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
                         if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name, names).show(parentFragmentManager, RENAME_DIALOG)
                     }
                 }

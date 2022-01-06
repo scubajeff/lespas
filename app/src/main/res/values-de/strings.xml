@@ -223,10 +223,14 @@
     <string name="item_location_search">Standort</string>
     <string name="option_menu_in_map">Alle in Karte</string>
     <string name="object_face">Gesicht</string>
+    <string name="action_hide">Ausblenden</string>
+    <string name="hidden_albums">Versteckte Alben:</string>
+    <string name="item_unhide">Einblenden</string>
     <string name="button_text_scan">App-Passwort scannen</string>
     <string name="option_menu_map_slideshow">Diashow</string>
     <string name="backup_exif_location_permission_rationale">So sichern Sie im Foto gespeicherte GPS-Daten</string>
     <string name="search_exif_location_permission_rationale">So suchen Sie nach Standortinformationen in der Kamerarolle</string>
     <string name="read_exif_location_permission_rationale">So zeigen Sie Standortinformationen von Fotos an</string>
     <string name="need_access_media_location_permission">Les Pas benötigt eine Genehmigung für den Zugriff auf den Medienstandort.</string>
+    <string name="unlock_please">Versteckte Alben freischalten</string>
 </resources>
