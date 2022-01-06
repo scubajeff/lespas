@@ -8,33 +8,27 @@
         android:orderInCategory="50"
         android:icon="@drawable/ic_baseline_shared_with_me_24"
         android:enabled="false"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/option_menu_search"
-        android:title="@string/item_search"
-        android:orderInCategory="99"
-        android:icon="@drawable/ic_baseline_image_search_24"
-        app:showAsAction="never" />
+        app:showAsAction="always" />
     <item
         android:id="@+id/option_menu_camera_roll"
         android:title="@string/item_camera_roll"
-        android:orderInCategory="97"
+        android:orderInCategory="80"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_search"
+        android:title="@string/item_search"
+        android:orderInCategory="81"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_unhide"
         android:title="@string/item_unhide"
-        android:orderInCategory="98"
+        android:orderInCategory="82"
         android:enabled="false"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/option_menu_settings"
-        android:title="@string/item_settings"
-        android:orderInCategory="200"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="9"
+        android:orderInCategory="90"
         app:showAsAction="never">
         <menu>
             <item
@@ -56,4 +50,9 @@
                 android:title="@string/item_namedesc"/>
         </menu>
     </item>
+    <item
+        android:id="@+id/option_menu_settings"
+        android:title="@string/item_settings"
+        android:orderInCategory="100"
+        app:showAsAction="never" />
 </menu>
