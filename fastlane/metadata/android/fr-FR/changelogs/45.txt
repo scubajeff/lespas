@@ -1,0 +1,4 @@
+* Ajout d'une BGM au diaporama
+* Ajout d'une fonction de masquage/démasquage de l'album
+* Optimisation du démarrage de l'application
+* Autres améliorations et corrections de bugs
