@@ -60,7 +60,8 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("DELETE FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun deleteById(albumId: String): Int
 
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' ORDER BY endDate DESC")
+    // Hidden albums not included
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' AND name NOT LIKE '.%' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
 
@@ -73,6 +74,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name = :albumName")
     abstract fun getAlbumByName(albumName: String): Album?
 
+    // Including hidden ones
     @Query("SELECT id, eTag FROM ${Album.TABLE_NAME} ORDER BY id ASC")
     abstract fun getAllIdAndETag(): List<IDandETag>
 
@@ -101,15 +103,26 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("UPDATE ${Album.TABLE_NAME} SET sortOrder = :sortOrder WHERE id = :albumId")
     abstract fun setSortOrder(albumId: String, sortOrder: Int)
 
-    @Query("SELECT id, name FROM ${Album.TABLE_NAME}")
+    // Hidden albums not included
+    @Query("SELECT id, name FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
     abstract fun getAllAlbumIdName(): List<IDandName>
 
-    @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME}")
+    // Hidden albums not included
+    @Query("SELECT COUNT(*) FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
     abstract fun getAlbumTotal(): Int
 
-    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != ''")
+    // Hidden albums not included
+    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != '' AND name NOT LIKE '.%'")
     abstract fun getAllSyncedAlbum(): List<IDandCover>
 
+    // Including hidden ones
     @Query("SELECT name FROM ${Album.TABLE_NAME}")
     abstract fun getAllAlbumName(): List<String>
+
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE name LIKE '.%'")
+    abstract fun getAllHiddenAlbumsDistinctFlow(): Flow<List<Album>>
+    fun getAllHiddenAlbumsFlow() = getAllHiddenAlbumsDistinctFlow().distinctUntilChanged()
+
+    @Query("SELECT id FROM ${Album.TABLE_NAME} WHERE name LIKE '.%'")
+    abstract fun getAllHiddenAlbumIds(): List<String>
 }

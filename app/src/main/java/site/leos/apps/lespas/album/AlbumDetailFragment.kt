@@ -89,14 +89,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
-    private var stripExif = "1"
+    private var stripExif = "2"
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
 
-    private lateinit var mapOptionMenu: MenuItem
+    private var mapOptionMenu: MenuItem? = null
     private var photosWithCoordinate = mutableListOf<PhotoWithCoordinate>()
     private var getCoordinateJob: Job? = null
 
@@ -411,7 +411,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
 
                 withContext(Dispatchers.Main) {
-                    mapOptionMenu.apply {
+                    mapOptionMenu?.apply {
                         isEnabled = hit
                         isVisible = hit
                     }
@@ -473,7 +473,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_on_value))!!
+            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
             isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
         }
     }
@@ -509,6 +509,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)
+        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -527,8 +528,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Disable publish function when this is a newly created album which does not exist on server yet
         if (album.eTag.isEmpty()) menu.findItem(R.id.option_menu_publish).isEnabled = false
 
-        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
-
         super.onPrepareOptionsMenu(menu)
     }
 
@@ -540,7 +539,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
             R.id.option_menu_rename-> {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    albumModel.getAllAlbumName().also { names->
+                    albumModel.getAllAlbumName().also {
+                        val names = mutableListOf<String>()
+                        // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
+                        // name check should include hidden ones
+                        it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
                         if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name, names).show(parentFragmentManager, RENAME_DIALOG)
                     }
                 }
@@ -585,7 +588,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album.name, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                true
+            }
+            R.id.option_menu_bgm-> {
+                if (parentFragmentManager.findFragmentByTag(BGM_DIALOG) == null) BGMDialogFragment.newInstance(album).show(parentFragmentManager, BGM_DIALOG)
                 true
             }
             else-> false
@@ -945,6 +952,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val RENAME_DIALOG = "RENAME_DIALOG"
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val BGM_DIALOG = "BGM_DIALOG"
         private const val SELECTION = "SELECTION"
         private const val SHARED_SELECTION = "SHARED_SELECTION"
         private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"

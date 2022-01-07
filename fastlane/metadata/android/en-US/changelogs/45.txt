@@ -1,0 +1,4 @@
+* Added BGM to slideshow
+* Added hide/unhide album function
+* Optimized app startup
+* Other improvements and bugs fixed

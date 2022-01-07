@@ -22,6 +22,7 @@ import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
@@ -313,6 +314,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds name of the album deemed meta update
                     contentMetaUpdatedNeeded.add(action.folderName)
                 }
+                Action.ACTION_REFRESH_ALBUM_LIST-> {
+                    // Do nothing, this action is for launching remote sync
+                }
+                Action.ACTION_UPDATE_ALBUM_BGM-> {
+                    val localFile = File(localRootFolder, action.fileName)
+                    if (localFile.exists()) webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}", action.folderId, application)
+                }
+                Action.ACTION_DELETE_ALBUM_BGM-> {
+                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
@@ -327,17 +338,25 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Merge changed and/or new album from server
         var localAlbum: List<Album>
+        var hidden = false
 
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
-            if (remoteAlbum.isFolder && !remoteAlbum.name.startsWith('.')) {
+            if (remoteAlbum.isFolder) {
+                // Collecting remote album ids, including hidden albums, for deletion syncing
                 remoteAlbumIds.add(remoteAlbum.fileId)
+                hidden = remoteAlbum.name.startsWith('.')
 
                 localAlbum = albumRepository.getThisAlbumList(remoteAlbum.fileId)
                 if (localAlbum.isNotEmpty()) {
                     // We have hit in local table, which means it's a existing album
                     if (localAlbum[0].eTag != remoteAlbum.eTag) {
-                        // eTag mismatched, this album changed on server
-                        changedAlbums.add(
+                        // eTag mismatched, this album changed on server, could be name changed (hidden state toggled) plus other changes
+
+                        if (hidden) {
+                            // Sync name change for hidden album and/or hide operation done on server
+                            if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
+                        }
+                        else changedAlbums.add(
                             Album(
                                 remoteAlbum.fileId,             // Either local or remote version is fine
                                 remoteAlbum.name,               // Use remote version, since it might be changed on server
@@ -349,16 +368,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 localAlbum[0].coverHeight,      // Preserve local data
                                 remoteAlbum.modified,           // Use remote version
                                 localAlbum[0].sortOrder,        // Preserve local data
-                                remoteAlbum.eTag,               // Use remote version
+                                remoteAlbum.eTag,               // Use remote eTag for unhidden albums
                                 if (remoteAlbum.isShared) 1 else 0,
                                 1f,
                             )
                         )
                     } else {
-                        // Rename operation on server would not change item's own eTag, have to sync name changes here
+                        // Rename operation (including hidden state toggled) on server would not change item's own eTag, have to sync name change here
                         if (localAlbum[0].name != remoteAlbum.name) albumRepository.changeName(remoteAlbum.fileId, remoteAlbum.name)
                     }
                 } else {
+                    // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
+                    if (hidden) return@forEach
+
                     // No hit on local, a new album from server, make sure the 'cover' property is set to "", a sign shows it's a new album
                     changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
                 }
@@ -366,6 +388,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         // Delete those albums not exist on server, happens when user delete album on the server. Should skip local added new albums, e.g. those with eTag column empty
+        // Include hidden albums
         for (local in albumRepository.getAllAlbumIdAndETag()) {
             if (!remoteAlbumIds.contains(local.id) && local.eTag.isNotEmpty()) {
                 albumRepository.deleteById(local.id)
@@ -396,10 +419,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var remotePhotoId: String
                 var localImageFileName: String
                 val metaFileName = "${changedAlbum.id}.json"
+                val bgmFileName = "${changedAlbum.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
 
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
+                    // Download album BGM file if file size is different to local's, since we don't cache this file's id, eTag at local, size is the most reliable way. TODO: bgm file eTag column in Album table
+                    if ((remotePhoto.contentType.startsWith("audio/") || remotePhoto.contentType == "application/octet-stream") && remotePhoto.name == BGM_FILENAME_ON_SERVER) {
+                        if (File("${localRootFolder}/${bgmFileName}").length() != remotePhoto.size) {
+                            webDav.download("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${BGM_FILENAME_ON_SERVER}", "$localRootFolder/${bgmFileName}", null)
+                        }
+                        return@forEach
+                    }
+
                     if ((remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.')) {
                         remotePhotoId = remotePhoto.fileId
                         // Accumulate remote photos list
@@ -716,7 +748,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))) else ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
                                 } catch (e: SecurityException) {
                                     ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
-                                },
+                                } catch (e: UnsupportedOperationException) {
+                                    ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
+                               },
                                 "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application
                             )
                             break
@@ -831,5 +865,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_BOTH_WAY = 3
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
+
+        const val BGM_FILENAME_ON_SERVER = ".bgm"
     }
 }

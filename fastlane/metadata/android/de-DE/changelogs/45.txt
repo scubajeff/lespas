@@ -1,0 +1,4 @@
+* BGM zur Diashow hinzugefügt
+* Funktion zum Verstecken/Einblenden von Alben hinzugefügt
+* Optimierter Start der Anwendung
+* Weitere Verbesserungen und Fehler behoben

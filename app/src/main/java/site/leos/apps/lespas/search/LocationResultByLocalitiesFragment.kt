@@ -91,7 +91,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             result.forEach {
                 // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
                 photoList = it.photos.takeLast(4)
-                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.toMutableList(), it.total, it.country, it.locality))
+                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality))
             }
 
             resultAdapter.submitList(items.sortedWith(compareBy({it.country}, {it.locality})))

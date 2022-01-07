@@ -44,6 +44,10 @@
 
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
+    <string name="unlock_please">Unlock hidden albums</string>
+
+    <!-- Album fragment, UnhideDialog fragment -->
+    <string name="hidden_albums">Hidden Albums:</string>
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
@@ -153,6 +157,10 @@
     <string name="yes_logout">Yes, log out</string>
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
+    <string name="backup_exif_location_permission_rationale">To backup GPS data saved in photo</string>
+    <string name="search_exif_location_permission_rationale">To search for location information in camera roll</string>
+    <string name="read_exif_location_permission_rationale">To show location information of photos</string>
+    <string name="need_access_media_location_permission">, Les Pas needs Access Media Location permission.</string>
     <string name="proceed_request">Proceed</string>
     <string name="install_snapseed_dialog_msg">Install Snapseed now?</string>
 
@@ -206,8 +214,10 @@
     <string name="item_search">Search</string>
     <string name="item_location_search">Location</string>
     <string name="item_camera_roll">Camera Roll</string>
+    <string name="item_unhide">Unhide</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
+    <string name="item_bgm">Manage BGM</string>
     <string name="item_sortby">Sort by</string>
     <string name="item_dateasc">Date Ascending</string>
     <string name="item_datedesc">Date Descending</string>
@@ -215,6 +225,7 @@
     <string name="item_namedesc">Name Descending</string>
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
+    <string name="action_hide">Hide</string>
     <string name="action_reuse">To album…</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>
@@ -253,6 +264,7 @@
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
+    <string name="option_menu_mute">Toggle mute</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

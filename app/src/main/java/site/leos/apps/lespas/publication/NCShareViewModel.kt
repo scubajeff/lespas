@@ -108,11 +108,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}", "LesPas_${application.getString(R.string.lespas_version)}")
         }
+    }
 
+    fun refresh() {
         viewModelScope.launch(Dispatchers.IO) {
-            _sharees.value = getSharees()
-            _shareByMe.value = getShareByMe()
-            getShareWithMe()
+            _sharees.value = refreshSharees()
+            _shareByMe.value = refreshShareByMe()
+            refreshShareWithMe()
         }
     }
 
@@ -133,7 +135,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }.flowOn(Dispatchers.IO)
 
-    private fun getShareByMe(): MutableList<ShareByMe> {
+    private fun refreshShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
         var sharee: Recipient
 
@@ -168,59 +170,61 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return arrayListOf()
     }
 
-    fun getShareWithMe() {
+    private fun refreshShareWithMe() {
         val result = mutableListOf<ShareWithMe>()
 
-        viewModelScope.launch(Dispatchers.IO) {
-            _shareWithMeProgress.value = 0
-            try {
-                webDav.ocsGet("$baseUrl$SHARED_WITH_ME_ENDPOINT")?.apply {
-                    var folderId: String
-                    var permission: Int
+        _shareWithMeProgress.value = 0
+        try {
+            webDav.ocsGet("$baseUrl$SHARED_WITH_ME_ENDPOINT")?.apply {
+                var folderId: String
+                var permission: Int
 
-                    val data = getJSONArray("data")
-                    for (i in 0 until data.length()) {
-                        data.getJSONObject(i).apply {
-                            if (getString("item_type") == "folder") {
-                                // Only interested in shares of subfolders under lespas/
-                                folderId = getString("item_source")
-                                permission = getInt("permissions")
-                                result.find { existed-> existed.albumId == folderId }?.let { existed->
-                                    // Existing sharedWithMe entry, we should keep the one with more permission bits set
-                                    if (existed.permission < permission) {
-                                        existed.shareId = getString("id")
-                                        existed.permission = permission
-                                        existed.sharedTime = getLong("stime")
-                                    }
-                                } ?: run {
-                                    // New sharedWithMe entry
-                                    result.add(ShareWithMe(
-                                        getString("id"),
-                                        getString("file_target"),
-                                        folderId,
-                                        getString("path").substringAfterLast('/'),
-                                        getString("uid_owner"),
-                                        getString("displayname_owner"),
-                                        permission,
-                                        getLong("stime"),
-                                        Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L
-                                    ))
+                val data = getJSONArray("data")
+                for (i in 0 until data.length()) {
+                    data.getJSONObject(i).apply {
+                        if (getString("item_type") == "folder") {
+                            // Only interested in shares of subfolders under lespas/
+                            folderId = getString("item_source")
+                            permission = getInt("permissions")
+                            result.find { existed-> existed.albumId == folderId }?.let { existed->
+                                // Existing sharedWithMe entry, we should keep the one with more permission bits set
+                                if (existed.permission < permission) {
+                                    existed.shareId = getString("id")
+                                    existed.permission = permission
+                                    existed.sharedTime = getLong("stime")
                                 }
+                            } ?: run {
+                                // New sharedWithMe entry
+                                result.add(ShareWithMe(
+                                    getString("id"),
+                                    getString("file_target"),
+                                    folderId,
+                                    getString("path").substringAfterLast('/'),
+                                    getString("uid_owner"),
+                                    getString("displayname_owner"),
+                                    permission,
+                                    getLong("stime"),
+                                    Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L
+                                ))
                             }
                         }
                     }
                 }
-
-                if (result.isNotEmpty()) _shareWithMe.value = getAlbumMetaForShareWithMe(result).apply { sort() }
-
-            } catch (e: IOException) {
-                e.printStackTrace()
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            } catch (e: JSONException) {
-                e.printStackTrace()
             }
+
+            if (result.isNotEmpty()) _shareWithMe.value = getAlbumMetaForShareWithMe(result).apply { sort() }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+        } catch (e: IllegalStateException) {
+            e.printStackTrace()
+        } catch (e: JSONException) {
+            e.printStackTrace()
         }
+    }
+
+    fun getShareWithMe() {
+        viewModelScope.launch(Dispatchers.IO) { refreshShareWithMe() }
     }
 
     private fun getAlbumMetaForShareWithMe(shares: List<ShareWithMe>): MutableList<ShareWithMe> {
@@ -264,7 +268,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result.filter { it.cover.cover.isNotEmpty() }.toMutableList()
     }
 
-    private fun getSharees(): MutableList<Sharee> {
+    private fun refreshSharees(): MutableList<Sharee> {
         val result = mutableListOf<Sharee>()
         var backOff = 2500L
 
@@ -334,14 +338,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun publish(albums: List<ShareByMe>) {
         viewModelScope.launch(Dispatchers.IO) {
             createShares(albums)
-            _shareByMe.value = getShareByMe()
+            _shareByMe.value = refreshShareByMe()
         }
     }
 
-    fun unPublish(recipients: List<Recipient>) {
+    fun unPublish(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
+            val recipients = mutableListOf<Recipient>()
+            for (album in albums) { _shareByMe.value.find { it.fileId == album.id }?.apply { recipients.addAll(this.with) }}
             deleteShares(recipients)
-            _shareByMe.value = getShareByMe()
+            _shareByMe.value = refreshShareByMe()
         }
     }
 
@@ -385,7 +391,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
 
                 // Update _shareByMe hence update UI
-                if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = getShareByMe()
+                if (album.with.isNotEmpty() || removeRecipients.isNotEmpty()) _shareByMe.value = refreshShareByMe()
             }
             catch (e: Exception) { e.printStackTrace() }
         }

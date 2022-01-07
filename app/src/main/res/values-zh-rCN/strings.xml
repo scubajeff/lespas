@@ -171,6 +171,16 @@
     <string name="item_location_search">拍摄地点</string>
     <string name="option_menu_in_map">显示全图</string>
     <string name="object_face">人脸</string>
+    <string name="action_hide">隐藏</string>
+    <string name="hidden_albums">已隐藏相册：</string>
+    <string name="item_unhide">重现</string>
     <string name="button_text_scan">扫描应用密码</string>
     <string name="option_menu_map_slideshow">自动播放</string>
+    <string name="backup_exif_location_permission_rationale">为了备份照片中的地理信息</string>
+    <string name="search_exif_location_permission_rationale">为了搜索照片中的地理信息</string>
+    <string name="read_exif_location_permission_rationale">为了显示照片中的地理信息</string>
+    <string name="need_access_media_location_permission">，Les Pas需要获取访问媒体地理信息权限。</string>
+    <string name="unlock_please">解锁隐藏相册</string>
+    <string name="item_bgm">背景音乐</string>
+    <string name="option_menu_mute">切换静音</string>
 </resources>

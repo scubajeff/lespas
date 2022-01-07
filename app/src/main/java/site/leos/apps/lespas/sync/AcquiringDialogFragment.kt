@@ -206,6 +206,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 application.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && uri.host == "media") MediaStore.setRequireOriginal(uri) else uri)
                             } catch (e: SecurityException) {
                                 application.contentResolver.openInputStream(uri)
+                            } catch (e: UnsupportedOperationException) {
+                                application.contentResolver.openInputStream(uri)
                             }?.use { input ->
                                 File(if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
                                     totalBytes += input.copyTo(output, 8192)

@@ -11,17 +11,17 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        isCancelable = arguments?.getBoolean(CANCELABLE) ?: true
+        isCancelable = requireArguments().getBoolean(CANCELABLE)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<TextView>(R.id.message_textview).text = arguments?.getString(MESSAGE)
+        view.findViewById<TextView>(R.id.message_textview).text = requireArguments().getString(MESSAGE)
         view.findViewById<MaterialButton>(R.id.ok_button).apply {
-            text = arguments?.getString(OK_TEXT) ?: getString(android.R.string.ok)
+            text = requireArguments().getString(OK_TEXT) ?: getString(android.R.string.ok)
             setOnClickListener {
-                val requestKey = arguments?.getString(INDIVIDUAL_REQUEST_KEY) ?: ""
+                val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
                 parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
                     putBoolean(CONFIRM_DIALOG_REQUEST_KEY, true)
                     putString(INDIVIDUAL_REQUEST_KEY, requestKey)
@@ -32,7 +32,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
             isCancelable.let {
                 if (it) setOnClickListener {
-                    val requestKey = arguments?.getString(INDIVIDUAL_REQUEST_KEY) ?: ""
+                    val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
                     parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
                         putBoolean(CONFIRM_DIALOG_REQUEST_KEY, false)
                         putString(INDIVIDUAL_REQUEST_KEY, requestKey)

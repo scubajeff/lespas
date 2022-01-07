@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.auth.NCLoginFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
@@ -40,92 +42,99 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sp: SharedPreferences
     private var coldExit = true
 
+    private lateinit var accounts: Array<Account>
+    private var loggedIn = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        sp = PreferenceManager.getDefaultSharedPreferences(this)
-        sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
-
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        sp = PreferenceManager.getDefaultSharedPreferences(this)
 
-        // Make sure photo's folder, temporary cache folder created
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                File(Tools.getLocalRoot(applicationContext)).mkdir()
-                File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
-            } catch (e: Exception) {}
-        }
+        accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
+        if (accounts.isEmpty()) {
+            loggedIn = false
+            setTheme(R.style.Theme_LesPas_NoTitleBar)
+            sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
+            setContentView(R.layout.activity_main)
+            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment.newInstance(false)).commit()
+        } else {
+            sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
+            setContentView(R.layout.activity_main)
 
-        supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
-            if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
-                    CONFIRM_RESTART_DIALOG-> {
-                        WorkManager.getInstance(this).pruneWork()
-                        navigateUpTo(Intent(this, MainActivity::class.java))
-                        startActivity(intent)
+            supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->
+                if (key == ACTIVITY_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                    when (bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
+                        CONFIRM_RESTART_DIALOG -> {
+                            WorkManager.getInstance(this).pruneWork()
+                            navigateUpTo(Intent(this, MainActivity::class.java))
+                            startActivity(intent)
+                        }
+                        CONFIRM_REQUIRE_SD_DIALOG -> finish()
                     }
-                    CONFIRM_REQUIRE_SD_DIALOG-> finish()
-                }
-            }
-        }
-
-        val account: Account = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0]
-        if (savedInstanceState == null) {
-            if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
-                // We need external SD mounted writable
-                if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
-                    .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
-            } else {
-                lifecycleScope.launch {
-                    // Sync with server at startup
-                    ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-                    })
-
-                    // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                    if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) sp.edit {
-                        putBoolean(getString(R.string.snapseed_pref_key), false)
-                        putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
-                        putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
-                    }
-                    // If Snapseed is not installed, disable Snapseed integration
-                    packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
-                        sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
-                    }
-                }
-
-                intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
-                    Thread {
-                        val album = AlbumRepository(this.application).getThisAlbum(it)
-                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit()
-                    }.start()
-                } ?: run {
-                    supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                 }
             }
 
-            // Create album meta file for all synced albums if needed
-            WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
-        }
+            if (savedInstanceState == null) {
+                if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
+                    // We need external SD mounted writable
+                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
+                        .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
+                } else {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        // Make sure photo's folder, temporary cache folder created
+                        try {
+                            File(Tools.getLocalRoot(applicationContext)).mkdir()
+                            File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
+                        } catch (e: Exception) {}
+                    }
 
-        // Sync when receiving network tickle
-        ContentResolver.setSyncAutomatically(account, getString(R.string.sync_authority), true)
-        // Setup observer to fire up SyncAdapter
-        actionsPendingModel.allPendingActions.observe(this, { actions ->
-            if (actions.isNotEmpty()) ContentResolver.requestSync(account, getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                    intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
+                        Thread {
+                            val album = AlbumRepository(this.application).getThisAlbum(it)
+                            supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit()
+                        }.start()
+                    } ?: run {
+                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+
+                        lifecycleScope.launch {
+                            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
+                            if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                                sp.edit {
+                                    putBoolean(getString(R.string.snapseed_pref_key), false)
+                                    putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
+                                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                                }
+                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                            // If Snapseed is not installed, disable Snapseed integration
+                            packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
+                                sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
+                            }
+
+                            // Sync when receiving network tickle
+                            ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
+                        }
+                    }
+                }
+
+                // Create album meta file for all synced albums if needed
+                WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
+            }
+
+            // Setup observer to fire up SyncAdapter
+            actionsPendingModel.allPendingActions.observe(this, { actions ->
+                if (actions.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                })
             })
-        })
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
     }
 
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
-        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
+        if (loggedIn && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
     }
 
     override fun onPause() {

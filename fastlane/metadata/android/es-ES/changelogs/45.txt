@@ -1,0 +1,4 @@
+* Añadido BGM a la presentación de diapositivas
+* Añadida la función de ocultar/desocultar el álbum
+* Optimización del inicio de la aplicación
+* Otras mejoras y errores corregidos

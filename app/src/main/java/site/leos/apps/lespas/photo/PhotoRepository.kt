@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 
 class PhotoRepository(application: Application) {
     private val photoDao = LespasDatabase.getDatabase(application).photoDao()
+    private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAlbumPhotosFlow(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosFlow(albumId)
     fun upsert(photo: Photo) { photoDao.upsert(photo) }
@@ -28,7 +29,10 @@ class PhotoRepository(application: Application) {
     //suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto) }
     //fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
-    fun getAllImage(): List<Photo> = photoDao.getAllImage()
+    fun getAllImage(): List<Photo> {
+        val hiddenAlbums = albumDao.getAllHiddenAlbumIds()
+        return photoDao.getAllImage().filter { it.albumId !in hiddenAlbums }
+    }
     fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)

@@ -1,6 +1,8 @@
 package site.leos.apps.lespas.album
 
+import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -10,6 +12,7 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
+import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -17,6 +20,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
@@ -29,6 +34,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.*
 import androidx.work.*
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
@@ -38,6 +44,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -47,6 +54,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -70,6 +78,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var receivedShareMenu: MenuItem? = null
     private var cameraRollAsAlbumMenu: MenuItem? = null
+    private var unhideMenu: MenuItem? = null
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
@@ -150,9 +159,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.fragment_album, container, false)
-
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -160,9 +167,23 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab = view.findViewById(R.id.fab)
 
         postponeEnterTransition()
-        view.doOnPreDraw { startPostponedEnterTransition() }
+        view.doOnPreDraw {
+            startPostponedEnterTransition()
+            if (savedInstanceState == null) {
+                // TODO: seems like flooding the server
+                publishViewModel.refresh()
+
+                // Sync with server at startup
+                ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+                })
+            }
+        }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
+        albumsModel.allHiddenAlbums.observe(viewLifecycleOwner, { hidden-> unhideMenu?.isEnabled = hidden.isNotEmpty() })
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
@@ -246,17 +267,23 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
         // Delete album confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
-                if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                    val albums = mutableListOf<Album>()
-                    // Selection key is Album.id
-                    for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
-                    actionModel.deleteAlbums(albums)
-                }
-                selectionTracker.clearSelection()
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                val albums = mutableListOf<Album>()
+                // Selection key is Album.id
+                for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
+                actionModel.deleteAlbums(albums)
+            }
+            selectionTracker.clearSelection()
+        }
+        // Unhide dialog result handler
+        parentFragmentManager.setFragmentResultListener(UnhideDialogFragment.UNHIDE_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            bundle.getParcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
+                if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
+
+        if (savedInstanceState == null) (requireActivity() as AppCompatActivity).reportFullyDrawn()
     }
 
     override fun onResume() {
@@ -294,15 +321,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_menu, menu)
+        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
+        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
+        unhideMenu = menu.findItem(R.id.option_menu_unhide)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
+        albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
         publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
 
-        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
         cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
         cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
 
@@ -334,22 +363,39 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return true
             }
             R.id.option_menu_search-> {
-                exitTransition = null
-                reenterTransition = null
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 ), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == ImageLoaderViewModel.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_received_shares-> {
                 receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)
                 PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
 
-                exitTransition = null
-                reenterTransition = null
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
                 parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
                 changeSortOrder(item.itemId)
+                return true
+            }
+            R.id.option_menu_unhide-> {
+                if (BiometricManager.from(requireContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS) {
+                    BiometricPrompt(requireActivity(), ContextCompat.getMainExecutor(requireContext()), object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                            super.onAuthenticationSucceeded(result)
+                            unhide()
+                        }
+                    }).authenticate(BiometricPrompt.PromptInfo.Builder()
+                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                        .setConfirmationRequired(false)
+                        .setTitle(getString(R.string.unlock_please))
+                        .build()
+                    )
+                } else unhide()
+
                 return true
             }
             else-> {
@@ -370,14 +416,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, "CONFIRM_DIALOG")
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
+            R.id.hide -> {
+                mutableListOf<Album>().let { albums ->
+                    selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
+                    selectionTracker.clearSelection()
+
+                    actionModel.hideAlbums(albums)
+                    publishViewModel.unPublish(albums)
+                }
+
+                true
+            }
+/*
             R.id.share -> {
                 selectionTracker.selection.forEach { _ -> }
                 selectionTracker.clearSelection()
                 true
             }
+*/
             else -> false
         }
     }
@@ -386,6 +445,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
         actionMode = null
         fab.isEnabled = true
+    }
+
+    private fun unhide() {
+        albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
     }
 
     private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {
@@ -558,10 +621,77 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress
     }
 
+    class UnhideDialogFragment: LesPasDialogFragment(R.layout.fragment_unhide_dialog) {
+        private lateinit var unhideButton: MaterialButton
+        private val choices = arrayListOf<Album>()
+        private val hiddenAdapter = NameAdapter { album, checked ->
+            if (checked) choices.add(album)
+            else choices.remove(album)
+
+            unhideButton.isEnabled = choices.isNotEmpty()
+        }
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            requireArguments().getParcelableArrayList<Album>(KEY_ALBUMS)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+        }
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+
+            view.findViewById<RecyclerView>(R.id.hidden_albums).adapter = hiddenAdapter
+            unhideButton = view.findViewById<MaterialButton>(R.id.unhide_button).apply {
+                setOnClickListener {
+                    parentFragmentManager.setFragmentResult(UNHIDE_DIALOG_REQUEST_KEY, Bundle().apply {
+                        putParcelableArrayList(KEY_UNHIDE_THESE, choices)
+                    })
+                    dismiss()
+                }
+            }
+
+            view.findViewById<MaterialButton>(R.id.cancel_button).apply {
+                setOnClickListener { dismiss() }
+            }
+        }
+
+        class NameAdapter(private val updateChoice: (Album, Boolean) -> Unit): ListAdapter<Album, NameAdapter.ViewHolder>(NameDiffCallback()) {
+            inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+                private val tvName = itemView.findViewById<CheckedTextView>(android.R.id.text1)
+
+                fun bind(album: Album) {
+                    tvName.text = album.name.substring(1)
+
+                    tvName.setOnClickListener {
+                        tvName.isChecked = !tvName.isChecked
+                        updateChoice(album, tvName.isChecked)
+                    }
+                }
+            }
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(android.R.layout.simple_list_item_multiple_choice, parent, false))
+            override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(currentList[position]) }
+        }
+
+        class NameDiffCallback: DiffUtil.ItemCallback<Album>() {
+            override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.eTag == newItem.eTag
+        }
+
+        companion object {
+            const val UNHIDE_DIALOG_REQUEST_KEY = "UNHIDE_DIALOG_REQUEST_KEY"
+            const val KEY_UNHIDE_THESE = "KEY_UNHIDE_THESE"
+
+            private const val KEY_ALBUMS = "KEY_ALBUMS"
+
+            @JvmStatic
+            fun newInstance(albums: List<Album>) = UnhideDialogFragment().apply { arguments = Bundle().apply { putParcelableArrayList(KEY_ALBUMS, ArrayList(albums)) }}
+        }
+    }
+
     companion object {
         const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
         const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
         private const val FAKE_ALBUM_ID_LONG = 0L
