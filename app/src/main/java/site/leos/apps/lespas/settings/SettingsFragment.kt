@@ -325,7 +325,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         PackageManager.DONT_KILL_APP
                     )
                     setComponentEnabledSetting(
-                        ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.LesPas"),
+                        ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.MainActivity"),
                         PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                         PackageManager.DONT_KILL_APP
                     )
