@@ -183,4 +183,5 @@
     <string name="unlock_please">Déverrouiller les albums cachés</string>
     <string name="item_bgm">Gérer la BGM</string>
     <string name="option_menu_mute">Basculer la sourdine</string>
+    <string name="skip_late_night_update">Passer la mise à jour tardive</string>
 </resources>

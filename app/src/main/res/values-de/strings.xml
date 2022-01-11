@@ -235,4 +235,5 @@
     <string name="unlock_please">Versteckte Alben freischalten</string>
     <string name="item_bgm">BGM verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
+    <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
 </resources>

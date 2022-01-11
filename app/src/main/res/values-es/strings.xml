@@ -183,4 +183,5 @@
     <string name="unlock_please">Desbloquear álbumes ocultos</string>
     <string name="item_bgm">Gestionar la BGM</string>
     <string name="option_menu_mute">Activar el silencio</string>
+    <string name="skip_late_night_update">Omitir la actualización nocturna</string>
 </resources>

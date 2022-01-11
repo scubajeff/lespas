@@ -19,11 +19,12 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 
 class LesPasArtProviderSettingActivity: AppCompatActivity() {
+    private lateinit var sp: SharedPreferences
     private lateinit var exclusionAdapter: ExclusionAdapter
     private lateinit var preferRadioGroup: RadioGroup
     private var exclusionList = mutableSetOf<String>()
-    private lateinit var sp: SharedPreferences
     private var lastPreferSetting = PREFER_RANDOM
+    private var skipLateNightUpdate = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,14 +37,20 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
         }
 
         sp = PreferenceManager.getDefaultSharedPreferences(this)
-        exclusionList = sp.getStringSet(EXCLUSION_LIST_KEY, mutableSetOf<String>()) ?: mutableSetOf()
+        exclusionList = sp.getStringSet(KEY_EXCLUSION_LIST, mutableSetOf<String>()) ?: mutableSetOf()
+        skipLateNightUpdate = sp.getBoolean(KEY_SKIP_LATE_NIGHT_UPDATE, false)
+        lastPreferSetting = sp.getInt(KEY_PREFER, PREFER_RANDOM)
 
-        lastPreferSetting = sp.getInt(PREFER_KEY, PREFER_RANDOM)
         preferRadioGroup.check(when(lastPreferSetting) {
             PREFER_LATEST-> R.id.prefer_latest
             PREFER_TODAY_IN_HISTORY-> R.id.prefer_day_in_history
             else-> R.id.prefer_random
         })
+
+        findViewById<CheckBox>(R.id.skip_late_night_update)?.apply {
+            isChecked = skipLateNightUpdate
+            setOnCheckedChangeListener { _, isChecked -> skipLateNightUpdate = isChecked }
+        }
 
         ViewModelProvider(this).get(AlbumViewModel::class.java).allAlbumsByEndDate.observe(this, {
             for (album in it) album.shareId = if (exclusionList.contains(album.id)) 1 else 0
@@ -59,7 +66,7 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
             else-> PREFER_RANDOM
         }
 
-        sp.edit().putStringSet(EXCLUSION_LIST_KEY, exclusionAdapter.getExclusionList()).putInt(PREFER_KEY, currentPreferSetting).commit()
+        sp.edit().putStringSet(KEY_EXCLUSION_LIST, exclusionAdapter.getExclusionList()).putInt(KEY_PREFER, currentPreferSetting).putBoolean(KEY_SKIP_LATE_NIGHT_UPDATE, skipLateNightUpdate).commit()
 
         // TODO Change immediately
         //if (currentPreferSetting != lastPreferSetting) contentResolver.call(ProviderContract.getContentUri(getString(R.string.muzei_authority)), LesPasArtProvider.UPDATE_CALL, null, null)
@@ -106,8 +113,9 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
     }
 
     companion object {
-        const val EXCLUSION_LIST_KEY = "MUZEI_EXCLUSION_SET"
-        const val PREFER_KEY = "MUZEI_PREFER"
+        const val KEY_EXCLUSION_LIST = "MUZEI_EXCLUSION_SET"
+        const val KEY_PREFER = "MUZEI_PREFER"
+        const val KEY_SKIP_LATE_NIGHT_UPDATE = "MUZEI_SKIP_LATE_NIGHT"
         const val PREFER_LATEST = 0
         const val PREFER_TODAY_IN_HISTORY = 1
         const val PREFER_RANDOM = 2

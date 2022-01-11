@@ -283,4 +283,5 @@
     <string name="prefer_random">Random (fallback of all the above)</string>
     <string name="exclude_albums">Exclude from:</string>
     <string name="prefer_latest">Recent</string>
+    <string name="skip_late_night_update">Skip late night update</string>
 </resources>

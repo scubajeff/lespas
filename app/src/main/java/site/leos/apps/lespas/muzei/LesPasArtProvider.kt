@@ -22,6 +22,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -30,7 +31,14 @@ import java.util.*
 import kotlin.random.Random
 
 class LesPasArtProvider: MuzeiArtProvider() {
-    override fun onLoadRequested(initial: Boolean) { if (initial || Date().time - (lastAddedArtwork?.dateAdded ?: Date()).time > 30000) updateArtwork() }
+    override fun onLoadRequested(initial: Boolean) {
+        val skipLateNightUpdate =
+            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE, false)) {
+                LocalDateTime.now().hour in 0..5
+            }
+            else false
+        if (initial || ((Date().time - (lastAddedArtwork?.dateAdded ?: Date()).time > 30000) && !skipLateNightUpdate)) updateArtwork()
+    }
 
     override fun openFile(artwork: Artwork): InputStream {
         var sWidth: Int
@@ -103,12 +111,12 @@ class LesPasArtProvider: MuzeiArtProvider() {
         Thread {
             (context?.applicationContext as Application).let {
                 val sp = PreferenceManager.getDefaultSharedPreferences(it)
-                val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.EXCLUSION_LIST_KEY, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
+                val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
                 PhotoRepository(it).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(AlbumRepository(it).getAllHiddenAlbumIds()) }, it.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()
-                        when (sp.getInt(LesPasArtProviderSettingActivity.PREFER_KEY, LesPasArtProviderSettingActivity.PREFER_RANDOM)) {
+                        when (sp.getInt(LesPasArtProviderSettingActivity.KEY_PREFER, LesPasArtProviderSettingActivity.PREFER_RANDOM)) {
                             LesPasArtProviderSettingActivity.PREFER_LATEST -> {
                                 photoList.filter { p -> Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1 }.let { recentList ->
                                     when {
