@@ -51,25 +51,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
         view.findViewById<MaterialButton>(R.id.ok_button).setOnClickListener { dismiss() }
         mapButton = view.findViewById(R.id.map_button)
-
-        mapView = view.findViewById<MapView>(R.id.map).apply {
-            // TODO user setting?
-            setMultiTouchControls(true)
-            setUseDataConnection(true)
-            setTileSource(TileSourceFactory.MAPNIK)
-            isFlingEnabled = false
-            overlays.add(CopyrightOverlay(requireContext()))
-
-            // Enable map panning inside Scrollview
-            setOnTouchListener { v, event ->
-                when(event.action) {
-                    MotionEvent.ACTION_DOWN-> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
-                    MotionEvent.ACTION_UP-> v.parent.parent.requestDisallowInterceptTouchEvent(false)
-                }
-
-                false
-            }
-        }
+        mapView = view.findViewById(R.id.map)
         // Don't abuse map tile source
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
 
@@ -186,6 +168,24 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 latLong[1] <= -180.0 -> {}
                                 else -> {
                                     with(mapView) {
+                                        // Initialization
+                                        // TODO user setting?
+                                        setMultiTouchControls(true)
+                                        setUseDataConnection(true)
+                                        setTileSource(TileSourceFactory.MAPNIK)
+                                        isFlingEnabled = false
+                                        overlays.add(CopyrightOverlay(requireContext()))
+
+                                        // Enable map panning inside Scrollview
+                                        setOnTouchListener { v, event ->
+                                            when(event.action) {
+                                                MotionEvent.ACTION_DOWN-> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
+                                                MotionEvent.ACTION_UP-> v.parent.parent.requestDisallowInterceptTouchEvent(false)
+                                            }
+
+                                            false
+                                        }
+
                                         val poi = GeoPoint(latLong[0], latLong[1])
                                         controller.setZoom(18.5)
                                         controller.setCenter(poi)
