@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -55,6 +56,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var onBackupStatusChangedListener: SharedPreferences.OnSharedPreferenceChangeListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,6 +106,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
             }
+        }
+        // Update on-going backup status
+        onBackupStatusChangedListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            key?.let {if (key == LAST_BACKUP) { showBackupSummary() }}
         }
 
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
@@ -221,6 +227,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     false
                 }
                 else {
+                    // Preference check state is about to be toggled, but not toggled yet
                     if ((pref as SwitchPreferenceCompat).isChecked) {
                         findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                             it.isChecked = false
@@ -242,13 +249,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                     toggleAutoSync(!(pref.isChecked))
+                    showBackupSummary()
                     true
                 }
             }
-            summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
+
             // Make sure SYNC preference acts accordingly
             if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                 it.isChecked = true
+                showBackupSummary()
                 it.isEnabled = false
             }
         }
@@ -285,12 +294,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Disable Snapseed integration setting if the app is not installed
         isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
         if (isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+
+        PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).registerOnSharedPreferenceChangeListener(onBackupStatusChangedListener)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         summaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
         outState.putLong(STATISTIC_TOTAL_SIZE, totalSize)
+    }
+
+    override fun onPause() {
+        PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).unregisterOnSharedPreferenceChangeListener(onBackupStatusChangedListener)
+        super.onPause()
     }
 
     override fun onStop() {
@@ -402,6 +418,26 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Add 100MB redundant
         (if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize + 100 * 1024 * 1024
         //(if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize
+
+    private fun showBackupSummary() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            var items = 0
+            val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+            requireContext().contentResolver.query(
+                MediaStore.Files.getContentUri("external"),
+                null,
+                "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
+                null,
+                null
+            )?.use { items = it.count }
+
+            withContext(Dispatchers.Main) {
+                findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel()) + "\n" +
+                    if (items > 0) String.format(getString(R.string.backup_waiting), items) else getString(R.string.backup_done)
+            }
+        }
+    }
 
     class TransferStorageDialog: LesPasDialogFragment(R.layout.fragment_transfer_storage_dialog) {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
