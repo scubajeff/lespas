@@ -10,7 +10,9 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.*
 import android.widget.CheckedTextView
 import android.widget.ImageView
@@ -85,6 +87,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private var showCameraRoll = true
     private var cameraRollAlbum: Album? = null
+    private var mediaStoreVersion = ""
+    private var mediaStoreGeneration = 0L
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
             showCameraRoll = this
@@ -154,9 +158,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
-        showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
-        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        requireContext().run {
+            showCameraRoll = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+            // TODO only check first volume
+            getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
+            PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
@@ -296,6 +303,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 title = getString(R.string.app_name)
             }
             window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        }
+
+        if (showCameraRoll) {
+            requireContext().apply {
+                val newVersion = MediaStore.getVersion(this)
+                val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
+                if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
+            }
         }
     }
 
@@ -495,6 +511,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         mAdapter.setAlbums(sortedAlbums)
     }
 
+    private fun getCameraRoll(version: String, generation: Long): Album? {
+        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, getString(R.string.item_camera_roll))
+        mediaStoreVersion = version
+        mediaStoreGeneration = generation
+
+        return cameraRollAlbum
+    }
+
     // List adapter for Albums' recyclerView
     class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
@@ -585,7 +609,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 albums.forEach { album ->
                     if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                         // Pass cover orientation in property eTag
-                        this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
+                        this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.eTag, album.coverBaseline))
                     }
                     else this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
                 }
@@ -596,6 +620,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
             this.recipients = recipients
             for (recipient in recipients) { notifyItemChanged(currentList.indexOfFirst { it.id == recipient.fileId }) }
+        }
+
+        internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
+            this.covers[0].apply {
+                id = cameraRollAlbum.cover
+                mimeType = cameraRollAlbum.eTag
+                eTag = cameraRollAlbum.shareId.toString()   // cover rotation
+                width = cameraRollAlbum.coverWidth
+                height = cameraRollAlbum.coverHeight
+                shareId = cameraRollAlbum.coverBaseline
+            }
+
+            notifyItemChanged(0)
         }
 
         internal fun getItemBySelectionKey(key: Long): Album = (currentList.find { it.id.toLong() == key })!!
