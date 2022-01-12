@@ -162,7 +162,7 @@ class PhotoWithMapFragment: Fragment() {
             }
             R.id.option_menu_open_in_map_app -> {
                 startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("geo:${photo.lat},${photo.long}?z=20")
+                    Tools.wGS84ToGCJ02(doubleArrayOf(photo.lat, photo.long)).let { gcjCoordinate-> data = Uri.parse("geo:${gcjCoordinate[0]},${gcjCoordinate[1]}?z=20") }
                 })
                 true
             }

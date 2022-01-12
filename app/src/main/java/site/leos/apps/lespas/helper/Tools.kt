@@ -41,8 +41,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 object Tools {
     const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
@@ -551,5 +550,43 @@ object Tools {
                 wm.currentWindowMetrics.bounds.width()
             }
         }
+    }
+
+    private const val PI = 3.1415926535897932384626
+    private const val EE = 0.00669342162296594323
+    private const val A = 6378245.0
+    fun wGS84ToGCJ02(latLong: DoubleArray): DoubleArray {
+        // Out of China
+        if (latLong[0] < 0.8293 || latLong[0] > 55.8271) return latLong
+        if (latLong[1] < 72.004 || latLong[1] > 137.8347) return latLong
+
+        var dLat = translateLat(latLong[1] - 105.0, latLong[0] - 35.0)
+        var dLong = translateLong(latLong[1] - 105.0, latLong[0] - 35.0)
+        val radLat = latLong[0] / 180.0 * PI
+        var magic = sin(radLat)
+        magic = 1 - EE * magic * magic
+        val sqrtMagic = sqrt(magic)
+        dLat = (dLat * 180.0) / ((A * (1 - EE)) / (magic * sqrtMagic) * PI)
+        dLong = (dLong * 180.0) / (A / sqrtMagic * cos(radLat) * PI)
+
+        return doubleArrayOf(latLong[0] + dLat, latLong[1] + dLong)
+    }
+
+    private fun translateLat(x: Double, y: Double): Double {
+        var lat = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * sqrt(abs(x))
+        lat += (20.0 * sin(6.0 * x * PI) + 20.0 * sin(2.0 * x * PI)) * 2.0 / 3.0
+        lat += (20.0 * sin(y * PI) + 40.0 * sin(y / 3.0 * PI)) * 2.0 / 3.0
+        lat += (160.0 * sin(y / 12.0 * PI) + 320.0 * sin(y * PI / 30.0)) * 2.0 / 3.0
+
+        return lat
+    }
+
+    private fun translateLong(x: Double, y: Double): Double {
+        var long = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * sqrt(abs(x))
+        long += (20.0 * sin(6.0 * x * PI) + 20.0 * sin(2.0 * x * PI)) * 2.0 / 3.0
+        long += (20.0 * sin(x * PI) + 40.0 * sin(x / 3.0 * PI)) * 2.0 / 3.0
+        long += (150.0 * sin( x / 12.0 * PI) + 300.0 * sin(x / 30.0 * PI)) * 2.0 / 3.0
+
+        return long
     }
 }
