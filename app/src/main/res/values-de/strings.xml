@@ -99,7 +99,7 @@
     
     <string name="sync_header">Synchronisierung</string>
     <string name="cameraroll_backup_title">Filmrolle synchronsisieren</string>
-    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner \\\'DCIM/%1$s\\\' gesichert.</string>
+    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner \'DCIM/%1$s\' gesichert.</string>
     <string name="background_sync_title">Regelmäßig synchronisieren</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="wifionly_title">Nur über WLAN synchronisieren</string>
