@@ -175,7 +175,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
-        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+        requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {

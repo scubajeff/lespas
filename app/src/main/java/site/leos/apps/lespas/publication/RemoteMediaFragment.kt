@@ -81,7 +81,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 submitList(toMutableList())
 
                 previousOrientationSetting = requireActivity().requestedOrientation
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.auto_rotate_perf_key), false))
+                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false))
                     requireActivity().requestedOrientation = if (this[0].width > this[0].height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
         }

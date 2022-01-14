@@ -111,7 +111,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         previousOrientationSetting = requireActivity().requestedOrientation
         with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
-            autoRotate = getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+            autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value)) ?: "0"
         }
 
@@ -129,7 +129,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+        requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
