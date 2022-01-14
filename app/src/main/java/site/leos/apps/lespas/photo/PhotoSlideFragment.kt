@@ -20,7 +20,6 @@ import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
@@ -63,6 +62,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var window: Window
     //private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
+    private var previousTitleBarDisplayOption = 0
 
     private lateinit var controlsContainer: LinearLayout
     private lateinit var removeButton: Button
@@ -203,6 +203,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         postponeEnterTransition()
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            previousTitleBarDisplayOption = savedInstanceState?.run {
+                // During fragment recreate, wipe actionbar to avoid flash
+                wipeActionBar()
+
+                getInt(KEY_DISPLAY_OPTION)
+            } ?: displayOptions
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photoslide, container, false)
@@ -391,6 +401,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
     }
@@ -431,7 +446,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
-                displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
+                displayOptions = previousTitleBarDisplayOption
                 setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
             }
             requestedOrientation = previousOrientationSetting
@@ -479,12 +494,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     private fun followSystemBar(show: Boolean) {
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
@@ -493,6 +502,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // auto hide
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+
+        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
+        wipeActionBar()
+    }
+
+    private fun wipeActionBar() {
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
     }
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {
@@ -632,6 +651,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
+
+        private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"
