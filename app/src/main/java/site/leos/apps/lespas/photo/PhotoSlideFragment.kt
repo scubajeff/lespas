@@ -206,9 +206,15 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Wipe ActionBar
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            previousTitleBarDisplayOption = savedInstanceState?.getInt(KEY_DISPLAY_OPTION) ?: displayOptions
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
+            previousTitleBarDisplayOption = savedInstanceState?.run {
+                // During fragment recreate, wipe actionbar to avoid flash
+                (requireActivity() as AppCompatActivity).supportActionBar?.run {
+                    setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                    displayOptions = 0
+                }
+
+                getInt(KEY_DISPLAY_OPTION)
+            } ?: displayOptions
         }
     }
 
@@ -466,6 +472,12 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val hideSystemUI = Runnable { Tools.goImmersive(window) }
     private val showSystemUI = Runnable {
+        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
+
         @Suppress("DEPRECATION")
 /*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R)
