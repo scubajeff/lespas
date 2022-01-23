@@ -448,7 +448,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun unhide() {
-        albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
+        if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) {
+            val hidden = mutableListOf<Album>()
+
+            albumsModel.allHiddenAlbums.value?.let { hidden.addAll(it) }
+            for (album in mAdapter.currentList) {
+                // If there is same name existed in album list, mark this hidden album's name with 2 dots prefix
+                hidden.find { it.name.substring(1) == album.name}?.let { it.name = ".${it.name}" }
+            }
+
+            UnhideDialogFragment.newInstance(hidden).show(parentFragmentManager, UNHIDE_DIALOG)
+        }
     }
 
     private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {
@@ -659,11 +669,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 private val tvName = itemView.findViewById<CheckedTextView>(android.R.id.text1)
 
                 fun bind(album: Album) {
-                    tvName.text = album.name.substring(1)
-
-                    tvName.setOnClickListener {
-                        tvName.isChecked = !tvName.isChecked
-                        updateChoice(album, tvName.isChecked)
+                    if (album.name.startsWith("..")) {
+                        // There is an album with same name existed, disable this item
+                        tvName.text = album.name.substring(2)
+                        tvName.isEnabled = false
+                    } else {
+                        tvName.text = album.name.substring(1)
+                        tvName.isEnabled = true
+                        tvName.setOnClickListener {
+                            tvName.toggle()
+                            updateChoice(album, tvName.isChecked)
+                        }
                     }
                 }
             }
