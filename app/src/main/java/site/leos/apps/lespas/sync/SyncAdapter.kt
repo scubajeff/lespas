@@ -382,7 +382,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (hidden) return@forEach
 
                     // No hit on local, a new album from server, make sure the 'cover' property is set to "", a sign shows it's a new album
-                    changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
+                    changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, sp.getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
                 }
             }
         }

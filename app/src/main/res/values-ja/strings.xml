@@ -184,4 +184,5 @@
     <string name="item_bgm">BGMの管理</string>
     <string name="option_menu_mute">トグルミュート</string>
     <string name="skip_late_night_update">深夜に更新をスキップ</string>
+    <string name="default_sort_order_title">写真のデフォルトの並び順</string>
 </resources>

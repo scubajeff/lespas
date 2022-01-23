@@ -184,4 +184,5 @@
     <string name="item_bgm">Gestionar la BGM</string>
     <string name="option_menu_mute">Activar el silencio</string>
     <string name="skip_late_night_update">Omitir la actualización nocturna</string>
+    <string name="default_sort_order_title">Ordenación de fotos por defecto</string>
 </resources>

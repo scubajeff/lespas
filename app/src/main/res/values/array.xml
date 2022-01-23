@@ -12,6 +12,19 @@
         <item>@string/theme_auto_values</item>
     </string-array>
 
+    <string-array name="default_sort_order_entries">
+        <item>@string/item_dateasc</item>
+        <item>@string/item_datedesc</item>
+        <item>@string/item_nameasc</item>
+        <item>@string/item_namedesc</item>
+    </string-array>
+    <string-array name="default_sort_order_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
     <string-array name="strip_exif_entries">
         <item>@string/strip_on_entry</item>
         <item>@string/strip_off_entry</item>
