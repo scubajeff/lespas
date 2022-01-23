@@ -346,8 +346,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 QuickScrollAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object: SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = (key.isNotEmpty())
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key.isNotEmpty()
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object: SelectionTracker.SelectionObserver<String>() {
@@ -1038,7 +1038,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
         class PhotoKeyProvider(private val adapter: QuickScrollAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
-            override fun getPosition(key: String): Int = with(adapter.getPhotoPosition(key)) { if (this >= 0) this else RecyclerView.NO_POSITION }
+            override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
             override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
