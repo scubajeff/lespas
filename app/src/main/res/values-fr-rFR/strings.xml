@@ -187,4 +187,5 @@
     <string name="backup_done">Tous les éléments du rouleau de la caméra ont été sauvegardés.</string>
     <string name="backup_waiting">%1$,d éléments dans la liste des photos en attente de sauvegarde.</string>
     <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
+    <string name="default_sort_order_title">Ordre de tri des photos par défaut</string>
 </resources>

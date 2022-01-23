@@ -146,8 +146,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         private val newPhotos = mutableListOf<Photo>()
         private val actions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
-        private val albumRepository = AlbumRepository(application)
-        private val actionRepository = ActionRepository(application)
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -270,14 +268,16 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             album.coverHeight = newPhotos[validCover].height
                             album.cover = newPhotos[validCover].id
 
+                            album.sortOrder = PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
+
                             // Create new album first, store cover, e.g. first photo in new album, in property filename
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                         }
 
                         photoRepository.insert(newPhotos)
-                        albumRepository.upsert(album)
+                        AlbumRepository(application).upsert(album)
                     }
-                    actionRepository.addActions(actions)
+                    ActionRepository(application).addActions(actions)
 
                     // By setting progress to more than 100%, signaling the calling fragment/activity
                     setProgress(uris.size, fileId)

@@ -187,4 +187,5 @@
     <string name="backup_done">カメラロールの項目はすべてバックアップされました。</string>
     <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります。</string>
     <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
+    <string name="default_sort_order_title">写真のデフォルトの並び順</string>
 </resources>
