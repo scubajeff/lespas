@@ -186,4 +186,5 @@
     <string name="skip_late_night_update">Omitir la actualización nocturna</string>
     <string name="backup_done">Todos los elementos del rollo de la cámara han sido respaldados.</string>
     <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad.</string>
+    <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
 </resources>

@@ -186,4 +186,5 @@
     <string name="skip_late_night_update">不在深夜更新</string>
     <string name="backup_done">相機相冊備份已完成。</string>
     <string name="backup_waiting">相機相冊中仲有%1$,d個檔案正等待備份。</string>
+    <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
 </resources>

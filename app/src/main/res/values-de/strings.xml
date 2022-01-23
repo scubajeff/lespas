@@ -238,4 +238,5 @@
     <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
     <string name="backup_done">Alle Elemente in der Kamerarolle wurden gesichert.</string>
     <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung.</string>
+    <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
 </resources>
