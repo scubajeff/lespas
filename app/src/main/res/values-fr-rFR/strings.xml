@@ -184,4 +184,5 @@
     <string name="item_bgm">Gérer la BGM</string>
     <string name="option_menu_mute">Basculer la sourdine</string>
     <string name="skip_late_night_update">Passer la mise à jour tardive</string>
+    <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
 </resources>

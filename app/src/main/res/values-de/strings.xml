@@ -236,4 +236,5 @@
     <string name="item_bgm">BGM verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
     <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
+    <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
 </resources>

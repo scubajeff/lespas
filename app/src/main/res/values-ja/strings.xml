@@ -184,4 +184,5 @@
     <string name="item_bgm">BGMの管理</string>
     <string name="option_menu_mute">トグルミュート</string>
     <string name="skip_late_night_update">深夜に更新をスキップ</string>
+    <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
 </resources>

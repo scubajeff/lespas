@@ -184,4 +184,5 @@
     <string name="item_bgm">背景音樂</string>
     <string name="option_menu_mute">切換靜音</string>
     <string name="skip_late_night_update">不在深夜刷新</string>
+    <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
 </resources>

@@ -48,6 +48,7 @@
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
+    <string name="not_hiding">The following names already existed in hidden album list: %1$s</string>
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>

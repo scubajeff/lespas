@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.*
 import androidx.work.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
@@ -420,12 +421,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.hide -> {
+                val refused = mutableListOf<String>()
+                val hidden = mutableListOf<String>()
+                albumsModel.allHiddenAlbums.value?.let { for (album in it) hidden.add(album.name.substring(1)) }
+
                 mutableListOf<Album>().let { albums ->
-                    selectionTracker.selection.forEach { id-> mAdapter.getItemBySelectionKey(id)?.let { albums.add(it) }}
+                    selectionTracker.selection.forEach { id->
+                        mAdapter.getItemBySelectionKey(id)?.let { album->
+                            hidden.find { it == album.name }?.let { refused.add(it) } ?: albums.add(album)
+                        }
+                    }
                     selectionTracker.clearSelection()
 
-                    actionModel.hideAlbums(albums)
-                    publishViewModel.unPublish(albums)
+                    if (albums.isNotEmpty()) {
+                        actionModel.hideAlbums(albums)
+                        publishViewModel.unPublish(albums)
+                    }
+                    if (refused.isNotEmpty()) {
+                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(requireContext().getColor(R.color.color_primary)).setTextColor(requireContext().getColor(R.color.color_text_light)).show()
+                    }
                 }
 
                 true
