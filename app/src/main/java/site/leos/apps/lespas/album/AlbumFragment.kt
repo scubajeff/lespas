@@ -233,7 +233,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 StorageStrategy.createLongStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
                 override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = key != FAKE_ALBUM_ID_LONG
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = mAdapter.getItemId(position) != FAKE_ALBUM_ID_LONG
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
