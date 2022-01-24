@@ -1,0 +1,8 @@
+* Affichage du résumé de l'état de la sauvegarde de la liste d'appareils photo dans le paramètre
+* Nouvelle préférence par défaut pour le tri des photos dans les paramètres
+* Nouvelle option pour éviter de rafraîchir le fond d'écran de Muzei en fin de nuit.
+* Possibilité de lancer l'application Carte dans l'écran Photo avec carte
+* Éviter la collision des noms lors du masquage et du démasquage de l'album.
+* Correction d'une erreur lors d'un appui long pour sélectionner plusieurs albums.
+* Correction d'une erreur lors de l'ajout de l'icône du lanceur de galerie dans les paramètres.
+* Autres améliorations et corrections de bogues

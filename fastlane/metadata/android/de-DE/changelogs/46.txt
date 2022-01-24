@@ -1,0 +1,8 @@
+* Zusammenfassung des Sicherungsstatus der Kamerarolle in den Einstellungen anzeigen
+* Neue Standard-Sortierreihenfolge für Fotos in den Einstellungen
+* Neue Option, um das Aktualisieren des Muzei-Hintergrundbildes während der Nacht zu vermeiden
+* Möglichkeit, die Karten-App im Bildschirm Foto mit Karte zu starten
+* Vermeidung von Namenskollisionen beim Ein- und Ausblenden von Alben
+* Behobener Absturz bei langem Drücken zur Auswahl mehrerer Alben
+* Behobener Absturz beim Hinzufügen des Galerie-Startsymbols in den Einstellungen
+* Weitere Verbesserungen und Fehlerkorrekturen
