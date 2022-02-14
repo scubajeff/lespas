@@ -130,7 +130,14 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { tih ->
                                     when {
                                         tih.size == 1 -> tih[0]
-                                        tih.isNotEmpty() -> tih[Random.nextInt(tih.size - 1)]
+                                        tih.isNotEmpty() -> {
+                                            var index = Random.nextInt(tih.size - 1)
+                                            lastAddedArtwork?.apply {
+                                                // Prevent from choosing the last one again
+                                                while(tih[index].id == token) index = Random.nextInt(tih.size - 1)
+                                            }
+                                            tih[index]
+                                        }
                                         else -> photoList[Random.nextInt(photoList.size - 1)]
                                     }
                                 }
