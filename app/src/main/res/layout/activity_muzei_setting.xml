@@ -53,11 +53,21 @@
             android:text="@string/prefer_random" />
     </RadioGroup>
 
+    <CheckBox
+        android:id="@+id/skip_late_night_update"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/preference_group"
+        android:layout_marginTop="@dimen/big_padding"
+        android:textAppearance="?android:textAppearanceLarge"
+        android:textStyle="bold"
+        android:text="@string/skip_late_night_update" />
+
     <TextView
         android:id="@+id/exclude_from_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/preference_group"
+        app:layout_constraintTop_toBottomOf="@id/skip_late_night_update"
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_marginTop="@dimen/big_padding"
         android:background="@android:color/transparent"

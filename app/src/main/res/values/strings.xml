@@ -48,6 +48,7 @@
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
+    <string name="not_hiding">The following names already existed in hidden album list: %1$s</string>
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
@@ -92,12 +93,15 @@
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
     <string name="auto_replay_title">Replay video automatically</string>
-    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
-    <string name="show_list_first">Display media list when camera roll start</string>
+    <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
+    <string name="default_sort_order_title">Default photo sort order</string>
+
     <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="cameraroll_as_album_title">Show camera roll as an album</string>
     <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Gallery launcher icon</string>
+    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
+    <string name="show_list_first">Display media list when camera roll start</string>
 
     <string name="edit_header">Edit</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
@@ -138,7 +142,9 @@
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
-    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder DCIM/%1$s</string>
+    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder \'DCIM/%1$s\'.</string>
+    <string name="backup_done">All items in camera roll have been backup.</string>
+    <string name="backup_waiting">%1$,d items in camera roll waiting for backup.</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check for server changes every 6 hours</string>
@@ -283,4 +289,5 @@
     <string name="prefer_random">Random (fallback of all the above)</string>
     <string name="exclude_albums">Exclude from:</string>
     <string name="prefer_latest">Recent</string>
+    <string name="skip_late_night_update">Skip late night update</string>
 </resources>

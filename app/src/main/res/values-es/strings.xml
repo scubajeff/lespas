@@ -85,7 +85,7 @@
     <string name="button_text_edit_in_snapseed">Editar en Snapseed</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
-    <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta DCIM/%1$s</string>
+    <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta \'DCIM/%1$s\'.</string>
     <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
     <string name="gallery_app_name">Galería</string>
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
@@ -183,4 +183,9 @@
     <string name="unlock_please">Desbloquear álbumes ocultos</string>
     <string name="item_bgm">Gestionar la BGM</string>
     <string name="option_menu_mute">Activar el silencio</string>
+    <string name="skip_late_night_update">Omitir la actualización nocturna</string>
+    <string name="backup_done">Todos los elementos del rollo de la cámara han sido respaldados.</string>
+    <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad.</string>
+    <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
+    <string name="default_sort_order_title">Ordenación de fotos por defecto</string>
 </resources>

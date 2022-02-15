@@ -185,13 +185,7 @@ object Tools {
         if (videoDate.year == 1904) videoDate = LocalDateTime.MIN
 
         // Could not get creation date from metadata, try guessing from file name
-        if (videoDate == LocalDateTime.MIN) {
-            if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
-                videoDate = LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset)
-            }
-        }
-
-        if (videoDate == LocalDateTime.MIN) videoDate = LocalDateTime.now()
+        if (videoDate == LocalDateTime.MIN) videoDate = parseFileName(fileName)?.run { LocalDateTime.parse(this, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)) } ?: LocalDateTime.now()
 
         return videoDate
     }
@@ -202,15 +196,22 @@ object Tools {
         timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
         if (isUnknown(timeString)) timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
         //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-        if (isUnknown(timeString)) {
-            // Could not get creation date from exif, try guessing from file name
-            timeString = if (Pattern.compile(wechatPattern).matcher(fileName).matches()) {
-                (LocalDateTime.ofEpochSecond((fileName.substring(8, 18)).toLong(), 0, OffsetDateTime.now().offset))
-                    .format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
-            } else null
-        }
+
+        // Could not get creation date from exif, try guessing from file name
+        if (isUnknown(timeString)) timeString = parseFileName(fileName)
 
         return timeString
+    }
+
+    private fun parseFileName(fileName: String): String? {
+        var matcher = Pattern.compile(wechatPattern).matcher(fileName)
+        @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+        return if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+            else {
+                matcher = Pattern.compile(timeStampPattern).matcher(fileName)
+                if (matcher.matches()) matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }
+                else null
+            }
     }
 
     private fun isUnknown(date: String?): Boolean {
@@ -218,7 +219,8 @@ object Tools {
     }
 
     // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
-    private const val wechatPattern = "^mmexport[0-9]{10}.*"
+    private const val wechatPattern = "^mmexport([0-9]{10}).*"
+    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
 
     fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
 

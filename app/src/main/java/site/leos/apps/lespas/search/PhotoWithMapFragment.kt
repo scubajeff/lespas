@@ -160,6 +160,12 @@ class PhotoWithMapFragment: Fragment() {
                 } else shareOut(stripExif == getString(R.string.strip_on_value))
                 true
             }
+            R.id.option_menu_open_in_map_app -> {
+                startActivity(Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("geo:${photo.lat},${photo.long}?z=20")
+                })
+                true
+            }
             else -> false
         }
     }

@@ -85,7 +85,7 @@
     <string name="button_text_edit_in_snapseed">Modifier dans Snapseed</string>
     <string name="item_camera_roll">Rouleau de Caméra</string>
     <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
-    <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier DCIM/%1$s</string>
+    <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier \'DCIM/%1$s\'.</string>
     <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la rouleau de caméra</string>
     <string name="gallery_app_name">Galerie</string>
     <string name="gallery_launcher_title">Icône du lanceur de galerie</string>
@@ -183,4 +183,9 @@
     <string name="unlock_please">Déverrouiller les albums cachés</string>
     <string name="item_bgm">Gérer la BGM</string>
     <string name="option_menu_mute">Basculer la sourdine</string>
+    <string name="skip_late_night_update">Passer la mise à jour tardive</string>
+    <string name="backup_done">Tous les éléments du rouleau de la caméra ont été sauvegardés.</string>
+    <string name="backup_waiting">%1$,d éléments dans la liste des photos en attente de sauvegarde.</string>
+    <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
+    <string name="default_sort_order_title">Ordre de tri des photos par défaut</string>
 </resources>

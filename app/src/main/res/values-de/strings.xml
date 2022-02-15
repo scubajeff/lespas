@@ -99,7 +99,7 @@
     
     <string name="sync_header">Synchronisierung</string>
     <string name="cameraroll_backup_title">Filmrolle synchronsisieren</string>
-    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner DCIM/%1$s gesichert</string>
+    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner \'DCIM/%1$s\' gesichert.</string>
     <string name="background_sync_title">Regelmäßig synchronisieren</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
     <string name="wifionly_title">Nur über WLAN synchronisieren</string>
@@ -235,4 +235,9 @@
     <string name="unlock_please">Versteckte Alben freischalten</string>
     <string name="item_bgm">BGM verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
+    <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
+    <string name="backup_done">Alle Elemente in der Kamerarolle wurden gesichert.</string>
+    <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung.</string>
+    <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
+    <string name="default_sort_order_title">Standard-Sortierreihenfolge der Fotos</string>
 </resources>

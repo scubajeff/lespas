@@ -1,3 +1,12 @@
+## Version 2.4.6
+* Show camera roll backup status summary in Setting
+* New default photo sort order preference in Setting
+* New option to avoid refreshing Muzei wallpaper during late night
+* Able to launch map app in Photo with Map screen
+* Avoid name collision when hiding and un-hiding album
+* Fixed crash when long press to select multiple albums
+* Fixed crash when adding Gallery launcher icon in Setting
+
 ## Version 2.4.5
 * Added BGM to slideshow
 * Added hide/unhide album function

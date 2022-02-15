@@ -12,4 +12,7 @@
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_baseline_footprint_24"
         android:visible="false" />
+    <item android:id="@+id/option_menu_open_in_map_app"
+        android:title="@string/button_text_map"
+        app:showAsAction="never" />
 </menu>
