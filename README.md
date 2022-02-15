@@ -16,7 +16,7 @@ Features:
 - Search for photos by objects with AI
 - Search photos by location, show album in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
 - Integrate with Snapseed for photo editing on mobile devices
-- Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app
+- Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app, act as a source of Today in History
 - Share to social networks，option provided to strip photo's EXIF before sharing
 - Theme design inspired by Wes Anderson's works
 - All files saved in App's private storage, stop being scanned by malicious apps
