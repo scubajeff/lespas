@@ -34,8 +34,14 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 val allPhoto = photoRepository.getAlbumPhotos(album.id)
                 photoRepository.deletePhotosByAlbum(album.id)
                 allPhoto.forEach { photo ->
-                    if (photo.eTag.isEmpty()) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
-                    else try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                    if (photo.eTag.isEmpty() && actionRepository.safeToRemoveFile(photo.name)) {
+                        try { File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
+                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                    }
+                    else {
+                        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
+                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                    }
                 }
 
                 // Remove local meta file
