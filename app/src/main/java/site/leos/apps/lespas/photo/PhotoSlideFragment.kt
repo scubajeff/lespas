@@ -298,9 +298,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType)) {
-                    albumModel.setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
-                    // If album has not been uploaded yet, update the cover id in action table too
-                    actionModel.updateCover(album.id, currentMedia.id)
+                    actionModel.updateCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
