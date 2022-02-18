@@ -27,6 +27,10 @@ data class Photo(
 ): Parcelable {
     companion object {
         const val TABLE_NAME = "photos"
+
+        const val ETAG_NOT_YET_UPLOADED = ""
+
+        const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
     }
 }
 
@@ -34,7 +38,7 @@ data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
 data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int)
-data class MuzeiPhoto(val id: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int)
+data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int)
 @Parcelize
 data class PhotoWithCoordinate(
     val photo: Photo,
@@ -77,7 +81,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, name = :newName, eTag = :eTag, lastModified = :lastModified WHERE id = :oldId")
     abstract fun fixPhoto(oldId: String, newId: String, newName: String, eTag: String, lastModified: LocalDateTime)
 
-    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag WHERE id = :oldId")
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = shareId & ~${Photo.NOT_YET_UPLOADED} WHERE id = :oldId")
     abstract fun fixPhotoIdEtag(oldId: String, newId: String, eTag: String)
 
     // Including photos from hidden albums
@@ -114,12 +118,15 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT eTag FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
     abstract fun getETag(photoId: String): String
 
-    @Query("SELECT id, name, dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != ''")
+    @Query("SELECT id, name, dateTaken, mimeType, width, height FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
-    @Query("SELECT id, albumId, dateTaken, width, height FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion )")
+    @Query("SELECT id, name, albumId, dateTaken, width, height FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto>
 
     @Query("SELECT dateTaken FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumDuration(albumId: String): List<LocalDateTime>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET eTag = '${Photo.ETAG_NOT_YET_UPLOADED}' WHERE albumId IN (:albumIds)")
+    abstract fun setAsLocal(albumIds: List<String>)
 }

@@ -240,4 +240,10 @@
     <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung.</string>
     <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
     <string name="default_sort_order_title">Standard-Sortierreihenfolge der Fotos</string>
+    <string name="msg_set_as_remote">Wenn Sie das Album als \"Remote\" einstellen, werden alle Mediendateien von diesem Gerät entfernt. Fortfahren?</string>
+    <string name="msg_set_as_local">Wenn Sie das Album als \"Lokal\" einstellen, werden alle Mediendateien vom Server heruntergeladen, was eine Weile dauern würde. Wie vorgehen?</string>
+    <string name="action_set_remote">Remote einstellen</string>
+    <string name="action_set_local">Lokal einstellen</string>
+    <string name="msg_check_network">Überprüfen Sie Ihre Serververbindung.</string>
+    <string name="msg_error_preparing_share_out_files">Versäumnis, Mediendateien vorzubereiten.</string>
 </resources>

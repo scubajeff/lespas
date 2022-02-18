@@ -188,4 +188,10 @@
     <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります。</string>
     <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
     <string name="default_sort_order_title">写真のデフォルトの並び順</string>
+    <string name="msg_set_as_remote">アルバムを「リモート」に設定すると、このデバイスからすべてのメディアファイルが削除されます。続行しますか？</string>
+    <string name="msg_set_as_local">アルバムを「ローカル」に設定すると、サーバーからすべてのメディアファイルをダウンロードするため、しばらく時間がかかります。続行しますか？</string>
+    <string name="action_set_remote">リモート設定</string>
+    <string name="action_set_local">ローカルに設定</string>
+    <string name="msg_check_network">サーバーの接続を確認してください。</string>
+    <string name="msg_error_preparing_share_out_files">メディアファイルの準備に失敗する。</string>
 </resources>

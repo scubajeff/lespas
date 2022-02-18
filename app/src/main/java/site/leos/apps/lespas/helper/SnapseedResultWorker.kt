@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import java.io.File
 
@@ -95,7 +96,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                         // Mark sync status by setting eTag to empty
-                        id = originalPhoto.id, albumId = album.id, name = imageName, eTag = "", shareId = originalPhoto.shareId
+                        id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                     )
                     photoDao.update(newPhoto)
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
@@ -112,11 +113,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                     // Update server
                     with(mutableListOf<Action>()) {
-                        // Rename file to new filename on server, so that we can overwrite it in the next action and keep it's fileId intact
+                        // First rename file to new filename on server, then in next ACTION_ADD_FILES_ON_SERVER action, overwrite it with new edition. This way, file's fileId on server will not change
                         add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
-                        // Upload new photo to server. Photo mimeType passed in folderId property, and since this is actually an file update on server, pass the current photo id in property fileId
-                        //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
 
                         actionDao.insert(this)
                     }
@@ -140,11 +139,11 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Create new photo in local database
-                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
+                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.NOT_YET_UPLOADED))
 
                     with(mutableListOf<Action>()) {
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), album.shareId))
 
                         actionDao.insert(this)
                     }

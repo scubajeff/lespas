@@ -188,4 +188,10 @@
     <string name="backup_waiting">%1$,d éléments dans la liste des photos en attente de sauvegarde.</string>
     <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut</string>
+    <string name="msg_set_as_remote">Le fait de définir l\'album comme \"Distant\" supprimera tous ses fichiers multimédias de cet appareil. Comment procéder ?</string>
+    <string name="msg_set_as_local">Si vous définissez l\'album comme \"Local\", tous les fichiers multimédias seront téléchargés depuis le serveur, ce qui prendra un certain temps. Comment procéder ?</string>
+    <string name="action_set_remote">Définir comme Distant</string>
+    <string name="action_set_local">Définir comme Local</string>
+    <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
+    <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
 </resources>

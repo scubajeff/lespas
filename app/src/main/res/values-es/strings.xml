@@ -188,4 +188,10 @@
     <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad.</string>
     <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
     <string name="default_sort_order_title">Ordenación de fotos por defecto</string>
+    <string name="msg_set_as_remote">Al establecer el álbum como \'Remoto\' se eliminarán todos sus archivos multimedia de este dispositivo. ¿Cómo proceder?</string>
+    <string name="msg_set_as_local">Al configurar el álbum como \"Local\" se descargarán todos los archivos multimedia del servidor, por lo que tardará un poco. ¿Cómo proceder?</string>
+    <string name="action_set_remote">Ajustar como Remoto</string>
+    <string name="action_set_local">Ajustar como Local</string>
+    <string name="msg_check_network">Compruebe la conexión de su servidor.</string>
+    <string name="msg_error_preparing_share_out_files">No preparar los archivos multimedia.</string>
 </resources>

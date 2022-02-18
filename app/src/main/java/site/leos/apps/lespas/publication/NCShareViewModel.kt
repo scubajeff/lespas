@@ -80,7 +80,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
-    private val localCacheFolder = "${application.cacheDir}${lespasBase}"
+    private val localCacheFolder = "${application.filesDir}${lespasBase}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
 
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
@@ -106,7 +106,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
-            webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}", "LesPas_${application.getString(R.string.lespas_version)}")
+            webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder, "LesPas_${application.getString(R.string.lespas_version)}")
         }
     }
 
@@ -552,7 +552,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var animatedDrawable: Drawable? = null
         val job = viewModelScope.launch(downloadDispatcher) {
             try {
-                val key = "${photo.fileId}$type"
+                val photoPath = "$resourceRoot${photo.path}"
+                var key = "${photo.fileId}$type"
+                if ((type == ImageLoaderViewModel.TYPE_COVER) || (type == ImageLoaderViewModel.TYPE_SMALL_COVER)) key = "$key-${photo.coverBaseLine}"
+
                 imageCache.get(key)?.let { bitmap = it } ?: run {
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
                     try {
@@ -577,9 +580,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             // TODO the following setting make picture larger, care to find a new way?
                             //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                         }
-                        webDav.getStream("$resourceRoot${photo.path}", true,null).use {
+                        webDav.getStream(photoPath, true,null).use {
                             when (type) {
-                                ImageLoaderViewModel.TYPE_COVER -> {
+                                ImageLoaderViewModel.TYPE_COVER, ImageLoaderViewModel.TYPE_SMALL_COVER -> {
                                     // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
                                     // TODO better way to handle this
                                     val top = if (photo.coverBaseLine > photo.height - 1) 0 else photo.coverBaseLine
@@ -595,10 +598,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         @Suppress("DEPRECATION")
                                         bitmap = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, option.apply { inSampleSize = sampleSize })
                                     } catch (e: IOException) {
+                                        // No information on cover's mimetype
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                                         //e.printStackTrace()
                                         it.close()
-                                        webDav.getStream("$resourceRoot${photo.path}", true,null).use { vResp->
+                                        webDav.getStream(photoPath, true,null).use { vResp->
                                             bitmap = getRemoteVideoThumbnail(vResp, photo)
                                         }
                                     }
@@ -627,7 +631,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         bitmap?.let {
                             if (it.allocationByteCount > 100000000) {
                                 bitmap = null
-                                webDav.getStream("$resourceRoot${photo.path}", true, CacheControl.FORCE_CACHE).use { s-> bitmap = BitmapFactory.decodeStream(s, null, option.apply { inSampleSize = 2 })}
+                                webDav.getStream(photoPath, true, CacheControl.FORCE_CACHE).use { s-> bitmap = BitmapFactory.decodeStream(s, null, option.apply { inSampleSize = 2 })}
                             }
                         }
                     }
@@ -720,16 +724,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         decoderJobMap[System.identityHashCode(view)]?.cancel()
     }
 
-    private fun replacePrevious(key: Int, newJob: Job) {
-        decoderJobMap[key]?.cancel()
-        decoderJobMap[key] = newJob
-    }
+    fun downloadFile(media: String, dest: File, stripExif: Boolean): Boolean {
+        return try {
+            webDav.getStream("${resourceRoot}${media}", true, null).use { remote ->
+                if (stripExif) BitmapFactory.decodeStream(remote)?.compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                else dest.outputStream().use { local -> remote.copyTo(local, 8192) }
+            }
 
-    override fun onCleared() {
-        //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
-        decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
-        downloadDispatcher.close()
-        super.onCleared()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+
+            false
+        }
     }
 
     fun savePhoto(context: Context, photo: RemotePhoto) {
@@ -844,10 +851,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
 */
+
+    private fun replacePrevious(key: Int, newJob: Job) {
+        decoderJobMap[key]?.cancel()
+        decoderJobMap[key] = newJob
+    }
+
+    override fun onCleared() {
+        //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
+        decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
+        downloadDispatcher.close()
+        super.onCleared()
+    }
+
     class ImageCache (maxSize: Int): LruCache<String, Bitmap>(maxSize) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
-
 
     @Parcelize
     data class Sharee (

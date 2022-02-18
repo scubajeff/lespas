@@ -188,4 +188,10 @@
     <string name="backup_waiting">相機相冊中仲有%1$,d個檔案正等待備份。</string>
     <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
     <string name="default_sort_order_title">預設相片排序規則</string>
+    <string name="msg_set_as_remote">相冊設置為「遠程相冊」後，該相冊之媒體檔案將從本機存儲中刪除，繼續操作嗎？</string>
+    <string name="msg_set_as_local">相冊設置為「本地相冊」後，該相冊之媒體檔案將從伺服器下載到本機，繼續操作嗎？</string>
+    <string name="action_set_remote">設為遠程相冊</string>
+    <string name="action_set_local">設為本地相冊</string>
+    <string name="msg_check_network">請檢查與伺服器之連結 。</string>
+    <string name="msg_error_preparing_share_out_files">無法讀取媒體檔案。</string>
 </resources>

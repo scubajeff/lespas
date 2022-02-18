@@ -45,6 +45,8 @@
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
     <string name="unlock_please">Unlock hidden albums</string>
+    <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
+    <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
@@ -65,6 +67,8 @@
     <string name="strip_exif_no">No</string>
     <string name="preparing_shares">Preparing shares…</string>
     <string name="striping_exif">Striping EXIF data…</string>
+    <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
+    <string name="msg_check_network">Check your server connection.</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
@@ -232,6 +236,8 @@
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_hide">Hide</string>
+    <string name="action_set_remote">Set as Remote</string>
+    <string name="action_set_local">Set as Local</string>
     <string name="action_reuse">To album…</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>

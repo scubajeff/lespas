@@ -723,8 +723,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             job?.let { if (it.isCancelled) return arrayListOf() }
 
             mediaPagerAdapter.getPhotoBy(photoId.toString()).also {  photo->
-                // This TEMP_CACHE_FOLDER is created by MainActivity
-                destFile = File("${requireActivity().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+                destFile = File(requireActivity().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
 
                 // Copy the file from camera roll to cacheDir/name, strip EXIF base on setting
                 if (strip && Tools.hasExif(photo.mimeType)) {
