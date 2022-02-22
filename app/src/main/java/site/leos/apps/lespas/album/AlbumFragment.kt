@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -593,7 +594,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val llRecipients = itemView.findViewById<LinearLayoutCompat>(R.id.recipients)
-            private val titleDrawableSize = tvTitle.textSize.toInt()
+            private val cameraDrawable: Drawable?
+            private val cloudDrawable: Drawable?
+
+            init {
+                val titleDrawableSize = tvTitle.textSize.toInt()
+                cameraDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+                cloudDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+            }
 
             @SuppressLint("InflateParams")
             fun bindViewItems(album: Album, isActivated: Boolean) {
@@ -623,8 +631,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         text = album.name
 
                         setCompoundDrawables(when {
-                            album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL -> ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
-                            Tools.isRemoteAlbum(album) -> ContextCompat.getDrawable(context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+                            album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL -> cameraDrawable
+                            Tools.isRemoteAlbum(album) -> cloudDrawable
                             else -> null
                         }, null, null, null)
                     }

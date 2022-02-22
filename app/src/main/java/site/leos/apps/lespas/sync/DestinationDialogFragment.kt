@@ -4,6 +4,7 @@ import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
@@ -320,7 +321,12 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
             private val tvName = itemView.findViewById<TextView>(R.id.name)
-            private val nameDrawableSize = tvName.textSize.toInt()
+            private val cloudDrawable: Drawable?
+
+            init {
+                val nameDrawableSize = tvName.textSize.toInt()
+                cloudDrawable = ContextCompat.getDrawable(tvName.context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, nameDrawableSize, nameDrawableSize) }
+            }
 
             fun bindViewItems(album: Album) {
                 if (album.id.isEmpty()) {
@@ -344,7 +350,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     }
                     tvName.apply {
                         text = album.name
-                        setCompoundDrawables(if (Tools.isRemoteAlbum(album)) ContextCompat.getDrawable(context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, nameDrawableSize, nameDrawableSize) } else null, null, null, null)
+                        setCompoundDrawables(if (Tools.isRemoteAlbum(album)) cloudDrawable else null, null, null, null)
                     }
                 }
 
