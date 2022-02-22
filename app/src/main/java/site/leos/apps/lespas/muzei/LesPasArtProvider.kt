@@ -153,38 +153,41 @@ class LesPasArtProvider: MuzeiArtProvider() {
                 }?.let { photo ->
                     val album = albumRepository.getThisAlbum(photo.albumId)
                     val dest = File(application.cacheDir, photo.id)
-                    if (Tools.isRemoteAlbum(album)) {
-                        // Download remote image
-                        val accounts = AccountManager.get(application).getAccountsByType(application.getString(R.string.account_type_nc))
-                        val webDav: OkHttpWebDav
-                        val resourceRoot: String
+                    try {
+                        if (Tools.isRemoteAlbum(album)) {
+                            // Download remote image
+                            val accounts = AccountManager.get(application).getAccountsByType(application.getString(R.string.account_type_nc))
+                            val webDav: OkHttpWebDav
+                            val resourceRoot: String
 
-                        if (accounts.isNotEmpty()) {
-                            AccountManager.get(application).run {
-                                val userName = getUserData(accounts[0], application.getString(R.string.nc_userdata_username))
-                                val serverRoot = getUserData(accounts[0], application.getString(R.string.nc_userdata_server))
+                            if (accounts.isNotEmpty()) {
+                                AccountManager.get(application).run {
+                                    val userName = getUserData(accounts[0], application.getString(R.string.nc_userdata_username))
+                                    val serverRoot = getUserData(accounts[0], application.getString(R.string.nc_userdata_server))
 
-                                resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
-                                webDav = OkHttpWebDav(
-                                    userName,
-                                    peekAuthToken(accounts[0], serverRoot),
-                                    serverRoot,
-                                    getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                                    "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
-                                    "LesPas_${application.getString(R.string.lespas_version)}"
-                                )
+                                    resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
+                                    webDav = OkHttpWebDav(
+                                        userName,
+                                        peekAuthToken(accounts[0], serverRoot),
+                                        serverRoot,
+                                        getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                                        "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
+                                        "LesPas_${application.getString(R.string.lespas_version)}"
+                                    )
+                                }
+
+                                webDav.download("${resourceRoot}/${Uri.encode(album.name)}/${Uri.encode(photo.name)}", dest, null)
                             }
-
-                            webDav.download("${resourceRoot}/${Uri.encode(album.name)}/${Uri.encode(photo.name)}", dest, null)
-                        }
-                    } else {
-                        File("${Tools.getLocalRoot(application)}/${photo.id}").inputStream().use { source ->
-                            dest.outputStream().use { target ->
-                                source.copyTo(target, 8192)
+                        } else {
+                            File("${Tools.getLocalRoot(application)}/${photo.id}").inputStream().use { source ->
+                                dest.outputStream().use { target ->
+                                    source.copyTo(target, 8192)
+                                }
                             }
                         }
-                    }
-                    setArtwork(Artwork(
+                    } catch (e: Exception) {}
+
+                    if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
                         byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
                         token = photo.id,
