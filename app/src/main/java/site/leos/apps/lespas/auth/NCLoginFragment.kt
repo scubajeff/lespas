@@ -230,6 +230,8 @@ class NCLoginFragment: Fragment() {
                     }
                 }
 
+                // Have to allow self-signed certificate
+                @SuppressLint("WebViewClientOnReceivedSslError")
                 override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
                     if (error?.primaryError == SslError.SSL_IDMISMATCH && selfSigned) handler?.proceed() else handler?.cancel()
                 }
@@ -348,6 +350,9 @@ class NCLoginFragment: Fragment() {
         if (!Pattern.compile("^https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;\\[\\]]*[-a-zA-Z0-9\\]+&@#/%=~_|]").matcher(hostUrl).matches()) {
             hostInputText.error = getString(R.string.host_address_validation_error)
         } else {
+            // Temporarily prevent screen rotation
+            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
             disableInput()
             // Set a loading spinner for text input view
             inputArea.run {
@@ -357,6 +362,9 @@ class NCLoginFragment: Fragment() {
 
             CoroutineScope(Dispatchers.Default).launch(Dispatchers.Main) {
                 result = pingServer(hostUrl, false)
+
+                // Resume screen rotation setting
+                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
                 when (result) {
                     HttpURLConnection.HTTP_OK -> {
