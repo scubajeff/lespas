@@ -544,7 +544,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
     @JvmOverloads
-    fun getPhoto(photo: RemotePhoto, view: ImageView, type: String, callBack: LoadCompleteListener? = null) {
+    fun getPhoto(photo: RemotePhoto, view: ImageView, photoType: String, callBack: LoadCompleteListener? = null) {
+        val type = if (photo.mimeType.startsWith("video")) ImageLoaderViewModel.TYPE_VIDEO else photoType
         val jobKey = System.identityHashCode(view)
 
         //view.imageAlpha = 0
@@ -582,6 +583,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                         webDav.getStream(photoPath, true,null).use {
                             when (type) {
+                                ImageLoaderViewModel.TYPE_VIDEO -> bitmap = getRemoteVideoThumbnail(it, photo)
                                 ImageLoaderViewModel.TYPE_COVER, ImageLoaderViewModel.TYPE_SMALL_COVER -> {
                                     // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
                                     // TODO better way to handle this
@@ -608,12 +610,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
-                                    if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
-                                    else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                    //if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
+                                    //else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                    bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
                                     when {
-                                        photo.mimeType.startsWith("video")-> bitmap = getRemoteVideoThumbnail(it, photo)
+                                        //photo.mimeType.startsWith("video")-> bitmap = getRemoteVideoThumbnail(it, photo)
                                         (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif")-> {
                                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                                 animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
