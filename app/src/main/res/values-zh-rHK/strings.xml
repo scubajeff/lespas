@@ -194,4 +194,5 @@
     <string name="action_set_local">設為本地相冊</string>
     <string name="msg_check_network">請檢查與伺服器之連結 。</string>
     <string name="msg_error_preparing_share_out_files">無法讀取媒體檔案。</string>
+    <string name="to_new_album">至新相冊：</string>
 </resources>

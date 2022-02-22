@@ -246,4 +246,5 @@
     <string name="action_set_local">Lokal einstellen</string>
     <string name="msg_check_network">Überprüfen Sie Ihre Serververbindung.</string>
     <string name="msg_error_preparing_share_out_files">Versäumnis, Mediendateien vorzubereiten.</string>
+    <string name="to_new_album">Zum neuen Album:</string>
 </resources>

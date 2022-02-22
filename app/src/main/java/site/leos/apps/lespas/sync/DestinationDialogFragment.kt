@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.webkit.MimeTypeMap
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -63,6 +64,9 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private lateinit var copyOrMoveToggleGroup: MaterialButtonToggleGroup
     private lateinit var newAlbumTextInputLayout: TextInputLayout
     private lateinit var newAlbumTitleTextInputEditText: TextInputEditText
+    private lateinit var toAlbumTextView: TextView
+    private lateinit var remoteAlbumCheckBox: CheckBox
+    private var remoteAlbumIconDrawableSize = 16
 
     private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
@@ -170,8 +174,23 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
         copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
-        newAlbumTextInputLayout = view.findViewById(R.id.new_album_textinputlayout)
+        newAlbumTextInputLayout = view.findViewById<TextInputLayout?>(R.id.new_album_textinputlayout).apply {
+            this.editText?.run {
+                compoundDrawablePadding = 16
+                TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
+                remoteAlbumIconDrawableSize = textSize.toInt()
+            }
+        }
         newAlbumTitleTextInputEditText = view.findViewById(R.id.name_textinputedittext)
+        toAlbumTextView = view.findViewById(R.id.to)
+        remoteAlbumCheckBox = view.findViewById<CheckBox?>(R.id.create_remote_album).apply {
+            setOnCheckedChangeListener { _, isChecked ->
+                newAlbumTitleTextInputEditText.setCompoundDrawables(
+                    if (isChecked) ContextCompat.getDrawable(context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, remoteAlbumIconDrawableSize, remoteAlbumIconDrawableSize) } else null,
+                    null, null, null
+                )
+            }
+        }
 
         clipDataRecyclerView.adapter = clipDataAdapter
         destinationRecyclerView.adapter = albumAdapter
@@ -195,7 +214,16 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         if (name.isNotEmpty()) {
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                             // Return with album id field empty, calling party will know this is a new album
-                            destinationModel.setDestination(Album("", name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", Album.NULL_ALBUM, 1f))
+                            destinationModel.setDestination(
+                                Album(
+                                    "", name,
+                                    LocalDateTime.MAX, LocalDateTime.MIN,
+                                    "", 0, 0, 0,
+                                    LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "",
+                                    if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM,
+                                    1f
+                                )
+                            )
 
                             // Clear editing mode
                             destinationModel.setEditMode(false)
@@ -276,6 +304,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     }
 
     private fun showNewAlbumEditText() {
+        toAlbumTextView.text = getString(R.string.to_new_album)
         destinationRecyclerView.visibility = View.GONE
         newAlbumTextInputLayout.apply {
             visibility = View.VISIBLE

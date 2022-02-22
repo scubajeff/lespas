@@ -194,4 +194,5 @@
     <string name="action_set_local">设为本地相册</string>
     <string name="msg_error_preparing_share_out_files">无法读取媒体文件。</string>
     <string name="msg_check_network">请检查与服务器的连接。</string>
+    <string name="to_new_album">至新相册：</string>
 </resources>

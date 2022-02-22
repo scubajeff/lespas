@@ -194,4 +194,5 @@
     <string name="action_set_local">ローカルに設定</string>
     <string name="msg_check_network">サーバーの接続を確認してください。</string>
     <string name="msg_error_preparing_share_out_files">メディアファイルの準備に失敗する。</string>
+    <string name="to_new_album">ニューアルバムへ</string>
 </resources>
