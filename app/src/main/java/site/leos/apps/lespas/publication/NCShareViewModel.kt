@@ -624,17 +624,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                             }
                                         }
-                                        else-> bitmap = BitmapFactory.decodeStream(it, null, option)
+                                        else-> {
+                                            if (photo.width * photo.height > 33333334) option.inSampleSize = 2
+                                            bitmap = BitmapFactory.decodeStream(it, null, option)
+                                        }
                                     }
                                 }
-                            }
-                        }
-
-                        // If decoded bitmap is too large
-                        bitmap?.let {
-                            if (it.allocationByteCount > 100000000) {
-                                bitmap = null
-                                webDav.getStream(photoPath, true, CacheControl.FORCE_CACHE).use { s-> bitmap = BitmapFactory.decodeStream(s, null, option.apply { inSampleSize = 2 })}
                             }
                         }
                     }
