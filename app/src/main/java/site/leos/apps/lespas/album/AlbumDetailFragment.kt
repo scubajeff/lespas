@@ -24,6 +24,7 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import androidx.exifinterface.media.ExifInterface
@@ -142,6 +143,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     setLastPosition(position)
                 }
 
+                ViewCompat.setTransitionName(recyclerView, null)
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -149,7 +151,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     excludeTarget(android.R.id.statusBarBackground, true)
                     excludeTarget(android.R.id.navigationBarBackground, true)
                 }
-                ViewCompat.setTransitionName(recyclerView, null)
 
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
@@ -276,6 +277,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
+        recyclerView.doOnLayout { startPostponedEnterTransition() }
 
         with(recyclerView) {
             // Special span size to show cover at the top of the grid
