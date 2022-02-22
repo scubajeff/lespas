@@ -121,7 +121,7 @@ class NCLoginFragment: Fragment() {
             strokeWidth = 6.0f
             centerRadius = 16.0f
             setColorSchemeColors(ContextCompat.getColor(requireContext(), R.color.color_primary))
-            start()
+            hostInputText.textSize.toInt().let { setBounds(0, 0, it, it) }
         }
 
         // Animate the background
@@ -351,8 +351,8 @@ class NCLoginFragment: Fragment() {
             disableInput()
             // Set a loading spinner for text input view
             inputArea.run {
-                endIconDrawable = loadingSpinner
                 endIconMode = TextInputLayout.END_ICON_CUSTOM
+                endIconDrawable = loadingSpinner.apply { (this as CircularProgressDrawable).start() }
             }
 
             CoroutineScope(Dispatchers.Default).launch(Dispatchers.Main) {
