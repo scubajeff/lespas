@@ -11,6 +11,7 @@ class PhotoRepository(application: Application) {
 
     fun getAlbumPhotosFlow(albumId: String): Flow<List<Photo>> = photoDao.getAlbumPhotosFlow(albumId)
     fun upsert(photo: Photo) { photoDao.upsert(photo) }
+    fun upsert(photo: List<Photo>) { photoDao.upsert(photo) }
     fun deleteById(photoId: String) { photoDao.deleteById(photoId) }
     fun getETagsMap(albumId: String): Map<String, String> = photoDao.getETagsMap(albumId).map { it.id to it.eTag }.toMap()
     fun getNamesMap(albumId: String): Map<String, String> = photoDao.getNamesMap(albumId).map { it.id to it.name }.toMap()
@@ -38,4 +39,5 @@ class PhotoRepository(application: Application) {
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
     fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto> = photoDao.getMuzeiArtwork(exclusion, portraitMode)
     fun getAlbumDuration(albumId: String): Pair<LocalDateTime, LocalDateTime> = with(photoDao.getAlbumDuration(albumId)) { Pair(this.first(), this.last()) }
+    fun setAsLocal(albumIds: List<String>) { photoDao.setAsLocal(albumIds) }
 }

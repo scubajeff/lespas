@@ -35,8 +35,10 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -149,7 +151,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
             localRootFolder = Tools.getLocalRoot(application)
 
-            webDav = OkHttpWebDav(userName, peekAuthToken(account, serverRoot), serverRoot, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}", "LesPas_${application.getString(R.string.lespas_version)}")
+            webDav = OkHttpWebDav(
+                userName, peekAuthToken(account, serverRoot), serverRoot, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
+                "LesPas_${application.getString(R.string.lespas_version)}",
+                sp.getInt(SettingsFragment.CACHE_SIZE, 800)
+            )
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -175,17 +182,31 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 Action.ACTION_ADD_FILES_ON_SERVER -> {
-                    // MIME type passed in folderId property
+                    // folderId: file mimetype
+                    // folderName: album name
+                    // fileId: photo's id, if this is a new photo, same as photo name
+                    // fileName: photo name
+                    // date: created timestamp
+                    // retry: album's flags
+                    // local file saved as "filename" in lespas/ folder
+
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
                         with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
-                                val newId = this.first.substring(0, 8).toInt().toString()
-                                // Rename image file name to fileId
-                                try { localFile.renameTo(File(localRootFolder, newId)) } catch (e: Exception) { e.printStackTrace() }
-                                // Rename video thumbnail file too
-                                if (action.folderId.startsWith("video")) try { File(localRootFolder, "${action.fileName}.thumbnail").renameTo(File(localRootFolder, "${newId}.thumbnail")) } catch (e: Exception) { e.printStackTrace() }
+                                val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
+
+                                if ((action.retry and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM) {
+                                    // If this is a remote album, remove the image file and video thumbnail
+                                    try { localFile.delete() } catch (e: Exception) { e.printStackTrace() }
+                                    try { File(localRootFolder, "${action.fileName}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                                } else {
+                                    // If it's a local album, rename image file name to fileId
+                                    try { localFile.renameTo(File(localRootFolder, newId)) } catch (e: Exception) { e.printStackTrace() }
+                                    // Rename video thumbnail file too
+                                    if (action.folderId.startsWith("video")) try { File(localRootFolder, "${action.fileName}.thumbnail").renameTo(File(localRootFolder, "${newId}.thumbnail")) } catch (e: Exception) { e.printStackTrace() }
+                                }
 
                                 // Update photo's id to the real fileId and latest eTag now. When called from Snapseed Replace, newEtag is what needs to be updated
                                 photoRepository.fixPhotoIdEtag(action.fileId, newId, this.second)
@@ -219,12 +240,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // mind that we purposely leave the eTag column empty
                             photoRepository.fixNewPhotosAlbumId(action.folderId, fileId)
                             albumRepository.fixNewLocalAlbumId(action.folderId, fileId, action.fileName)
+
                             // touch meta file
-                            try {
-                                File("${localRootFolder}/${fileId}.json").createNewFile()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
+                            try { File("${localRootFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
 
                             // Mark meta update later
                             metaUpdatedNeeded.add(action.folderName)
@@ -340,6 +358,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var localAlbum: List<Album>
         var hidden = false
 
+        // Create a changed album list, including all albums modified or created on server except newly created hidden ones
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
             if (remoteAlbum.isFolder) {
                 // Collecting remote album ids, including hidden albums, for deletion syncing
@@ -369,8 +388,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 remoteAlbum.modified,           // Use remote version
                                 localAlbum[0].sortOrder,        // Preserve local data
                                 remoteAlbum.eTag,               // Use remote eTag for unhidden albums
-                                if (remoteAlbum.isShared) 1 else 0,
-                                1f,
+                                if (remoteAlbum.isShared) localAlbum[0].shareId or Album.SHARED_ALBUM else localAlbum[0].shareId and Album.SHARED_ALBUM.inv(),    // shareId's 1st bit denotes album shared status
+                                1f,                  // Default to finished
                             )
                         )
                     } else {
@@ -381,8 +400,22 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
                     if (hidden) return@forEach
 
-                    // No hit on local, a new album from server, make sure the 'cover' property is set to "", a sign shows it's a new album
-                    changedAlbums.add(Album(remoteAlbum.fileId, remoteAlbum.name, LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, remoteAlbum.modified, sp.getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC, remoteAlbum.eTag, 0, 1f))
+                    // No hit on local, a new album from server, make sure the 'cover' property is set to Album.NO_COVER, denotes a new album which will NOT be included in album list
+                    // Default album attribute set to "Remote" for any album not created by this device
+                    changedAlbums.add(
+                        Album(
+                            remoteAlbum.fileId,
+                            remoteAlbum.name,
+                            LocalDateTime.MAX, LocalDateTime.MIN,
+                            Album.NO_COVER,
+                            0, 0, 0,
+                            remoteAlbum.modified,
+                            sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC,
+                            remoteAlbum.eTag,
+                            Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
+                            1f,
+                        )
+                    )
                 }
             }
         }
@@ -403,6 +436,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
         }
 
+        // Syncing changes for each album in changed albums list
         if (changedAlbums.isNotEmpty()) {
             // Sync each changed album
             val changedPhotos = mutableListOf<Photo>()
@@ -420,79 +454,87 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var localImageFileName: String
                 val metaFileName = "${changedAlbum.id}.json"
                 val bgmFileName = "${changedAlbum.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                var contentModifiedTime = LocalDateTime.MIN
 
                 // Create changePhotos list
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
-                    // Download album BGM file if file size is different to local's, since we don't cache this file's id, eTag at local, size is the most reliable way. TODO: bgm file eTag column in Album table
-                    if ((remotePhoto.contentType.startsWith("audio/") || remotePhoto.contentType == "application/octet-stream") && remotePhoto.name == BGM_FILENAME_ON_SERVER) {
-                        if (File("${localRootFolder}/${bgmFileName}").length() != remotePhoto.size) {
-                            webDav.download("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${BGM_FILENAME_ON_SERVER}", "$localRootFolder/${bgmFileName}", null)
-                        }
-                        return@forEach
-                    }
+                    when {
+                        // Media files with supported format which are not hidden
+                        (remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.') -> {
+                            remotePhotoId = remotePhoto.fileId
 
-                    if ((remotePhoto.contentType.substringAfter("image/", "") in Tools.SUPPORTED_PICTURE_FORMATS || remotePhoto.contentType.startsWith("video/", true)) && !remotePhoto.name.startsWith('.')) {
-                        remotePhotoId = remotePhoto.fileId
-                        // Accumulate remote photos list
-                        remotePhotoIds.add(remotePhotoId)
+                            // Collect remote photos ids for detection of server deletion
+                            remotePhotoIds.add(remotePhotoId)
 
-                        if (localPhotoETags[remotePhotoId] != remotePhoto.eTag) { // Also matches newly created photo id from server, e.g. no such remotePhotoId in local table
-                            //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
+                            if (localPhotoETags[remotePhotoId] != remotePhoto.eTag) {
+                                // Also matches newly created photo id from server, e.g. no such remotePhotoId in local table
+                                //Log.e("=======", "updating photo: ${remotePhoto.name} r_etag:${remotePhoto.etag} l_etag:${localPhotoETags[remotePhotoId]}")
 
-                            //if (localPhotoETags.containsKey(remotePhoto.name)) {
-                            if (File(localRootFolder, remotePhoto.name).exists()) {
-                                // If there is local file with remote photo's name, that means it's a local added photo which is now coming back from server.
-                                //Log.e("<><><>", "coming back now ${remotePhoto.name}")
-                                // Rename image file name to fileid
-                                try {
-                                    // If this file has already being uploaded,
-                                    File(localRootFolder, remotePhotoId).delete()
-                                } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-                                try {
-                                    File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId))
-                                    //Log.e(">>>>", "rename ${remotePhoto.name} to $remotePhotoId")
-                                } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-                                // Rename video thumbnail file too
-                                if (remotePhoto.contentType.startsWith("video")) try { File(localRootFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localRootFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { e.printStackTrace() }
+                                if (File(localRootFolder, remotePhoto.name).exists()) {
+                                    // If there is local file with remote photo's name, that means it's a local added photo which is now coming back from server.
+                                    //Log.e("<><><>", "coming back now ${remotePhoto.name}")
 
-                                localPhotoNamesReverse[remotePhoto.name]?.apply {
-                                    // Update it's id to the real fileId and also eTag now
-                                    photoRepository.fixPhoto(this, remotePhotoId, remotePhoto.name, remotePhoto.eTag, remotePhoto.modified)
-                                    // Taking care the cover
-                                    // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
-                                    if (changedAlbum.cover == this) {
-                                        //Log.e("=======", "fixing cover from ${changedAlbum.cover} to $remotePhotoId")
-                                        albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
-                                        changedAlbum.cover = remotePhotoId
-
-                                        metaUpdatedNeeded.add(changedAlbum.name)
+                                    // Remove old media file at local
+                                    try { File(localRootFolder, remotePhotoId).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                    // Rename image file name to fileid
+                                    try { File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId)) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                    // Handle video thumbnail file too
+                                    if (remotePhoto.contentType.startsWith("video")) {
+                                        try { File(localRootFolder, "${remotePhotoId}.thumbnail").delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                        try { File(localRootFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localRootFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
                                     }
-                                }
-                            } else {
-                                // Either a new photo created on server or an existing photo updated on server
-                                changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
-                            }
-                        } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
-                            // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
-                            // file again from server
-                            photoRepository.changeName(remotePhotoId, remotePhoto.name)
 
-                            // Published album's content meta needs update
-                            contentMetaUpdatedNeeded.add(changedAlbum.name)
-                            if (remotePhoto.name == photoRepository.getPhotoName(changedAlbum.cover)) metaUpdatedNeeded.add(changedAlbum.name)
+                                    localPhotoNamesReverse[remotePhoto.name]?.apply {
+                                        // Update it's id to the real fileId and also eTag now
+                                        photoRepository.fixPhoto(this, remotePhotoId, remotePhoto.name, remotePhoto.eTag, remotePhoto.modified)
+                                        // Taking care the cover
+                                        // TODO: Condition race here, e.g. user changes this album's cover right at this very moment
+                                        if (changedAlbum.cover == this) {
+                                            //Log.e("=======", "fixing cover from ${changedAlbum.cover} to $remotePhotoId")
+                                            albumRepository.fixCoverId(changedAlbum.id, remotePhotoId)
+                                            changedAlbum.cover = remotePhotoId
+
+                                            metaUpdatedNeeded.add(changedAlbum.name)
+                                        }
+                                    }
+                                } else {
+                                    // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local
+                                    changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
+                                }
+                            } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
+                                // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
+                                // file again from server
+                                photoRepository.changeName(remotePhotoId, remotePhoto.name)
+
+                                // Published album's content meta needs update
+                                contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                if (remotePhoto.name == photoRepository.getPhotoName(changedAlbum.cover)) metaUpdatedNeeded.add(changedAlbum.name)
+                            }
+                        }
+                        // Content meta file
+                        remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
+                            // Mark down latest meta (both album meta and conent meta) update timestamp,
+                            contentModifiedTime = maxOf(contentModifiedTime, remotePhoto.modified)
+                        }
+                        // BGM file
+                        (remotePhoto.contentType.startsWith("audio/") || remotePhoto.contentType == "application/octet-stream") && remotePhoto.name == BGM_FILENAME_ON_SERVER -> {
+                            // Download album BGM file if file size is different to local's, since we don't cache this file's id, eTag at local, size is the most reliable way. TODO: bgm file eTag column in Album table
+                            if (File("${localRootFolder}/${bgmFileName}").length() != remotePhoto.size) {
+                                webDav.download("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${BGM_FILENAME_ON_SERVER}", "$localRootFolder/${bgmFileName}", null)
+                            }
                         }
                     }
                 }
 
-                // Syncing meta, mostly about album cover
-                if (changedAlbum.cover.isEmpty()) {
-                    // New album created on server, cover not assigned yet
+                // Syncing meta, deal with album cover, sort order
+                if (changedAlbum.cover == Album.NO_COVER) {
+                    // New album created on server, cover not yet available
 
                     // Safety check, if this new album is empty, process next album
                     if (changedPhotos.size <= 0) continue
 
-                    // New album from server, try downloading album meta file. If this album was created on server, might not have cover set up yet
+                    // New album from server, try downloading album meta file. If this album was created directly on server rather than from another client, there wil be no cover at all
                     downloadAlbumMeta(changedAlbum)?.apply {
                         changedAlbum.cover = cover
                         changedAlbum.coverBaseline = baseline
@@ -500,20 +542,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverHeight = height
                         changedAlbum.sortOrder = sortOrder
                     } ?: run {
-                        // If there isn't meta on server, create it
+                        // If there has no meta on server, create it at the end of syncing
                         metaUpdatedNeeded.add(changedAlbum.name)
                     }
-
-                    // Find the cover in photo lists
-                    (changedPhotos.find { it.id == changedAlbum.cover })?.let { cover->
-                        // Move cover photo to the first position of changedPhotos list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
-                        changedPhotos.remove(cover)
-                        changedPhotos.add(0, cover)
-                    }
                 } else {
-                    // A new album created by Les Pas app running on other device, cover has been assigned
-
-                    // Try to sync meta changes from other devices if this album existed on local device
+                    // Try to sync meta changes from other devices if this album exists on local device
                     remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->
                         //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
                         //Log.e(">>>>>", "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
@@ -529,13 +562,63 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 changedAlbum.coverHeight = height
                                 changedAlbum.sortOrder = sortOrder
                             }
+                        }
+                    }
+                }
+                // If cover found in changed photo lists then move it to the top of the list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
+                (changedPhotos.find { it.id == changedAlbum.cover })?.let { coverPhoto ->
+                    changedPhotos.remove(coverPhoto)
+                    changedPhotos.add(0, coverPhoto)
+                }
 
-                            // If the new cover is new or updated somewhere else, move it to the top of download list
-                            changedPhotos.find { it.id == changedAlbum.cover }?.let { newCover->
-                                changedPhotos.remove(newCover)
-                                changedPhotos.add(0, newCover)
+
+                // Quick sync for "Remote" albums
+                if (Tools.isRemoteAlbum(changedAlbum) && Tools.isExcludedAlbum(changedAlbum)) {
+                    // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
+                    if (changedAlbum.lastModified <= contentModifiedTime) {
+                        // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
+                        val photoMeta = mutableListOf<Photo>()
+                        var pId = ""
+
+                        webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
+                            val meta = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas").getJSONArray("photos")
+                            for (i in 0 until meta.length()) {
+                                // Create photos by merging from content meta file and webDAV PROPFIND
+                                meta.getJSONObject(i).apply {
+                                    pId = getString("id")
+                                    // TODO: shall we update content meta to include eTag and lastModified?
+                                    changedPhotos.find { p -> p.id == pId }?.let {
+                                        photoMeta.add(
+                                            Photo(
+                                                pId, changedAlbum.id, getString("name"),
+                                                it.eTag,
+                                                Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                                                it.lastModified,
+                                                getInt("width"),
+                                                getInt("height"),
+                                                getString("mime"),
+                                                0,
+                                            )
+                                        )
+
+                                        // Maintain album start and end date
+                                        with(photoMeta.last().dateTaken) {
+                                            if (this > changedAlbum.endDate) changedAlbum.endDate = this
+                                            if (this < changedAlbum.startDate) changedAlbum.startDate = this
+                                        }
+                                    } ?: run {
+                                        // Miss match, content meta needs update
+                                        contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                    }
+                                }
                             }
                         }
+
+                        // Clear changedPhotos list, no need to process each media file
+                        changedPhotos.clear()
+
+                        photoRepository.upsert(photoMeta)
+                        changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
                     }
                 }
 
@@ -545,17 +628,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     localImageFileName = localPhotoNames.getOrDefault(changedPhoto.id, changedPhoto.name)
                     if (File(localRootFolder, localImageFileName).exists()) {
                         // If image file with 'name' exists, replace the old file with this
-                        try {
-                            File(localRootFolder, changedPhoto.id).delete()
-                        } catch (e: Exception) {
-                            Log.e(">>>>Exception: ", e.stackTraceToString())
-                        }
-                        try {
-                            File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id))
-                            //Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
-                        } catch (e: Exception) {
-                            Log.e(">>>>Exception: ", e.stackTraceToString())
-                        }
+                        try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                        try { File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id)) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                        //Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
                     } else {
                         // Check network type on every loop, so that user is able to stop sync right in the middle
                         checkConnection()
@@ -568,11 +643,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch(e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
 
                     with(Tools.getPhotoParams("$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name)) {
-                        // Preserve lastModified date from server if more accurate taken date can't be found
+                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
                         changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
                         changedPhoto.width = this.width
                         changedPhoto.height = this.height
-                        changedPhoto.mimeType = this.mimeType
+                        changedPhoto.mimeType = this.mimeType   // If photo got rotated, mimetype will be changed to image/jpeg
                     }
 
                     // Update album's startDate, endDate fields
@@ -585,7 +660,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Time to show updated album in AlbumFragment
                     // If it's a new album without meta file, create default cover because width and height information are ready now
                     with(changedAlbum) {
-                        if (cover.isEmpty()) {
+                        if (cover == Album.NO_COVER) {
                             this.cover = changedPhoto.id
                             coverBaseline = (changedPhoto.height - (changedPhoto.width * 9 / 21)) / 2
                             coverWidth = changedPhoto.width
@@ -594,12 +669,18 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     if (i == 0) {
-                        // eTag property should be "", means it's syncing
-                        albumRepository.upsert(changedAlbum.copy(eTag = "", syncProgress = 0f))
+                        // Clear EXCLUDED bit so that album will show up in album list
+                        changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
+
+                        // eTag property should be Album.ETAG_NOT_YET_UPLOADED, means it's syncing
+                        albumRepository.upsert(changedAlbum.copy(eTag = Album.ETAG_NOT_YET_UPLOADED, syncProgress = 0f))
                     } else {
                         // Update sync status. AlbumFragment will show changes to user
                         albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
                     }
+
+                    // Finally, remove downloaded media file if this is a remote album (happens when adding photo to remote album on server or during app reinstall)
+                    if (Tools.isRemoteAlbum(changedAlbum)) try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
                 }
 
                 // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
@@ -632,10 +713,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (localPhoto.value.isNotEmpty() && !remotePhotoIds.contains(localPhoto.key)) {
                         deletion = true
                         photoRepository.deleteById(localPhoto.key)
-                        try {
-                            File(localRootFolder, localPhoto.key).delete()
-                            //Log.e(">>>>", "Deleted photo: ${localPhoto.key}")
-                        } catch (e: Exception) { e.printStackTrace() }
+                        try { File(localRootFolder, localPhoto.key).delete() } catch (e: Exception) { e.printStackTrace() }
                     }
                 }
 
@@ -646,6 +724,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         albumRepository.getThisAlbum(changedAlbum.id).run {
                             startDate = photosLeft[0].dateTaken
                             endDate = photosLeft.last().dateTaken
+
                             photosLeft.find { it.id == this.cover } ?: run {
                                 // If the last cover is deleted, use the first photo as default
                                 this.cover = photosLeft[0].id
@@ -655,6 +734,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                                 metaUpdatedNeeded.add(changedAlbum.name)
                             }
+
                             albumRepository.update(this)
                         }
 
@@ -797,7 +877,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Need this file in phone
             //FileWriter("$localRootFolder/metaFileName").apply {
             localFile.writer().use {
-                it.write(String.format("{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}", cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
+                it.write(String.format(ALBUM_META_JSON, cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
             }
 
             // If local meta json file created successfully
@@ -867,5 +947,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_ALL = 7
 
         const val BGM_FILENAME_ON_SERVER = ".bgm"
+
+        const val ALBUM_META_JSON = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}"
     }
 }

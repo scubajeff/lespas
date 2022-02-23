@@ -71,7 +71,7 @@
     <string name="storage_access_permission_rationale">Snapseedはレタッチ結果を「Snapseed」というディレクトリに保存するので、これらのファイルを読むためのストレージアクセスを許可してください。</string>
     <string name="proceed_request">デ・オーソライズ</string>
     <string name="logout_title">サーバーからのログアウト</string>
-    <string name="logout_dialog_msg">アカウント %1$s からログアウトしますか？</string>
+    <string name="msg_logout_dialog">アカウント %1$s からログアウトしますか？</string>
     <string name="yes_logout">ログアウトへの同意</string>
     <string name="copy_files">レプリケート</string>
     <string name="move_files">ポータブル</string>
@@ -188,4 +188,17 @@
     <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります。</string>
     <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
     <string name="default_sort_order_title">写真のデフォルトの並び順</string>
+    <string name="msg_set_as_remote">アルバムを「リモート」に設定すると、このデバイスからすべてのメディアファイルが削除されます。続行しますか？</string>
+    <string name="msg_set_as_local">アルバムを「ローカル」に設定すると、サーバーからすべてのメディアファイルをダウンロードするため、しばらく時間がかかります。続行しますか？</string>
+    <string name="action_set_remote">リモート設定</string>
+    <string name="action_set_local">ローカルに設定</string>
+    <string name="msg_check_network">サーバーの接続を確認してください。</string>
+    <string name="msg_error_preparing_share_out_files">メディアファイルの準備に失敗する。</string>
+    <string name="to_new_album">ニューアルバムへ</string>
+    <string name="clear_cache_title">リモートアルバムのキャッシュをクリアする</string>
+    <string name="msg_clear_cache">すべてのリモートイメージファイルがキャッシュから削除されます。続行しますか？</string>
+    <string name="msg_restart_to_take_effect">新しい設定を有効にするために、アプリを再起動します。</string>
+    <string name="cache_size_title">リモートアルバムキャッシュサイズを設定する</string>
+    <string name="cache_size_summary">現在のキャッシュ・サイズ: %1$dMB</string>
+    <string name="cache_size_setting_hint">キャッシュサイズ。</string>
 </resources>

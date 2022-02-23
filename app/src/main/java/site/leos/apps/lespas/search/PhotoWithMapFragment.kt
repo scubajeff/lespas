@@ -33,7 +33,6 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
@@ -173,8 +172,9 @@ class PhotoWithMapFragment: Fragment() {
     private fun prepareShares(photo: Photo, strip: Boolean): Uri? {
         return try {
             // Synced file is named after id, not yet synced file is named after file's name
-            val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag.isNotEmpty()) photo.id else photo.name)
-            val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+            //val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) photo.id else photo.name)
+            val sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
+            val destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
 
             // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
             if (strip && Tools.hasExif(photo.mimeType)) {

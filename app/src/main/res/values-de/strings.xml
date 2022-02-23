@@ -110,7 +110,7 @@
     <string name="relogin_title">Neuanmeldung</string>
     <string name="relogin_summary">Wenn Sie versehentlich den Zugangsschlüssel von Les Pas auf dem Server widerrufen haben.</string>
     <string name="logout_title">Abmelden</string>
-    <string name="logout_dialog_msg">Vom Konto %1$s abmelden?</string>
+    <string name="msg_logout_dialog">Vom Konto %1$s abmelden?</string>
     <string name="yes_logout">Abmelden</string>
 
     <string name="storage_access_permission_rationale">Snapseed speichert Dateien im Ordner \"Snapseed\". Erteilen Sie die Berechtigung, um auf diese Dateien zuzugreifen.</string>
@@ -240,4 +240,17 @@
     <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung.</string>
     <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
     <string name="default_sort_order_title">Standard-Sortierreihenfolge der Fotos</string>
+    <string name="msg_set_as_remote">Wenn Sie das Album als \"Remote\" einstellen, werden alle Mediendateien von diesem Gerät entfernt. Fortfahren?</string>
+    <string name="msg_set_as_local">Wenn Sie das Album als \"Lokal\" einstellen, werden alle Mediendateien vom Server heruntergeladen, was eine Weile dauern würde. Wie vorgehen?</string>
+    <string name="action_set_remote">Remote einstellen</string>
+    <string name="action_set_local">Lokal einstellen</string>
+    <string name="msg_check_network">Überprüfen Sie Ihre Serververbindung.</string>
+    <string name="msg_error_preparing_share_out_files">Versäumnis, Mediendateien vorzubereiten.</string>
+    <string name="to_new_album">Zum neuen Album:</string>
+    <string name="clear_cache_title">Remote-Alben-Cache löschen</string>
+    <string name="msg_clear_cache">Alle entfernten Bilddateien werden aus dem Cache entfernt. Fortfahren?</string>
+    <string name="msg_restart_to_take_effect">Starten Sie die Anwendung neu, damit die neue Einstellung wirksam wird.</string>
+    <string name="cache_size_title">Größe des Remote-Album-Caches festlegen</string>
+    <string name="cache_size_summary">Aktuelle Cache-Größe: %1$dMB</string>
+    <string name="cache_size_setting_hint">Größe des Cache:</string>
 </resources>

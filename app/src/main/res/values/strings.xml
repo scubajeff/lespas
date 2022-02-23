@@ -45,6 +45,8 @@
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
     <string name="unlock_please">Unlock hidden albums</string>
+    <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
+    <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
@@ -65,6 +67,8 @@
     <string name="strip_exif_no">No</string>
     <string name="preparing_shares">Preparing shares…</string>
     <string name="striping_exif">Striping EXIF data…</string>
+    <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
+    <string name="msg_check_network">Check your server connection.</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
@@ -138,6 +142,14 @@
     <string name="internal_storage">internal storage</string>
     <string name="external_storage">external SD card</string>
     <string name="statistic_free_space_message">%1$s available in %2$s</string>
+    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
+    <string name="clear_cache_title">Clear Remote albums cache</string>
+    <string name="msg_clear_cache">All remote image files will be removed from cache. Proceed?</string>
+    <string name="msg_restart_to_take_effect">Restart app for new setting to take effect.</string>
+    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
+    <string name="cache_size_title">Set Remote album cache size</string>
+    <string name="cache_size_summary">Current cache size: %1$dMB</string>
+    <string name="cache_size_setting_hint">Cache size:</string>
 
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
@@ -159,7 +171,7 @@
     <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
-    <string name="logout_dialog_msg">Log out of account %1$s?</string>
+    <string name="msg_logout_dialog">Log out of account %1$s?</string>
     <string name="yes_logout">Yes, log out</string>
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
@@ -175,6 +187,7 @@
     <string name="move_files">Move</string>
     <string name="create_new_album">Create new album</string>
     <string name="to_album">To Album:</string>
+    <string name="to_new_album">To New Album:</string>
 
     <!-- Album Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
@@ -232,6 +245,8 @@
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_hide">Hide</string>
+    <string name="action_set_remote">Set as Remote</string>
+    <string name="action_set_local">Set as Local</string>
     <string name="action_reuse">To album…</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>

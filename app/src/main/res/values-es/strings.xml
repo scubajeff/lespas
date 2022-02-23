@@ -47,7 +47,7 @@
     <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso para acceder a esos archivos.</string>
     <string name="proceed_request">Proceda</string>
     <string name="logout_title">Cierre de sesión</string>
-    <string name="logout_dialog_msg">¿Desconexión de la cuenta %1$s?</string>
+    <string name="msg_logout_dialog">¿Desconexión de la cuenta %1$s?</string>
     <string name="yes_logout">Sí, cierre de sesión</string>
     <string name="copy_files">Copiar</string>
     <string name="create_new_album">Crear un nuevo álbum</string>
@@ -188,4 +188,17 @@
     <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad.</string>
     <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
     <string name="default_sort_order_title">Ordenación de fotos por defecto</string>
+    <string name="msg_set_as_remote">Al establecer el álbum como \'Remoto\' se eliminarán todos sus archivos multimedia de este dispositivo. ¿Cómo proceder?</string>
+    <string name="msg_set_as_local">Al configurar el álbum como \"Local\" se descargarán todos los archivos multimedia del servidor, por lo que tardará un poco. ¿Cómo proceder?</string>
+    <string name="action_set_remote">Ajustar como Remoto</string>
+    <string name="action_set_local">Ajustar como Local</string>
+    <string name="msg_check_network">Compruebe la conexión de su servidor.</string>
+    <string name="msg_error_preparing_share_out_files">No preparar los archivos multimedia.</string>
+    <string name="to_new_album">Al nuevo álbum:</string>
+    <string name="clear_cache_title">Borrar la caché de los álbumes remotos</string>
+    <string name="msg_clear_cache">Todos los archivos de imagen remotos serán eliminados de la caché. ¿Proceder?</string>
+    <string name="msg_restart_to_take_effect">Reinicie la aplicación para que la nueva configuración surta efecto.</string>
+    <string name="cache_size_title">Establecer el tamaño de la caché del álbum remoto</string>
+    <string name="cache_size_summary">Tamaño actual de la caché: %1$dMB</string>
+    <string name="cache_size_setting_hint">Tamaño de la caché:</string>
 </resources>

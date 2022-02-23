@@ -104,6 +104,12 @@
                 android:textCursorDrawable="@null"
                 android:maxLines="1"
                 android:imeOptions="actionGo" />
+            <CheckBox
+                android:id="@+id/create_remote_album"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/action_set_remote" />
+
         </com.google.android.material.textfield.TextInputLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

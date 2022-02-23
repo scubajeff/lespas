@@ -30,7 +30,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?) {
+class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient
     private val cachedHttpClient: OkHttpClient
@@ -321,7 +321,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     ): Parcelable
 
     companion object {
-        private const val DISK_CACHE_SIZE = 300L * 1024L * 1024L    // 300MB
+        private const val DISK_CACHE_SIZE = 800L * 1024L * 1024L    // 800MB for both remote album and publications shared with me
         private const val MAX_AGE = "864000"                        // 10 days
         //const val VIDEO_CACHE_FOLDER = "videos"
 

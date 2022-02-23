@@ -30,9 +30,9 @@ class CameraRollActivity : AppCompatActivity() {
 
         // Make sure photo's folder, temporary cache folder created
         lifecycleScope.launch(Dispatchers.IO) {
+            // Make sure photo's folder created
             try {
                 File(Tools.getLocalRoot(applicationContext)).mkdir()
-                File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").mkdir()
             } catch (e: Exception) {}
         }
 
@@ -62,12 +62,5 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-    }
-
-    override fun onDestroy() {
-        // Clean up temporary folder in app's cachePath
-        try {  File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
-
-        super.onDestroy()
     }
 }

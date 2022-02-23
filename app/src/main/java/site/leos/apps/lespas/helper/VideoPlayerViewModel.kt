@@ -35,7 +35,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
         val builder = ExoPlayer.Builder(application)
         callFactory?.let {
-            cache = SimpleCache(File(application.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
+            cache = SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
             builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory)))))
         }
         videoPlayer = builder.build().apply {

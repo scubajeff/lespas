@@ -21,7 +21,6 @@ import androidx.transition.Slide
 import androidx.transition.Transition
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
@@ -172,9 +171,7 @@ class CoverSettingFragment : Fragment() {
             currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
-                ViewModelProvider(requireActivity()).get(AlbumViewModel::class.java).setCover(albumId, Cover(id, baseLine, width, height))
-                // If album has not been uploaded yet, update the cover id in action table too
-                ViewModelProvider(requireActivity()).get(ActionViewModel::class.java).updateCover(albumId, id)
+                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(albumId, Cover(id, baseLine, width, height))
             }
             currentPhotoModel.coverApplied(true)
 
