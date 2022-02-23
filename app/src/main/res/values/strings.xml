@@ -142,6 +142,14 @@
     <string name="internal_storage">internal storage</string>
     <string name="external_storage">external SD card</string>
     <string name="statistic_free_space_message">%1$s available in %2$s</string>
+    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
+    <string name="clear_cache_title">Clear Remote albums cache</string>
+    <string name="msg_clear_cache">All remote image files will be removed from cache. Proceed?</string>
+    <string name="msg_restart_to_take_effect">Restart app for new setting to take effect.</string>
+    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
+    <string name="cache_size_title">Set Remote album cache size</string>
+    <string name="cache_size_summary">Current cache size: %1$dMB</string>
+    <string name="cache_size_setting_hint">Cache size:</string>
 
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
@@ -163,7 +171,7 @@
     <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
-    <string name="logout_dialog_msg">Log out of account %1$s?</string>
+    <string name="msg_logout_dialog">Log out of account %1$s?</string>
     <string name="yes_logout">Yes, log out</string>
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>

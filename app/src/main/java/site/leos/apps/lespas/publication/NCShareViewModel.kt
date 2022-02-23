@@ -50,6 +50,7 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.InputStream
 import java.lang.Thread.sleep
@@ -106,7 +107,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
-            webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder, "LesPas_${application.getString(R.string.lespas_version)}")
+            webDav = OkHttpWebDav(
+                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,
+                "LesPas_${application.getString(R.string.lespas_version)}",
+                PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
+            )
         }
     }
 

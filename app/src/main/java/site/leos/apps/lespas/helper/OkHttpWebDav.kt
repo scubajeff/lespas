@@ -30,7 +30,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?) {
+class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient
     private val cachedHttpClient: OkHttpClient

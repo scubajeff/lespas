@@ -10,7 +10,6 @@ import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 
 class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumrename_dialog) {
-    private lateinit var renameTextInputLayout: TextInputLayout
     private lateinit var usedNames: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,9 +20,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        renameTextInputLayout = view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).apply {
-            requestFocus()
-        }
+        view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).requestFocus()
 
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
             // Use append to move cursor to the end of text

@@ -33,7 +33,7 @@
     <string name="wifionly_summary_off">Non, consomme des données mobiles - la prudence est de mise lorsque vous avez une grande collection de photos.</string>
     <string name="account_header">Compte</string>
     <string name="logout_title">Déconnexion-vous</string>
-    <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
+    <string name="msg_logout_dialog">Déconnexion du compte %1$s?</string>
     <string name="copy_files">Copier</string>
     <string name="create_new_album">Créer un nouvel album</string>
     <string name="invalid_character_found">Le séparateur de chemin \"\\\" \"/\" n\'est pas autorisé</string>
@@ -195,4 +195,10 @@
     <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
     <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
     <string name="to_new_album">Au nouvel album :</string>
+    <string name="clear_cache_title">Effacer le cache des albums distants</string>
+    <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Comment procéder ?</string>
+    <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
+    <string name="cache_size_title">Définir la taille du cache de l\'album distant</string>
+    <string name="cache_size_summary">Taille actuelle du cache : %1$dMB</string>
+    <string name="cache_size_setting_hint">Taille du cache :</string>
 </resources>

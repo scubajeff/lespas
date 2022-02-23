@@ -131,6 +131,14 @@
             app:key="@string/storage_statistic_pref_key"
             app:title="@string/storage_statistic_title"
             app:singleLineTitle="false" />
+        <Preference
+            app:key="@string/cache_size_pref_key"
+            app:title="@string/cache_size_title"
+            app:singleLineTitle="false" />
+        <Preference
+            app:key="@string/clear_cache_pref_key"
+            app:title="@string/clear_cache_title"
+            app:singleLineTitle="false" />
     </PreferenceCategory>
 
     <PreferenceCategory

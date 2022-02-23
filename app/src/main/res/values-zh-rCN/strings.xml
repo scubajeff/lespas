@@ -32,7 +32,7 @@
     <string name="wifionly_summary_off">关闭，应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
     <string name="account_header">帐户</string>
     <string name="logout_title">登出服务器</string>
-    <string name="logout_dialog_msg">登出帐户%1$s吗？</string>
+    <string name="msg_logout_dialog">登出帐户%1$s吗？</string>
     <string name="copy_files">复制</string>
     <string name="create_new_album">创建新相册</string>
     <string name="invalid_character_found">禁止使用目录符号\'\\\'或\'/\'</string>
@@ -195,4 +195,10 @@
     <string name="msg_error_preparing_share_out_files">无法读取媒体文件。</string>
     <string name="msg_check_network">请检查与服务器的连接。</string>
     <string name="to_new_album">至新相册：</string>
+    <string name="clear_cache_title">清除远程相册图片缓存</string>
+    <string name="msg_clear_cache">将清除所有远程相册图片的本地缓存，继续吗？</string>
+    <string name="msg_restart_to_take_effect">新设置在应用重新打开后生效。</string>
+    <string name="cache_size_title">设置远程相册图片缓存</string>
+    <string name="cache_size_summary">当前缓存大小为：%1$dMB</string>
+    <string name="cache_size_setting_hint">缓存大小</string>
 </resources>

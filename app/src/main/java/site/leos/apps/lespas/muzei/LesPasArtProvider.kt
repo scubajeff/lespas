@@ -21,6 +21,7 @@ import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -172,7 +173,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                         serverRoot,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
                                         "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
-                                        "LesPas_${application.getString(R.string.lespas_version)}"
+                                        "LesPas_${application.getString(R.string.lespas_version)}",
+                                        PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
                                     )
                                 }
 
