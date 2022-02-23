@@ -80,7 +80,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
-    private val localCacheFolder = "${application.filesDir}${lespasBase}/cache"
+    private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
 
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
