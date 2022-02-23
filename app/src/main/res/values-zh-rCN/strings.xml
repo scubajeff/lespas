@@ -28,8 +28,8 @@
     <string name="sync_header">同步</string>
     <string name="background_sync_title">定时同步</string>
     <string name="wifionly_title">只使用WiFi网络同步</string>
-    <string name="wifionly_summary_on">开启，应用将不消耗移动网络流量。</string>
-    <string name="wifionly_summary_off">关闭，应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
+    <string name="wifionly_summary_on">已开启。应用将不消耗移动网络流量。</string>
+    <string name="wifionly_summary_off">已关闭。应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
     <string name="account_header">帐户</string>
     <string name="logout_title">登出服务器</string>
     <string name="msg_logout_dialog">登出帐户%1$s吗？</string>
@@ -72,8 +72,8 @@
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替换原照片</string>
-    <string name="snapseed_replace_on_summary">开启，将采用Snapseed修图结果替换原始照片。</string>
-    <string name="snapseed_replace_off_summary">关闭，将保留原始照片，只添加Snapseed修图结果到相册中。</string>
+    <string name="snapseed_replace_on_summary">已开启。将采用Snapseed修图结果替换原始照片。</string>
+    <string name="snapseed_replace_off_summary">已关闭。将保留原始照片，只添加Snapseed修图结果到相册中。</string>
     <string name="storage_access_permission_rationale">Snapseed将修图结果保存在名为\"Snapseed\"的目录中，请授予存储访问权限以读取这些文件。</string>
     <string name="proceed_request">去授权</string>
     <string name="snapseed_integration_summary">注意：请设置Snapseed使用JPEG格式输出。</string>
