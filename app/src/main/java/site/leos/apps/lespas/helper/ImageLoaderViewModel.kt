@@ -335,6 +335,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     companion object {
+        const val TYPE_NULL = ""    // For startPostponedEnterTransition() immediately for video item
         const val TYPE_GRID = "_view"
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"

@@ -137,7 +137,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (ignoreHide && showListFirst) ignoreHide = false
                 else bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type-> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
+            { photo, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
             { view-> imageLoaderModel.cancelLoading(view as ImageView) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -912,7 +912,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
     }
 
-    class MediaPagerAdapter(displayWidth: Int, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+    class MediaPagerAdapter(displayWidth: Int, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))

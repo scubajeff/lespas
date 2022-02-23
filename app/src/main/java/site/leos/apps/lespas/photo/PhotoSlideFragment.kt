@@ -125,8 +125,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             },
             { state-> toggleSystemUI(state) },
             { photo, imageView, type ->
-                if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "${serverPath}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L), imageView, type) { startPostponedEnterTransition() }
-                else imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }
+                when {
+                    type == ImageLoaderViewModel.TYPE_NULL -> startPostponedEnterTransition()
+                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "${serverPath}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L), imageView!!, type) { startPostponedEnterTransition() }
+                    else -> imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }
+                }
             },
             { view ->
                 remoteImageLoaderModel.cancelGetPhoto(view)
@@ -304,10 +307,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }.also {
-            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
-            // Also we can transit to video thumbnail before player start playing
-            it.addListener(MediaSliderTransitionListener(slider))
         }
 
         // Controls
@@ -643,7 +642,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     class PhotoSlideAdapter(
         displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (Photo) -> VideoItem,
-        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id

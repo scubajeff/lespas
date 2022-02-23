@@ -72,7 +72,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },
-            { media, view, type-> shareModel.getPhoto(media, view, type) { startPostponedEnterTransition() }},
+            { media, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.getPhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelGetPhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -217,10 +217,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }.also {
-            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
-            // Also we can transit to video thumbnail before starting playing it
-            it.addListener(MediaSliderTransitionListener(slider))
         }
 
         return view
@@ -351,7 +347,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView, type: String) -> Unit, cancelLoader: (View) -> Unit
+    class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
