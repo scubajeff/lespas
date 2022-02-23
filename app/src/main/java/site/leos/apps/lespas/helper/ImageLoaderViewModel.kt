@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
+import android.view.View
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -262,7 +263,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         replacePrevious(jobKey, job)
     }
 
-    fun cancelLoading(view: ImageView) { jobMap[System.identityHashCode(view)]?.cancel() }
+    fun cancelLoading(view: View) { jobMap[System.identityHashCode(view)]?.cancel() }
 
     private fun replacePrevious(key: Int, newJob: Job) {
         jobMap[key]?.cancel()

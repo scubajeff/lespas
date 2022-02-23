@@ -138,7 +138,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 else bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
             },
             { photo, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
-            { view-> imageLoaderModel.cancelLoading(view as ImageView) }
+            { view-> imageLoaderModel.cancelLoading(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(

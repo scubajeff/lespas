@@ -72,7 +72,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        cancelLoader(holder.itemView.findViewById(R.id.media) as View)
+        // Cancel loading only works for image
+        holder.itemView.findViewById<View>(R.id.media)?.let { if (it is ImageView) cancelLoader(it) }
         super.onViewRecycled(holder)
     }
 

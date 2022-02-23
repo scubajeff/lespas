@@ -133,7 +133,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             },
             { view ->
                 remoteImageLoaderModel.cancelGetPhoto(view)
-                imageLoaderModel.cancelLoading(view as ImageView)
+                imageLoaderModel.cancelLoading(view)
             }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
