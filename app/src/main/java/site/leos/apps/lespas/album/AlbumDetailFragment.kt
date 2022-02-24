@@ -415,7 +415,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             // Search for location in photos, enable 'show in map' option menu
             getCoordinateJob?.cancel()
-            if (Tools.isRemoteAlbum(album)) {
+            if (!Tools.isRemoteAlbum(album)) {
                 // TODO enable after db migration
                 getCoordinateJob = lifecycleScope.launch(Dispatchers.IO) {
                     val baseFolder = Tools.getLocalRoot(requireContext())
