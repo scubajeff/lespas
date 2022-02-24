@@ -16,7 +16,6 @@ import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
@@ -37,7 +36,6 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.*
 
 
 class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
@@ -230,15 +228,15 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             val meta = Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId, true)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
-                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId))
+                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = meta.shareId or Photo.NOT_YET_UPLOADED))
 
                             // Update album start and end dates accordingly
                             date = newPhotos.last().dateTaken
                             if (date < album.startDate) album.startDate = date
                             if (date > album.endDate) album.endDate = date
 
-                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table, also pass flags shareId in retry property
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), album.shareId))
                         }
                     } else {
                         // TODO show special error message when there are just some duplicate in uris

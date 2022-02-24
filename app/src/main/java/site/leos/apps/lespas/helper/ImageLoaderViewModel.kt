@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
+import android.view.View
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
@@ -52,11 +53,12 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
         try {
             bitmap = when (type) {
+                TYPE_VIDEO -> getVideoThumbnail(photo, fileName)
                 TYPE_GRID -> {
                     val option = BitmapFactory.Options().apply { inSampleSize = if ((photo.height < 1600) || (photo.width < 1600)) 2 else 8 }
                     with(photo.mimeType) {
                         when {
-                            this.startsWith("video") -> getVideoThumbnail(photo, fileName)
+                            //this.startsWith("video") -> getVideoThumbnail(photo, fileName)
                             photo.albumId != FROM_CAMERA_ROLL -> BitmapFactory.decodeFile(fileName, option)
                             this == "image/jpeg" || this == "image/png" -> getImageThumbnail(photo)
                             this == "image/agif" || this == "image/gif" || this == "image/webp" || this == "image/awebp" -> BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
@@ -65,8 +67,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 }
                 TYPE_FULL, TYPE_QUATER -> {
-                    if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
-                    else {
+                    //if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
+                    //else {
                         val option = BitmapFactory.Options().apply {
                             when {
                                 type == TYPE_QUATER -> inSampleSize = 2
@@ -96,7 +98,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             }
                             else BitmapFactory.decodeFile(fileName, option)
                         }
-                    }
+                    //}
                 }
                 TYPE_COVER, TYPE_SMALL_COVER -> {
 /*
@@ -186,7 +188,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
 
     @SuppressLint("NewApi")
     @JvmOverloads
-    fun loadPhoto(photo: Photo, view: ImageView, type: String, callBack: LoadCompleteListener? = null) {
+    fun loadPhoto(photo: Photo, view: ImageView, photoType: String, callBack: LoadCompleteListener? = null) {
+        val type = if (photo.mimeType.startsWith("video")) TYPE_VIDEO else photoType
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(Dispatchers.IO) {
@@ -260,7 +263,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         replacePrevious(jobKey, job)
     }
 
-    fun cancelLoading(view: ImageView) { jobMap[System.identityHashCode(view)]?.cancel() }
+    fun cancelLoading(view: View) { jobMap[System.identityHashCode(view)]?.cancel() }
 
     private fun replacePrevious(key: Int, newJob: Job) {
         jobMap[key]?.cancel()
@@ -285,7 +288,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             null
         }
 
-    private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap =
+    private fun getVideoThumbnail(photo: Photo, fileName: String): Bitmap? =
         try {
             if (photo.albumId == FROM_CAMERA_ROLL) {
                 val photoId = photo.id.substringAfterLast('/').toLong()
@@ -316,11 +319,11 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     }
                     bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, File(thumbnailFile).outputStream())
                 }
-                bitmap ?: placeholderBitmap
+                bitmap
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            placeholderBitmap
+            null
         }
 
     override fun onCleared() {
@@ -333,11 +336,13 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     companion object {
+        const val TYPE_NULL = ""    // For startPostponedEnterTransition() immediately for video item
         const val TYPE_GRID = "_view"
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
         const val TYPE_QUATER = "_quater"
+        const val TYPE_VIDEO = "_video"
 
         //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
         const val FROM_CAMERA_ROLL = "0"

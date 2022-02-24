@@ -35,6 +35,16 @@ data class Album(
         const val BY_DATE_MODIFIED_DESC = 3
         const val BY_NAME_ASC = 4
         const val BY_NAME_DESC = 5
+
+        const val NULL_ALBUM = 0                // Use by DestinationDialogFragment to add a fake album item used for "Add new album" function
+        const val SHARED_ALBUM = 1 shl 0        // Album is shared on server
+        const val REMOTE_ALBUM = 1 shl 1        // Remote album which media files are not saved locally
+        const val EXCLUDED_ALBUM = 1 shl 2      // Exclude this album from any album list, because it's cover media file is not available yet, etc.
+        const val DEFAULT_FLAGS = REMOTE_ALBUM  // Default as remote album
+
+        const val NO_COVER = ""
+
+        const val ETAG_NOT_YET_UPLOADED = ""
     }
 }
 
@@ -45,6 +55,16 @@ data class AlbumWithPhotos(
         entityColumn = "albumId"
     )
     var photos: List<Photo>
+)
+
+// TODO: upgrade DB
+data class AlbumWithCover(
+    @Embedded var album: Album,
+    @Relation(
+        parentColumn = "cover",
+        entityColumn = "id"
+    )
+    var coverPhoto: Photo?
 )
 
 @Parcelize
@@ -61,9 +81,14 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun deleteById(albumId: String): Int
 
     // Hidden albums not included
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE cover != '' AND name NOT LIKE '.%' ORDER BY endDate DESC")
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
+
+    // Hidden albums not included
+    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
+    abstract fun getAllWithCoverSortByEndDateDistinct(): Flow<List<AlbumWithCover>>
+    fun getAllWithCoverSortByEndDate() = getAllWithCoverSortByEndDateDistinct().distinctUntilChanged()
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId LIMIT 1")
     abstract fun getThisAlbum(albumId: String): Album
@@ -125,4 +150,11 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("SELECT id FROM ${Album.TABLE_NAME} WHERE name LIKE '.%'")
     abstract fun getAllHiddenAlbumIds(): List<String>
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET shareId = shareId | ${Album.REMOTE_ALBUM} WHERE id IN (:albumIds)")
+    abstract fun setAsRemote(albumIds: List<String>)
+
+    @Transaction
+    @Query("UPDATE ${Album.TABLE_NAME} SET shareId = (shareId & ~${Album.REMOTE_ALBUM}) | ${Album.EXCLUDED_ALBUM}, eTag = '${Album.ETAG_NOT_YET_UPLOADED}' WHERE id IN (:albumIds)")
+    abstract fun setAsLocal(albumIds: List<String>)
 }

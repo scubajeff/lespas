@@ -9,6 +9,7 @@ class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
+    fun getAllAlbumsWithCoverSortByEndDate(): Flow<List<AlbumWithCover>> = albumDao.getAllWithCoverSortByEndDate()
     fun getThisAlbum(albumId: String): Album = albumDao.getThisAlbum(albumId)
     fun getThisAlbumList(albumId: String): List<Album> = albumDao.getThisAlbumList(albumId)
     fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
@@ -30,4 +31,5 @@ class AlbumRepository(application: Application){
     fun getAllAlbumName(): List<String> = albumDao.getAllAlbumName()
     fun getAllHiddenAlbumsFlow(): Flow<List<Album>> = albumDao.getAllHiddenAlbumsFlow()
     fun getAllHiddenAlbumIds(): List<String> = albumDao.getAllHiddenAlbumIds()
+    fun setAsRemote(albumIds: List<String>, asRemote: Boolean) { if (asRemote) albumDao.setAsRemote(albumIds) else albumDao.setAsLocal(albumIds) }
 }

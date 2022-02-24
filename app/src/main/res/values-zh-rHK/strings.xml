@@ -28,11 +28,11 @@
     <string name="sync_header">同步</string>
     <string name="background_sync_title">定時同步</string>
     <string name="wifionly_title">只使用WiFi網絡同步</string>
-    <string name="wifionly_summary_on">開啟，應用將不消耗流動網絡流量。</string>
-    <string name="wifionly_summary_off">關閉，應用將消耗流動網絡流量。如果照片數量多，請謹慎選擇使用。</string>
+    <string name="wifionly_summary_on">已開啟。應用將不消耗流動網絡流量。</string>
+    <string name="wifionly_summary_off">已關閉。應用將消耗流動網絡流量。如果照片數量多，請謹慎選擇使用。</string>
     <string name="account_header">帳戶</string>
     <string name="logout_title">登出伺服器</string>
-    <string name="logout_dialog_msg">登出帳戶%1$s嗎？</string>
+    <string name="msg_logout_dialog">登出帳戶%1$s嗎？</string>
     <string name="copy_files">複製</string>
     <string name="create_new_album">創建新相冊</string>
     <string name="invalid_character_found">禁止使用目錄符號\'\\\'或\'/\'</string>
@@ -72,8 +72,8 @@
     <string name="mind_network_setting">請留意，當前同步設置不允許Les Pas使用移動流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替換原照片</string>
-    <string name="snapseed_replace_on_summary">開啟，將採用Snapseed修圖結果替換原始照片。</string>
-    <string name="snapseed_replace_off_summary">關閉，將保留原始相片，只添加Snapseed修圖結果到相冊中。</string>
+    <string name="snapseed_replace_on_summary">已開啟。將採用Snapseed修圖結果替換原始照片。</string>
+    <string name="snapseed_replace_off_summary">已關閉。將保留原始相片，只添加Snapseed修圖結果到相冊中。</string>
     <string name="storage_access_permission_rationale">Snapseed將修圖結果保存在名為\"Snapseed\"的目錄中，請授予存儲訪問權限以讀取這些文件。</string>
     <string name="proceed_request">去授權</string>
     <string name="snapseed_integration_summary">注意：請設置Snapseed使用JPEG格式輸出。</string>
@@ -188,4 +188,17 @@
     <string name="backup_waiting">相機相冊中仲有%1$,d個檔案正等待備份。</string>
     <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
     <string name="default_sort_order_title">預設相片排序規則</string>
+    <string name="msg_set_as_remote">相冊設置為「遠程相冊」後，該相冊之媒體檔案將從本機存儲中刪除，繼續操作嗎？</string>
+    <string name="msg_set_as_local">相冊設置為「本地相冊」後，該相冊之媒體檔案將從伺服器下載到本機，繼續操作嗎？</string>
+    <string name="action_set_remote">設為遠程相冊</string>
+    <string name="action_set_local">設為本地相冊</string>
+    <string name="msg_check_network">請檢查與伺服器之連結 。</string>
+    <string name="msg_error_preparing_share_out_files">無法讀取媒體檔案。</string>
+    <string name="to_new_album">至新相冊：</string>
+    <string name="clear_cache_title">清空遠程相冊圖片快取</string>
+    <string name="msg_clear_cache">將清空遠程相冊圖片快取，繼續嗎？</string>
+    <string name="msg_restart_to_take_effect">新設定在App重新啟動後生效。</string>
+    <string name="cache_size_title">設定遠程相冊圖片快取</string>
+    <string name="cache_size_summary">當前快取大小為：%1$dMB</string>
+    <string name="cache_size_setting_hint">快取大小</string>
 </resources>

@@ -33,7 +33,7 @@
     <string name="wifionly_summary_off">Non, consomme des données mobiles - la prudence est de mise lorsque vous avez une grande collection de photos.</string>
     <string name="account_header">Compte</string>
     <string name="logout_title">Déconnexion-vous</string>
-    <string name="logout_dialog_msg">Déconnexion du compte %1$s?</string>
+    <string name="msg_logout_dialog">Déconnexion du compte %1$s?</string>
     <string name="copy_files">Copier</string>
     <string name="create_new_album">Créer un nouvel album</string>
     <string name="invalid_character_found">Le séparateur de chemin \"\\\" \"/\" n\'est pas autorisé</string>
@@ -107,7 +107,7 @@
     <string name="button_text_leave">Sortie</string>
     <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
     <string name="need_albums">Veuillez d\'abord créer un album.</string>
-    <string name="to_album">À l\'album :</string>
+    <string name="to_album">Vers l\'album :</string>
     <string name="move_files">Déplacer</string>
     <string name="storage_header">Stockage</string>
     <string name="transfer_to_internal">Transfert d\'albums vers le stockage interne</string>
@@ -188,4 +188,17 @@
     <string name="backup_waiting">%1$,d éléments dans la liste des photos en attente de sauvegarde.</string>
     <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut</string>
+    <string name="msg_set_as_remote">Le fait de définir l\'album comme \"Distant\" supprimera tous ses fichiers multimédias de cet appareil. Comment procéder ?</string>
+    <string name="msg_set_as_local">Si vous définissez l\'album comme \"Local\", tous les fichiers multimédias seront téléchargés depuis le serveur, ce qui prendra un certain temps. Comment procéder ?</string>
+    <string name="action_set_remote">Définir comme Distant</string>
+    <string name="action_set_local">Définir comme Local</string>
+    <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
+    <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
+    <string name="to_new_album">Au nouvel album :</string>
+    <string name="clear_cache_title">Effacer le cache des albums distants</string>
+    <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Comment procéder ?</string>
+    <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
+    <string name="cache_size_title">Définir la taille du cache de l\'album distant</string>
+    <string name="cache_size_summary">Taille actuelle du cache : %1$dMB</string>
+    <string name="cache_size_setting_hint">Taille du cache :</string>
 </resources>

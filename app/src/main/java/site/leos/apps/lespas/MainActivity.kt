@@ -40,7 +40,6 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var sp: SharedPreferences
-    private var coldExit = true
 
     private lateinit var accounts: Array<Account>
     private var loggedIn = true
@@ -80,10 +79,9 @@ class MainActivity : AppCompatActivity() {
                         .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
-                        // Make sure photo's folder, temporary cache folder created
+                        // Make sure photo's folder created
                         try {
                             File(Tools.getLocalRoot(applicationContext)).mkdir()
-                            File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
                         } catch (e: Exception) {}
                     }
 
@@ -120,12 +118,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Setup observer to fire up SyncAdapter
-            actionsPendingModel.allPendingActions.observe(this, { actions ->
+            actionsPendingModel.allPendingActions.observe(this) { actions ->
                 if (actions.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
                     putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                     putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
                 })
-            })
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
@@ -135,23 +133,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
         if (loggedIn && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
-    }
-
-    override fun onPause() {
-        coldExit = true
-        super.onPause()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        coldExit = false
-        super.onSaveInstanceState(outState)
-    }
-
-    override fun onDestroy() {
-        // Clean up temporary folder in app's cachePath
-        if (coldExit) try {  File("${cacheDir}${TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
-
-        super.onDestroy()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -176,7 +157,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun observeTransferWorker() {
-        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(TransferStorageWorker.WORKER_NAME).observe(this, { workInfos->
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(TransferStorageWorker.WORKER_NAME).observe(this) { workInfos ->
             try {
                 workInfos?.get(0)?.apply {
                     if (state.isFinished) {
@@ -185,7 +166,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: IndexOutOfBoundsException) {}
-        })
+        }
     }
 
 /*
@@ -218,7 +199,5 @@ class MainActivity : AppCompatActivity() {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
-
-        const val TEMP_CACHE_FOLDER = "/lespastemp"
     }
 }
