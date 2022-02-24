@@ -702,19 +702,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun sortList(order: Int, list: MutableList<Album>? = null) {
             val sortedList = mutableListOf<Album>()
             val sourceList = mutableListOf<Album>().apply { addAll(list ?: currentList) }
-            val firstAlbum = sourceList.first()
 
-            if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sourceList.removeAt(0)
+            if (sourceList.isNotEmpty()) {
+                // save camera roll album
+                val firstAlbum = sourceList.first()
+                if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sourceList.removeAt(0)
 
-            sortedList.addAll(when(order) {
-                Album.BY_DATE_TAKEN_ASC-> sourceList.sortedWith(compareBy { it.endDate })
-                Album.BY_DATE_TAKEN_DESC-> sourceList.sortedWith(compareByDescending { it.endDate })
-                Album.BY_NAME_ASC-> sourceList.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-                Album.BY_NAME_DESC-> sourceList.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
-                else-> sourceList
-            })
+                sortedList.addAll(
+                    when (order) {
+                        Album.BY_DATE_TAKEN_ASC -> sourceList.sortedWith(compareBy { it.endDate })
+                        Album.BY_DATE_TAKEN_DESC -> sourceList.sortedWith(compareByDescending { it.endDate })
+                        Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        Album.BY_NAME_DESC -> sourceList.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        else -> sourceList
+                    }
+                )
 
-            if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
+                // restore camera roll album
+                if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
+            }
 
             submitList(sortedList)
         }
