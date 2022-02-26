@@ -97,6 +97,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
 
+    private val metadataRetriever = MediaMetadataRetriever()
+
     fun interface LoadCompleteListener{
         fun onLoadComplete()
     }
@@ -526,25 +528,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    private fun getRemoteVideoThumbnail(inputStream: InputStream, photo: RemotePhoto): Bitmap? {
+    private fun getRemoteVideoThumbnail(photo: RemotePhoto): Bitmap? {
         var bitmap: Bitmap? = null
-/*
-        // Download video file if necessary
-        val fileName = "${OkHttpWebDav.VIDEO_CACHE_FOLDER}/${photo.path.substringAfterLast('/')}"
-        val videoFile = File(localCacheFolder, fileName)
-        if (!videoFile.exists()) {
-            val sink = videoFile.sink(false).buffer()
-            sink.writeAll(inputStream.source())
-            sink.close()
-        }
 
-        // Get first frame
-        MediaMetadataRetriever().apply {
-            setDataSource("$localCacheFolder/$fileName")
-            bitmap = getFrameAtTime(0L) ?: videoThumbnail
-            release()
-        }
-*/
         val thumbnail = File(localCacheFolder, "${photo.fileId}.thumbnail")
 
         // Load from local cache
@@ -552,11 +538,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // Download from server
         bitmap ?: run {
-            MediaMetadataRetriever().apply {
-                inputStream.close()
+            metadataRetriever.apply {
                 setDataSource("$resourceRoot${Uri.encode(photo.path, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
                 bitmap = getFrameAtTime(0L) ?: videoThumbnail
-                release()
             }
 
             // Cache thumbnail in local
@@ -588,10 +572,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 imageCache.get(key)?.let { bitmap = it } ?: run {
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
-                    try {
-                        if (type == ImageLoaderViewModel.TYPE_GRID) {
+                    if (type == ImageLoaderViewModel.TYPE_GRID) try {
                             webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${photo.fileId}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
-                        }
                     } catch(e: Exception) {
                         // Catch all exception, give TYPE_GRID another chance below
                         e.printStackTrace()
@@ -605,9 +587,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                         }
 
-                        webDav.getStream(photoPath, true,null).use {
+                        if (type == ImageLoaderViewModel.TYPE_VIDEO) bitmap = getRemoteVideoThumbnail(photo)
+                        else webDav.getStream(photoPath, true,null).use {
                             when (type) {
-                                ImageLoaderViewModel.TYPE_VIDEO -> bitmap = getRemoteVideoThumbnail(it, photo)
                                 ImageLoaderViewModel.TYPE_COVER, ImageLoaderViewModel.TYPE_SMALL_COVER -> {
 /*
                                     // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
@@ -641,7 +623,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                                         //e.printStackTrace()
                                         it.close()
-                                        webDav.getStream(photoPath, true,null).use { vResp-> bitmap = getRemoteVideoThumbnail(vResp, photo) }
+                                        //webDav.getStream(photoPath, true,null).use { vResp-> bitmap = getRemoteVideoThumbnail(vResp, photo) }
+                                        bitmap = getRemoteVideoThumbnail(photo)
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
@@ -909,6 +892,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
+        metadataRetriever.release()
         super.onCleared()
     }
 
