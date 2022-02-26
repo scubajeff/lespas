@@ -44,7 +44,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             writeTimeout(20, TimeUnit.SECONDS)
         }
         httpClient = builder.build()
-        cachedHttpClient = builder.cache(Cache(File(cacheFolder), DISK_CACHE_SIZE)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build()
+        cachedHttpClient = builder.cache(Cache(File(cacheFolder), cacheSize * 1024L * 1024L)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build()
 
         // Make cache folder for video download
         //File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
@@ -321,7 +321,6 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     ): Parcelable
 
     companion object {
-        private const val DISK_CACHE_SIZE = 800L * 1024L * 1024L    // 800MB for both remote album and publications shared with me
         private const val MAX_AGE = "864000"                        // 10 days
         //const val VIDEO_CACHE_FOLDER = "videos"
 

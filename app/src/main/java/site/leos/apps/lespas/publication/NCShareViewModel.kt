@@ -609,20 +609,33 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when (type) {
                                 ImageLoaderViewModel.TYPE_VIDEO -> bitmap = getRemoteVideoThumbnail(it, photo)
                                 ImageLoaderViewModel.TYPE_COVER, ImageLoaderViewModel.TYPE_SMALL_COVER -> {
+/*
                                     // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
                                     // TODO better way to handle this
                                     val top = if (photo.coverBaseLine > photo.height - 1) 0 else photo.coverBaseLine
 
                                     val bottom = min(top + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1)
                                     val rect = Rect(0, top, photo.width - 1, bottom)
+*/
+                                    val rect = when(photo.orientation) {
+                                        0 -> Rect(0, photo.coverBaseLine, photo.width - 1, min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
+                                        90 -> Rect(photo.coverBaseLine, 0, min(photo.coverBaseLine + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
+                                        180 -> (photo.height - photo.coverBaseLine).let { Rect(0, Integer.max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
+                                        else-> (photo.width - photo.coverBaseLine).let { Rect(Integer.max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
+                                    }
+
                                     val sampleSize = when (photo.width) {
                                         in (0..2000) -> 1
                                         in (2000..3000) -> 2
                                         else -> 4
                                     }
+
                                     try  {
                                         @Suppress("DEPRECATION")
                                         bitmap = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, option.apply { inSampleSize = sampleSize })
+                                        if (photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) }
+
+                                        bitmap
                                     } catch (e: IOException) {
                                         // No information on cover's mimetype
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
@@ -639,7 +652,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     if (photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                                     bitmap
                                 }
-                                ImageLoaderViewModel.TYPE_FULL -> {
+                                ImageLoaderViewModel.TYPE_FULL, ImageLoaderViewModel.TYPE_QUATER -> {
                                     // Show cached low resolution bitmap first
                                     imageCache.get("${photo.fileId}${ImageLoaderViewModel.TYPE_GRID}")?.let {
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
@@ -656,7 +669,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             }
                                         }
                                         else-> {
-                                            if (photo.width * photo.height > 33333334) option.inSampleSize = 2
+                                            // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
+                                            option.inSampleSize = if (photo.width * photo.height > 33333334) 2 else 1
+                                            if (type == ImageLoaderViewModel.TYPE_QUATER) option.inSampleSize *= 2
                                             bitmap = BitmapFactory.decodeStream(it, null, option)
                                             // Rotate bitmap to upright position
                                             if (photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }

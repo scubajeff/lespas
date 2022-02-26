@@ -70,12 +70,9 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     //if (photo.mimeType.startsWith("video")) getVideoThumbnail(photo, fileName)
                     //else {
                         val option = BitmapFactory.Options().apply {
-                            when {
-                                type == TYPE_QUATER -> inSampleSize = 2
-                                // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
-                                // TODO hard coded size limit
-                                photo.width * photo.height > 33333334 -> inSampleSize = 2
-                            }
+                            // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
+                            inSampleSize = if (photo.width * photo.height > 33333334) 2 else 1
+                            if (type == TYPE_QUATER) inSampleSize *= 2
                         }
 
                         if (photo.albumId == FROM_CAMERA_ROLL) {
