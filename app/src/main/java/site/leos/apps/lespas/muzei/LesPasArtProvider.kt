@@ -172,7 +172,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                         peekAuthToken(accounts[0], serverRoot),
                                         serverRoot,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                                        "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
+                                        "${Tools.getLocalRoot(application)}/cache",
                                         "LesPas_${application.getString(R.string.lespas_version)}",
                                         PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
                                     )

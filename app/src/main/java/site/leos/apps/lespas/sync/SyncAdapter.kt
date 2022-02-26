@@ -153,7 +153,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             webDav = OkHttpWebDav(
                 userName, peekAuthToken(account, serverRoot), serverRoot, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                "${application.cacheDir}/${application.getString(R.string.lespas_base_folder_name)}",
+                "${Tools.getLocalRoot(application)}/cache",
                 "LesPas_${application.getString(R.string.lespas_version)}",
                 sp.getInt(SettingsFragment.CACHE_SIZE, 800)
             )
