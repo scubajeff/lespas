@@ -89,7 +89,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     var theAlbum = album
                     destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                     if (album.syncProgress == JOINT_PUBLICATION)
-                        theAlbum = Album(PublicationDetailFragment.JOINT_ALBUM_ID, album.cover.substringBeforeLast('/'), LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, album.id, Album.NULL_ALBUM, 1f)
+                        //theAlbum = Album(PublicationDetailFragment.JOINT_ALBUM_ID, album.cover.substringBeforeLast('/'), LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, album.id, Album.NULL_ALBUM, 1f)
+                        theAlbum = Album(
+                            id = PublicationDetailFragment.JOINT_ALBUM_ID,
+                            name = album.cover.substringBeforeLast('/'),
+                            lastModified = LocalDateTime.now(),
+                            eTag = album.id,
+                            shareId = Album.NULL_ALBUM,
+                        )
                     destinationModel.setDestination(theAlbum)
                     dismiss()
                 }
@@ -216,6 +223,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                             // Return with album id field empty, calling party will know this is a new album
                             destinationModel.setDestination(
+/*
                                 Album(
                                     "", name,
                                     LocalDateTime.MAX, LocalDateTime.MIN,
@@ -224,6 +232,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                                     if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM,
                                     1f
                                 )
+*/
+                                Album(name = name, lastModified = LocalDateTime.now(), shareId = if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM)
                             )
 
                             // Clear editing mode
@@ -242,7 +252,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
         albumNameModel.allAlbumsWithCoverByEndDate.observe(viewLifecycleOwner, Observer {
-            val nullAlbum = Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", Album.NULL_ALBUM, MY_ALBUMS)
+            //val nullAlbum = Album("", "", LocalDateTime.MAX, LocalDateTime.MIN, "", 0, 0, 0, LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "", Album.NULL_ALBUM, MY_ALBUMS)
+            val nullAlbum = Album(lastModified = LocalDateTime.now(), shareId = Album.NULL_ALBUM, syncProgress = MY_ALBUMS)
             val lespasPath = getString(R.string.lespas_base_folder_name)
             val albums = mutableListOf<Album>()
             it.forEach { albumWithCover ->
@@ -257,7 +268,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 val jointAlbums = mutableListOf<Album>()
                 for (publication in shared) {
                     if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
-                        Album(publication.albumId, publication.albumName, LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, publication.shareBy, Album.NULL_ALBUM, JOINT_PUBLICATION)
+                        //Album(publication.albumId, publication.albumName, LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, publication.shareBy, Album.NULL_ALBUM, JOINT_PUBLICATION)
+                        Album(publication.albumId, publication.albumName, LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.cover.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, publication.shareBy, Album.NULL_ALBUM, JOINT_PUBLICATION)
                     )
                 }
                 if (jointAlbums.isNotEmpty()) {

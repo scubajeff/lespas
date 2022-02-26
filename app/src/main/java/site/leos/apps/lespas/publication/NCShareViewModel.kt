@@ -48,6 +48,7 @@ import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -131,7 +132,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var color = 0
 
         try {
-            webDav.ocsGet("$baseUrl$CAPABILLITIES_ENDPOINT")?.apply {
+            webDav.ocsGet("$baseUrl$CAPABILITIES_ENDPOINT")?.apply {
                 color = Integer.parseInt(getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").getString("color").substringAfter('#'), 16)
             }
             if (color != 0) emit(color)
@@ -209,7 +210,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     getString("displayname_owner"),
                                     permission,
                                     getLong("stime"),
-                                    Cover("", 0, 0, 0), "", Album.BY_DATE_TAKEN_ASC, 0L
+                                    Cover(Album.NO_COVER, 0, 0, 0, Album.NO_COVER, ""), Album.BY_DATE_TAKEN_ASC, 0L
                                 ))
                             }
                         }
@@ -254,6 +255,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             _shareWithMeProgress.value = ((i * 100.0) / total).toInt()
             share.lastModified = lastModified[share.albumId] ?: 0L
             try {
+                webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}_v2.json", true, CacheControl.FORCE_NETWORK).use {
+                    JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
+                        meta.getJSONObject("cover").apply {
+                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"))
+                        }
+                        share.sortOrder = meta.getInt("sort")
+                    }
+
+                }
+/*
                 webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                     JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                         meta.getJSONObject("cover").apply {
@@ -264,8 +275,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
 
                 }
+*/
             } catch (e: Exception) {
-                // Either there is no folderId.json file in the folder, or json parse error means it's not a lespas share
+                // Either there is no album meta json file in the folder, or json parse error means it's not a lespas share
             }
         }
         _shareWithMeProgress.value = 100
@@ -357,14 +369,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun createContentMeta(photoMeta: List<PhotoMeta>?, remotePhotos: List<RemotePhoto>?): String {
-        var content = "{\"lespas\":{\"photos\":["
+        var content = PHOTO_META_HEADER
 
         photoMeta?.forEach {
-            content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+            content += String.format(PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         remotePhotos?.forEach {
-            content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
+            //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
+            content += String.format(PHOTO_META_JSON_V2, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"
@@ -372,7 +386,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun createJointAlbumContentMetaFile(albumId: String, remotePhotos: List<RemotePhoto>?) {
         try {
-            File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
+            //File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
+            File("${localFileFolder}/${albumId}${CONTENT_META_FILE_SUFFIX_V2}").sink(false).buffer().use {
                 it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
             }
         } catch (e: Exception) { e.printStackTrace() }
@@ -389,7 +404,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
-                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                        //webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX_V2", MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -425,12 +441,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         withContext(Dispatchers.IO) {
             try {
-                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
+                //webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
+                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork || this.second) doRefresh = false
                     this.first.use { _publicationContentMeta.value = getContentMeta(it, share) }
                 }
 
-                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
+                //if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
@@ -441,7 +459,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val photos = JSONObject(inputStream.bufferedReader().readText()).getJSONObject("lespas").getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
-                result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
+                //result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
+                result.add(RemotePhoto(
+                    getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                    getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
+                ))
             }
         }
         when (share.sortOrder) {
@@ -473,7 +495,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val targetShare = _shareWithMe.value.find { it.albumId == toAlbum.eTag }!!
                     var mediaList: MutableList<RemotePhoto>
 
-                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                    //webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
                     if (!mediaList.isNullOrEmpty()) {
                         mediaList.add(photo)
                         when(targetShare.sortOrder) {
@@ -482,7 +505,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
                             Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
                         }
-                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                        //webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX_V2", MIME_TYPE_JSON)
                     }
                 }
             } catch (e: Exception) { e.printStackTrace() }
@@ -576,16 +600,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                     // If preview download fail (like no preview for video etc), or other types than TYPE_GRID, then we need to download the media file itself
                     bitmap ?: run {
-                        // Show cached low resolution bitmap first
-                        imageCache.get("${photo.fileId}${ImageLoaderViewModel.TYPE_GRID}")?.let {
-                            withContext(Dispatchers.Main) { view.setImageBitmap(it) }
-                            callBack?.onLoadComplete()
-                        }
-
                         val option = BitmapFactory.Options().apply {
                             // TODO the following setting make picture larger, care to find a new way?
                             //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                         }
+
                         webDav.getStream(photoPath, true,null).use {
                             when (type) {
                                 ImageLoaderViewModel.TYPE_VIDEO -> bitmap = getRemoteVideoThumbnail(it, photo)
@@ -609,17 +628,24 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // Video only album has video file as cover, BitmapRegionDecoder will throw IOException with "Image format not supported" stack trace message
                                         //e.printStackTrace()
                                         it.close()
-                                        webDav.getStream(photoPath, true,null).use { vResp->
-                                            bitmap = getRemoteVideoThumbnail(vResp, photo)
-                                        }
+                                        webDav.getStream(photoPath, true,null).use { vResp-> bitmap = getRemoteVideoThumbnail(vResp, photo) }
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
+                                    // If preview is not available, we have to use the actual image file
                                     //if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
                                     //else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
                                     bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
+                                    if (photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
+                                    bitmap
                                 }
                                 ImageLoaderViewModel.TYPE_FULL -> {
+                                    // Show cached low resolution bitmap first
+                                    imageCache.get("${photo.fileId}${ImageLoaderViewModel.TYPE_GRID}")?.let {
+                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
+                                        callBack?.onLoadComplete()
+                                    }
+
                                     when {
                                         //photo.mimeType.startsWith("video")-> bitmap = getRemoteVideoThumbnail(it, photo)
                                         (photo.mimeType == "image/awebp" || photo.mimeType == "image/agif")-> {
@@ -632,9 +658,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         else-> {
                                             if (photo.width * photo.height > 33333334) option.inSampleSize = 2
                                             bitmap = BitmapFactory.decodeStream(it, null, option)
+                                            // Rotate bitmap to upright position
+                                            if (photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
+                                            bitmap
                                         }
                                     }
                                 }
+                                else -> null
                             }
                         }
                     }
@@ -872,14 +902,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     @Parcelize
-    data class Sharee (
+    data class Sharee(
         var name: String,
         var label: String,
         var type: Int,
     ): Parcelable
 
     @Parcelize
-    data class Recipient (
+    data class Recipient(
         var shareId: String,
         var permission: Int,
         var sharedTime: Long,
@@ -887,14 +917,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     ): Parcelable
 
     @Parcelize
-    data class ShareByMe (
+    data class ShareByMe(
         var fileId: String,
         var folderName: String,
         var with: MutableList<Recipient>,
     ): Parcelable
 
     @Parcelize
-    data class ShareWithMe (
+    data class ShareWithMe(
         var shareId: String,
         var sharePath: String,
         var albumId: String,
@@ -904,7 +934,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var permission: Int,
         var sharedTime: Long,
         var cover: Cover,
-        var coverFileName: String,
+        //var coverFileName: String,
         var sortOrder: Int,
         var lastModified: Long,
     ): Parcelable, Comparable<ShareWithMe> {
@@ -912,7 +942,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     @Parcelize
-    data class RemotePhoto (
+    data class RemotePhoto(
         val fileId: String,
         val path: String,
         val mimeType: String,
@@ -920,6 +950,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val height: Int,
         val coverBaseLine: Int,
         val timestamp: Long,
+        val orientation: Int = 0,
+        val caption: String = "",
+        val latitude: Double = Photo.NO_GPS_DATA,
+        val longitude: Double = Photo.NO_GPS_DATA,
+        val altitude: Double = Photo.NO_GPS_DATA,
+        val bearing: Double = Photo.NO_GPS_DATA,
     ): Parcelable
 
     companion object {
@@ -928,14 +964,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=lespas&subfiles=true&reshares=false&format=json"
         private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
-        private const val CAPABILLITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
+        private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
         private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
 
         const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
+        const val CONTENT_META_FILE_SUFFIX_V2 = "-content_v2.json"
+        const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
         const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
+        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%f,\"longitude\":%f,\"altitude\":%f,\"bearing\":%f},"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"

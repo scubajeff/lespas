@@ -47,7 +47,8 @@ class PublicationListFragment: Fragment() {
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
                 shareModel.getPhoto(
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
+                    //NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
+                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.cover.coverFileName}", share.cover.coverMimeType, share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
                     view,
                     ImageLoaderViewModel.TYPE_COVER
                 )
@@ -72,9 +73,9 @@ class PublicationListFragment: Fragment() {
             adapter = shareListAdapter
         }
 
-        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { shareListAdapter.submitList(it) })
-        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner, {
-            when(it) {
+        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { shareListAdapter.submitList(it) }
+        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner) {
+            when (it) {
                 0 -> {
                     activateRefresh?.isVisible = false
                     refreshProgress?.isVisible = true
@@ -94,7 +95,7 @@ class PublicationListFragment: Fragment() {
                     progressIndicator?.progress = it
                 }
             }
-        })
+        }
 /*
 
         lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}

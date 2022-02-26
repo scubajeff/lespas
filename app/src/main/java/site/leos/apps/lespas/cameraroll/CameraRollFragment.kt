@@ -830,10 +830,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
                     val uri = Uri.parse(this)
-                    val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                    //val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                    val photo = Photo(
+                        id = this,      // fileUri shared in as photo's id in Camera Roll album
+                        albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                        eTag = "0",     // Temporarily use eTag for saving file's size TODO use other number property
+                        dateTaken = LocalDateTime.now(),
+                        lastModified = LocalDateTime.MIN,
+                    )
 
                     photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: "image/jpeg"
+                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
                     }
                     when (uri.scheme) {
                         "content" -> {
@@ -853,9 +860,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (photo.mimeType.startsWith("video/")) {
                         MediaMetadataRetriever().run {
                             setDataSource(application, uri)
-                            photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                            photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
                             photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
+                            //photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                            //photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { photo.width = it.toInt() }
+                            extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { photo.height = it.toInt() }
                             release()
                         }
                     } else {
@@ -873,8 +882,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                     }
                                 } ?: LocalDateTime.now()
 
-                                // Store orientation in property shareId
-                                photo.shareId = exif.rotationDegrees
+                                photo.orientation = exif.rotationDegrees
+                                exif.latLong?.let {
+                                    photo.latitude = it[0]
+                                    photo.longitude = it[1]
+                                }
+                                photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                                exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { photo.bearing = it.toDouble() }
+                                if (photo.bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { photo.bearing = it.toDouble() }
                             }
                         }
 
@@ -1007,7 +1022,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 for (media in this) {
                     if (media.dateTaken.toLocalDate() != currentDate) {
                         currentDate = media.dateTaken.toLocalDate()
-                        listGroupedByDate.add(Photo("", ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
+                        // Add a fake photo item by taking default value for nearly all properties, denotes a date seperator
+                        listGroupedByDate.add(Photo(albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
+                        //listGroupedByDate.add(Photo("", ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
                     }
                     listGroupedByDate.add(media)
                 }

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -35,6 +36,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
         val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
+        val exifInterface: ExifInterface?
 
         withContext(Dispatchers.IO) {
             cr.query(uri, null, null, null, null)?.use { cursor ->
@@ -93,10 +95,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Update local database
-                    val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (e: Exception) { null }
+                    val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", JPEG, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                         // Mark sync status by setting eTag to empty
-                        id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
+                        //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
+                        id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                     )
                     photoDao.update(newPhoto)
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
@@ -139,7 +144,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Create new photo in local database
-                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.NOT_YET_UPLOADED))
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (e: Exception) { null }
+                    photoDao.insert(Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
 
                     with(mutableListOf<Action>()) {
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table

@@ -142,8 +142,8 @@ class PublicationDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner, { currentItem = it })
-        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
+        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
+        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
             photoListAdapter.submitList(it) {
                 // Setup UI in this submitList commitCallback
                 loadingIndicator?.run {
@@ -160,10 +160,10 @@ class PublicationDetailFragment: Fragment() {
                 }
             }
 
-            if (currentItem != -1) with (currentPositionModel.getLastRange()) {
-                if (currentItem <  this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
+            if (currentItem != -1) with(currentPositionModel.getLastRange()) {
+                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
             }
-        })
+        }
 
         lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
 

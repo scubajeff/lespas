@@ -87,7 +87,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                             else {
                                 var b = BitmapFactory.decodeStream(contentResolver.openInputStream(uri), null, option)
                                 // Rotate according to EXIF when this photo comes from camera roll
-                                if (photo.shareId != 0) b?.let { b = Bitmap.createBitmap(b!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
+                                if (photo.orientation != 0) b?.let { b = Bitmap.createBitmap(b!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                                 b
                             }
                         }
@@ -327,8 +327,8 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
         }
 
     override fun onCleared() {
-        super.onCleared()
         jobMap.forEach { if (it.value.isActive) it.value.cancel() }
+        super.onCleared()
     }
 
     class ImageCache (maxSize: Int) : LruCache<String, Bitmap>(maxSize) {

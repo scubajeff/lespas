@@ -52,7 +52,6 @@ import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
@@ -600,8 +599,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_publish-> {
+                // TODO verify this comment out
                 // Check for album meta file existence, create it if needed
-                if (!File(Tools.getLocalRoot(requireContext()), "${album.id}.json").exists()) WorkManager.getInstance(requireContext()).enqueueUniqueWork(MainActivity.MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MainActivity.MetaFileMaintenanceWorker>().build())
+                //if (!File(Tools.getLocalRoot(requireContext()), "${album.id}_v2.json").exists()) WorkManager.getInstance(requireContext()).enqueueUniqueWork(MainActivity.MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MainActivity.MetaFileMaintenanceWorker>().build())
 
                 // Get meaningful label for each recipient
                 publishModel.sharees.value.let { sharees->

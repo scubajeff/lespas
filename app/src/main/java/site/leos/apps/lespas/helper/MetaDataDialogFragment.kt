@@ -234,8 +234,6 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         const val KEY_MEDIA = "KEY_MEDIA"
         const val KEY_REMOTE_MEDIA = "KEY_REMOTE_MEDIA"
 
-        private const val FAKE_COORDINATE = 1000.0
-
         @JvmStatic
         fun newInstance(media: Photo) = MetaDataDialogFragment().apply { arguments = Bundle().apply { putParcelable(KEY_MEDIA, media) }}
 
