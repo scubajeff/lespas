@@ -444,8 +444,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             lastModified = remoteAlbum.modified,
                             // Default album attribute set to "Remote" for any album not created by this device, and "Excluded" in album list since cover is not available yet
                             shareId = Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
-                            sortOrder = sp.getInt(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC),
-                        )
+                            sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC,                        )
                     )
                     Log.e(">>>>>>>>", "no hit, creating changedAlbum ${remoteAlbum.name}")
                 }
