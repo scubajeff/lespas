@@ -731,16 +731,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
-            this.covers[0].apply {
-                id = cameraRollAlbum.cover
-                mimeType = cameraRollAlbum.eTag
-                eTag = cameraRollAlbum.shareId.toString()   // cover rotation
-                width = cameraRollAlbum.coverWidth
-                height = cameraRollAlbum.coverHeight
-                shareId = cameraRollAlbum.coverBaseline
+            mutableListOf<Album>().run {
+                addAll(currentList)
+                removeAt(0)
+                add(0, cameraRollAlbum)
+                submitList(this)
             }
-
-            notifyItemChanged(0)
         }
 
         internal fun getItemBySelectionKey(key: String): Album? = currentList.find { it.id == key }
