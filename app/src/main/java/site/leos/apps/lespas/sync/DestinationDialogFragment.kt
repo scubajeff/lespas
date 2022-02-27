@@ -103,7 +103,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             },
             { photo, album, view ->
                 // TODO: Dirty hack to find out if album's cover is synced or not, should use cover photo's eTag property after db migration
-                if (Tools.isRemoteAlbum(album) && photo.id != album.eTag.substringAfterLast('/')) publicationModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, album.eTag, "image/jpeg", photo.width, photo.height, photo.shareId, 0L), view, ImageLoaderViewModel.TYPE_COVER)
+                if (Tools.isRemoteAlbum(album) && photo.id != album.eTag.substringAfterLast('/')) publicationModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, album.eTag, photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), view, ImageLoaderViewModel.TYPE_COVER)
                 else imageLoaderModel.loadPhoto(photo, view, ImageLoaderViewModel.TYPE_COVER)
             },
             { photo, view -> run {

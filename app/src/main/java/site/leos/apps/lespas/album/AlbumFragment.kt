@@ -169,7 +169,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         ) { album, photo, imageView ->
             when {
                 album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_COVER)
-                Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, photo.name, photo.mimeType, photo.width, photo.height, photo.shareId, 0L), imageView, ImageLoaderViewModel.TYPE_COVER)
+                Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, photo.name, photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), imageView, ImageLoaderViewModel.TYPE_COVER)
                 else -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_COVER)
             }
         }.apply {

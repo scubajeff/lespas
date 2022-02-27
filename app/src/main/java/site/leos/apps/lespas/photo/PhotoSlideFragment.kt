@@ -127,7 +127,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             { photo, imageView, type ->
                 when {
                     type == ImageLoaderViewModel.TYPE_NULL -> startPostponedEnterTransition()
-                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "${serverPath}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L), imageView!!, type) { startPostponedEnterTransition() }
+                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "${serverPath}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), imageView!!, type) { startPostponedEnterTransition() }
                     else -> imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }
                 }
             },
