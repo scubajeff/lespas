@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 10,
-    "identityHash": "396874fd9f72e52b5da8dad07193857c",
+    "identityHash": "539dd7a914dd176f75c291ae54dfb218",
     "entities": [
       {
         "tableName": "albums",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `endDate` INTEGER NOT NULL, `cover` TEXT NOT NULL, `coverBaseline` INTEGER NOT NULL, `coverWidth` INTEGER NOT NULL, `coverHeight` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `eTag` TEXT NOT NULL, `shareId` INTEGER NOT NULL, `syncProgress` REAL NOT NULL, `coverFileName` TEXT NOT NULL, `coverMimeType` TEXT NOT NULL, `bgmId` TEXT NOT NULL, `bgmETag` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `endDate` INTEGER NOT NULL, `cover` TEXT NOT NULL, `coverBaseline` INTEGER NOT NULL, `coverWidth` INTEGER NOT NULL, `coverHeight` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `eTag` TEXT NOT NULL, `shareId` INTEGER NOT NULL, `syncProgress` REAL NOT NULL, `coverFileName` TEXT NOT NULL, `coverMimeType` TEXT NOT NULL, `coverOrientation` INTEGER NOT NULL, `bgmId` TEXT NOT NULL, `bgmETag` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -96,6 +96,12 @@
             "fieldPath": "coverMimeType",
             "columnName": "coverMimeType",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "coverOrientation",
+            "columnName": "coverOrientation",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -339,7 +345,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '396874fd9f72e52b5da8dad07193857c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '539dd7a914dd176f75c291ae54dfb218')"
     ]
   }
 }

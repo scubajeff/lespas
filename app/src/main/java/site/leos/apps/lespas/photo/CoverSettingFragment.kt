@@ -171,7 +171,7 @@ class CoverSettingFragment : Fragment() {
             currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
-                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(albumId, Cover(id, baseLine, width, height, name, mimeType))
+                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(albumId, Cover(id, baseLine, width, height, name, mimeType, orientation))
             }
             currentPhotoModel.coverApplied(true)
 

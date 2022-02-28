@@ -119,26 +119,22 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                     try {
                         var bmp: Bitmap? = null
                         if (photo.albumId == FROM_CAMERA_ROLL) {
-                            // cover orientation passed in property eTag
-                            (try {photo.eTag.toFloat()} catch (e: Exception) { 0.0F }).also { orientation->
-
-                                val rect = when(orientation) {
-                                    0.0F-> Rect(0, photo.shareId, photo.width - 1, min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
-                                    90.0F-> Rect(photo.shareId, 0, min(photo.shareId + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
-                                    180.0F-> (photo.height - photo.shareId).let { Rect(0, max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
-                                    else-> (photo.width - photo.shareId).let { Rect(max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
-                                }
-
-                                // Decode region
-                                //bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
-                                contentResolver.openInputStream(uri)?.let {
-                                    @Suppress("DEPRECATION")
-                                    bmp = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, options)
-                                }
-
-                                // Rotate if needed
-                                if (orientation != 0.0F) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(orientation) }, true) }
+                            val rect = when(photo.orientation) {
+                                0 -> Rect(0, photo.shareId, photo.width - 1, min(photo.shareId + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
+                                90 -> Rect(photo.shareId, 0, min(photo.shareId + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
+                                180 -> (photo.height - photo.shareId).let { Rect(0, max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
+                                else -> (photo.width - photo.shareId).let { Rect(max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
                             }
+
+                            // Decode region
+                            //bmp = BitmapRegionDecoder.newInstance(contentResolver.openInputStream(uri), false).decodeRegion(rect, options)
+                            contentResolver.openInputStream(uri)?.let {
+                                @Suppress("DEPRECATION")
+                                bmp = (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(it) else BitmapRegionDecoder.newInstance(it, false))?.decodeRegion(rect, options)
+                            }
+
+                            // Rotate if needed
+                            if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, bmp!!.width, bmp!!.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) }
                         } else {
                             // If album's cover size changed from other ends, like picture cropped on server, SyncAdapter will not handle the changes, the baseline could be invalid
                             // TODO better way to handle this
@@ -205,9 +201,10 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                 // Give error another chance
                 if (bitmap == null || bitmap == errorBitmap) {
                     when {
+                        // Loading low resolution version for full picture
                         type != TYPE_FULL -> {}
+                        // If it's not from camera roll, show grid version asap
                         photo.albumId != FROM_CAMERA_ROLL -> {
-                            // Black placeholder for full image view so that the layout can be stable during transition to immersive mode
                             if (isActive) {
                                 withContext(Dispatchers.Main) {
                                     imageCache.get("${photo.id}${TYPE_GRID}")?.let {
@@ -217,6 +214,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
                                 }
                             }
                         }
+                        // If it's from camera roll and it's not playable media, e.g. video, animated picture, show thumbnail asap
                         !Tools.isMediaPlayable(photo.mimeType) -> {
                             getImageThumbnail(photo)?.let {
                                 if (isActive) {
@@ -276,7 +274,7 @@ class ImageLoaderViewModel(application: Application) : AndroidViewModel(applicat
             } else {
                 @Suppress("DEPRECATION")
                 MediaStore.Images.Thumbnails.getThumbnail(contentResolver, photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
-                    if (photo.shareId != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(photo.shareId.toFloat()) }, true)
+                    if (photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(photo.orientation.toFloat()) }, true)
                     else this
                 }
             }

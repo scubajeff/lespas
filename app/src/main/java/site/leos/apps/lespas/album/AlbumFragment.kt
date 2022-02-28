@@ -166,11 +166,22 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
-        ) { album, photo, imageView ->
-            when {
-                album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_COVER)
-                Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, photo.name, photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), imageView, ImageLoaderViewModel.TYPE_COVER)
-                else -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_COVER)
+        ) { album, imageView ->
+            album.run {
+                val base = getString(R.string.lespas_base_folder_name)
+                when {
+                    Tools.isRemoteAlbum(album) && cover != coverFileName ->
+                        publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(
+                            fileId = cover, path = "${base}/${name}/${coverFileName}", mimeType = coverMimeType,
+                            width = coverWidth, height = coverHeight, coverBaseLine = coverBaseline, orientation = coverOrientation, timestamp = 0L
+                        ), imageView, ImageLoaderViewModel.TYPE_COVER)
+                    else ->
+                        imageLoaderModel.loadPhoto(Photo(
+                            id = cover, albumId = id,
+                            name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, shareId = coverBaseline, orientation = coverOrientation,
+                            dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                        ), imageView, ImageLoaderViewModel.TYPE_COVER)
+                }
             }
         }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -203,11 +214,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        albumsModel.allAlbumsWithCoverByEndDate.observe(viewLifecycleOwner) {
-            val list = mutableListOf<AlbumWithCover>().apply { addAll(it) }
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) {
+            val list = mutableListOf<Album>().apply { addAll(it) }
 
-            if (showCameraRoll) cameraRollAlbum?.let { album -> list.add(0, AlbumWithCover(album, Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, album.eTag, album.coverBaseline))) }
-            mAdapter.setAlbums(list, currentSortOrder, getString(R.string.lespas_base_folder_name))
+            if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(cameraroll) }
+            mAdapter.setAlbums(list, currentSortOrder)
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
@@ -435,7 +446,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     else-> -1
                 }
 
-                mAdapter.sortList(currentSortOrder)
+                mAdapter.setAlbums(null, currentSortOrder)
 
                 return true
             }
@@ -584,9 +595,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, Photo, ImageView) -> Unit
+    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
-        private var covers = mutableListOf<Photo>()
+        //private var covers = mutableListOf<Photo>()
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<String>
         //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -611,8 +622,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 itemView.apply {
                     this.isActivated = isActivated
                     ivCover.let {coverImageview ->
-                        //imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
-                        covers.find { it.id == album.cover }?.let { imageLoader(album, it, coverImageview) }
+                        imageLoader(album, coverImageview)
                         /*
                         if (this.isActivated) coverImageview.colorFilter = selectedFilter
                         else coverImageview.clearColorFilter()
@@ -683,25 +693,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             holder.bindViewItems(currentList[position], selectionTracker.isSelected(getAlbumId(position)))
         }
 
-        internal fun setAlbums(avc: MutableList<AlbumWithCover>, sortOrder: Int, folder: String) {
-            val albums = mutableListOf<Album>()
-            this.covers.apply {
-                clear()
-                avc.forEach { avc ->
-                    albums.add(avc.album)
-                    avc.coverPhoto?.let { cover ->
-                        // TODO due to Album and Photo db update sequence conflict, there is a brief moment when cover photo can't be found, db migration will solve this
-                        covers.add(if (avc.album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) cover else cover.copy(shareId = avc.album.coverBaseline, name = "${folder}/${avc.album.name}/${cover.name}"))
-                    }
-                }
-            }
-
-            sortList(sortOrder, albums)
-        }
-
-        internal fun sortList(order: Int, list: MutableList<Album>? = null) {
+        internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int) {
             val sortedList = mutableListOf<Album>()
-            val sourceList = mutableListOf<Album>().apply { addAll(list ?: currentList) }
+            val sourceList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
 
             if (sourceList.isNotEmpty()) {
                 // save camera roll album
@@ -709,7 +703,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sourceList.removeAt(0)
 
                 sortedList.addAll(
-                    when (order) {
+                    when (sortOrder) {
                         Album.BY_DATE_TAKEN_ASC -> sourceList.sortedWith(compareBy { it.endDate })
                         Album.BY_DATE_TAKEN_DESC -> sourceList.sortedWith(compareByDescending { it.endDate })
                         Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })

@@ -271,10 +271,15 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             if (validCover == -1) validCover = 0
 
                             // New album, update cover information but leaving cover column empty as the sign of local added new album
-                            album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
-                            album.coverWidth = newPhotos[validCover].width
-                            album.coverHeight = newPhotos[validCover].height
-                            album.cover = newPhotos[validCover].id
+                            newPhotos[validCover].run {
+                                album.coverBaseline = (height - (width * 9 / 21)) / 2
+                                album.coverWidth = width
+                                album.coverHeight = height
+                                album.cover = id
+                                album.coverFileName = name
+                                album.coverMimeType = mimeType
+                                album.coverOrientation = orientation
+                            }
 
                             album.sortOrder = PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
 

@@ -17,7 +17,7 @@ class AlbumRepository(application: Application){
     fun update(album: Album){ albumDao.update(album) }
     fun deleteById(albumId: String) { albumDao.deleteById(albumId) }
     fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
-    fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverFileName, cover.coverMimeType) }
+    fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverFileName, cover.coverMimeType, cover.coverOrientation) }
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
     fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()

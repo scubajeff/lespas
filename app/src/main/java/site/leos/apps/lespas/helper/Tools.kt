@@ -418,7 +418,8 @@ object Tools {
                         cover = coverId, coverFileName = coverFileName, coverBaseline = coverBaseline, coverWidth = coverWidth, coverHeight = coverHeight, coverMimeType = coverMimeType,
                         sortOrder = Album.BY_DATE_TAKEN_DESC,
                         eTag = Album.ETAG_CAMERA_ROLL_ALBUM,
-                        bgmId = orientation.toString()      // Pass cover orientation in property bgmId
+                        shareId = Album.NULL_ALBUM,
+                        coverOrientation = orientation,
                     )
                 } else return null
             } ?: return null

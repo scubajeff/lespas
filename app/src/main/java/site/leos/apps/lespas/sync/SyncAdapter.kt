@@ -276,7 +276,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property fileName holds filename of the album's cover TODO no need
                     albumRepository.getThisAlbum(action.folderId).apply {
                         //if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
-                        if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType), sortOrder)) {
+                        if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
                             // Touch file to avoid re-download
                             //try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                             try { File(localRootFolder, "${id}_v2.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
@@ -449,7 +449,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             lastModified = remoteAlbum.modified,
                             // Default album attribute set to "Remote" for any album not created by this device, and "Excluded" in album list since cover is not available yet
                             shareId = Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
-                            sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC,                        )
+                            sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC)
                     )
                     Log.e(">>>>>>>>", "no hit, creating changedAlbum ${remoteAlbum.name}")
                 }
@@ -584,6 +584,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverHeight = coverHeight
                         changedAlbum.coverFileName = coverFileName
                         changedAlbum.coverMimeType = coverMimeType
+                        changedAlbum.coverOrientation = coverOrientation
                         changedAlbum.sortOrder = sortOrder
 
                         // TODO This is needed when meta format changed from v1 to v2 on release 2.5.0 to restore existing cover, could be removed in future release
@@ -591,6 +592,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // A v1 meta file return which does not contain cover's mimetype information, try to get it from changePhotos list
                             changedPhotos.find { it.id == cover }?.let {
                                 changedAlbum.coverMimeType = it.mimeType
+                                changedAlbum.coverOrientation = it.orientation
                                 metaUpdatedNeeded.add(changedAlbum.name)
                             }
                         }
@@ -617,6 +619,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 changedAlbum.coverHeight = coverHeight
                                 changedAlbum.coverFileName = coverFileName
                                 changedAlbum.coverMimeType = coverMimeType
+                                changedAlbum.coverOrientation = coverOrientation
                                 changedAlbum.sortOrder = sortOrder
                             }
                         }
@@ -796,6 +799,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             coverHeight = changedPhoto.height
                             coverFileName = changedPhoto.name
                             coverMimeType = changedPhoto.mimeType
+                            coverOrientation = changedPhoto.orientation
 
                             metaUpdatedNeeded.add(this.name)
                         }
@@ -826,6 +830,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverHeight = this.coverHeight
                         changedAlbum.coverFileName = this.coverFileName
                         changedAlbum.coverMimeType = this.coverMimeType
+                        changedAlbum.coverOrientation = coverOrientation
                     }
 
                     // Maintain album start and end date
@@ -900,7 +905,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
             albumRepository.getAlbumByName(albumName)?.apply {
                 //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
-                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType), sortOrder)
+                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
             }
 
             // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
@@ -1022,7 +1027,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             //FileWriter("$localRootFolder/metaFileName").apply {
             localFile.writer().use {
                 //it.write(String.format(ALBUM_META_JSON, cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
-                it.write(String.format(ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, sortOrder))
+                it.write(String.format(ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, cover.coverOrientation, sortOrder))
             }
 
             // If local meta json file created successfully
@@ -1050,7 +1055,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Store meta info in meta data holder
                     val meta = JSONObject(content).getJSONObject("lespas")
-                    meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype")) }
+                    meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation")) }
                     //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
                 }
             }
@@ -1062,7 +1067,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         catch (e: Exception) { e.printStackTrace() }
 
         // TODO This is needed when meta format changed from v1 to v2 on release 2.5.0 to restore existing cover, could be removed in future release
-        // cover's mimetype will be return as empty string
+        // cover's mimetype will be return as empty string, cover's orientation will be return as 0
         result ?: run {
             try {
                 val metaFileName = "${album.id}.json"
@@ -1075,7 +1080,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Store meta info in meta data holder
                         val meta = JSONObject(content).getJSONObject("lespas")
-                        meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "") }
+                        meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0) }
                         //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
                     }
                 }
@@ -1114,6 +1119,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val ALBUM_META_JSON = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}"
-        const val ALBUM_META_JSON_V2 = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d,\"mimetype\":\"%s\"},\"sort\":%d,\"version\":2}}"
+        const val ALBUM_META_JSON_V2 = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d,\"mimetype\":\"%s\",\"orientation\":%d},\"sort\":%d,\"version\":2}}"
     }
 }

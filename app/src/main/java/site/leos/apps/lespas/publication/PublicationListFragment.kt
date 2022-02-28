@@ -48,7 +48,7 @@ class PublicationListFragment: Fragment() {
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
                 shareModel.getPhoto(
                     //NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.cover.coverFileName}", share.cover.coverMimeType, share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
+                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.cover.coverFileName}", share.cover.coverMimeType, share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L, share.cover.coverOrientation),
                     view,
                     ImageLoaderViewModel.TYPE_COVER
                 )

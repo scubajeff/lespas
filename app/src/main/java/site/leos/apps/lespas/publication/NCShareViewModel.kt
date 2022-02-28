@@ -19,6 +19,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.Parcelable
 import android.provider.MediaStore
+import android.util.Log
 import android.util.LruCache
 import android.view.View
 import android.widget.ImageView
@@ -47,6 +48,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.OkHttpWebDav
+import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
@@ -212,7 +214,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     getString("displayname_owner"),
                                     permission,
                                     getLong("stime"),
-                                    Cover(Album.NO_COVER, 0, 0, 0, Album.NO_COVER, ""), Album.BY_DATE_TAKEN_ASC, 0L
+                                    Cover(Album.NO_COVER, 0, 0, 0, Album.NO_COVER, "", 0), Album.BY_DATE_TAKEN_ASC, 0L
                                 ))
                             }
                         }
@@ -260,7 +262,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}_v2.json", true, CacheControl.FORCE_NETWORK).use {
                     JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
                         meta.getJSONObject("cover").apply {
-                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"))
+                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"))
                         }
                         share.sortOrder = meta.getInt("sort")
                     }
@@ -606,11 +608,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         else-> (photo.width - photo.coverBaseLine).let { Rect(Integer.max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
                                     }
 
-                                    val sampleSize = when (photo.width) {
+                                    var sampleSize = when (photo.width) {
                                         in (0..2000) -> 1
                                         in (2000..3000) -> 2
                                         else -> 4
                                     }
+                                    if (type == ImageLoaderViewModel.TYPE_SMALL_COVER) sampleSize *= 2
 
                                     try  {
                                         @Suppress("DEPRECATION")
@@ -669,6 +672,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && type != ImageLoaderViewModel.TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
+            catch (e: OkHttpWebDavException) { Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")}
             catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
@@ -933,7 +937,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var permission: Int,
         var sharedTime: Long,
         var cover: Cover,
-        //var coverFileName: String,
         var sortOrder: Int,
         var lastModified: Long,
     ): Parcelable, Comparable<ShareWithMe> {
