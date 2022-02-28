@@ -45,7 +45,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 }
 
                 // Remove local meta file
-                try { File(localRootFolder, "${album.id}_v2.json").delete() } catch (e: Exception) { e.printStackTrace() }
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
 
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
 

@@ -247,8 +247,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             albumRepository.fixNewLocalAlbumId(action.folderId, fileId, action.fileName)
 
                             // touch meta file
-                            //try { File("${localRootFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
-                            try { File("${localRootFolder}/${fileId}_v2.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
+                            try { File("${localRootFolder}/${fileId}.json").createNewFile() } catch (e: Exception) { e.printStackTrace() }
 
                             // Mark meta update later
                             metaUpdatedNeeded.add(action.folderName)
@@ -278,8 +277,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         //if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                         if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
                             // Touch file to avoid re-download
-                            //try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
-                            try { File(localRootFolder, "${id}_v2.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
+                            try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                         } else throw IOException()
                     }
                 }
@@ -304,12 +302,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3], "", Photo.NO_GPS_DATA, Photo.NO_GPS_DATA, Photo.NO_GPS_DATA, Photo.NO_GPS_DATA,
                             )
                             //val metaString = String.format(PHOTO_META_JSON, "fake", action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
-                            //val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
-                            val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX_V2}")
+                            val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
                             if (!contentMetaFile.exists()) {
                                 // Download content meta file if it's not ready
-                                //webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", contentMetaFile, null)
-                                webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX_V2}", contentMetaFile, null)
+                                webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", contentMetaFile, null)
                             }
                             var newMetaString: String
                             contentMetaFile.source().buffer().use { newMetaString = it.readUtf8() }
@@ -326,8 +322,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderId holds joint album's id
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
                     // Actual album meta json file is created by ACTION_ADD_FILES_TO_JOINT_ALBUM
-                    //val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
-                    val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX_V2}"
+                    val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
                         if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON, application)
@@ -467,8 +462,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try { File(localRootFolder, it.id).delete() } catch (e: Exception) { e.printStackTrace() }
                     try { File(localRootFolder, it.name).delete() } catch(e: Exception) { e.printStackTrace() }
                 }
-                //try { File(localRootFolder, "${local.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
-                try { File(localRootFolder, "${local.id}_v2.json").delete() } catch (e: Exception) { e.printStackTrace() }
+                try { File(localRootFolder, "${local.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
                 Log.e(">>>>", "Deleted album: ${local.id}")
             }
         }
@@ -552,9 +546,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                         // Content meta file
-                        //remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
-                        remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) && remotePhoto.name.endsWith("_v2.json") -> {
-                            // If there is a file name as "{albumId}_v2.json". mark down latest meta (both album meta and conent meta) update timestamp,
+                        remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
+                            // If there is a file name as "{albumId}.json". mark down latest meta (both album meta and conent meta) update timestamp,
                             contentModifiedTime = maxOf(contentModifiedTime, remotePhoto.modified)
                         }
                         // BGM file
@@ -598,12 +591,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     } ?: run {
                         // If there has no meta, neither v1 nor v2, on server, create it at the end of syncing
-                        Log.e(">>>>>>>>>>>", "could not download meta file ${changedAlbum.id}_v2.json of album  ${changedAlbum.name} from server")
+                        Log.e(">>>>>>>>>>>", "could not download meta file ${changedAlbum.id}.json of album  ${changedAlbum.name} from server")
                         metaUpdatedNeeded.add(changedAlbum.name)
                     }
                 } else {
                     // Try to sync meta changes from other devices if this album exists on local device
-                    val metaFileName = "${changedAlbum.id}_v2.json"
+                    val metaFileName = "${changedAlbum.id}.json"
                     remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->
                         //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
                         //Log.e(">>>>>", "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
@@ -613,14 +606,18 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // get updated cover setting, and if this album gets modified later, the cover setting will change!!
                             // TODO more proper way to handle conflict
                             downloadAlbumMeta(changedAlbum)?.apply {
-                                changedAlbum.cover = cover
-                                changedAlbum.coverBaseline = coverBaseline
-                                changedAlbum.coverWidth = coverWidth
-                                changedAlbum.coverHeight = coverHeight
-                                changedAlbum.coverFileName = coverFileName
-                                changedAlbum.coverMimeType = coverMimeType
-                                changedAlbum.coverOrientation = coverOrientation
-                                changedAlbum.sortOrder = sortOrder
+                                Log.e(">>>>>>>>>>>>>>>","downloaded ${changedAlbum.name}'s latest album meta json from server")
+                                if (changedAlbum.coverMimeType.isNotEmpty()) {
+                                    // Only sync with newer version of meta json
+                                    changedAlbum.cover = cover
+                                    changedAlbum.coverBaseline = coverBaseline
+                                    changedAlbum.coverWidth = coverWidth
+                                    changedAlbum.coverHeight = coverHeight
+                                    changedAlbum.coverFileName = coverFileName
+                                    changedAlbum.coverMimeType = coverMimeType
+                                    changedAlbum.coverOrientation = coverOrientation
+                                    changedAlbum.sortOrder = sortOrder
+                                }
                             }
                         }
                     }
@@ -636,63 +633,69 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
-                        Log.e(">>>>>>>>>>", "syncing meta for album ${changedAlbum.name}")
+                        Log.e(">>>>>>>>>>", "syncing meta for album ${changedAlbum.name}  ${changedAlbum.lastModified}  ${contentModifiedTime}")
                         // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
 
-                        //webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
-                        webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX_V2}", false, null).use { stream ->
-                            val meta = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas").getJSONArray("photos")
-                            for (i in 0 until meta.length()) {
-                                // Create photos by merging from content meta file and webDAV PROPFIND (eTag, lastModified are not available in content meta)
-                                // TODO: shall we update content meta to include eTag and lastModified?
-                                meta.getJSONObject(i).apply {
-                                    pId = getString("id")
-                                    changedPhotos.find { p -> p.id == pId }?.let {
-                                        photoMeta.add(
-                                            Photo(
+                        webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
+                            val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
+                            val version = try { lespasJson.getInt("version") } catch (e: JSONException) { 1 }
+                            when {
+                                // TODO Make sure later version of content meta file downward compatible
+                                version >= 2 -> {
+                                    val meta = lespasJson.getJSONArray("photos")
+                                    for (i in 0 until meta.length()) {
+                                        // Create photos by merging from content meta file and webDAV PROPFIND (eTag, lastModified are not available in content meta)
+                                        // TODO: shall we update content meta to include eTag and lastModified?
+                                        meta.getJSONObject(i).apply {
+                                            pId = getString("id")
+                                            changedPhotos.find { p -> p.id == pId }?.let {
+                                                photoMeta.add(
+                                                    Photo(
+                                                        id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
+                                                        eTag = it.eTag,
+                                                        dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
+                                                        width = getInt("width"), height = getInt("height"),
+                                                        caption = getString("caption"),
+                                                        orientation = getInt("orientation"),
+                                                        latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
 /*
-                                                pId, changedAlbum.id, getString("name"),
-                                                it.eTag,
-                                                Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(),
-                                                it.lastModified,
-                                                getInt("width"),
-                                                getInt("height"),
-                                                getString("mime"),
-                                                0,
+                                                        id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
+                                                        eTag = it.eTag,
+                                                        dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
+                                                        width = getInt("width"), height = getInt("height"),
 */
-                                                id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
-                                                eTag = it.eTag,
-                                                dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
-                                                width = getInt("width"), height = getInt("height"),
-                                                caption = getString("caption"),
-                                                orientation = getInt("orientation"),
-                                                latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
-                                            )
-                                        )
+                                                    )
+                                                )
 
-                                        Log.e(">>>>>>>>>>>>>>>>>>>>>>", "syncing new photo ${getString("name")} meta from server")
+                                                Log.e(">>>>>>>>>>>>>>>>>>>>>>", "syncing new photo ${getString("name")} meta version $version from server")
 
-                                        // Maintain album start and end date
-                                        with(photoMeta.last().dateTaken) {
-                                            if (this > changedAlbum.endDate) changedAlbum.endDate = this
-                                            if (this < changedAlbum.startDate) changedAlbum.startDate = this
+                                                // Maintain album start and end date
+                                                with(photoMeta.last().dateTaken) {
+                                                    if (this > changedAlbum.endDate) changedAlbum.endDate = this
+                                                    if (this < changedAlbum.startDate) changedAlbum.startDate = this
+                                                }
+                                            } ?: run {
+                                                // Miss match, content meta needs update
+                                                contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                            }
                                         }
-                                    } ?: run {
-                                        // Miss match, content meta needs update
-                                        contentMetaUpdatedNeeded.add(changedAlbum.name)
                                     }
+
+                                    // Clear changedPhotos list, no need to process each media file
+                                    changedPhotos.clear()
+
+                                    // Update photo meta data changed and mark album viewable
+                                    photoRepository.upsert(photoMeta)
+                                    changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
+                                }
+                                else -> {
+                                    // Version 1 content meta file, won't work for latest version quick sync
+                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
                                 }
                             }
                         }
-
-                        // Clear changedPhotos list, no need to process each media file
-                        changedPhotos.clear()
-
-                        // Update photo meta data changed and mark album viewable
-                        photoRepository.upsert(photoMeta)
-                        changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
                     }
                 }
 
@@ -886,7 +889,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         albumRepository.deleteById(changedAlbum.id)
                         actionRepository.addAction(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, changedAlbum.id, changedAlbum.name, "", "", System.currentTimeMillis(), 1))
                         // Remove local meta file
-                        try { File(localRootFolder, "${changedAlbum.id}_v2.json").delete() } catch (e: Exception) { e.printStackTrace() }
+                        try { File(localRootFolder, "${changedAlbum.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
                     }
                 }
 
@@ -1018,7 +1021,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     //private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
     private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, sortOrder: Int): Boolean {
         try {
-            val metaFileName = "${albumId}_v2.json"
+            val metaFileName = "${albumId}.json"
             val localFile = File(localRootFolder, metaFileName)
 
             // Need this file in phone
@@ -1043,7 +1046,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var result: Meta? = null
 
         try {
-            val metaFileName = "${album.id}_v2.json"
+            val metaFileName = "${album.id}.json"
 
             // Download the updated meta file
             webDav.getStream("$resourceRoot/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}", false,null).reader().use { input->
@@ -1053,42 +1056,24 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Store meta info in meta data holder
                     val meta = JSONObject(content).getJSONObject("lespas")
-                    meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation")) }
+                    val version = try { meta.getInt("version") } catch (e: JSONException) { 1 }
+                    result = meta.getJSONObject("cover").run {
+                        when {
+                            // TODO Make sure later version of album meta file downward compatible
+                            version >= 2 -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"))
+                            // Version 1 of album meta json
+                            else -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0)
+                        }
+                    }
                     //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
                 }
             }
         }
         // TODO consolidate these exception handling codes
-        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString) }
+        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ${e.statusCode}", e.stackTraceString) }
         catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
         catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
         catch (e: Exception) { e.printStackTrace() }
-
-        // TODO This is needed when meta format changed from v1 to v2 on release 2.5.0 to restore existing cover, could be removed in future release
-        // cover's mimetype will be return as empty string, cover's orientation will be return as 0
-        result ?: run {
-            try {
-                val metaFileName = "${album.id}.json"
-
-                // Download the meta file
-                webDav.getStream("$resourceRoot/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}", false,null).reader().use { input->
-                    File(localRootFolder, metaFileName).writer().use { output ->
-                        val content = input.readText()
-                        output.write(content)
-
-                        // Store meta info in meta data holder
-                        val meta = JSONObject(content).getJSONObject("lespas")
-                        meta.getJSONObject("cover").apply { result = Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0) }
-                        //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
-                    }
-                }
-            }
-            // TODO consolidate these exception handling codes
-            catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString) }
-            catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
-            catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
-            catch (e: Exception) { e.printStackTrace() }
-        }
 
         return result
     }
@@ -1103,8 +1088,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             content += String.format(NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
         content = content.dropLast(1) + "]}}"
-        //webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX_V2}", NCShareViewModel.MIME_TYPE_JSON)
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
     }
 
     companion object {

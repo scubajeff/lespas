@@ -259,10 +259,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             _shareWithMeProgress.value = ((i * 100.0) / total).toInt()
             share.lastModified = lastModified[share.albumId] ?: 0L
             try {
-                webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}_v2.json", true, CacheControl.FORCE_NETWORK).use {
+                webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
                     JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
-                        meta.getJSONObject("cover").apply {
-                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"))
+                        val version = try { meta.getInt("version") } catch (e: JSONException) { 1 }
+                        share.cover = meta.getJSONObject("cover").run {
+                            when {
+                                // TODO Make sure later version of album meta file downward compatible
+                                version >= 2 -> Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), getString("mimetype"), getInt("orientation"))
+                                // Version 1 of album meta json
+                                else -> Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "image/jpeg", 0)
+                            }
                         }
                         share.sortOrder = meta.getInt("sort")
                     }
@@ -390,8 +396,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     fun createJointAlbumContentMetaFile(albumId: String, remotePhotos: List<RemotePhoto>?) {
         try {
-            //File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
-            File("${localFileFolder}/${albumId}${CONTENT_META_FILE_SUFFIX_V2}").sink(false).buffer().use {
+            File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
                 it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
             }
         } catch (e: Exception) { e.printStackTrace() }
@@ -408,8 +413,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
-                        //webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
-                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX_V2", MIME_TYPE_JSON)
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -445,14 +449,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         withContext(Dispatchers.IO) {
             try {
-                //webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
-                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
+                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork || this.second) doRefresh = false
                     this.first.use { _publicationContentMeta.value = getContentMeta(it, share) }
                 }
 
-                //if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
-                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
@@ -460,14 +462,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun getContentMeta(inputStream: InputStream, share: ShareWithMe): List<RemotePhoto> {
         val result = mutableListOf<RemotePhoto>()
 
-        val photos = JSONObject(inputStream.bufferedReader().readText()).getJSONObject("lespas").getJSONArray("photos")
+        val lespasJson = JSONObject(inputStream.bufferedReader().readText()).getJSONObject("lespas")
+        val version = try { lespasJson.getInt("version") } catch (e: JSONException) { 1 }
+        val photos = lespasJson.getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
-                //result.add(RemotePhoto(getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime")))
-                result.add(RemotePhoto(
-                    getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
-                    getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
-                ))
+                when {
+                    // TODO make sure later version json file downward compatible
+                    version >= 2 -> {
+                        result.add(RemotePhoto(
+                            getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                            // Version 2 additions
+                            getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
+                        ))
+                    }
+                    // Version 1 of content meta json
+                    else -> {
+                        result.add(RemotePhoto(
+                            getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                        ))
+                    }
+                }
             }
         }
         when (share.sortOrder) {
@@ -499,8 +514,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val targetShare = _shareWithMe.value.find { it.albumId == toAlbum.eTag }!!
                     var mediaList: MutableList<RemotePhoto>
 
-                    //webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
-                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX_V2", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
                     if (!mediaList.isNullOrEmpty()) {
                         mediaList.add(photo)
                         when(targetShare.sortOrder) {
@@ -509,8 +523,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
                             Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
                         }
-                        //webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
-                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX_V2", MIME_TYPE_JSON)
+                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
                 }
             } catch (e: Exception) { e.printStackTrace() }
@@ -973,7 +986,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
-        const val CONTENT_META_FILE_SUFFIX_V2 = "-content_v2.json"
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
         const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
         const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%f,\"longitude\":%f,\"altitude\":%f,\"bearing\":%f},"
