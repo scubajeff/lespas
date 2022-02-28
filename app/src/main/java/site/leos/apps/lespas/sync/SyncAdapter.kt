@@ -632,9 +632,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Quick sync for "Remote" albums
-                // TODO move this before making changed photo list
-                //if (Tools.isRemoteAlbum(changedAlbum) && Tools.isExcludedAlbum(changedAlbum)) {
-                if (Tools.isRemoteAlbum(changedAlbum) && !Tools.isExcludedAlbum(changedAlbum)) {
+                if (Tools.isRemoteAlbum(changedAlbum) && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
                     Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
