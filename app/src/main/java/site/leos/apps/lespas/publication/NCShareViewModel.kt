@@ -472,11 +472,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 when {
                     // TODO make sure later version json file downward compatible
                     version >= 2 -> {
-                        result.add(RemotePhoto(
-                            getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
-                            // Version 2 additions
-                            getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
-                        ))
+                        try {
+                            getInt("orientation")
+                            result.add(RemotePhoto(
+                                getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                                // Version 2 additions
+                                getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
+                            ))
+                        } catch (e: JSONException) {
+                            result.add(RemotePhoto(
+                                getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                            ))
+                        }
                     }
                     // Version 1 of content meta json
                     else -> {
