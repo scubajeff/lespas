@@ -156,7 +156,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             },
             //{ photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
             { photo, view, type ->
-                if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "$lespasPath/${album.name}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), view, type) { startPostponedEnterTransition() }
+                if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo, "${lespasPath}/${album.name}"), view, type) { startPostponedEnterTransition() } //NCShareViewModel.RemotePhoto(photo.id, "$lespasPath/${album.name}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), view, type) { startPostponedEnterTransition() }
                 else imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() }
             }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -942,7 +942,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             notifyItemChanged(0)
         }
 
-        internal fun getPhotos(): List<Photo> = photos.drop(1)
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
         internal fun updateCover(sharedPhoto: Photo) {

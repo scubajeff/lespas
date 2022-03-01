@@ -109,10 +109,10 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             { album, view, type ->
                 album.run {
                     if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX)
-                        publicationModel.getPhoto(NCShareViewModel.RemotePhoto(
-                            fileId = cover, path = coverFileName,
-                            mimeType = coverMimeType, width = coverWidth, height = coverHeight, coverBaseLine = coverBaseline, orientation = coverOrientation, timestamp = 0L
-                        ), view, type)
+                        publicationModel.getPhoto(NCShareViewModel.RemotePhoto(Photo(
+                            id = cover, name = coverFileName.substringAfterLast('/'),
+                            mimeType = coverMimeType, width = coverWidth, height = coverHeight, orientation = coverOrientation, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                        ), coverFileName.substringBeforeLast('/'), coverBaseline), view, type)
                     else
                         imageLoaderModel.loadPhoto(Photo(
                             id = cover, albumId = id, name = coverFileName,

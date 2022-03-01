@@ -33,9 +33,6 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
@@ -78,11 +75,11 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 local = true
             } ?: run {
                 requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.also { media->
-                    id = media.fileId
-                    name = media.path.substringAfterLast('/')
-                    dateString = LocalDateTime.ofInstant(Instant.ofEpochSecond(media.timestamp), ZoneOffset.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
-                    widthString = media.width.toString()
-                    heightString = media.height.toString()
+                    id = media.photo.id
+                    name = media.photo.name
+                    dateString = media.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
+                    widthString = media.photo.width.toString()
+                    heightString = media.photo.height.toString()
 
                     local = false
                 }

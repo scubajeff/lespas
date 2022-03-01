@@ -203,14 +203,14 @@ class PhotosInMapFragment: Fragment() {
                             override fun onOpen(item: Any?) {
                                 mView.apply {
                                     photos[marker.id.toInt()].run {
-                                        val view = mView.findViewById<ImageView>(R.id.photo)
+                                        val v = mView.findViewById<ImageView>(R.id.photo)
                                         if (isLocalAlbum) {
                                             findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
                                             (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                         }
                                         else {
-                                            remoteImageLoader.getPhoto(NCShareViewModel.RemotePhoto(id, "$lespasPath/${album!!.name}/${name}", mimeType, width, height, 0, 0L, orientation, ), view, ImageLoaderViewModel.TYPE_GRID) {
-                                                (view.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            remoteImageLoader.getPhoto(NCShareViewModel.RemotePhoto(this, "$lespasPath/${album!!.name}"), v, ImageLoaderViewModel.TYPE_GRID) {
+                                                (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                             }
                                         }
                                     }

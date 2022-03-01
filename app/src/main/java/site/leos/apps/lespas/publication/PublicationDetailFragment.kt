@@ -32,9 +32,7 @@ import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -248,20 +246,18 @@ class PublicationDetailFragment: Fragment() {
                     imageLoader(item, this)
                     ConstraintSet().apply {
                         clone(itemView as ConstraintLayout)
-                        setDimensionRatio(R.id.media, "H,${item.width}:${item.height}")
+                        setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
                         applyTo(itemView)
                     }
                     setOnClickListener { clickListener(this, currentList, position) }
 
-                    ViewCompat.setTransitionName(this, item.fileId)
+                    ViewCompat.setTransitionName(this, item.photo.id)
                 }
 
-                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
+                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (Tools.isMediaPlayable(item.photo.mimeType)) View.VISIBLE else View.GONE
 
                 (itemView.findViewById<TextView>(R.id.meta)).apply {
-                    LocalDateTime.ofInstant(Instant.ofEpochSecond(item.timestamp), ZoneOffset.systemDefault()).apply {
-                        text = String.format("%s, %s", this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
-                    }
+                    text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
@@ -294,8 +290,8 @@ class PublicationDetailFragment: Fragment() {
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
-        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
-        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
     }
 
     class CurrentPublicationViewModel: ViewModel() {

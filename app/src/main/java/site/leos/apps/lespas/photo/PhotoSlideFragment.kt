@@ -55,7 +55,6 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import java.time.OffsetDateTime
 import java.util.*
 import kotlin.math.atan2
 
@@ -127,7 +126,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             { photo, imageView, type ->
                 when {
                     type == ImageLoaderViewModel.TYPE_NULL -> startPostponedEnterTransition()
-                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo.id, "${serverPath}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), imageView!!, type) { startPostponedEnterTransition() }
+                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo, serverPath), imageView!!, type) { startPostponedEnterTransition() }
                     else -> imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }
                 }
             },
@@ -372,7 +371,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) with(pAdapter.getPhotoAt(slider.currentItem)) {
                     if (isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED)
-                        MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(id, "${serverPath}/${name}", mimeType, width, height, 0, dateTaken.toEpochSecond(OffsetDateTime.now().offset))).show(parentFragmentManager, INFO_DIALOG)
+                        MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(this, serverPath)).show(parentFragmentManager, INFO_DIALOG)
                     else
                         MetaDataDialogFragment.newInstance(this).show(parentFragmentManager, INFO_DIALOG)
                 }

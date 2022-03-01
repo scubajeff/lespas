@@ -60,6 +60,7 @@ import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -388,7 +389,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         remotePhotos?.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
-            content += String.format(PHOTO_META_JSON_V2, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            with(it.photo) {
+                content += String.format(PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+            }
         }
 
         return content.dropLast(1) + "]}}"
@@ -474,31 +477,31 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     version >= 2 -> {
                         try {
                             getInt("orientation")
-                            result.add(RemotePhoto(
-                                getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
+                            result.add(RemotePhoto(Photo(
+                                id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
                                 // Version 2 additions
-                                getInt("orientation"), getString("caption"), getDouble("latitude"), getDouble("longitude"), getDouble("altitude"), getDouble("bearing")
-                            ))
+                                orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing")
+                            ), share.sharePath))
                         } catch (e: JSONException) {
-                            result.add(RemotePhoto(
-                                getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
-                            ))
+                            result.add(RemotePhoto(Photo(
+                                id = getString("id"), name =  getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                            ), share.sharePath))
                         }
                     }
                     // Version 1 of content meta json
                     else -> {
-                        result.add(RemotePhoto(
-                            getString("id"), "${share.sharePath}/${getString("name")}", getString("mime"), getInt("width"), getInt("height"), 0, getLong("stime"),
-                        ))
+                        result.add(RemotePhoto(Photo(
+                            id = getString("id"), name =  getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                        ), share.sharePath))
                     }
                 }
             }
         }
         when (share.sortOrder) {
-            Album.BY_NAME_ASC -> result.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
-            Album.BY_NAME_DESC -> result.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
-            Album.BY_DATE_TAKEN_ASC -> result.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
-            Album.BY_DATE_TAKEN_DESC -> result.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+            Album.BY_NAME_ASC -> result.sortWith(compareBy { it.photo.name})
+            Album.BY_NAME_DESC -> result.sortWith(compareByDescending { it.photo.name })
+            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
         }
 
         return result
@@ -527,10 +530,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!mediaList.isNullOrEmpty()) {
                         mediaList.add(photo)
                         when(targetShare.sortOrder) {
-                            Album.BY_NAME_ASC -> mediaList.sortWith { o1, o2 -> o1.path.compareTo(o2.path) }
-                            Album.BY_NAME_DESC -> mediaList.sortWith { o1, o2 -> o2.path.compareTo(o1.path) }
-                            Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith { o1, o2 -> (o1.timestamp - o2.timestamp).toInt() }
-                            Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith { o1, o2 -> (o2.timestamp - o1.timestamp).toInt() }
+                            Album.BY_NAME_ASC -> mediaList.sortWith(compareBy { it.photo.name})
+                            Album.BY_NAME_DESC -> mediaList.sortWith(compareByDescending { it.photo.name })
+                            Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith(compareBy { it.photo.dateTaken })
+                            Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith(compareByDescending { it.photo.dateTaken })
                         }
                         webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
@@ -552,10 +555,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    private fun getRemoteVideoThumbnail(photo: RemotePhoto): Bitmap? {
+    private fun getRemoteVideoThumbnail(remotePhoto: RemotePhoto): Bitmap? {
         var bitmap: Bitmap? = null
 
-        val thumbnail = File(localCacheFolder, "${photo.fileId}.thumbnail")
+        val thumbnail = File(localCacheFolder, "${remotePhoto.photo.id}.thumbnail")
 
         // Load from local cache
         if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
@@ -563,7 +566,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // Download from server
         bitmap ?: run {
             metadataRetriever.apply {
-                setDataSource("$resourceRoot${Uri.encode(photo.path, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
+                setDataSource("$resourceRoot${Uri.encode(remotePhoto.path, "/")}/${Uri.encode(remotePhoto.photo.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
                 bitmap = getFrameAtTime(0L) ?: videoThumbnail
             }
 
@@ -581,7 +584,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
     @JvmOverloads
-    fun getPhoto(photo: RemotePhoto, view: ImageView, photoType: String, callBack: LoadCompleteListener? = null) {
+    fun getPhoto(remotePhoto: RemotePhoto, view: ImageView, photoType: String, callBack: LoadCompleteListener? = null) {
+        val photo = remotePhoto.photo
         val type = if (photo.mimeType.startsWith("video")) ImageLoaderViewModel.TYPE_VIDEO else photoType
         val jobKey = System.identityHashCode(view)
 
@@ -590,14 +594,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var animatedDrawable: Drawable? = null
         val job = viewModelScope.launch(downloadDispatcher) {
             try {
-                val photoPath = "$resourceRoot${photo.path}"
-                var key = "${photo.fileId}$type"
-                if ((type == ImageLoaderViewModel.TYPE_COVER) || (type == ImageLoaderViewModel.TYPE_SMALL_COVER)) key = "$key-${photo.coverBaseLine}"
+                var key = "${photo.id}$type"
+                if ((type == ImageLoaderViewModel.TYPE_COVER) || (type == ImageLoaderViewModel.TYPE_SMALL_COVER)) key = "$key-${remotePhoto.coverBaseLine}"
 
                 imageCache.get(key)?.let { bitmap = it } ?: run {
                     // Get preview for TYPE_GRID. To speed up the process, should run Preview Generator app on Nextcloud server to pre-generate 1024x1024 size of preview files, if not, the 1st time of viewing this shared image would be slow
                     if (type == ImageLoaderViewModel.TYPE_GRID) try {
-                            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${photo.fileId}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
+                            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${photo.id}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
                     } catch(e: Exception) {
                         // Catch all exception, give TYPE_GRID another chance below
                         e.printStackTrace()
@@ -611,8 +614,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             //inPreferredConfig = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) Bitmap.Config.RGBA_F16 else Bitmap.Config.ARGB_8888
                         }
 
-                        if (type == ImageLoaderViewModel.TYPE_VIDEO) bitmap = getRemoteVideoThumbnail(photo)
-                        else webDav.getStream(photoPath, true,null).use {
+                        if (type == ImageLoaderViewModel.TYPE_VIDEO) bitmap = getRemoteVideoThumbnail(remotePhoto)
+                        else webDav.getStream("$resourceRoot${remotePhoto.path}/${photo.name}", true,null).use {
                             when (type) {
                                 ImageLoaderViewModel.TYPE_COVER, ImageLoaderViewModel.TYPE_SMALL_COVER -> {
 /*
@@ -624,10 +627,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     val rect = Rect(0, top, photo.width - 1, bottom)
 */
                                     val rect = when(photo.orientation) {
-                                        0 -> Rect(0, photo.coverBaseLine, photo.width - 1, min(photo.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
-                                        90 -> Rect(photo.coverBaseLine, 0, min(photo.coverBaseLine + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
-                                        180 -> (photo.height - photo.coverBaseLine).let { Rect(0, Integer.max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
-                                        else-> (photo.width - photo.coverBaseLine).let { Rect(Integer.max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
+                                        0 -> Rect(0, remotePhoto.coverBaseLine, photo.width - 1, min(remotePhoto.coverBaseLine + (photo.width.toFloat() * 9 / 21).toInt(), photo.height - 1))
+                                        90 -> Rect(remotePhoto.coverBaseLine, 0, min(remotePhoto.coverBaseLine + (photo.height.toFloat() * 9 / 21).toInt(), photo.width - 1), photo.height - 1)
+                                        180 -> (photo.height - remotePhoto.coverBaseLine).let { Rect(0, Integer.max(it - (photo.width.toFloat() * 9 / 21).toInt(), 0), photo.width - 1, it) }
+                                        else-> (photo.width - remotePhoto.coverBaseLine).let { Rect(Integer.max(it - (photo.height.toFloat() * 9 / 21).toInt(), 0), 0, it, photo.height - 1) }
                                     }
 
                                     var sampleSize = when (photo.width) {
@@ -649,7 +652,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         //e.printStackTrace()
                                         it.close()
                                         //webDav.getStream(photoPath, true,null).use { vResp-> bitmap = getRemoteVideoThumbnail(vResp, photo) }
-                                        bitmap = getRemoteVideoThumbnail(photo)
+                                        bitmap = getRemoteVideoThumbnail(remotePhoto)
                                     }
                                 }
                                 ImageLoaderViewModel.TYPE_GRID -> {
@@ -662,7 +665,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                                 ImageLoaderViewModel.TYPE_FULL, ImageLoaderViewModel.TYPE_QUATER -> {
                                     // Show cached low resolution bitmap first
-                                    imageCache.get("${photo.fileId}${ImageLoaderViewModel.TYPE_GRID}")?.let {
+                                    imageCache.get("${photo.id}${ImageLoaderViewModel.TYPE_GRID}")?.let {
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
                                         callBack?.onLoadComplete()
                                     }
@@ -796,21 +799,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun savePhoto(context: Context, photo: RemotePhoto) {
-        if (photo.mimeType.startsWith("image")) {
+    fun savePhoto(context: Context, remotePhoto: RemotePhoto) {
+        if (remotePhoto.photo.mimeType.startsWith("image")) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     val cr = context.contentResolver
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val mediaDetails = ContentValues().apply {
-                            put(MediaStore.MediaColumns.DISPLAY_NAME, photo.path.substringAfterLast('/'))
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, remotePhoto.path.substringAfterLast('/'))
                             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                            put(MediaStore.MediaColumns.MIME_TYPE, photo.mimeType)
+                            put(MediaStore.MediaColumns.MIME_TYPE, remotePhoto.photo.mimeType)
                             put(MediaStore.MediaColumns.IS_PENDING, 1)
                         }
                         cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), mediaDetails)?.let { uri ->
                             cr.openOutputStream(uri)?.use { local ->
-                                webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                                webDav.getStream("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}", true, null).use { remote ->
                                     remote.copyTo(local, 8192)
 
                                     mediaDetails.clear()
@@ -821,22 +824,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     } else {
                         @Suppress("DEPRECATION")
-                        val fileName = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/${photo.path.substringAfterLast('/')}"
+                        val fileName = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/${remotePhoto.photo.name}"
                         File(fileName).outputStream().use { local ->
-                            webDav.getStream("$resourceRoot${photo.path}", true, null).use { remote ->
+                            webDav.getStream("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}", true, null).use { remote ->
                                 remote.copyTo(local, 8192)
                             }
                         }
-                        MediaScannerConnection.scanFile(context, arrayOf(fileName), arrayOf(photo.mimeType), null)
+                        MediaScannerConnection.scanFile(context, arrayOf(fileName), arrayOf(remotePhoto.photo.mimeType), null)
                     }
                 } catch (e: Exception) { e.printStackTrace() }
             }
         } else {
             // Video is now streaming, there is no local cache available, and might take some time to download, so we resort to Download Manager
             (context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
-                DownloadManager.Request(Uri.parse("$resourceRoot${photo.path}"))
-                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, photo.path.substringAfterLast('/'))
-                    .setTitle(photo.path.substringAfterLast('/'))
+                DownloadManager.Request(Uri.parse("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}"))
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name)
+                    .setTitle(remotePhoto.path.substringAfterLast('/'))
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .addRequestHeader("Authorization", "Basic $token")
             )
@@ -967,19 +970,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     @Parcelize
     data class RemotePhoto(
-        val fileId: String,
+        val photo: Photo,
         val path: String,
-        val mimeType: String,
-        val width: Int,
-        val height: Int,
-        val coverBaseLine: Int,
-        val timestamp: Long,
-        val orientation: Int = 0,
-        val caption: String = "",
-        val latitude: Double = Photo.NO_GPS_DATA,
-        val longitude: Double = Photo.NO_GPS_DATA,
-        val altitude: Double = Photo.NO_GPS_DATA,
-        val bearing: Double = Photo.NO_GPS_DATA,
+        val coverBaseLine: Int = 0,
     ): Parcelable
 
     companion object {

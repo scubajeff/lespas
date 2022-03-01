@@ -171,10 +171,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 val base = getString(R.string.lespas_base_folder_name)
                 when {
                     Tools.isRemoteAlbum(album) && cover != coverFileName ->
-                        publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(
-                            fileId = cover, path = "${base}/${name}/${coverFileName}", mimeType = coverMimeType,
-                            width = coverWidth, height = coverHeight, coverBaseLine = coverBaseline, orientation = coverOrientation, timestamp = 0L
-                        ), imageView, ImageLoaderViewModel.TYPE_COVER)
+                        publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(Photo(
+                            id = cover, name = coverFileName, mimeType = coverMimeType, orientation = coverOrientation,
+                            width = coverWidth, height = coverHeight,
+                            dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                        ), "${base}/${name}", coverBaseline), imageView, ImageLoaderViewModel.TYPE_COVER)
                     else ->
                         imageLoaderModel.loadPhoto(Photo(
                             id = cover, albumId = id,

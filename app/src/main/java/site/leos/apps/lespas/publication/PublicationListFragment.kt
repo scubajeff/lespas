@@ -20,6 +20,8 @@ import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.Photo
+import java.time.LocalDateTime
 
 class PublicationListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
@@ -48,7 +50,11 @@ class PublicationListFragment: Fragment() {
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
                 shareModel.getPhoto(
                     //NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.cover.coverFileName}", share.cover.coverMimeType, share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L, share.cover.coverOrientation),
+                    //NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.cover.coverFileName}", share.cover.coverMimeType, share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L, share.cover.coverOrientation),
+                    NCShareViewModel.RemotePhoto(Photo(
+                        id = share.cover.cover, name = share.cover.coverFileName, mimeType = share.cover.coverMimeType, width = share.cover.coverWidth, height = share.cover.coverHeight, orientation = share.cover.coverOrientation,
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                    ), share.sharePath, share.cover.coverBaseline),
                     view,
                     ImageLoaderViewModel.TYPE_COVER
                 )
