@@ -315,7 +315,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         lespasButton.setOnClickListener {
             copyTargetUris()
 
-            if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+            if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
         }
         removeButton.setOnClickListener {
             copyTargetUris()
@@ -1082,6 +1082,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
 
+        const val TAG_FROM_CAMERAROLL_ACTIVITY = "TAG_DESTINATION_DIALOG"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
