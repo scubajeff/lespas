@@ -295,16 +295,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
                             val metaString = String.format(
-                                // TODO have to do DB querying here
-                                //",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}",
-                                //this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3]
-                                ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s,\"caption\":\"%s\",\"latitude\":%f,\"latitude\":%f,\"longitude\":%f,\"bearing\":%f}]}}",
-                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3], "", Photo.NO_GPS_DATA, Photo.NO_GPS_DATA, Photo.NO_GPS_DATA, Photo.NO_GPS_DATA,
+/*
+                                ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}",
+                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3]
+*/
+                                // Use PHOTO_META_JSON_V2 string while deleting it's trailing ',', add ',' at the beginning, add JSON closing ']}}' at the end
+                                ",${NCShareViewModel.PHOTO_META_JSON_V2.dropLast(1)}]}}",
+                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3], metaFromAction[4], metaFromAction[5], metaFromAction[6], metaFromAction[7], metaFromAction[8], metaFromAction[9]
                             )
-                            //val metaString = String.format(PHOTO_META_JSON, "fake", action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3])
                             val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
                             if (!contentMetaFile.exists()) {
-                                // Download content meta file if it's not ready
+                                // Download content meta file if it's not ready, if user added photo from Publication Detail screen the file will exist, if user added photo by sharing from other apps, this file does not exist
                                 webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", contentMetaFile, null)
                             }
                             var newMetaString: String
@@ -312,7 +313,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             newMetaString = newMetaString.dropLast(3) + metaString
                             contentMetaFile.sink(false).buffer().use { it.write(newMetaString.encodeToByteArray()) }
 
-                            // Don't keep the media file, other user owns the album after all
+                            // No need to keep the media file, other user owns the album after all
                             localFile.delete()
                         }
                     }
@@ -321,12 +322,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
                     // Property folderId holds joint album's id
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Actual album meta json file is created by ACTION_ADD_FILES_TO_JOINT_ALBUM
+                    // Actual album meta json file is created/modified by ACTION_ADD_FILES_TO_JOINT_ALBUM
                     val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content
                         if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON, application)
-                        this.delete()   // We don't actually need this at local, since meta is stored in Room DB
+                        this.delete()   // We don't actually need this at local after updating it
                     }
                 }
 
@@ -633,7 +634,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
-                        Log.e(">>>>>>>>>>", "syncing meta for album ${changedAlbum.name}  ${changedAlbum.lastModified}  ${contentModifiedTime}")
+                        Log.e(">>>>>>>>>>", "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
                         // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
@@ -651,6 +652,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         meta.getJSONObject(i).apply {
                                             pId = getString("id")
                                             changedPhotos.find { p -> p.id == pId }?.let {
+                                                try {
+                                                    getInt("orientation")
+                                                } catch (e: JSONException) {
+                                                    // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
+                                                    // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
+                                                    Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
+                                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                                    return@use
+                                                }
                                                 photoMeta.add(
                                                     Photo(
                                                         id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
@@ -669,33 +679,30 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                     )
                                                 )
 
-                                                Log.e(">>>>>>>>>>>>>>>>>>>>>>", "syncing new photo ${getString("name")} meta version $version from server")
+                                                Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
 
                                                 // Maintain album start and end date
                                                 with(photoMeta.last().dateTaken) {
                                                     if (this > changedAlbum.endDate) changedAlbum.endDate = this
                                                     if (this < changedAlbum.startDate) changedAlbum.startDate = this
                                                 }
-                                            } ?: run {
-                                                // Miss match, content meta needs update
-                                                contentMetaUpdatedNeeded.add(changedAlbum.name)
+
+                                                changedPhotos.remove(it)
                                             }
                                         }
                                     }
 
-                                    // Clear changedPhotos list, no need to process each media file
-                                    changedPhotos.clear()
-
-                                    // Update photo meta data changed and mark album viewable
                                     photoRepository.upsert(photoMeta)
-                                    changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
+
+                                    if (changedPhotos.isEmpty()) changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
                                 }
                                 else -> {
-                                    // Version 1 content meta file, won't work for latest version quick sync
-                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                    // Version 1 content meta file, won't work for latest version quick sync, fall back to normal sync
                                 }
                             }
                         }
+                    } else {
+                        Log.e(">>>>>>>>>", "there are updates to album ${changedAlbum.name} done on server, quit quick sync")
                     }
                 }
 

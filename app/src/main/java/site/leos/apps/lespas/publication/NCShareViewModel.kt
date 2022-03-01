@@ -410,11 +410,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Add sharees
                 if (album.with.isNotEmpty()) {
+/*
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
                         webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
+*/
 
                     createShares(listOf(album))
                 }

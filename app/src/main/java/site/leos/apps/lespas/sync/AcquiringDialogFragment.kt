@@ -228,8 +228,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$cacheFolder/$fileId", mimeType, fileId, false)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
-                            // PublicationDetailFragment pass joint album's albumId in property album.eTag TODO pass more meta data
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.name, "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}", fileId, System.currentTimeMillis(), 1))
+                            // PublicationDetailFragment pass joint album's albumId in property album.eTag
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.name, "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}", fileId, System.currentTimeMillis(), 1))
                         } else {
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
