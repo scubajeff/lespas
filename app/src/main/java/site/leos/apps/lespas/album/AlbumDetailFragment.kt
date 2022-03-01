@@ -27,7 +27,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
-import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
@@ -56,7 +55,6 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -112,8 +110,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var reuseUris = arrayListOf<Uri>()
 
     private var mapOptionMenu: MenuItem? = null
-    private var photosWithCoordinate = mutableListOf<PhotoWithCoordinate>()
-    private var getCoordinateJob: Job? = null
 
     private lateinit var lespasPath: String
 
@@ -412,34 +408,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             // Restore selection state
             if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
 
-            // Search for location in photos, enable 'show in map' option menu
-            getCoordinateJob?.cancel()
-            if (!Tools.isRemoteAlbum(album)) {
-                // TODO enable after db migration
-                getCoordinateJob = lifecycleScope.launch(Dispatchers.IO) {
-                    val baseFolder = Tools.getLocalRoot(requireContext())
-                    var coordinate: DoubleArray
-                    var hit = false
-
-                    photosWithCoordinate.clear()
-                    mAdapter.getPhotos().forEach { photo ->
-                        coordinate = doubleArrayOf(0.0, 0.0)
-                        if (Tools.hasExif(photo.mimeType)) try {
-                            ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                        } catch (e: Exception) {
-                            null
-                        }?.latLong?.apply {
-                            hit = true
-                            coordinate = this
-                        }
-                        photosWithCoordinate.add(PhotoWithCoordinate(photo, coordinate[0], coordinate[1]))
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        mapOptionMenu?.apply {
-                            isEnabled = hit
-                            isVisible = hit
-                        }
+            lifecycleScope.launch {
+                it.photos.forEach { photo ->
+                    if (photo.latitude != Photo.NO_GPS_DATA) {
+                        mapOptionMenu?.isVisible = true
+                        return@launch
                     }
                 }
             }
@@ -616,7 +589,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, mAdapter.getphotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             R.id.option_menu_bgm-> {
@@ -958,8 +931,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     else-> album.photos
                 }
             )
-            // Add album cover at the top of photo list
-            album.album.run { photos.add(0, album.photos.find { it.id == album.album.cover }!!.copy(id = album.album.id, shareId = album.album.coverBaseline)) }
+            // Add album cover at the top of photo list, save cover's baseline in shareId property, clear latitude property so that it would be included in map related function
+            album.album.run { photos.add(0, album.photos.find { it.id == album.album.cover }!!.copy(id = album.album.id, shareId = album.album.coverBaseline, latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
 
@@ -980,6 +953,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+        internal fun getphotoWithCoordinate(): List<Photo> {
+            return mutableListOf<Photo>().apply {
+                currentList.forEach { if (it.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.mimeType)) add(it) }
+                toList()
+            }
+        }
+
         class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)

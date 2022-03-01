@@ -8,8 +8,7 @@
         android:orderInCategory="7"
         app:showAsAction="always"
         android:icon="@drawable/ic_baseline_map_24"
-        android:visible="false"
-        android:enabled="false" />
+        android:visible="false" />
     <item
         android:id="@+id/option_menu_add_photo"
         android:title="@string/fab_add_photos"

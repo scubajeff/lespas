@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -47,14 +48,13 @@ import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
 import java.lang.Double.max
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -63,7 +63,7 @@ class PhotosInMapFragment: Fragment() {
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
     private var album: Album? = null
-    private var photos = mutableListOf<PhotoWithCoordinate>()
+    private var photos = mutableListOf<Photo>()
     private var poiBoundingBox: BoundingBox? = null
 
     private lateinit var rootPath: String
@@ -82,15 +82,21 @@ class PhotosInMapFragment: Fragment() {
     private var isMuted = false
     private lateinit var bgmPlayer: ExoPlayer
 
+    private val remoteImageLoader: NCShareViewModel by activityViewModels()
+    private lateinit var lespasPath: String
+    private var isLocalAlbum = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lespasPath = getString(R.string.lespas_base_folder_name)
 
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
             album = getParcelable(KEY_ALBUM)
-            getParcelableArrayList<PhotoWithCoordinate>(KEY_PHOTOS)?.let { photos.addAll(it) }
+            getParcelableArrayList<Photo>(KEY_PHOTOS)?.let { photos.addAll(it) }
         }
 
         rootPath = Tools.getLocalRoot(requireContext())
@@ -126,6 +132,7 @@ class PhotosInMapFragment: Fragment() {
 
                 playerHandler = Handler(bgmPlayer.applicationLooper)
             }
+            isLocalAlbum = !Tools.isRemoteAlbum(this)
         }
     }
 
@@ -182,19 +189,31 @@ class PhotosInMapFragment: Fragment() {
                     mapView.overlays.add(marker)
 
                     points.add(poi)
-                } else photos.forEach { photo ->
-                    if (photo.lat != 0.0 && photo.long != 0.0) {
-                        poi = GeoPoint(photo.lat, photo.long)
+                } else photos.forEachIndexed { index, photo ->
+                    if (photo.latitude != Photo.NO_GPS_DATA) {
+                        poi = GeoPoint(photo.latitude, photo.longitude)
                         val marker = Marker(mapView).apply {
                             position = poi
                             icon = pin
-                            loadImage(this, photo.photo)
+                            if (isLocalAlbum) loadImage(this, photo)
                             relatedObject = spaceHeight
+                            id = index.toString()
                         }
                         marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                             override fun onOpen(item: Any?) {
                                 mView.apply {
-                                    findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                                    photos[marker.id.toInt()].run {
+                                        val view = mView.findViewById<ImageView>(R.id.photo)
+                                        if (isLocalAlbum) {
+                                            findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                                            (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                        }
+                                        else {
+                                            remoteImageLoader.getPhoto(NCShareViewModel.RemotePhoto(id, "$lespasPath/${album!!.name}/${name}", mimeType, width, height, 0, 0L, orientation, ), view, ImageLoaderViewModel.TYPE_GRID) {
+                                                (view.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            }
+                                        }
+                                    }
                                     findViewById<TextView>(R.id.label).isVisible = false
                                     setOnClickListener(InfoWindowClickListener(mapView))
                                 }
@@ -290,7 +309,7 @@ class PhotosInMapFragment: Fragment() {
                         val allZoomLevel = (mapView.zoomLevelDouble + MAXIMUM_ZOOM) / 2
                         val animationController = AnimationMapController(mapView)
                         var lastPos = (mapView.overlays[1] as Marker).position
-                        var poiCenter: Int
+                        //var poiCenter: Int
 
                         if (hasBGM) {
                             bgmPlayer.volume = if (isMuted) 0f else 1f
@@ -302,7 +321,7 @@ class PhotosInMapFragment: Fragment() {
                                 if (!isActive) break
                                     (mapView.overlays[i] as Marker).let { stop ->
                                     // Pan map to reveal full image
-                                    poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
+                                    //poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
 
                                     if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
                                         // If next POI is 3km away, use jump animation
@@ -313,13 +332,13 @@ class PhotosInMapFragment: Fragment() {
                                                 }
                                                 animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
                                             }
-                                            mapView.setMapCenterOffset(0, poiCenter)
+                                            //mapView.setMapCenterOffset(0, poiCenter)
                                             animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
                                         }
                                         animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
                                         delay(6400)     // 4000 + 3 * 800
                                     } else {
-                                        mapView.setMapCenterOffset(0, poiCenter)
+                                        //mapView.setMapCenterOffset(0, poiCenter)
                                         animationController.setOnAnimationEndListener {
                                             stop.showInfoWindow()
                                         }
@@ -432,7 +451,7 @@ class PhotosInMapFragment: Fragment() {
             else {
                 mapView.overlays.forEach { if (it is Marker) it.closeInfoWindow() }
                 marker.showInfoWindow()
-                (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                //marker.image?.let { (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }}
                 mapView.controller.animateTo(marker.position)
             }
 
@@ -491,7 +510,7 @@ class PhotosInMapFragment: Fragment() {
         }
 
         @JvmStatic
-        fun newInstance(album: Album, photos: MutableList<PhotoWithCoordinate>) = PhotosInMapFragment().apply {
+        fun newInstance(album: Album, photos: List<Photo>) = PhotosInMapFragment().apply {
             arguments = Bundle().apply {
                 putParcelable(KEY_ALBUM, album)
                 putParcelableArrayList(KEY_PHOTOS, ArrayList(photos))
