@@ -195,7 +195,7 @@
     <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
     <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
     <string name="to_new_album">Au nouvel album :</string>
-    <string name="clear_cache_title">Effacer le cache des albums distants</string>
+    <string name="clear_cache_title">Effacer le cache de l\'album distants</string>
     <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Comment procéder ?</string>
     <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
     <string name="cache_size_title">Définir la taille du cache de l\'album distant</string>

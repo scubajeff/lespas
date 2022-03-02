@@ -143,8 +143,8 @@
     <string name="external_storage">external SD card</string>
     <string name="statistic_free_space_message">%1$s available in %2$s</string>
     <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
-    <string name="clear_cache_title">Clear Remote albums cache</string>
-    <string name="msg_clear_cache">All remote image files will be removed from cache. Proceed?</string>
+    <string name="clear_cache_title">Clear Remote album cache</string>
+    <string name="msg_clear_cache">All cached remote image files will be removed. Proceed?</string>
     <string name="msg_restart_to_take_effect">Restart app for new setting to take effect.</string>
     <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
     <string name="cache_size_title">Set Remote album cache size</string>
