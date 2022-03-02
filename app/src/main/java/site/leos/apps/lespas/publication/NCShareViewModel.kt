@@ -507,7 +507,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    fun acquireMediaFromShare(photo: RemotePhoto, toAlbum: Album) {
+    fun acquireMediaFromShare(remotePhoto: RemotePhoto, toAlbum: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val destFolder: String = when(toAlbum.id) {
@@ -515,8 +515,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     else-> "$resourceRoot$lespasBase/${Uri.encode(toAlbum.name, "/")}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
                 }
 
+                // TODO do we really need to update Joint Album's content meta file after modification?? the way doing this will generate this json file in current version, which will not be compatible with future one
+                //  if we don't update, all changes to the Joint Album will be shown after the owner of it sync once, and conflict might happen during this period.
+                //  This is really problematic since we don't have a proper server side app!!!
                 // Copy media file on server. If file already exists in target folder, this will throw OkHttpWebDavException, it's OK since no more things need to do in this circumstance
-                webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${Uri.encode(photo.path.substringAfterLast('/'))}")
+                //webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${Uri.encode(photo.path.substringAfterLast('/'))}")
+                webDav.copy("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}", "${destFolder}/${remotePhoto.photo.name}")
 
                 if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
                     // Update joint album's content meta. For user's own album, it's content meta will be updated during next server sync
@@ -528,7 +532,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                     webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
                     if (!mediaList.isNullOrEmpty()) {
-                        mediaList.add(photo)
+                        mediaList.add(remotePhoto)
                         when(targetShare.sortOrder) {
                             Album.BY_NAME_ASC -> mediaList.sortWith(compareBy { it.photo.name})
                             Album.BY_NAME_DESC -> mediaList.sortWith(compareByDescending { it.photo.name })
@@ -542,12 +546,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(photo: RemotePhoto): Pair<ExifInterface, Long>? {
+    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {
         var response: Response? = null
         var result: Pair<ExifInterface, Long>? = null
 
         try {
-            response = webDav.getRawResponse("$resourceRoot${photo.path}", true)
+            response = webDav.getRawResponse("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}", true)
             result = Pair(ExifInterface(response.body!!.byteStream()), response.headersContentLength())
         } catch (e: Exception) { e.printStackTrace() }
         finally { response?.close() }
@@ -806,7 +810,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val cr = context.contentResolver
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val mediaDetails = ContentValues().apply {
-                            put(MediaStore.MediaColumns.DISPLAY_NAME, remotePhoto.path.substringAfterLast('/'))
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, remotePhoto.photo.name)
                             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                             put(MediaStore.MediaColumns.MIME_TYPE, remotePhoto.photo.mimeType)
                             put(MediaStore.MediaColumns.IS_PENDING, 1)
@@ -839,7 +843,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             (context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
                 DownloadManager.Request(Uri.parse("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}"))
                     .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name)
-                    .setTitle(remotePhoto.path.substringAfterLast('/'))
+                    .setTitle(remotePhoto.photo.name)
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .addRequestHeader("Authorization", "Basic $token")
             )
