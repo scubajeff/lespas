@@ -130,6 +130,11 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 view.findViewById<TextView>(R.id.info_artist).text = t
                             }
 
+                            if (albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) latLong?.let {
+                                latitude = it[0]
+                                longitude = it[1]
+                            }
+
                             if (latitude != Photo.NO_GPS_DATA) {
                                 with(mapView) {
                                     // Initialization
