@@ -32,7 +32,7 @@ import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
-    private lateinit var menu: Menu
+    private var menu: Menu? = null
     private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getBoolean(SEARCH_COLLECTION)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,8 +70,8 @@ class LocationSearchHostFragment: Fragment() {
         }
     }
 
-    fun enableMenuItem(itemId: Int): MenuItem? = menu.findItem(itemId).apply { this?.enable() }
-    fun disableMenuItem(itemId: Int) { menu.findItem(itemId).disable() }
+    //private fun enableMenuItem(itemId: Int): MenuItem? = menu?.findItem(itemId)?.apply { this.enable() }
+    private fun disableMenuItem(itemId: Int) { menu?.findItem(itemId)?.disable() }
 
     private fun MenuItem.disable() {
         this.isEnabled = false
