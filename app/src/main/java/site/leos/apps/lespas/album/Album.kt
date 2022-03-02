@@ -82,6 +82,7 @@ data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int,
 data class IDandCover(val id: String, val cover: String)
 data class IDandETag(val id: String, val eTag: String)
 data class IDandName(val id: String, val name: String)
+data class IDandAttribute(val id: String, val name: String, val shareId: Int)
 data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
@@ -148,7 +149,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAlbumTotal(): Int
 
     // Hidden albums not included
-    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != '' AND name NOT LIKE '.%'")
+    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != '${Album.ETAG_NOT_YET_UPLOADED}' AND name NOT LIKE '.%'")
     abstract fun getAllSyncedAlbum(): List<IDandCover>
 
     // Including hidden ones
@@ -171,4 +172,8 @@ abstract class AlbumDao: BaseDao<Album>() {
 
     @Query("UPDATE ${Album.TABLE_NAME} SET bgmId = :bgmId, bgmETag = :bgmETag WHERE id = :albumId")
     abstract fun fixBGM(albumId: String, bgmId: String, bgmETag: String)
+
+    // Not including hidden album
+    @Query("SELECT id, name, shareId FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
+    abstract fun getAllAlbumAttribute(): List<IDandAttribute>
 }

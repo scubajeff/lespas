@@ -784,6 +784,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         replacePrevious(jobKey, job)
     }
 
+    fun getPreview(remotePhoto: RemotePhoto): Bitmap? {
+        var bitmap: Bitmap?
+        webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${remotePhoto.photo.id}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
+        bitmap ?: run {
+            webDav.getStream("$resourceRoot${remotePhoto.path}/${remotePhoto.photo.name}", true,null).use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 8 })
+            }
+        }
+
+        return bitmap
+    }
+
     fun cancelGetPhoto(view: View) {
         decoderJobMap[System.identityHashCode(view)]?.cancel()
     }

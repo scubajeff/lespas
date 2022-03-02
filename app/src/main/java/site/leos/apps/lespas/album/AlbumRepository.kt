@@ -33,4 +33,5 @@ class AlbumRepository(application: Application){
     fun getAllHiddenAlbumIds(): List<String> = albumDao.getAllHiddenAlbumIds()
     fun setAsRemote(albumIds: List<String>, asRemote: Boolean) { if (asRemote) albumDao.setAsRemote(albumIds) else albumDao.setAsLocal(albumIds) }
     fun fixBGM(albumId: String, bgmId: String, bgmETag: String) { albumDao.fixBGM(albumId, bgmId, bgmETag) }
+    fun getAllAlbumAttribute(): List<IDandAttribute> = albumDao.getAllAlbumAttribute()
 }
