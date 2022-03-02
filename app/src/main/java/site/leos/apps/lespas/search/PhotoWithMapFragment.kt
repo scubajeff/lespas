@@ -34,6 +34,7 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
@@ -186,17 +187,26 @@ class PhotoWithMapFragment: Fragment() {
                     BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)))?.let { bmp->
                         (if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true) else bmp)
                             .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                        FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
                     }
                 }
                 else {
-                    BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+                    if (sourceFile.exists()) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    else {
+                        val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
+                        if (!remoteImageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true)) return null
+                    }
                 }
+
+                FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
             } else {
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) Uri.parse(photo.id)
                 else {
-                    sourceFile.copyTo(destFile, true, 4096)
+                    if (sourceFile.exists()) sourceFile.copyTo(destFile, true, 4096)
+                    else {
+                        val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
+                        if (!remoteImageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false)) return null
+                    }
+
                     FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
                 }
             }
