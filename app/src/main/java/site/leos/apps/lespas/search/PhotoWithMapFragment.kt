@@ -143,6 +143,10 @@ class PhotoWithMapFragment: Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_with_map_menu, menu)
         menu.findItem(R.id.option_menu_lespas).isVisible = remotePhoto.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL
+        Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("geo:0.0,0.0?z=20")
+            resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
