@@ -30,7 +30,7 @@ class PhotoRepository(application: Application) {
     //suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto) }
     //fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
     fun getPhotoName(id: String): String = photoDao.getName(id)
-    fun getAllImage(): List<Photo> {
+    fun getAllImageNotHidden(): List<Photo> {
         val hiddenAlbums = albumDao.getAllHiddenAlbumIds()
         return photoDao.getAllImage().filter { it.albumId !in hiddenAlbums }
     }

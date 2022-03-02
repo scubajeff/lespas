@@ -19,11 +19,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import site.leos.apps.lespas.publication.NCShareViewModel
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
@@ -42,7 +42,10 @@ class LocationResultByLocalitiesFragment: Fragment() {
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { photo, imageView -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_GRID) },
+            { remotePhoto, imageView ->
+                if (remotePhoto.path.isEmpty()) imageLoaderModel.loadPhoto(remotePhoto.photo, imageView, ImageLoaderViewModel.TYPE_GRID)
+                else remoteImageLoaderModel.getPhoto(remotePhoto, imageView, ImageLoaderViewModel.TYPE_GRID)
+            },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
     }
 
@@ -83,9 +86,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
             }
         })
 
-        searchViewModel.getResult().observe(viewLifecycleOwner, { result ->
+        searchViewModel.getResult().observe(viewLifecycleOwner) { result ->
             val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
-            var photoList: List<PhotoWithCoordinate>
+            var photoList: List<NCShareViewModel.RemotePhoto>
 
             // General a new result list, this is crucial for DiffUtil to detect changes
             result.forEach {
@@ -94,9 +97,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality))
             }
 
-            resultAdapter.submitList(items.sortedWith(compareBy({it.country}, {it.locality})))
+            resultAdapter.submitList(items.sortedWith(compareBy({ it.country }, { it.locality })))
             //resultAdapter.submitList(result.map { it.copy() }.sortedWith(compareBy({it.country}, {it.locality})))
-        })
+        }
     }
 
     override fun onResume() {
@@ -108,7 +111,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
         }
     }
 
-    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
+    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
     ): ListAdapter<LocationSearchHostFragment.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var photoAdapter = PhotoAdapter { photo, imageView ->  imageLoader(photo, imageView) }
@@ -152,12 +155,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
         override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
     }
 
-    class PhotoAdapter(private val imageLoader: (Photo, ImageView) -> Unit): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
 
-            fun bind(item: PhotoWithCoordinate) {
-                imageLoader(item.photo, ivPhoto)
+            fun bind(item: NCShareViewModel.RemotePhoto) {
+                imageLoader(item, ivPhoto)
             }
         }
 
@@ -165,9 +168,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<PhotoWithCoordinate>() {
-        override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
-        override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
+    class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
     companion object {

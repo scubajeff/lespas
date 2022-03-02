@@ -19,7 +19,6 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -63,7 +62,7 @@ class PhotosInMapFragment: Fragment() {
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
     private var album: Album? = null
-    private var photos = mutableListOf<Photo>()
+    private var remotePhoto: MutableList<NCShareViewModel.RemotePhoto>? = null
     private var poiBoundingBox: BoundingBox? = null
 
     private lateinit var rootPath: String
@@ -96,7 +95,6 @@ class PhotosInMapFragment: Fragment() {
             country = getString(KEY_COUNTRY)
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
             album = getParcelable(KEY_ALBUM)
-            getParcelableArrayList<Photo>(KEY_PHOTOS)?.let { photos.addAll(it) }
         }
 
         rootPath = Tools.getLocalRoot(requireContext())
@@ -133,6 +131,8 @@ class PhotosInMapFragment: Fragment() {
                 playerHandler = Handler(bgmPlayer.applicationLooper)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
+            remotePhoto = mutableListOf()
+            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhoto?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
         }
     }
 
@@ -159,24 +159,36 @@ class PhotosInMapFragment: Fragment() {
                 val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
                 spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt()
 
-                if (locality != null) ViewModelProvider(
+                if (locality != null) remotePhoto = ViewModelProvider(
                     requireParentFragment(),
                     LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true)
-                )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos?.forEach { photo ->
-                    poi = GeoPoint(photo.lat, photo.long)
+                )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos
+
+                remotePhoto?.forEach { remotePhoto ->
+                    poi = GeoPoint(remotePhoto.photo.latitude, remotePhoto.photo.longitude)
                     val marker = Marker(mapView).apply {
                         position = poi
                         icon = pin
-                        loadImage(this, photo.photo)
+                        if (remotePhoto.path.isEmpty()) loadImage(this, remotePhoto.photo)
                         relatedObject = spaceHeight
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
                             mView.apply {
-                                findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
+                                findViewById<ImageView>(R.id.photo)?.let { v ->
+                                    if (remotePhoto.path.isEmpty()) {
+                                        v.setImageDrawable(marker.image)
+                                        (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                    }
+                                    else {
+                                        remoteImageLoader.getPhoto(remotePhoto, v, ImageLoaderViewModel.TYPE_GRID) {
+                                            (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                        }
+                                    }
+                                }
                                 findViewById<TextView>(R.id.label).text =
-                                    if (photo.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) photo.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
-                                    else albumNames?.get(photo.photo.albumId)
+                                    if (remotePhoto.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    else albumNames?.get(remotePhoto.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }
                         }
@@ -189,46 +201,6 @@ class PhotosInMapFragment: Fragment() {
                     mapView.overlays.add(marker)
 
                     points.add(poi)
-                } else photos.forEachIndexed { index, photo ->
-                    if (photo.latitude != Photo.NO_GPS_DATA) {
-                        poi = GeoPoint(photo.latitude, photo.longitude)
-                        val marker = Marker(mapView).apply {
-                            position = poi
-                            icon = pin
-                            if (isLocalAlbum) loadImage(this, photo)
-                            relatedObject = spaceHeight
-                            id = index.toString()
-                        }
-                        marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
-                            override fun onOpen(item: Any?) {
-                                mView.apply {
-                                    photos[marker.id.toInt()].run {
-                                        val v = mView.findViewById<ImageView>(R.id.photo)
-                                        if (isLocalAlbum) {
-                                            findViewById<ImageView>(R.id.photo).setImageDrawable(marker.image)
-                                            (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
-                                        }
-                                        else {
-                                            remoteImageLoader.getPhoto(NCShareViewModel.RemotePhoto(this, "$lespasPath/${album!!.name}"), v, ImageLoaderViewModel.TYPE_GRID) {
-                                                (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
-                                            }
-                                        }
-                                    }
-                                    findViewById<TextView>(R.id.label).isVisible = false
-                                    setOnClickListener(InfoWindowClickListener(mapView))
-                                }
-                                relatedObject = marker
-                            }
-
-                            override fun onClose() {
-                                mView.setOnClickListener(null)
-                            }
-                        }
-                        marker.setOnMarkerClickListener(markerClickListener)
-                        mapView.overlays.add(marker)
-
-                        points.add(poi)
-                    }
                 }
 
                 mapView.invalidate()

@@ -186,7 +186,7 @@ class SearchResultFragment : Fragment() {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
                 val albums = AlbumRepository(app).getAllAlbumAttribute()
-                val photos = if (searchInAlbums) PhotoRepository(app).getAllImage() else Tools.getCameraRoll(app.contentResolver, true)
+                val photos = if (searchInAlbums) PhotoRepository(app).getAllImageNotHidden() else Tools.getCameraRoll(app.contentResolver, true)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = Tools.getLocalRoot(app)
                 val lespasBasePath = app.getString(R.string.lespas_base_folder_name)
@@ -210,7 +210,6 @@ class SearchResultFragment : Fragment() {
                         bitmap =
                             if (searchInAlbums) {
                                 albums.find { it.id == photo.albumId }?.let { album ->
-                                    // Photo is NOT in hidden album
                                     if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                                         // Photo's image file is not at local
                                         sharePath = "${lespasBasePath}/${album.name}"
