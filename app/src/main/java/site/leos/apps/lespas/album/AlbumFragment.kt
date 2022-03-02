@@ -270,8 +270,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != ImageLoaderViewModel.FROM_CAMERA_ROLL
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != ImageLoaderViewModel.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0 && mAdapter.currentList[position].syncProgress >= 1.0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
