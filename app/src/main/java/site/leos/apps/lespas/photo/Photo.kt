@@ -32,7 +32,7 @@ data class Photo(
     var bearing: Double = NO_GPS_DATA,
     var locality: String = NO_ADDRESS,
     var country: String = NO_ADDRESS,
-    var address: String = NO_ADDRESS,
+    var countryCode: String = NO_ADDRESS,
     var classificationId: String = NO_CLASSIFICATION,
 ): Parcelable {
     companion object {
@@ -145,4 +145,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET eTag = '${Photo.ETAG_NOT_YET_UPLOADED}' WHERE albumId IN (:albumIds)")
     abstract fun setAsLocal(albumIds: List<String>)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET locality = :locality, country = :countryName, countryCode = :countryCode WHERE id = :photoId")
+    abstract fun updateAddress(photoId: String, locality: String, countryName: String, countryCode: String)
 }

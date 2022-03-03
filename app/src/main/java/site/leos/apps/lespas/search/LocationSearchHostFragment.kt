@@ -88,13 +88,16 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     class LocationSearchViewModel(application: Application, searchCollection: Boolean): AndroidViewModel(application) {
+        val photoRepository = PhotoRepository(application)
+
         private var job = viewModelScope.launch(Dispatchers.IO) {
-            (if (searchCollection) PhotoRepository(application).getAllImageNotHidden() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
+            (if (searchCollection) photoRepository.getAllImageNotHidden() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
                 val lespasBaseFolder = application.getString(R.string.lespas_base_folder_name)
                 val cr = application.contentResolver
                 val albums = AlbumRepository(application).getAllAlbumAttribute()
                 val total = this.size
-                var p = NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), "")
+                var rp = NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), "")
+                val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
 
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
@@ -112,27 +115,34 @@ class LocationSearchHostFragment: Fragment() {
                                 cr.openInputStream(Uri.parse(photo.id))
                             }?.let { ExifInterface(it).latLong } ?: run { null }
                         })?.also { latLong ->
-                            try {
-                                GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latLong[0], latLong[1], 1)
-                            } catch (e: IOException) {
-                                null
-                            }?.get(0)?.apply {
+                            if (photo.country.isEmpty()) {
+                                try {
+                                    nominatim.getFromLocation(latLong[0], latLong[1], 1)
+                                } catch (e: IOException) { null }?.get(0)?.let {
+                                    if (it.countryName != null) {
+                                        val locality = it.locality ?: it.adminArea ?: ""
+                                        if (searchCollection) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
+                                        Pair(it.countryName, locality)
+                                    } else null
+                                } ?: run { null }
+                            } else {
+                                Pair(photo.country, photo.locality)
+                            }?.apply {
                                 if (searchCollection) {
                                     val album = albums.find { it.id == photo.albumId }
                                     album?.let {
-                                        p = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
+                                        rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
                                     } ?: run {
                                         return@forEachIndexed
                                     }
-                                } else p = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), "")
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), "")
 
-                                val city = this.locality ?: this.adminArea ?: ""
-                                resultList.find { result -> result.country == this.countryName && result.locality == city }
+                                resultList.find { result -> result.country == this.first && result.locality == this.second }
                                     ?.let { existed ->
-                                        existed.photos.add(p)
+                                        existed.photos.add(rp)
                                         existed.total++
                                     }
-                                    ?: run { resultList.add(LocationSearchResult(arrayListOf(p), 1, this.countryName, city)) }
+                                    ?: run { resultList.add(LocationSearchResult(arrayListOf(rp), 1, this.first, this.second)) }
 
                                 // Update UI
                                 result.postValue(resultList)
