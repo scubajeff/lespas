@@ -34,21 +34,24 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 val allPhoto = photoRepository.getAlbumPhotos(album.id)
                 photoRepository.deletePhotosByAlbum(album.id)
                 allPhoto.forEach { photo ->
-                    if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED && actionRepository.safeToRemoveFile(photo.name)) {
-                        try { File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
-                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                    if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
+                        try { File(localRootFolder, photo.name).delete() } catch (e: Exception) {}
+                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) {}
                     }
                     else {
-                        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
-                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+                        if (Tools.isRemoteAlbum(album)) {
+                            if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                        } else {
+                            try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
+                            if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                        }
                     }
                 }
 
                 // Remove local meta file
-                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) {}
 
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
-
             }
 
             actionRepository.addActions(actions)
@@ -65,6 +68,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             val timestamp = System.currentTimeMillis()
 
             photos.forEach { photo->
+/*
                 if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) try { if (actionRepository.safeToRemoveFile(photo.name)) File(localRootFolder, photo.name).delete() } catch (e: Exception) { e.printStackTrace() }
                 else if (!Tools.isRemoteAlbum(album)){
                     // Delete media file if album is "Local"
@@ -77,6 +81,25 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 // the only problem is that it would reappear after next sync, e.g. can only be deleted on server. This can be solved with adding another column in Photo table)
                 // folderName field can be empty in these actions
                 if (photo.id != photo.name) actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, album.name, photo.id, photo.name, timestamp, 1))
+*/
+                if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
+                    // Deleting the media file will prevent ACTION_ADD_FILES_ON_SERVER from starting since in that process file existence will be checked at the beginning
+                    try { File(localRootFolder, photo.name).delete() } catch (e: Exception) {}
+                    if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) {}
+                } else {
+                    // Remove media file on server
+                    actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, album.name, photo.id, photo.name, timestamp, 1))
+
+                    if (Tools.isRemoteAlbum(album)){
+                        // Remove video thumbnail in cache folder
+                        if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                    } else {
+                        // Remove local media file if it's a Local album
+                        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
+                        // Remove video thumbnail too
+                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                    }
+                }
             }
 
             // Get remaining photos in album, the return list is sort by dateTaken ASC
@@ -91,6 +114,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 // Delete folder instead of deleting photos 1 by 1
                 actions.clear()
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, photos[0].albumId, album.name, "", "", timestamp, 1))
+
+                // Remove local meta file
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) {}
             }
 
             actionRepository.addActions(actions)

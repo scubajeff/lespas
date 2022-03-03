@@ -21,6 +21,5 @@ class ActionRepository(application: Application){
     fun safeToRemoveFile(photoName: String): Boolean = !actionDao.fileInUse(photoName)
     fun updateAlbumMeta(album: Album) { actionDao.updateAlbumMeta(album.id, photoDao.getName(album.cover)) }
     fun updateAlbumMeta(albumId: String, coverId: String) { actionDao.updateAlbumMeta(albumId, photoDao.getName(coverId)) }
-    //fun discardCurrentWorkingAction() { actionDao.delete(actionDao.getAllPendingActions()[0]) }
     fun discardCurrentWorkingAction() { actionDao.deleteFirstRow() }
 }
