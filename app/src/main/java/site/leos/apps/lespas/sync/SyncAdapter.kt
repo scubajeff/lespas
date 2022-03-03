@@ -60,8 +60,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val wifionlyKey = application.getString(R.string.wifionly_pref_key)
     private val metaUpdatedNeeded = mutableSetOf<String>()
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
+    private var workingAction: Action? = null
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
+
         try {
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
 
@@ -81,8 +83,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString)
             when (e.statusCode) {
                 400, 404, 405, 406, 410 -> {
-                    // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move onto next action
-                    actionRepository.discardCurrentWorkingAction()
+                    // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move on to next action
+                    //actionRepository.discardCurrentWorkingAction()
+                    workingAction?.let { actionRepository.delete(it) }
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
@@ -171,6 +174,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun syncLocalChanges(pendingActions: List<Action>) {
         // Sync local changes, e.g., processing pending actions
         pendingActions.forEach { action ->
+            // Save current action for deletion when some ignorable exceptions happen
+            workingAction = action
+
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
 

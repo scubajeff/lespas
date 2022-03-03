@@ -1,6 +1,9 @@
 package site.leos.apps.lespas.sync
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import site.leos.apps.lespas.BaseDao
 
@@ -52,8 +55,10 @@ abstract class ActionDao: BaseDao<Action>() {
     //@Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
     //abstract fun fileInUse(photoName: String): Boolean
 
+/*
     @Query("SELECT * FROM ${Action.TABLE_NAME} LIMIT 1")
     abstract fun getFirstRow(): Action
     @Transaction
     open fun deleteFirstRow() { delete(getFirstRow()) }
+*/
 }
