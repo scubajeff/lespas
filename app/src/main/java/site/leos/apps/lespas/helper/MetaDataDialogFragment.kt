@@ -79,7 +79,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 exif = try { ExifInterface(this) } catch (e: Exception) { null }
                             }
                         } else {
-                            size = eTag.toLong()
+                            size = shareId.toLong()
                             exif = try {
                                 (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))
                             } catch (e: SecurityException) {

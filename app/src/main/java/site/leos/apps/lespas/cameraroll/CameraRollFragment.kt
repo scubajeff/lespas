@@ -682,7 +682,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private fun updateMetaDisplay() {
         with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
             dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-            sizeTextView.text = Tools.humanReadableByteCountSI(eTag.toLong())
+            sizeTextView.text = Tools.humanReadableByteCountSI(shareId.toLong())
         }
     }
 
@@ -730,7 +730,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     try {
                         // Strip EXIF, rotate picture if needed
                         BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)))?.let { bmp->
-                            (if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true) else bmp)
+                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
                                 .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                             uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
                         }
@@ -834,7 +834,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     val photo = Photo(
                         id = this,      // fileUri shared in as photo's id in Camera Roll album
                         albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                        eTag = "0",     // Temporarily use eTag for saving file's size TODO use other number property
+                        shareId = 0,     // Temporarily use shareId for saving file's size TODO maximum 4GB
                         dateTaken = LocalDateTime.now(),
                         lastModified = LocalDateTime.MIN,
                     )
@@ -847,8 +847,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             cr.query(uri, null, null, null, null)?.use { cursor ->
                                 cursor.moveToFirst()
                                 cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
-                                // Store file size in property eTag
-                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.eTag = it }
+                                // Store file size in property shareId
+                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() }
                             }
                         }
                         "file" -> {

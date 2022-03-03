@@ -342,16 +342,16 @@ object Tools {
                     }
                     medias.add(
                         Photo(
-                            ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
-                            ImageLoaderViewModel.FROM_CAMERA_ROLL,
-                            cursor.getString(nameColumn) ?: "",
-                            cursor.getString(sizeColumn),           // Saving photo size value in eTag property
-                            LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
-                            LocalDateTime.MIN,
-                            cursor.getInt(widthColumn),
-                            cursor.getInt(heightColumn),
-                            mimeType,
-                            cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property
+                            id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
+                            albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                            name = cursor.getString(nameColumn) ?: "",
+                            dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
+                            lastModified = LocalDateTime.MIN,
+                            width = cursor.getInt(widthColumn),
+                            height = cursor.getInt(heightColumn),
+                            mimeType = mimeType,
+                            shareId = cursor.getInt(sizeColumn),                  // Saving photo size value in shareId property
+                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property
                         )
                     )
                 }
