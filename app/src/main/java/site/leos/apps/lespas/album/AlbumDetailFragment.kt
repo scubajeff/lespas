@@ -98,6 +98,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val publishModel: NCShareViewModel by activityViewModels()
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
 
+    // Update album meta only when fragment destroy
     private var sortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
@@ -495,7 +496,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroy() {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumMeta(album)
+        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)

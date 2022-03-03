@@ -47,13 +47,10 @@ abstract class ActionDao: BaseDao<Action>() {
 
     @Query("UPDATE ${Action.TABLE_NAME} SET fileName = :coverId WHERE folderId = :albumId AND action = ${Action.ACTION_ADD_DIRECTORY_ON_SERVER}")
     // cover id is stored in fileName property
-    abstract fun updateCover(albumId: String, coverId: String)
+    abstract fun updateCoverInPendingActions(albumId: String, coverId: String)
 
-    @Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
-    abstract fun fileInUse(photoName: String): Boolean
-
-    fun updateAlbumMeta(albumId: String, coverFileName: String) { insert(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", coverFileName, System.currentTimeMillis(), 1)) }
-    //fun updatePhotoMeta(albumId: String, albumName: String) { insert(Action(null, Action.ACTION_UPDATE_PHOTO_META, albumId, albumName, "", "", System.currentTimeMillis(), 1)) }
+    //@Query(value = "SELECT EXISTS (SELECT fileName FROM ${Action.TABLE_NAME} WHERE fileName = :photoName AND action = ${Action.ACTION_ADD_FILES_ON_SERVER})")
+    //abstract fun fileInUse(photoName: String): Boolean
 
     @Query("SELECT * FROM ${Action.TABLE_NAME} LIMIT 1")
     abstract fun getFirstRow(): Action

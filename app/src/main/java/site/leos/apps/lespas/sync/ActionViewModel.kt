@@ -126,7 +126,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun renameAlbum(albumId: String, oldName: String, newName: String, sharedAlbum: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.changeName(albumId, newName)
-            if (!sharedAlbum) actionRepository.addActions(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
+            if (!sharedAlbum) actionRepository.addAction(Action(null, Action.ACTION_RENAME_DIRECTORY, albumId, oldName, "", newName, System.currentTimeMillis(), 1))
         }
     }
 
@@ -135,14 +135,19 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             albumRepository.setCover(albumId, cover)
 
             // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-            if (!cover.cover.contains('.')) actionRepository.updateAlbumMeta(albumId, cover.cover)
+            if (!cover.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", "", System.currentTimeMillis(), 1))
 
-            // If album has not been uploaded yet, update the cover id in action table too
-            actionRepository.updateCover(albumId, cover.cover)
+            // If album has not been uploaded yet, update pending action ACTION_ADD_DIRECTORY_ON_SERVER's cover id action table too
+            actionRepository.updateCoverInPendingActions(albumId, cover.cover)
         }
     }
 
-    fun updateAlbumMeta(album: Album) { viewModelScope.launch(Dispatchers.IO) { actionRepository.updateAlbumMeta(album) }}
+    fun updateAlbumSortOrderInMeta(album: Album) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
+            if (!album.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, "", "", "", System.currentTimeMillis(), 1))
+        }
+    }
 
     fun hideAlbums(albums: List<Album>) { setHiddenState(albums, true) }
     fun unhideAlbums(albums: List<Album>) { setHiddenState(albums, false) }

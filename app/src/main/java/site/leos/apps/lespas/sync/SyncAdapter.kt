@@ -272,9 +272,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_UPDATE_ALBUM_META -> {
                     // Property folderId holds id of the album needed meta update
-                    // Property fileName holds filename of the album's cover TODO no need
                     albumRepository.getThisAlbum(action.folderId).apply {
-                        //if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), action.fileName, sortOrder)) {
                         if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
                             // Touch file to avoid re-download
                             try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
