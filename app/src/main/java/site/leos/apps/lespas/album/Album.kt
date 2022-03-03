@@ -67,16 +67,6 @@ data class AlbumWithPhotos(
     var photos: List<Photo>
 )
 
-// TODO: upgrade DB
-data class AlbumWithCover(
-    @Embedded var album: Album,
-    @Relation(
-        parentColumn = "cover",
-        entityColumn = "id"
-    )
-    var coverPhoto: Photo?
-)
-
 @Parcelize
 data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int): Parcelable
 data class IDandCover(val id: String, val cover: String)
@@ -95,12 +85,6 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
-
-    // Hidden albums not included
-    @Transaction
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
-    abstract fun getAllWithCoverSortByEndDateDistinct(): Flow<List<AlbumWithCover>>
-    fun getAllWithCoverSortByEndDate() = getAllWithCoverSortByEndDateDistinct().distinctUntilChanged()
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId LIMIT 1")
     abstract fun getThisAlbum(albumId: String): Album

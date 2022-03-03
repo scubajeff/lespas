@@ -18,7 +18,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val localRootFolder = Tools.getLocalRoot(application)
 
     val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
-    val allAlbumsWithCoverByEndDate: LiveData<List<AlbumWithCover>> = albumRepository.getAllAlbumsWithCoverSortByEndDate().asLiveData()
     fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }

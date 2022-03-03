@@ -189,7 +189,7 @@ class PhotoWithMapFragment: Fragment() {
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     // Strip EXIF, rotate picture if needed
                     BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)))?.let { bmp->
-                        (if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true) else bmp)
+                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
                             .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     }
                 }

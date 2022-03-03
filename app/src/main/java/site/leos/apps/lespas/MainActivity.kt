@@ -176,7 +176,6 @@ class MainActivity : AppCompatActivity() {
 
 */
 /*
-    // TODO no need to do this after several release updates later?
     class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
             val actionDao = LespasDatabase.getDatabase(context).actionDao()

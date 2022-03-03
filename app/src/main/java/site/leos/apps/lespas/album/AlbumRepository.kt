@@ -9,7 +9,6 @@ class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
-    fun getAllAlbumsWithCoverSortByEndDate(): Flow<List<AlbumWithCover>> = albumDao.getAllWithCoverSortByEndDate()
     fun getThisAlbum(albumId: String): Album = albumDao.getThisAlbum(albumId)
     fun getThisAlbumList(albumId: String): List<Album> = albumDao.getThisAlbumList(albumId)
     fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)

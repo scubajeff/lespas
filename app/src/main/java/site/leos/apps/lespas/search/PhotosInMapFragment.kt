@@ -409,7 +409,7 @@ class PhotosInMapFragment: Fragment() {
             marker.image = BitmapDrawable(resources,
                 if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
-                    if (photo.shareId != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.shareId).toFloat()) }, true) }
+                    if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp
                 }
                 else BitmapFactory.decodeFile("$rootPath/${photo.id}", option)

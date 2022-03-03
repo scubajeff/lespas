@@ -364,7 +364,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun syncRemoteChanges() {
-        Log.e(">>>>>>>>**", "sync remote changes")
+        //Log.e(">>>>>>>>**", "sync remote changes")
         val changedAlbums = mutableListOf<Album>()
         val remoteAlbumIds = arrayListOf<String>()
 
@@ -451,7 +451,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             shareId = Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
                             sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC)
                     )
-                    Log.e(">>>>>>>>", "no hit, creating changedAlbum ${remoteAlbum.name}")
+                    //Log.e(">>>>>>>>", "no hit, creating changedAlbum ${remoteAlbum.name}")
                 }
             }
         }
@@ -468,7 +468,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try { File(localRootFolder, it.name).delete() } catch(e: Exception) { e.printStackTrace() }
                 }
                 try { File(localRootFolder, "${local.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
-                Log.e(">>>>", "Deleted album: ${local.id}")
+                //Log.e(">>>>", "Deleted album: ${local.id}")
             }
         }
 
@@ -493,7 +493,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var contentModifiedTime = LocalDateTime.MIN
 
                 // Create changePhotos list
-                Log.e(">>>>>>>>>>", "syncing remote album ${changedAlbum.name}")
+                //Log.e(">>>>>>>>>>", "syncing remote album ${changedAlbum.name}")
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
                     when {
@@ -538,7 +538,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local, or on first sync with server
                                     changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified))
                                     //changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
-                                    Log.e(">>>>>>>>>>", "creating changePhoto ${remotePhoto.name}")
+                                    //Log.e(">>>>>>>>>>", "creating changePhoto ${remotePhoto.name}")
                                 }
                             } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                                 // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
@@ -568,7 +568,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Syncing meta, deal with album cover, sort order
                 if (changedAlbum.cover == Album.NO_COVER) {
-                    Log.e(">>>>>>>>", "create cover for new album ${changedAlbum.name}")
+                    //Log.e(">>>>>>>>", "create cover for new album ${changedAlbum.name}")
                     // New album created on server, cover not yet available
 
                     // Safety check, if this new album is empty, process next album
@@ -596,7 +596,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     } ?: run {
                         // If there has no meta, neither v1 nor v2, on server, create it at the end of syncing
-                        Log.e(">>>>>>>>>>>", "could not download meta file ${changedAlbum.id}.json of album  ${changedAlbum.name} from server")
+                        //Log.e(">>>>>>>>>>>", "could not download meta file ${changedAlbum.id}.json of album  ${changedAlbum.name} from server")
                         metaUpdatedNeeded.add(changedAlbum.name)
                     }
                 } else {
@@ -611,7 +611,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // get updated cover setting, and if this album gets modified later, the cover setting will change!!
                             // TODO more proper way to handle conflict
                             downloadAlbumMeta(changedAlbum)?.apply {
-                                Log.e(">>>>>>>>>>>>>>>","downloaded ${changedAlbum.name}'s latest album meta json from server")
+                                //Log.e(">>>>>>>>>>>>>>>","downloaded ${changedAlbum.name}'s latest album meta json from server")
                                 if (changedAlbum.coverMimeType.isNotEmpty()) {
                                     // Only sync with newer version of meta json
                                     changedAlbum.cover = cover
@@ -635,10 +635,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Quick sync for "Remote" albums
                 if (Tools.isRemoteAlbum(changedAlbum) && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
-                    Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
+                    //Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
-                        Log.e(">>>>>>>>>>", "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
+                        //Log.e(">>>>>>>>>>", "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
                         // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
@@ -661,7 +661,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                 } catch (e: JSONException) {
                                                     // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
                                                     // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
-                                                    Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
+                                                    //Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
                                                     contentMetaUpdatedNeeded.add(changedAlbum.name)
                                                     return@use
                                                 }
@@ -683,7 +683,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                     )
                                                 )
 
-                                                Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
+                                                //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
 
                                                 // Maintain album start and end date
                                                 with(photoMeta.last().dateTaken) {
@@ -706,7 +706,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     } else {
-                        Log.e(">>>>>>>>>", "there are updates to album ${changedAlbum.name} done on server, quit quick sync")
+                        //Log.e(">>>>>>>>>", "there are updates to album ${changedAlbum.name} done on server, quit quick sync")
                     }
                 }
 
@@ -732,7 +732,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     checkConnection()
 
                     if (Tools.isRemoteAlbum(changedAlbum)) {
-                        Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
+                        //Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
                         // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
                         if (changedPhoto.mimeType.startsWith("video", true)) {
                             try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" }) } catch (e: Exception) {}
@@ -743,7 +743,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     } else {
                         // If it's a Local album, download image file from server and extract meta locally
                         webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
-                        Log.e(">>>>", "Downloaded ${changedPhoto.name}")
+                        //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
 
                         if (changedPhoto.mimeType.startsWith("video")) try { metadataRetriever.setDataSource("$localRootFolder/${changedPhoto.id}") } catch (e: Exception) {}
                         else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}") } catch (e: Exception) { null }
@@ -770,7 +770,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Tools.isRemoteAlbum(changedAlbum)) {
                         // Find out if it's animated GIF or WEBP
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
-                            Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
+                            //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
                             webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", true, null).use {
                                 val d = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
                                 changedPhoto.width = d.intrinsicWidth
@@ -781,7 +781,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // If image resolution fetched from EXIF failed (for example, picture format don't support EXIF), we need to download the file from server
                         if (changedPhoto.width == 0 && changedPhoto.mimeType.startsWith("image")) {
-                            Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to get resolution data")
+                            //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to get resolution data")
                             webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", true, null).use {
                                 BitmapFactory.Options().apply {
                                     inJustDecodeBounds = true
@@ -804,7 +804,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // If it's a new album without meta file, create default cover because width and height information are ready now
                     with(changedAlbum) {
                         if (cover == Album.NO_COVER) {
-                            Log.e(">>>>>>>>>>>>", "setting 1st photo in the list ${changedPhoto.name} to be the cover for new album ${changedAlbum.name}")
+                            //Log.e(">>>>>>>>>>>>", "setting 1st photo in the list ${changedPhoto.name} to be the cover for new album ${changedAlbum.name}")
                             cover = changedPhoto.id
                             coverBaseline = (changedPhoto.height - (changedPhoto.width * 9 / 21)) / 2
                             coverWidth = changedPhoto.width
@@ -856,7 +856,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
-                Log.e(">>>>>>>>>>>>>>>>>", "finish syncing album ${changedAlbum.name}")
+                //Log.e(">>>>>>>>>>>>>>>>>", "finish syncing album ${changedAlbum.name}")
                 albumRepository.upsert(changedAlbum)
 
                 // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server

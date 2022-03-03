@@ -572,10 +572,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_publish-> {
-                // TODO verify this comment out
-                // Check for album meta file existence, create it if needed
-                //if (!File(Tools.getLocalRoot(requireContext()), "${album.id}_v2.json").exists()) WorkManager.getInstance(requireContext()).enqueueUniqueWork(MainActivity.MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MainActivity.MetaFileMaintenanceWorker>().build())
-
                 // Get meaningful label for each recipient
                 publishModel.sharees.value.let { sharees->
                     sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
