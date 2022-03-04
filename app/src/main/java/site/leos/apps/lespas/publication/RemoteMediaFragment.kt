@@ -72,8 +72,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },
-            { media, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.getPhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
-            { view-> shareModel.cancelGetPhoto(view) }
+            { media, imageView, type-> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.setImagePhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
+            { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
@@ -338,7 +338,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
             shareModel.savePhoto(requireContext(), this)
             hideHandler.postDelayed({
-                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.path.substringAfterLast('/')), Snackbar.LENGTH_LONG)
+                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
                     .setTextColor(resources.getColor(R.color.color_text_light, null))
@@ -349,7 +349,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
     }

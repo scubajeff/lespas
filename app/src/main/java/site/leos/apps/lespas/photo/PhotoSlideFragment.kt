@@ -77,8 +77,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
     private lateinit var playerViewModel: VideoPlayerViewModel
 
@@ -104,10 +103,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         isRemote = Tools.isRemoteAlbum(album)
         rootPath = Tools.getLocalRoot(requireContext())
         serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
-        serverFullPath = "${remoteImageLoaderModel.getResourceRoot()}${serverPath}"
+        serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, remoteImageLoaderModel.getCallFactory()))[VideoPlayerViewModel::class.java]
-        //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) remoteImageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()))[VideoPlayerViewModel::class.java]
+        //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
             Tools.getDisplayWidth(requireActivity().windowManager),
@@ -124,16 +123,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             },
             { state-> toggleSystemUI(state) },
             { photo, imageView, type ->
-                when {
-                    type == ImageLoaderViewModel.TYPE_NULL -> startPostponedEnterTransition()
-                    isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo, serverPath), imageView!!, type) { startPostponedEnterTransition() }
-                    else -> imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }
-                }
+                if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
+                else imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else ""), imageView!!, type) { startPostponedEnterTransition() }
             },
-            { view ->
-                remoteImageLoaderModel.cancelGetPhoto(view)
-                imageLoaderModel.cancelLoading(view)
-            }
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         // Adjusting the shared element mapping
@@ -186,7 +179,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         if (workInfo != null) {
                             if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                 // When replacing original with Snapseed result, refresh image cache of all size
-                                imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem).id)
+                                imageLoaderModel.invalidPhoto(pAdapter.getPhotoAt(slider.currentItem).id)
                             }
                         }
                     }
@@ -572,7 +565,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                 // For remote album and synced photo
-                if (!remoteImageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))) {
+                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))) {
                     // TODO notify user
                     return null
                 }

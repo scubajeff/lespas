@@ -55,7 +55,6 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -85,7 +84,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
     private var receivedShareMenu: MenuItem? = null
     private var cameraRollAsAlbumMenu: MenuItem? = null
@@ -138,7 +136,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                if (album.id != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                if (album.id != CameraRollFragment.FROM_CAMERA_ROLL) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
@@ -166,23 +164,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
-        ) { album, imageView ->
-            album.run {
-                val base = getString(R.string.lespas_base_folder_name)
-                when {
-                    Tools.isRemoteAlbum(album) && cover != coverFileName ->
-                        publishViewModel.getPhoto(NCShareViewModel.RemotePhoto(Photo(
-                            id = cover, name = coverFileName, mimeType = coverMimeType, orientation = coverOrientation,
-                            width = coverWidth, height = coverHeight,
-                            dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
-                        ), "${base}/${name}", coverBaseline), imageView, ImageLoaderViewModel.TYPE_COVER)
-                    else ->
-                        imageLoaderModel.loadPhoto(Photo(
-                            id = cover, albumId = id,
-                            name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, shareId = coverBaseline, orientation = coverOrientation,
-                            dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
-                        ), imageView, ImageLoaderViewModel.TYPE_COVER)
-                }
+        ) { album, imageView -> album.run {
+                publishViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(Photo(
+                    id = cover, albumId = id, eTag = eTag,
+                    name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
+                    dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, NCShareViewModel.TYPE_COVER)
             }
         }.apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -270,7 +257,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 AlbumListAdapter.AlbumDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != ImageLoaderViewModel.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != CameraRollFragment.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
                 override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0 && mAdapter.currentList[position].syncProgress >= 1.0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
@@ -426,7 +413,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             R.id.option_menu_search-> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == ImageLoaderViewModel.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == CameraRollFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_received_shares-> {
@@ -645,7 +632,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         text = album.name
 
                         setCompoundDrawables(when {
-                            album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL -> cameraDrawable
+                            album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
                             Tools.isRemoteAlbum(album) -> cloudDrawable
                             else -> null
                         }, null, null, null)
@@ -701,7 +688,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             if (sourceList.isNotEmpty()) {
                 // save camera roll album
                 val firstAlbum = sourceList.first()
-                if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sourceList.removeAt(0)
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sourceList.removeAt(0)
 
                 sortedList.addAll(
                     when (sortOrder) {
@@ -714,7 +701,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 )
 
                 // restore camera roll album
-                if (firstAlbum.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
             }
 
             submitList(sortedList)

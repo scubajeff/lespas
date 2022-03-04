@@ -85,8 +85,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
@@ -155,10 +154,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view, type ->
-                if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) remoteImageLoaderModel.getPhoto(NCShareViewModel.RemotePhoto(photo, "${lespasPath}/${album.name}", photo.bearing.toInt()), view, type) { startPostponedEnterTransition() } //NCShareViewModel.RemotePhoto(photo.id, "$lespasPath/${album.name}/${photo.name}", photo.mimeType, photo.width, photo.height, photo.shareId, 0L, photo.orientation), view, type) { startPostponedEnterTransition() }
-                else imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() }
-            }
+            { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }}
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -217,7 +213,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             if (workInfo != null) {
                                 // If replace original is on, remove old bitmaps from cache and take care of cover too
                                 if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                    imageLoaderModel.invalid(sharedPhoto.id)
+                                    imageLoaderModel.invalidPhoto(sharedPhoto.id)
                                     // Update cover if needed, cover id can be found only in adapter
                                     mAdapter.updateCover(sharedPhoto)
                                 }
@@ -683,7 +679,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 destFile = File(requireActivity().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
 
                 if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                    remoteImageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
+                    imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
                 } else {
                     //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
                     sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
@@ -821,7 +817,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             fun bindViewItem(cover: Photo) {
                 with(itemView) {
-                    imageLoader(cover.copy(id = album.cover), ivCover, ImageLoaderViewModel.TYPE_COVER)
+                    imageLoader(cover.copy(id = album.cover), ivCover, NCShareViewModel.TYPE_COVER)
 
                     tvTitle.apply {
                         text = album.name
@@ -867,7 +863,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     it.isActivated = isActivated
 
                     with(ivPhoto) {
-                        imageLoader(photo, this, ImageLoaderViewModel.TYPE_GRID)
+                        imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
@@ -927,8 +923,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     else-> album.photos
                 }
             )
-            // Add album cover at the top of photo list, save cover's baseline in shareId property, clear latitude property so that it would be included in map related function
-            album.album.run { photos.add(0, album.photos.find { it.id == album.album.cover }!!.copy(id = album.album.id, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
+            // Add album cover at the top of photo list, save cover's baseline in bearing property, clear latitude property so that it would be included in map related function
+            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
 
@@ -977,7 +973,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.shareId == newItem.shareId && oldItem.eTag == newItem.eTag
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing
     }
 
     companion object {

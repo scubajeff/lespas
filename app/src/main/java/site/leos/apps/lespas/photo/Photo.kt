@@ -39,6 +39,7 @@ data class Photo(
         const val TABLE_NAME = "photos"
 
         const val ETAG_NOT_YET_UPLOADED = ""
+        const val ETAG_FAKE = "1"
 
         const val DEFAULT_PHOTO_FLAG = 0
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices

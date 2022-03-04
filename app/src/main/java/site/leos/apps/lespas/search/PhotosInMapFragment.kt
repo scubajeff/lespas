@@ -44,7 +44,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -81,7 +81,7 @@ class PhotosInMapFragment: Fragment() {
     private var isMuted = false
     private lateinit var bgmPlayer: ExoPlayer
 
-    private val remoteImageLoader: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var lespasPath: String
     private var isLocalAlbum = false
 
@@ -169,25 +169,25 @@ class PhotosInMapFragment: Fragment() {
                     val marker = Marker(mapView).apply {
                         position = poi
                         icon = pin
-                        if (remotePhoto.path.isEmpty()) loadImage(this, remotePhoto.photo)
+                        if (remotePhoto.remotePath.isEmpty()) loadImage(this, remotePhoto.photo)
                         relatedObject = spaceHeight
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
                             mView.apply {
                                 findViewById<ImageView>(R.id.photo)?.let { v ->
-                                    if (remotePhoto.path.isEmpty()) {
+                                    if (remotePhoto.remotePath.isEmpty()) {
                                         v.setImageDrawable(marker.image)
                                         (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                     }
                                     else {
-                                        remoteImageLoader.getPhoto(remotePhoto, v, ImageLoaderViewModel.TYPE_GRID) {
+                                        imageLoaderModel.setImagePhoto(remotePhoto, v, NCShareViewModel.TYPE_GRID) {
                                             (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                         }
                                     }
                                 }
                                 findViewById<TextView>(R.id.label).text =
-                                    if (remotePhoto.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
+                                    if (remotePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) remotePhoto.photo.dateTaken.run { this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) }
                                     else albumNames?.get(remotePhoto.photo.albumId)
                                 setOnClickListener(InfoWindowClickListener(mapView))
                             }
@@ -407,7 +407,7 @@ class PhotosInMapFragment: Fragment() {
                 while(photo.width > vW * inSampleSize || photo.height > vH * inSampleSize) { inSampleSize += 2 }
             }
             marker.image = BitmapDrawable(resources,
-                if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
                     var bmp = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
                     if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp

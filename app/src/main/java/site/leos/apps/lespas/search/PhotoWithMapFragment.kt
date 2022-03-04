@@ -35,8 +35,8 @@ import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.YesNoDialogFragment
 import site.leos.apps.lespas.photo.Photo
@@ -49,8 +49,7 @@ import java.util.*
 
 class PhotoWithMapFragment: Fragment() {
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
-    private val imageLoaderViewModel by activityViewModels<ImageLoaderViewModel>()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var mapView: MapView
 
     private var stripExif = "2"
@@ -69,7 +68,7 @@ class PhotoWithMapFragment: Fragment() {
             //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }
         with(remotePhoto.photo) {
-            requireActivity().requestedOrientation = if ((width < height) || (albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL && (shareId == 90 || shareId == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            requireActivity().requestedOrientation = if ((width < height) || (albumId == CameraRollFragment.FROM_CAMERA_ROLL && (shareId == 90 || shareId == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
         setHasOptionsMenu(true)
@@ -83,8 +82,7 @@ class PhotoWithMapFragment: Fragment() {
         postponeEnterTransition()
 
         view.findViewById<PhotoView>(R.id.photo)?.apply {
-            if (remotePhoto.path.isEmpty()) imageLoaderViewModel.loadPhoto(remotePhoto.photo, this, ImageLoaderViewModel.TYPE_QUATER) { startPostponedEnterTransition() }
-            else remoteImageLoaderModel.getPhoto(remotePhoto, this, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }
+            imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }
 
             ViewCompat.setTransitionName(this, remotePhoto.photo.id)
         }
@@ -142,7 +140,7 @@ class PhotoWithMapFragment: Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_with_map_menu, menu)
-        menu.findItem(R.id.option_menu_lespas).isVisible = remotePhoto.photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL
+        menu.findItem(R.id.option_menu_lespas).isVisible = remotePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL
         Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("geo:0.0,0.0?z=20")
             resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
@@ -186,7 +184,7 @@ class PhotoWithMapFragment: Fragment() {
 
             // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
             if (strip && Tools.hasExif(photo.mimeType)) {
-                if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
                     // Strip EXIF, rotate picture if needed
                     BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)))?.let { bmp->
                         (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
@@ -197,18 +195,18 @@ class PhotoWithMapFragment: Fragment() {
                     if (sourceFile.exists()) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!remoteImageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true)) return null
+                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true)) return null
                     }
                 }
 
                 FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
             } else {
-                if (photo.albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) Uri.parse(photo.id)
+                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) Uri.parse(photo.id)
                 else {
                     if (sourceFile.exists()) sourceFile.copyTo(destFile, true, 4096)
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!remoteImageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false)) return null
+                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false)) return null
                     }
 
                     FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)

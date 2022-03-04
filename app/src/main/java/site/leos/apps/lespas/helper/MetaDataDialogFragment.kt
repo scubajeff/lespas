@@ -30,6 +30,7 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
@@ -61,7 +62,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 photo = it
             }
             requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let {
-                remotePhotoSharePath = it.path
+                remotePhotoSharePath = it.remotePath
                 photo = it.photo
             }
 
@@ -72,7 +73,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 lifecycleScope.launch(Dispatchers.IO) {
                     var exif: ExifInterface? = null
                     if (remotePhotoSharePath.isEmpty()) {
-                        if (albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                        if (albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
                             with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
                                 //with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
                                 size = File(this).length()
@@ -130,7 +131,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 view.findViewById<TextView>(R.id.info_artist).text = t
                             }
 
-                            if (albumId == ImageLoaderViewModel.FROM_CAMERA_ROLL) latLong?.let {
+                            if (albumId == CameraRollFragment.FROM_CAMERA_ROLL) latLong?.let {
                                 latitude = it[0]
                                 longitude = it[1]
                             }

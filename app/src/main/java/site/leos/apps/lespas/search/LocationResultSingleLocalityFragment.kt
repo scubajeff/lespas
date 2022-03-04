@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -40,8 +40,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
     private lateinit var photoAdapter: PhotoAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,10 +61,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { remotePhoto, imageView ->
-                if (remotePhoto.path.isEmpty()) imageLoaderModel.loadPhoto(remotePhoto.photo, imageView, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }
-                else remoteImageLoaderModel.getPhoto(remotePhoto, imageView, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }
-            }
+            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
         ).apply {
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -133,7 +129,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     ViewCompat.setTransitionName(ivPhoto, this.id)
 
                     tvLabel.text =
-                        if (this.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[this.albumId]
+                        if (this.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]
                         else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
             }

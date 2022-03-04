@@ -26,6 +26,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
@@ -55,7 +56,7 @@ object Tools {
 
     @SuppressLint("SimpleDateFormat")
     @JvmOverloads
-    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, pathName: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, isRemoteAlbum: Boolean = false): Photo {
+    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false): Photo {
         val dateFormatter = SimpleDateFormat(DATE_FORMAT_PATTERN).apply { timeZone = TimeZone.getDefault() }
         var timeString: String?
         var mMimeType = mimeType
@@ -68,7 +69,8 @@ object Tools {
         //var caption = ""
         var orientation = 0
 
-        val lastModified = Date(if (isRemoteAlbum) System.currentTimeMillis() else File(pathName).lastModified())
+        val isLocalFileExist = localPath.isNotEmpty()
+        val lastModified = Date(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis())
 
         if (mimeType.startsWith("video/", true)) {
             metadataRetriever?.run {
@@ -118,7 +120,6 @@ object Tools {
 
                             if (updateCreationDate) {
                                 exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
-                                exif.resetOrientation()
                                 saveExif = true
                             }
                         }
@@ -127,28 +128,37 @@ object Tools {
                         height = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
 
                         orientation = exif.rotationDegrees
-                        // For Local album, rotate the picture to it's up right position, save some rotation time when showing it in the future
-                        // For Remote album, rotation will be done when fetching image from server
                         if (orientation != 0) {
-                            if (!isRemoteAlbum) {
-                                Bitmap.createBitmap(BitmapFactory.decodeFile(pathName), 0, 0, width, height, Matrix().apply { preRotate(orientation.toFloat()) }, true).apply {
-                                    compress(Bitmap.CompressFormat.JPEG, 95, File(pathName).outputStream())
-                                    mMimeType = Photo.DEFAULT_MIMETYPE
-                                    recycle()
-                                }
-                            }
+                            if (isLocalFileExist) {
+                                // Either by acquiring file from local or downloading media file from server for Local album, must rotate file
+                                try {
+                                    // TODO what if rotation fails?
+                                    BitmapFactory.decodeFile(localPath)?.let {
+                                        Bitmap.createBitmap(it, 0, 0, it.width, it.height, Matrix().apply { preRotate(orientation.toFloat()) }, true).apply {
+                                            if (compress(Bitmap.CompressFormat.JPEG, 95, File(localPath).outputStream())) {
+                                                mMimeType = Photo.DEFAULT_MIMETYPE
 
-                            // Swap width and height value and write back to exif
-                            if (orientation == 90 || orientation == 270) {
-                                val t = width
-                                width = height
-                                height = t
-
-                                if (!isRemoteAlbum) {
-                                    exif.resetOrientation()
-                                    exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, "$width")
-                                    exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, "$height")
-                                    saveExif = true
+                                                // Swap width and height value, write back to exif and save in Room (see return value at the bottom)
+                                                if (orientation == 90 || orientation == 270) {
+                                                    val t = width
+                                                    width = height
+                                                    height = t
+                                                }
+                                                exif.resetOrientation()
+                                                exif.setAttribute(ExifInterface.TAG_IMAGE_WIDTH, "$width")
+                                                exif.setAttribute(ExifInterface.TAG_IMAGE_LENGTH, "$height")
+                                                saveExif = true
+                                            }
+                                            recycle()
+                                        }
+                                    }
+                                } catch (e: Exception) {}
+                            } else {
+                                // Swap width and height value if needed and save it to Room
+                                if (orientation == 90 || orientation == 270) {
+                                    val t = width
+                                    width = height
+                                    height = t
                                 }
                             }
                         }
@@ -162,27 +172,27 @@ object Tools {
                         }
                     }
 
-                    if (imageFormat == "webp" && !isRemoteAlbum) {
+                    if (imageFormat == "webp" && isLocalFileExist) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             // Set my own image/awebp mimetype for animated WebP
-                            if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                            if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
                         }
                     }
                 }
                 "gif"-> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && !isRemoteAlbum) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && isLocalFileExist) {
                         // Set my own image/agif mimetype for animated GIF
-                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(pathName))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
                     }
                 }
                 else-> {}
             }
 
             // Get image width and height for local album if they can't fetched from EXIF
-            if (!isRemoteAlbum && width == 0) try {
+            if (isLocalFileExist && width == 0) try {
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
-                    BitmapFactory.decodeFile(pathName, this)
+                    BitmapFactory.decodeFile(localPath, this)
                 }
                 width = options.outWidth
                 height = options.outHeight
@@ -201,7 +211,7 @@ object Tools {
             width = width, height = height,
             //caption = caption,
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
-            orientation = orientation
+            orientation = if (keepOriginalOrientation) orientation else 0
         )
         //return Photo("", "", "", Photo.ETAG_NOT_YET_UPLOADED, tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
     }
@@ -343,7 +353,7 @@ object Tools {
                     medias.add(
                         Photo(
                             id = ContentUris.withAppendedId(contentUri, cursor.getString(idColumn).toLong()).toString(),
-                            albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                            albumId = CameraRollFragment.FROM_CAMERA_ROLL,
                             name = cursor.getString(nameColumn) ?: "",
                             dateTaken = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), defaultZone),     // DATE_TAKEN has nano adjustment
                             lastModified = LocalDateTime.MIN,
@@ -411,9 +421,9 @@ object Tools {
                     if (cursor.moveToLast()) startDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(cursor.getLong(dateColumn)), defaultZone)
 
                     // Cover's mimetype passed in property eTag, cover's orientation passed in property shareId
-                    //return Album(ImageLoaderViewModel.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
+                    //return Album(CameraRollFragment.FROM_CAMERA_ROLL, albumName, startDate, endDate, coverId, coverBaseline, coverWidth, coverHeight, endDate, Album.BY_DATE_TAKEN_DESC, mimeType, orientation, 1.0F)
                     return Album(
-                        id = ImageLoaderViewModel.FROM_CAMERA_ROLL, name = albumName,
+                        id = CameraRollFragment.FROM_CAMERA_ROLL, name = albumName,
                         startDate = startDate, endDate = endDate, lastModified = endDate,
                         cover = coverId, coverFileName = coverFileName, coverBaseline = coverBaseline, coverWidth = coverWidth, coverHeight = coverHeight, coverMimeType = coverMimeType,
                         sortOrder = Album.BY_DATE_TAKEN_DESC,

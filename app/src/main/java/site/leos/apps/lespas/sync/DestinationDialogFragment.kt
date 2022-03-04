@@ -43,7 +43,10 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.AlbumNameValidator
+import site.leos.apps.lespas.helper.LesPasDialogFragment
+import site.leos.apps.lespas.helper.SingleLiveEvent
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationDetailFragment
@@ -56,7 +59,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     private val albumModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
     private val publicationModel: NCShareViewModel by activityViewModels()
     private lateinit var jointAlbumLiveData: LiveData<List<NCShareViewModel.ShareWithMe>>
 
@@ -109,6 +111,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             },
             { album, view, type ->
                 album.run {
+                    publicationModel.setImagePhoto(
+                        NCShareViewModel.RemotePhoto(Photo(
+                        id = cover, albumId = id, eTag = eTag,
+                        name = if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringAfterLast('/') else coverFileName,
+                        width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                    ), if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringBeforeLast('/') else "", coverBaseline), view, type)
+/*
                     if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX)
                         publicationModel.getPhoto(NCShareViewModel.RemotePhoto(Photo(
                             id = cover, name = coverFileName.substringAfterLast('/'),
@@ -120,10 +130,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                             width = coverWidth, height = coverHeight, mimeType = coverMimeType, shareId = coverBaseline, orientation = coverOrientation,
                             dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
                         ), view, type)
+*/
                 }
             },
             { user, view -> publicationModel.getAvatar(user, view, null) },
-            { view -> imageLoaderModel.cancelLoading(view) }
+            { view -> publicationModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             setCoverType(tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG)
@@ -135,7 +146,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 val bitmap: Bitmap? =
                     when {
                         uri.scheme == "lespas"-> {
-                            publicationModel.getPhoto(remotePhotos[position], view, ImageLoaderViewModel.TYPE_GRID)
+                            publicationModel.setImagePhoto(remotePhotos[position], view, NCShareViewModel.TYPE_GRID)
                             null
                         }
                         (cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: "image/*").startsWith("image") -> {
@@ -169,7 +180,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 val uris = mutableListOf<Uri>()
                 remotePhotos = requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()
                 remotePhotos.forEach {
-                    uris.add(Uri.fromParts("lespas", "//${it.path}", ""))
+                    uris.add(Uri.fromParts("lespas", "//${it.remotePath}", ""))
                 }
                 uris
             }
@@ -347,7 +358,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Album, ImageView, String)-> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View)-> Unit, private val cancelLoading: (ImageView)-> Unit)
     : ListAdapter<Album, DestinationAdapter.DestViewHolder>(DestinationDiffCallback()) {
-        private var coverType: String = ImageLoaderViewModel.TYPE_SMALL_COVER
+        private var coverType: String = NCShareViewModel.TYPE_SMALL_COVER
 
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
@@ -402,7 +413,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         override fun getItemViewType(position: Int): Int = if (currentList[position].lastModified == LocalDateTime.MAX) 1 else 0
 
         fun setCoverType(smallCover: Boolean) {
-            coverType = if (smallCover) ImageLoaderViewModel.TYPE_SMALL_COVER else ImageLoaderViewModel.TYPE_COVER
+            coverType = if (smallCover) NCShareViewModel.TYPE_SMALL_COVER else NCShareViewModel.TYPE_COVER
         }
     }
 

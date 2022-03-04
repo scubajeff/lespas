@@ -27,7 +27,6 @@ import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -43,11 +42,10 @@ class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
     private lateinit var emptyView: ImageView
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
-        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getBoolean(SEARCH_COLLECTION), remoteImageLoaderModel)
+        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getBoolean(SEARCH_COLLECTION), imageLoaderModel)
     }
 
     private var loadingIndicator: MenuItem? = null
@@ -84,10 +82,7 @@ class SearchResultFragment : Fragment() {
                         .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
-            { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView ->
-                if (remotePhoto.path.isEmpty()) imageLoaderModel.loadPhoto(remotePhoto.photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }
-                else remoteImageLoaderModel.getPhoto(remotePhoto, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }
-            }
+            { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
         ).apply {
             // Get album's name for display
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
@@ -270,7 +265,7 @@ class SearchResultFragment : Fragment() {
                 }
                 //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 tvLabel.text =
-                    if (item.remotePhoto.photo.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[item.remotePhoto.photo.albumId]
+                    if (item.remotePhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[item.remotePhoto.photo.albumId]
                     else item.remotePhoto.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
             }
         }

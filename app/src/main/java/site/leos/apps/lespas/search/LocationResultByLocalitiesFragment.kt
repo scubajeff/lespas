@@ -18,12 +18,10 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import site.leos.apps.lespas.R
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.publication.NCShareViewModel
 
 class LocationResultByLocalitiesFragment: Fragment() {
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
-    private val remoteImageLoaderModel: NCShareViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
@@ -42,10 +40,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { remotePhoto, imageView ->
-                if (remotePhoto.path.isEmpty()) imageLoaderModel.loadPhoto(remotePhoto.photo, imageView, ImageLoaderViewModel.TYPE_GRID)
-                else remoteImageLoaderModel.getPhoto(remotePhoto, imageView, ImageLoaderViewModel.TYPE_GRID)
-            },
+            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
     }
 

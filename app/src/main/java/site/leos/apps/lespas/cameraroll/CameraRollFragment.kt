@@ -60,6 +60,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
@@ -106,7 +107,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var ignoreHide = true
     //private var sideTouchAreaWidth  = 0
 
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
@@ -137,8 +138,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (ignoreHide && showListFirst) ignoreHide = false
                 else bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
-            { view-> imageLoaderModel.cancelLoading(view) }
+            { photo, imageView, type-> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView!!, type) { startPostponedEnterTransition() }},
+            { view-> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
@@ -148,7 +149,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView, type) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
@@ -830,10 +831,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
                     val uri = Uri.parse(this)
-                    //val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                    //val photo = Photo(this, FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
                     val photo = Photo(
                         id = this,      // fileUri shared in as photo's id in Camera Roll album
-                        albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL,
+                        albumId = FROM_CAMERA_ROLL,
                         shareId = 0,     // Temporarily use shareId for saving file's size TODO maximum 4GB
                         dateTaken = LocalDateTime.now(),
                         lastModified = LocalDateTime.MIN,
@@ -955,7 +956,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     it.isActivated = isActivated
 
                     with(ivPhoto) {
-                        imageLoader(item, this, ImageLoaderViewModel.TYPE_GRID)
+                        imageLoader(item, this, NCShareViewModel.TYPE_GRID)
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
@@ -1023,8 +1024,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (media.dateTaken.toLocalDate() != currentDate) {
                         currentDate = media.dateTaken.toLocalDate()
                         // Add a fake photo item by taking default value for nearly all properties, denotes a date seperator
-                        listGroupedByDate.add(Photo(albumId = ImageLoaderViewModel.FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
-                        //listGroupedByDate.add(Photo("", ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
+                        listGroupedByDate.add(Photo(albumId = FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
+                        //listGroupedByDate.add(Photo("", FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
                     }
                     listGroupedByDate.add(media)
                 }
@@ -1078,6 +1079,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     companion object {
+        //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
+        const val FROM_CAMERA_ROLL = "0"
+
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"

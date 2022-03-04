@@ -749,7 +749,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}") } catch (e: Exception) { null }
                     }
 
-                    with(Tools.getPhotoParams(metadataRetriever, exifInterface,"$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, isRemoteAlbum = Tools.isRemoteAlbum(changedAlbum))) {
+                    with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (Tools.isRemoteAlbum(changedAlbum)) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = true)) {
                         // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
                         // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
                         changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken

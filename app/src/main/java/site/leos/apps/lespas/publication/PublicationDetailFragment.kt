@@ -28,7 +28,6 @@ import com.google.android.material.transition.MaterialElevationScale
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
@@ -85,8 +84,8 @@ class PublicationDetailFragment: Fragment() {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
-            { view-> shareModel.cancelGetPhoto(view) }
+            { photo, view-> shareModel.setImagePhoto(photo, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             if (savedInstanceState?.run { getBoolean(SHOW_META, false) } == true) {
