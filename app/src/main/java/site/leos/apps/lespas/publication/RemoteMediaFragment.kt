@@ -217,6 +217,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.apply {
+            addListener(MediaSliderTransitionListener(slider))
         }
 
         return view
