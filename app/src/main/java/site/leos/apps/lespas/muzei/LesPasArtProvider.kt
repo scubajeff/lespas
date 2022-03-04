@@ -5,10 +5,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapRegionDecoder
-import android.graphics.Rect
-import android.net.Uri
+import android.graphics.*
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -178,7 +175,13 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     )
                                 }
 
-                                webDav.download("${resourceRoot}/${Uri.encode(album.name)}/${Uri.encode(photo.name)}", dest, null)
+                                webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", true, null).use {
+                                    var bitmap: Bitmap? = BitmapFactory.decodeStream(it)
+                                    if (bitmap != null && photo.orientation != 0) {
+                                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
+                                    }
+                                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, dest.outputStream())
+                                }
                             }
                         } else {
                             File("${Tools.getLocalRoot(application)}/${photo.id}").inputStream().use { source ->
@@ -187,7 +190,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 }
                             }
                         }
-                    } catch (e: Exception) {}
+                    } catch (e: Exception) { e.printStackTrace() }
 
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
