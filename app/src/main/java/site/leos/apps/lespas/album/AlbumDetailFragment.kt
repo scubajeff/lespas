@@ -581,7 +581,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, mAdapter.getphotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, mAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             R.id.option_menu_bgm-> {
@@ -944,7 +944,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
-        internal fun getphotoWithCoordinate(): List<Photo> {
+        internal fun getPhotoWithCoordinate(): List<Photo> {
             return mutableListOf<Photo>().apply {
                 currentList.forEach { if (it.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.mimeType)) add(it) }
                 toList()

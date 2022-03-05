@@ -119,10 +119,12 @@ class PhotosInMapFragment: Fragment() {
                 repeatMode = ExoPlayer.REPEAT_MODE_ONE
                 playWhenReady = true
 
-                val bgmFile = "$rootPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
-                if (File(bgmFile).exists()) {
-                    bgmPlayer.setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
-                    hasBGM = true
+                var bgmFile = "$rootPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                if (File(bgmFile).exists()) setBGM(bgmFile)
+                else {
+                    // BGM for publication downloaded in cache folder
+                    bgmFile = "${requireContext().cacheDir}/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                    if (File(bgmFile).exists()) setBGM(bgmFile)
                 }
 
                 // Mute the video sound during late night hours
@@ -134,6 +136,11 @@ class PhotosInMapFragment: Fragment() {
             remotePhoto = mutableListOf()
             requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhoto?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
         }
+    }
+
+    private fun setBGM(bgmFile: String) {
+        bgmPlayer.setMediaItem(MediaItem.fromUri("file://${bgmFile}"))
+        hasBGM = true
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photos_in_map, container, false)

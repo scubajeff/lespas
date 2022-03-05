@@ -25,12 +25,19 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.MaterialSharedAxis
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -49,6 +56,7 @@ class PublicationDetailFragment: Fragment() {
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
     private var addPhotoMenuItem: MenuItem? = null
+    private var mapMenuItem: MenuItem? = null
 
     private var currentItem = -1
 
@@ -155,6 +163,19 @@ class PublicationDetailFragment: Fragment() {
                     isVisible = true
                     isEnabled = true
                 }
+
+                it.forEach { remotePhoto ->
+                    if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                        mapMenuItem?.isVisible = true
+                        mapMenuItem?.isEnabled = true
+
+                        // Try to download publication's BGM
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), false)
+                        }
+                        return@submitList
+                    }
+                }
             }
 
             if (currentItem != -1) with(currentPositionModel.getLastRange()) {
@@ -204,6 +225,7 @@ class PublicationDetailFragment: Fragment() {
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
         addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
+        mapMenuItem = menu.findItem(R.id.option_menu_in_map)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
@@ -229,6 +251,20 @@ class PublicationDetailFragment: Fragment() {
             }
             R.id.option_menu_add_photo-> {
                 addFileLauncher.launch("*/*")
+                true
+            }
+            R.id.option_menu_in_map-> {
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(
+                    Album(
+                        id = share.albumId,
+                        name = share.albumName,
+                        eTag = Photo.ETAG_FAKE,
+                        shareId = Album.REMOTE_ALBUM,
+                        lastModified = LocalDateTime.MIN
+                    ),
+                    photoListAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -286,6 +322,13 @@ class PublicationDetailFragment: Fragment() {
         }
 
         fun isMetaDisplayed(): Boolean = displayMeta
+
+        fun getPhotoWithCoordinate(): List<Photo> {
+            return mutableListOf<Photo>().apply {
+                currentList.forEach { if (it.photo.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.photo.mimeType)) add(it.photo) }
+                toList()
+            }
+        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
