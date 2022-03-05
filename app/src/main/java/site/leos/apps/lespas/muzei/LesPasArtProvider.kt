@@ -17,6 +17,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.ByteArrayInputStream
@@ -152,7 +153,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                     val album = albumRepository.getThisAlbum(photo.albumId)
                     val dest = File(application.cacheDir, photo.id)
                     try {
-                        if (Tools.isRemoteAlbum(album)) {
+                        if (Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                             // Download remote image
                             val accounts = AccountManager.get(application).getAccountsByType(application.getString(R.string.account_type_nc))
                             val webDav: OkHttpWebDav
