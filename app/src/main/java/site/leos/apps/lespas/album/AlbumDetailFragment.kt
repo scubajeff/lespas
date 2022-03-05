@@ -711,7 +711,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             if (mAdapter.getPhotoBy(photoId).let { photo ->
                 // Synced file is named after id, not yet synced file is named after file's name
-                destFile = File(requireActivity().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+                destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
 
                 if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                     remoteImageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
