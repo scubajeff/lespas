@@ -164,11 +164,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { user, view -> publishViewModel.getAvatar(user, view, null) }
-        ) { album, imageView -> album.run {
+        ) { album, imageView ->
+            album.run {
                 publishViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(Photo(
-                    id = cover, albumId = id, eTag = eTag,
+                    id = cover, albumId = id,
                     name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
-                    dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                    dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                    // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
+                    eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
                 ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, NCShareViewModel.TYPE_COVER)
             }
         }.apply {

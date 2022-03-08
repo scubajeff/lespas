@@ -113,10 +113,12 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 album.run {
                     publicationModel.setImagePhoto(
                         NCShareViewModel.RemotePhoto(Photo(
-                        id = cover, albumId = id, eTag = eTag,
+                        id = cover, albumId = id,
                         name = if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringAfterLast('/') else coverFileName,
                         width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
-                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                        // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
+                        eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
                     ), if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringBeforeLast('/') else "", coverBaseline), view, type)
 /*
                     if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX)

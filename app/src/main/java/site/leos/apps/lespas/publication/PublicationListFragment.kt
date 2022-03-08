@@ -50,7 +50,8 @@ class PublicationListFragment: Fragment() {
                 shareModel.setImagePhoto(
                     NCShareViewModel.RemotePhoto(Photo(
                         id = share.cover.cover, name = share.cover.coverFileName, mimeType = share.cover.coverMimeType, width = share.cover.coverWidth, height = share.cover.coverHeight, orientation = share.cover.coverOrientation,
-                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                        eTag = Photo.ETAG_FAKE,
                     ), share.sharePath, share.cover.coverBaseline),
                     view,
                     NCShareViewModel.TYPE_COVER
