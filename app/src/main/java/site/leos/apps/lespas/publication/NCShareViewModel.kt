@@ -10,6 +10,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
@@ -104,8 +105,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(
-                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,
-                "LesPas_${application.getString(R.string.lespas_version)}",
+                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
         }
@@ -974,6 +974,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val cr = application.contentResolver
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
+    private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_placeholder) as AnimatedVectorDrawable
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
     private val metadataRetriever = MediaMetadataRetriever()
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
@@ -997,16 +998,27 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     //Log.e(">>>>>>>>>","got cache hit $key")
                 } ?: run {
                     // Cache missed
+                    // Clear imageview
+                    withContext(Dispatchers.Main) { view.setImageResource(0) }
+
                     bitmap = when (type) {
                         TYPE_VIDEO -> {
                             getVideoThumbnail(imagePhoto)
                         }
                         TYPE_GRID -> {
-                            getImageThumbNail(imagePhoto)
+                            getImageThumbNail(imagePhoto, view)
                         }
                         else -> {
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
+                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
+                                    webDav.getStreamBool("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
+                                        if (second) {
+                                            // It's a network response, start loading indicator
+                                            withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+                                        }
+                                        first
+                                    }
+                                }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 else -> try {
                                     File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
@@ -1019,7 +1031,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         // Show cached low resolution bitmap first
                                         imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                                             //Log.e(">>>>>>>>>>>>", "show GRID version 1st")
-                                            withContext(Dispatchers.Main) { view.setImageBitmap(it) }
+                                            withContext(Dispatchers.Main) {
+                                                view.setImageBitmap(it)
+                                                view.background = null
+                                            }
                                             callBack?.onLoadComplete()
                                         }
 
@@ -1112,6 +1127,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         })
                     } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     //view.imageAlpha = 255
+
+                    // Stop loading indicator
+                    view.background = null
                 }
                 callBack?.onLoadComplete()
             }
@@ -1162,7 +1180,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         } catch (e: Exception) { null }
     }
 
-    private fun getImageThumbNail(imagePhoto: RemotePhoto): Bitmap? {
+    private suspend fun getImageThumbNail(imagePhoto: RemotePhoto, view: ImageView): Bitmap? {
         try {
             val thumbnailSize = if ((imagePhoto.photo.height < 1600) || (imagePhoto.photo.width < 1600)) 2 else 8
             return when {
@@ -1170,7 +1188,16 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                     var bitmap: Bitmap?
-                    try { webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }} catch (e: Exception) { bitmap = null }
+                    try {
+                        webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null).run {
+                            if (second) withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+                            first
+                        }.use {
+                            bitmap = BitmapFactory.decodeStream(it)
+                        }
+                    } catch (e: Exception) {
+                        bitmap = null
+                    }
                     bitmap ?: run {
                         // If preview is not available, we have to use the actual image file
                         //if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
