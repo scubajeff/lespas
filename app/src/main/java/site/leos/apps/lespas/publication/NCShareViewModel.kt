@@ -1084,7 +1084,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
                                                 else bmp
                                             }
-                                        } catch (e: Exception) { null }
+                                        } catch (e: Exception) {
+                                            getVideoThumbnail(imagePhoto)
+                                        }
                                     }
                                     else -> {
                                         null
