@@ -585,6 +585,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverOrientation = coverOrientation
                         changedAlbum.sortOrder = sortOrder
 
+                        // Remove excluded flag since we have cover now, so that quick sync can happen
+                        changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
+
                         // TODO This is needed when meta format changed from v1 to v2 on release 2.5.0 to restore existing cover, could be removed in future release
                         if (coverMimeType.isEmpty()) {
                             // A v1 meta file return which does not contain cover's mimetype information, try to get it from changePhotos list
@@ -628,7 +631,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
                 // If cover found in changed photo lists then move it to the top of the list so that we can download it and show album in album list asap in the following changedPhotos.forEachIndexed loop
-                (changedPhotos.find { it.id == changedAlbum.cover })?.let { coverPhoto ->
+                if (changedAlbum.cover != Album.NO_COVER) (changedPhotos.find { it.id == changedAlbum.cover })?.let { coverPhoto ->
                     changedPhotos.remove(coverPhoto)
                     changedPhotos.add(0, coverPhoto)
                 }
@@ -702,6 +705,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                                 else -> {
                                     // Version 1 content meta file, won't work for latest version quick sync, fall back to normal sync
+                                    //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "version 1 meta json found, quit quick sync")
                                 }
                             }
                         }
