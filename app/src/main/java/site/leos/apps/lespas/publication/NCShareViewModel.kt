@@ -1023,6 +1023,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 else -> try {
                                     File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                 } catch (e: FileNotFoundException) {
+                                    // Fall back to network fetching if loading local file failed
                                     webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
                             }?.use { sourceStream ->
@@ -1221,8 +1222,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         }
                     }
                 }
-                // File is available locally, always rotated to it's upright position
                 else -> {
+                    // File is available locally, already rotated to it's upright position
                     BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
                 }
             }
