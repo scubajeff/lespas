@@ -998,8 +998,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     //Log.e(">>>>>>>>>","got cache hit $key")
                 } ?: run {
                     // Cache missed
-                    // Clear imageview
-                    withContext(Dispatchers.Main) { view.setImageResource(0) }
 
                     bitmap = when (type) {
                         TYPE_VIDEO -> {
