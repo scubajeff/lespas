@@ -717,7 +717,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Fetch changed photo files, extract EXIF info, update Photo table
-                var webStream: InputStream? = null
                 changedPhotos.forEachIndexed { i, changedPhoto->
                     // Prepare the image file
 
@@ -738,79 +737,70 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
 
-                    try {
-                        if (Tools.isRemoteAlbum(changedAlbum)) {
-                            //Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
-                            // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
-                            if (changedPhoto.mimeType.startsWith("video", true)) {
-                                try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (e: Exception) {}
-                                exifInterface = null
-                            } else {
-                                webStream = webDav.getStream("$resourceRoot/${changedAlbum.name}/${changedPhoto.name}", false, null)
-                                webStream?.use { exifInterface = try { androidx.exifinterface.media.ExifInterface(it) } catch (e: Exception) { null }}
+                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                        //Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
+                        // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
+                        if (changedPhoto.mimeType.startsWith("video", true)) {
+                            try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (e: Exception) {}
+                            exifInterface = null
+                        } else {
+                            webDav.getStream("$resourceRoot/${changedAlbum.name}/${changedPhoto.name}", false, null)?.use {
+                                exifInterface = try { androidx.exifinterface.media.ExifInterface(it) } catch (e: Exception) { null }
+                            }
+                        }
+                    } else {
+                        // If it's a Local album, download image file from server and extract meta locally
+                        webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
+                        //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
+
+                        if (changedPhoto.mimeType.startsWith("video")) {
+                            try { metadataRetriever.setDataSource("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) {}
+                            exifInterface = null
+                        }
+                        else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) { null }
+                    }
+
+                    with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (Tools.isRemoteAlbum(changedAlbum)) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = true)) {
+                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
+                        // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
+                        changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
+                        changedPhoto.width = this.width
+                        changedPhoto.height = this.height
+                        // If photo got rotated, mimetype will be changed to image/jpeg
+                        changedPhoto.mimeType = this.mimeType
+                        // Photo's original orientation is needed to display remote image in full format
+                        changedPhoto.orientation = this.orientation
+                        //changedPhoto.caption = this.caption
+                        changedPhoto.latitude = this.latitude
+                        changedPhoto.longitude = this.longitude
+                        changedPhoto.altitude = this.altitude
+                        changedPhoto.bearing = this.bearing
+                    }
+
+                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
+                            // Find out if it's animated GIF or WEBP
+                            //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
+                            webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
+                                val d = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
+                                changedPhoto.width = d.intrinsicWidth
+                                changedPhoto.height = d.intrinsicHeight
+                                if (d is AnimatedImageDrawable) changedPhoto.mimeType = "image/a${changedPhoto.mimeType.substringAfterLast('/')}"
                             }
                         } else {
-                            // If it's a Local album, download image file from server and extract meta locally
-                            webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
-                            //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
-
-                            if (changedPhoto.mimeType.startsWith("video")) {
-                                try { metadataRetriever.setDataSource("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) {}
-                                exifInterface = null
-                            }
-                            else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) { null }
-                        }
-
-                        with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (Tools.isRemoteAlbum(changedAlbum)) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = true)) {
-                            // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
-                            // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
-                            changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
-                            changedPhoto.width = this.width
-                            changedPhoto.height = this.height
-                            // If photo got rotated, mimetype will be changed to image/jpeg
-                            changedPhoto.mimeType = this.mimeType
-                            // Photo's original orientation is needed to display remote image in full format
-                            changedPhoto.orientation = this.orientation
-                            //changedPhoto.caption = this.caption
-                            changedPhoto.latitude = this.latitude
-                            changedPhoto.longitude = this.longitude
-                            changedPhoto.altitude = this.altitude
-                            changedPhoto.bearing = this.bearing
-                        }
-
-                        webStream?.closeQuietly()
-                        webStream = null
-
-                        if (Tools.isRemoteAlbum(changedAlbum)) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
-                                // Find out if it's animated GIF or WEBP
-                                //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
-                                webStream = webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null)
-                                webStream?.use {
-                                    val d = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
-                                    changedPhoto.width = d.intrinsicWidth
-                                    changedPhoto.height = d.intrinsicHeight
-                                    if (d is AnimatedImageDrawable) changedPhoto.mimeType = "image/a${changedPhoto.mimeType.substringAfterLast('/')}"
-                                }
-                            } else {
-                                if (changedPhoto.width == 0 && changedPhoto.mimeType.startsWith("image")) {
-                                    // If image resolution fetched from EXIF failed (for example, picture format don't support EXIF), we need to download the file from server
-                                    //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to get resolution data")
-                                    webStream = webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null)
-                                    webStream?.use {
-                                        BitmapFactory.Options().apply {
-                                            inJustDecodeBounds = true
-                                            BitmapFactory.decodeStream(it, null, this)
-                                            changedPhoto.width = outWidth
-                                            changedPhoto.height = outHeight
-                                        }
+                            if (changedPhoto.width == 0 && changedPhoto.mimeType.startsWith("image")) {
+                                // If image resolution fetched from EXIF failed (for example, picture format don't support EXIF), we need to download the file from server
+                                //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to get resolution data")
+                                webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
+                                    BitmapFactory.Options().apply {
+                                        inJustDecodeBounds = true
+                                        BitmapFactory.decodeStream(it, null, this)
+                                        changedPhoto.width = outWidth
+                                        changedPhoto.height = outHeight
                                     }
                                 }
                             }
                         }
-                    } catch (e: Exception) {
-                        webStream?.closeQuietly()
-                        throw e
                     }
 
                     // Update album's startDate, endDate fields

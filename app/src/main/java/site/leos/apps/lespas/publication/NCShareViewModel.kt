@@ -774,7 +774,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(downloadDispatcher) {
-            var webStream: InputStream? = null
             var bitmap: Bitmap? = null
             var drawable: Drawable? = null
             try {
@@ -799,15 +798,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         }
 
-                        webStream = webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null)
-                        webStream.use { bitmap = BitmapFactory.decodeStream(it) }
+                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
 
                         bitmap?.let { imageCache.put(key, it) }
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                webStream?.close()
             } finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     if (drawable == null && bitmap != null) drawable = BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, bitmap!!))
@@ -988,7 +985,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(downloadDispatcher) {
-            var sourceStream: InputStream? = null
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             try {
@@ -1012,7 +1008,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         else -> {
                             if (imagePhoto.coverBaseLine == Album.SPECIAL_COVER_BASELINE) type = TYPE_FULL
 
-                            sourceStream = when {
+                            when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     webDav.getStreamBool("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
                                         if (second) {
@@ -1029,9 +1025,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Fall back to network fetching if loading local file failed
                                     webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
-                            }
-
-                            sourceStream?.use {
+                            }?.use { sourceStream ->
                                 when (type) {
                                     TYPE_FULL, TYPE_QUATER -> {
                                         // Show cached low resolution bitmap first
@@ -1125,11 +1119,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
             }
             catch (e: OkHttpWebDavException) {
-                sourceStream?.close()
                 Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
             }
             catch (e: Exception) {
-                sourceStream?.close()
                 e.printStackTrace()
             }
             finally {
