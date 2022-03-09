@@ -592,7 +592,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private lateinit var selectionTracker: SelectionTracker<String>
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private var currentAlbumId = ""
+            private var currentAlbum = Album(lastModified = LocalDateTime.MIN)
             private var withThese = mutableListOf<NCShareViewModel.Recipient>()
             private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
             private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
@@ -610,8 +610,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             @SuppressLint("InflateParams")
             fun bindViewItems(album: Album) {
-                val new = if (currentAlbumId != album.id) {
-                    currentAlbumId = album.id
+                val new = if (currentAlbum.id != album.id || currentAlbum.cover != album.cover || currentAlbum.coverBaseline != album.coverBaseline) {
+                    currentAlbum = album
                     withThese = mutableListOf()
                     true
                 } else { false }
