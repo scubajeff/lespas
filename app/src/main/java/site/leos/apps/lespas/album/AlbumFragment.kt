@@ -208,7 +208,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) {
             val list = mutableListOf<Album>().apply { addAll(it) }
 
-            if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(cameraroll) }
+            if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(0, cameraroll) }
             mAdapter.setAlbums(list, currentSortOrder)
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
