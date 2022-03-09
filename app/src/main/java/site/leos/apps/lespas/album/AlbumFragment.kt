@@ -652,6 +652,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     )
 
                     llRecipients.also { chipGroup->
+                        if (new) chipGroup.removeAllViews()
                         recipients.find { it.fileId == album.id }?.let {
                             if (withThese != it.with) {
                                 // When syncing with server, don't repeatedly load the same recipient list
