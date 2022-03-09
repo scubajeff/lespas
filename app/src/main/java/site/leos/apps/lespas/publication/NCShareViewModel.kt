@@ -979,7 +979,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
     private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_placeholder) as AnimatedVectorDrawable
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
-    private val metadataRetriever = MediaMetadataRetriever()
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()
 
@@ -1179,11 +1178,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Download from server
                 bitmap ?: run {
-                    metadataRetriever.apply {
+                    MediaMetadataRetriever().apply {
                         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED)
                             setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
                         else setDataSource("${localFileFolder}/${imagePhoto.photo.id}")
                         bitmap = getFrameAtTime(0L)
+                        release()
                     }
 
                     // Cache thumbnail in local
@@ -1272,7 +1272,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
         decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
         downloadDispatcher.close()
-        metadataRetriever.release()
         super.onCleared()
     }
 
