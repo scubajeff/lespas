@@ -253,15 +253,20 @@ class SearchResultFragment : Fragment() {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
             @SuppressLint("SetTextI18n")
             fun bind(item: Result) {
                 with(ivPhoto) {
-                    imageLoader(item.remotePhoto, this)
+                    if (currentPhotoId != item.remotePhoto.photo.id) {
+                        this.setImageResource(0)
+                        imageLoader(item.remotePhoto, this)
+                        ViewCompat.setTransitionName(this, item.remotePhoto.photo.id)
+                        currentPhotoId = item.remotePhoto.photo.id
+                    }
                     setOnClickListener { clickListener(item, this) }
-                    ViewCompat.setTransitionName(this, item.remotePhoto.photo.id)
                 }
                 //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 tvLabel.text =

@@ -592,7 +592,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private lateinit var selectionTracker: SelectionTracker<String>
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private var currentId = ""
+            private var currentAlbumId = ""
             private var withThese = mutableListOf<NCShareViewModel.Recipient>()
             private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
             private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
@@ -610,21 +610,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             @SuppressLint("InflateParams")
             fun bindViewItems(album: Album) {
-                val new = if (currentId != album.id) {
-                    currentId = album.id
+                val new = if (currentAlbumId != album.id) {
+                    currentAlbumId = album.id
                     withThese = mutableListOf()
                     true
                 } else { false }
 
                 itemView.apply {
+                    // Background color adhere to selection state
+                    isActivated = selectionTracker.isSelected(album.id)
+
                     ivCover.let {coverImageview ->
                         if (new) {
                             // When syncing with server, don't repeatedly load the same image
                             coverImageview.setImageResource(0)
                             imageLoader(album, coverImageview)
                             ViewCompat.setTransitionName(coverImageview, album.id)
-                            setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         }
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
                             with(pbSync) {
@@ -671,9 +674,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                             }
                         }
                     }
-
-                    // Background color adhere to selection state
-                    isActivated = selectionTracker.isSelected(album.id)
                 }
             }
 

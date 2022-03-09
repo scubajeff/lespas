@@ -119,14 +119,19 @@ class LocationResultSingleLocalityFragment: Fragment() {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
             fun bind(item: NCShareViewModel.RemotePhoto) {
                 with(item.photo) {
-                    imageLoader(item, ivPhoto)
+                    if (currentPhotoId != item.photo.id) {
+                        ivPhoto.setImageResource(0)
+                        imageLoader(item, ivPhoto)
+                        ViewCompat.setTransitionName(ivPhoto, this.id)
+                        currentPhotoId = item.photo.id
+                    }
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
-                    ViewCompat.setTransitionName(ivPhoto, this.id)
 
                     tvLabel.text =
                         if (this.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]

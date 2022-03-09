@@ -854,31 +854,35 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoName = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
             private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
 
-            fun bindViewItem(photo: Photo, isActivated: Boolean) {
+            fun bindViewItem(photo: Photo) {
                 itemView.let {
-                    it.isActivated = isActivated
+                    it.isActivated = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
-                        imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
+                        if (currentPhotoName != photo.name) {
+                            this.setImageResource(0)
+                            imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
+                            ViewCompat.setTransitionName(this, photo.id)
+                            currentPhotoName = photo.name
+                        }
 
-                        if (this.isActivated) {
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
+
+                        if (it.isActivated) {
                             colorFilter = selectedFilter
                             ivSelectionMark.visibility = View.VISIBLE
                         } else {
                             clearColorFilter()
                             ivSelectionMark.visibility = View.GONE
                         }
-
-                        ViewCompat.setTransitionName(this, photo.id)
-
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
-
-                        ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !this.isActivated) View.VISIBLE else View.GONE
                     }
+
+                    ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isActivated) View.VISIBLE else View.GONE
                 }
             }
 
@@ -905,7 +909,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
+            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position])
             else (holder as CoverViewHolder).bindViewItem(currentList.first())  // List will never be empty, no need to check for NoSuchElementException
         }
 

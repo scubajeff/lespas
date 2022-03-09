@@ -947,16 +947,21 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
             private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
 
-            fun bind(item: Photo, isActivated: Boolean) {
+            fun bind(item: Photo) {
                 itemView.let {
-                    it.isActivated = isActivated
+                    it.isActivated = selectionTracker.isSelected(item.id)
 
                     with(ivPhoto) {
-                        imageLoader(item, this, NCShareViewModel.TYPE_GRID)
+                        if (currentId != item.id) {
+                            this.setImageResource(0)
+                            imageLoader(item, this, NCShareViewModel.TYPE_GRID)
+                            currentId = item.id
+                        }
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
@@ -968,6 +973,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
                     }
+
                     ivPlayMark.visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
                 }
             }
@@ -1010,7 +1016,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             else HorizontalDateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is MediaViewHolder) holder.bind(currentList[position], selectionTracker.isSelected(currentList[position].id))
+            if (holder is MediaViewHolder) holder.bind(currentList[position])
             //else if (holder is DateViewHolder) holder.bind(currentList[position])
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
         }

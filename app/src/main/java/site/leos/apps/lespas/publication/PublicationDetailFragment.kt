@@ -276,29 +276,37 @@ class PublicationDetailFragment: Fragment() {
         private var displayMeta = false
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoId = ""
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.media)
+            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private val tvMeta = itemView.findViewById<TextView>(R.id.meta)
+
             fun bind(item: NCShareViewModel.RemotePhoto, position: Int) {
-                (itemView.findViewById(R.id.media) as ImageView).apply {
-                    imageLoader(item, this)
+                ivPhoto.apply {
+                    if (currentPhotoId != item.photo.id) {
+                        this.setImageResource(0)
+                        imageLoader(item, this)
+                        ViewCompat.setTransitionName(this, item.photo.id)
+                        currentPhotoId = item.photo.id
+                    }
                     ConstraintSet().apply {
                         clone(itemView as ConstraintLayout)
                         setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
                         applyTo(itemView)
                     }
                     setOnClickListener { clickListener(this, currentList, position) }
-
-                    ViewCompat.setTransitionName(this, item.photo.id)
                 }
 
-                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (Tools.isMediaPlayable(item.photo.mimeType)) View.VISIBLE else View.GONE
+                ivPlayMark.visibility = if (Tools.isMediaPlayable(item.photo.mimeType)) View.VISIBLE else View.GONE
 
-                (itemView.findViewById<TextView>(R.id.meta)).apply {
+                tvMeta.apply {
                     text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
 
             fun toggleMeta() {
-                (itemView.findViewById<TextView>(R.id.meta)).visibility = if (displayMeta) View.VISIBLE else View.GONE
+                tvMeta.visibility = if (displayMeta) View.VISIBLE else View.GONE
             }
         }
 

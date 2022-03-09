@@ -149,12 +149,17 @@ class PublicationListFragment: Fragment() {
     class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentAlbumId = ""
             private val ivCover = itemView.findViewById<AppCompatImageView>(R.id.coverart)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val ivIndicator = itemView.findViewById<ImageView>(R.id.joint_album_indicator)
 
             fun bind(item: NCShareViewModel.ShareWithMe) {
-                imageLoader(item, ivCover)
+                if (currentAlbumId != item.albumId) {
+                    ivCover.setImageResource(0)
+                    imageLoader(item, ivCover)
+                    currentAlbumId = item.albumId
+                }
                 //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
                 tvTitle.apply {
                     text = item.albumName
