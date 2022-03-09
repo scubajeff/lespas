@@ -588,12 +588,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     // List adapter for Albums' recyclerView
     class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
-        //private var covers = mutableListOf<Photo>()
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<String>
-        //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentId = ""
+            private var withThese = mutableListOf<NCShareViewModel.Recipient>()
             private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
             private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
@@ -609,17 +609,22 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             @SuppressLint("InflateParams")
-            fun bindViewItems(album: Album, isActivated: Boolean) {
+            fun bindViewItems(album: Album) {
+                val new = if (currentId != album.id) {
+                    currentId = album.id
+                    withThese = mutableListOf()
+                    true
+                } else { false }
+
                 itemView.apply {
-                    this.isActivated = isActivated
                     ivCover.let {coverImageview ->
-                        imageLoader(album, coverImageview)
-                        /*
-                        if (this.isActivated) coverImageview.colorFilter = selectedFilter
-                        else coverImageview.clearColorFilter()
-                         */
-                        ViewCompat.setTransitionName(coverImageview, album.id)
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
+                        if (new) {
+                            // When syncing with server, don't repeatedly load the same image
+                            coverImageview.setImageResource(0)
+                            imageLoader(album, coverImageview)
+                            ViewCompat.setTransitionName(coverImageview, album.id)
+                            setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
+                        }
                         if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
                             with(pbSync) {
@@ -632,7 +637,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         }
                     }
                     with(tvTitle) {
-                        text = album.name
+                        if (new) text = album.name
 
                         setCompoundDrawables(when {
                             album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
@@ -647,20 +652,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     )
 
                     llRecipients.also { chipGroup->
-                        chipGroup.removeAllViews()
                         recipients.find { it.fileId == album.id }?.let {
-                            val ctx = chipGroup.context
-                            for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
-                                recipient.sharee.run {
-                                    if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
-                                        it.text = label
-                                        it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                            if (withThese != it.with) {
+                                // When syncing with server, don't repeatedly load the same recipient list
+                                withThese = it.with
+                                chipGroup.removeAllViews()
+                                val ctx = chipGroup.context
+                                for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
+                                    recipient.sharee.run {
+                                        if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
+                                            it.text = label
+                                            it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                                        }
+                                        avatarLoader(this, it)
                                     }
-                                    avatarLoader(this, it)
-                                }
-                            })
+                                })
+                            }
                         }
                     }
+
+                    // Background color adhere to selection state
+                    isActivated = selectionTracker.isSelected(album.id)
                 }
             }
 
@@ -679,9 +691,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             return AlbumViewHolder(view)
         }
 
-
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
-            holder.bindViewItems(currentList[position], selectionTracker.isSelected(getAlbumId(position)))
+            holder.bindViewItems(currentList[position])
         }
 
         internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int) {
