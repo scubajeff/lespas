@@ -1092,8 +1092,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             }
 
                                         var sampleSize = when (width) {
-                                            in (0..2000) -> 1
-                                            in (2000..3000) -> 2
+                                            in (0..1439) -> 1
+                                            in (1439..3000) -> 2
                                             else -> 4
                                         }
                                         if (type == TYPE_SMALL_COVER) sampleSize *= 2
@@ -1197,7 +1197,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private suspend fun getImageThumbNail(imagePhoto: RemotePhoto, view: ImageView): Bitmap? {
         try {
-            val thumbnailSize = if ((imagePhoto.photo.height < 1600) || (imagePhoto.photo.width < 1600)) 2 else 8
+            val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
+            val option = BitmapFactory.Options().apply { inSampleSize = thumbnailSize }
             return when {
                 // File is not available locally
                 // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
@@ -1210,7 +1211,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             first
                         }
 
-                        sourceStream.use { bitmap = BitmapFactory.decodeStream(it) }
+                        sourceStream.use { bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = 2 }) }
                     } catch (e: Exception) {
                         sourceStream?.close()
                         bitmap = null
@@ -1222,7 +1223,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         bitmap ?: run {
                             // If preview is not available, we have to use the actual image file
                             sourceStream = webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null)
-                            sourceStream.use { bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 }) }
+                            sourceStream.use { bitmap = BitmapFactory.decodeStream(it, null, option) }
                             if (imagePhoto.photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true) }
                         }
                     } catch (e: Exception) {
@@ -1248,7 +1249,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 }
                 else -> {
                     // File is available locally, already rotated to it's upright position
-                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize })
+                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", option)
                 }
             }
         } catch (e: Exception) { return null }
