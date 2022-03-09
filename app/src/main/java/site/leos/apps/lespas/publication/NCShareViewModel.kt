@@ -774,6 +774,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(downloadDispatcher) {
+            var webStream: InputStream? = null
             var bitmap: Bitmap? = null
             var drawable: Drawable? = null
             try {
@@ -798,13 +799,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         }
 
-                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
+                        webStream = webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null)
+                        webStream.use { bitmap = BitmapFactory.decodeStream(it) }
 
                         bitmap?.let { imageCache.put(key, it) }
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                webStream?.close()
             } finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     if (drawable == null && bitmap != null) drawable = BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, bitmap!!))
@@ -984,10 +987,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
-        var bitmap: Bitmap? = null
-        var animatedDrawable: Drawable? = null
 
         val job = viewModelScope.launch(downloadDispatcher) {
+            var sourceStream: InputStream? = null
+            var bitmap: Bitmap? = null
+            var animatedDrawable: Drawable? = null
             try {
                 val type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
                 var key = "${imagePhoto.photo.id}$type"
@@ -1007,7 +1011,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             getImageThumbNail(imagePhoto, view)
                         }
                         else -> {
-                            when {
+                            sourceStream = when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     webDav.getStreamBool("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
                                         if (second) {
@@ -1024,7 +1028,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     // Fall back to network fetching if loading local file failed
                                     webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
-                            }?.use { sourceStream ->
+                            }
+
+                            sourceStream?.use {
                                 when (type) {
                                     TYPE_FULL, TYPE_QUATER -> {
                                         // Show cached low resolution bitmap first
@@ -1040,7 +1046,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes())))
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream!!.readBytes())))
                                                     null
                                                 } else {
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
@@ -1094,11 +1100,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                                         try {
                                             @Suppress("DEPRECATION")
-                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, null)?.let { bmp ->
+                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream!!) else BitmapRegionDecoder.newInstance(sourceStream!!, false))?.decodeRegion(rect, null)?.let { bmp ->
                                                 if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
                                                 else bmp
                                             }
                                         } catch (e: Exception) {
+                                            sourceStream?.close()
+
+                                            // Fall back to video
+                                            // TODO this is for v1 meta which do not contain cover's mimetype information, should be remove in future release
                                             getVideoThumbnail(imagePhoto)
                                         }
                                     }
@@ -1113,8 +1123,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) { Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}") }
-            catch (e: Exception) { e.printStackTrace() }
+            catch (e: OkHttpWebDavException) {
+                sourceStream?.close()
+                Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
+            }
+            catch (e: Exception) {
+                sourceStream?.close()
+                e.printStackTrace()
+            }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let {
@@ -1186,24 +1202,34 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // File is not available locally
                 // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
+                    var sourceStream: InputStream? = null
                     var bitmap: Bitmap?
                     try {
-                        webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null).run {
+                        sourceStream = webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null).run {
                             if (second) withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
                             first
-                        }.use {
-                            bitmap = BitmapFactory.decodeStream(it)
                         }
+
+                        sourceStream.use { bitmap = BitmapFactory.decodeStream(it) }
                     } catch (e: Exception) {
+                        sourceStream?.close()
                         bitmap = null
                     }
-                    bitmap ?: run {
-                        // If preview is not available, we have to use the actual image file
-                        //if (photo.mimeType.startsWith("video")) bitmap = getRemoteVideoThumbnail(it, photo)
-                        //else bitmap = BitmapFactory.decodeStream(it, null, option.apply { inSampleSize = if (photo.width < 2000) 2 else 8 })
-                        bitmap = BitmapFactory.decodeStream(webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null), null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
-                        if (imagePhoto.photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true) }
+
+                    sourceStream = null
+
+                    try {
+                        bitmap ?: run {
+                            // If preview is not available, we have to use the actual image file
+                            sourceStream = webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null)
+                            sourceStream.use { bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 }) }
+                            if (imagePhoto.photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true) }
+                        }
+                    } catch (e: Exception) {
+                        sourceStream?.close()
+                        bitmap = null
                     }
+
                     bitmap
                 }
                 // From camera roll
