@@ -992,7 +992,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             try {
-                val type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
+                var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
                 var key = "${imagePhoto.photo.id}$type"
                 if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
 
@@ -1010,6 +1010,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             getImageThumbNail(imagePhoto, view)
                         }
                         else -> {
+                            if (imagePhoto.coverBaseLine == Album.SPECIAL_COVER_BASELINE) type = TYPE_FULL
+
                             sourceStream = when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     webDav.getStreamBool("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {

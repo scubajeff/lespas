@@ -322,8 +322,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 hideHandler.post(hideSystemUI)
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
-                if (Tools.isMediaPlayable(currentMedia.mimeType)) {
-                    actionModel.updateCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
+                if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
+                    actionModel.updateCover(album.id, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }

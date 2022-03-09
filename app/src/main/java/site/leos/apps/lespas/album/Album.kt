@@ -55,6 +55,8 @@ data class Album(
         const val ETAG_CAMERA_ROLL_ALBUM = "CR"
 
         const val SYNC_COMPLETED = 1.0f
+
+        const val SPECIAL_COVER_BASELINE = -100 // Speical cover baseline value when setting animated GIF/WEBP and general GIF as cover
     }
 }
 

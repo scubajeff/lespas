@@ -927,8 +927,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     else-> album.photos
                 }
             )
-            // Add album cover at the top of photo list, save cover's baseline in bearing property, clear latitude property so that it would be included in map related function
-            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
+            // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
 
