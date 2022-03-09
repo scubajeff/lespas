@@ -11,7 +11,7 @@
             android:viewportHeight="4">
             <path
                 android:name="path"
-                android:pathData="M 6 2 L 18 2"
+                android:pathData="M 4 2 L 20 2"
                 android:strokeColor="@color/color_primary"
                 android:strokeAlpha="192"
                 android:strokeWidth="0.1" />
@@ -24,8 +24,8 @@
                 android:duration="1000"
                 android:repeatCount="infinite"
                 android:repeatMode="reverse"
-                android:valueFrom="M 12 2 L 18 2"
-                android:valueTo="M 6 2 L 6.1 2"
+                android:valueFrom="M 12 2 L 20 2"
+                android:valueTo="M 4 2 L 4.1 2"
                 android:valueType="pathType"
                 android:interpolator="@android:anim/linear_interpolator"/>
         </aapt:attr>
