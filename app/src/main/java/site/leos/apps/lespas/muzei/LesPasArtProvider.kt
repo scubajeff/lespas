@@ -19,7 +19,6 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -170,13 +169,13 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                         peekAuthToken(accounts[0], serverRoot),
                                         serverRoot,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                                        "${Tools.getLocalRoot(application)}/cache",
+                                        null,
                                         "LesPas_${application.getString(R.string.lespas_version)}",
-                                        PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
+                                        0,
                                     )
                                 }
 
-                                webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", true, null).use {
+                                webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", false, null).use {
                                     var bitmap: Bitmap? = BitmapFactory.decodeStream(it)
                                     if (bitmap != null && photo.orientation != 0) {
                                         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)

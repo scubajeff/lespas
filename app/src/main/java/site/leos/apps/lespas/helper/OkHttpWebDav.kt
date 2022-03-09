@@ -30,10 +30,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
-class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String, userAgent: String?, cacheSize: Int) {
+class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient
-    private val cachedHttpClient: OkHttpClient
+    private var cachedHttpClient: OkHttpClient? = null
 
     init {
         val builder = OkHttpClient.Builder().apply {
@@ -44,7 +44,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             writeTimeout(20, TimeUnit.SECONDS)
         }
         httpClient = builder.build()
-        cachedHttpClient = builder.cache(Cache(File(cacheFolder), cacheSize * 1024L * 1024L)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build()
+        cacheFolder?.let { cachedHttpClient = builder.cache(Cache(File(cacheFolder), cacheSize * 1024L * 1024L)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build() }
 
         // Make cache folder for video download
         //File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
@@ -91,7 +91,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getRawResponse(source: String, useCache: Boolean): Response {
         val reqBuilder = Request.Builder().url(source)
-        return (if (useCache) cachedHttpClient.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
+        return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
     }
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
@@ -99,7 +99,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         val reqBuilder = Request.Builder().url(source)
         (if (useCache) {
             cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            cachedHttpClient.newCall(reqBuilder.get().build())
+            cachedHttpClient!!.newCall(reqBuilder.get().build())
         } else {
             httpClient.newCall(reqBuilder.get().build())
         }).execute().also { response ->
