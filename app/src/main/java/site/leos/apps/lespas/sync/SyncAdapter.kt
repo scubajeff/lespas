@@ -152,6 +152,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Check network type
         checkConnection()
 
+        // If we don't have any album, clean up the local root folder, this is useful when upgrading to version 2.5.0 when local media files have to be deleted
+        if (albumRepository.getAlbumTotal() == 0) {
+            try { File(localRootFolder).deleteRecursively() } catch(e: Exception) {}
+            try { File(localRootFolder).mkdir() } catch(e: Exception) {}
+        }
+
         AccountManager.get(application).run {
             val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
             val serverRoot = getUserData(account, context.getString(R.string.nc_userdata_server))
@@ -842,8 +848,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         albumRepository.updateAlbumSyncStatus(changedAlbum.id, (i + 1).toFloat() / changedPhotos.size, changedAlbum.startDate, changedAlbum.endDate)
                     }
 
+/*
                     // Finally, remove downloaded media file if this is a remote album (happens when adding photo to remote album on server or during app reinstall)
-                    //if (Tools.isRemoteAlbum(changedAlbum)) try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                        try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) {}
+                        if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch (e: Exception) {}
+                    }
+*/
                 }
 
                 // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
