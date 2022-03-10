@@ -186,7 +186,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
 
-            // Do not do too many works here, as the local sync should be as simple as making several webdav calls, so that if any thing bad happen, we will be catched by
+            // Don't try to do too many works here, as the local sync should be as simple as making several webdav calls, so that if any thing bad happen, we will be catched by
             // exceptions handling down below, and start again right here in later sync, e.g. atomic
             when (action.action) {
                 Action.ACTION_DELETE_FILES_ON_SERVER -> {
@@ -213,11 +213,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
                                 val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
+                                var fixPreview = false
 
                                 if ((action.retry and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM) {
                                     // If this is a remote album, remove the image file and video thumbnail
                                     try { localFile.delete() } catch (e: Exception) { e.printStackTrace() }
                                     try { File(localRootFolder, "${action.fileName}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
+
+                                    // If it's modification rather than new creation (fileId is not the same as filename), we need to fetch new preview from server
+                                    fixPreview = action.fileId != action.fileName
                                 } else {
                                     // If it's a local album, rename image file name to fileId
                                     try { localFile.renameTo(File(localRootFolder, newId)) } catch (e: Exception) { e.printStackTrace() }
@@ -226,7 +230,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
 
                                 // Update photo's id to the real fileId and latest eTag now. When called from Snapseed Replace, newEtag is what needs to be updated
-                                photoRepository.fixPhotoIdEtag(action.fileId, newId, this.second)
+                                photoRepository.fixPhotoIdEtag(action.fileId, newId, this.second, fixPreview)
 
                                 // Fix album cover id if this photo is the cover
                                 albumRepository.getAlbumByName(action.folderName).also { album ->

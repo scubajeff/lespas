@@ -43,6 +43,7 @@ data class Photo(
 
         const val DEFAULT_PHOTO_FLAG = 0
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
+        const val NEED_REFRESH = 1 shl 1        // Need to refresh photo's preview from server
 
         const val NO_GPS_DATA = -1000.0
         const val NO_ADDRESS = ""
@@ -100,6 +101,12 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = shareId & ~${Photo.NOT_YET_UPLOADED} WHERE id = :oldId")
     abstract fun fixPhotoIdEtag(oldId: String, newId: String, eTag: String)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET id = :newId, eTag = :eTag, shareId = ((shareId & ~${Photo.NOT_YET_UPLOADED}) | ${Photo.NEED_REFRESH}) WHERE id = :oldId")
+    abstract fun fixPhotoIdEtagRefresh(oldId: String, newId: String, eTag: String)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET shareId = shareId & ~${Photo.NEED_REFRESH} WHERE id = :photoId")
+    abstract fun resetNetworkRefresh(photoId: String)
 
     // Including photos from hidden albums
     @Query("SELECT albumId, name FROM ${Photo.TABLE_NAME}")

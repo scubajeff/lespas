@@ -54,6 +54,7 @@ import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
+import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.FileNotFoundException
@@ -92,6 +93,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
+
+    private val photoRepository = PhotoRepository(application)
 
     fun interface LoadCompleteListener {
         fun onLoadComplete()
@@ -987,12 +990,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val job = viewModelScope.launch(downloadDispatcher) {
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
+            val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
+
             try {
                 var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
                 var key = "${imagePhoto.photo.id}$type"
                 if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
 
-                imageCache.get(key)?.let {
+                (if (forceNetwork) null else imageCache.get(key))?.let {
                     bitmap = it
                     //Log.e(">>>>>>>>>","got cache hit $key")
                 } ?: run {
@@ -1005,7 +1010,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(imagePhoto, view, type)
+                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(imagePhoto, view, type, forceNetwork)
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
@@ -1061,7 +1066,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream!!.readBytes())))
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes())))
                                                     null
                                                 } else {
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
@@ -1115,13 +1120,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                                         try {
                                             @Suppress("DEPRECATION")
-                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream!!) else BitmapRegionDecoder.newInstance(sourceStream!!, false))?.decodeRegion(rect, null)?.let { bmp ->
+                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, null)?.let { bmp ->
                                                 if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
                                                 else bmp
                                             }
                                         } catch (e: Exception) {
-                                            sourceStream?.close()
-
                                             // Fall back to video
                                             // TODO this is for v1 meta which do not contain cover's mimetype information, should be remove in future release
                                             getVideoThumbnail(imagePhoto)
@@ -1209,12 +1212,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         } catch (e: Exception) { null }
     }
 
-    private suspend fun getRemoteThumbnail(imagePhoto: RemotePhoto, view: ImageView, type: String): Bitmap? {
+    private suspend fun getRemoteThumbnail(imagePhoto: RemotePhoto, view: ImageView, type: String, forceNetwork: Boolean = false): Bitmap? {
         var bitmap: Bitmap?
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap = try {
-            webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null).run {
+            webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).run {
                 if (second) withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
                 first
             }.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 }) }
@@ -1227,6 +1230,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let { bitmap = Bitmap.createBitmap(bitmap!!, 0, 0, bitmap!!.width, bitmap!!.height, Matrix().apply { preRotate((imagePhoto.photo.orientation).toFloat()) }, true) }
         }
+
+        bitmap?.let { if (forceNetwork) photoRepository.resetNetworkRefresh(imagePhoto.photo.id) }
 
         return bitmap
     }
