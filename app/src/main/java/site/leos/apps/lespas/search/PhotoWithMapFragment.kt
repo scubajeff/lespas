@@ -82,7 +82,7 @@ class PhotoWithMapFragment: Fragment() {
         postponeEnterTransition()
 
         view.findViewById<PhotoView>(R.id.photo)?.apply {
-            imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }
+            imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_IN_MAP) { startPostponedEnterTransition() }
 
             ViewCompat.setTransitionName(this, remotePhoto.photo.id)
         }
