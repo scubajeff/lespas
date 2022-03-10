@@ -543,13 +543,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     //Log.e(">>>>>>>>>>", "creating changePhoto ${remotePhoto.name}")
                                 }
                             } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
-                                // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual
-                                // file again from server
+                                // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual file again from server
                                 photoRepository.changeName(remotePhotoId, remotePhoto.name)
-
-                                // Published album's content meta needs update
+                                // Album content meta needs update
                                 contentMetaUpdatedNeeded.add(changedAlbum.name)
-                                if (remotePhoto.name == photoRepository.getPhotoName(changedAlbum.cover)) metaUpdatedNeeded.add(changedAlbum.name)
+
+                                // If album's cover's filename changed on server
+                                if (remotePhotoId == changedAlbum.cover) {
+                                    changedAlbum.coverFileName = remotePhoto.name
+                                    metaUpdatedNeeded.add(changedAlbum.name)
+                                }
+                                //if (remotePhoto.name == photoRepository.getPhotoName(changedAlbum.cover)) metaUpdatedNeeded.add(changedAlbum.name)
                             }
                         }
                         // Content meta file
