@@ -363,6 +363,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         private var coverType: String = NCShareViewModel.TYPE_SMALL_COVER
 
         inner class DestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentAlbumId = ""
             private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
             private val tvName = itemView.findViewById<TextView>(R.id.name)
             private val cloudDrawable: Drawable?
@@ -385,7 +386,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     }
                 } else {
                     ivCover.apply {
-                        imageLoader(album, this, coverType)
+                        if (currentAlbumId != album.id) {
+                            this.setImageResource(0)
+                            imageLoader(album, this, coverType)
+                            currentAlbumId = album.id
+                        }
                         if (album.lastModified == LocalDateTime.MAX) avatarLoader(NCShareViewModel.Sharee(album.eTag, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
                         scaleType = ImageView.ScaleType.CENTER_CROP
                     }
