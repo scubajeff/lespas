@@ -110,6 +110,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    private var doSync = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -196,7 +198,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         postponeEnterTransition()
         view.doOnPreDraw {
             startPostponedEnterTransition()
-            if (savedInstanceState == null) {
+            if (savedInstanceState == null && doSync) {
                 // TODO: seems like flooding the server
                 publishViewModel.refresh()
 
@@ -357,6 +359,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroyView() {
+        doSync = false
         recyclerView.clearOnScrollListeners()
         recyclerView.adapter = null
 
