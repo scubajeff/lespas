@@ -1035,19 +1035,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
-                                    webDav.getStreamBool("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                        if (second) {
-                                            // It's a network response, start loading indicator
-                                            withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                        }
-                                        first
-                                    }
+                                    withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+                                    webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 else -> try {
                                     File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                 } catch (e: FileNotFoundException) {
                                     // Fall back to network fetching if loading local file failed
+                                    withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
                                     webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
                             }?.use { sourceStream ->
@@ -1217,10 +1213,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap = try {
-            webDav.getStreamBool("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).run {
-                if (second) withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                first
-            }.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 }) }
+            withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
+            }
         } catch(e: Exception) { null }
 
         bitmap ?: run {
