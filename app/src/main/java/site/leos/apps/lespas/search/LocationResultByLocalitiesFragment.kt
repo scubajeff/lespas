@@ -81,10 +81,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
             }
         })
 
-        searchViewModel.getResult().observe(viewLifecycleOwner) { result ->
+        searchViewModel.getResult().observe(viewLifecycleOwner) {
+            val result = mutableListOf<LocationSearchHostFragment.LocationSearchResult>().apply { addAll(it) }
             val items = mutableListOf<LocationSearchHostFragment.LocationSearchResult>()
             var photoList: List<NCShareViewModel.RemotePhoto>
 
+            // TODO intermediary
             // General a new result list, this is crucial for DiffUtil to detect changes
             result.forEach {
                 // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
