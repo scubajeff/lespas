@@ -17,7 +17,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
-import okhttp3.internal.closeQuietly
 import okio.IOException
 import okio.buffer
 import okio.sink
@@ -35,7 +34,6 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.InputStream
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
@@ -392,7 +390,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // We have hit in local table, which means it's a existing album
                     // This list will have 1 item only
                     if (localAlbum[0].eTag != remoteAlbum.eTag) {
-                        // eTag mismatched, this album changed on server, could be name changed (hidden state toggled) plus other changes
+                        // eTag mismatched, this album changed on server, could be name changed (hidden state toggled) plus others
 
                         if (hidden) {
                             // Sync name change for hidden album and/or hide operation done on server
@@ -417,7 +415,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             )
 */
                             localAlbum[0].copy(
-                                name = remoteAlbum.name,                // Use remote version, since it might be changed on server
+                                name = remoteAlbum.name,                // Use remote version, since it might be changed on server or hidden state toggled
                                 lastModified = remoteAlbum.modified,
                                 eTag = remoteAlbum.eTag,                // Use remote eTag for unhidden albums
                                 shareId =                               // shareId's 1st bit denotes album shared status TODO should we enforce SHARED_ALBUM bit? it's actually determined by Share_With_Me now.
@@ -578,7 +576,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Syncing meta, deal with album cover, sort order
+                // *****************************************************
+                // Syncing album meta, deal with album cover, sort order
+                // *****************************************************
                 if (changedAlbum.cover == Album.NO_COVER) {
                     //Log.e(">>>>>>>>", "create cover for new album ${changedAlbum.name}")
                     // New album created on server, cover not yet available
@@ -648,7 +648,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     changedPhotos.add(0, coverPhoto)
                 }
 
+                //*******************************
                 // Quick sync for "Remote" albums
+                //*******************************
                 if (Tools.isRemoteAlbum(changedAlbum) && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
                     //Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
@@ -726,24 +728,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
+                //*****************************************************************
                 // Fetch changed photo files, extract EXIF info, update Photo table
+                //*****************************************************************
                 changedPhotos.forEachIndexed { i, changedPhoto->
-                    // Prepare the image file
-
-/*
-                    // changePhotos contain those file not exist at local, no need to do this now
-                    // If image file with 'name' exists, replace the old file with this
-                    localPhotoNames.getOrDefault(changedPhoto.id, changedPhoto.name).let { localImageFileName ->
-                        if (File(localRootFolder, localImageFileName).exists()) {
-                            try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-                            try { File(localRootFolder, localImageFileName).renameTo(File(localRootFolder, changedPhoto.id)) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-                            //Log.e(">>>>", "rename file $localImageFileName to ${changedPhoto.id}")
-                        }
-                    }
-
-                    // Remove old video thumbnail if any, let ImageLoaderViewModel create a new one
-                    if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch(e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-*/
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
 
@@ -754,7 +742,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (e: Exception) {}
                             exifInterface = null
                         } else {
-                            webDav.getStream("$resourceRoot/${changedAlbum.name}/${changedPhoto.name}", false, null)?.use {
+                            webDav.getStream("$resourceRoot/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
                                 exifInterface = try { androidx.exifinterface.media.ExifInterface(it) } catch (e: Exception) { null }
                             }
                         }
@@ -857,8 +845,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 */
                 }
 
-                // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
                 if (changedPhotos.isNotEmpty()) {
+                    // New meta scanned at local, update content meta file
+                    contentMetaUpdatedNeeded.add(changedAlbum.name)
+
+                    // The above loop might take a long time to finish, during the process, user might already change cover or sort order by now, update it here
                     with(albumRepository.getMeta(changedAlbum.id)) {
                         changedAlbum.sortOrder = this.sortOrder
                         changedAlbum.cover = this.cover
@@ -872,26 +863,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Maintain album start and end date
                     with(photoRepository.getAlbumDuration(changedAlbum.id)) {
-                        changedAlbum.startDate = first
-                        changedAlbum.endDate = second
+                        if (first < changedAlbum.startDate) changedAlbum.startDate = first
+                        if (second > changedAlbum.endDate) changedAlbum.endDate = second
                     }
-
-                    // There are photo changes, update meta
-                    contentMetaUpdatedNeeded.add(changedAlbum.name)
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 //Log.e(">>>>>>>>>>>>>>>>>", "finish syncing album ${changedAlbum.name}")
                 albumRepository.upsert(changedAlbum)
 
+                //*********************************************************************************************************************************************************************
                 // Delete those photos not exist on server (local photo id not in remote photo list and local photo's etag is not empty), happens when user delete photos on the server
+                //*********************************************************************************************************************************************************************
                 var deletion = false
                 //localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                 for (localPhoto in localPhotoETags) {
                     if (localPhoto.value.isNotEmpty() && !remotePhotoIds.contains(localPhoto.key)) {
                         deletion = true
                         photoRepository.deleteById(localPhoto.key)
-                        try { File(localRootFolder, localPhoto.key).delete() } catch (e: Exception) { e.printStackTrace() }
+                        try { File(localRootFolder, localPhoto.key).delete() } catch (e: Exception) {}
+                        try { File(localRootFolder, "${localPhoto.key}.thumbnail").delete() } catch (e: Exception) {}
                     }
                 }
 
@@ -935,25 +926,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             metadataRetriever.release()
-        }
-    }
-
-    private fun updateMeta() {
-        mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
-            albumRepository.getAlbumByName(albumName)?.apply {
-                //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
-                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
-            }
-
-            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
-            metaUpdatedNeeded.remove(albumName)
-        }
-
-        mutableListOf<String>().apply { addAll(contentMetaUpdatedNeeded) }.forEach { albumName->
-            albumRepository.getAlbumByName(albumName)?.apply { updateContentMeta(id, name) }
-
-            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
-            contentMetaUpdatedNeeded.remove(albumName)
         }
     }
 
@@ -1048,9 +1020,24 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun checkConnection() {
-        if (sp.getBoolean(wifionlyKey, true)) {
-            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
+    private fun updateMeta() {
+        Log.e(">>>>>>>>>>>>", "updating album meta for these albums: ${metaUpdatedNeeded}")
+        mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
+            albumRepository.getAlbumByName(albumName)?.apply {
+                //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
+                if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
+            }
+
+            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
+            metaUpdatedNeeded.remove(albumName)
+        }
+
+        Log.e(">>>>>>>>>>>>", "updating content meta for these albums: ${contentMetaUpdatedNeeded}")
+        mutableListOf<String>().apply { addAll(contentMetaUpdatedNeeded) }.forEach { albumName->
+            albumRepository.getAlbumByName(albumName)?.apply { updateContentMeta(id, name) }
+
+            // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
+            contentMetaUpdatedNeeded.remove(albumName)
         }
     }
 
@@ -1068,7 +1055,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             // If local meta json file created successfully
-            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${Uri.encode(metaFileName)}", NCShareViewModel.MIME_TYPE_JSON, application)
+            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", NCShareViewModel.MIME_TYPE_JSON, application)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1076,6 +1063,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         return true
+    }
+
+    private fun updateContentMeta(albumId: String, albumName: String) {
+        // TODO simply return if album by albumName doesn't exist
+        //val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
+        //var content = "{\"lespas\":{\"photos\":["
+        var content = NCShareViewModel.PHOTO_META_HEADER
+        photoRepository.getPhotoMetaInAlbum(albumId).forEach {
+            //content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+            content += String.format(NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+        }
+        content = content.dropLast(1) + "]}}"
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
@@ -1114,17 +1114,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return result
     }
 
-    private fun updateContentMeta(albumId: String, albumName: String) {
-        // TODO simply return if album by albumName doesn't exist
-        //val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
-        //var content = "{\"lespas\":{\"photos\":["
-        var content = NCShareViewModel.PHOTO_META_HEADER
-        photoRepository.getPhotoMetaInAlbum(albumId).forEach {
-            //content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+    private fun checkConnection() {
+        if (sp.getBoolean(wifionlyKey, true)) {
+            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
         }
-        content = content.dropLast(1) + "]}}"
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
     }
 
     companion object {
