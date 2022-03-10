@@ -1031,14 +1031,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         }
                         else -> {
+                            // For GIF, AGIF, AWEBP cover
                             if (imagePhoto.coverBaseLine == Album.SPECIAL_COVER_BASELINE) type = TYPE_FULL
 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
-                                    withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+                                    if (type == TYPE_FULL) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                                        // Show cached low resolution bitmap first if loading full size bitmap
+                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
+                                        callBack?.onLoadComplete()
+                                    } else withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
                                     webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
                                 }
-                                imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(imagePhoto.photo.id))
+                                imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
+                                    if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                                        // Show cached low resolution bitmap first if we need to rotate the picture which will take times
+                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
+                                        callBack?.onLoadComplete()
+                                    }
+                                    cr.openInputStream(Uri.parse(imagePhoto.photo.id))
+                                }
                                 else -> try {
                                     File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                 } catch (e: FileNotFoundException) {
@@ -1049,16 +1061,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }?.use { sourceStream ->
                                 when (type) {
                                     TYPE_FULL, TYPE_QUATER -> {
-                                        // Show cached low resolution bitmap first
-                                        imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                                            //Log.e(">>>>>>>>>>>>", "show GRID version 1st")
-                                            withContext(Dispatchers.Main) {
-                                                view.setImageBitmap(it)
-                                                view.background = null
-                                            }
-                                            callBack?.onLoadComplete()
-                                        }
-
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
