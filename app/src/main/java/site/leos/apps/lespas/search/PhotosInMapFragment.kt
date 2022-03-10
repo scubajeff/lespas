@@ -188,7 +188,7 @@ class PhotosInMapFragment: Fragment() {
                                         (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                     }
                                     else {
-                                        imageLoaderModel.setImagePhoto(remotePhoto, v, NCShareViewModel.TYPE_GRID) {
+                                        imageLoaderModel.setImagePhoto(remotePhoto, v, NCShareViewModel.TYPE_IN_MAP) {
                                             (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                         }
                                     }
