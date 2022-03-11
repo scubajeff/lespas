@@ -19,7 +19,8 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.Photo
+import java.time.LocalDateTime
 
 class PublicationListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
@@ -46,10 +47,14 @@ class PublicationListFragment: Fragment() {
                 } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
-                shareModel.getPhoto(
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
+                shareModel.setImagePhoto(
+                    NCShareViewModel.RemotePhoto(Photo(
+                        id = share.cover.cover, name = share.cover.coverFileName, mimeType = share.cover.coverMimeType, width = share.cover.coverWidth, height = share.cover.coverHeight, orientation = share.cover.coverOrientation,
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                        eTag = Photo.ETAG_FAKE,
+                    ), share.sharePath, share.cover.coverBaseline),
                     view,
-                    ImageLoaderViewModel.TYPE_COVER
+                    NCShareViewModel.TYPE_COVER
                 )
             },
             { user, view -> shareModel.getAvatar(user, view, null) }
@@ -72,9 +77,9 @@ class PublicationListFragment: Fragment() {
             adapter = shareListAdapter
         }
 
-        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { shareListAdapter.submitList(it) })
-        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner, {
-            when(it) {
+        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { shareListAdapter.submitList(it) }
+        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner) {
+            when (it) {
                 0 -> {
                     activateRefresh?.isVisible = false
                     refreshProgress?.isVisible = true
@@ -94,7 +99,7 @@ class PublicationListFragment: Fragment() {
                     progressIndicator?.progress = it
                 }
             }
-        })
+        }
 /*
 
         lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}
@@ -144,12 +149,17 @@ class PublicationListFragment: Fragment() {
     class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentAlbumId = ""
             private val ivCover = itemView.findViewById<AppCompatImageView>(R.id.coverart)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val ivIndicator = itemView.findViewById<ImageView>(R.id.joint_album_indicator)
 
             fun bind(item: NCShareViewModel.ShareWithMe) {
-                imageLoader(item, ivCover)
+                if (currentAlbumId != item.albumId) {
+                    ivCover.setImageResource(0)
+                    imageLoader(item, ivCover)
+                    currentAlbumId = item.albumId
+                }
                 //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
                 tvTitle.apply {
                     text = item.albumName

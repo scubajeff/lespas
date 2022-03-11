@@ -12,23 +12,29 @@ import java.time.LocalDateTime
 @Entity(tableName = Album.TABLE_NAME)
 @Parcelize
 data class Album(
-    @PrimaryKey var id: String,
-    var name: String,
-    var startDate: LocalDateTime,
-    var endDate: LocalDateTime,
-    var cover: String,
-    var coverBaseline: Int,
-    var coverWidth: Int,
-    var coverHeight: Int,
+    @PrimaryKey var id: String = "",
+    var name: String = "",
+    var startDate: LocalDateTime = LocalDateTime.MAX,   // Default to MAX for smooth start of comparing and sorting
+    var endDate: LocalDateTime = LocalDateTime.MIN,     // Default to MIN for smooth start of comparing and sorting
+    var cover: String = NO_COVER,
+    var coverBaseline: Int = 0,
+    var coverWidth: Int = 0,
+    var coverHeight: Int = 0,
     var lastModified: LocalDateTime,
-    var sortOrder: Int,
-    var eTag: String,
-    var shareId: Int,
-    var syncProgress: Float,
+    var sortOrder: Int = BY_DATE_TAKEN_ASC,
+    var eTag: String = ETAG_NOT_YET_UPLOADED,
+    var shareId: Int = DEFAULT_FLAGS,
+    var syncProgress: Float = SYNC_COMPLETED,
+    var coverFileName: String = NO_COVER,
+    var coverMimeType: String = Photo.DEFAULT_MIMETYPE,
+    var coverOrientation: Int = 0,
+    var bgmId: String = NO_BGM,
+    var bgmETag: String = Photo.ETAG_NOT_YET_UPLOADED,
 ): Parcelable {
     companion object {
         const val TABLE_NAME = "albums"
 
+        // Sort order
         const val BY_DATE_TAKEN_ASC = 0
         const val BY_DATE_TAKEN_DESC = 1
         const val BY_DATE_MODIFIED_ASC = 2
@@ -43,8 +49,14 @@ data class Album(
         const val DEFAULT_FLAGS = REMOTE_ALBUM  // Default as remote album
 
         const val NO_COVER = ""
+        const val NO_BGM = ""
 
         const val ETAG_NOT_YET_UPLOADED = ""
+        const val ETAG_CAMERA_ROLL_ALBUM = "CR"
+
+        const val SYNC_COMPLETED = 1.0f
+
+        const val SPECIAL_COVER_BASELINE = -100 // Speical cover baseline value when setting animated GIF/WEBP and general GIF as cover
     }
 }
 
@@ -57,22 +69,13 @@ data class AlbumWithPhotos(
     var photos: List<Photo>
 )
 
-// TODO: upgrade DB
-data class AlbumWithCover(
-    @Embedded var album: Album,
-    @Relation(
-        parentColumn = "cover",
-        entityColumn = "id"
-    )
-    var coverPhoto: Photo?
-)
-
 @Parcelize
-data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int): Parcelable
+data class Cover(val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int): Parcelable
 data class IDandCover(val id: String, val cover: String)
 data class IDandETag(val id: String, val eTag: String)
 data class IDandName(val id: String, val name: String)
-data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int)
+data class IDandAttribute(val id: String, val name: String, val shareId: Int)
+data class Meta(val sortOrder: Int, val cover: String, val coverBaseline: Int, val coverWidth: Int, val coverHeight: Int, val coverFileName: String, val coverMimeType: String, val coverOrientation: Int)
 //data class AlbumDestination(val id: String, val name: String, val cover: String)
 
 @Dao
@@ -84,11 +87,6 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
     abstract fun getAllSortByEndDateDistinct(): Flow<List<Album>>
     fun getAllSortByEndDate() = getAllSortByEndDateDistinct().distinctUntilChanged()
-
-    // Hidden albums not included
-    @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE (shareId & ${Album.EXCLUDED_ALBUM} != ${Album.EXCLUDED_ALBUM}) AND name NOT LIKE '.%' ORDER BY endDate DESC")
-    abstract fun getAllWithCoverSortByEndDateDistinct(): Flow<List<AlbumWithCover>>
-    fun getAllWithCoverSortByEndDate() = getAllWithCoverSortByEndDateDistinct().distinctUntilChanged()
 
     @Query("SELECT * FROM ${Album.TABLE_NAME} WHERE id = :albumId LIMIT 1")
     abstract fun getThisAlbum(albumId: String): Album
@@ -106,10 +104,10 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("UPDATE ${Album.TABLE_NAME} SET name = :newName WHERE id = :id")
     abstract fun changeName(id: String, newName: String)
 
-    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :cover, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height WHERE id = :albumId")
-    abstract fun setCover(albumId: String, cover: String, coverBaseline: Int, width: Int, height: Int)
+    @Query("UPDATE ${Album.TABLE_NAME} SET cover = :coverId, coverBaseline = :coverBaseline, coverWidth = :width, coverHeight = :height, coverFileName = :filename, coverMimeType = :mimetype, coverOrientation = :orientation WHERE id = :albumId")
+    abstract fun setCover(albumId: String, coverId: String, coverBaseline: Int, width: Int, height: Int, filename: String, mimetype: String, orientation: Int)
 
-    @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight FROM ${Album.TABLE_NAME} WHERE id = :albumId")
+    @Query("SELECT sortOrder, cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation FROM ${Album.TABLE_NAME} WHERE id = :albumId")
     abstract fun getMeta(albumId: String): Meta
 
     @Transaction
@@ -137,7 +135,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun getAlbumTotal(): Int
 
     // Hidden albums not included
-    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != '' AND name NOT LIKE '.%'")
+    @Query("SELECT id, cover FROM ${Album.TABLE_NAME} WHERE eTag != '${Album.ETAG_NOT_YET_UPLOADED}' AND name NOT LIKE '.%'")
     abstract fun getAllSyncedAlbum(): List<IDandCover>
 
     // Including hidden ones
@@ -157,4 +155,11 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Transaction
     @Query("UPDATE ${Album.TABLE_NAME} SET shareId = (shareId & ~${Album.REMOTE_ALBUM}) | ${Album.EXCLUDED_ALBUM}, eTag = '${Album.ETAG_NOT_YET_UPLOADED}' WHERE id IN (:albumIds)")
     abstract fun setAsLocal(albumIds: List<String>)
+
+    @Query("UPDATE ${Album.TABLE_NAME} SET bgmId = :bgmId, bgmETag = :bgmETag WHERE id = :albumId")
+    abstract fun fixBGM(albumId: String, bgmId: String, bgmETag: String)
+
+    // Not including hidden album
+    @Query("SELECT id, name, shareId FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
+    abstract fun getAllAlbumAttribute(): List<IDandAttribute>
 }

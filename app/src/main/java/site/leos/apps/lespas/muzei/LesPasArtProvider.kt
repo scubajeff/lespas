@@ -5,10 +5,7 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapRegionDecoder
-import android.graphics.Rect
-import android.net.Uri
+import android.graphics.*
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -20,8 +17,8 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -155,7 +152,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                     val album = albumRepository.getThisAlbum(photo.albumId)
                     val dest = File(application.cacheDir, photo.id)
                     try {
-                        if (Tools.isRemoteAlbum(album)) {
+                        if (Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                             // Download remote image
                             val accounts = AccountManager.get(application).getAccountsByType(application.getString(R.string.account_type_nc))
                             val webDav: OkHttpWebDav
@@ -172,13 +169,19 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                         peekAuthToken(accounts[0], serverRoot),
                                         serverRoot,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                                        "${Tools.getLocalRoot(application)}/cache",
+                                        null,
                                         "LesPas_${application.getString(R.string.lespas_version)}",
-                                        PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
+                                        0,
                                     )
                                 }
 
-                                webDav.download("${resourceRoot}/${Uri.encode(album.name)}/${Uri.encode(photo.name)}", dest, null)
+                                webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", false, null).use {
+                                    var bitmap: Bitmap? = BitmapFactory.decodeStream(it)
+                                    if (bitmap != null && photo.orientation != 0) {
+                                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
+                                    }
+                                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, dest.outputStream())
+                                }
                             }
                         } else {
                             File("${Tools.getLocalRoot(application)}/${photo.id}").inputStream().use { source ->
@@ -187,7 +190,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 }
                             }
                         }
-                    } catch (e: Exception) {}
+                    } catch (e: Exception) { e.printStackTrace() }
 
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,

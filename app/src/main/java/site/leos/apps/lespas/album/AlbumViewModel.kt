@@ -18,7 +18,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     private val localRootFolder = Tools.getLocalRoot(application)
 
     val allAlbumsByEndDate: LiveData<List<Album>> = albumRepository.getAllAlbumsSortByEndDate().asLiveData()
-    val allAlbumsWithCoverByEndDate: LiveData<List<AlbumWithCover>> = albumRepository.getAllAlbumsWithCoverSortByEndDate().asLiveData()
     fun getAlbumDetail(albumId: String): LiveData<AlbumWithPhotos> = albumRepository.getAlbumDetail(albumId).asLiveData()
     fun getAllPhotoInAlbum(albumId: String): LiveData<List<Photo>> = photoRepository.getAlbumPhotosFlow(albumId).asLiveData()
     fun setSortOrder(albumId: String, sortOrder: Int) = viewModelScope.launch(Dispatchers.IO) { albumRepository.setSortOrder(albumId, sortOrder) }
@@ -26,7 +25,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     fun getThisAlbum(albumId: String): Album = albumRepository.getThisAlbum(albumId)
     fun getAllAlbumName(): List<String> = albumRepository.getAllAlbumName()
     val allHiddenAlbums: LiveData<List<Album>> = albumRepository.getAllHiddenAlbumsFlow().asLiveData()
-    fun getCoverFileName(album: Album): String = photoRepository.getPhotoName(album.cover)
 
     fun setAsRemote(albumIds: List<String>, asRemote: Boolean) {
         // Update local db
@@ -37,7 +35,7 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
             albumIds.forEach {
                 photoRepository.getAlbumPhotos(it).forEach { photo ->
                     // Remove all local media files (named after file id), for those media files pending upload, they will be remove after upload complete since album attribute has been changed to remote
-                    if (photo.eTag != Album.ETAG_NOT_YET_UPLOADED) {
+                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                         try { File(localRootFolder, photo.id).delete() } catch (e: Exception) { e.printStackTrace() }
                         if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) { e.printStackTrace() }
                     }

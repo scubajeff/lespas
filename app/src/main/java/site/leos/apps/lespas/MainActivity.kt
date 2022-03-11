@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import androidx.work.*
+import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.AlbumDetailFragment
@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Create album meta file for all synced albums if needed
-                WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
+                //WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
             }
 
             // Setup observer to fire up SyncAdapter
@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 */
-    // TODO no need to do this after several release updates later?
+/*
     class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
             val actionDao = LespasDatabase.getDatabase(context).actionDao()
@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
             val photoDao = LespasDatabase.getDatabase(context).photoDao()
 
             for (album in albumDao.getAllSyncedAlbum())
-                if (!File(Tools.getLocalRoot(context), "${album.id}.json").exists()) {
+                if (!File(Tools.getLocalRoot(context), "${album.id}_v2.json").exists()) {
                     if (photoDao.getETag(album.cover).isNotEmpty()) actionDao.updateAlbumMeta(album.id, photoDao.getName(album.cover))
                 }
 
@@ -194,6 +194,7 @@ class MainActivity : AppCompatActivity() {
             const val WORKER_NAME = "${BuildConfig.APPLICATION_ID}.META_FILE_MAINTENANCE_WORKER"
         }
     }
+*/
 
     companion object {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"

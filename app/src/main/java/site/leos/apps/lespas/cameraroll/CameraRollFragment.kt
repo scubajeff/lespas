@@ -60,6 +60,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.ShareReceiverActivity
@@ -106,7 +107,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var ignoreHide = true
     //private var sideTouchAreaWidth  = 0
 
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
@@ -137,8 +138,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (ignoreHide && showListFirst) ignoreHide = false
                 else bottomSheet.state = if (state ?: run { bottomSheet.state == BottomSheetBehavior.STATE_HIDDEN }) BottomSheetBehavior.STATE_COLLAPSED else BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.loadPhoto(photo, imageView!!, type) { startPostponedEnterTransition() }},
-            { view-> imageLoaderModel.cancelLoading(view) }
+            { photo, imageView, type-> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView!!, type) { startPostponedEnterTransition() }},
+            { view-> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
@@ -148,7 +149,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView, type) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
@@ -315,7 +316,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         lespasButton.setOnClickListener {
             copyTargetUris()
 
-            if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+            if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(lastSelection,true).show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
         }
         removeButton.setOnClickListener {
             copyTargetUris()
@@ -682,7 +683,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private fun updateMetaDisplay() {
         with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
             dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-            sizeTextView.text = Tools.humanReadableByteCountSI(eTag.toLong())
+            sizeTextView.text = Tools.humanReadableByteCountSI(shareId.toLong())
         }
     }
 
@@ -730,7 +731,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     try {
                         // Strip EXIF, rotate picture if needed
                         BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)))?.let { bmp->
-                            (if (photo.shareId != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.shareId.toFloat()) }, true) else bmp)
+                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
                                 .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                             uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
                         }
@@ -830,18 +831,25 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
                     val uri = Uri.parse(this)
-                    val photo = Photo(this, ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                    //val photo = Photo(this, FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
+                    val photo = Photo(
+                        id = this,      // fileUri shared in as photo's id in Camera Roll album
+                        albumId = FROM_CAMERA_ROLL,
+                        shareId = 0,     // Temporarily use shareId for saving file's size TODO maximum 4GB
+                        dateTaken = LocalDateTime.now(),
+                        lastModified = LocalDateTime.MIN,
+                    )
 
                     photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: "image/jpeg"
+                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
                     }
                     when (uri.scheme) {
                         "content" -> {
                             cr.query(uri, null, null, null, null)?.use { cursor ->
                                 cursor.moveToFirst()
                                 cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
-                                // Store file size in property eTag
-                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.eTag = it }
+                                // Store file size in property shareId
+                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() }
                             }
                         }
                         "file" -> {
@@ -853,9 +861,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (photo.mimeType.startsWith("video/")) {
                         MediaMetadataRetriever().run {
                             setDataSource(application, uri)
-                            photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
-                            photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
                             photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
+                            //photo.width = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 0
+                            //photo.height = extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 0
+                            extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { photo.width = it.toInt() }
+                            extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { photo.height = it.toInt() }
                             release()
                         }
                     } else {
@@ -873,8 +883,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                     }
                                 } ?: LocalDateTime.now()
 
-                                // Store orientation in property shareId
-                                photo.shareId = exif.rotationDegrees
+                                photo.orientation = exif.rotationDegrees
+                                exif.latLong?.let {
+                                    photo.latitude = it[0]
+                                    photo.longitude = it[1]
+                                }
+                                photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                                exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { photo.bearing = it.toDouble() }
+                                if (photo.bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { photo.bearing = it.toDouble() }
                             }
                         }
 
@@ -931,16 +947,21 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
             private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
 
-            fun bind(item: Photo, isActivated: Boolean) {
+            fun bind(item: Photo) {
                 itemView.let {
-                    it.isActivated = isActivated
+                    it.isActivated = selectionTracker.isSelected(item.id)
 
                     with(ivPhoto) {
-                        imageLoader(item, this, ImageLoaderViewModel.TYPE_GRID)
+                        if (currentId != item.id) {
+                            this.setImageResource(0)
+                            imageLoader(item, this, NCShareViewModel.TYPE_GRID)
+                            currentId = item.id
+                        }
 
                         if (this.isActivated) {
                             colorFilter = selectedFilter
@@ -952,6 +973,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
                     }
+
                     ivPlayMark.visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
                 }
             }
@@ -994,7 +1016,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             else HorizontalDateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is MediaViewHolder) holder.bind(currentList[position], selectionTracker.isSelected(currentList[position].id))
+            if (holder is MediaViewHolder) holder.bind(currentList[position])
             //else if (holder is DateViewHolder) holder.bind(currentList[position])
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
         }
@@ -1007,7 +1029,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 for (media in this) {
                     if (media.dateTaken.toLocalDate() != currentDate) {
                         currentDate = media.dateTaken.toLocalDate()
-                        listGroupedByDate.add(Photo("", ImageLoaderViewModel.FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
+                        // Add a fake photo item by taking default value for nearly all properties, denotes a date seperator
+                        listGroupedByDate.add(Photo(albumId = FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
+                        //listGroupedByDate.add(Photo("", FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
                     }
                     listGroupedByDate.add(media)
                 }
@@ -1061,10 +1085,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     companion object {
+        //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
+        const val FROM_CAMERA_ROLL = "0"
+
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
 
+        const val TAG_FROM_CAMERAROLL_ACTIVITY = "TAG_DESTINATION_DIALOG"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "CAMERAROLL_ACQUIRING_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"

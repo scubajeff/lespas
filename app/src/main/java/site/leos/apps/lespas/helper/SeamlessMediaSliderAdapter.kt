@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.publication.NCShareViewModel
 import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -96,7 +97,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
-                imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
                 maximumScale = 5.0f
                 mediumScale = 2.5f
@@ -147,7 +148,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
-                imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 setOnClickListener { clickListener(null) }
                 ViewCompat.setTransitionName(this, transitionName)
             }
@@ -183,7 +184,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
                 // Need to call imageLoader here to start postponed enter transition
                 ViewCompat.setTransitionName(this, video.transitionName)
-                imageLoader(item, null, ImageLoaderViewModel.TYPE_NULL)
+                imageLoader(item, null, NCShareViewModel.TYPE_NULL)
             }
 
             clVideoViewContainer.setOnClickListener { clickListener(!videoView.isControllerVisible) }

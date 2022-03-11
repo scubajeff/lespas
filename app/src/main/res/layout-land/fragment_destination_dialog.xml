@@ -52,6 +52,7 @@
             app:layout_constraintTop_toBottomOf="@id/move_or_copy"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:orientation="horizontal"
+            android:scrollbars="none"
             tools:listitem="@layout/recyclerview_item_clipdata"/>
 
         <View

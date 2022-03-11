@@ -82,7 +82,7 @@
     <string name="item_datedesc">Date Décroissante</string>
     <string name="item_nameasc">Nom Croissante</string>
     <string name="item_namedesc">Nom Décroissante</string>
-    <string name="button_text_edit_in_snapseed">Modifier dans Snapseed</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Remplacer</string>
     <string name="item_camera_roll">Rouleau de Caméra</string>
     <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
     <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier \'DCIM/%1$s\'.</string>
@@ -195,10 +195,11 @@
     <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
     <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
     <string name="to_new_album">Au nouvel album :</string>
-    <string name="clear_cache_title">Effacer le cache des albums distants</string>
+    <string name="clear_cache_title">Effacer le cache de l\'album distants</string>
     <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Comment procéder ?</string>
     <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
     <string name="cache_size_title">Définir la taille du cache de l\'album distant</string>
     <string name="cache_size_summary">Taille actuelle du cache : %1$dMB</string>
     <string name="cache_size_setting_hint">Taille du cache :</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Ajouter</string>
 </resources>

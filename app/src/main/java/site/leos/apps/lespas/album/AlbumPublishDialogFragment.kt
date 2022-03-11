@@ -75,7 +75,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
             val currentRecipients = currentShare.with
             val newRecipients = mutableListOf<NCShareViewModel.Recipient>().apply { for (s in selectedSharees) add(NCShareViewModel.Recipient("", if (publicationTypeToggleGroup.checkedButtonId == R.id.joint_album) NCShareViewModel.PERMISSION_JOINT else NCShareViewModel.PERMISSION_CAN_READ, 0L, s)) }
             val permissionUnChanged = if (currentShare.with.isNotEmpty() && newRecipients.isNotEmpty()) currentShare.with[0].permission == newRecipients[0].permission else false
-            val removeRecipients = currentRecipients.toMutableList().apply {
+            val recipientsToRemove = currentRecipients.toMutableList().apply {
                 if (permissionUnChanged) {
                     for (old in currentRecipients) {
                         for (new in newRecipients) {
@@ -84,7 +84,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                     }
                 }
             }
-            val addRecipients = newRecipients.toMutableList().apply {
+            val recipientsToAdd = newRecipients.toMutableList().apply {
                 if (permissionUnChanged) {
                     for (new in newRecipients) {
                         for (old in currentRecipients) {
@@ -93,7 +93,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                     }
                 }
             }
-            publishModel.updatePublish(NCShareViewModel.ShareByMe(currentShare.fileId, currentShare.folderName, addRecipients.toMutableList()), removeRecipients)
+            publishModel.updatePublish(NCShareViewModel.ShareByMe(currentShare.fileId, currentShare.folderName, recipientsToAdd.toMutableList()), recipientsToRemove)
 
             dismiss()
         }

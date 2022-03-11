@@ -20,7 +20,8 @@
             android:layout_marginTop="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
             android:hint="@string/cache_size_setting_hint"
-            android:textColorHint="@color/color_secondary"
+            android:textColorHint="?attr/colorSecondary"
+            app:hintTextColor="?attr/colorSecondary"
             app:helperTextEnabled="true"
             app:helperText="@string/msg_restart_to_take_effect"
             app:suffixText="MB"
@@ -31,6 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="none"
+                android:dropDownHeight="240dp"
                 tools:ignore="LabelFor" />
 
         </com.google.android.material.textfield.TextInputLayout>

@@ -9,7 +9,6 @@ class AlbumRepository(application: Application){
     private val albumDao = LespasDatabase.getDatabase(application).albumDao()
 
     fun getAllAlbumsSortByEndDate(): Flow<List<Album>> = albumDao.getAllSortByEndDate()
-    fun getAllAlbumsWithCoverSortByEndDate(): Flow<List<AlbumWithCover>> = albumDao.getAllWithCoverSortByEndDate()
     fun getThisAlbum(albumId: String): Album = albumDao.getThisAlbum(albumId)
     fun getThisAlbumList(albumId: String): List<Album> = albumDao.getThisAlbumList(albumId)
     fun getAlbumByName(albumName: String): Album? = albumDao.getAlbumByName(albumName)
@@ -17,7 +16,7 @@ class AlbumRepository(application: Application){
     fun update(album: Album){ albumDao.update(album) }
     fun deleteById(albumId: String) { albumDao.deleteById(albumId) }
     fun changeName(albumId: String, newName: String) = albumDao.changeName(albumId, newName)
-    fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight) }
+    fun setCover(albumId: String, cover: Cover) { albumDao.setCover(albumId, cover.cover, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverFileName, cover.coverMimeType, cover.coverOrientation) }
     fun getMeta(albumId: String): Meta = albumDao.getMeta(albumId)
     fun deleteAlbums(albums: List<Album>) { albumDao.delete(albums) }
     fun getAllAlbumIdAndETag(): List<IDandETag> = albumDao.getAllIdAndETag()
@@ -32,4 +31,6 @@ class AlbumRepository(application: Application){
     fun getAllHiddenAlbumsFlow(): Flow<List<Album>> = albumDao.getAllHiddenAlbumsFlow()
     fun getAllHiddenAlbumIds(): List<String> = albumDao.getAllHiddenAlbumIds()
     fun setAsRemote(albumIds: List<String>, asRemote: Boolean) { if (asRemote) albumDao.setAsRemote(albumIds) else albumDao.setAsLocal(albumIds) }
+    fun fixBGM(albumId: String, bgmId: String, bgmETag: String) { albumDao.fixBGM(albumId, bgmId, bgmETag) }
+    fun getAllAlbumAttribute(): List<IDandAttribute> = albumDao.getAllAlbumAttribute()
 }

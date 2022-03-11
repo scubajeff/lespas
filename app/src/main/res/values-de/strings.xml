@@ -50,7 +50,7 @@
     <string name="button_text_share">Teilen</string>
     <string name="button_text_set_as">Als Hintergrundbild</string>
     <string name="button_text_info">Informationen</string>
-    <string name="button_text_edit_in_snapseed">In Snapseed bearbeiten</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Ersetzen</string>
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">Neues Albumcover wurde gesetzt.</string>
@@ -253,4 +253,5 @@
     <string name="cache_size_title">Größe des Remote-Album-Caches festlegen</string>
     <string name="cache_size_summary">Aktuelle Cache-Größe: %1$dMB</string>
     <string name="cache_size_setting_hint">Größe des Cache:</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Hinzufügen</string>
 </resources>

@@ -72,8 +72,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },
-            { media, imageView, type-> if (type == ImageLoaderViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.getPhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
-            { view-> shareModel.cancelGetPhoto(view) }
+            { media, imageView, type-> if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition() else shareModel.setImagePhoto(media, imageView!!, type) { startPostponedEnterTransition() }},
+            { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             @Suppress("UNCHECKED_CAST")
@@ -82,7 +82,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 previousOrientationSetting = requireActivity().requestedOrientation
                 if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false))
-                    requireActivity().requestedOrientation = if (this[0].width > this[0].height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    requireActivity().requestedOrientation = if (this[0].photo.width > this[0].photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
         }
 
@@ -217,6 +217,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+        }.apply {
+            addListener(MediaSliderTransitionListener(slider))
         }
 
         return view
@@ -226,14 +228,14 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onViewCreated(view, savedInstanceState)
 
         // When DestinationDialog returns
-        destinationModel.getDestination().observe(viewLifecycleOwner, { album ->
+        destinationModel.getDestination().observe(viewLifecycleOwner) { album ->
             album?.let {
                 shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it)
 
                 // If destination is user's own album, trigger sync with server
                 if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) acquired = true
             }
-        })
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -338,7 +340,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
             shareModel.savePhoto(requireContext(), this)
             hideHandler.postDelayed({
-                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.path.substringAfterLast('/')), Snackbar.LENGTH_LONG)
+                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG)
                     .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
                     .setBackgroundTint(resources.getColor(R.color.color_primary, null))
                     .setTextColor(resources.getColor(R.color.color_text_light, null))
@@ -349,14 +351,14 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$path"), mimeType, width, height, fileId) }
-        override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).fileId
-        override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).mimeType
+        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
+        override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
+        override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
-        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
-        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
     }
 
     companion object {

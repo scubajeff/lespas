@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/option_menu_in_map"
+        android:title="@string/option_menu_in_map"
+        android:orderInCategory="97"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_map_24"
+        android:visible="false"
+        android:enabled="false" />
     <item
         android:id="@+id/option_menu_add_photo"
         android:title="@string/fab_add_photos"

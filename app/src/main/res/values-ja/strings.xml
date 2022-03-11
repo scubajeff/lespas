@@ -29,7 +29,7 @@
     <string name="button_text_set_cover">アルバムカバー</string>
     <string name="button_text_set_as">壁紙設定</string>
     <string name="button_text_info">写真情報</string>
-    <string name="button_text_edit_in_snapseed">Snapseedでの編集</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - 置き換え</string>
     <string name="toast_cover_applied">アルバムジャケットを更新しました。</string>
     <string name="toast_cover_set_canceled">操作がキャンセルされました。</string>
     <string name="settings_title">設定</string>
@@ -201,4 +201,5 @@
     <string name="cache_size_title">リモートアルバムキャッシュサイズを設定する</string>
     <string name="cache_size_summary">現在のキャッシュ・サイズ: %1$dMB</string>
     <string name="cache_size_setting_hint">キャッシュサイズ。</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
 </resources>
