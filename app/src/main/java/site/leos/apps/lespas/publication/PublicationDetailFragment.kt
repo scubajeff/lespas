@@ -241,6 +241,17 @@ class PublicationDetailFragment: Fragment() {
                 addPhotoMenuItem?.isEnabled = true
                 addPhotoMenuItem?.isVisible = true
             }
+
+            run map@{
+                mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
+                    if (it.photo.latitude != Photo.NO_GPS_DATA) {
+                        mapMenuItem?.isEnabled = true
+                        mapMenuItem?.isVisible = true
+
+                        return@map
+                    }
+                }
+            }
         }
     }
 

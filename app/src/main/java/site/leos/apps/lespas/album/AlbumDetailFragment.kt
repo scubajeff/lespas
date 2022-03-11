@@ -506,6 +506,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)
         mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+
+        run map@{
+            mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
+                if (it.latitude != Photo.NO_GPS_DATA) {
+                    mapOptionMenu?.isVisible = true
+
+                    return@map
+                }
+            }
+        }
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
