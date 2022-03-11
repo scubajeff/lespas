@@ -169,10 +169,6 @@ class PublicationDetailFragment: Fragment() {
                         mapMenuItem?.isVisible = true
                         mapMenuItem?.isEnabled = true
 
-                        // Try to download publication's BGM
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), false)
-                        }
                         return@submitList
                     }
                 }
@@ -183,7 +179,11 @@ class PublicationDetailFragment: Fragment() {
             }
         }
 
-        lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
+        lifecycleScope.launch(Dispatchers.IO) {
+            shareModel.getRemotePhotoList(share, false)
+            // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
+            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, useCache = false)
+        }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
@@ -211,6 +211,8 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
+        try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (e:Exception) {}
+
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE
             customView = null

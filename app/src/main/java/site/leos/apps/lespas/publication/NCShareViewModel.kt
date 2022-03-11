@@ -845,9 +845,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun downloadFile(media: String, dest: File, stripExif: Boolean): Boolean {
+    fun downloadFile(media: String, dest: File, stripExif: Boolean, useCache: Boolean = true): Boolean {
         return try {
-            webDav.getStream("${resourceRoot}${media}", true, null).use { remote ->
+            webDav.getStream("${resourceRoot}${media}", useCache, null).use { remote ->
                 if (stripExif) BitmapFactory.decodeStream(remote)?.compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
                 else dest.outputStream().use { local -> remote.copyTo(local, 8192) }
             }
