@@ -1027,7 +1027,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateMeta() {
-        Log.e(">>>>>>>>>>>>", "updating album meta for these albums: ${metaUpdatedNeeded}")
         mutableListOf<String>().apply { addAll(metaUpdatedNeeded) }.forEach { albumName->
             albumRepository.getAlbumByName(albumName)?.apply {
                 //if (!cover.contains('.')) updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight), photoRepository.getPhotoName(cover), sortOrder)
@@ -1038,7 +1037,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             metaUpdatedNeeded.remove(albumName)
         }
 
-        Log.e(">>>>>>>>>>>>", "updating content meta for these albums: ${contentMetaUpdatedNeeded}")
         mutableListOf<String>().apply { addAll(contentMetaUpdatedNeeded) }.forEach { albumName->
             albumRepository.getAlbumByName(albumName)?.apply { updateContentMeta(id, name) }
 
