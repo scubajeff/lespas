@@ -612,7 +612,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         with(PreferenceManager.getDefaultSharedPreferences(context)) {
             isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
             snapseedEditAction?.isVisible = isSnapseedEnabled
-            if (isSnapseedEnabled) snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
+
+            if (isSnapseedEnabled) {
+                if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_24)
+                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_replace)
+                } else {
+                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24)
+                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_add)
+                }
+            }
         }
 
         return true

@@ -82,7 +82,7 @@
     <string name="item_datedesc">按時間倒序</string>
     <string name="item_nameasc">按名稱順序</string>
     <string name="item_namedesc">按名稱倒序</string>
-    <string name="button_text_edit_in_snapseed">Snapseed修圖</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed修圖 - 替換</string>
     <string name="item_camera_roll">相機相冊</string>
     <string name="cameraroll_backup_title">備份本地相機相冊</string>
     <string name="cameraroll_backup_summary">新拍攝的照片和視頻將被自動備份到伺服器的DCIM/%1$s目錄下。</string>
@@ -201,4 +201,5 @@
     <string name="cache_size_title">設定遠程相冊圖片快取</string>
     <string name="cache_size_summary">當前快取大小為：%1$dMB</string>
     <string name="cache_size_setting_hint">快取大小</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed修圖 - 新建</string>
 </resources>

@@ -82,7 +82,7 @@
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <string name="selected_count">%1$d seleccionado</string>
-    <string name="button_text_edit_in_snapseed">Editar en Snapseed</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta \'DCIM/%1$s\'.</string>
@@ -201,4 +201,5 @@
     <string name="cache_size_title">Establecer el tamaño de la caché del álbum remoto</string>
     <string name="cache_size_summary">Tamaño actual de la caché: %1$dMB</string>
     <string name="cache_size_setting_hint">Tamaño de la caché:</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
 </resources>
