@@ -268,7 +268,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
-        recyclerView.doOnLayout { startPostponedEnterTransition() }
+        if (scrollTo.isEmpty()) recyclerView.doOnLayout { startPostponedEnterTransition() }
 
         with(recyclerView) {
             // Special span size to show cover at the top of the grid
