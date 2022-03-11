@@ -181,7 +181,7 @@ class PhotosInMapFragment: Fragment() {
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
-                            mView.apply {
+                            mView?.apply {
                                 findViewById<ImageView>(R.id.photo)?.let { v ->
                                     if (remotePhoto.remotePath.isEmpty()) {
                                         v.setImageDrawable(marker.image)
