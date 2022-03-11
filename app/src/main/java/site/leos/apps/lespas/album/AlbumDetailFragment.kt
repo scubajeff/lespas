@@ -98,7 +98,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
 
     // Update album meta only when fragment destroy
-    private var sortOrderChanged = false
+    private var saveSortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
@@ -128,7 +128,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         savedInstanceState?.let {
             lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
-            sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
+            saveSortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
@@ -478,7 +478,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onSaveInstanceState(outState)
         outState.putStringArray(SELECTION, lastSelection.toTypedArray())
         outState.putStringArray(SHARED_SELECTION, sharedSelection.toTypedArray())
-        outState.putBoolean(SORT_ORDER_CHANGED, sortOrderChanged)
+        outState.putBoolean(SORT_ORDER_CHANGED, saveSortOrderChanged)
     }
 
     override fun onDestroyView() {
@@ -492,7 +492,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroy() {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
+        if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
@@ -658,8 +658,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun updateSortOrder(newOrder: Int) {
+        // Scroll to the top after sort, since cover photo has album's id as it's id, scroll to this id means scroll to the top
+        scrollTo = album.id
+
         albumModel.setSortOrder(album.id, newOrder)
-        sortOrderChanged = true
+        saveSortOrderChanged = true
     }
 
     private fun hasExifInSelection(): Boolean {
@@ -938,6 +941,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             )
             // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+            // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
             album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
