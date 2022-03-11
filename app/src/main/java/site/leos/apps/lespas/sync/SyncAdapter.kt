@@ -723,12 +723,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                                 else -> {
                                     // Version 1 content meta file, won't work for latest version quick sync, fall back to normal sync
-                                    //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "version 1 meta json found, quit quick sync")
+                                    // Should mark content meta update here, since older client might change json file even without modified any content, like when publish an album
+                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
                                 }
                             }
                         }
                     } else {
-                        //Log.e(">>>>>>>>>", "there are updates to album ${changedAlbum.name} done on server, quit quick sync")
+                        // There are updates done on server, quit quick sync
+                        contentMetaUpdatedNeeded.add(changedAlbum.name)
                     }
                 }
 
@@ -1070,12 +1072,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
-        // TODO simply return if album by albumName doesn't exist
-        //val albumId = id ?: (albumRepository.getAlbumByName(albumName)?.id ?: run { return })
-        //var content = "{\"lespas\":{\"photos\":["
         var content = NCShareViewModel.PHOTO_META_HEADER
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
-            //content += String.format(NCShareViewModel.PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
             content += String.format(NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
         content = content.dropLast(1) + "]}}"

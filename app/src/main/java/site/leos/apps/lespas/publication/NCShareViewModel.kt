@@ -423,13 +423,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Add sharees
                 if (album.with.isNotEmpty()) {
-/*
+                    // TODO no need to create content meta here since it's always maintained and uploaded on every update, but since client lower than release 2.5.0 will update the meta here, need to keep this
+                    //    here for a while as a counter measure
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
                         webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
                     }
-*/
 
                     createShares(listOf(album))
                 }
