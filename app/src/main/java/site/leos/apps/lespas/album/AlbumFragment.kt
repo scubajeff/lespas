@@ -197,7 +197,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         recyclerView = view.findViewById(R.id.albumlist)
         fab = view.findViewById(R.id.fab)
 
-        postponeEnterTransition()
+        if (!(savedInstanceState == null && doSync)) postponeEnterTransition()
         view.doOnPreDraw {
             startPostponedEnterTransition()
             if (savedInstanceState == null && doSync) {
