@@ -702,6 +702,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int) {
+            val sortList = albums == null
             val sortedList = mutableListOf<Album>()
             val sourceList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
 
@@ -725,7 +726,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
 
             submitList(sortedList) {
-                sortListener()
+                if (sortList) sortListener()
             }
         }
 
