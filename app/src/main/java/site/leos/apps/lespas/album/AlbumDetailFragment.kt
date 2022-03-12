@@ -65,6 +65,7 @@ import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.lang.Runnable
 import java.time.Duration
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -132,6 +133,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
+            album.id,
             { view, position ->
                 currentPhotoModel.run {
                     setCurrentPosition(position)
@@ -820,8 +822,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
-    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
         var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<String>
@@ -830,6 +832,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private var recipientText = ""
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
             private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
@@ -839,7 +842,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             fun bindViewItem(cover: Photo) {
                 with(itemView) {
-                    imageLoader(cover.copy(id = album.cover), ivCover, NCShareViewModel.TYPE_COVER)
+                    if (currentCover.name != cover.name || currentCover.eTag != cover.eTag || currentCover.bearing != cover.bearing) {
+                        imageLoader(cover.copy(id = album.cover), ivCover, NCShareViewModel.TYPE_COVER)
+                        currentCover = cover
+                    }
 
                     tvTitle.apply {
                         text = album.name
@@ -951,7 +957,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             )
             // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
             // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
-            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, latitude = Photo.NO_GPS_DATA)) }
+            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
 
@@ -998,9 +1004,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
+    class PhotoDiffCallback(private val albumId: String): DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean =
+            if (oldItem.id == albumId) oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing
+            else oldItem.name == newItem.name && oldItem.eTag == newItem.eTag
     }
 
     companion object {

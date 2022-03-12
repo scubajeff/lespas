@@ -764,7 +764,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     class AlbumDiffCallback: DiffUtil.ItemCallback<Album>() {
         override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress && oldItem.shareId == newItem.shareId
+        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.coverFileName == newItem.coverFileName && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress && oldItem.shareId == newItem.shareId
     }
 
     class UnhideDialogFragment: LesPasDialogFragment(R.layout.fragment_unhide_dialog) {

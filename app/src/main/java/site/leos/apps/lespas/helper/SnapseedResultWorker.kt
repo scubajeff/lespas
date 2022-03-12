@@ -104,6 +104,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                     )
                     photoDao.update(newPhoto)
+                    if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
                     //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
@@ -121,6 +122,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         // First rename file to new filename on server, then in next ACTION_ADD_FILES_ON_SERVER action, overwrite it with new edition. This way, file's fileId on server will not change
                         add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
+                        if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, "", "", "", System.currentTimeMillis(), 1))
 /*
                         // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
                         add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))

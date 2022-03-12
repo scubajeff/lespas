@@ -123,6 +123,9 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("UPDATE ${Album.TABLE_NAME} SET cover = :newCoverId WHERE id = :albumId")
     abstract fun fixCoverId(albumId: String, newCoverId: String)
 
+    @Query("UPDATE ${Album.TABLE_NAME} SET coverFileName = :newCoverFileName WHERE id = :albumId")
+    abstract fun fixCoverName(albumId: String, newCoverFileName: String)
+
     @Query("UPDATE ${Album.TABLE_NAME} SET sortOrder = :sortOrder WHERE id = :albumId")
     abstract fun setSortOrder(albumId: String, sortOrder: Int)
 
