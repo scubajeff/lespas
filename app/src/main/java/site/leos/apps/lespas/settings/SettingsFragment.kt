@@ -117,6 +117,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Set content below action toolbar
+        (requireActivity() as AppCompatActivity).supportActionBar?.let { view.setPadding(0, it.height ,0, 0) }
+
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 

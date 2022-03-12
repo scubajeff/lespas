@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -46,7 +45,6 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
@@ -152,9 +150,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
                     else {
-                        exitTransition = MaterialContainerTransform().apply {
+                        exitTransition = MaterialElevationScale(false).apply {
                             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                            scrimColor = Color.TRANSPARENT
+                            excludeTarget(imageView, true)
+                            //excludeTarget(android.R.id.statusBarBackground, true)
+                            //excludeTarget(android.R.id.navigationBarBackground, true)
                         }
                         reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
 
@@ -630,7 +630,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                             // When syncing with server, don't repeatedly load the same image
                             coverImageview.setImageResource(0)
                             imageLoader(album, coverImageview)
-                            ViewCompat.setTransitionName(coverImageview, album.id)
+                            ViewCompat.setTransitionName(coverImageview, if (album.id == CameraRollFragment.FROM_CAMERA_ROLL) album.cover else album.id)
                         }
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {

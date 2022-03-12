@@ -24,7 +24,7 @@
 
         <!-- Customize your theme here. -->
         <item name="android:windowActivityTransitions">true</item>
-        <item name="android:windowSharedElementsUseOverlay">false</item>
+        <item name="windowActionBarOverlay">true</item>
 
         <!-- ActionMode -->
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>

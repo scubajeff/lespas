@@ -6,6 +6,7 @@
     android:id="@+id/category_list"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="?attr/actionBarSize"
     android:paddingLeft="@dimen/extra_padding"
     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
     app:spanCount="@integer/search_category_grid_span_count"

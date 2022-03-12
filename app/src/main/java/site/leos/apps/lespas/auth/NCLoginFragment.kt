@@ -29,6 +29,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -110,6 +111,9 @@ class NCLoginFragment: Fragment() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Set content below action toolbar if launched from Setting
+        if (reLogin) (requireActivity() as AppCompatActivity).supportActionBar?.let { view.setPadding(0, it.height ,0, 0) }
 
         val root = view.findViewById<ConstraintLayout>(R.id.layout_background)
         welcomePage = view.findViewById(R.id.welcome_page)

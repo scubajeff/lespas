@@ -96,6 +96,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var savedStatusBarColor = 0
     private var savedNavigationBarColor = 0
     private var savedNavigationBarDividerColor = 0
+    private var previousTitleBarDisplayOption = 0
 
     private var viewReCreated = false   // Flag for resuming video playing after regained window focus
 
@@ -164,7 +165,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }.addListener(object: Transition.TransitionListener {
+            // Prevent viewpager from showing content before transition ends
             override fun onTransitionStart(transition: Transition) {
                 mediaPager.findChildViewUnder(500.0f, 500.0f)?.visibility = View.INVISIBLE
             }
@@ -275,6 +278,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
 
         playerViewModel.setWindow(requireActivity().window)
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+            previousTitleBarDisplayOption = savedInstanceState?.run { getInt(KEY_DISPLAY_OPTION) } ?: displayOptions
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_camera_roll, container, false)
@@ -283,11 +293,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         viewReCreated = true
 
-        (requireActivity() as AppCompatActivity).supportActionBar!!.hide()
-
         postponeEnterTransition()
-
-        view.setBackgroundColor(Color.BLACK)
 
         divider = view.findViewById(R.id.divider)
         dateTextView = view.findViewById(R.id.date)
@@ -621,6 +627,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onSaveInstanceState(outState)
         outState.putString(KEY_SCROLL_TO, mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id)
         outState.putParcelableArrayList(KEY_LAST_SELECTION, lastSelection)
+        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
     }
 
     override fun onDestroyView() {
@@ -631,7 +638,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onDestroy() {
         (requireActivity() as AppCompatActivity).run {
-            supportActionBar!!.show()
+            supportActionBar?.apply {
+                displayOptions = previousTitleBarDisplayOption
+                setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
+            }
             with(window) {
                 statusBarColor = savedStatusBarColor
                 navigationBarColor = savedNavigationBarColor
@@ -1099,6 +1109,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val DELETE_REQUEST_KEY = "CAMERA_ROLL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
+
+        private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
         @JvmStatic
         @JvmOverloads

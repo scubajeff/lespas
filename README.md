@@ -11,15 +11,16 @@ Features:
 - Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
 - Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
-- Share albums with other Nextcloud users
-- Joint album which you and other Nextcloud users can edit together
+- Share albums and album slideshow with other Nextcloud users
+- Joint album, which you and other Nextcloud users can edit together
 - Search for photos by objects with AI
-- Search photos by location, show album in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
+- Search photos by location, support album slideshow in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
 - Integrate with Snapseed for photo editing on mobile devices
 - Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app, act as a source of Today in History
 - Share to social networks，option provided to strip photo's EXIF before sharing
 - Theme design inspired by Wes Anderson's works
-- All files saved in App's private storage, stop being scanned by malicious apps
+- Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage  
+- Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
 - Open-source
 
 <p float="left">
@@ -58,10 +59,11 @@ I believe when someone start searching his/her memory for a moment in the past, 
 Les Pas use folder to group photos on the server, e.g., each album in Les Pas app has a one to one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folder, and Nextcloud has it's own file tagging support too. But not every picture format support tagging, that makes tagging picture file a feature that will heavily rely on platform speicific functions. I would like my data (and yours too) to be platform neutual instead.
 
 ### Why does Les Pas use a lot of storage space?
-Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space (I have 10GB myself) in Android's setting menu.<br> 
+If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br> 
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
 **For privacy sake, stop using "/Pictures" folder in your phone's internal/external storage.**<br><br>
-Since Les Pas use app's private storage to stop photos, if you reinstall the app, albums/photos need to be downloaded again from server.
+Since release 2.5.0, Les Pas support managing albums remotely. With Remote Album, all photo's and video's media file are stored in Nextcloud server, this will dramatically reduces app's storage footprint on mobile device.<br>
+Nextcloud has a reputation of sluggish image processing, to make Remote Album work, you need to setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024. Here is an [excellent document](https://rayagainstthemachine.net/linux%20administration/nextcloud-photos/) on how to do it. 
 
 ### About server using self-signed certificate
 You need to install your certificates in your phone first. A quick search on instructions points to <a href=https://aboutssl.org/how-to-create-and-import-self-signed-certificate-to-android-device/>here</a> and <a href=https://proxyman.io/blog/2020/09/Install-And-Trust-Self-Signed-Certificate-On-Android-11.html>here</a>.
@@ -77,5 +79,5 @@ If synchronization doesn't seem to work, especially when you phone is a Chinese 
 To enable publishing (e.g. sharing album to other users on Nextcloud server), there are several things you need to take care beforehand:
 - Make sure your are using LesPas version 2.4.1+
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. User not belongs to any group can not download sharee list from server, this is a limitation of Nextcloud Sharee API
-- Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
+- Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
 - Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [document](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for detail.
