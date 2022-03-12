@@ -1062,9 +1062,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 when (type) {
                                     TYPE_FULL, TYPE_QUATER -> {
                                         when {
-                                            (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") -> {
+                                            (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
+                                            (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes())))
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
+                                                        if (this is AnimatedImageDrawable) {
+                                                            if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                                            start()
+                                                        }
+                                                    }
                                                     null
                                                 } else {
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
@@ -1147,14 +1153,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
-                    animatedDrawable?.let {
-                        view.setImageDrawable(it.apply {
-                            (this as AnimatedImageDrawable).apply {
-                                if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                                start()
-                            }
-                        })
-                    } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
+                    animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
                     //view.imageAlpha = 255
 
                     // Stop loading indicator
