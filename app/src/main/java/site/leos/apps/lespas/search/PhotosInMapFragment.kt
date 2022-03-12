@@ -164,7 +164,7 @@ class PhotosInMapFragment: Fragment() {
                 var poi: GeoPoint
                 val points = arrayListOf<IGeoPoint>()
                 val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
-                spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt()
+                spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt() - (requireActivity() as AppCompatActivity).supportActionBar!!.height
 
                 if (locality != null) remotePhoto = ViewModelProvider(
                     requireParentFragment(),
