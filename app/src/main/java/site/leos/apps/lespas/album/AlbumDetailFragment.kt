@@ -156,7 +156,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }}
+            { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -822,7 +823,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
         var photos = mutableListOf<Photo>()
@@ -833,7 +834,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
-            private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
+            private val ivCover = itemView.findViewById<ImageView>(R.id.photo)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val tvTotal = itemView.findViewById<TextView>(R.id.total)
@@ -939,6 +940,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
             if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position])
             else (holder as CoverViewHolder).bindViewItem(currentList.first())  // List will never be empty, no need to check for NoSuchElementException
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {

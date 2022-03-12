@@ -82,7 +82,8 @@ class SearchResultFragment : Fragment() {
                         .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
-            { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
+            { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply {
             // Get album's name for display
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
@@ -248,7 +249,7 @@ class SearchResultFragment : Fragment() {
         fun getProgress(): SingleLiveEvent<Int> = progress
     }
 
-    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
+    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -280,6 +281,13 @@ class SearchResultFragment : Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(getItem(position))
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         fun setAlbumNameList(list: List<IDandName>) {

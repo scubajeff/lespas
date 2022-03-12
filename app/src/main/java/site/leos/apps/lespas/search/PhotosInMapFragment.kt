@@ -201,7 +201,10 @@ class PhotosInMapFragment: Fragment() {
                         }
 
                         override fun onClose() {
-                            mView.setOnClickListener(null)
+                            mView?.apply {
+                                findViewById<View>(R.id.photo)?.let { imageLoaderModel.cancelSetImagePhoto(it) }
+                                setOnClickListener(null)
+                            }
                         }
                     }
                     marker.setOnMarkerClickListener(markerClickListener)

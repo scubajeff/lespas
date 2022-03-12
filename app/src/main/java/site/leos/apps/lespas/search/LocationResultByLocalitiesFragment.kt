@@ -41,6 +41,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
                     .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) },
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
     }
 
@@ -108,10 +109,10 @@ class LocationResultByLocalitiesFragment: Fragment() {
         }
     }
 
-    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
+    class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<LocationSearchHostFragment.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            private var photoAdapter = PhotoAdapter { photo, imageView ->  imageLoader(photo, imageView) }
+            private var photoAdapter = PhotoAdapter({ photo, imageView ->  imageLoader(photo, imageView) }, { view -> cancelLoader(view) })
             private val tvCountry = itemView.findViewById<TextView>(R.id.country)
             private val tvLocality = itemView.findViewById<TextView>(R.id.locality)
             private val tvCount = itemView.findViewById<TextView>(R.id.count)
@@ -152,7 +153,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
         override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
     }
 
-    class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
 
@@ -163,6 +164,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

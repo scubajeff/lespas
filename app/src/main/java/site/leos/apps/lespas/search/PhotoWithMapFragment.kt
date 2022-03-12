@@ -51,6 +51,7 @@ class PhotoWithMapFragment: Fragment() {
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var mapView: MapView
+    private lateinit var photoView: PhotoView
 
     private var stripExif = "2"
     private var shareOutJob: Job? = null
@@ -81,7 +82,7 @@ class PhotoWithMapFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        view.findViewById<PhotoView>(R.id.photo)?.apply {
+        photoView = view.findViewById<PhotoView>(R.id.photo).apply {
             imageLoaderModel.setImagePhoto(remotePhoto, this, NCShareViewModel.TYPE_IN_MAP) { startPostponedEnterTransition() }
 
             ViewCompat.setTransitionName(this, remotePhoto.photo.id)
@@ -130,6 +131,12 @@ class PhotoWithMapFragment: Fragment() {
     override fun onPause() {
         mapView.onPause()
         super.onPause()
+    }
+
+    override fun onDestroyView() {
+        imageLoaderModel.cancelSetImagePhoto(photoView)
+
+        super.onDestroyView()
     }
 
     override fun onDestroy() {

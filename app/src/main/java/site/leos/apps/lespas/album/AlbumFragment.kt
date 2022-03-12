@@ -177,6 +177,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, NCShareViewModel.TYPE_COVER)
                 }
             },
+            { view -> publishViewModel.cancelSetImagePhoto(view) },
             { recyclerView.scrollToPosition(0) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -591,7 +592,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val sortListener: () -> Unit
+    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val cancelLoader: (View) -> Unit, private val sortListener: () -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<String>
@@ -699,6 +700,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
             holder.bindViewItems(currentList[position])
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
+                    holder.itemView.findViewById<View>(R.id.coverart)?.let { cancelLoader(it) }
+                }
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int) {

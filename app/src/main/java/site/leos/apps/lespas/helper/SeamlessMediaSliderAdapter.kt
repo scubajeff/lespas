@@ -72,14 +72,23 @@ abstract class SeamlessMediaSliderAdapter<T>(
         super.onViewDetachedFromWindow(holder)
     }
 
+/*
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         // Cancel loading only works for image
         holder.itemView.findViewById<View>(R.id.media)?.let { if (it is ImageView) cancelLoader(it) }
         super.onViewRecycled(holder)
     }
+*/
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         playerViewModel.resetPlayer()
+
+        for (i in 0 until currentList.size) {
+            recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
+                holder.itemView.findViewById<View>(R.id.media)?.let { cancelLoader(it) }
+            }
+        }
+
         super.onDetachedFromRecyclerView(recyclerView)
     }
 

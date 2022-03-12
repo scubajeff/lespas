@@ -150,7 +150,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 mediaPager.scrollToPosition(mediaPagerAdapter.findMediaPosition(photo))
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             },
-            { photo, imageView, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView, type) }
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo), imageView, type) },
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         startWithThisMedia = arguments?.getString(KEY_SCROLL_TO) ?: ""
@@ -951,7 +952,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
     }
 
-    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -1029,6 +1030,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             if (holder is MediaViewHolder) holder.bind(currentList[position])
             //else if (holder is DateViewHolder) holder.bind(currentList[position])
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         override fun submitList(list: MutableList<Photo>?) {

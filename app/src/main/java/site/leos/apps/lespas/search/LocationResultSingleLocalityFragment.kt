@@ -61,7 +61,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
+            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply {
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -114,7 +115,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
-    class PhotoAdapter(private val clickListener: (NCShareViewModel.RemotePhoto, View, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit
+    class PhotoAdapter(private val clickListener: (NCShareViewModel.RemotePhoto, View, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -142,6 +143,12 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_search_result, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
 
         fun setAlbumNameList(list: List<IDandName>) { for (album in list) { albumNames[album.id] = album.name }}
         fun getAlbumNameList(): HashMap<String, String> = albumNames

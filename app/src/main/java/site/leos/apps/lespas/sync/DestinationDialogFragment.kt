@@ -358,7 +358,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
     }
 
-    class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Album, ImageView, String)-> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View)-> Unit, private val cancelLoading: (ImageView)-> Unit)
+    class DestinationAdapter(private val itemClickListener: (Album)-> Unit, private val imageLoader: (Album, ImageView, String)-> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View)-> Unit, private val cancelLoader: (View)-> Unit)
     : ListAdapter<Album, DestinationAdapter.DestViewHolder>(DestinationDiffCallback()) {
         private var coverType: String = NCShareViewModel.TYPE_SMALL_COVER
 
@@ -376,7 +376,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             fun bindViewItems(album: Album) {
                 if (album.id.isEmpty()) {
                     ivCover.apply {
-                        cancelLoading(this)
+                        this.setImageResource(0)
                         setImageResource(R.drawable.ic_baseline_add_24)
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }
@@ -415,6 +415,13 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         override fun onBindViewHolder(holder: DestViewHolder, position: Int) {
             holder.bindViewItems(currentList[position])
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].lastModified == LocalDateTime.MAX) 1 else 0

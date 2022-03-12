@@ -57,7 +57,8 @@ class PublicationListFragment: Fragment() {
                     NCShareViewModel.TYPE_COVER
                 )
             },
-            { user, view -> shareModel.getAvatar(user, view, null) }
+            { user, view -> shareModel.getAvatar(user, view, null) },
+            { view -> shareModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         setHasOptionsMenu(true)
@@ -146,7 +147,7 @@ class PublicationListFragment: Fragment() {
         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
-    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
+    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentAlbumId = ""
@@ -175,6 +176,13 @@ class PublicationListFragment: Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(getItem(position))
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.coverart)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         override fun submitList(list: List<NCShareViewModel.ShareWithMe>?) {
