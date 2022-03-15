@@ -254,4 +254,5 @@
     <string name="cache_size_summary">Aktuelle Cache-Größe: %1$dMB</string>
     <string name="cache_size_setting_hint">Größe des Cache:</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Hinzufügen</string>
+    <string name="checkbox_text_set_remote">Remote-Album, Mediendateien nur auf dem Server gespeichert.</string>
 </resources>

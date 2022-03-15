@@ -202,4 +202,5 @@
     <string name="cache_size_summary">現在のキャッシュ・サイズ: %1$dMB</string>
     <string name="cache_size_setting_hint">キャッシュサイズ。</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
+    <string name="checkbox_text_set_remote">リモートアルバム、メディアファイルはサーバーにのみ保存されます。</string>
 </resources>

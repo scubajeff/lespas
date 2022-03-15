@@ -202,4 +202,5 @@
     <string name="cache_size_summary">Tamaño actual de la caché: %1$dMB</string>
     <string name="cache_size_setting_hint">Tamaño de la caché:</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
+    <string name="checkbox_text_set_remote">Álbum remoto, archivos multimedia almacenados sólo en el servidor.</string>
 </resources>

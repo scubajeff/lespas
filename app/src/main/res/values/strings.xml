@@ -189,6 +189,7 @@
     <string name="create_new_album">Create new album</string>
     <string name="to_album">To Album:</string>
     <string name="to_new_album">To New Album:</string>
+    <string name="checkbox_text_set_remote">Remote album, media files stored in server only.</string>
 
     <!-- Album Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->

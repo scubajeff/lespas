@@ -202,4 +202,5 @@
     <string name="cache_size_summary">當前快取大小為：%1$dMB</string>
     <string name="cache_size_setting_hint">快取大小</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed修圖 - 新建</string>
+    <string name="checkbox_text_set_remote">遠程相冊，只在伺服器上保存媒體檔案。</string>
 </resources>
