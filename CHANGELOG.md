@@ -1,3 +1,14 @@
+## Version 2.5.0
+* New feature: Remote Album, all image files of remote album are stored in server only, free up phone's storage space
+* New feature: slideshow in map can now be shared to other Nextcloud user
+* New feature: support setting animated GIF, animated WEBP as album's cover photo
+* New feature: photo meta scanning process can now parse file name with timestamp pattern, support yyyyMMddHHmmss and yyyyMMdd_HHmmss
+* Fixed potential crash when quickly enter and exit location search screen
+* Fixed crash when playing slideshow in map
+* Fixed seeding image with wrong orientation to Muzei
+* After sorting album list, current scroll position will reset to top
+* Other improvements and bugs fixes
+
 ## Version 2.4.6
 * Show camera roll backup status summary in Setting
 * New default photo sort order preference in Setting

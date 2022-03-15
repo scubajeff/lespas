@@ -1,24 +1,25 @@
-Les Pas， 一款免費、開源、簡潔高效而又不失絢麗的相冊應用。通過Les Pas，將美麗的照片、高效的動圖、精彩的視頻全都按相冊進行整理，方便瀏覽和分享。Les Pas內建Nextcloud伺服器雙向同步功能，您的珍貴回憶將永久、安全地保存在您的私有雲中。
+Les Pas， 一款免費、開源、簡潔高效而又不失絢麗的相冊應用。通過Les Pas，將美麗的照片、高效的動圖、精彩的視訊全都按相冊進行整理，方便瀏覽和分享。Les Pas內建Nextcloud伺服器雙向同步功能，您的珍貴回憶將永久、安全地保存在您的私有雲中。
 
 功能：
-- 簡潔、絢麗的照片與視頻瀏覽
+- 簡潔、絢麗的照片與視訊瀏覽
 - 查看照片詳情
-- 按相冊整理圖片視頻
+- 按相冊整理圖片視訊
 - 自動備份手機的相機相冊到Nextcloud伺服器
 - 與Nextcloud伺服器雙向同步，支持多設備同步
 - 支持同時在伺服器和手機中管理相冊、照片
 - 支持Nextcloud用戶之間分享相冊（前置步驟請查閱https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server）
 - 支持與其他Nextcloud用戶一齊編輯「合作相冊」
-- 人工智能輔助搜索圖片
-- 搜索、顯示图片地理信息，在地圖上展示整個相冊（地圖資料來源於OpenStreetMap項目）
-- 與Snapseed修圖軟件聯動
+- 人工智慧輔助搜尋圖片
+- 搜尋、顯示图片地理資訊，在地圖上展示整個相冊（地圖資料來源於OpenStreetMap項目）
+- 與Snapseed修圖軟體聯動
 - 支持Muzei Live Wallpaper
-- 分享至社交網絡，可以選擇在分享前刪除圖片的EXIF私隱信息
+- 分享至社交網路，可以選擇在分享前刪除圖片的EXIF隱私資訊
 - 視覺設計來源於Wes Anderson的電影
-- 所有照片及視頻都保存在手機應用的私有存儲空間，防止不法軟件任意掃描剽竊
+- 支持遠端相冊，所有照片及視訊檔案只儲存在伺服器上，節省手機儲存空間
+- 支持本地相冊，所有照片及視訊都儲存在手機應用的私有儲存空間，防止不法軟件任意掃描剽竊
 - 完全免費、開源
 
-本項目採用了以下開源軟件:
+本項目採用了以下開源軟體:
 - OkHttp https://square.github.io/okhttp
 - PhotoView https://github.com/chrisbanes/PhotoView
 - osmdroid https://github.com/osmdroid/osmdroid

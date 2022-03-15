@@ -5,7 +5,7 @@ Características:
 - Fotos y vídeos organizados en álbumes
 - Gestiona el rollo de la cámara de tu teléfono y realiza una copia de seguridad automática en el servidor
 - La sincronización funciona con el servidor Nextcloud y entre múltiples dispositivos, edita álbumes en el servidor Nextcloud y en todos tus dispositivos móviles simultáneamente
-- Comparte álbumes con otros usuarios de Nextcloud (compruebe los requisitos previos en https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
+- Compartir álbumes y presentaciones de álbumes con otros usuarios de Nextcloud (compruebe los requisitos previos en https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Álbumes conjuntos que usted y otros usuarios de Nextcloud pueden editar juntos
 - Búsqueda de fotos por objetos con IA
 - Buscar fotos por ubicación, mostrar el álbum en el mapa (datos del mapa proporcionados por el proyecto OpenStreetMap)
@@ -13,7 +13,8 @@ Características:
 - Integración con la aplicación Muzei Live Wallpaper
 - Compartir en las redes sociales, opción para eliminar los datos EXIF de la foto antes de compartirla
 - Diseño del tema inspirado en las obras de Wes Anderson
-- Todos los archivos guardados en el almacenamiento privado de la App, dejan de ser escaneados por aplicaciones maliciosas
+- Gestionar el Álbum Remoto, que tiene todos sus archivos de imagen almacenados en el servidor de Nextcloud solamente, liberar el almacenamiento del teléfono
+- Gestionar el Álbum Local, con todos los archivos guardados en el almacenamiento privado de la aplicación, dejando de ser escaneado por aplicaciones maliciosas
 - De código abierto
 
 Este proyecto se construye utilizando el siguiente software de código abierto:
