@@ -1,0 +1,8 @@
+* Mostrar um resumo da situação do backup da pasta câmera nas configuração
+* Nova preferência de ordenação de fotos na configuração
+* Nova opção para evitar atualizar o fundo do Muzei durante a noite
+* Permitir abrir o aplicativo de mapa na foto com a tela de mapas
+* Evita colisão de nomes quando ocultar e reexibir álbuns
+* Consertado problema quando segurando o dedo para selecionar múltiplos álbuns
+* Consertado problema quando adicionando ícone para galeria nas configurações
+* Outras melhorias e correções de problemas
