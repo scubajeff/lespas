@@ -188,19 +188,19 @@
     <string name="backup_waiting">相機相冊中還有%1$,d個檔案正等待備份。</string>
     <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
     <string name="default_sort_order_title">預設照片排序規則</string>
-    <string name="msg_set_as_remote">相冊設置為「遠程相冊」後，該相冊的媒體檔案將從本機存儲中消去，繼續操作嗎？</string>
+    <string name="msg_set_as_remote">相冊設置為「遠端相冊」後，該相冊的媒體檔案將從本機存儲中消去，繼續操作嗎？</string>
     <string name="msg_set_as_local">相冊設置為「本地相冊」後，該相冊的媒體檔案將從伺服器下載到本機，繼續操作嗎？</string>
-    <string name="action_set_remote">設為遠程相冊</string>
+    <string name="action_set_remote">設為遠端相冊</string>
     <string name="action_set_local">設為本地相冊</string>
     <string name="msg_error_preparing_share_out_files">無法載入媒體檔案。</string>
     <string name="msg_check_network">請檢查與伺服器的連結 。</string>
     <string name="to_new_album">至新相冊：</string>
-    <string name="clear_cache_title">清空遠程相冊圖片快取</string>
-    <string name="msg_clear_cache">將清空遠程相冊圖片快取，繼續嗎？</string>
+    <string name="clear_cache_title">清空遠端相冊圖片快取</string>
+    <string name="msg_clear_cache">將清空遠端相冊圖片快取，繼續嗎？</string>
     <string name="msg_restart_to_take_effect">新設定在App重新啟動後生效。</string>
-    <string name="cache_size_title">設定遠程相冊圖片快取</string>
+    <string name="cache_size_title">設定遠端相冊圖片快取</string>
     <string name="cache_size_summary">當前快取大小為：%1$dMB</string>
     <string name="cache_size_setting_hint">快取大小</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed修圖 - 新建</string>
-    <string name="checkbox_text_set_remote">遠程相冊，只在伺服器上保存媒體檔案。</string>
+    <string name="checkbox_text_set_remote">遠端相冊，只在伺服器上儲存媒體檔案。</string>
 </resources>
