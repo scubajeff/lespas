@@ -1,0 +1,43 @@
+<resources>
+
+    <style name="Widget.Theme.LesPas.ButtonBar.Fullscreen" parent="Widget.AppCompat.ButtonBar">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:lines">@integer/bottom_bar_button_text_line</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColor">@color/bottom_control_button</item>
+        <item name="android:drawableTint">@color/bottom_control_button</item>
+    </style>
+
+    <style name="Theme.LesPas.Dialog.Animation" parent="ThemeOverlay.MaterialComponents.Dialog">
+        <item name="android:windowEnterAnimation">@anim/dialog_entering</item>
+        <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
+    </style>
+
+    <style name="DateIndicatorShape">
+        <item name="cornerFamilyTopLeft">cut</item>
+        <item name="cornerSizeTopLeft">20dp</item>
+    </style>
+
+    <style name="Theme.AppCompat.NoActionBar.Translucent" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:background">@color/dark_gray_overlay_background</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation</item>
+        <item name="fontFamily">sans-serif-condensed</item>
+    </style>
+
+    <style name="LightEdgeEffectColor">
+        <item name="android:colorEdgeEffect">@color/lespas_white</item>
+    </style>
+
+    <style name="Theme.LesPas.ActionBar" parent="@style/Widget.MaterialComponents.ActionBar.Primary">
+        <item name="android:textColor">@color/color_text_light</item>
+    </style>
+</resources>

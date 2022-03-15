@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="auto_theme_entries">
+        <item>@string/theme_light_entries</item>
+        <item>@string/theme_dark_entries</item>
+        <item>@string/theme_auto_entries</item>
+    </string-array>
+    <string-array name="auto_theme_values">
+        <item>@string/theme_light_values</item>
+        <item>@string/theme_dark_values</item>
+        <item>@string/theme_auto_values</item>
+    </string-array>
+
+    <string-array name="default_sort_order_entries">
+        <item>@string/item_dateasc</item>
+        <item>@string/item_datedesc</item>
+        <item>@string/item_nameasc</item>
+        <item>@string/item_namedesc</item>
+    </string-array>
+    <string-array name="default_sort_order_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="strip_exif_entries">
+        <item>@string/strip_on_entry</item>
+        <item>@string/strip_off_entry</item>
+        <item>@string/strip_ask_entry</item>
+    </string-array>
+    <string-array name="strip_exif_values">
+        <item>@string/strip_on_value</item>
+        <item>@string/strip_off_value</item>
+        <item>@string/strip_ask_value</item>
+    </string-array>
+
+    <string-array name="objects">
+        <item>@string/object_unknown</item>
+        <item>@string/object_animal</item>
+        <item>@string/object_plant</item>
+        <item>@string/object_food</item>
+        <item>@string/object_vehicle</item>
+        <item>@string/object_location</item>
+        <item>@string/object_face</item>
+    </string-array>
+
+    <integer-array name="object_drawable_ids">
+        <item>@drawable/ic_baseline_animal_24</item>
+        <item>@drawable/ic_baseline_animal_24</item>
+        <item>@drawable/ic_baseline_plant_24</item>
+        <item>@drawable/ic_baseline_food_24</item>
+        <item>@drawable/ic_baseline_vehicle_24</item>
+        <item>@drawable/ic_baseline_places_24</item>
+        <item>@drawable/ic_baseline_face_24</item>
+    </integer-array>
+</resources>

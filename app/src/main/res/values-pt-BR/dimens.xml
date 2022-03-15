@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="extra_padding">24dp</dimen>
+    <dimen name="big_padding">16dp</dimen>
+    <dimen name="small_padding">8dp</dimen>
+    <dimen name="tiny_padding">4dp</dimen>
+    <dimen name="mini_padding">2dp</dimen>
+    <dimen name="dialog_frame_radius">12dp</dimen>
+    <dimen name="dialog_frame_radius_small">4dp</dimen>
+    <dimen name="camera_roll_grid_size">96dp</dimen>
+    <dimen name="camera_roll_date_grid_size">36dp</dimen>
+    <dimen name="video_player_controls_right_margin">@dimen/extra_padding</dimen>
+    <dimen name="chip_label_minimum_height">20dp</dimen>
+    <dimen name="exoplayer_control_layout_horizontal_margin">@dimen/big_padding</dimen>
+    <dimen name="exoplayer_control_layout_vertical_margin">56dp</dimen>
+    <dimen name="login_screen_logo_size">144dp</dimen>
+
+    <dimen name="destination_dialog_clipdata_grid_size">64dp</dimen>
+    <dimen name="destination_cover_width">88dp</dimen>
+    <dimen name="destination_cover_height">40dp</dimen>
+    <dimen name="destination_title_text_size">13sp</dimen>
+</resources>

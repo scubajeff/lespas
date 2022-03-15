@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="album_grid_span_count">1</integer>
+    <integer name="photo_grid_span_count">3</integer>
+    <integer name="cameraroll_grid_span_count">4</integer>
+    <integer name="search_category_grid_span_count">2</integer>
+    <integer name="publication_detail_grid_span_count">2</integer>
+    <integer name="dialog_width_ratio">80</integer>
+    <integer name="bottom_bar_button_text_line">2</integer>
+</resources>

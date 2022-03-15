@@ -1,0 +1,92 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Theme.LesPas" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
+        <!-- Additional UI colors -->
+        <item name="colorError">@color/color_error</item>
+        <item name="android:colorBackground">@color/color_background</item>
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+
+        <item name="actionBarStyle">@style/Theme.LesPas.ActionBar</item>
+        <item name="actionMenuTextColor">@color/color_on_primary_invert</item>
+        <item name="android:actionMenuTextColor">@color/color_on_primary_invert</item>
+
+        <!-- fonts -->
+        <item name="fontFamily">@font/archer_bold</item>
+
+        <!-- Customize your theme here. -->
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="windowActionBarOverlay">true</item>
+
+        <!-- ActionMode -->
+        <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
+    </style>
+
+    <!-- Theme for first login page -->
+    <style name="Theme.LesPas.NoTitleBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/color_secondary</item>
+        <item name="colorSecondaryVariant">@color/color_secondary_variant</item>
+        <!-- Additional UI colors -->
+        <item name="colorError">@color/color_error</item>
+        <item name="android:colorBackground">@color/color_background</item>
+        <item name="colorSurface">@color/color_surface</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+
+        <!-- fonts -->
+        <item name="fontFamily">@font/archer_bold</item>
+
+        <!-- Customize your theme here. -->
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowSharedElementsUseOverlay">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <style name="Theme.LesPas.NoDisplay" parent="Theme.LesPas">
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowNoDisplay">true</item>
+    </style>
+
+    <style name="Theme.LesPas.Transparent" parent="Theme.LesPas">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@null</item>
+    </style>
+
+    <style name="Theme.LesPas.Cameraroll" parent="Theme.LesPas">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+    </style>
+
+    <style name="Theme.LesPas.Toolbar.Dark.Overlay" parent="@style/ThemeOverlay.MaterialComponents.ActionBar">
+        <item name="android:textColorPrimary">@color/color_text_light</item>
+        <item name="android:textColorSecondary">@color/color_text_light</item>
+        <item name="android:textColor">@color/color_on_primary_invert</item>
+    </style>
+
+    <style name="Theme.LesPas.ActionModeStyle" parent="@style/Widget.AppCompat.ActionMode">
+        <item name="background">?attr/colorPrimary</item>
+        <item name="android:textColor">@color/color_text_light</item>
+    </style>
+</resources>

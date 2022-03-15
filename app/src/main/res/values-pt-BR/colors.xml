@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="frosted_glass">#A0000000</color>
+    <color name="progressbar_background">#C0C0C0C0</color>
+    <color name="lespas_white">#F9F7E8</color>
+    <color name="lespas_black">#1B1D1C</color>
+
+    <!-- Straight from https://vanschneider.com/colors -->
+    <color name="color_primary">#DE633A</color>
+    <color name="color_primary_variant">#C15733</color>
+    <color name="color_on_primary">@color/lespas_white</color>
+    <color name="color_on_primary_invert">@color/lespas_black</color>
+    <color name="color_secondary">#2B8E7E</color> <!-- 61BFAD -->
+    <color name="color_secondary_variant">#236E5F</color>
+    <color name="color_secondary_variant_faded">#20236E5F</color>
+    <color name="color_on_secondary">@color/lespas_black</color>
+    <color name="color_background">#EFE8D8</color>
+    <color name="color_surface">#E4E9D2</color>
+    <color name="color_error">#FFD101</color>
+    <color name="color_text_light">@color/lespas_white</color>
+    <color name="color_text_dark">@color/lespas_black</color>
+    <color name="color_recipient_chip_text">#89000000</color>
+    <color name="color_gray_out">@android:color/darker_gray</color>
+    <color name="color_avatar_default_background">#FFEFE8D8</color>
+    <color name="color_remote_media_grid_background">#201B1D1C</color>
+
+    <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
+
+    <color name="ic_launcher_background">#EFE8D8</color>
+    <color name="ic_launcher_gallery_background">#2B8E7E</color>
+
+    <color name="dark_gray_overlay_background">#80000000</color>
+</resources>
