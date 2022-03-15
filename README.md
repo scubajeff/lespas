@@ -24,7 +24,7 @@ Features:
 - Open-source
 
 <p float="left">
-  <img alt="Welcom Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
+  <img alt="Welcome Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
   <img alt="Album List" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" /> 
   <img alt="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/03_album_detail.png" width="200" />
   <img alt="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/04_photo.png" width="200" />
@@ -32,7 +32,7 @@ Features:
 
 <p float="left">
   <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
-  <img alt="Browing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
+  <img alt="Browsing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
   <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
   <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
 </p>
@@ -43,7 +43,7 @@ Features:
   <img alt="Show Photo with Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
 </p>
 
-This project build using the following open source software:
+This project is built using the following open source software:
 - <a href=https://square.github.io/okhttp>OkHttp</a>
 - <a href=https://github.com/chrisbanes/PhotoView>PhotoView</a>
 - <a href=https://github.com/osmdroid/osmdroid>osmdroid</a>
@@ -52,11 +52,11 @@ This project build using the following open source software:
 
 <a id="faq"></a>
 ## Faq
-### Why organzied by album?
+### Why organize by album?
 I believe when someone start searching his/her memory for a moment in the past, it's hard for him/her to recall the exact date or exact location, but rather easy to remember what was happening during that period of time, like kid's birthday or family trip to Paris. So organized photos by events is probably the best way for most people, therefore grouping photos by event into an album is the best choice.
 
 ### Why use folder but not tag to group photos?
-Les Pas use folder to group photos on the server, e.g., each album in Les Pas app has a one to one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folder, and Nextcloud has it's own file tagging support too. But not every picture format support tagging, that makes tagging picture file a feature that will heavily rely on platform speicific functions. I would like my data (and yours too) to be platform neutual instead.
+Les Pas uses folders to group photos on the server, e.g., each album in Les Pas app has a one-to-one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folders, and Nextcloud has it's own file tagging support too. But not every picture format supports tagging, that makes tagging picture file a feature that will heavily rely on platform specific functions. I would like my data (and yours too) to be platform neutral instead.
 
 ### Why does Les Pas use a lot of storage space?
 If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br> 
@@ -80,4 +80,4 @@ To enable publishing (e.g. sharing album to other users on Nextcloud server), th
 - Make sure your are using LesPas version 2.4.1+
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. User not belongs to any group can not download sharee list from server, this is a limitation of Nextcloud Sharee API
 - Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
-- Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [document](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for detail.
+- Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for details.
