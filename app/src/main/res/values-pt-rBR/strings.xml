@@ -291,7 +291,7 @@
 
     <!-- Image Recognition -->
     <!-- Object label -->
-    <string name="object_unknown">UNKNOWN</string>
+    <string name="object_unknown">DESCONHECIDO</string>
     <string name="object_animal">Animal</string>
     <string name="object_plant">Planta</string>
     <string name="object_food">Comida</string>
@@ -306,5 +306,5 @@
     <string name="prefer_random">Aleatório (entre todos acima)</string>
     <string name="exclude_albums">Excluir de:</string>
     <string name="prefer_latest">Recentes</string>
-    <string name="skip_late_night_update">Pular atualização da noite anterior</string>
+    <string name="skip_late_night_update">Evitar atualizações tarde da noite</string>
 </resources>
