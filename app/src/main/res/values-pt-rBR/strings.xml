@@ -16,15 +16,6 @@
     <string name="host_textinput_label">Endereço do Servidor</string>
     <string name="url_helper_text">Ex. https://exemplo.com.br/nextcloud</string>
     <string name="http_toggle_helper_text">Toque no prefixo para usar HTTP inseguro</string>
-    <string name="nextcloud_credential_scheme" translatable="false">nc</string>
-    <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
-    <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
-    <string name="nc_userdata_server_protocol" translatable="false">NC_SERVER_PROTOCOL</string>
-    <string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
-    <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
-    <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
-    <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
-    <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
     <string name="verify_ssl_certificate_title">Certificado SSL Inválido</string>
     <string name="verify_ssl_certificate_message">O certificado do servidor %1$s NÃO PODE ser verificado, você quer confiar neste servidor e continuar assim mesmo?</string>
     <string name="accept_certificate">Confiar nele!</string>
@@ -34,13 +25,6 @@
     <string name="unknown_host">Servidor não encontrado.</string>
     <string name="network_error">Erro de rede, tente novamente.</string>
     <string name="certificate_error">Erro de certificado remoto.</string>
-
-    <!-- Various Nextcloud access endpoints and naming -->
-    <string name="lespas_base_folder_name" translatable="false">/lespas</string>
-    <string name="server_capabilities_endpoint" translatable="false">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint" translatable="false">/ocs/v2.php/cloud/users</string>
-    <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
-    <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->
     <string name="fab_add_photos">Adicionar fotos</string>
@@ -86,49 +70,32 @@
     <string name="settings_title">Configurações</string>
 
     <string name="view_header">Visualizar</string>
-    <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
     <string name="auto_theme_title">Tema da App</string>
     <string name="theme_light_entries">Tema Claro</string>
     <string name="theme_dark_entries">Tema Escuro</string>
     <string name="theme_auto_entries">Seguir o sistema</string>
-    <string name="theme_light_values" translatable="false">1</string>
-    <string name="theme_dark_values" translatable="false">2</string>
-    <string name="theme_auto_values" translatable="false">-1</string>
-    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotacionar tela para combinar com a proporção da foto</string>
-    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
-    <string name="auto_replay_title">Reproduzir video automaticamente</string>
-    <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
+    <string name="auto_replay_title">Reproduzir vídeo automaticamente</string>
     <string name="default_sort_order_title">Ordenação padrão de fotos</string>
 
-    <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="cameraroll_as_album_title">Mostrar fotos da câmera como um álbum</string>
-    <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Ícone para abrir galeria</string>
-    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
     <string name="show_list_first">Mostrar a lista primeiro quando abrir</string>
 
     <string name="edit_header">Edit</string>
-    <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
     <string name="snapseed_integration_title">Integração com Snapseed</string>
     <string name="snapseed_integration_summary">Nota: Por favor use o formato JPEG no Snapseed</string>
-    <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
     <string name="snapseed_replace_title">Substituir original</string>
     <string name="snapseed_replace_on_summary">Sim, substituir a foto original com a versão salva no Snapseed.</string>
     <string name="snapseed_replace_off_summary">Não, adicionar a versão salva pelo Snapseed ao álbum, duplicando a foto.</string>
 
     <string name="privacy_header">Privacidade</string>
-    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF_CHOICE</string>
     <string name="strip_exif_title">Remover EXIF antes de compartilhar</string>
     <string name="strip_on_entry">Sim, sempre remover.</string>
     <string name="strip_off_entry">Não, deixe lá.</string>
     <string name="strip_ask_entry">Sempre pergunte.</string>
-    <string name="strip_on_value" translatable="false">1</string>
-    <string name="strip_off_value" translatable="false">0</string>
-    <string name="strip_ask_value" translatable="false">2</string>
 
     <string name="storage_header">Armazenamento</string>
-    <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
     <string name="transfer_to_internal">Transferir álbuns para armazenamento interno</string>
     <string name="transfer_to_external">Transferir álbuns para o cartão SD</string>
     <string name="external_storage_not_writable">Não é possível escrever no cartão SD agora.</string>
@@ -136,41 +103,33 @@
     <string name="not_enough_space_message">Espaço insuficiente em %2$s para salvar as fotos de %1$s.</string>
     <string name="is_syncing_message">Les Pas está sincronizando com o servidor, não é seguro fazer a transferência agora. Tente mais tarde.</string>
     <string name="yes_transfer">Continuar</string>
-    <string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
     <string name="storage_statistic_title">Estatísticas</string>
     <string name="statistic_db_message">%1$,d fotos em %2$,d álbuns</string>
     <string name="statistic_storage_message">%1$s usado em %2$s</string>
     <string name="internal_storage">armazenamento interno</string>
     <string name="external_storage">cartão SD externo</string>
     <string name="statistic_free_space_message">%1$s disponível no %2$s</string>
-    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
     <string name="clear_cache_title">Limpar cache temporário de álbuns remotos</string>
     <string name="msg_clear_cache">Todas as imagens temporárias serão removidas, continuar?</string>
     <string name="msg_restart_to_take_effect">Reincie a aplicação para aplicar.</string>
-    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
     <string name="cache_size_title">Configurar limites para pasta temporária de álbuns remotos</string>
     <string name="cache_size_summary">Tamanho atual: %1$dMB</string>
     <string name="cache_size_setting_hint">Tamanho:</string>
 
     <string name="sync_header">Sincronização</string>
-    <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup da pasta de Câmera</string>
     <string name="cameraroll_backup_summary">Novas fotos e vídeos serão copiados automaticamente para o servidor na pasta \'DCIM/%1$s\'.</string>
     <string name="backup_done">Todos os ítens da câmera já foram copiados.</string>
     <string name="backup_waiting">%1$,d ítens na câmera aguardando backup.</string>
-    <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sincronizar periodicamente</string>
     <string name="background_sync_summary">Verificar mudanças no servidor a cada 6 horas</string>
-    <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sincronizar somente no WiFi</string>
     <string name="wifionly_summary_on">Sim, evitar consumo de dados móveis.</string>
     <string name="wifionly_summary_off">Não, usar os dados móveis - tome cuidado se a sua coleção for grande.</string>
 
     <string name="account_header">Conta</string>
-    <string name="relogin_pref_key" translatable="false">RELOGIN</string>
     <string name="relogin_title">Re-logar</string>
     <string name="relogin_summary">Se você revogou sua chave de acesso do Les Pas no servidor, sem querer.</string>
-    <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Sair</string>
     <string name="msg_logout_dialog">Sair da conta %1$s?</string>
     <string name="yes_logout">Sim, sair</string>
@@ -273,7 +232,6 @@
     <string name="yes_i_do">Claro!</string>
 
     <!-- Publication Detail Fragment -->
-    <string name="publication_detail_fragment_title" translatable="false">"%1$s  |  %2$s"</string>
     <string name="item_show_meta">Mostar metadados</string>
     <string name="item_refresh_publication">Atualizar publicações</string>
 
