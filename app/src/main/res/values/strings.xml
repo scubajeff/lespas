@@ -11,7 +11,7 @@
 
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Welcome to Les Pas!</string>
-    <string name="welcom_message">To get started, please grant access on your Nextcloud server.</string>
+    <string name="welcome_message">To get started, please grant access on your Nextcloud server.</string>
     <string name="button_text_scan">Scan App Password</string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>

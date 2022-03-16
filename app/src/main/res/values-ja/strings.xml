@@ -7,7 +7,7 @@
     <string name="sd_card_not_ready">外部メモリーカードがマウントされていないか、読み取り専用になっている。</string>
     <string name="error_only_one_account">同一サーバー上では1つのアカウントしか使用できない</string>
     <string name="welcome_message_title">Les Pasはあなたを歓迎します。</string>
-    <string name="welcom_message">アプリケーション認証のために、Nextcloudサーバーにログインしてください。</string>
+    <string name="welcome_message">アプリケーション認証のために、Nextcloudサーバーにログインしてください。</string>
     <string name="host_textinput_label">サーバーURL</string>
     <string name="url_helper_text">例： https://example.com/nextcloud</string>
     <string name="verify_ssl_certificate_title">SSL証明書の検証に失敗しました。</string>

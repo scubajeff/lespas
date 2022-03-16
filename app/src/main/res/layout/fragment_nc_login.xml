@@ -55,7 +55,7 @@
             android:layout_gravity="fill_horizontal"
             style="@style/TextAppearance.MaterialComponents.Subtitle2"
             android:textColor="@color/color_text_light"
-            android:text="@string/welcom_message"
+            android:text="@string/welcome_message"
             android:labelFor="@id/input_area"
             android:visibility="gone" />
 

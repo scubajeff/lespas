@@ -12,7 +12,7 @@
 
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Willkommen bei Les Pas!</string>
-    <string name="welcom_message">Um zu beginnen, gewähren Sie bitte Zugriff auf Ihren Nextcloud-Server.</string>
+    <string name="welcome_message">Um zu beginnen, gewähren Sie bitte Zugriff auf Ihren Nextcloud-Server.</string>
     <string name="host_textinput_label">Server-Adresse</string>
     <string name="url_helper_text">z.B. https://example.com/nextcloud</string>
     <string name="http_toggle_helper_text">Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>

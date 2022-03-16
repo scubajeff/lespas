@@ -11,7 +11,7 @@
 
     <!-- NCLogin activity -->
     <string name="welcome_message_title">Bem-vindo ao Les Pas!</string>
-    <string name="welcom_message">Para começar, favor conceder acesso ao seu servidor Nextcloud.</string>
+    <string name="welcome_message">Para começar, favor conceder acesso ao seu servidor Nextcloud.</string>
     <string name="button_text_scan">Digitalizar Código QR</string>
     <string name="host_textinput_label">Endereço do Servidor</string>
     <string name="url_helper_text">Ex. https://exemplo.com.br/nextcloud</string>

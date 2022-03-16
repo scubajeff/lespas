@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="welcome_message_title">Les Pas歡迎您!</string>
-    <string name="welcom_message">請登錄您的Nextcloud伺服器進行授權。</string>
+    <string name="welcome_message">請登錄您的Nextcloud伺服器進行授權。</string>
     <string name="host_textinput_label">伺服器網址</string>
     <string name="url_helper_text">例如：https://example.com/nextcloud</string>
     <string name="host_address_validation_error">網址不正確</string>

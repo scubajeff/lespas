@@ -3,7 +3,7 @@
     <string name="app_name">Les Pas</string>
     <string name="error_only_one_account">Sólo se permite una cuenta</string>
     <string name="welcome_message_title">¡Bienvenido a Les Pas!</string>
-    <string name="welcom_message">Para empezar, por favor conceda acceso en su servidor de Nextcloud.</string>
+    <string name="welcome_message">Para empezar, por favor conceda acceso en su servidor de Nextcloud.</string>
     <string name="host_textinput_label">Dirección del servidor</string>
     <string name="url_helper_text">Por ejemplo, https://example.com/nextcloud</string>
     <string name="host_address_validation_error">El anfitrión no es válido.</string>
