@@ -1,3 +1,6 @@
+## Version 2.5.2
+* When syncing with server, recreate metadata files on server if they are missing
+
 ## Version 2.5.1
 * Fixed wrong format of metadata JSON file being generated when running in system with non english locales like French, German, etc.
 * New pt-BR translation, thanks to github user @nosklo
