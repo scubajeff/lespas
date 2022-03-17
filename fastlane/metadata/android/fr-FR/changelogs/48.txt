@@ -1,0 +1,9 @@
+* Nouvelle fonction : Album distant, tous les fichiers d'images de l'album distant sont stockés sur le serveur uniquement, ce qui libère l'espace de stockage du téléphone.
+* Nouvelle fonctionnalité : le diaporama de la carte peut maintenant être partagé avec d'autres utilisateurs de Nextcloud.
+* Nouvelle fonctionnalité : possibilité de définir un GIF animé ou un WEBP animé comme photo de couverture de l'album.
+* Nouvelle fonctionnalité : le processus de méta-analyse des photos peut désormais analyser le nom du fichier avec un modèle d'horodatage, supportant yyyyMMddHHmmss et yyyyMMdd_HHmmss.
+* Correction d'une erreur potentielle lors de l'entrée et de la sortie rapide de l'écran de recherche d'un lieu.
+* Correction d'un crash lors de la lecture d'un diaporama dans la carte
+* Correction de l'image d'ensemencement avec une mauvaise orientation à Muzei
+* Après avoir trié la liste des albums, la position de défilement actuelle est remise en haut.
+* Autres améliorations et corrections de bogues
