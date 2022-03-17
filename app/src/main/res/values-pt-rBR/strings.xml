@@ -265,4 +265,5 @@
     <string name="exclude_albums">Excluir de:</string>
     <string name="prefer_latest">Recentes</string>
     <string name="skip_late_night_update">Evitar atualizações tarde da noite</string>
+    <string name="login_to_new_account">Você está entrando com uma nova conta. Você deve sair da conta corrente primeiro, depois relançar o Les Pas. Proceder ao logout?</string>
 </resources>

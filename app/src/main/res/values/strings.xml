@@ -9,7 +9,7 @@
     <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>
 
-    <!-- NCLogin activity -->
+    <!-- NCLogin fragment -->
     <string name="welcome_message_title">Welcome to Les Pas!</string>
     <string name="welcome_message">To get started, please grant access on your Nextcloud server.</string>
     <string name="button_text_scan">Scan App Password</string>
@@ -35,11 +35,11 @@
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>
 
+    <!-- NCAuthentication fragment -->
+    <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
+
     <!-- Various Nextcloud access endpoints and naming -->
     <string name="lespas_base_folder_name" translatable="false">/lespas</string>
-    <string name="server_capabilities_endpoint" translatable="false">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint" translatable="false">/ocs/v2.php/cloud/users</string>
-    <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->

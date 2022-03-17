@@ -203,4 +203,5 @@
     <string name="cache_size_setting_hint">キャッシュサイズ。</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
     <string name="checkbox_text_set_remote">リモートアルバム、メディアファイルはサーバーにのみ保存されます。</string>
+    <string name="login_to_new_account">新しいアカウントでログインしています。まず現在のアカウントをログアウトしてから、Les Pasを起動し直してください。ログアウトを実行しますか？</string>
 </resources>

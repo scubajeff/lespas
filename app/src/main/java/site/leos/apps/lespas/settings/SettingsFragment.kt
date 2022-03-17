@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import androidx.work.ExistingWorkPolicy
@@ -38,6 +39,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.auth.NCAuthenticationFragment
 import site.leos.apps.lespas.auth.NCLoginFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
@@ -59,6 +61,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+
+    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -370,7 +374,16 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.relogin_pref_key) -> {
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCLoginFragment.newInstance(true), NCLoginFragment::class.java.canonicalName).addToBackStack(null).commit()
+                // Retrieve current account information from AccountManager's vault
+                AccountManager.get(requireContext()).run {
+                    val account = getAccountsByType(getString(R.string.account_type_nc))[0]
+                    authenticateModel.setToken(getUserData(account, getString(R.string.nc_userdata_username)), "", getUserData(account, getString(R.string.nc_userdata_server)))
+                    authenticateModel.setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
+                }
+
+                // Launch authentication webview
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(true), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
+
                 true
             }
             getString(R.string.snapseed_pref_key) -> {

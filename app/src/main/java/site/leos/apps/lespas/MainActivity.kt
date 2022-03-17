@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             setTheme(R.style.Theme_LesPas_NoTitleBar)
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             setContentView(R.layout.activity_main)
-            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment.newInstance(false)).commit()
+            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
         } else {
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             setContentView(R.layout.activity_main)

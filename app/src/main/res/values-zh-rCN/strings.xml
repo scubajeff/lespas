@@ -203,4 +203,5 @@
     <string name="cache_size_setting_hint">缓存大小</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed修图 - 新建</string>
     <string name="checkbox_text_set_remote">远程相册，只在服务器上保存媒体文件。</string>
+    <string name="login_to_new_account">如果要登录其他帐户，请先登出当前帐户。现在继续登出当前帐户吗？</string>
 </resources>

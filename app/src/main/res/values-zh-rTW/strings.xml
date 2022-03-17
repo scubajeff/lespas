@@ -146,7 +146,7 @@
     <string name="prefer_random">隨意（以上各項無結果時亦使用此項）</string>
     <string name="http_toggle_helper_text">點擊前綴切換非安全HTTP連接</string>
     <string name="cameraroll_as_album_title">在相冊列表中顯示相機相冊</string>
-    <string name="relogin_title">重新登錄</string>
+    <string name="relogin_title">重新登入</string>
     <string name="relogin_summary">假如你在伺服器端意外撤銷了Les Pas的應用授權。</string>
     <string name="auto_replay_title">自動重複播放影片</string>
     <string name="button_text_download">下載</string>
@@ -203,4 +203,5 @@
     <string name="cache_size_setting_hint">快取大小</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed修圖 - 新建</string>
     <string name="checkbox_text_set_remote">遠端相冊，只在伺服器上儲存媒體檔案。</string>
+    <string name="login_to_new_account">如果要登入其他帳戶，請先登出當前帳戶。現在繼續登出當前帳戶嗎？</string>
 </resources>
