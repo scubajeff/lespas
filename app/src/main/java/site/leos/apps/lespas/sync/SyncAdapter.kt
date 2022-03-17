@@ -566,7 +566,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                         // Content meta file
                         remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
-                            // If there is a file name as "{albumId}.json". mark down latest meta (both album meta and conent meta) update timestamp,
+                            // If there is a file name as "{albumId}.json" or "{albumId}-content.json". mark down latest meta (both album meta and conent meta) update timestamp,
                             contentModifiedTime = maxOf(contentModifiedTime, remotePhoto.modified)
                         }
                         // BGM file

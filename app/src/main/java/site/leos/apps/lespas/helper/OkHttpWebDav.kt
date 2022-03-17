@@ -94,7 +94,24 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
     }
 
-    fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamBool(source, useCache, cacheControl).first
+    fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamCall(source, useCache, cacheControl).first
+    fun getStreamCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Call> {
+        val reqBuilder = Request.Builder().url(source)
+        (if (useCache) {
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            cachedHttpClient!!.newCall(reqBuilder.get().build())
+        } else {
+            httpClient.newCall(reqBuilder.get().build())
+        }).run {
+            execute().also { response ->
+                if (response.isSuccessful) return Pair(response.body!!.byteStream(), this)
+                else {
+                    response.close()
+                    throw OkHttpWebDavException(response)
+                }
+            }
+        }
+    }
     fun getStreamBool(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Boolean> {
         val reqBuilder = Request.Builder().url(source)
         (if (useCache) {
