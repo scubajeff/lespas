@@ -65,6 +65,7 @@ import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.util.*
 import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -392,13 +393,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         photoMeta?.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         remotePhotos?.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -1186,7 +1187,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
         //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
-        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%f,\"longitude\":%f,\"altitude\":%f,\"bearing\":%f},"
+        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"
