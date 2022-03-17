@@ -580,6 +580,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
+                // Recreate metadata file on server if there are missing
+                remotePhotoList.find { it.name == "${changedAlbum.id}.json" } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
+                remotePhotoList.find { it.name == "${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
+
                 // *****************************************************
                 // Syncing album meta, deal with album cover, sort order
                 // *****************************************************
