@@ -1,3 +1,7 @@
+## Version 2.5.1
+* Fixed wrong format of metadata JSON file being generated when running in system with non english locales like French, German, etc.
+* New pt-BR translation, thanks to github user @nosklo
+
 ## Version 2.5.0
 * New feature: Remote Album, all image files of remote album are stored in server only, free up phone's storage space
 * New feature: slideshow in map can now be shared to other Nextcloud user
