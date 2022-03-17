@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -44,9 +45,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accounts: Array<Account>
     private var loggedIn = true
 
+    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sp = PreferenceManager.getDefaultSharedPreferences(this)
+
+        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
         if (accounts.isEmpty()) {
@@ -100,8 +105,9 @@ class MainActivity : AppCompatActivity() {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                 }
-                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
                             // If Snapseed is not installed, disable Snapseed integration
                             packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
                                 sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }

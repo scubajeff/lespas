@@ -34,6 +34,7 @@ class SearchFragment : Fragment() {
     private var onMenuCreation = true
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var exifPermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +81,7 @@ class SearchFragment : Fragment() {
 
         noAlbum = arguments?.getBoolean(NO_ALBUM) == true
 
+        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
@@ -87,7 +89,7 @@ class SearchFragment : Fragment() {
                 destinationToggleGroup?.check(R.id.search_cameraroll)
 
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
             }
             else if (noAlbum) parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
                 ConfirmDialogFragment.newInstance(getString(R.string.condition_to_perform_search), getString(R.string.button_text_leave), false, LEAVE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
