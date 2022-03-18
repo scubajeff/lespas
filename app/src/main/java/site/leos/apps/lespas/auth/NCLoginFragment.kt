@@ -186,7 +186,11 @@ class NCLoginFragment: Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean(KEY_ERROR_SHOWN, hostEditText.error != null)
+        try {
+            outState.putBoolean(KEY_ERROR_SHOWN, hostEditText.error != null)
+        } catch (e: UninitializedPropertyAccessException) {
+            outState.putBoolean(KEY_ERROR_SHOWN, false)
+        }
     }
 
     override fun onDestroyView() {
