@@ -37,6 +37,7 @@
 
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
+    <string name="menu_item_qr_scanner_title">Scan QR code</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
     <string name="lespas_base_folder_name" translatable="false">/lespas</string>

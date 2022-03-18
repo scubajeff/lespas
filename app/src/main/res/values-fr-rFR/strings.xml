@@ -204,4 +204,5 @@
     <string name="button_text_edit_in_snapseed_add">Snapseed - Ajouter</string>
     <string name="checkbox_text_set_remote">Album distant, fichiers multimédia stockés sur le serveur uniquement.</string>
     <string name="login_to_new_account">Vous vous connectez avec un nouveau compte. Vous devez d\'abord vous déconnecter du compte actuel, puis relancer Les Pas. Procéder à la déconnexion ?</string>
+    <string name="menu_item_qr_scanner_title">Scanner le code QR</string>
 </resources>

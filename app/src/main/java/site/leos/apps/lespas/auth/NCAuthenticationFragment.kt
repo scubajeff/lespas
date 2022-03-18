@@ -5,9 +5,11 @@ import android.accounts.AccountManager
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -17,13 +19,13 @@ import android.graphics.drawable.ColorDrawable
 import android.net.http.SslError
 import android.os.Bundle
 import android.util.Base64
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.webkit.*
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -44,6 +46,9 @@ class NCAuthenticationFragment: Fragment() {
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
+    private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
+    private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,6 +60,19 @@ class NCAuthenticationFragment: Fragment() {
                 if (authWebpage.canGoBack()) authWebpage.goBack() else parentFragmentManager.popBackStack()
             }
         })
+
+        setHasOptionsMenu(true)
+        scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
+                    ("nc://login/user:(.*)&password:(.*)&server:(.*)").toRegex().matchEntire(scanResult)?.destructured?.let { (username, token, server) ->
+                        prepareCredential(server, username, token)
+                    }
+                }
+            }
+
+            // TODO Show scan error
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_nc_authentication, container, false)
@@ -71,27 +89,7 @@ class NCAuthenticationFragment: Fragment() {
                         if (this.scheme.equals(resources.getString(R.string.nextcloud_credential_scheme))) {
                             // Detected Nextcloud server authentication return special uri scheme: "nc://login/server:<server>&user:<loginname>&password:<password>"
                             ("/server:(.*)&user:(.*)&password:(.*)").toRegex().matchEntire(this.path.toString())?.destructured?.let { (server, username, token) ->
-                                // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
-                                // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
-                                val host = if (server.startsWith("http")) server else "https://${server}"
-                                val currentUsername = authenticateModel.getAccount().username
-
-                                authenticateModel.setToken(username, token, host)
-
-                                if (reLogin) {
-                                    if (username != currentUsername) {
-                                        // Re-login to a new account
-                                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                                            ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), getString(R.string.yes_logout), true, CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
-                                    } else {
-                                        saveToken()
-                                        parentFragmentManager.popBackStack()
-                                    }
-                                } else {
-                                    saveToken()
-                                    authenticateModel.setAuthResult(NCLoginFragment.AuthenticateViewModel.RESULT_SUCCESS)
-                                    parentFragmentManager.popBackStack()
-                                }
+                                prepareCredential(server, username, token)
                             } ?: run {
                                 // Can't parse Nextcloud server's return
                                 if (reLogin) {
@@ -215,7 +213,58 @@ class NCAuthenticationFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun saveToken() {
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.authentication_menu, menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+
+
+        (scanIntent.resolveActivity(requireContext().packageManager) != null).let { scannerAvailable ->
+            menu.findItem(R.id.option_menu_qr_scanner)?.run {
+                isEnabled = scannerAvailable
+                isVisible = scannerAvailable
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId) {
+            R.id.option_menu_qr_scanner -> {
+                scanRequestLauncher?.launch(scanIntent)
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun prepareCredential(server: String, username: String, token: String) {
+        // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
+        // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
+        val host = if (server.startsWith("http")) server else "https://${server}"
+        val currentUsername = authenticateModel.getAccount().username
+
+        authenticateModel.setToken(username, token, host)
+
+        if (reLogin) {
+            if (username != currentUsername) {
+                // Re-login to a new account
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
+                    ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), getString(R.string.yes_logout), true, CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+            } else {
+                saveCredential()
+                parentFragmentManager.popBackStack()
+            }
+        } else {
+            saveCredential()
+            authenticateModel.setAuthResult(NCLoginFragment.AuthenticateViewModel.RESULT_SUCCESS)
+            parentFragmentManager.popBackStack()
+        }
+    }
+
+    private fun saveCredential() {
         val ncAccount = authenticateModel.getAccount()
         val url = URL(ncAccount.serverUrl)
         val account: Account

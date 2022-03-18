@@ -204,4 +204,5 @@
     <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
     <string name="checkbox_text_set_remote">Álbum remoto, archivos multimedia almacenados sólo en el servidor.</string>
     <string name="login_to_new_account">Estás entrando con una nueva cuenta. Primero debe cerrar la sesión de la cuenta actual y luego volver a iniciar Les Pas. ¿Proceder a cerrar la sesión?</string>
+    <string name="menu_item_qr_scanner_title">Código QR de varredura</string>
 </resources>
