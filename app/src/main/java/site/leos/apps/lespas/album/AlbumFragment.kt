@@ -658,7 +658,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         }
                     }
                     with(tvTitle) {
-                        if (new) text = album.name
+                        text = album.name
 
                         setCompoundDrawables(when {
                             album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
