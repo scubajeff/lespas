@@ -308,7 +308,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
-                            val metaString = String.format(
+                            val metaString = String.format(Locale.ROOT,
 /*
                                 ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}",
                                 this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3]
@@ -566,7 +566,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                         // Content meta file
                         remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
-                            // If there is a file name as "{albumId}.json". mark down latest meta (both album meta and conent meta) update timestamp,
+                            // If there is a file name as "{albumId}.json" or "{albumId}-content.json". mark down latest meta (both album meta and conent meta) update timestamp,
                             contentModifiedTime = maxOf(contentModifiedTime, remotePhoto.modified)
                         }
                         // BGM file
@@ -579,6 +579,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     }
                 }
+
+                // Recreate metadata file on server if there are missing
+                remotePhotoList.find { it.name == "${changedAlbum.id}.json" } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
+                remotePhotoList.find { it.name == "${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
 
                 // *****************************************************
                 // Syncing album meta, deal with album cover, sort order
@@ -1055,7 +1059,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             //FileWriter("$localRootFolder/metaFileName").apply {
             localFile.writer().use {
                 //it.write(String.format(ALBUM_META_JSON, cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
-                it.write(String.format(ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, cover.coverOrientation, sortOrder))
+                it.write(String.format(Locale.ROOT, ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, cover.coverOrientation, sortOrder))
             }
 
             // If local meta json file created successfully
@@ -1072,7 +1076,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun updateContentMeta(albumId: String, albumName: String) {
         var content = NCShareViewModel.PHOTO_META_HEADER
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
-            content += String.format(NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
         content = content.dropLast(1) + "]}}"
         webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)

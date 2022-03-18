@@ -59,6 +59,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var albumId = ""
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
     private lateinit var gestureDetector: GestureDetectorCompat
 
@@ -96,12 +97,13 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         @Suppress("DEPRECATION")
         requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
 
+        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
             if (isGranted) {
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 
                 saveMedia()
             }

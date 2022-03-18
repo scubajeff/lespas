@@ -37,6 +37,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.parcelize.Parcelize
 import okhttp3.CacheControl
+import okhttp3.Call
 import okhttp3.FormBody
 import okhttp3.Response
 import okhttp3.internal.headersContentLength
@@ -65,6 +66,7 @@ import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.util.*
 import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -277,18 +279,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
 
                 }
-/*
-                webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}.json", true, CacheControl.FORCE_NETWORK).use {
-                    JSONObject(it.bufferedReader().readText()).getJSONObject("lespas").let { meta ->
-                        meta.getJSONObject("cover").apply {
-                            share.cover = Cover(getString("id"), getInt("baseline"), getInt("width"), getInt("height"))
-                            share.coverFileName = getString("filename")
-                        }
-                        share.sortOrder = meta.getInt("sort")
-                    }
-
-                }
-*/
             } catch (e: Exception) {
                 // Either there is no album meta json file in the folder, or json parse error means it's not a lespas share
             }
@@ -392,13 +382,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         photoMeta?.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         remotePhotos?.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -810,6 +800,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()
+    private val httpCallMap = HashMap<Job, Call>()
 
     @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
@@ -872,7 +863,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
                                         callBack?.onLoadComplete()
                                     } else withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                    webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
+                                    webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
+                                        httpCallMap.replace(coroutineContext.job, second)
+                                        first
+                                    }
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
@@ -887,7 +881,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 } catch (e: FileNotFoundException) {
                                     // Fall back to network fetching if loading local file failed
                                     withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                    webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null)
+                                    webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
+                                        httpCallMap.replace(coroutineContext.job, second)
+                                        first
+                                    }
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
@@ -980,12 +977,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) {
-                Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
-            }
-            catch (e: Exception) {
-                e.printStackTrace()
-            }
+            catch (e: OkHttpWebDavException) { Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}") }
+            catch (e: Exception) { e.printStackTrace() }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
@@ -996,6 +989,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 callBack?.onLoadComplete()
             }
         }
+        job.invokeOnCompletion { try { httpCallMap.remove(job) } catch (e: Exception) {} }
 
         // Replacing previous job
         replacePrevious(jobKey, job)
@@ -1058,18 +1052,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         bitmap = try {
             withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
             job.ensureActive()
-            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).use {
-                job.ensureActive()
-                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
+            webDav.getStreamCall("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).run {
+                httpCallMap.replace(job, second)
+
+                first.use {
+                    job.ensureActive()
+                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
+                }
             }
         } catch(e: Exception) { null }
 
         bitmap ?: run {
             // If preview is not available, we have to use the actual image file
             job.ensureActive()
-            webDav.getStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null).use {
-                job.ensureActive()
-                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
+            webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null).run {
+                httpCallMap.replace(job, second)
+
+                first.use {
+                    job.ensureActive()
+                    bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
+                }
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let {
                 job.ensureActive()
@@ -1083,7 +1085,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun cancelSetImagePhoto(view: View) {
-        decoderJobMap[System.identityHashCode(view)]?.cancel()
+        decoderJobMap[System.identityHashCode(view)]?.apply {
+            httpCallMap[this]?.cancel()
+            cancel()
+        }
     }
 
     fun invalidPhoto(photoId: String) {
@@ -1152,16 +1157,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val coverBaseLine: Int = 0,
     ) : Parcelable
 
-/*
-    @Parcelize
-    data class ImagePhoto(
-        val photo: Photo,
-        val type: String,
-        val remotePath: String = "",    // Empty means photo
-        val coverBaseLine: Int = 0,
-    ) : Parcelable
-*/
-
     companion object {
         const val TYPE_NULL = ""    // For startPostponedEnterTransition() immediately for video item
         const val TYPE_GRID = "_view"
@@ -1186,7 +1181,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
         //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
-        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%f,\"longitude\":%f,\"altitude\":%f,\"bearing\":%f},"
+        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"

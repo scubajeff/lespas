@@ -88,6 +88,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var unhideMenu: MenuItem? = null
     private var toggleRemoteMenu: MenuItem? = null
 
+    private var scrollTo = -1
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
@@ -97,18 +98,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var cameraRollAlbum: Album? = null
     private var mediaStoreVersion = ""
     private var mediaStoreGeneration = 0L
+
+    private var doSync = true
+
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
+            // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
             showCameraRoll = this
+            // Move album list to the top when popping back from Setting fragment, actual scrolling will happen after setAlbum in livedata observer
+            // Only scroll to top when setting being turned on
+            if (showCameraRoll) scrollTo = 0
+
+            // Maintain option menu
             cameraRollAsAlbumMenu?.isEnabled = !this
             cameraRollAsAlbumMenu?.isVisible = !this
 
-            // Selection based on bindingAdapterPosition, which will be changed
+            // Selection based on bindingAdapterPosition, must be cleared
             selectionTracker.clearSelection()
         }
     }
-
-    private var doSync = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -178,7 +186,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
             },
             { view -> publishViewModel.cancelSetImagePhoto(view) },
-            { recyclerView.scrollToPosition(0) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
@@ -214,7 +221,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             val list = mutableListOf<Album>().apply { addAll(it) }
 
             if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(0, cameraroll) }
-            mAdapter.setAlbums(list, currentSortOrder)
+            mAdapter.setAlbums(list, currentSortOrder) {
+                if (scrollTo != -1) {
+                    recyclerView.scrollToPosition(scrollTo)
+                    scrollTo = -1
+                }
+            }
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
@@ -443,7 +455,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     else-> -1
                 }
 
-                mAdapter.setAlbums(null, currentSortOrder)
+                mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
 
                 return true
             }
@@ -592,7 +604,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val cancelLoader: (View) -> Unit, private val sortListener: () -> Unit
+    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
         private lateinit var selectionTracker: SelectionTracker<String>
@@ -646,7 +658,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         }
                     }
                     with(tvTitle) {
-                        if (new) text = album.name
+                        text = album.name
 
                         setCompoundDrawables(when {
                             album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
@@ -711,8 +723,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
-        internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int) {
-            val sortList = albums == null
+        internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int, callback: () -> Unit) {
             val sortedList = mutableListOf<Album>()
             val sourceList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
 
@@ -735,9 +746,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
             }
 
-            submitList(sortedList) {
-                if (sortList) sortListener()
-            }
+            submitList(sortedList) { callback() }
         }
 
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
