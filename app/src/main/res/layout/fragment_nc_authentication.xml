@@ -1,13 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- required for setting padding when launched from Setting -->
-<androidx.constraintlayout.widget.ConstraintLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/webview_background"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/theme_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <WebView
-        android:id="@+id/webview"
+    <FrameLayout
+        android:id="@+id/webview_background"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/slogan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/extra_padding"
+            android:layout_gravity="center_vertical"
+            android:gravity="center"
+            style="?attr/textAppearanceHeadline6"
+            tools:text="slogan" />
+
+        <WebView
+            android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+</FrameLayout>

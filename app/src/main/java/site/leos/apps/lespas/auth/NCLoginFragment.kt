@@ -5,12 +5,10 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.graphics.drawable.Drawable
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -34,9 +32,12 @@ import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.json.JSONException
+import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
@@ -151,7 +152,7 @@ class NCLoginFragment: Fragment() {
                     (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(hostEditText.windowToken, 0) }
                     setEndIconMode(ICON_MODE_INPUT)
 
-                    parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(false), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(false, authenticateModel.getTheming()), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
                 998 -> {
                     // Ask user to accept self-signed certificate
@@ -254,6 +255,7 @@ class NCLoginFragment: Fragment() {
 
     class AuthenticateViewModel : ViewModel() {
         private val account = NCAccount()
+        private var theming = NCThemimg()
         private var pingJob: Job? = null
         private var httpCall: Call? = null
 
@@ -271,7 +273,29 @@ class NCLoginFragment: Fragment() {
                             writeTimeout(20, TimeUnit.SECONDS)
                         }.build().newCall(Request.Builder().url("${serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
 
-                        httpCall?.execute().use { it?.code ?: 0}
+                        httpCall?.execute()?.use { response ->
+                            if (response.isSuccessful) {
+                                response.body?.string()?.let { json ->
+                                    JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
+                                        try { theming.color = Color.parseColor(getString("color")) } catch (e: java.lang.Exception) {}
+                                        try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: java.lang.Exception) {}
+                                        try { theming.slogan = getString("slogan") } catch (e: java.lang.Exception) {}
+/*
+                                        OkHttpClient.Builder().apply {
+                                            if (acceptSelfSign) hostnameVerifier { _, _ -> true }
+                                            readTimeout(20, TimeUnit.SECONDS)
+                                            writeTimeout(20, TimeUnit.SECONDS)
+                                        }.build().newCall(Request.Builder().url(getString("logo")).build()).execute().use { source ->
+                                            File()
+                                        }
+*/
+                                    }
+                                }
+                            }
+                            response.code
+                        } ?: 999
+                    } catch (e: JSONException) {
+                        999
                     } catch (e: SSLPeerUnverifiedException) {
                         // This certificate is issued by user installed CA, let user decided whether to trust it or not
                         998
@@ -310,6 +334,8 @@ class NCLoginFragment: Fragment() {
             }
         }}
 
+        fun getTheming() = theming
+
         private val authResult = SingleLiveEvent<Int>()
         fun getAuthResult() = authResult
         fun setAuthResult(result: Int) { this.authResult.postValue(result) }
@@ -321,6 +347,13 @@ class NCLoginFragment: Fragment() {
             var selfSigned: Boolean = false,
             var https: Boolean = true,
         )
+
+        @Parcelize
+        data class NCThemimg(
+            var slogan: String = "",
+            var color: Int = Color.TRANSPARENT,
+            var textColor: Int = Color.WHITE,
+        ): Parcelable
 
         companion object {
             const val RESULT_SUCCESS = 0

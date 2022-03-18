@@ -2,12 +2,18 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.ColorDrawable
 import android.net.http.SslError
 import android.os.Bundle
 import android.util.Base64
@@ -15,9 +21,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
+import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -30,8 +37,10 @@ import java.net.URL
 
 class NCAuthenticationFragment: Fragment() {
     private lateinit var authWebpage: WebView
+    private lateinit var authWebpageBG: ViewGroup
 
     private var reLogin: Boolean = false
+    private lateinit var theming: NCLoginFragment.AuthenticateViewModel.NCThemimg
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
@@ -39,6 +48,7 @@ class NCAuthenticationFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
+        theming = requireArguments().getParcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCThemimg()
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -53,6 +63,7 @@ class NCAuthenticationFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         if (reLogin) (requireActivity() as AppCompatActivity).supportActionBar?.let { view.setPadding(view.paddingLeft, it.height, view.paddingRight, 0) }
 
+        authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -114,6 +125,8 @@ class NCAuthenticationFragment: Fragment() {
                                 animate().alpha(1f).duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
                                 requestFocus()
                             }
+
+                            authWebpageBG.background = null
                         }
                     }
                 }
@@ -142,7 +155,31 @@ class NCAuthenticationFragment: Fragment() {
         } ?: run {
             // Show a loading sign first
             authWebpage.alpha = 0f
-            view.findViewById<ConstraintLayout>(R.id.webview_background).background = (ContextCompat.getDrawable(requireContext(), R.drawable.animated_placeholder) as AnimatedVectorDrawable).apply { start() }
+
+            if (theming.color != Color.TRANSPARENT) view.findViewById<FrameLayout>(R.id.theme_background).background = ColorDrawable(theming.color)
+            if (theming.slogan.isNotEmpty()) {
+                view.findViewById<TextView>(R.id.slogan).run {
+                    text = theming.slogan
+                    setTextColor(theming.textColor)
+
+                    alpha = 0.2f
+                    ObjectAnimator.ofFloat(this, "alpha", 1f).run {
+                        duration = 800
+                        interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+                        repeatCount = ValueAnimator.INFINITE
+                        repeatMode = ValueAnimator.REVERSE
+                        start()
+                    }
+                }
+            } else {
+                authWebpageBG.background = (ContextCompat.getDrawable(requireContext(), R.drawable.animated_placeholder) as AnimatedVectorDrawable).apply {
+                    if (theming.color != Color.TRANSPARENT) {
+                        setTintList(ColorStateList.valueOf(theming.color))
+                        setTintMode(PorterDuff.Mode.ADD)
+                    }
+                    start()
+                }
+            }
 
             authWebpage.loadUrl("${authenticateModel.getAccount().serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
         }
@@ -163,9 +200,19 @@ class NCAuthenticationFragment: Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (theming.color != Color.TRANSPARENT) requireActivity().window.statusBarColor = theming.color
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         authWebpage.saveState(outState)
+    }
+
+    override fun onDestroyView() {
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        super.onDestroyView()
     }
 
     private fun saveToken() {
@@ -225,7 +272,13 @@ class NCAuthenticationFragment: Fragment() {
         private const val CONFIRM_NEW_ACCOUNT_DIALOG = "CONFIRM_NEW_ACCOUNT_DIALOG"
 
         private const val KEY_RELOGIN = "KEY_RELOGIN"
+        private const val KEY_THEMING = "KEY_THEMING"
         @JvmStatic
-        fun newInstance(reLogin: Boolean) = NCAuthenticationFragment().apply { arguments = Bundle().apply { putBoolean(KEY_RELOGIN, reLogin) }}
+        fun newInstance(reLogin: Boolean, theming: NCLoginFragment.AuthenticateViewModel.NCThemimg = NCLoginFragment.AuthenticateViewModel.NCThemimg()) = NCAuthenticationFragment().apply {
+            arguments = Bundle().apply {
+                putBoolean(KEY_RELOGIN, reLogin)
+                putParcelable(KEY_THEMING, theming)
+            }
+        }
     }
 }
