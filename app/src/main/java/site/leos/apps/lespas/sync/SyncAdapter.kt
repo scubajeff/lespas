@@ -17,6 +17,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
+import okhttp3.internal.http2.StreamResetException
 import okio.IOException
 import okio.buffer
 import okio.sink
@@ -981,11 +982,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
 
-                    //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
+                    Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
                     fileName = cursor.getString(nameColumn)
                     relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                     mimeType = cursor.getString(typeColumn)
-                    //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+                    Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
 
                     // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
@@ -998,6 +999,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 } catch (e: UnsupportedOperationException) {
                                     ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
                                },
+                                //"${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application
                                 "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application
                             )
                             break
@@ -1013,6 +1015,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     }
                                 }
                                 else -> throw e
+                            }
+                        } catch (e: StreamResetException) {
+                            var subFolder = dcimRoot
+                            relativePath.split("/").forEach {
+                                subFolder += "/$it"
+                                if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
                             }
                         }
                     }
