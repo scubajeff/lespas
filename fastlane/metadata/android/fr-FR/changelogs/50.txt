@@ -1,0 +1,6 @@
+* Nouvel écran de connexion et de re-connexion, plus robuste et qui suit le thème de votre serveur Nextcloud.
+* Correction d'une erreur lors de la demande d'autorisation d'accès au stockage
+* Correction d'une erreur lors du transfert du stockage de l'application entre la carte SD interne et externe.
+* Correction de l'arrêt de la sauvegarde automatique du rouleau d'appareil photo
+* Correction du nom de l'album n'étant pas mis à jour sur l'écran après le renommage.
+* Autres améliorations et corrections de bogues

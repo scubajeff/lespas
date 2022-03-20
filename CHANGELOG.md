@@ -1,3 +1,10 @@
+## Version 2.5.3
+* New login and re-login screen, more robust implementation and follow your Nextcloud server's theming
+* Fixed crash when asking for storage access permission
+* Fixed crash when transferring app storage between internal and external SD
+* Fixed camera roll auto backup stalled
+* Fixed album name not being updated on screen after renaming
+
 ## Version 2.5.2
 * When syncing with server, recreate metadata files on server if they are missing
 
