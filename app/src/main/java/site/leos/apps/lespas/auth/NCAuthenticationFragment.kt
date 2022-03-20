@@ -49,6 +49,8 @@ class NCAuthenticationFragment: Fragment() {
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
     private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
 
+    private var actionBarHeight = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -61,25 +63,30 @@ class NCAuthenticationFragment: Fragment() {
             }
         })
 
-        setHasOptionsMenu(true)
-        scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
-                    ("nc://login/user:(.*)&password:(.*)&server:(.*)").toRegex().matchEntire(scanResult)?.destructured?.let { (username, token, server) ->
-                        prepareCredential(server, username, token)
+        if (reLogin) {
+            setHasOptionsMenu(true)
+            scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
+                        ("nc://login/user:(.*)&password:(.*)&server:(.*)").toRegex().matchEntire(scanResult)?.destructured?.let { (username, token, server) ->
+                            prepareCredential(server, username, token)
+                        }
                     }
                 }
-            }
 
-            // TODO Show scan error
+                // TODO Show scan error
+            }
         }
+
+        actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_nc_authentication, container, false)
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        if (reLogin) (requireActivity() as AppCompatActivity).supportActionBar?.let { view.setPadding(view.paddingLeft, it.height, view.paddingRight, 0) }
+        // Set content below action toolbar if launch from Setting
+        if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
 
         authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {
@@ -206,6 +213,7 @@ class NCAuthenticationFragment: Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         authWebpage.saveState(outState)
+        outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
     override fun onDestroyView() {
@@ -215,17 +223,18 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.authentication_menu, menu)
+        if (reLogin) inflater.inflate(R.menu.authentication_menu, menu)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
 
-
-        (scanIntent.resolveActivity(requireContext().packageManager) != null).let { scannerAvailable ->
-            menu.findItem(R.id.option_menu_qr_scanner)?.run {
-                isEnabled = scannerAvailable
-                isVisible = scannerAvailable
+        if (reLogin) {
+            (scanIntent.resolveActivity(requireContext().packageManager) != null).let { scannerAvailable ->
+                menu.findItem(R.id.option_menu_qr_scanner)?.run {
+                    isEnabled = scannerAvailable
+                    isVisible = scannerAvailable
+                }
             }
         }
     }
@@ -319,6 +328,8 @@ class NCAuthenticationFragment: Fragment() {
 
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val CONFIRM_NEW_ACCOUNT_DIALOG = "CONFIRM_NEW_ACCOUNT_DIALOG"
+
+        private const val KEY_ACTION_BAR_HEIGHT = "KEY_ACTION_BAR_HEIGHT"
 
         private const val KEY_RELOGIN = "KEY_RELOGIN"
         private const val KEY_THEMING = "KEY_THEMING"
