@@ -3,11 +3,13 @@ package site.leos.apps.lespas.helper
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
 import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import androidx.core.app.NotificationCompat
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
@@ -26,7 +28,7 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
     @SuppressLint("ApplySharedPref")
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val source: File
-        val destination: File
+        val target: File
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val inInternal = sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)
         val isSyncEnabled = sp.getBoolean(context.getString(R.string.sync_pref_key), false)
@@ -36,11 +38,11 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
         context.getString(R.string.lespas_base_folder_name).apply {
             if (inInternal) {
                 source = File(context.filesDir, this)
-                destination = File(context.getExternalFilesDirs(null)[1], this)
+                target = File(context.getExternalFilesDirs(null)[1], this)
                 message = context.getString(R.string.transfer_to_external)
             } else {
                 source = File(context.getExternalFilesDirs(null)[1], this)
-                destination = File(context.filesDir, this)
+                target = File(context.filesDir, this)
                 message = context.getString(R.string.transfer_to_internal)
             }
         }
@@ -52,19 +54,21 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
             if (isSyncEnabled) ContentResolver.removePeriodicSync(accounts[0], context.getString(R.string.sync_authority), Bundle.EMPTY)
 
             // Make destination folder
-            destination.mkdir()
+            target.mkdir()
 
             source.listFiles()?.let {
                 it.forEachIndexed { i, sFile ->
                     @Suppress("DEPRECATION")
-                    (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) Notification.Builder(context) else Notification.Builder(context, WORKER_NAME)).apply {
+                    NotificationCompat.Builder(context, WORKER_NAME).apply {
                         setProgress(100, ((i + 1.0) / it.size * 100).toInt(), false).setSmallIcon(R.drawable.ic_notification).setContentTitle(message).setTicker(message).setOngoing(true)
                         notificationManager.notify(NOTIFICATION_ID, build())
                     }
 
-                    sFile.inputStream().use { input->
-                        File("$destination/${sFile.name}").outputStream().use { output->
-                            input.copyTo(output, 8192)
+                    if (sFile.isFile) {
+                        sFile.inputStream().use { input ->
+                            File("$target/${sFile.name}").outputStream().use { output ->
+                                input.copyTo(output, 8192)
+                            }
                         }
                     }
                 }
@@ -80,7 +84,7 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
         } catch (e: Exception) {
             e.printStackTrace()
 
-            try { destination.deleteRecursively() } catch (e: Exception) { e.printStackTrace() }
+            try { target.deleteRecursively() } catch (e: Exception) { e.printStackTrace() }
             Result.failure()
         } finally {
             // Restore periodic sync
@@ -94,9 +98,8 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
     private fun createForegroundInfo(notificationTitle: String): ForegroundInfo = ForegroundInfo(NOTIFICATION_ID, createNotification(notificationTitle))
 
     private fun createNotification(title: String): Notification {
-        @Suppress("DEPRECATION")
-        val builder = (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) Notification.Builder(context) else Notification.Builder(context, WORKER_NAME))
-            .setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setTicker(title).setProgress(100, 0, false).setOngoing(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) notificationManager.createNotificationChannel(NotificationChannel(WORKER_NAME, WORKER_NAME, NotificationManager.IMPORTANCE_LOW))
+        return NotificationCompat.Builder(context, WORKER_NAME).setSmallIcon(R.drawable.ic_notification).setContentTitle(title).setTicker(title).setProgress(100, 0, false).setOngoing(true).build()
 /*
             // TODO cancel transfer worker
             .addAction(
@@ -107,15 +110,6 @@ class TransferStorageWorker(private val context: Context, workerParams: WorkerPa
                     .build()
             )
 */
-
-/*
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) NotificationChannel(WORKER_NAME, WORKER_NAME, NotificationManager.IMPORTANCE_LOW).also {
-            notificationManager.createNotificationChannel(it)
-            builder.setChannelId(it.id)
-        }
-*/
-
-        return builder.build()
     }
 
     companion object {
