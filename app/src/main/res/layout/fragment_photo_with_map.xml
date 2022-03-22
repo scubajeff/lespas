@@ -5,11 +5,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="?attr/actionBarSize"
     android:background="@drawable/album_item_background">
 
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/photo"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         app:layout_constraintTop_toTopOf="parent"

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -13,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.LespasDatabase
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.sync.Action
 import java.io.File
 
@@ -34,6 +36,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
         val uri = Uri.parse(inputData.keyValueMap[KEY_IMAGE_URI] as String)
         val originalPhoto = photoDao.getPhotoById(inputData.keyValueMap[KEY_SHARED_PHOTO] as String)
         val album = albumDao.getThisAlbum(inputData.keyValueMap[KEY_ALBUM] as String)
+        val exifInterface: ExifInterface?
 
         withContext(Dispatchers.IO) {
             cr.query(uri, null, null, null, null)?.use { cursor ->
@@ -92,12 +95,16 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Update local database
-                    val newPhoto = Tools.getPhotoParams("$appRootFolder/$imageName", JPEG, imageName).copy(
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (e: Exception) { null }
+                    val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                         // Mark sync status by setting eTag to empty
-                        id = originalPhoto.id, albumId = album.id, name = imageName, eTag = "", shareId = originalPhoto.shareId
+                        //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
+                        id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                     )
                     photoDao.update(newPhoto)
+                    if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
                     //setProgress(workDataOf( KEY_INVALID_OLD_PHOTO_CACHE to true))
 
@@ -106,17 +113,21 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     try { File(appRootFolder, originalPhoto.id).delete() } catch (e: Exception) { e.printStackTrace() }
 */
 
-                    // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any
+                    // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
                     try { File(appRootFolder, originalPhoto.name).delete() } catch (e: Exception) {}
 
 
                     // Update server
                     with(mutableListOf<Action>()) {
-                        // Rename file to new filename on server, so that we can overwrite it in the next action and keep it's fileId intact
+                        // First rename file to new filename on server, then in next ACTION_ADD_FILES_ON_SERVER action, overwrite it with new edition. This way, file's fileId on server will not change
                         add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
-                        // Upload new photo to server. Photo mimeType passed in folderId property, and since this is actually an file update on server, pass the current photo id in property fileId
-                        //add(Action(null, Action.ACTION_UPDATE_FILE, newPhoto.mimeType, album.name, "", newPhoto.name, System.currentTimeMillis(), 1))
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
+                        if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, "", "", "", System.currentTimeMillis(), 1))
+/*
+                        // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
+                        add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
+*/
 
                         actionDao.insert(this)
                     }
@@ -140,11 +151,13 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     }
 
                     // Create new photo in local database
-                    photoDao.insert(Tools.getPhotoParams("$appRootFolder/$fileName", JPEG, fileName).copy(id = fileName, albumId = album.id, name = fileName))
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (e: Exception) { null }
+                    photoDao.insert(Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
 
                     with(mutableListOf<Action>()) {
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
-                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, JPEG, album.name, fileName, fileName, System.currentTimeMillis(), 1))
+                        add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, Photo.DEFAULT_MIMETYPE, album.name, fileName, fileName, System.currentTimeMillis(), album.shareId))
 
                         actionDao.insert(this)
                     }
@@ -164,8 +177,6 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
     }
 
     companion object {
-        private const val JPEG = "image/jpeg"
-
         const val KEY_IMAGE_URI = "IMAGE_URI"
         const val KEY_SHARED_PHOTO = "SHARE_PHOTO"
         const val KEY_ALBUM = "ALBUM"

@@ -1,3 +1,37 @@
+## Version 2.5.3
+* New login and re-login screen, more robust implementation and follow your Nextcloud server's theming
+* Fixed crash when asking for storage access permission
+* Fixed crash when transferring app storage between internal and external SD
+* Fixed camera roll auto backup stalled
+* Fixed album name not being updated on screen after renaming
+
+## Version 2.5.2
+* When syncing with server, recreate metadata files on server if they are missing
+
+## Version 2.5.1
+* Fixed wrong format of metadata JSON file being generated when running in system with non english locales like French, German, etc.
+* New pt-BR translation, thanks to github user @nosklo
+
+## Version 2.5.0
+* New feature: Remote Album, all image files of remote album are stored in server only, free up phone's storage space
+* New feature: slideshow in map can now be shared to other Nextcloud user
+* New feature: support setting animated GIF, animated WEBP as album's cover photo
+* New feature: photo meta scanning process can now parse file name with timestamp pattern, support yyyyMMddHHmmss and yyyyMMdd_HHmmss
+* Fixed potential crash when quickly enter and exit location search screen
+* Fixed crash when playing slideshow in map
+* Fixed seeding image with wrong orientation to Muzei
+* After sorting album list, current scroll position will reset to top
+* Other improvements and bugs fixes
+
+## Version 2.4.6
+* Show camera roll backup status summary in Setting
+* New default photo sort order preference in Setting
+* New option to avoid refreshing Muzei wallpaper during late night
+* Able to launch map app in Photo with Map screen
+* Avoid name collision when hiding and un-hiding album
+* Fixed crash when long press to select multiple albums
+* Fixed crash when adding Gallery launcher icon in Setting
+
 ## Version 2.4.5
 * Added BGM to slideshow
 * Added hide/unhide album function

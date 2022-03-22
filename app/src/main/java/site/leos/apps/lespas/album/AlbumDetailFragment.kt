@@ -2,10 +2,14 @@ package site.leos.apps.lespas.album
 
 import android.content.*
 import android.content.pm.ActivityInfo
+import android.content.res.ColorStateList
 import android.database.ContentObserver
 import android.graphics.*
 import android.net.Uri
-import android.os.*
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.TypedValue
 import android.view.*
@@ -20,29 +24,37 @@ import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
-import androidx.exifinterface.media.ExifInterface
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.selection.*
+import androidx.recyclerview.selection.ItemDetailsLookup
+import androidx.recyclerview.selection.ItemKeyProvider
+import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.SelectionTracker.Builder
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.selection.StorageStrategy
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import androidx.work.*
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.transition.*
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -53,6 +65,7 @@ import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.lang.Runnable
 import java.time.Duration
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -73,7 +86,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
@@ -85,7 +98,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val publishModel: NCShareViewModel by activityViewModels()
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
 
-    private var sortOrderChanged = false
+    // Update album meta only when fragment destroy
+    private var saveSortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
@@ -97,8 +111,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var reuseUris = arrayListOf<Uri>()
 
     private var mapOptionMenu: MenuItem? = null
-    private var photosWithCoordinate = mutableListOf<PhotoWithCoordinate>()
-    private var getCoordinateJob: Job? = null
+
+    private lateinit var lespasPath: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +121,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         album = arguments?.getParcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
+        lespasPath = getString(R.string.lespas_base_folder_name)
 
         // Must be restore here
         lastSelection = mutableSetOf()
@@ -114,16 +129,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         savedInstanceState?.let {
             lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
-            sortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
+            saveSortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
         } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
+            album.id,
             { view, position ->
                 currentPhotoModel.run {
                     setCurrentPosition(position)
                     setLastPosition(position)
                 }
 
+                ViewCompat.setTransitionName(recyclerView, null)
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(false).apply {
                     duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -131,7 +148,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     excludeTarget(android.R.id.statusBarBackground, true)
                     excludeTarget(android.R.id.navigationBarBackground, true)
                 }
-                ViewCompat.setTransitionName(recyclerView, null)
 
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
@@ -140,7 +156,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view, type -> imageLoaderModel.loadPhoto(photo, view, type) { startPostponedEnterTransition() } }
+            { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -175,7 +192,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }
-        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+        requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -195,16 +212,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     with(WorkManager.getInstance(requireContext())) {
                         enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
-                        getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                        getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
                             if (workInfo != null) {
                                 // If replace original is on, remove old bitmaps from cache and take care of cover too
                                 if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                    imageLoaderModel.invalid(sharedPhoto.id)
+                                    imageLoaderModel.invalidPhoto(sharedPhoto.id)
                                     // Update cover if needed, cover id can be found only in adapter
                                     mAdapter.updateCover(sharedPhoto)
                                 }
                             }
-                        })
+                        }
                     }
 
                     requireContext().contentResolver.unregisterContentObserver(this)
@@ -216,7 +233,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             if (it) {
                 val photos = mutableListOf<Photo>()
                 for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
             }
             sharedSelection.clear()
         }
@@ -254,6 +271,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
+        if (scrollTo.isEmpty()) recyclerView.doOnLayout { startPostponedEnterTransition() }
 
         with(recyclerView) {
             // Special span size to show cover at the top of the grid
@@ -273,8 +291,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 PhotoGridAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = (key.isNotEmpty())
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = (position != 0)
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key.isNotEmpty()
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
@@ -367,7 +385,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
-        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner, {
+        albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
             // Cover might changed, photo might be deleted, so get updates from latest here
             this.album = it.album
 
@@ -382,54 +400,34 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             // Scroll to designated photo at first run
             if (scrollTo.isNotEmpty()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >=0) this else 0})
+                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
                 scrollTo = ""
             }
 
             // Restore selection state
-            if (lastSelection.isNotEmpty()) lastSelection.forEach {selected-> selectionTracker.select(selected) }
+            if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
 
-            // Search for location in photos, enable 'show in map' option menu
-            getCoordinateJob?.cancel()
-            getCoordinateJob = lifecycleScope.launch(Dispatchers.IO) {
-                val baseFolder = Tools.getLocalRoot(requireContext())
-                var coordinate: DoubleArray
-                var hit = false
-
-                photosWithCoordinate.clear()
-                mAdapter.getPhotos().forEach { photo->
-                    coordinate = doubleArrayOf(0.0, 0.0)
-                    if (Tools.hasExif(photo.mimeType)) try {
-                        ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                    } catch (e: Exception) {
-                        null
-                    }?.latLong?.apply {
-                        hit = true
-                        coordinate = this
-                    }
-                    photosWithCoordinate.add(PhotoWithCoordinate(photo, coordinate[0], coordinate[1]))
-                }
-
-                withContext(Dispatchers.Main) {
-                    mapOptionMenu?.apply {
-                        isEnabled = hit
-                        isVisible = hit
+            lifecycleScope.launch {
+                it.photos.forEach { photo ->
+                    if (photo.latitude != Photo.NO_GPS_DATA) {
+                        mapOptionMenu?.isVisible = true
+                        return@launch
                     }
                 }
             }
-        })
+        }
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
             sharedByMe = shares.find { it.fileId == album.id } ?: NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
             mAdapter.setRecipient(sharedByMe)
         }
 
-        destinationViewModel.getDestination().observe(viewLifecycleOwner, { album->
+        destinationViewModel.getDestination().observe(viewLifecycleOwner) { album ->
             // Acquire files
             album?.apply {
                 if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, album, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
-        })
+        }
 
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
@@ -446,6 +444,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     // Set title to new name
                     (activity as? AppCompatActivity)?.supportActionBar?.title = newName
+                    album.name = newName
                 }
             }
         }
@@ -458,7 +457,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                             val photos = mutableListOf<Photo>()
                             for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album.name)
+                            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
                         }
                         selectionTracker.clearSelection()
                     }
@@ -482,7 +481,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onSaveInstanceState(outState)
         outState.putStringArray(SELECTION, lastSelection.toTypedArray())
         outState.putStringArray(SHARED_SELECTION, sharedSelection.toTypedArray())
-        outState.putBoolean(SORT_ORDER_CHANGED, sortOrderChanged)
+        outState.putBoolean(SORT_ORDER_CHANGED, saveSortOrderChanged)
     }
 
     override fun onDestroyView() {
@@ -496,7 +495,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onDestroy() {
         // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (sortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumMeta(album)
+        if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
 
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
@@ -510,6 +509,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)
         mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+
+        run map@{
+            mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
+                if (it.latitude != Photo.NO_GPS_DATA) {
+                    mapOptionMenu?.isVisible = true
+
+                    return@map
+                }
+            }
+        }
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -526,7 +535,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         // Disable publish function when this is a newly created album which does not exist on server yet
-        if (album.eTag.isEmpty()) menu.findItem(R.id.option_menu_publish).isEnabled = false
+        if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
 
         super.onPrepareOptionsMenu(menu)
     }
@@ -572,9 +581,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_publish-> {
-                // Check for album meta file existence, create it if needed
-                if (!File(Tools.getLocalRoot(requireContext()), "${album.id}.json").exists()) WorkManager.getInstance(requireContext()).enqueueUniqueWork(MainActivity.MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MainActivity.MetaFileMaintenanceWorker>().build())
-
                 // Get meaningful label for each recipient
                 publishModel.sharees.value.let { sharees->
                     sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
@@ -588,7 +594,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, photosWithCoordinate), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, mAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             R.id.option_menu_bgm-> {
@@ -609,7 +615,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         with(PreferenceManager.getDefaultSharedPreferences(context)) {
             isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
             snapseedEditAction?.isVisible = isSnapseedEnabled
-            if (isSnapseedEnabled) snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24)
+
+            if (isSnapseedEnabled) {
+                if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_24)
+                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_replace)
+                } else {
+                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24)
+                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_add)
+                }
+            }
         }
 
         return true
@@ -638,36 +653,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.snapseed_edit-> {
-                val uris = prepareShares(false, null)
-
-                if (uris.isNotEmpty()) {
-                    sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-                    startActivity(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        data = uris[0]
-                        putExtra(Intent.EXTRA_STREAM, uris[0])
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                    })
-
-                    // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
-                    requireContext().sendBroadcast(Intent().apply {
-                        action = CHOOSER_SPY_ACTION
-                        putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                    })
-                }
-
-                selectionTracker.clearSelection()
+                shareOut(false, SHARE_TO_SNAPSEED)
                 true
             }
             R.id.lespas_reuse-> {
-                reuseUris = prepareShares(false, null)
-
-                if (reuseUris.isNotEmpty()) {
-                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                }
-
-                selectionTracker.clearSelection()
+                shareOut(false, SHARE_TO_LESPAS)
                 true
             }
             else -> false
@@ -680,8 +670,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun updateSortOrder(newOrder: Int) {
+        // Scroll to the top after sort, since cover photo has album's id as it's id, scroll to this id means scroll to the top
+        scrollTo = album.id
+
         albumModel.setSortOrder(album.id, newOrder)
-        sortOrderChanged = true
+        saveSortOrderChanged = true
     }
 
     private fun hasExifInSelection(): Boolean {
@@ -696,34 +689,40 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         val uris = arrayListOf<Uri>()
         var sourceFile: File
         var destFile: File
+        val isRemote = Tools.isRemoteAlbum(album)
+        val serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
 
-        try {
-            sharedSelection.clear()
-            for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
+        sharedSelection.clear()
+        for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
 
-            for (photoId in sharedSelection) {
-                // Quit asap when job cancelled
-                job?.let { if (it.isCancelled) return arrayListOf() }
+        for (photoId in sharedSelection) {
+            // Quit asap when job cancelled
+            job?.let { if (it.isCancelled) return arrayListOf() }
 
-                with(mAdapter.getPhotoBy(photoId)) {
-                    // Synced file is named after id, not yet synced file is named after file's name
-                    sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag.isNotEmpty()) id else name)
+            if (mAdapter.getPhotoBy(photoId).let { photo ->
+                // Synced file is named after id, not yet synced file is named after file's name
+                destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+
+                if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                    imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
+                } else {
+                    //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
+                    sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
                     // This TEMP_CACHE_FOLDER is created by MainActivity
-                    destFile = File("${requireActivity().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${name.substringAfterLast('.')}" else name)
 
                     // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                    if (strip && Tools.hasExif(this.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    if (strip && Tools.hasExif(photo.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else sourceFile.copyTo(destFile, true, 4096)
-                    uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
+                    true
                 }
-            }
-        } catch (e: Exception) { e.printStackTrace() }
+            }) uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
+        }
 
         return uris
     }
 
     private var shareOutJob: Job? = null
-    private fun shareOut(strip: Boolean) {
+    private fun shareOut(strip: Boolean, shareType: Int = GENERAL_SHARE) {
         val handler = Handler(Looper.getMainLooper())
         val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { shareOutJob?.cancel(cause = null) }
 
@@ -744,34 +743,65 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 val uris = prepareShares(strip, shareOutJob!!)
 
                 withContext(Dispatchers.Main) {
-                    // Call system share chooser
                     if (uris.isNotEmpty()) {
-                        val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
-                        for (i in 1 until uris.size) {
-                            if (isActive) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
-                                else clipData.addItem(ClipData.Item(uris[i]))
+                        when (shareType) {
+                            GENERAL_SHARE -> {
+                                // Call system share chooser
+                                val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                                for (i in 1 until uris.size) {
+                                    if (isActive) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                                        else clipData.addItem(ClipData.Item(uris[i]))
+                                    }
+                                }
+
+                                // Dismiss Snackbar before showing system share chooser, avoid unpleasant screen flicker
+                                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
+                                if (isActive) startActivity(Intent.createChooser(Intent().apply {
+                                    if (uris.size == 1) {
+                                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    } else {
+                                        action = Intent.ACTION_SEND_MULTIPLE
+                                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                                    }
+                                    //type = sharedPhoto.mimeType
+                                    type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
+                                    this.clipData = clipData
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                                }, null))
+                            }
+                            SHARE_TO_SNAPSEED -> {
+                                startActivity(Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    data = uris[0]
+                                    putExtra(Intent.EXTRA_STREAM, uris[0])
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                                })
+
+                                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
+                                requireContext().sendBroadcast(Intent().apply {
+                                    action = CHOOSER_SPY_ACTION
+                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                                })
+                            }
+                            SHARE_TO_LESPAS -> {
+                                reuseUris = uris
+                                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                             }
                         }
-
-                        // Dismiss Snackbar before showing system share chooser, avoid unpleasant screen flicker
-                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-                        if (isActive) startActivity(Intent.createChooser(Intent().apply {
-                            if (uris.size == 1) {
-                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_STREAM, uris[0])
-                            } else {
-                                action = Intent.ACTION_SEND_MULTIPLE
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            }
-                            //type = sharedPhoto.mimeType
-                            type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
+                    } else {
+                        var msg = getString(R.string.msg_error_preparing_share_out_files)
+                        if (Tools.isRemoteAlbum(album)) msg += " ${getString(R.string.msg_check_network)}"
+                        Snackbar.make(recyclerView, msg, Snackbar.LENGTH_LONG).apply {
+                            animationMode = Snackbar.ANIMATION_MODE_FADE
+                            setBackgroundTint(ContextCompat.getColor(recyclerView.context, R.color.color_primary))
+                            setTextColor(ContextCompat.getColor(recyclerView.context, R.color.color_text_light))
+                        }.show()
                     }
                 }
             } catch (e: CancellationException) {
@@ -793,31 +823,43 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     // Adapter for photo grid
-    class PhotoGridAdapter(private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
-    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+    ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
+        private lateinit var album: Album
         var photos = mutableListOf<Photo>()
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
-        //private var oldSortOrder = Album.BY_DATE_TAKEN_ASC
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private val ivCover = itemView.findViewById<ImageView>(R.id.cover)
+            private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
+            private val ivCover = itemView.findViewById<ImageView>(R.id.photo)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val tvTotal = itemView.findViewById<TextView>(R.id.total)
             private val tvRecipients = itemView.findViewById<TextView>(R.id.recipients)
+            private val titleDrawableSize = tvTitle.textSize.toInt()
 
             fun bindViewItem(cover: Photo) {
                 with(itemView) {
-                    imageLoader(cover, ivCover, ImageLoaderViewModel.TYPE_COVER)
+                    if (currentCover.name != cover.name || currentCover.eTag != cover.eTag || currentCover.bearing != cover.bearing) {
+                        imageLoader(cover.copy(id = album.cover), ivCover, NCShareViewModel.TYPE_COVER)
+                        currentCover = cover
+                    }
 
-                    tvTitle.text = cover.name
+                    tvTitle.apply {
+                        text = album.name
+
+                        setCompoundDrawables(
+                            if (Tools.isRemoteAlbum(album)) ContextCompat.getDrawable(context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) } else null,
+                            null, null, null
+                        )
+                    }
 
                     val days = Duration.between(
-                        cover.dateTaken.atZone(ZoneId.systemDefault()).toInstant(),
-                        cover.lastModified.atZone(ZoneId.systemDefault()).toInstant()
+                        album.startDate.atZone(ZoneId.systemDefault()).toInstant(),
+                        album.endDate.atZone(ZoneId.systemDefault()).toInstant()
                     ).toDays().toInt()
                     tvDuration.text = when (days) {
                         in 0..21 -> resources.getString(R.string.duration_days, days + 1)
@@ -841,31 +883,35 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoName = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
             private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
 
-            fun bindViewItem(photo: Photo, isActivated: Boolean) {
+            fun bindViewItem(photo: Photo) {
                 itemView.let {
-                    it.isActivated = isActivated
+                    it.isActivated = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
-                        imageLoader(photo, this, ImageLoaderViewModel.TYPE_GRID)
+                        if (currentPhotoName != photo.name) {
+                            this.setImageResource(0)
+                            imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
+                            ViewCompat.setTransitionName(this, photo.id)
+                            currentPhotoName = photo.name
+                        }
 
-                        if (this.isActivated) {
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
+
+                        if (it.isActivated) {
                             colorFilter = selectedFilter
                             ivSelectionMark.visibility = View.VISIBLE
                         } else {
                             clearColorFilter()
                             ivSelectionMark.visibility = View.GONE
                         }
-
-                        ViewCompat.setTransitionName(this, photo.id)
-
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
-
-                        ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !this.isActivated) View.VISIBLE else View.GONE
                     }
+
+                    ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isActivated) View.VISIBLE else View.GONE
                 }
             }
 
@@ -879,17 +925,32 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             recipientText = parent.context.getString(R.string.published_to)
-            return if (viewType == TYPE_COVER) CoverViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false))
+            return if (viewType == TYPE_COVER) {
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cover, parent, false)
+                view.findViewById<TextView>(R.id.title)?.apply {
+                    compoundDrawablePadding = 16
+                    TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
+                }
+                CoverViewHolder(view)
+            }
             else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
 
         }
 
         override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position], selectionTracker.isSelected(currentList[position].id))
+            if (holder is PhotoViewHolder) holder.bindViewItem(currentList[position])
             else (holder as CoverViewHolder).bindViewItem(currentList.first())  // List will never be empty, no need to check for NoSuchElementException
         }
 
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+
         internal fun setAlbum(album: AlbumWithPhotos) {
+            this.album = album.album
             photos = mutableListOf()
             photos.addAll(
                 when(album.album.sortOrder) {
@@ -897,12 +958,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
                     Album.BY_DATE_MODIFIED_ASC-> album.photos.sortedWith(compareBy { it.lastModified })
                     Album.BY_DATE_MODIFIED_DESC-> album.photos.sortedWith(compareByDescending { it.lastModified })
-                    Album.BY_NAME_ASC-> album.photos.sortedWith(compareBy { it.name })
-                    Album.BY_NAME_DESC-> album.photos.sortedWith(compareByDescending { it.name })
+                    Album.BY_NAME_ASC-> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                    Album.BY_NAME_DESC-> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
                     else-> album.photos
                 }
             )
-            album.album.run { photos.add(0, Photo(cover, id, name, "", startDate, endDate, coverWidth, coverHeight, photos.size.toString(), coverBaseline)) }
+            // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+            // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
+            // set albumId to album's name, so that album name changes can be updated
+            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
             submitList(photos)
         }
 
@@ -912,7 +976,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             notifyItemChanged(0)
         }
 
-        internal fun getPhotos(): List<Photo> = photos.drop(1)
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
         internal fun updateCover(sharedPhoto: Photo) {
@@ -923,9 +986,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+        internal fun getPhotoWithCoordinate(): List<Photo> {
+            return mutableListOf<Photo>().apply {
+                currentList.forEach { if (it.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.mimeType)) add(it) }
+                toList()
+            }
+        }
+
         class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
-            override fun getPosition(key: String): Int = with(adapter.getPhotoPosition(key)) { if (this >= 0) this else RecyclerView.NO_POSITION }
+            override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
         }
         class PhotoDetailsLookup(private val recyclerView: RecyclerView): ItemDetailsLookup<String>() {
             override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
@@ -943,9 +1013,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
+    class PhotoDiffCallback(private val albumId: String): DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.lastModified == newItem.lastModified && oldItem.name == newItem.name && oldItem.shareId == newItem.shareId && oldItem.mimeType == newItem.mimeType
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean =
+            if (oldItem.id == albumId) oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing && oldItem.albumId == newItem.albumId
+            else oldItem.name == newItem.name && oldItem.eTag == newItem.eTag
     }
 
     companion object {
@@ -962,6 +1034,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
+
+        private const val GENERAL_SHARE = 0
+        private const val SHARE_TO_SNAPSEED = 1
+        private const val SHARE_TO_LESPAS = 2
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_ALBUMDETAIL"
 

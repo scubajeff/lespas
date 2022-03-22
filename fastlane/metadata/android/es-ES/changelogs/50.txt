@@ -1,0 +1,6 @@
+* Nueva pantalla de inicio y reinicio de sesión, con una implementación más robusta y que sigue la temática de su servidor Nextcloud.
+* Corregido el fallo al pedir permiso de acceso al almacenamiento
+* Corregido el fallo al transferir el almacenamiento de la aplicación entre la SD interna y la externa
+* Fijo rollo de la cámara de copia de seguridad automática estancada
+* Corregido el nombre del álbum que no se actualiza en la pantalla después de cambiar el nombre
+* Otras mejoras y correcciones de errores

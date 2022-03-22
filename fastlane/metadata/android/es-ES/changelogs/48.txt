@@ -1,0 +1,9 @@
+* Nueva función: Álbum remoto, todos los archivos de imagen del álbum remoto se almacenan en el servidor solamente, liberar el espacio de almacenamiento del teléfono
+* Nueva función: la presentación de diapositivas en el mapa ahora se puede compartir con otros usuarios de Nextcloud
+* Nueva función: soporte para establecer GIF animado, WEBP animado como foto de portada del álbum
+* Nueva función: el proceso de escaneo de fotos puede ahora analizar el nombre del archivo con un patrón de fecha y hora, soportando aaaaMMddHHmmss y aaaaMMdd_HHmmss
+* Corregido el posible fallo al entrar y salir rápidamente de la pantalla de búsqueda de ubicación
+* Corregido el fallo al reproducir la presentación de diapositivas en el mapa
+* Arreglado el problema de la imagen con orientación incorrecta en Muzei
+* Después de ordenar la lista de álbumes, la posición de desplazamiento actual se restablece a la parte superior
+* Otras mejoras y correcciones de errores

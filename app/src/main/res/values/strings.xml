@@ -9,9 +9,9 @@
     <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>
 
-    <!-- NCLogin activity -->
+    <!-- NCLogin fragment -->
     <string name="welcome_message_title">Welcome to Les Pas!</string>
-    <string name="welcom_message">To get started, please grant access on your Nextcloud server.</string>
+    <string name="welcome_message">To get started, please grant access on your Nextcloud server.</string>
     <string name="button_text_scan">Scan App Password</string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
@@ -35,19 +35,23 @@
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>
 
+    <!-- NCAuthentication fragment -->
+    <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
+    <string name="menu_item_qr_scanner_title">Scan QR code</string>
+
     <!-- Various Nextcloud access endpoints and naming -->
     <string name="lespas_base_folder_name" translatable="false">/lespas</string>
-    <string name="server_capabilities_endpoint" translatable="false">/ocs/v2.php/cloud/capabilities?format=json</string> <!-- No credentials needed -->
-    <string name="user_metadata_endpoint" translatable="false">/ocs/v2.php/cloud/users</string>
-    <string name="login_flow_endpoint" translatable="false">/index.php/login/flow</string>
     <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->
     <string name="fab_add_photos">Add photos</string>
     <string name="unlock_please">Unlock hidden albums</string>
+    <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
+    <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
+    <string name="not_hiding">The following names already existed in hidden album list: %1$s</string>
 
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
@@ -64,13 +68,16 @@
     <string name="strip_exif_no">No</string>
     <string name="preparing_shares">Preparing shares…</string>
     <string name="striping_exif">Striping EXIF data…</string>
+    <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
+    <string name="msg_check_network">Check your server connection.</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
     <string name="button_text_share">Share</string>
     <string name="button_text_set_as">Set wallpaper</string>
     <string name="button_text_info">Info</string>
-    <string name="button_text_edit_in_snapseed">Edit in Snapseed</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Replace</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Add</string>
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">New cover applied.</string>
@@ -92,12 +99,15 @@
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
     <string name="auto_replay_title">Replay video automatically</string>
-    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
-    <string name="show_list_first">Display media list when camera roll start</string>
+    <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
+    <string name="default_sort_order_title">Default photo sort order</string>
+
     <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="cameraroll_as_album_title">Show camera roll as an album</string>
     <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Gallery launcher icon</string>
+    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
+    <string name="show_list_first">Display media list when camera roll start</string>
 
     <string name="edit_header">Edit</string>
     <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
@@ -134,11 +144,21 @@
     <string name="internal_storage">internal storage</string>
     <string name="external_storage">external SD card</string>
     <string name="statistic_free_space_message">%1$s available in %2$s</string>
+    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
+    <string name="clear_cache_title">Clear Remote album cache</string>
+    <string name="msg_clear_cache">All cached remote image files will be removed. Proceed?</string>
+    <string name="msg_restart_to_take_effect">Restart app for new setting to take effect.</string>
+    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
+    <string name="cache_size_title">Set Remote album cache size</string>
+    <string name="cache_size_summary">Current cache size: %1$dMB</string>
+    <string name="cache_size_setting_hint">Cache size:</string>
 
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
-    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder DCIM/%1$s</string>
+    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder \'DCIM/%1$s\'.</string>
+    <string name="backup_done">All items in camera roll have been backup.</string>
+    <string name="backup_waiting">%1$,d items in camera roll waiting for backup.</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check for server changes every 6 hours</string>
@@ -153,7 +173,7 @@
     <string name="relogin_summary">If you accidentally revoked Les Pas\'s access key on server.</string>
     <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
-    <string name="logout_dialog_msg">Log out of account %1$s?</string>
+    <string name="msg_logout_dialog">Log out of account %1$s?</string>
     <string name="yes_logout">Yes, log out</string>
 
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
@@ -169,6 +189,8 @@
     <string name="move_files">Move</string>
     <string name="create_new_album">Create new album</string>
     <string name="to_album">To Album:</string>
+    <string name="to_new_album">To New Album:</string>
+    <string name="checkbox_text_set_remote">Remote album, media files stored in server only.</string>
 
     <!-- Album Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
@@ -226,6 +248,8 @@
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_hide">Hide</string>
+    <string name="action_set_remote">Set as Remote</string>
+    <string name="action_set_local">Set as Local</string>
     <string name="action_reuse">To album…</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>

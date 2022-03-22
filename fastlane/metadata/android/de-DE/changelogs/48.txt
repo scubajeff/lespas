@@ -1,0 +1,9 @@
+* Neue Funktion: Remote Album, alle Bilddateien des Remote Albums werden nur auf dem Server gespeichert, um Speicherplatz auf dem Telefon freizugeben
+* Neue Funktion: Diashow in der Karte kann jetzt für andere Nextcloud-Nutzer freigegeben werden
+* Neue Funktion: Unterstützung der Einstellung von animiertem GIF, animiertem WEBP als Cover-Foto des Albums
+* Neue Funktion: Foto-Metascan-Prozess kann jetzt Dateinamen mit Zeitstempel-Muster analysieren, unterstützt yyyyMMddHHmmss und yyyyMMdd_HHmmss
+* Behebung eines möglichen Absturzes beim schnellen Aufrufen und Verlassen des Bildschirms für die Ortssuche
+* Behobener Absturz beim Abspielen einer Diashow in der Karte
+* Behoben, wenn ein Bild mit falscher Ausrichtung an Muzei gesendet wurde
+* Nach dem Sortieren der Albenliste wird die aktuelle Scroll-Position auf den Anfang zurückgesetzt
+* Weitere Verbesserungen und Fehlerkorrekturen

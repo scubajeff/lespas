@@ -13,6 +13,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +22,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import androidx.work.*
+import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.album.AlbumDetailFragment
@@ -40,14 +41,17 @@ import java.io.File
 class MainActivity : AppCompatActivity() {
     private val actionsPendingModel: ActionViewModel by viewModels()
     private lateinit var sp: SharedPreferences
-    private var coldExit = true
 
     private lateinit var accounts: Array<Account>
     private var loggedIn = true
 
+    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sp = PreferenceManager.getDefaultSharedPreferences(this)
+
+        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
         if (accounts.isEmpty()) {
@@ -55,7 +59,7 @@ class MainActivity : AppCompatActivity() {
             setTheme(R.style.Theme_LesPas_NoTitleBar)
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             setContentView(R.layout.activity_main)
-            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment.newInstance(false)).commit()
+            if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
         } else {
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             setContentView(R.layout.activity_main)
@@ -80,10 +84,9 @@ class MainActivity : AppCompatActivity() {
                         .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
-                        // Make sure photo's folder, temporary cache folder created
+                        // Make sure photo's folder created
                         try {
                             File(Tools.getLocalRoot(applicationContext)).mkdir()
-                            File("${cacheDir}${TEMP_CACHE_FOLDER}").mkdir()
                         } catch (e: Exception) {}
                     }
 
@@ -102,8 +105,9 @@ class MainActivity : AppCompatActivity() {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
+                                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                 }
-                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
                             // If Snapseed is not installed, disable Snapseed integration
                             packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
                                 sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
@@ -116,16 +120,16 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Create album meta file for all synced albums if needed
-                WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
+                //WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
             }
 
             // Setup observer to fire up SyncAdapter
-            actionsPendingModel.allPendingActions.observe(this, { actions ->
+            actionsPendingModel.allPendingActions.observe(this) { actions ->
                 if (actions.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
                     putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
                     putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
                 })
-            })
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
@@ -135,23 +139,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
         if (loggedIn && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
-    }
-
-    override fun onPause() {
-        coldExit = true
-        super.onPause()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        coldExit = false
-        super.onSaveInstanceState(outState)
-    }
-
-    override fun onDestroy() {
-        // Clean up temporary folder in app's cachePath
-        if (coldExit) try {  File("${cacheDir}${TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
-
-        super.onDestroy()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -176,7 +163,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun observeTransferWorker() {
-        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(TransferStorageWorker.WORKER_NAME).observe(this, { workInfos->
+        WorkManager.getInstance(this).getWorkInfosForUniqueWorkLiveData(TransferStorageWorker.WORKER_NAME).observe(this) { workInfos ->
             try {
                 workInfos?.get(0)?.apply {
                     if (state.isFinished) {
@@ -185,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: IndexOutOfBoundsException) {}
-        })
+        }
     }
 
 /*
@@ -194,7 +181,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 */
-    // TODO no need to do this after several release updates later?
+/*
     class MetaFileMaintenanceWorker(private val context: Context, workerParams: WorkerParameters): CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result {
             val actionDao = LespasDatabase.getDatabase(context).actionDao()
@@ -202,7 +189,7 @@ class MainActivity : AppCompatActivity() {
             val photoDao = LespasDatabase.getDatabase(context).photoDao()
 
             for (album in albumDao.getAllSyncedAlbum())
-                if (!File(Tools.getLocalRoot(context), "${album.id}.json").exists()) {
+                if (!File(Tools.getLocalRoot(context), "${album.id}_v2.json").exists()) {
                     if (photoDao.getETag(album.cover).isNotEmpty()) actionDao.updateAlbumMeta(album.id, photoDao.getName(album.cover))
                 }
 
@@ -213,12 +200,11 @@ class MainActivity : AppCompatActivity() {
             const val WORKER_NAME = "${BuildConfig.APPLICATION_ID}.META_FILE_MAINTENANCE_WORKER"
         }
     }
+*/
 
     companion object {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
-
-        const val TEMP_CACHE_FOLDER = "/lespastemp"
     }
 }

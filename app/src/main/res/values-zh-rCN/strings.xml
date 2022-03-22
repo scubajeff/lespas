@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="welcome_message_title">Les Pas欢迎您!</string>
-    <string name="welcom_message">请登录您的Nextcloud服务器进行应用授权。</string>
+    <string name="welcome_message">请登录您的Nextcloud服务器进行应用授权。</string>
     <string name="host_textinput_label">服务器网址</string>
     <string name="url_helper_text">例如：https://example.com/nextcloud</string>
     <string name="host_address_validation_error">网址不正确</string>
@@ -28,11 +28,11 @@
     <string name="sync_header">同步</string>
     <string name="background_sync_title">定时同步</string>
     <string name="wifionly_title">只使用WiFi网络同步</string>
-    <string name="wifionly_summary_on">开启，应用将不消耗移动网络流量。</string>
-    <string name="wifionly_summary_off">关闭，应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
+    <string name="wifionly_summary_on">已开启。应用将不消耗移动网络流量。</string>
+    <string name="wifionly_summary_off">已关闭。应用将消耗移动网络流量。如果照片数量多，请谨慎选择使用。</string>
     <string name="account_header">帐户</string>
     <string name="logout_title">登出服务器</string>
-    <string name="logout_dialog_msg">登出帐户%1$s吗？</string>
+    <string name="msg_logout_dialog">登出帐户%1$s吗？</string>
     <string name="copy_files">复制</string>
     <string name="create_new_album">创建新相册</string>
     <string name="invalid_character_found">禁止使用目录符号\'\\\'或\'/\'</string>
@@ -72,8 +72,8 @@
     <string name="mind_network_setting">请留意，当前同步设置不允许Les Pas使用移动流量。</string>
     <string name="snapseed_integration_title">集成Snapseed</string>
     <string name="snapseed_replace_title">替换原照片</string>
-    <string name="snapseed_replace_on_summary">开启，将采用Snapseed修图结果替换原始照片。</string>
-    <string name="snapseed_replace_off_summary">关闭，将保留原始照片，只添加Snapseed修图结果到相册中。</string>
+    <string name="snapseed_replace_on_summary">已开启。将采用Snapseed修图结果替换原始照片。</string>
+    <string name="snapseed_replace_off_summary">已关闭。将保留原始照片，只添加Snapseed修图结果到相册中。</string>
     <string name="storage_access_permission_rationale">Snapseed将修图结果保存在名为\"Snapseed\"的目录中，请授予存储访问权限以读取这些文件。</string>
     <string name="proceed_request">去授权</string>
     <string name="snapseed_integration_summary">注意：请设置Snapseed使用JPEG格式输出。</string>
@@ -82,7 +82,7 @@
     <string name="item_datedesc">按时间倒序</string>
     <string name="item_nameasc">按名称顺序</string>
     <string name="item_namedesc">按名称倒序</string>
-    <string name="button_text_edit_in_snapseed">Snapseed修图</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
     <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%1$s目录下。</string>
@@ -184,4 +184,25 @@
     <string name="item_bgm">背景音乐</string>
     <string name="option_menu_mute">切换静音</string>
     <string name="skip_late_night_update">不在深夜刷新</string>
+    <string name="backup_done">相机相册备份已完成。</string>
+    <string name="backup_waiting">相机相册中还有%1$,d个文件正在等待备份。</string>
+    <string name="not_hiding">隐藏相册表里已有以下相册：%1$s</string>
+    <string name="default_sort_order_title">默认照片排序规则</string>
+    <string name="msg_set_as_remote">相册设置为“远程相册”后，该相册的媒体文件将从本机存储中删除，继续操作吗？</string>
+    <string name="msg_set_as_local">相册设置为“本地相册”后，该相册的媒体文件将从服务器下载到本机，继续操作吗？</string>
+    <string name="action_set_remote">设为远程相册</string>
+    <string name="action_set_local">设为本地相册</string>
+    <string name="msg_error_preparing_share_out_files">无法读取媒体文件。</string>
+    <string name="msg_check_network">请检查与服务器的连接。</string>
+    <string name="to_new_album">至新相册：</string>
+    <string name="clear_cache_title">清除远程相册图片缓存</string>
+    <string name="msg_clear_cache">将清除所有远程相册图片的本地缓存，继续吗？</string>
+    <string name="msg_restart_to_take_effect">新设置在应用重新打开后生效。</string>
+    <string name="cache_size_title">设置远程相册图片缓存</string>
+    <string name="cache_size_summary">当前缓存大小为：%1$dMB</string>
+    <string name="cache_size_setting_hint">缓存大小</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed修图 - 新建</string>
+    <string name="checkbox_text_set_remote">远程相册，只在服务器上保存媒体文件。</string>
+    <string name="login_to_new_account">如果要登录其他帐户，请先登出当前帐户。现在继续登出当前帐户吗？</string>
+    <string name="menu_item_qr_scanner_title">扫码登录</string>
 </resources>

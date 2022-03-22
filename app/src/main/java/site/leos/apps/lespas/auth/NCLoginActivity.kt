@@ -11,6 +11,6 @@ class NCLoginActivity : AppCompatActivity() {
 
         supportActionBar?.hide()
 
-        savedInstanceState ?: run { supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment.newInstance(false)).commit() }
+        savedInstanceState ?: run { supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit() }
     }
 }

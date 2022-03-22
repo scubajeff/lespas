@@ -1,0 +1,9 @@
+* Nova funcionalidade: Álbum remoto, todos os arquivos de imagem do álbum são armazenados apenas no serivdor, liberando espaço do telefone
+* Nova funcionalidade: Apresentação no mapa agora pode ser compartilhado com outros usuários do Nextcloud
+* Nova funcionalidade: Possibilita colocar GIF animada e WEPB animada como capa de álbum
+* Nova funcionalidade: Processo de verificação dos metadados agora pode verificar o nome do arquivo com padrão de tempo, funciona com aaaaMMddHHmmss e aaaaMMdd_HHmmss
+* Consertado problema potencial quando rapidamente entrando e saindo da tela de pesquisa por localização
+* Consertado probleam quando reproduzindo apresentação no mapa
+* Consertado envio de imagem original com orientação errada para o Muzei
+* Após ordenação da lista de álbuns, voltar ao topo da mesma
+* Outras melhorias e correções de problemas

@@ -19,17 +19,20 @@ import kotlinx.coroutines.launch
 import org.osmdroid.bonuspack.location.GeocoderNominatim
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
-import java.io.File
+import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.IOException
+import java.time.LocalDateTime
 import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
-    private lateinit var menu: Menu
+    private var menu: Menu? = null
     private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getBoolean(SEARCH_COLLECTION)) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,8 +70,8 @@ class LocationSearchHostFragment: Fragment() {
         }
     }
 
-    fun enableMenuItem(itemId: Int): MenuItem? = menu.findItem(itemId).apply { this?.enable() }
-    fun disableMenuItem(itemId: Int) { menu.findItem(itemId).disable() }
+    //private fun enableMenuItem(itemId: Int): MenuItem? = menu?.findItem(itemId)?.apply { this.enable() }
+    private fun disableMenuItem(itemId: Int) { menu?.findItem(itemId)?.disable() }
 
     private fun MenuItem.disable() {
         this.isEnabled = false
@@ -85,46 +88,64 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     class LocationSearchViewModel(application: Application, searchCollection: Boolean): AndroidViewModel(application) {
-        private val baseFolder = Tools.getLocalRoot(application)
-        private val cr = application.contentResolver
-        private var total = 0
+        val photoRepository = PhotoRepository(application)
+
         private var job = viewModelScope.launch(Dispatchers.IO) {
-            (if (searchCollection) PhotoRepository(application).getAllImage() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
-                total = this.size
+            (if (searchCollection) photoRepository.getAllImageNotHidden() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
+                val lespasBaseFolder = application.getString(R.string.lespas_base_folder_name)
+                val cr = application.contentResolver
+                val albums = AlbumRepository(application).getAllAlbumAttribute()
+                val total = this.size
+                var rp = NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), "")
+                val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
+
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
-                    if (Tools.hasExif(photo.mimeType)) try {
-                        if (searchCollection) ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                        else try {
-                            cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
-                        } catch (e: SecurityException) {
-                            cr.openInputStream(Uri.parse(photo.id))
-                        } catch (e: UnsupportedOperationException) {
-                            cr.openInputStream(Uri.parse(photo.id))
-                        }?.use { ExifInterface(it) }
-                    } catch (e: Exception) {
-                        null
-                    }?.latLong?.also { latLong->
-                        when {
-                            latLong[0] == 0.0 -> {}
-                            latLong[0] >= 90.0 -> {}
-                            latLong[0] <= -90.0 -> {}
-                            latLong[1] == 0.0 -> {}
-                            latLong[1] >= 180.0 -> {}
-                            latLong[1] <= -180.0 -> {}
-                            else -> {
-                                try { GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID).getFromLocation(latLong[0], latLong[1], 1) } catch (e: IOException) { null }?.get(0)?.apply {
-                                    val city = this.locality ?: this.adminArea ?: ""
-                                    resultList.find { result-> result.country == this.countryName && result.locality == city }
-                                        ?.let { existed ->
-                                            existed.photos.add(PhotoWithCoordinate(photo, latLong[0], latLong[1]))
-                                            existed.total++
-                                        }
-                                        ?: run { resultList.add(LocationSearchResult(arrayListOf(PhotoWithCoordinate(photo, latLong[0], latLong[1])), 1, this.countryName, city)) }
+                    if (Tools.hasExif(photo.mimeType)) {
+                        (if (searchCollection) {
+                            //ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
+                            if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
+                            else return@forEachIndexed
+                        } else {
+                            try {
+                                cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
+                            } catch (e: SecurityException) {
+                                cr.openInputStream(Uri.parse(photo.id))
+                            } catch (e: UnsupportedOperationException) {
+                                cr.openInputStream(Uri.parse(photo.id))
+                            }?.let { ExifInterface(it).latLong } ?: run { null }
+                        })?.also { latLong ->
+                            if (photo.country.isEmpty()) {
+                                try {
+                                    nominatim.getFromLocation(latLong[0], latLong[1], 1)
+                                } catch (e: IOException) { null }?.get(0)?.let {
+                                    if (it.countryName != null) {
+                                        val locality = it.locality ?: it.adminArea ?: ""
+                                        if (searchCollection) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
+                                        Pair(it.countryName, locality)
+                                    } else null
+                                } ?: run { null }
+                            } else {
+                                Pair(photo.country, photo.locality)
+                            }?.apply {
+                                if (searchCollection) {
+                                    val album = albums.find { it.id == photo.albumId }
+                                    album?.let {
+                                        rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
+                                    } ?: run {
+                                        return@forEachIndexed
+                                    }
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), "")
 
-                                    // Update UI
-                                    result.postValue(resultList)
-                                }
+                                resultList.find { result -> result.country == this.first && result.locality == this.second }
+                                    ?.let { existed ->
+                                        existed.photos.add(rp)
+                                        existed.total++
+                                    }
+                                    ?: run { resultList.add(LocationSearchResult(arrayListOf(rp), 1, this.first, this.second)) }
+
+                                // Update UI
+                                result.postValue(resultList)
                             }
                         }
                     }
@@ -156,7 +177,7 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     data class LocationSearchResult (
-        var photos: MutableList<PhotoWithCoordinate>,
+        var photos: MutableList<NCShareViewModel.RemotePhoto>,
         var total: Int,
         val country: String,
         val locality: String,

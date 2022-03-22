@@ -1,0 +1,8 @@
+* Mostrar el resumen del estado de la copia de seguridad del rollo de la cámara en la configuración
+* Nueva preferencia de ordenación de las fotos por defecto en la configuración
+* Nueva opción para evitar refrescar el fondo de pantalla de Muzei durante la noche
+* Posibilidad de lanzar la aplicación de mapas en la pantalla de Foto con Mapa
+* Evitar la colisión de nombres al ocultar y desocultar el álbum
+* Corregido el fallo al pulsar prolongadamente para seleccionar varios álbumes
+* Arreglado el fallo al añadir el icono del lanzador de la Galería en la Configuración
+* Otras mejoras y correcciones de errores

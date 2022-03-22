@@ -1,12 +1,11 @@
 package site.leos.apps.lespas.muzei
 
+import android.accounts.AccountManager
 import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapRegionDecoder
-import android.graphics.Rect
+import android.graphics.*
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -16,10 +15,13 @@ import com.google.android.apps.muzei.api.provider.MuzeiArtProvider
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.InputStream
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -85,7 +87,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
         }
 
         val out = ByteArrayOutputStream()
-        with("${Tools.getLocalRoot(context!!)}/${artwork.token!!}") {
+        with("${context!!.applicationContext.cacheDir}/${artwork.token!!}") {
             @Suppress("DEPRECATION")
             (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(this) else BitmapRegionDecoder.newInstance(this, false)).decodeRegion(rect, null).compress(Bitmap.CompressFormat.JPEG, 90, out)
         }
@@ -109,10 +111,11 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
     private fun updateArtwork() {
         Thread {
-            (context?.applicationContext as Application).let {
-                val sp = PreferenceManager.getDefaultSharedPreferences(it)
+            (context?.applicationContext as Application).let { application ->
+                val sp = PreferenceManager.getDefaultSharedPreferences(application)
                 val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
-                PhotoRepository(it).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(AlbumRepository(it).getAllHiddenAlbumIds()) }, it.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
+                val albumRepository = AlbumRepository(application)
+                PhotoRepository(application).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(albumRepository.getAllHiddenAlbumIds()) }, application.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()
@@ -130,7 +133,14 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { tih ->
                                     when {
                                         tih.size == 1 -> tih[0]
-                                        tih.isNotEmpty() -> tih[Random.nextInt(tih.size - 1)]
+                                        tih.isNotEmpty() -> {
+                                            var index = Random.nextInt(tih.size - 1)
+                                            lastAddedArtwork?.apply {
+                                                // Prevent from choosing the last one again
+                                                while(tih[index].id == token) index = Random.nextInt(tih.size - 1)
+                                            }
+                                            tih[index]
+                                        }
                                         else -> photoList[Random.nextInt(photoList.size - 1)]
                                     }
                                 }
@@ -138,12 +148,57 @@ class LesPasArtProvider: MuzeiArtProvider() {
                             else -> photoList[Random.nextInt(photoList.size - 1)]
                         }
                     }
-                }?.let { photo -> setArtwork(Artwork(
-                    title = AlbumRepository(it).getThisAlbum(photo.albumId).name,
-                    token = photo.id,
-                    metadata = "${photo.albumId},${photo.width},${photo.height}",
-                    byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
-                )) }
+                }?.let { photo ->
+                    val album = albumRepository.getThisAlbum(photo.albumId)
+                    val dest = File(application.cacheDir, photo.id)
+                    try {
+                        if (Tools.isRemoteAlbum(album) && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                            // Download remote image
+                            val accounts = AccountManager.get(application).getAccountsByType(application.getString(R.string.account_type_nc))
+                            val webDav: OkHttpWebDav
+                            val resourceRoot: String
+
+                            if (accounts.isNotEmpty()) {
+                                AccountManager.get(application).run {
+                                    val userName = getUserData(accounts[0], application.getString(R.string.nc_userdata_username))
+                                    val serverRoot = getUserData(accounts[0], application.getString(R.string.nc_userdata_server))
+
+                                    resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
+                                    webDav = OkHttpWebDav(
+                                        userName,
+                                        peekAuthToken(accounts[0], serverRoot),
+                                        serverRoot,
+                                        getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                                        null,
+                                        "LesPas_${application.getString(R.string.lespas_version)}",
+                                        0,
+                                    )
+                                }
+
+                                webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", false, null).use {
+                                    var bitmap: Bitmap? = BitmapFactory.decodeStream(it)
+                                    if (bitmap != null && photo.orientation != 0) {
+                                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
+                                    }
+                                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, dest.outputStream())
+                                }
+                            }
+                        } else {
+                            File("${Tools.getLocalRoot(application)}/${photo.id}").inputStream().use { source ->
+                                dest.outputStream().use { target ->
+                                    source.copyTo(target, 8192)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) { e.printStackTrace() }
+
+                    if (dest.exists()) setArtwork(Artwork(
+                        title = album.name,
+                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
+                        token = photo.id,
+                        metadata = "${photo.albumId},${photo.width},${photo.height}",
+                    ))
+                }
             }
         }.start()
     }

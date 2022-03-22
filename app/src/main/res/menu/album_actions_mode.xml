@@ -3,12 +3,16 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:id="@+id/hide"
-        android:title="@string/action_hide"
-        android:icon="@drawable/ic_baseline_hide_24"
-        app:showAsAction="ifRoom" />
     <item android:id="@+id/remove"
         android:title="@string/action_remove"
         android:icon="@drawable/ic_baseline_delete_24"
         app:showAsAction="ifRoom" />
+    <item android:id="@+id/hide"
+        android:title="@string/action_hide"
+        android:icon="@drawable/ic_baseline_hide_24"
+        app:showAsAction="never" />
+    <item android:id="@+id/toggle_remote"
+        android:title="@string/action_set_remote"
+        android:icon="@drawable/ic_baseline_wb_cloudy_24"
+        app:showAsAction="never" />
 </menu>

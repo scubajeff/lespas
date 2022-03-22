@@ -5,12 +5,14 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.SharedPreferences
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.*
 import android.widget.CheckedTextView
 import android.widget.ImageView
@@ -30,20 +32,27 @@ import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.selection.*
-import androidx.recyclerview.widget.*
-import androidx.work.*
+import androidx.recyclerview.selection.ItemDetailsLookup
+import androidx.recyclerview.selection.ItemKeyProvider
+import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.selection.StorageStrategy
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.transition.MaterialContainerTransform
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -65,33 +74,46 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var recyclerView: RecyclerView
     private lateinit var fab: FloatingActionButton
 
-    private lateinit var selectionTracker: SelectionTracker<Long>
-    private lateinit var lastSelection: MutableSet<Long>
+    private lateinit var selectionTracker: SelectionTracker<String>
+    private lateinit var lastSelection: MutableSet<String>
     private val uris = arrayListOf<Uri>()
 
     private val publishViewModel: NCShareViewModel by activityViewModels()
     private val albumsModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
 
-    private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var receivedShareMenu: MenuItem? = null
     private var cameraRollAsAlbumMenu: MenuItem? = null
     private var unhideMenu: MenuItem? = null
+    private var toggleRemoteMenu: MenuItem? = null
+
+    private var scrollTo = -1
+    private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     private var showCameraRoll = true
     private var cameraRollAlbum: Album? = null
+    private var mediaStoreVersion = ""
+    private var mediaStoreGeneration = 0L
+
+    private var doSync = true
+
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
+            // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
             showCameraRoll = this
+            // Move album list to the top when popping back from Setting fragment, actual scrolling will happen after setAlbum in livedata observer
+            // Only scroll to top when setting being turned on
+            if (showCameraRoll) scrollTo = 0
+
+            // Maintain option menu
             cameraRollAsAlbumMenu?.isEnabled = !this
             cameraRollAsAlbumMenu?.isVisible = !this
 
-            // Selection based on bindingAdapterPosition, which will be changed
+            // Selection based on bindingAdapterPosition, must be cleared
             selectionTracker.clearSelection()
         }
     }
@@ -99,7 +121,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lastSelection = savedInstanceState?.getLongArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
+        lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
         currentSortOrder = savedInstanceState?.getInt(KEY_SORT_ORDER, Album.BY_DATE_TAKEN_DESC) ?: Album.BY_DATE_TAKEN_DESC
 
         setHasOptionsMenu(true)
@@ -112,17 +134,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     DestinationDialogFragment.newInstance(uris,false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
-        destinationModel.getDestination().observe (this, { album->
+        destinationModel.getDestination().observe (this) { album ->
             // Acquire files
             album?.apply {
                 if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
                     AcquiringDialogFragment.newInstance(uris, album, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
-        })
+        }
 
         mAdapter = AlbumListAdapter(
             { album, imageView ->
-                if (album.id != ImageLoaderViewModel.FROM_CAMERA_ROLL) {
+                if (album.id != CameraRollFragment.FROM_CAMERA_ROLL) {
                     exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction()
@@ -136,9 +158,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
                     }
                     else {
-                        exitTransition = MaterialContainerTransform().apply {
+                        exitTransition = MaterialElevationScale(false).apply {
                             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
-                            scrimColor = Color.TRANSPARENT
+                            excludeTarget(imageView, true)
+                            //excludeTarget(android.R.id.statusBarBackground, true)
+                            //excludeTarget(android.R.id.navigationBarBackground, true)
                         }
                         reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
 
@@ -149,14 +173,29 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     }
                 }
             },
-            { user, view -> publishViewModel.getAvatar(user, view, null) }
-        ) { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) }.apply {
+            { user, view -> publishViewModel.getAvatar(user, view, null) },
+            { album, imageView ->
+                album.run {
+                    publishViewModel.setImagePhoto(NCShareViewModel.RemotePhoto(Photo(
+                        id = cover, albumId = id,
+                        name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                        // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
+                        eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
+                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, NCShareViewModel.TYPE_COVER)
+                }
+            },
+            { view -> publishViewModel.cancelSetImagePhoto(view) },
+        ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
 
-        showCameraRoll = PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
-        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, requireContext().getString(R.string.item_camera_roll))
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        requireContext().run {
+            showCameraRoll = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+            // TODO only check first volume
+            getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
+            PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
@@ -166,27 +205,33 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         recyclerView = view.findViewById(R.id.albumlist)
         fab = view.findViewById(R.id.fab)
 
-        postponeEnterTransition()
+        if (!(savedInstanceState == null && doSync)) postponeEnterTransition()
         view.doOnPreDraw {
             startPostponedEnterTransition()
-            if (savedInstanceState == null) {
+            if (savedInstanceState == null && doSync) {
                 // TODO: seems like flooding the server
                 publishViewModel.refresh()
 
                 // Sync with server at startup
-                ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-                })
+                requestSync(SyncAdapter.SYNC_BOTH_WAY)
             }
         }
 
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner, { albums-> sortAndSetAlbums(albums) })
-        albumsModel.allHiddenAlbums.observe(viewLifecycleOwner, { hidden-> unhideMenu?.isEnabled = hidden.isNotEmpty() })
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) {
+            val list = mutableListOf<Album>().apply { addAll(it) }
 
-        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner, { mAdapter.setRecipients(it) })
-        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { fixMenuIcon(it) })
+            if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(0, cameraroll) }
+            mAdapter.setAlbums(list, currentSortOrder) {
+                if (scrollTo != -1) {
+                    recyclerView.scrollToPosition(scrollTo)
+                    scrollTo = -1
+                }
+            }
+        }
+        albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
+
+        publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { mAdapter.setRecipients(it) }
+        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it) }
 
         mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             init {
@@ -230,13 +275,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 this,
                 AlbumListAdapter.AlbumKeyProvider(mAdapter),
                 AlbumListAdapter.AlbumDetailsLookup(this),
-                StorageStrategy.createLongStorage()
-            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<Long>() {
-                override fun canSetStateForKey(key: Long, nextState: Boolean): Boolean = key != FAKE_ALBUM_ID_LONG
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = mAdapter.getItemId(position) != FAKE_ALBUM_ID_LONG
+                StorageStrategy.createStringStorage()
+            ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != CameraRollFragment.FROM_CAMERA_ROLL && mAdapter.getItemBySelectionKey(key)?.let { it.syncProgress >= 1.0 } ?: run { true }
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0 && mAdapter.currentList[position].syncProgress >= 1.0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
-                addObserver(object : SelectionTracker.SelectionObserver<Long>() {
+                addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
 
@@ -249,7 +294,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
                     }
 
-                    override fun onItemStateChanged(key: Long, selected: Boolean) {
+                    override fun onItemStateChanged(key: String, selected: Boolean) {
                         super.onItemStateChanged(key, selected)
                         if (selected) lastSelection.add(key)
                         else lastSelection.remove(key)
@@ -266,13 +311,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
-        // Delete album confirm dialog result handler
+        // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                val albums = mutableListOf<Album>()
-                // Selection key is Album.id
-                for (i in selectionTracker.selection) albums.add(mAdapter.getItemBySelectionKey(i))
-                actionModel.deleteAlbums(albums)
+                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                    CONFIRM_DELETE_REQUEST -> {
+                        val albums = mutableListOf<Album>()
+                        // Selection key is Album.id
+                        for (id in selectionTracker.selection) mAdapter.getItemBySelectionKey(id)?.let { albums.add(it) }
+                        actionModel.deleteAlbums(albums)
+                    }
+                    CONFIRM_TOGGLE_REMOTE_REQUEST -> {
+                        val selection = mutableListOf<String>().apply { for (id in selectionTracker.selection) add(id) }
+                        val remote = Tools.isRemoteAlbum(mAdapter.getItemBySelectionKey(selectionTracker.selection.first())!!)
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            albumsModel.setAsRemote(selection, !remote)
+
+                            // If changing from remote to local, kick start a sync with server
+                            if (remote) withContext(Dispatchers.Main) { requestSync(SyncAdapter.SYNC_REMOTE_CHANGES) }
+                        }
+                    }
+                }
             }
             selectionTracker.clearSelection()
         }
@@ -297,15 +356,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
             window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
         }
+
+        if (showCameraRoll) {
+            requireContext().apply {
+                val newVersion = MediaStore.getVersion(this)
+                val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
+                if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putLongArray(KEY_SELECTION, lastSelection.toLongArray())
+        outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
         outState.putInt(KEY_SORT_ORDER, currentSortOrder)
     }
 
     override fun onDestroyView() {
+        doSync = false
         recyclerView.clearOnScrollListeners()
         recyclerView.adapter = null
 
@@ -365,7 +434,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             R.id.option_menu_search-> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == ImageLoaderViewModel.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == CameraRollFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_received_shares-> {
@@ -378,7 +447,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 return true
             }
             R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
-                changeSortOrder(item.itemId)
+                currentSortOrder = when(item.itemId) {
+                    R.id.option_menu_sortbydateasc-> Album.BY_DATE_TAKEN_ASC
+                    R.id.option_menu_sortbydatedesc-> Album.BY_DATE_TAKEN_DESC
+                    R.id.option_menu_sortbynameasc-> Album.BY_NAME_ASC
+                    R.id.option_menu_sortbynamedesc-> Album.BY_NAME_DESC
+                    else-> -1
+                }
+
+                mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
+
                 return true
             }
             R.id.option_menu_unhide-> {
@@ -406,26 +484,54 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
         mode?.menuInflater?.inflate(R.menu.album_actions_mode, menu)
+        toggleRemoteMenu = menu?.findItem(R.id.toggle_remote)
+
         fab.isEnabled = false
 
         return true
     }
 
-    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean = false
+    override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean  {
+        var allRemote = false
+        var allLocal = false
+
+        selectionTracker.selection.forEach { key ->
+            mAdapter.getItemBySelectionKey(key)?.apply { if (Tools.isRemoteAlbum(this)) allRemote = true else allLocal = true }
+            toggleRemoteMenu?.apply {
+                isEnabled = !(allLocal && allRemote)
+                title = getString(if (allRemote) R.string.action_set_local else R.string.action_set_remote)
+            }
+        }
+
+        return true
+    }
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         return when(item?.itemId) {
             R.id.remove -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete)).show(parentFragmentManager, CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), requestKey = CONFIRM_DELETE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.hide -> {
+                val refused = mutableListOf<String>()
+                val hidden = mutableListOf<String>()
+                albumsModel.allHiddenAlbums.value?.let { for (album in it) hidden.add(album.name.substring(1)) }
+
                 mutableListOf<Album>().let { albums ->
-                    selectionTracker.selection.forEach { albums.add(mAdapter.getItemBySelectionKey(it)) }
+                    selectionTracker.selection.forEach { id->
+                        mAdapter.getItemBySelectionKey(id)?.let { album->
+                            hidden.find { it == album.name }?.let { refused.add(it) } ?: albums.add(album)
+                        }
+                    }
                     selectionTracker.clearSelection()
 
-                    actionModel.hideAlbums(albums)
-                    publishViewModel.unPublish(albums)
+                    if (albums.isNotEmpty()) {
+                        actionModel.hideAlbums(albums)
+                        publishViewModel.unPublish(albums)
+                    }
+                    if (refused.isNotEmpty()) {
+                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(requireContext().getColor(R.color.color_primary)).setTextColor(requireContext().getColor(R.color.color_text_light)).show()
+                    }
                 }
 
                 true
@@ -437,6 +543,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 true
             }
 */
+            R.id.toggle_remote -> {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
+                    ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), null, requestKey = CONFIRM_TOGGLE_REMOTE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
+                true
+            }
             else -> false
         }
     }
@@ -447,8 +558,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         fab.isEnabled = true
     }
 
+    private fun requestSync(syncAction: Int) {
+        // Sync with server at startup
+        ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
+            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+            //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+            putInt(SyncAdapter.ACTION, syncAction)
+        })
+    }
+
     private fun unhide() {
-        albumsModel.allHiddenAlbums.value?.let { if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) UnhideDialogFragment.newInstance(it).show(parentFragmentManager, UNHIDE_DIALOG) }
+        if (parentFragmentManager.findFragmentByTag(UNHIDE_DIALOG) == null) {
+            val hidden = mutableListOf<Album>()
+
+            albumsModel.allHiddenAlbums.value?.let { hidden.addAll(it) }
+            for (album in mAdapter.currentList) {
+                // If there is same name existed in album list, mark this hidden album's name with 2 dots prefix
+                hidden.find { it.name.substring(1) == album.name}?.let { it.name = ".${it.name}" }
+            }
+
+            UnhideDialogFragment.newInstance(hidden).show(parentFragmentManager, UNHIDE_DIALOG)
+        }
     }
 
     private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {
@@ -465,63 +595,56 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    private fun changeSortOrder(id: Int) {
-        currentSortOrder = when(id) {
-            R.id.option_menu_sortbydateasc-> Album.BY_DATE_TAKEN_ASC
-            R.id.option_menu_sortbydatedesc-> Album.BY_DATE_TAKEN_DESC
-            R.id.option_menu_sortbynameasc-> Album.BY_NAME_ASC
-            R.id.option_menu_sortbynamedesc-> Album.BY_NAME_DESC
-            else-> -1
-        }
+    private fun getCameraRoll(version: String, generation: Long): Album? {
+        cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, getString(R.string.item_camera_roll))
+        mediaStoreVersion = version
+        mediaStoreGeneration = generation
 
-        sortAndSetAlbums(null)
-    }
-
-    private fun sortAndSetAlbums(original: List<Album>?) {
-        val albums = mutableListOf<Album>()
-        val sortedAlbums = mutableListOf<Album>()
-
-        albums.addAll(original ?: mAdapter.currentList)
-        if (showCameraRoll && albums.isNotEmpty() && albums[0].id == ImageLoaderViewModel.FROM_CAMERA_ROLL) albums.removeAt(0)
-        sortedAlbums.addAll(when(currentSortOrder) {
-            Album.BY_DATE_TAKEN_ASC-> albums.sortedWith(compareBy { it.endDate })
-            Album.BY_DATE_TAKEN_DESC-> albums.sortedWith(compareByDescending { it.endDate })
-            Album.BY_NAME_ASC-> albums.sortedWith(compareBy { it.name })
-            Album.BY_NAME_DESC-> albums.sortedWith(compareByDescending { it.name })
-            else-> albums
-        })
-        if (showCameraRoll) cameraRollAlbum?.let { sortedAlbums.add(0, it) }
-
-        mAdapter.setAlbums(sortedAlbums)
+        return cameraRollAlbum
     }
 
     // List adapter for Albums' recyclerView
-    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit
+    class AlbumListAdapter(private val clickListener: (Album, ImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val imageLoader: (Album, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Album, AlbumListAdapter.AlbumViewHolder>(AlbumDiffCallback()) {
-        private var covers = mutableListOf<Photo>()
         private var recipients = emptyList<NCShareViewModel.ShareByMe>()
-        private lateinit var selectionTracker: SelectionTracker<Long>
-        //private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
+        private lateinit var selectionTracker: SelectionTracker<String>
 
         inner class AlbumViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentAlbum = Album(lastModified = LocalDateTime.MIN)
+            private var withThese = mutableListOf<NCShareViewModel.Recipient>()
             private val ivCover = itemView.findViewById<ImageView>(R.id.coverart)
             private val pbSync = itemView.findViewById<ContentLoadingProgressBar>(R.id.sync_progress)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val tvDuration = itemView.findViewById<TextView>(R.id.duration)
             private val llRecipients = itemView.findViewById<LinearLayoutCompat>(R.id.recipients)
+            private val cameraDrawable: Drawable?
+            private val cloudDrawable: Drawable?
+
+            init {
+                val titleDrawableSize = tvTitle.textSize.toInt()
+                cameraDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+                cloudDrawable = ContextCompat.getDrawable(tvTitle.context, R.drawable.ic_baseline_wb_cloudy_24)?.apply { setBounds(0, 0, titleDrawableSize, titleDrawableSize) }
+            }
 
             @SuppressLint("InflateParams")
-            fun bindViewItems(album: Album, isActivated: Boolean) {
+            fun bindViewItems(album: Album) {
+                val new = if (currentAlbum.id != album.id || currentAlbum.cover != album.cover || currentAlbum.coverBaseline != album.coverBaseline) {
+                    currentAlbum = album
+                    withThese = mutableListOf()
+                    true
+                } else { false }
+
                 itemView.apply {
-                    this.isActivated = isActivated
+                    // Background color adhere to selection state
+                    isActivated = selectionTracker.isSelected(album.id)
+
                     ivCover.let {coverImageview ->
-                        //imageLoader(covers[bindingAdapterPosition], coverImageview, ImageLoaderViewModel.TYPE_COVER)
-                        covers.find { it.id == album.cover }?.let { imageLoader(it, coverImageview, ImageLoaderViewModel.TYPE_COVER) }
-                        /*
-                        if (this.isActivated) coverImageview.colorFilter = selectedFilter
-                        else coverImageview.clearColorFilter()
-                         */
-                        ViewCompat.setTransitionName(coverImageview, album.id)
+                        if (new) {
+                            // When syncing with server, don't repeatedly load the same image
+                            coverImageview.setImageResource(0)
+                            imageLoader(album, coverImageview)
+                            ViewCompat.setTransitionName(coverImageview, if (album.id == CameraRollFragment.FROM_CAMERA_ROLL) album.cover else album.id)
+                        }
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(album, coverImageview) }
                         if (album.syncProgress < 1.0f) {
                             coverImageview.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(album.syncProgress) })
@@ -537,10 +660,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     with(tvTitle) {
                         text = album.name
 
-                        val size = context.resources.getDimension(R.dimen.big_padding).toInt()
-                        compoundDrawablePadding = 16
-                        TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
-                        setCompoundDrawables(if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) ContextCompat.getDrawable(context, R.drawable.ic_baseline_camera_roll_24)?.apply { setBounds(0, 0, size, size) } else null, null, null, null)
+                        setCompoundDrawables(when {
+                            album.id == CameraRollFragment.FROM_CAMERA_ROLL -> cameraDrawable
+                            Tools.isRemoteAlbum(album) -> cloudDrawable
+                            else -> null
+                        }, null, null, null)
                     }
                     tvDuration.text = String.format(
                         "%s  -  %s",
@@ -549,48 +673,80 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     )
 
                     llRecipients.also { chipGroup->
-                        chipGroup.removeAllViews()
+                        if (new) chipGroup.removeAllViews()
                         recipients.find { it.fileId == album.id }?.let {
-                            val ctx = chipGroup.context
-                            for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
-                                recipient.sharee.run {
-                                    if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
-                                        it.text = label
-                                        it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                            if (withThese != it.with) {
+                                // When syncing with server, don't repeatedly load the same recipient list
+                                withThese = it.with
+                                chipGroup.removeAllViews()
+                                val ctx = chipGroup.context
+                                for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
+                                    recipient.sharee.run {
+                                        if (type == NCShareViewModel.SHARE_TYPE_GROUP) {
+                                            it.text = label
+                                            it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
+                                        }
+                                        avatarLoader(this, it)
                                     }
-                                    avatarLoader(this, it)
-                                }
-                            })
+                                })
+                            }
                         }
                     }
                 }
             }
 
-            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<Long>() {
+            fun getItemDetails() = object : ItemDetailsLookup.ItemDetails<String>() {
                 override fun getPosition(): Int = bindingAdapterPosition
-                override fun getSelectionKey(): Long = getItemId(bindingAdapterPosition)
+                override fun getSelectionKey(): String = getAlbumId(bindingAdapterPosition)
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder  =
-            AlbumViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false))
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumListAdapter.AlbumViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_album, parent,false)
+            view.findViewById<TextView>(R.id.title)?.apply {
+                compoundDrawablePadding = 16
+                TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
+            }
+            return AlbumViewHolder(view)
+        }
 
         override fun onBindViewHolder(holder: AlbumListAdapter.AlbumViewHolder, position: Int) {
-            holder.bindViewItems(currentList[position], selectionTracker.isSelected(getItemId(position)))
+            holder.bindViewItems(currentList[position])
         }
 
-        internal fun setAlbums(albums: MutableList<Album>) {
-            this.covers.apply {
-                clear()
-                albums.forEach { album ->
-                    if (album.id == ImageLoaderViewModel.FROM_CAMERA_ROLL) {
-                        // Pass cover orientation in property eTag
-                        this.add(Photo(album.cover, ImageLoaderViewModel.FROM_CAMERA_ROLL, album.name, album.shareId.toString(), LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
-                    }
-                    else this.add(Photo(album.cover, album.id, album.name, "", LocalDateTime.now(), LocalDateTime.now(), album.coverWidth, album.coverHeight, "", album.coverBaseline))
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
+                    holder.itemView.findViewById<View>(R.id.coverart)?.let { cancelLoader(it) }
                 }
             }
-            submitList(albums)
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+
+        internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int, callback: () -> Unit) {
+            val sortedList = mutableListOf<Album>()
+            val sourceList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
+
+            if (sourceList.isNotEmpty()) {
+                // save camera roll album
+                val firstAlbum = sourceList.first()
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sourceList.removeAt(0)
+
+                sortedList.addAll(
+                    when (sortOrder) {
+                        Album.BY_DATE_TAKEN_ASC -> sourceList.sortedWith(compareBy { it.endDate })
+                        Album.BY_DATE_TAKEN_DESC -> sourceList.sortedWith(compareByDescending { it.endDate })
+                        Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        Album.BY_NAME_DESC -> sourceList.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        else -> sourceList
+                    }
+                )
+
+                // restore camera roll album
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
+            }
+
+            submitList(sortedList) { callback() }
         }
 
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
@@ -598,16 +754,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             for (recipient in recipients) { notifyItemChanged(currentList.indexOfFirst { it.id == recipient.fileId }) }
         }
 
-        internal fun getItemBySelectionKey(key: Long): Album = (currentList.find { it.id.toLong() == key })!!
-        override fun getItemId(position: Int): Long = currentList[position].id.toLong()
-        fun getPosition(key: Long): Int = currentList.indexOfFirst { it.id.toLong() == key}
-        fun setSelectionTracker(selectionTracker: SelectionTracker<Long>) { this.selectionTracker = selectionTracker }
-        class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<Long>(SCOPE_CACHED) {
-            override fun getKey(position: Int): Long = adapter.getItemId(position)
-            override fun getPosition(key: Long): Int = adapter.getPosition(key)
+        internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
+            mutableListOf<Album>().run {
+                addAll(currentList)
+                removeAt(0)
+                add(0, cameraRollAlbum)
+                submitList(this)
+            }
         }
-        class AlbumDetailsLookup(private val recyclerView: RecyclerView) : ItemDetailsLookup<Long>() {
-            override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
+
+        internal fun getItemBySelectionKey(key: String): Album? = currentList.find { it.id == key }
+        private fun getAlbumId(position: Int): String = currentList[position].id
+        private fun getPosition(key: String): Int = currentList.indexOfFirst { it.id == key}
+        internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
+        class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
+            override fun getKey(position: Int): String = adapter.getAlbumId(position)
+            override fun getPosition(key: String): Int = adapter.getPosition(key)
+        }
+        class AlbumDetailsLookup(private val recyclerView: RecyclerView) : ItemDetailsLookup<String>() {
+            override fun getItemDetails(e: MotionEvent): ItemDetails<String>? {
                 recyclerView.findChildViewUnder(e.x, e.y)?.let {
                     return (recyclerView.getChildViewHolder(it) as AlbumViewHolder).getItemDetails()
                 }
@@ -618,7 +783,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     class AlbumDiffCallback: DiffUtil.ItemCallback<Album>() {
         override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress
+        override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.cover == newItem.cover && oldItem.name == newItem.name && oldItem.coverBaseline == newItem.coverBaseline && oldItem.coverFileName == newItem.coverFileName && oldItem.startDate == newItem.startDate && oldItem.endDate == newItem.endDate && oldItem.syncProgress == newItem.syncProgress && oldItem.shareId == newItem.shareId
     }
 
     class UnhideDialogFragment: LesPasDialogFragment(R.layout.fragment_unhide_dialog) {
@@ -659,11 +824,17 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 private val tvName = itemView.findViewById<CheckedTextView>(android.R.id.text1)
 
                 fun bind(album: Album) {
-                    tvName.text = album.name.substring(1)
-
-                    tvName.setOnClickListener {
-                        tvName.isChecked = !tvName.isChecked
-                        updateChoice(album, tvName.isChecked)
+                    if (album.name.startsWith("..")) {
+                        // There is an album with same name existed, disable this item
+                        tvName.text = album.name.substring(2)
+                        tvName.isEnabled = false
+                    } else {
+                        tvName.text = album.name.substring(1)
+                        tvName.isEnabled = true
+                        tvName.setOnClickListener {
+                            tvName.toggle()
+                            updateChoice(album, tvName.isChecked)
+                        }
                     }
                 }
             }
@@ -673,7 +844,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         class NameDiffCallback: DiffUtil.ItemCallback<Album>() {
             override fun areItemsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.id == newItem.id
-            override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.eTag == newItem.eTag
+            override fun areContentsTheSame(oldItem: Album, newItem: Album): Boolean = oldItem.shareId == newItem.shareId && oldItem.eTag == newItem.eTag
         }
 
         companion object {
@@ -688,13 +859,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     }
 
     companion object {
-        const val TAG_ACQUIRING_DIALOG = "ALBUMFRAGMENT_TAG_ACQUIRING_DIALOG"
-        const val TAG_DESTINATION_DIALOG = "ALBUMFRAGMENT_TAG_DESTINATION_DIALOG"
+        const val TAG_ACQUIRING_DIALOG = "ALBUM_FRAGMENT_TAG_ACQUIRING_DIALOG"
+        const val TAG_DESTINATION_DIALOG = "ALBUM_FRAGMENT_TAG_DESTINATION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
+        private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
+        private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
-        private const val FAKE_ALBUM_ID_LONG = 0L
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 

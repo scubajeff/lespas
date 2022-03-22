@@ -30,9 +30,9 @@ class CameraRollActivity : AppCompatActivity() {
 
         // Make sure photo's folder, temporary cache folder created
         lifecycleScope.launch(Dispatchers.IO) {
+            // Make sure photo's folder created
             try {
                 File(Tools.getLocalRoot(applicationContext)).mkdir()
-                File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").mkdir()
             } catch (e: Exception) {}
         }
 
@@ -49,8 +49,8 @@ class CameraRollActivity : AppCompatActivity() {
                 if (supportFragmentManager.findFragmentByTag(MainActivity.CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, MainActivity.CONFIRM_REQUIRE_SD_DIALOG)
                     .show(supportFragmentManager, MainActivity.CONFIRM_REQUIRE_SD_DIALOG)
             } else {
-                if (intent.action == Intent.ACTION_MAIN) supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).commit()
-                else intent.data?.apply {supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(this), CameraRollFragment::class.java.canonicalName).commit()} ?: run { finish() }
+                if (intent.action == Intent.ACTION_MAIN) supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
+                else intent.data?.apply {supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(this), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()} ?: run { finish() }
             }
         }
 
@@ -62,12 +62,5 @@ class CameraRollActivity : AppCompatActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-    }
-
-    override fun onDestroy() {
-        // Clean up temporary folder in app's cachePath
-        try {  File("${cacheDir}${MainActivity.TEMP_CACHE_FOLDER}").deleteRecursively() } catch (e: Exception) {}
-
-        super.onDestroy()
     }
 }

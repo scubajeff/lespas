@@ -11,8 +11,8 @@
 
     <ImageView
         android:id="@+id/cover"
-        android:layout_width="88dp"
-        android:layout_height="40dp"
+        android:layout_width="@dimen/destination_cover_width"
+        android:layout_height="@dimen/destination_cover_height"
         android:padding="@dimen/mini_padding"
         tools:src="@drawable/ic_footprint"
         tools:ignore="ContentDescription" />
@@ -24,7 +24,7 @@
         android:layout_gravity="center"
         android:layout_marginLeft="@dimen/small_padding"
         style="@style/TextAppearance.MaterialComponents.Caption"
-        android:textSize="13sp"
+        android:textSize="@dimen/destination_title_text_size"
         android:singleLine="false"
         android:maxLines="2"
         tools:text="Title name goes here"

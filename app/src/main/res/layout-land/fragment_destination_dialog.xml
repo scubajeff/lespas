@@ -52,6 +52,7 @@
             app:layout_constraintTop_toBottomOf="@id/move_or_copy"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:orientation="horizontal"
+            android:scrollbars="none"
             tools:listitem="@layout/recyclerview_item_clipdata"/>
 
         <View
@@ -107,6 +108,11 @@
                 android:textCursorDrawable="@null"
                 android:maxLines="1"
                 android:imeOptions="actionGo" />
+            <CheckBox
+                android:id="@+id/create_remote_album"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/checkbox_text_set_remote" />
         </com.google.android.material.textfield.TextInputLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

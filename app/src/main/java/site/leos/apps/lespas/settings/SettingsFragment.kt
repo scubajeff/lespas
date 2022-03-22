@@ -12,8 +12,11 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
+import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import androidx.work.ExistingWorkPolicy
@@ -35,6 +39,7 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.auth.NCAuthenticationFragment
 import site.leos.apps.lespas.auth.NCLoginFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
@@ -42,8 +47,9 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
 
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
     private var summaryString: String? = null
     private var totalSize = -1L
     private lateinit var volume: MutableList<StorageVolume>
@@ -55,6 +61,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
+
+    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
+
+    private var actionBarHeight = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,13 +75,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
             totalSize = it.getLong(STATISTIC_TOTAL_SIZE)
         }
 
+        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
         snapseedPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
 
             // Explicitly request ACCESS_MEDIA_LOCATION permission
-            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
         }
         showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -78,7 +90,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = isGranted
 
             // Explicitly request ACCESS_MEDIA_LOCATION permission
-            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
         }
         backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -102,16 +114,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
 
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) (registerForActivityResult(ActivityResultContracts.RequestPermission()) {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
             }
         }
 
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
         returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+
+        actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Set content below action toolbar
+        view.setPadding(0, actionBarHeight,0, 0)
 
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
@@ -126,16 +143,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         requireActivity().packageManager.setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
                         requireActivity().finish()
                     }
-                    SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG-> {
+                    SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG -> {
                         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                         snapseedPermissionRequestLauncher.launch(storagePermission)
                     }
-                    INSTALL_SNAPSEED_DIALOG->
+                    INSTALL_SNAPSEED_DIALOG ->
                         try {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
                         } catch (e: ActivityNotFoundException) {
                             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}")))
                         }
+                    CLEAR_CACHE_CONFIRM_DIALOG -> {
+                        File("${Tools.getLocalRoot(requireContext())}/cache").deleteRecursively()
+                    }
                 }
             } else {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
@@ -221,6 +241,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     false
                 }
                 else {
+                    // Preference check state is about to be toggled, but not toggled yet
                     if ((pref as SwitchPreferenceCompat).isChecked) {
                         findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                             it.isChecked = false
@@ -242,13 +263,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                     toggleAutoSync(!(pref.isChecked))
+                    showBackupSummary()
                     true
                 }
             }
-            summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
+
             // Make sure SYNC preference acts accordingly
             if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                 it.isChecked = true
+                showBackupSummary()
                 it.isEnabled = false
             }
         }
@@ -264,6 +287,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     false
                 } else true
             }
+        }
+
+        findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
+            summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
         }
     }
 
@@ -285,12 +312,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // Disable Snapseed integration setting if the app is not installed
         isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
         if (isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+
+        preferenceScreen.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+    }
+
+    override fun onPause() {
+        preferenceScreen.sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+        super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         summaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
         outState.putLong(STATISTIC_TOTAL_SIZE, totalSize)
+        outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
     override fun onStop() {
@@ -306,7 +341,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 true
             }
             getString(R.string.logout_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.logout_dialog_msg, accounts[0].name), getString(R.string.yes_logout), true, LOGOUT_CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_logout_dialog, accounts[0].name), getString(R.string.yes_logout), true, LOGOUT_CONFIRM_DIALOG)
                     .show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
@@ -345,11 +380,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 summaryString ?: run { showStatistic(preference) }
                 true
             }
-            getString(R.string.relogin_pref_key)-> {
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCLoginFragment.newInstance(true), NCLoginFragment::class.java.canonicalName).addToBackStack(null).commit()
+            getString(R.string.relogin_pref_key) -> {
+                // Retrieve current account information from AccountManager's vault
+                AccountManager.get(requireContext()).run {
+                    val account = getAccountsByType(getString(R.string.account_type_nc))[0]
+                    authenticateModel.setToken(getUserData(account, getString(R.string.nc_userdata_username)), "", getUserData(account, getString(R.string.nc_userdata_server)))
+                    authenticateModel.setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
+                }
+
+                // Launch authentication webview
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(true), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
+
                 true
             }
-            getString(R.string.snapseed_pref_key)-> {
+            getString(R.string.snapseed_pref_key) -> {
                 if (preference.sharedPreferences.getBoolean(preference.key, false) && isSnapseedNotInstalled) {
                     // Prompt user to install Snapseed
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
@@ -357,8 +401,25 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 true
             }
+            getString(R.string.clear_cache_pref_key) -> {
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_clear_cache), null, true, CLEAR_CACHE_CONFIRM_DIALOG)
+                    .show(parentFragmentManager, CONFIRM_DIALOG)
+                true
+            }
+            getString(R.string.cache_size_pref_key) -> {
+                if (parentFragmentManager.findFragmentByTag(CACHE_SIZE_DIALOG) == null) CacheSizeSettingDialog().show(parentFragmentManager, CACHE_SIZE_DIALOG)
+                true
+            }
             else -> super.onPreferenceTreeClick(preference)
         }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        when(key) {
+            LAST_BACKUP -> showBackupSummary()
+            CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
+            else -> {}
+        }
+    }
 
     private fun toggleAutoSync(on: Boolean) {
         if (on) {
@@ -403,6 +464,27 @@ class SettingsFragment : PreferenceFragmentCompat() {
         (if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize + 100 * 1024 * 1024
         //(if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize
 
+    private fun showBackupSummary() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            var items = 0
+            @Suppress("DEPRECATION")
+            val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+            requireContext().contentResolver.query(
+                MediaStore.Files.getContentUri("external"),
+                null,
+                "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
+                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
+                null,
+                null
+            )?.use { items = it.count }
+
+            withContext(Dispatchers.Main) {
+                findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel()) + "\n" +
+                    if (items > 0) String.format(getString(R.string.backup_waiting), items) else getString(R.string.backup_done)
+            }
+        }
+    }
+
     class TransferStorageDialog: LesPasDialogFragment(R.layout.fragment_transfer_storage_dialog) {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
@@ -424,10 +506,34 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
+    class CacheSizeSettingDialog: LesPasDialogFragment(R.layout.fragment_cache_size_dialog) {
+        private lateinit var sp: SharedPreferences
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        }
+
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
+
+            view.findViewById<AutoCompleteTextView>(R.id.cache_size)?.run {
+                setText(sp.getInt(CACHE_SIZE, 800).toString())
+                setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf<Int>().apply { for (i in 1..10) add(i*100) }))
+                setOnItemClickListener { _, _, position, _ ->
+                    sp.edit().putInt(CACHE_SIZE, (position + 1) * 100).apply()
+                    dismiss()
+                }
+            }
+        }
+    }
+
     companion object {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val TRANSFER_FILES_DIALOG = "CONFIRM_MOVING_DIALOG"
         private const val LOGOUT_CONFIRM_DIALOG = "LOGOUT_CONFIRM_DIALOG"
+        private const val CLEAR_CACHE_CONFIRM_DIALOG = "CLEAR_CACHE_CONFIRM_DIALOG"
+        private const val CACHE_SIZE_DIALOG = "CACHE_SIZE_DIALOG"
         private const val SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG = "SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG"
         private const val INSTALL_SNAPSEED_DIALOG = "INSTALL_SNAPSEED_DIALOG"
 
@@ -439,6 +545,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"
         const val SNAPSEED_MAIN_ACTIVITY_CLASS_NAME = "com.google.android.apps.snapseed.MainActivity"
-    }
 
+        const val CACHE_SIZE = "WEB_CACHE_SIZE"
+
+        private const val KEY_ACTION_BAR_HEIGHT = "KEY_ACTION_BAR_HEIGHT"
+    }
 }

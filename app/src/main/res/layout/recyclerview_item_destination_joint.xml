@@ -9,8 +9,8 @@
 
     <ImageView
         android:id="@+id/cover"
-        android:layout_width="88dp"
-        android:layout_height="40dp"
+        android:layout_width="@dimen/destination_cover_width"
+        android:layout_height="@dimen/destination_cover_height"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:padding="@dimen/mini_padding"
@@ -27,7 +27,7 @@
         app:layout_constraintRight_toLeftOf="@id/avatar"
         android:layout_marginHorizontal="@dimen/small_padding"
         style="@style/TextAppearance.MaterialComponents.Caption"
-        android:textSize="13sp"
+        android:textSize="@dimen/destination_title_text_size"
         android:singleLine="false"
         android:maxLines="2"
         android:ellipsize="middle"

@@ -25,16 +25,20 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
+import com.google.android.material.transition.MaterialSharedAxis
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import java.time.Instant
+import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.File
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -52,6 +56,7 @@ class PublicationDetailFragment: Fragment() {
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
     private var addPhotoMenuItem: MenuItem? = null
+    private var mapMenuItem: MenuItem? = null
 
     private var currentItem = -1
 
@@ -87,8 +92,8 @@ class PublicationDetailFragment: Fragment() {
                     .addToBackStack(null)
                     .commit()
             },
-            { photo, view-> shareModel.getPhoto(photo, view, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
-            { view-> shareModel.cancelGetPhoto(view) }
+            { photo, view-> shareModel.setImagePhoto(photo, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
             if (savedInstanceState?.run { getBoolean(SHOW_META, false) } == true) {
@@ -142,8 +147,8 @@ class PublicationDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner, { currentItem = it })
-        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner, {
+        currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
+        shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
             photoListAdapter.submitList(it) {
                 // Setup UI in this submitList commitCallback
                 loadingIndicator?.run {
@@ -158,14 +163,27 @@ class PublicationDetailFragment: Fragment() {
                     isVisible = true
                     isEnabled = true
                 }
+
+                it.forEach { remotePhoto ->
+                    if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                        mapMenuItem?.isVisible = true
+                        mapMenuItem?.isEnabled = true
+
+                        return@submitList
+                    }
+                }
             }
 
-            if (currentItem != -1) with (currentPositionModel.getLastRange()) {
-                if (currentItem <  this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
+            if (currentItem != -1) with(currentPositionModel.getLastRange()) {
+                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
             }
-        })
+        }
 
-        lifecycleScope.launch { shareModel.getRemotePhotoList(share, false) }
+        lifecycleScope.launch(Dispatchers.IO) {
+            shareModel.getRemotePhotoList(share, false)
+            // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
+            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, useCache = false)
+        }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
@@ -193,6 +211,8 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
+        try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (e:Exception) {}
+
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE
             customView = null
@@ -207,6 +227,7 @@ class PublicationDetailFragment: Fragment() {
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
         addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
+        mapMenuItem = menu.findItem(R.id.option_menu_in_map)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
@@ -219,6 +240,17 @@ class PublicationDetailFragment: Fragment() {
             if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
                 addPhotoMenuItem?.isEnabled = true
                 addPhotoMenuItem?.isVisible = true
+            }
+
+            run map@{
+                mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
+                    if (it.photo.latitude != Photo.NO_GPS_DATA) {
+                        mapMenuItem?.isEnabled = true
+                        mapMenuItem?.isVisible = true
+
+                        return@map
+                    }
+                }
             }
         }
     }
@@ -234,6 +266,20 @@ class PublicationDetailFragment: Fragment() {
                 addFileLauncher.launch("*/*")
                 true
             }
+            R.id.option_menu_in_map-> {
+                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(
+                    Album(
+                        id = share.albumId,
+                        name = share.albumName,
+                        eTag = Photo.ETAG_FAKE,
+                        shareId = Album.REMOTE_ALBUM,
+                        lastModified = LocalDateTime.MIN
+                    ),
+                    photoListAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                true
+            }
             else-> false
         }
 
@@ -243,31 +289,38 @@ class PublicationDetailFragment: Fragment() {
         private var displayMeta = false
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoId = ""
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.media)
+            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private val tvMeta = itemView.findViewById<TextView>(R.id.meta)
+
             fun bind(item: NCShareViewModel.RemotePhoto, position: Int) {
-                (itemView.findViewById(R.id.media) as ImageView).apply {
-                    imageLoader(item, this)
+                ivPhoto.apply {
+                    if (currentPhotoId != item.photo.id) {
+                        this.setImageResource(0)
+                        imageLoader(item, this)
+                        ViewCompat.setTransitionName(this, item.photo.id)
+                        currentPhotoId = item.photo.id
+                    }
+                    // TODO do we need this
                     ConstraintSet().apply {
                         clone(itemView as ConstraintLayout)
-                        setDimensionRatio(R.id.media, "H,${item.width}:${item.height}")
+                        setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
                         applyTo(itemView)
                     }
                     setOnClickListener { clickListener(this, currentList, position) }
-
-                    ViewCompat.setTransitionName(this, item.fileId)
                 }
 
-                (itemView.findViewById<ImageView>(R.id.play_mark)).visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
+                ivPlayMark.visibility = if (Tools.isMediaPlayable(item.photo.mimeType)) View.VISIBLE else View.GONE
 
-                (itemView.findViewById<TextView>(R.id.meta)).apply {
-                    LocalDateTime.ofInstant(Instant.ofEpochSecond(item.timestamp), ZoneOffset.systemDefault()).apply {
-                        text = String.format("%s, %s", this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
-                    }
+                tvMeta.apply {
+                    text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
 
             fun toggleMeta() {
-                (itemView.findViewById<TextView>(R.id.meta)).visibility = if (displayMeta) View.VISIBLE else View.GONE
+                tvMeta.visibility = if (displayMeta) View.VISIBLE else View.GONE
             }
         }
 
@@ -291,11 +344,18 @@ class PublicationDetailFragment: Fragment() {
         }
 
         fun isMetaDisplayed(): Boolean = displayMeta
+
+        fun getPhotoWithCoordinate(): List<Photo> {
+            return mutableListOf<Photo>().apply {
+                currentList.forEach { if (it.photo.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.photo.mimeType)) add(it.photo) }
+                toList()
+            }
+        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
-        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
-        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.fileId == newItem.fileId
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
     }
 
     class CurrentPublicationViewModel: ViewModel() {

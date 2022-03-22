@@ -27,14 +27,12 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.IDandName
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
-import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoWithCoordinate
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.publication.NCShareViewModel
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import kotlin.collections.HashMap
 
 class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var locality: String
@@ -42,7 +40,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
     private lateinit var photoAdapter: PhotoAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +61,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
                     .addSharedElement(view, view.transitionName)
                     .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
-            { photo, imageView -> imageLoaderModel.loadPhoto(photo, imageView, ImageLoaderViewModel.TYPE_GRID) { startPostponedEnterTransition() }}
+            { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply {
             lifecycleScope.launch(Dispatchers.IO) { setAlbumNameList(albumModel.getAllAlbumIdName()) }
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
@@ -91,9 +90,9 @@ class LocationResultSingleLocalityFragment: Fragment() {
             ViewCompat.setTransitionName(this, locality)
         }
 
-        searchViewModel.getResult().observe(viewLifecycleOwner, { resultList->
+        searchViewModel.getResult().observe(viewLifecycleOwner) { resultList ->
             resultList.find { it.locality == locality && it.country == country }?.photos?.apply { photoAdapter.submitList(asReversed().toMutableList()) }
-        })
+        }
     }
 
     override fun onResume() {
@@ -116,22 +115,27 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
-    class PhotoAdapter(private val clickListener: (PhotoWithCoordinate, View, View) -> Unit, private val imageLoader: (Photo, ImageView) -> Unit
-    ): ListAdapter<PhotoWithCoordinate, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
+    class PhotoAdapter(private val clickListener: (NCShareViewModel.RemotePhoto, View, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentPhotoId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val tvLabel = itemView.findViewById<TextView>(R.id.label)
 
-            fun bind(item: PhotoWithCoordinate) {
+            fun bind(item: NCShareViewModel.RemotePhoto) {
                 with(item.photo) {
-                    imageLoader(this, ivPhoto)
+                    if (currentPhotoId != item.photo.id) {
+                        ivPhoto.setImageResource(0)
+                        imageLoader(item, ivPhoto)
+                        ViewCompat.setTransitionName(ivPhoto, this.id)
+                        currentPhotoId = item.photo.id
+                    }
                     ivPhoto.setOnClickListener { clickListener(item, ivPhoto, tvLabel) }
-                    ViewCompat.setTransitionName(ivPhoto, this.id)
 
                     tvLabel.text =
-                        if (this.albumId != ImageLoaderViewModel.FROM_CAMERA_ROLL) albumNames[this.albumId]
+                        if (this.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[this.albumId]
                         else this.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
                 }
             }
@@ -139,14 +143,20 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_search_result, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
 
         fun setAlbumNameList(list: List<IDandName>) { for (album in list) { albumNames[album.id] = album.name }}
         fun getAlbumNameList(): HashMap<String, String> = albumNames
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<PhotoWithCoordinate>() {
-        override fun areItemsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.id == newItem.photo.id
-        override fun areContentsTheSame(oldItem: PhotoWithCoordinate, newItem: PhotoWithCoordinate): Boolean = oldItem.photo.eTag == newItem.photo.eTag
+    class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.eTag == newItem.photo.eTag
     }
 
     companion object {

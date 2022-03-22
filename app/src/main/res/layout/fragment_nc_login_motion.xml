@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.motion.widget.MotionLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/login_background"
+    android:paddingHorizontal="@dimen/extra_padding"
+    app:layoutDescription="@xml/fragment_nc_login_scene">
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="@dimen/login_screen_logo_size"
+        android:layout_height="@dimen/login_screen_logo_size"
+        android:src="@drawable/ic_logo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.25"
+        tools:ignore="ContentDescription" />
+
+    <TextView
+        android:id="@+id/welcome_message_title"
+        style="@style/TextAppearance.MaterialComponents.Headline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="@dimen/small_padding"
+        android:text="@string/welcome_message_title"
+        android:textColor="@color/color_text_light"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/logo" />
+
+    <TextView
+        android:id="@+id/welcome_message"
+        style="@style/TextAppearance.MaterialComponents.Subtitle2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:labelFor="@id/input_area"
+        android:text="@string/welcome_message"
+        android:textColor="@color/color_text_light"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/welcome_message_title" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/input_area"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/small_padding"
+        app:boxStrokeColor="?attr/colorSecondary"
+        app:errorEnabled="true"
+        app:helperText="@string/http_toggle_helper_text"
+        app:helperTextEnabled="true"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/welcome_message"
+        app:prefixText="https://">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/host"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionGo"
+            android:inputType="textUri"
+            android:maxLines="1"
+            android:singleLine="true" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+</androidx.constraintlayout.motion.widget.MotionLayout>

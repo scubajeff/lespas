@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.publication.NCShareViewModel
 import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
@@ -24,7 +25,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
-    private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+    private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
 
     abstract fun getVideoItem(position: Int): VideoItem
@@ -71,13 +72,23 @@ abstract class SeamlessMediaSliderAdapter<T>(
         super.onViewDetachedFromWindow(holder)
     }
 
+/*
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        cancelLoader(holder.itemView.findViewById(R.id.media) as View)
+        // Cancel loading only works for image
+        holder.itemView.findViewById<View>(R.id.media)?.let { if (it is ImageView) cancelLoader(it) }
         super.onViewRecycled(holder)
     }
+*/
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         playerViewModel.resetPlayer()
+
+        for (i in 0 until currentList.size) {
+            recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
+                holder.itemView.findViewById<View>(R.id.media)?.let { cancelLoader(it) }
+            }
+        }
+
         super.onDetachedFromRecyclerView(recyclerView)
     }
 
@@ -93,9 +104,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
             ivMedia.setAllowParentInterceptOnEdge(true)
         }
 
-        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
-                imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
                 maximumScale = 5.0f
                 mediumScale = 2.5f
@@ -144,9 +155,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
     inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
 
-        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
-                imageLoader(photo, this, ImageLoaderViewModel.TYPE_FULL)
+                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 setOnClickListener { clickListener(null) }
                 ViewCompat.setTransitionName(this, transitionName)
             }
@@ -160,9 +171,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
         lateinit var videoView: PlayerView
         private lateinit var muteButton: ImageButton
         private val clVideoViewContainer = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
-        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
 
-        fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView, String) -> Unit) {
+        fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
             videoMimeType = video.mimeType
 
@@ -176,18 +186,17 @@ abstract class SeamlessMediaSliderAdapter<T>(
             // Muted by default during late night hours
             muteButton.isActivated = !playerViewModel.isMuted()
 
-            videoView = itemView.findViewById<PlayerView>(R.id.player_view).apply {
+            videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
                 hideController()
                 controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
                 setOnClickListener { clickListener(!videoView.isControllerVisible) }
-            }
-            clVideoViewContainer.setOnClickListener { clickListener(!videoView.isControllerVisible) }
 
-            ivMedia.apply {
-                // Even thought we don't load animated image with ImageLoader, we still need to call it here so that postponed enter transition can be started
-                imageLoader(item, this, ImageLoaderViewModel.TYPE_FULL)
+                // Need to call imageLoader here to start postponed enter transition
                 ViewCompat.setTransitionName(this, video.transitionName)
+                imageLoader(item, null, NCShareViewModel.TYPE_NULL)
             }
+
+            clVideoViewContainer.setOnClickListener { clickListener(!videoView.isControllerVisible) }
         }
     }
 

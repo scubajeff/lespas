@@ -3,6 +3,7 @@ package site.leos.apps.lespas.sync
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.media.MediaMetadataRetriever
 import android.net.ConnectivityManager
 import android.net.Uri
 import android.os.Build
@@ -14,9 +15,9 @@ import android.webkit.MimeTypeMap
 import android.widget.TextView
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.widget.ContentLoadingProgressBar
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.transition.TransitionInflater
@@ -37,7 +38,6 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.*
 
 
 class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_dialog) {
@@ -80,9 +80,9 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                     progressLinearLayout.visibility = View.GONE
                     dialogTitleTextView.text = getString(R.string.finished_preparing_files)
                     var note = getString(R.string.it_takes_time, Tools.humanReadableByteCountSI(acquiringModel.getTotalBytes()))
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context?.getString(R.string.wifionly_pref_key), true)) {
-                        if ((context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                            note += context?.getString(R.string.mind_network_setting)
+                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.wifionly_pref_key), true)) {
+                        if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+                            note += requireContext().getString(R.string.mind_network_setting)
                         }
                     }
                     messageTextView.text = note
@@ -146,8 +146,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
         private val newPhotos = mutableListOf<Photo>()
         private val actions = mutableListOf<Action>()
         private val photoRepository = PhotoRepository(application)
-        private val albumRepository = AlbumRepository(application)
-        private val actionRepository = ActionRepository(application)
 
         init {
             viewModelScope.launch(Dispatchers.IO) {
@@ -158,6 +156,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 var date: LocalDateTime
                 val fakeAlbumId = System.currentTimeMillis().toString()
                 val contentResolver = application.contentResolver
+                val metadataRetriever = MediaMetadataRetriever()
+                var exifInterface: ExifInterface?
 
                 uris.forEachIndexed { index, uri ->
                     if (album.id.isEmpty()) {
@@ -223,24 +223,28 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
                         if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
-                            val meta = Tools.getPhotoParams("$cacheFolder/$fileId", mimeType, fileId, false)
+                            try { metadataRetriever.setDataSource("$cacheFolder/$fileId") } catch (e: Exception) {}
+                            exifInterface = try { ExifInterface("$cacheFolder/$fileId") } catch (e: Exception) { null }
+                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$cacheFolder/$fileId", mimeType, fileId, false)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
                             // PublicationDetailFragment pass joint album's albumId in property album.eTag
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.name, "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}", fileId, System.currentTimeMillis(), 1))
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.name, "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}", fileId, System.currentTimeMillis(), 1))
                         } else {
-                            val meta = Tools.getPhotoParams("$appRootFolder/$fileId", mimeType, fileId, true)
+                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
+                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
+                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId, true)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
-                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId))
+                            newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
 
                             // Update album start and end dates accordingly
                             date = newPhotos.last().dateTaken
                             if (date < album.startDate) album.startDate = date
                             if (date > album.endDate) album.endDate = date
 
-                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), 1))
+                            // Pass photo mimeType in Action's folderId property, fileId is the same as fileName, reflecting what it's in local Room table, also pass flags shareId in retry property
+                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, mimeType, album.name, fileId, fileId, System.currentTimeMillis(), album.shareId))
                         }
                     } else {
                         // TODO show special error message when there are just some duplicate in uris
@@ -251,6 +255,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         else setProgress(index, fileId)
                     }
                 }
+
+                metadataRetriever.release()
 
                 if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
@@ -265,19 +271,26 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             if (validCover == -1) validCover = 0
 
                             // New album, update cover information but leaving cover column empty as the sign of local added new album
-                            album.coverBaseline = (newPhotos[validCover].height - (newPhotos[validCover].width * 9 / 21)) / 2
-                            album.coverWidth = newPhotos[validCover].width
-                            album.coverHeight = newPhotos[validCover].height
-                            album.cover = newPhotos[validCover].id
+                            newPhotos[validCover].run {
+                                album.coverBaseline = (height - (width * 9 / 21)) / 2
+                                album.coverWidth = width
+                                album.coverHeight = height
+                                album.cover = id
+                                album.coverFileName = name
+                                album.coverMimeType = mimeType
+                                album.coverOrientation = orientation
+                            }
+
+                            album.sortOrder = PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.default_sort_order_pref_key), "0")?.toInt() ?: Album.BY_DATE_TAKEN_ASC
 
                             // Create new album first, store cover, e.g. first photo in new album, in property filename
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, album.id, album.name, "", newPhotos[validCover].id, System.currentTimeMillis(), 1))
                         }
 
                         photoRepository.insert(newPhotos)
-                        albumRepository.upsert(album)
+                        AlbumRepository(application).upsert(album)
                     }
-                    actionRepository.addActions(actions)
+                    ActionRepository(application).addActions(actions)
 
                     // By setting progress to more than 100%, signaling the calling fragment/activity
                     setProgress(uris.size, fileId)

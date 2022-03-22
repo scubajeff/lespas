@@ -13,6 +13,10 @@
     <dimen name="chip_label_minimum_height">20dp</dimen>
     <dimen name="exoplayer_control_layout_horizontal_margin">@dimen/big_padding</dimen>
     <dimen name="exoplayer_control_layout_vertical_margin">56dp</dimen>
-    <dimen name="destination_dialog_clipdata_grid_size">64dp</dimen>
     <dimen name="login_screen_logo_size">144dp</dimen>
+
+    <dimen name="destination_dialog_clipdata_grid_size">64dp</dimen>
+    <dimen name="destination_cover_width">88dp</dimen>
+    <dimen name="destination_cover_height">40dp</dimen>
+    <dimen name="destination_title_text_size">13sp</dimen>
 </resources>

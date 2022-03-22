@@ -3,7 +3,7 @@
     <string name="app_name">Les Pas</string>
     <string name="error_only_one_account">Sólo se permite una cuenta</string>
     <string name="welcome_message_title">¡Bienvenido a Les Pas!</string>
-    <string name="welcom_message">Para empezar, por favor conceda acceso en su servidor de Nextcloud.</string>
+    <string name="welcome_message">Para empezar, por favor conceda acceso en su servidor de Nextcloud.</string>
     <string name="host_textinput_label">Dirección del servidor</string>
     <string name="url_helper_text">Por ejemplo, https://example.com/nextcloud</string>
     <string name="host_address_validation_error">El anfitrión no es válido.</string>
@@ -47,7 +47,7 @@
     <string name="storage_access_permission_rationale">Snapseed guarda los archivos en la carpeta \"Snapseed\", concede permiso para acceder a esos archivos.</string>
     <string name="proceed_request">Proceda</string>
     <string name="logout_title">Cierre de sesión</string>
-    <string name="logout_dialog_msg">¿Desconexión de la cuenta %1$s?</string>
+    <string name="msg_logout_dialog">¿Desconexión de la cuenta %1$s?</string>
     <string name="yes_logout">Sí, cierre de sesión</string>
     <string name="copy_files">Copiar</string>
     <string name="create_new_album">Crear un nuevo álbum</string>
@@ -82,10 +82,10 @@
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <string name="selected_count">%1$d seleccionado</string>
-    <string name="button_text_edit_in_snapseed">Editar en Snapseed</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
-    <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta DCIM/%1$s</string>
+    <string name="cameraroll_backup_summary">Las nuevas fotos y videos serán respaldadas automáticamente en el servidor bajo la carpeta \'DCIM/%1$s\'.</string>
     <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
     <string name="gallery_app_name">Galería</string>
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
@@ -184,4 +184,25 @@
     <string name="item_bgm">Gestionar la BGM</string>
     <string name="option_menu_mute">Activar el silencio</string>
     <string name="skip_late_night_update">Omitir la actualización nocturna</string>
+    <string name="backup_done">Todos los elementos del rollo de la cámara han sido respaldados.</string>
+    <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad.</string>
+    <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
+    <string name="default_sort_order_title">Ordenación de fotos por defecto</string>
+    <string name="msg_set_as_remote">Al establecer el álbum como \'Remoto\' se eliminarán todos sus archivos multimedia de este dispositivo. ¿Cómo proceder?</string>
+    <string name="msg_set_as_local">Al configurar el álbum como \"Local\" se descargarán todos los archivos multimedia del servidor, por lo que tardará un poco. ¿Cómo proceder?</string>
+    <string name="action_set_remote">Ajustar como Remoto</string>
+    <string name="action_set_local">Ajustar como Local</string>
+    <string name="msg_check_network">Compruebe la conexión de su servidor.</string>
+    <string name="msg_error_preparing_share_out_files">No preparar los archivos multimedia.</string>
+    <string name="to_new_album">Al nuevo álbum:</string>
+    <string name="clear_cache_title">Borrar la caché de los álbumes remotos</string>
+    <string name="msg_clear_cache">Todos los archivos de imagen remotos serán eliminados de la caché. ¿Proceder?</string>
+    <string name="msg_restart_to_take_effect">Reinicie la aplicación para que la nueva configuración surta efecto.</string>
+    <string name="cache_size_title">Establecer el tamaño de la caché del álbum remoto</string>
+    <string name="cache_size_summary">Tamaño actual de la caché: %1$dMB</string>
+    <string name="cache_size_setting_hint">Tamaño de la caché:</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Añadir</string>
+    <string name="checkbox_text_set_remote">Álbum remoto, archivos multimedia almacenados sólo en el servidor.</string>
+    <string name="login_to_new_account">Estás entrando con una nueva cuenta. Primero debe cerrar la sesión de la cuenta actual y luego volver a iniciar Les Pas. ¿Proceder a cerrar la sesión?</string>
+    <string name="menu_item_qr_scanner_title">Código QR de varredura</string>
 </resources>

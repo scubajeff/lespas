@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.album
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import com.google.android.material.textfield.TextInputEditText
@@ -10,7 +11,6 @@ import site.leos.apps.lespas.helper.AlbumNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 
 class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumrename_dialog) {
-    private lateinit var renameTextInputLayout: TextInputLayout
     private lateinit var usedNames: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,9 +21,7 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        renameTextInputLayout = view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).apply {
-            requestFocus()
-        }
+        view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).requestFocus()
 
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
             // Use append to move cursor to the end of text
@@ -31,8 +29,8 @@ class AlbumRenameDialogFragment: LesPasDialogFragment(R.layout.fragment_albumren
 
             addTextChangedListener(AlbumNameValidator(this, usedNames))
 
-            setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_NULL) {
+            setOnEditorActionListener { _, actionId, keyEvent ->
+                if (actionId == EditorInfo.IME_ACTION_GO || keyEvent.keyCode == KeyEvent.KEYCODE_ENTER) {
                     error ?: run {
                         val name = this.text.toString().trim()    // Trim the leading and trailing blank
                         if (name.isNotEmpty()) {

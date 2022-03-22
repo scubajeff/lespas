@@ -7,7 +7,7 @@
     <string name="sd_card_not_ready">外部メモリーカードがマウントされていないか、読み取り専用になっている。</string>
     <string name="error_only_one_account">同一サーバー上では1つのアカウントしか使用できない</string>
     <string name="welcome_message_title">Les Pasはあなたを歓迎します。</string>
-    <string name="welcom_message">アプリケーション認証のために、Nextcloudサーバーにログインしてください。</string>
+    <string name="welcome_message">アプリケーション認証のために、Nextcloudサーバーにログインしてください。</string>
     <string name="host_textinput_label">サーバーURL</string>
     <string name="url_helper_text">例： https://example.com/nextcloud</string>
     <string name="verify_ssl_certificate_title">SSL証明書の検証に失敗しました。</string>
@@ -29,7 +29,7 @@
     <string name="button_text_set_cover">アルバムカバー</string>
     <string name="button_text_set_as">壁紙設定</string>
     <string name="button_text_info">写真情報</string>
-    <string name="button_text_edit_in_snapseed">Snapseedでの編集</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - 置き換え</string>
     <string name="toast_cover_applied">アルバムジャケットを更新しました。</string>
     <string name="toast_cover_set_canceled">操作がキャンセルされました。</string>
     <string name="settings_title">設定</string>
@@ -71,7 +71,7 @@
     <string name="storage_access_permission_rationale">Snapseedはレタッチ結果を「Snapseed」というディレクトリに保存するので、これらのファイルを読むためのストレージアクセスを許可してください。</string>
     <string name="proceed_request">デ・オーソライズ</string>
     <string name="logout_title">サーバーからのログアウト</string>
-    <string name="logout_dialog_msg">アカウント %1$s からログアウトしますか？</string>
+    <string name="msg_logout_dialog">アカウント %1$s からログアウトしますか？</string>
     <string name="yes_logout">ログアウトへの同意</string>
     <string name="copy_files">レプリケート</string>
     <string name="move_files">ポータブル</string>
@@ -184,4 +184,25 @@
     <string name="item_bgm">BGMの管理</string>
     <string name="option_menu_mute">トグルミュート</string>
     <string name="skip_late_night_update">深夜に更新をスキップ</string>
+    <string name="backup_done">カメラロールの項目はすべてバックアップされました。</string>
+    <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります。</string>
+    <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
+    <string name="default_sort_order_title">写真のデフォルトの並び順</string>
+    <string name="msg_set_as_remote">アルバムを「リモート」に設定すると、このデバイスからすべてのメディアファイルが削除されます。続行しますか？</string>
+    <string name="msg_set_as_local">アルバムを「ローカル」に設定すると、サーバーからすべてのメディアファイルをダウンロードするため、しばらく時間がかかります。続行しますか？</string>
+    <string name="action_set_remote">リモート設定</string>
+    <string name="action_set_local">ローカルに設定</string>
+    <string name="msg_check_network">サーバーの接続を確認してください。</string>
+    <string name="msg_error_preparing_share_out_files">メディアファイルの準備に失敗する。</string>
+    <string name="to_new_album">ニューアルバムへ</string>
+    <string name="clear_cache_title">リモートアルバムのキャッシュをクリアする</string>
+    <string name="msg_clear_cache">すべてのリモートイメージファイルがキャッシュから削除されます。続行しますか？</string>
+    <string name="msg_restart_to_take_effect">新しい設定を有効にするために、アプリを再起動します。</string>
+    <string name="cache_size_title">リモートアルバムキャッシュサイズを設定する</string>
+    <string name="cache_size_summary">現在のキャッシュ・サイズ: %1$dMB</string>
+    <string name="cache_size_setting_hint">キャッシュサイズ。</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - 追加</string>
+    <string name="checkbox_text_set_remote">リモートアルバム、メディアファイルはサーバーにのみ保存されます。</string>
+    <string name="login_to_new_account">新しいアカウントでログインしています。まず現在のアカウントをログアウトしてから、Les Pasを起動し直してください。ログアウトを実行しますか？</string>
+    <string name="menu_item_qr_scanner_title">QRコードを読み取る</string>
 </resources>

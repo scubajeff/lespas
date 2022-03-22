@@ -1,0 +1,4 @@
+* Adicionada música à apresentação
+* Adicionada opção de exibir/ocultar álbum
+* Inicialização do aplicativo otimizada
+* Outras melhorias e correções de problemas

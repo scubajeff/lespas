@@ -1,0 +1,6 @@
+* Neuer Login- und Re-Login-Bildschirm, robustere Implementierung und Anpassung an das Design Ihres Nextcloud-Servers
+* Behobener Absturz bei der Abfrage der Speicherzugriffsberechtigung
+* Behobener Absturz beim Übertragen von App-Speicher zwischen interner und externer SD
+* Behoben: Automatisches Backup der Kamerarolle wurde blockiert.
+* Behoben, dass der Albumname nach dem Umbenennen nicht auf dem Bildschirm aktualisiert wurde
+* Weitere Verbesserungen und Fehlerkorrekturen

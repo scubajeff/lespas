@@ -20,7 +20,6 @@ import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
@@ -30,6 +29,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
@@ -49,6 +49,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -63,6 +64,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var window: Window
     //private var previousNavBarColor = 0
     private var previousOrientationSetting = 0
+    private var previousTitleBarDisplayOption = 0
 
     private lateinit var controlsContainer: LinearLayout
     private lateinit var removeButton: Button
@@ -75,9 +77,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by viewModels()
-    private val imageLoaderModel: ImageLoaderViewModel by activityViewModels()
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val currentPhotoModel: CurrentPhotoViewModel by activityViewModels()
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, null) }
+    private lateinit var playerViewModel: VideoPlayerViewModel
 
     private var autoRotate = false
     private var stripExif = "2"
@@ -88,18 +90,43 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private lateinit var gestureDetector: GestureDetectorCompat
 
+    private var isRemote: Boolean = false
+    private lateinit var serverPath: String
+    private lateinit var serverFullPath: String
+    private lateinit var rootPath: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         album = arguments?.getParcelable(KEY_ALBUM)!!
+        // Album meta won't change during this fragment lifecycle
+        isRemote = Tools.isRemoteAlbum(album)
+        rootPath = Tools.getLocalRoot(requireContext())
+        serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
+        serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
+        // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()))[VideoPlayerViewModel::class.java]
+        //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
             Tools.getDisplayWidth(requireActivity().windowManager),
-            Tools.getLocalRoot(requireContext()),
             playerViewModel,
+            { photo->
+                with(photo) {
+                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) SeamlessMediaSliderAdapter.VideoItem(Uri.parse("${serverFullPath}/${name}"), mimeType, width, height, id)
+                    else {
+                        var fileName = "${rootPath}/${id}"
+                        if (!(File(fileName).exists())) fileName = "${rootPath}/${name}"
+                        SeamlessMediaSliderAdapter.VideoItem(Uri.parse("file:///$fileName"), mimeType, width, height, id)
+                    }
+                }
+            },
             { state-> toggleSystemUI(state) },
-            { photo, imageView, type -> imageLoaderModel.loadPhoto(photo, imageView, type) { startPostponedEnterTransition() }},
-            { view -> imageLoaderModel.cancelLoading(view as ImageView) }
+            { photo, imageView, type ->
+                if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
+                else imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else ""), imageView!!, type) { startPostponedEnterTransition() }
+            },
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         // Adjusting the shared element mapping
@@ -111,7 +138,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         previousOrientationSetting = requireActivity().requestedOrientation
         with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
-            autoRotate = getBoolean(context?.getString(R.string.auto_rotate_perf_key), false)
+            autoRotate = getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
             stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value)) ?: "0"
         }
 
@@ -129,7 +156,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
-        context?.registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
+        requireContext().registerReceiver(snapseedCatcher, IntentFilter(CHOOSER_SPY_ACTION))
 
         // Content observer looking for Snapseed output
         snapseedOutputObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -148,14 +175,14 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
                     WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
-                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!, { workInfo->
+                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
                         if (workInfo != null) {
                             if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                 // When replacing original with Snapseed result, refresh image cache of all size
-                                imageLoaderModel.invalid(pAdapter.getPhotoAt(slider.currentItem).id)
+                                imageLoaderModel.invalidPhoto(pAdapter.getPhotoAt(slider.currentItem).id)
                             }
                         }
-                    })
+                    }
 
                     requireContext().contentResolver.unregisterContentObserver(this)
                 }
@@ -203,6 +230,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         postponeEnterTransition()
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            previousTitleBarDisplayOption = savedInstanceState?.run {
+                // During fragment recreate, wipe actionbar to avoid flash
+                wipeActionBar()
+
+                getInt(KEY_DISPLAY_OPTION)
+            } ?: displayOptions
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photoslide, container, false)
@@ -262,10 +299,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
             fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
-        }.also {
-            // Prevent ViewPager from showing content before transition finished, without this, Android 11 will show it right at the beginning
-            // Also we can transit to video thumbnail before player start playing
-            it.addListener(MediaSliderTransitionListener(slider))
+        }.apply {
+            addListener(MediaSliderTransitionListener(slider))
         }
 
         // Controls
@@ -287,10 +322,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 hideHandler.post(hideSystemUI)
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
-                if (Tools.isMediaPlayable(currentMedia.mimeType)) {
-                    albumModel.setCover(album.id, Cover(currentMedia.id, 0, currentMedia.width, currentMedia.height))
-                    // If album has not been uploaded yet, update the cover id in action table too
-                    actionModel.updateCover(album.id, currentMedia.id)
+                if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
+                    actionModel.updateCover(album.id, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
@@ -331,10 +364,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
 
-                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) MetaDataDialogFragment.newInstance(pAdapter.getPhotoAt(slider.currentItem)).show(parentFragmentManager, INFO_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) with(pAdapter.getPhotoAt(slider.currentItem)) {
+                    if (isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED)
+                        MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(this, serverPath)).show(parentFragmentManager, INFO_DIALOG)
+                    else
+                        MetaDataDialogFragment.newInstance(this).show(parentFragmentManager, INFO_DIALOG)
+                }
             }
         }
         snapseedButton.run {
+            // Snapseed edit replace/add preference can't be changed in this screen, safe to fix the action icon
             setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24), null, null)
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener { view->
@@ -366,17 +405,17 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner, { photos->
+        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
             pAdapter.setPhotos(photos, album.sortOrder)
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
-        })
+        }
 
-        currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner, { appliedStatus ->
+        currentPhotoModel.getCoverAppliedStatus().observe(viewLifecycleOwner) { appliedStatus ->
             showCoverAppliedStatus(appliedStatus == true)
 
             // Clear transition when coming back from CoverSettingFragment
             exitTransition = null
-        })
+        }
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
@@ -389,6 +428,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -431,7 +475,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
-                displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
+                displayOptions = previousTitleBarDisplayOption
                 setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
             }
             requestedOrientation = previousOrientationSetting
@@ -479,12 +523,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     private fun followSystemBar(show: Boolean) {
-        // Wipe ActionBar
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-
         // TODO: Nasty exception handling here, but Android doesn't provide method to unregister System UI/Insets changes listener
         try {
             TransitionManager.beginDelayedTransition(controlsContainer, if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) android.transition.Fade() else Slide(Gravity.BOTTOM).apply { duration = 50 })
@@ -493,6 +531,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // auto hide
         if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+
+        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
+        wipeActionBar()
+    }
+
+    private fun wipeActionBar() {
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
     }
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {
@@ -514,21 +562,32 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private fun prepareShares(photo: Photo, strip: Boolean): Pair<Uri, String>? {
         try {
-            // Synced file is named after id, not yet synced file is named after file's name
-            val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag.isNotEmpty()) photo.id else photo.name)
-            val destFile = File("${requireContext().cacheDir}${MainActivity.TEMP_CACHE_FOLDER}", if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+            val destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+            val mimeType: String
 
-            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-            val mimeType = if (strip && Tools.hasExif(photo.mimeType)) {
-                BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                "image/jpeg"
+            if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                // For remote album and synced photo
+                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))) {
+                    // TODO notify user
+                    return null
+                }
+                else mimeType = photo.mimeType
             } else {
-                sourceFile.copyTo(destFile, true, 4096)
-                photo.mimeType
-            }
-            val uri = FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
+                // Synced file is named after id, not yet synced file is named after file's name
+                //val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) photo.id else photo.name)
+                val sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
 
-            return Pair(uri, mimeType)
+                // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                if (strip && Tools.hasExif(photo.mimeType)) {
+                    BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                    mimeType = "image/jpeg"
+                } else {
+                    sourceFile.copyTo(destFile, true, 4096)
+                    mimeType = photo.mimeType
+                }
+            }
+
+            return Pair(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile), mimeType)
         } catch (e: Exception) { return null }
     }
 
@@ -573,17 +632,13 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album.name) }
+    private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album) }
 
     class PhotoSlideAdapter(
-        displayWidth: Int, private val rootPath: String, playerViewModel: VideoPlayerViewModel,
-        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView, String) -> Unit, cancelLoader: (View) -> Unit
+        displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (Photo) -> VideoItem,
+        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
-        override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
-            var fileName = "$rootPath/${id}"
-            if (!(File(fileName).exists())) fileName = "$rootPath/${name}"
-            VideoItem(Uri.parse("file:///$fileName"), mimeType, width, height, id)
-        }
+        override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
         override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
 
@@ -632,6 +687,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
+
+        private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"

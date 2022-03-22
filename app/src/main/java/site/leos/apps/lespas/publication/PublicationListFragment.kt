@@ -19,7 +19,8 @@ import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.ImageLoaderViewModel
+import site.leos.apps.lespas.photo.Photo
+import java.time.LocalDateTime
 
 class PublicationListFragment: Fragment() {
     private val shareModel: NCShareViewModel by activityViewModels()
@@ -46,13 +47,18 @@ class PublicationListFragment: Fragment() {
                 } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
-                shareModel.getPhoto(
-                    NCShareViewModel.RemotePhoto(share.cover.cover, "${share.sharePath}/${share.coverFileName}", "image/jpeg", share.cover.coverWidth, share.cover.coverHeight, share.cover.coverBaseline, 0L),
+                shareModel.setImagePhoto(
+                    NCShareViewModel.RemotePhoto(Photo(
+                        id = share.cover.cover, name = share.cover.coverFileName, mimeType = share.cover.coverMimeType, width = share.cover.coverWidth, height = share.cover.coverHeight, orientation = share.cover.coverOrientation,
+                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
+                        eTag = Photo.ETAG_FAKE,
+                    ), share.sharePath, share.cover.coverBaseline),
                     view,
-                    ImageLoaderViewModel.TYPE_COVER
+                    NCShareViewModel.TYPE_COVER
                 )
             },
-            { user, view -> shareModel.getAvatar(user, view, null) }
+            { user, view -> shareModel.getAvatar(user, view, null) },
+            { view -> shareModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         setHasOptionsMenu(true)
@@ -72,9 +78,9 @@ class PublicationListFragment: Fragment() {
             adapter = shareListAdapter
         }
 
-        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner, { shareListAdapter.submitList(it) })
-        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner, {
-            when(it) {
+        shareModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { shareListAdapter.submitList(it) }
+        shareModel.shareWithMeProgress.asLiveData().observe(viewLifecycleOwner) {
+            when (it) {
                 0 -> {
                     activateRefresh?.isVisible = false
                     refreshProgress?.isVisible = true
@@ -94,7 +100,7 @@ class PublicationListFragment: Fragment() {
                     progressIndicator?.progress = it
                 }
             }
-        })
+        }
 /*
 
         lifecycleScope.launch { shareModel.themeColor.collect { (requireActivity() as MainActivity).themeToolbar(ColorUtils.setAlphaComponent(it, 255)) }}
@@ -141,15 +147,20 @@ class PublicationListFragment: Fragment() {
         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
-    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
+    class ShareListAdapter(private val clickListener: (NCShareViewModel.ShareWithMe) -> Unit, private val imageLoader: (NCShareViewModel.ShareWithMe, AppCompatImageView) -> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+            private var currentAlbumId = ""
             private val ivCover = itemView.findViewById<AppCompatImageView>(R.id.coverart)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val ivIndicator = itemView.findViewById<ImageView>(R.id.joint_album_indicator)
 
             fun bind(item: NCShareViewModel.ShareWithMe) {
-                imageLoader(item, ivCover)
+                if (currentAlbumId != item.albumId) {
+                    ivCover.setImageResource(0)
+                    imageLoader(item, ivCover)
+                    currentAlbumId = item.albumId
+                }
                 //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
                 tvTitle.apply {
                     text = item.albumName
@@ -165,6 +176,13 @@ class PublicationListFragment: Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bind(getItem(position))
+        }
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.coverart)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
         }
 
         override fun submitList(list: List<NCShareViewModel.ShareWithMe>?) {

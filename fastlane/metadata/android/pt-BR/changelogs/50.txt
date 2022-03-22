@@ -1,0 +1,6 @@
+* Nova tela de login e re-login, implementação mais robusta e siga a temática de seu servidor Nextcloud
+* Corrigida a falha ao solicitar a permissão de acesso ao armazenamento
+* Corrigida a falha ao transferir o armazenamento de aplicativos entre SD internos e externos
+* O backup automático do rolo de câmera fixo estacionou
+* Nome fixo do álbum não sendo atualizado na tela após a renomeação
+* Outras melhorias e correções de bugs

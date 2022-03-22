@@ -72,7 +72,7 @@
             <Button
                 android:id="@+id/snapseed_button"
                 android:drawableTop="@drawable/ic_baseline_snapseed_24"
-                android:text="@string/button_text_edit_in_snapseed"
+                android:text="@string/button_text_edit_in_snapseed_replace"
                 style="@style/Widget.Theme.LesPas.ButtonBar.Fullscreen"/>
 
         </LinearLayout>

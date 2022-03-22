@@ -35,7 +35,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
         val builder = ExoPlayer.Builder(application)
         callFactory?.let {
-            cache = SimpleCache(File(application.cacheDir, "media"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
+            cache = SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
             builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory)))))
         }
         videoPlayer = builder.build().apply {
@@ -73,6 +73,12 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
     }
 
     fun resume(view: PlayerView, uri: Uri) {
+        // Hide controller view by default
+        view.hideController()
+
+        // Keep screen on during playing
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         if (uri == currentVideo) {
             // Resuming the same video
             if (videoPlayer.isPlaying) {
@@ -98,11 +104,6 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
             prepare()
             play()
         }
-
-        // Hide controller view by default
-        view.hideController()
-
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     fun pause(uri: Uri?) {
@@ -113,6 +114,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
             saveVideoPosition(currentVideo)
         }
 
+        // Reset screen auto turn off
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -135,6 +137,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         cache?.release()
         videoPlayer.release()
 
+        // Reset screen auto turn off
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         super.onCleared()
