@@ -302,11 +302,12 @@ class PublicationDetailFragment: Fragment() {
                         ViewCompat.setTransitionName(this, item.photo.id)
                         currentPhotoId = item.photo.id
                     }
-                    // TODO do we need this
-                    ConstraintSet().apply {
-                        clone(itemView as ConstraintLayout)
-                        setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
-                        applyTo(itemView)
+                    (itemView as ConstraintLayout).let {
+                        ConstraintSet().apply {
+                            clone(it)
+                            setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
+                            applyTo(it)
+                        }
                     }
                     setOnClickListener { clickListener(this, currentList, position) }
                 }

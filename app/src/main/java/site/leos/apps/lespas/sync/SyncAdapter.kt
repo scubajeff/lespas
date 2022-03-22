@@ -489,7 +489,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val changedPhotos = mutableListOf<Photo>()
             val remotePhotoIds = mutableListOf<String>()
             val metadataRetriever = MediaMetadataRetriever()
-            var exifInterface: androidx.exifinterface.media.ExifInterface? = null
+            var exifInterface: androidx.exifinterface.media.ExifInterface?
 
             for (changedAlbum in changedAlbums) {
                 // Check network type on every loop, so that user is able to stop sync right in the middle
