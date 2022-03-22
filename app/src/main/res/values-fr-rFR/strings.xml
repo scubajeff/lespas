@@ -205,4 +205,7 @@
     <string name="checkbox_text_set_remote">Album distant, fichiers multimédia stockés sur le serveur uniquement.</string>
     <string name="login_to_new_account">Vous vous connectez avec un nouveau compte. Vous devez d\'abord vous déconnecter du compte actuel, puis relancer Les Pas. Procéder à la déconnexion ?</string>
     <string name="menu_item_qr_scanner_title">Scanner le code QR</string>
+    <string name="chinese_map_title">Utiliser l\'application de carte chinoise</string>
+    <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
+    <string name="map_header">Carte</string>
 </resources>

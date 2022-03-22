@@ -174,7 +174,11 @@ class PhotoWithMapFragment: Fragment() {
             }
             R.id.option_menu_open_in_map_app -> {
                 startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("geo:${remotePhoto.photo.latitude},${remotePhoto.photo.longitude}?z=20")
+                    data = Uri.parse(
+                        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
+                            Tools.wGS84ToGCJ02(doubleArrayOf(remotePhoto.photo.latitude, remotePhoto.photo.longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
+                        else "geo:${remotePhoto.photo.latitude},${remotePhoto.photo.longitude}?z=20"
+                    )
                 })
                 true
             }

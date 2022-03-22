@@ -257,4 +257,7 @@
     <string name="checkbox_text_set_remote">Remote-Album, Mediendateien nur auf dem Server gespeichert.</string>
     <string name="login_to_new_account">Sie melden sich mit einem neuen Konto an. Sie sollten sich zuerst von Ihrem aktuellen Konto abmelden und dann Les Pas neu starten. Mit dem Abmelden fortfahren?</string>
     <string name="menu_item_qr_scanner_title">QR-Code scannen</string>
+    <string name="chinese_map_title">Chinesische Karten-App verwenden</string>
+    <string name="chinese_map_summary">Alle Kartenanwendungen in China verwenden ein einheitliches Koordinatensystem.</string>
+    <string name="map_header">Karte</string>
 </resources>

@@ -17,6 +17,7 @@ import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -170,7 +171,11 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                     isVisible = true
                                 }
 
-                                mapIntent.data = Uri.parse("geo:${latitude},${longitude}?z=20")
+                                mapIntent.data = Uri.parse(
+                                    if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
+                                        Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
+                                    else "geo:${latitude},${longitude}?z=20"
+                                )
                                 mapIntent.resolveActivity(requireActivity().packageManager)?.let {
                                     mapButton.apply {
                                         setOnClickListener {

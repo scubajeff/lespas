@@ -167,6 +167,11 @@
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
 
+    <string name="map_header">Map</string>
+    <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
+    <string name="chinese_map_title">Use Chinese Map App</string>
+    <string name="chinese_map_summary">All map apps of China use an unique coordinate system.</string>
+
     <string name="account_header">Account</string>
     <string name="relogin_pref_key" translatable="false">RELOGIN</string>
     <string name="relogin_title">Re-login</string>

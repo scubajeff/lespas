@@ -267,4 +267,7 @@
     <string name="skip_late_night_update">Evitar atualizações tarde da noite</string>
     <string name="login_to_new_account">Você está entrando com uma nova conta. Você deve sair da conta corrente primeiro, depois relançar o Les Pas. Proceder ao logout?</string>
     <string name="menu_item_qr_scanner_title">Escanear código QR</string>
+    <string name="chinese_map_title">Use o aplicativo de mapa chinês</string>
+    <string name="chinese_map_summary">Todas as aplicações de mapas da China utilizam um sistema de coordenadas único.</string>
+    <string name="map_header">Mapa</string>
 </resources>

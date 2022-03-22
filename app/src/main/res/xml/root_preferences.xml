@@ -142,6 +142,17 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:title="@string/map_header"
+        app:icon="@drawable/ic_baseline_map_preference_24">
+        <SwitchPreferenceCompat
+            app:key="@string/chinese_map_pref_key"
+            app:title="@string/chinese_map_title"
+            app:summary="@string/chinese_map_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/account_header"
         app:icon="@drawable/ic_baseline_account_setting_24">
         <Preference
