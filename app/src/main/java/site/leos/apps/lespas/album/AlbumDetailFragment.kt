@@ -179,7 +179,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                    if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
                             registerContentObserver(
@@ -612,7 +612,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
 
         // Disable snapseed edit action menu if Snapseed is not installed, update snapseed action menu icon too
-        with(PreferenceManager.getDefaultSharedPreferences(context)) {
+        with(PreferenceManager.getDefaultSharedPreferences(requireContext())) {
             isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
             snapseedEditAction?.isVisible = isSnapseedEnabled
 

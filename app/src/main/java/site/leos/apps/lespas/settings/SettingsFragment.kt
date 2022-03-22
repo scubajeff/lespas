@@ -181,7 +181,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         findPreference<Preference>(getString(R.string.transfer_pref_key))?.let {
             it.isVisible = volume.size > 1
             if (it.isVisible) {
-                val inInternal = it.sharedPreferences.getBoolean(KEY_STORAGE_LOCATION, true)
+                val inInternal = it.sharedPreferences?.getBoolean(KEY_STORAGE_LOCATION, true) ?: true
                 it.title = getString(if (inInternal) R.string.transfer_to_external else R.string.transfer_to_internal)
 //                savedInstanceState ?: run {
                     lifecycleScope.launch(Dispatchers.IO) {
@@ -290,7 +290,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
-            summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
+            summary = getString(R.string.cache_size_summary, sharedPreferences?.getInt(CACHE_SIZE, 800) ?: 800)
         }
     }
 
@@ -313,11 +313,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
         if (isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
 
-        preferenceScreen.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+        preferenceScreen.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
     }
 
     override fun onPause() {
-        preferenceScreen.sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+        preferenceScreen.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(this)
         super.onPause()
     }
 
@@ -334,10 +334,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         super.onStop()
     }
 
-    override fun onPreferenceTreeClick(preference: Preference?): Boolean =
-        when (preference?.key) {
+    override fun onPreferenceTreeClick(preference: Preference): Boolean =
+        when (preference.key) {
             getString(R.string.sync_pref_key) -> {
-                toggleAutoSync(preference.sharedPreferences.getBoolean(preference.key, false))
+                toggleAutoSync(preference.sharedPreferences?.getBoolean(preference.key, false) ?: false)
                 true
             }
             getString(R.string.logout_pref_key) -> {
@@ -346,7 +346,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.auto_theme_perf_key) -> {
-                preference.sharedPreferences.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
+                preference.sharedPreferences?.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let {
                     AppCompatDelegate.setDefaultNightMode(it.toInt())
                 }
 
@@ -356,7 +356,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 requireActivity().packageManager.apply {
                     setComponentEnabledSetting(
                         ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"),
-                        if (preferenceManager.sharedPreferences.getBoolean(preference.key, false)) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        if (preferenceManager.sharedPreferences?.getBoolean(preference.key, false) == true) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                         PackageManager.DONT_KILL_APP
                     )
                     setComponentEnabledSetting(
@@ -394,7 +394,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.snapseed_pref_key) -> {
-                if (preference.sharedPreferences.getBoolean(preference.key, false) && isSnapseedNotInstalled) {
+                if (preference.sharedPreferences?.getBoolean(preference.key, false) == true && isSnapseedNotInstalled) {
                     // Prompt user to install Snapseed
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
                         ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), getString(android.R.string.ok), true, INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -459,9 +459,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
     }
 
-    private fun isEnoughSpace(sp: SharedPreferences): Boolean =
+    private fun isEnoughSpace(sp: SharedPreferences?): Boolean =
         // Add 100MB redundant
-        (if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize + 100 * 1024 * 1024
+        (if (sp?.getBoolean(KEY_STORAGE_LOCATION, true) != false) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize + 100 * 1024 * 1024
         //(if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize
 
     private fun showBackupSummary() {
