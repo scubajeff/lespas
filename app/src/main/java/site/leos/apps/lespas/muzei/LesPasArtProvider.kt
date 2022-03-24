@@ -124,28 +124,28 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 photoList.filter { p -> Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1 }.let { recentList ->
                                     when {
                                         recentList.size == 1 -> recentList[0]
-                                        recentList.isNotEmpty() -> recentList[Random.nextInt(recentList.size - 1)]
-                                        else -> photoList[Random.nextInt(photoList.size - 1)]
+                                        recentList.isNotEmpty() -> recentList[Random.nextInt(recentList.size)]
+                                        else -> photoList[Random.nextInt(photoList.size)]
                                     }
                                 }
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
-                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { tih ->
-                                    when {
-                                        tih.size == 1 -> tih[0]
-                                        tih.isNotEmpty() -> {
-                                            var index = Random.nextInt(tih.size - 1)
-                                            lastAddedArtwork?.apply {
+                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { hits ->
+                                    when(hits.size) {
+                                        0 -> photoList[Random.nextInt(photoList.size)]
+                                        1 -> hits[0]
+                                        else -> {
+                                            var index = Random.nextInt(hits.size)
+                                            lastAddedArtwork?.let {
                                                 // Prevent from choosing the last one again
-                                                while(tih[index].id == token) index = Random.nextInt(tih.size - 1)
+                                                while(hits[index].id == it.token) index = Random.nextInt(hits.size)
                                             }
-                                            tih[index]
+                                            hits[index]
                                         }
-                                        else -> photoList[Random.nextInt(photoList.size - 1)]
                                     }
                                 }
                             }
-                            else -> photoList[Random.nextInt(photoList.size - 1)]
+                            else -> photoList[Random.nextInt(photoList.size)]
                         }
                     }
                 }?.let { photo ->
