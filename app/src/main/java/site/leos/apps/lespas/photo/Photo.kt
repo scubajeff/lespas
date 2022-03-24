@@ -156,4 +156,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET locality = :locality, country = :countryName, countryCode = :countryCode WHERE id = :photoId")
     abstract fun updateAddress(photoId: String, locality: String, countryName: String, countryCode: String)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET locality = '${Photo.NO_ADDRESS}', country = '${Photo.NO_ADDRESS}', countryCode = '${Photo.NO_ADDRESS}'")
+    abstract fun clearLocality()
 }
