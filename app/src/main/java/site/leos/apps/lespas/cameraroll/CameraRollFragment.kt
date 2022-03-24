@@ -282,6 +282,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         playerViewModel.setWindow(requireActivity().window)
 
+        // Save current system bar color
+        (requireActivity() as AppCompatActivity).window?.run {
+            savedStatusBarColor = statusBarColor
+            savedNavigationBarColor = navigationBarColor
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) savedNavigationBarDividerColor = navigationBarDividerColor
+        }
         // Wipe ActionBar
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
