@@ -290,6 +290,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         // Wipe ActionBar
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            hideOffset = height
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             displayOptions = 0
             previousTitleBarDisplayOption = savedInstanceState?.run { getInt(KEY_DISPLAY_OPTION) } ?: displayOptions
@@ -648,6 +649,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onDestroy() {
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.apply {
+                hideOffset = 0
                 displayOptions = previousTitleBarDisplayOption
                 setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
             }
