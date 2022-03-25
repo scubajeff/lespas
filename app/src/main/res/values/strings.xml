@@ -70,6 +70,7 @@
     <string name="striping_exif">Striping EXIF data…</string>
     <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
     <string name="msg_check_network">Check your server connection.</string>
+    <string name="msg_server_operation">Photos will appear in target album after syncing with server.</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>

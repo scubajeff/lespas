@@ -37,6 +37,8 @@ data class Action (
        const val ACTION_UPDATE_ALBUM_BGM = 15
        const val ACTION_DELETE_ALBUM_BGM = 16
        const val ACTION_REFRESH_ALBUM_LIST = 17
+       const val ACTION_COPY_ON_SERVER = 18
+       const val ACTION_MOVE_ON_SERVER = 19
    }
 }
 

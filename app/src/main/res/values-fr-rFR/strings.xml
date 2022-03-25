@@ -208,4 +208,5 @@
     <string name="chinese_map_title">Utiliser l\'application de carte chinoise</string>
     <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
     <string name="map_header">Carte</string>
+    <string name="msg_server_operation">Les photos apparaîtront dans l\'album cible après la synchronisation avec le serveur.</string>
 </resources>

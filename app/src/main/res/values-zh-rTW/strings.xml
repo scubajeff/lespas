@@ -208,4 +208,5 @@
     <string name="chinese_map_title">使用中國大陸地圖App</string>
     <string name="chinese_map_summary">中國大陸地圖App採用獨特坐標系統。</string>
     <string name="map_header">地圖</string>
+    <string name="msg_server_operation">與伺服器實現同步後，照片才會在目標相冊中出現。</string>
 </resources>

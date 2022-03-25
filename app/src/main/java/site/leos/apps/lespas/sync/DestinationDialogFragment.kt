@@ -73,8 +73,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private lateinit var remoteAlbumCheckBox: CheckBox
     private var remoteAlbumIconDrawableSize = 16
 
-    private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
-
     private var ignoreAlbum = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,19 +119,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
                         eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
                     ), if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringBeforeLast('/') else "", coverBaseline), view, type)
-/*
-                    if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX)
-                        publicationModel.getPhoto(NCShareViewModel.RemotePhoto(Photo(
-                            id = cover, name = coverFileName.substringAfterLast('/'),
-                            mimeType = coverMimeType, width = coverWidth, height = coverHeight, orientation = coverOrientation, dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
-                        ), coverFileName.substringBeforeLast('/'), coverBaseline), view, type)
-                    else
-                        imageLoaderModel.loadPhoto(Photo(
-                            id = cover, albumId = id, name = coverFileName,
-                            width = coverWidth, height = coverHeight, mimeType = coverMimeType, shareId = coverBaseline, orientation = coverOrientation,
-                            dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN
-                        ), view, type)
-*/
                 }
             },
             { user, view -> publicationModel.getAvatar(user, view, null) },
@@ -149,7 +134,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 val bitmap: Bitmap? =
                     when {
                         uri.scheme == "lespas"-> {
-                            publicationModel.setImagePhoto(remotePhotos[position], view, NCShareViewModel.TYPE_GRID)
+                            publicationModel.setImagePhoto(destinationModel.getRemotePhotos()[position], view, NCShareViewModel.TYPE_GRID)
                             null
                         }
                         (cr.getType(uri) ?: MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString())) ?: "image/*").startsWith("image") -> {
@@ -180,10 +165,15 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
         clipDataAdapter.submitList(
             requireArguments().getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
+                // Mark operation should be carried out on server, if argument KEY_REMOTE_PHOTO is being passed to this fragment
+                destinationModel.setOnServer(true)
+
                 val uris = mutableListOf<Uri>()
-                remotePhotos = requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()
-                remotePhotos.forEach {
-                    uris.add(Uri.fromParts("lespas", "//${it.remotePath}", ""))
+                (requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
+                    forEach {
+                        uris.add(Uri.fromParts("lespas", "//${it.remotePath}", ""))
+                    }
+                    destinationModel.setRemotePhotos(this)
                 }
                 uris
             }
@@ -285,7 +275,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             val albums = mutableListOf<Album>()
             it.forEach { album ->
                 if (Tools.isRemoteAlbum(album) && album.cover != album.coverFileName) album.coverFileName = "${base}/${album.name}/${album.coverFileName}"
-                albums.add(album)
+                if (album.id != ignoreAlbum) albums.add(album)
             }
             albumAdapter.submitList(albums.plus(nullAlbum).toMutableList())
 
@@ -463,13 +453,25 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         private var destination = SingleLiveEvent<Album?>()
         private var inEditing = false
         private var removeOriginal = false
+        private var onServer = false    // Checked by fragment AlbumDetailFragment when doing copy/move among albums
+        private var remotePhotos = mutableListOf<NCShareViewModel.RemotePhoto>()
 
         fun setDestination(newDestination: Album) { destination.value = newDestination }
         fun getDestination(): SingleLiveEvent<Album?> = destination
+
         fun setEditMode(mode: Boolean) { inEditing = mode }
         fun isEditing() = inEditing
+
         fun setRemoveOriginal(remove: Boolean) { removeOriginal = remove }
         fun shouldRemoveOriginal() = removeOriginal
+
+        fun setOnServer(onServer: Boolean) { this.onServer = onServer }
+        fun doOnServer(): Boolean = onServer
+        fun setRemotePhotos(remotePhotos: MutableList<NCShareViewModel.RemotePhoto>) {
+            this.remotePhotos.clear()
+            this.remotePhotos.addAll(remotePhotos)
+        }
+        fun getRemotePhotos(): MutableList<NCShareViewModel.RemotePhoto> = remotePhotos
     }
 
     companion object {
@@ -489,11 +491,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
 
         @JvmStatic
-        fun newInstance(remotePhotos: ArrayList<NCShareViewModel.RemotePhoto>, ignoreAlbumId: String) = DestinationDialogFragment().apply {
+        fun newInstance(remotePhotos: ArrayList<NCShareViewModel.RemotePhoto>, ignoreAlbumId: String, canWrite: Boolean) = DestinationDialogFragment().apply {
             arguments = Bundle().apply {
                 putParcelableArrayList(KEY_REMOTE_PHOTO, remotePhotos)
                 putString(KEY_IGNORE_ALBUM, ignoreAlbumId)
-                putBoolean(KEY_CAN_WRITE, false)        // TODO could be true for joint album
+                putBoolean(KEY_CAN_WRITE, canWrite)
             }
         }
     }

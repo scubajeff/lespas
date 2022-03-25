@@ -202,7 +202,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnClickListener {
                 hideHandler.post(hideSystemUI)
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    DestinationDialogFragment.newInstance(arrayListOf(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()]), albumId, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
             }
         }
         view.findViewById<Button>(R.id.info_button).run {

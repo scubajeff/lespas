@@ -56,12 +56,10 @@ import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import site.leos.apps.lespas.sync.ActionViewModel
-import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.ShareReceiverActivity
+import site.leos.apps.lespas.sync.*
 import java.io.File
 import java.lang.Runnable
 import java.time.Duration
@@ -422,10 +420,37 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             mAdapter.setRecipient(sharedByMe)
         }
 
-        destinationViewModel.getDestination().observe(viewLifecycleOwner) { album ->
+        destinationViewModel.getDestination().observe(viewLifecycleOwner) {
             // Acquire files
-            album?.apply {
-                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, album, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+            it?.let { targetAlbum ->
+                if (destinationViewModel.doOnServer()) {
+                    val actionId = if (destinationViewModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
+                    val targetFolder = "${if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${lespasPath}/" else ""}${targetAlbum.name}"
+                    val photoList = mutableListOf<Photo>()
+
+                    val actions = mutableListOf<Action>()
+                    destinationViewModel.getRemotePhotos().forEach { remotePhoto ->
+                        // No matter the photo is uploaded or not, add action to move or copy on server. If it's not yet uploaded, another Action.ACTION_ADD_FILES_ON_SERVER should be in the pending list by now
+                        if (remotePhoto.photo.id == album.cover) {
+                            // Can't move cover photo
+                            actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, "", remotePhoto.photo.name, System.currentTimeMillis(), 1))
+                        } else {
+                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", remotePhoto.photo.name, System.currentTimeMillis(), 1))
+                            photoList.add(remotePhoto.photo)
+                        }
+                    }
+
+                    // Since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                    if (targetAlbum.id.isEmpty()) actions.add(Action(0, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+
+                    actionModel.addActions(actions)
+
+                    // If this is a MOVE operation, show moving result in source album immediately, result in target album however can't be shown until the next sync finished
+                    if (destinationViewModel.shouldRemoveOriginal()) actionModel.deletePhotosLocalRecord(photoList)
+
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), null).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+                else if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(reuseUris, targetAlbum, destinationViewModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
             }
         }
 
@@ -657,7 +682,18 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.lespas_reuse-> {
-                shareOut(false, SHARE_TO_LESPAS)
+                if (Tools.isRemoteAlbum(album)) {
+                    val rp = arrayListOf<NCShareViewModel.RemotePhoto>()
+                    selectionTracker.selection.forEach {
+                        mAdapter.getPhotoBy(it).let { photo ->
+                            rp.add(NCShareViewModel.RemotePhoto(photo, "${lespasPath}/${album.name}", 0))
+                        }
+                    }
+                    selectionTracker.clearSelection()
+
+                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(rp, album.id, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                } else shareOut(false, SHARE_TO_LESPAS)
+
                 true
             }
             else -> false

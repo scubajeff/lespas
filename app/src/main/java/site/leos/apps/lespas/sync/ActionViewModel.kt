@@ -34,17 +34,11 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 val allPhoto = photoRepository.getAlbumPhotos(album.id)
                 photoRepository.deletePhotosByAlbum(album.id)
                 allPhoto.forEach { photo ->
-                    if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
-                        try { File(localRootFolder, photo.name).delete() } catch (e: Exception) {}
-                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) {}
-                    }
+                    if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) removeLocalMediaFile(photo)
                     else {
                         if (Tools.isRemoteAlbum(album)) {
                             if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
-                        } else {
-                            try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
-                            if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
-                        }
+                        } else removeLocalMediaFile(photo)
                     }
                 }
 
@@ -84,8 +78,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 */
                 if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
                     // Deleting the media file will prevent ACTION_ADD_FILES_ON_SERVER from starting since in that process file existence will be checked at the beginning
-                    try { File(localRootFolder, photo.name).delete() } catch (e: Exception) {}
-                    if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.name}.thumbnail").delete() } catch (e: Exception) {}
+                    removeLocalMediaFile(photo)
                 } else {
                     // Remove media file on server
                     actions.add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, photo.albumId, album.name, photo.id, photo.name, timestamp, 1))
@@ -93,11 +86,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                     if (Tools.isRemoteAlbum(album)){
                         // Remove video thumbnail in cache folder
                         if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
-                    } else {
+                    }
+                    else {
                         // Remove local media file if it's a Local album
-                        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
-                        // Remove video thumbnail too
-                        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                        removeLocalMediaFile(photo)
                     }
                 }
             }
@@ -121,6 +113,16 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
             actionRepository.addActions(actions)
         }
+    }
+
+    fun deletePhotosLocalRecord(photos: List<Photo>) {
+        photos.forEach { photo ->
+            // Remove local media file only if photo has finished uploading. Since this is for moving photos among albums, let those uploading finished first, then the actually deletion will be synced back
+            //  to local in the next sync
+            if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) removeLocalMediaFile(photo)
+        }
+
+        viewModelScope.launch(Dispatchers.IO) { photoRepository.deletePhotos(photos) }
     }
 
     fun renameAlbum(albumId: String, oldName: String, newName: String, sharedAlbum: Boolean) {
@@ -172,4 +174,12 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     fun updateBGM(albumName: String, mimeType: String, bgmFileName: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_BGM, mimeType, albumName, bgmFileName, bgmFileName, System.currentTimeMillis(), 1)) }}
     fun removeBGM(albumName: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_DELETE_ALBUM_BGM, "", albumName, "", "", System.currentTimeMillis(), 1)) }}
+
+    fun addActions(actions: List<Action>) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(actions) }}
+
+    private fun removeLocalMediaFile(photo: Photo) {
+        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
+        // Remove video thumbnail too
+        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+    }
 }

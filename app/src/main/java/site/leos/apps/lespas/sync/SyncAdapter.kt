@@ -367,6 +367,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_ALBUM_BGM-> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
                 }
+                Action.ACTION_COPY_ON_SERVER -> {
+                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // fileName is source file name
+                    // webdav copy/move target file is specify in http call's header, need to be encoded here
+                    resourceRoot.substringBeforeLast('/').let { baseUrl -> webDav.copy("${baseUrl}/${action.folderId}/${action.fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}") }
+                }
+                Action.ACTION_MOVE_ON_SERVER -> {
+                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // fileName is source file name
+                    // webdav copy/move target file is specify in http call's header, need to be encoded here
+                    resourceRoot.substringBeforeLast('/').let { baseUrl -> webDav.move("${baseUrl}/${action.folderId}/${action.fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}") }
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
