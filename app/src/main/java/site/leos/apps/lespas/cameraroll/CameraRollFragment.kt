@@ -504,6 +504,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
+                            selectionTracker.clearSelection()
                             if (closeButton.isVisible) {
                                 dateTextView.isVisible = true
                                 sizeTextView.isVisible = true
@@ -522,6 +523,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
                         }
                         BottomSheetBehavior.STATE_COLLAPSED -> {
+                            selectionTracker.clearSelection()
                             // Update media meta when in collapsed state, should do it here since when media list updated, like after deletion, list's addOnScrollListener callback won't be called
                             // TODO any better way to detect mediaPager's scroll to event?
                             updateMetaDisplay()
