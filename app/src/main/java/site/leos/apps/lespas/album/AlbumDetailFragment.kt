@@ -747,10 +747,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         when (shareType) {
                             GENERAL_SHARE -> {
                                 // Call system share chooser
-                                val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                                val cr = requireActivity().contentResolver
+                                val clipData = ClipData.newUri(cr, "", uris[0])
                                 for (i in 1 until uris.size) {
                                     if (isActive) {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
                                         else clipData.addItem(ClipData.Item(uris[i]))
                                     }
                                 }

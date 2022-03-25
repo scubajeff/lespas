@@ -733,10 +733,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         return false
     }
 
-    private fun prepareShares(strip: Boolean, job: Job?): ArrayList<Uri> {
+    private fun prepareShares(strip: Boolean, job: Job?, cr: ContentResolver): ArrayList<Uri> {
         val uris = arrayListOf<Uri>()
         var destFile: File
-        val cr = requireContext().contentResolver
 
         for (photoId in lastSelection) {
             // Quit asap when job cancelled
@@ -764,6 +763,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     private fun shareOut(strip: Boolean) {
+        val cr = requireContext().contentResolver
         val handler = Handler(Looper.getMainLooper())
         val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip) { shareOutJob?.cancel(cause = null) }
 
@@ -778,15 +778,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     handler.postDelayed({ waitingMsg.show() }, 500)
                 }
 
-                val uris = prepareShares(strip, shareOutJob)
+                val uris = prepareShares(strip, shareOutJob, cr)
 
                 withContext(Dispatchers.Main) {
                     // Call system share chooser
                     if (uris.isNotEmpty()) {
-                        val clipData = ClipData.newUri(requireActivity().contentResolver, "", uris[0])
+                        val clipData = ClipData.newUri(cr, "", uris[0])
                         for (i in 1 until uris.size)
                             if (isActive) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(requireActivity().contentResolver, ClipData.Item(uris[i]))
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
                                 else clipData.addItem(ClipData.Item(uris[i]))
                             }
 
@@ -802,7 +802,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 action = Intent.ACTION_SEND
                                 putExtra(Intent.EXTRA_STREAM, uris[0])
                             }
-                            type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                            type = cr.getType(uris[0]) ?: "image/*"
                             if (type!!.startsWith("image")) type = "image/*"
                             this.clipData = clipData
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -842,7 +842,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             var medias = mutableListOf<Photo>()
 
             fileUri?.apply {
-                Tools.getFolderFromUri(this, application.contentResolver)?.let { uri->
+                Tools.getFolderFromUri(this, cr)?.let { uri->
                     //Log.e(">>>>>", "${uri.first}   ${uri.second}")
                     medias = Tools.listMediaContent(uri.first, cr, imageOnly = false, strict = true)
                     setStartPosition(medias.indexOfFirst { it.id.substringAfterLast('/') == uri.second })

@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.search
 
 import android.content.ClipData
+import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -158,7 +159,7 @@ class PhotoWithMapFragment: Fragment() {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
                 // Allow removing original (e.g. move) is too much. TODO or is it?
-                prepareShares(remotePhoto.photo, false)?.let {
+                prepareShares(remotePhoto.photo, false, requireContext().contentResolver)?.let {
                     shareOutUri = arrayListOf(it)
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(shareOutUri, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 }
@@ -186,7 +187,7 @@ class PhotoWithMapFragment: Fragment() {
         }
     }
 
-    private fun prepareShares(photo: Photo, strip: Boolean): Uri? {
+    private fun prepareShares(photo: Photo, strip: Boolean, cr: ContentResolver): Uri? {
         return try {
             // Synced file is named after id, not yet synced file is named after file's name
             //val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) photo.id else photo.name)
@@ -197,7 +198,7 @@ class PhotoWithMapFragment: Fragment() {
             if (strip && Tools.hasExif(photo.mimeType)) {
                 if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
                     // Strip EXIF, rotate picture if needed
-                    BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(Uri.parse(photo.id)))?.let { bmp->
+                    BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)))?.let { bmp->
                         (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
                             .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     }
@@ -227,6 +228,7 @@ class PhotoWithMapFragment: Fragment() {
     }
 
     private fun shareOut(strip: Boolean) {
+        val cr = requireContext().contentResolver
         val handler = Handler(Looper.getMainLooper())
         val waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) { shareOutJob?.cancel(cause = null) }
 
@@ -237,7 +239,7 @@ class PhotoWithMapFragment: Fragment() {
                 handler.postDelayed({ waitingMsg.show() }, 500)
             }
 
-            prepareShares(remotePhoto.photo, strip)?.let {
+            prepareShares(remotePhoto.photo, strip, cr)?.let {
                 withContext(Dispatchers.Main) {
                     // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
                     if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
@@ -245,9 +247,9 @@ class PhotoWithMapFragment: Fragment() {
                     // Call system share chooser
                     startActivity(Intent.createChooser(Intent().apply {
                         action = Intent.ACTION_SEND
-                        type = requireContext().contentResolver.getType(it) ?: "image/*"
+                        type = cr.getType(it) ?: "image/*"
                         putExtra(Intent.EXTRA_STREAM, it)
-                        clipData = ClipData.newUri(requireContext().contentResolver, "", it)
+                        clipData = ClipData.newUri(cr, "", it)
                         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                         // Allow removing original (e.g. move) is too much. TODO or is it?
                         putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
