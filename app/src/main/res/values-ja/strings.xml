@@ -208,5 +208,5 @@
     <string name="chinese_map_title">中国語の地図アプリを使う</string>
     <string name="chinese_map_summary">中国の地図アプリは、すべて独自の座標系を使用しています。</string>
     <string name="map_header">地図</string>
-    <string name="msg_server_operation">サーバーとの同期後、目的のアルバムに写真が表示されます。</string>
+    <string name="msg_server_operation">アルバムの所有者が同期を行うと、対象アルバムに写真が表示されます。</string>
 </resources>

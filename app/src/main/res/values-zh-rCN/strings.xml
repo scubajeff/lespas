@@ -208,5 +208,5 @@
     <string name="chinese_map_title">使用国内地图应用</string>
     <string name="chinese_map_summary">国内地图应用基于独一无二的坐标系统。</string>
     <string name="map_header">地图</string>
-    <string name="msg_server_operation">与服务器实现同步后，照片才会在目标相册中出现。</string>
+    <string name="msg_server_operation">相册所有者与服务器实现同步后，照片才会在目标相册中出现。</string>
 </resources>

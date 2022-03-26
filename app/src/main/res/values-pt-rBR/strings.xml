@@ -270,5 +270,5 @@
     <string name="chinese_map_title">Use o aplicativo de mapa chinês</string>
     <string name="chinese_map_summary">Todas as aplicações de mapas da China utilizam um sistema de coordenadas único.</string>
     <string name="map_header">Mapa</string>
-    <string name="msg_server_operation">As fotos aparecerão no álbum de destino após a sincronização com o servidor.</string>
+    <string name="msg_server_operation">As fotos aparecerão no álbum de destino após uma sincronia realizada pelo proprietário do álbum.</string>
 </resources>
