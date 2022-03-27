@@ -119,13 +119,19 @@ class PublicationDetailFragment: Fragment() {
 
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             if (uris.isNotEmpty()) {
-                // Save joint album's content meta file
+                // Save joint album's content meta file with existing content, so that later when Action.ACTION_ADD_FILES_TO_JOINT_ALBUM is processing by SyncAdapter, new addition's meta can be added to this file
                 shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
 
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(
                         uris as ArrayList<Uri>,
-                        Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
+                        //Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
+                        Album(
+                            lastModified = LocalDateTime.now(),
+                            id = JOINT_ALBUM_ID, name = share.albumName,
+                            coverFileName = "${share.sharePath}/",
+                            eTag = share.albumId,
+                        ),
                         false
                     ).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }

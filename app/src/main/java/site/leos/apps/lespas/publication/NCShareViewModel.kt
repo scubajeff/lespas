@@ -1166,6 +1166,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         const val MIME_TYPE_JSON = "application/json"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
+        // Future update of additional fields to content meta file should be added to header, leave photo list at the very last, so that individual photo meta can be added at the end
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
         //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
         const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"

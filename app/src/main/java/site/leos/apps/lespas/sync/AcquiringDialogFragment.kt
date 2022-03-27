@@ -151,7 +151,6 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
             viewModelScope.launch(Dispatchers.IO) {
                 var fileId = ""
                 val appRootFolder = Tools.getLocalRoot(application)
-                val cacheFolder = "${application.cacheDir}"
                 val allPhotoName = photoRepository.getAllPhotoNameMap()
                 var date: LocalDateTime
                 val fakeAlbumId = System.currentTimeMillis().toString()
@@ -224,9 +223,9 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
                         if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
-                            try { metadataRetriever.setDataSource("$cacheFolder/$fileId") } catch (e: Exception) {}
-                            exifInterface = try { ExifInterface("$cacheFolder/$fileId") } catch (e: Exception) { null }
-                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$cacheFolder/$fileId", mimeType, fileId, false)
+                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
+                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
+                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId, false)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
                             // PublicationDetailFragment pass joint album's albumId in property album.eTag
