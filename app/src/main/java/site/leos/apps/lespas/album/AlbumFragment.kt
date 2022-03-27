@@ -155,7 +155,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     // Camera roll album's cover mime type is passed in property eTag
                     if (album.eTag.startsWith("video")) {
                         // Don't do transition for video cover
-                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        // Set tag to null so that CameraRollFragment will hide the action bar
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
                     }
                     else {
                         exitTransition = MaterialElevationScale(false).apply {
@@ -422,7 +423,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             R.id.option_menu_camera_roll-> {
                 exitTransition = null
                 reenterTransition = null
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                // Set tag to null so that CameraRollFragment will hide the action bar
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
                 return true
             }
             R.id.option_menu_settings-> {

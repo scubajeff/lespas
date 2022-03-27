@@ -105,7 +105,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var stripExif = "2"
     private var showListFirst = false
     private var ignoreHide = true
-    //private var sideTouchAreaWidth  = 0
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -163,7 +162,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             // Don't ignore call to hide bottom sheet after activity recreated
             ignoreHide = false
-        } ?: run { if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) (requireActivity() as AppCompatActivity).supportActionBar?.hide() }
+        }
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
@@ -618,6 +617,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             savedNavigationBarColor = navigationBarColor
             statusBarColor = Color.BLACK
             navigationBarColor = Color.BLACK
+            if (tag == TAG_FROM_CAMERAROLL_ACTIVITY || tag == null) (requireActivity() as AppCompatActivity).supportActionBar?.hide()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 savedNavigationBarDividerColor = navigationBarDividerColor
                 navigationBarDividerColor = Color.BLACK
