@@ -425,7 +425,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             it?.let { targetAlbum ->
                 if (destinationViewModel.doOnServer()) {
                     val actionId = if (destinationViewModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = "${if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${lespasPath}/" else ""}${targetAlbum.name}"
+                    val targetFolder = if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${lespasPath}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val photoList = mutableListOf<Photo>()
 
                     val actions = mutableListOf<Action>()
@@ -828,7 +828,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             }
                             SHARE_TO_LESPAS -> {
                                 reuseUris = uris
-                                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                             }
                         }
                     } else {

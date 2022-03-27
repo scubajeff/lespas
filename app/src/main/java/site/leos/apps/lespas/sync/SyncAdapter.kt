@@ -300,23 +300,20 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Property fileId holds string "joint album's id|dateTaken|width|height"
+                    // Property fileId holds string "joint album's id|dateTaken|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // Property fileName holds media file name
-                    // Media file is located in app's cache folder
+                    // Media file is located in app's private folder
                     // Joint Album's content meta file is located in app's file folder
-                    val localFile = File(application.cacheDir, action.fileName)
+                    val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
+                        // TODO change agif, awebp to gif, webp before upload
                         with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId, application)) {
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
                             val metaString = String.format(Locale.ROOT,
-/*
-                                ",{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%s,\"mime\":\"%s\",\"width\":%s,\"height\":%s}]}}",
-                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3]
-*/
                                 // Use PHOTO_META_JSON_V2 string while deleting it's trailing ',', add ',' at the beginning, add JSON closing ']}}' at the end
                                 ",${NCShareViewModel.PHOTO_META_JSON_V2.dropLast(1)}]}}",
-                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1], action.folderId, metaFromAction[2], metaFromAction[3], metaFromAction[4], metaFromAction[5], metaFromAction[6], metaFromAction[7], metaFromAction[8], metaFromAction[9]
+                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1].toLong(), action.folderId, metaFromAction[2].toInt(), metaFromAction[3].toInt(), metaFromAction[4].toInt(), metaFromAction[5], metaFromAction[6].toDouble(), metaFromAction[7].toDouble(), metaFromAction[8].toDouble(), metaFromAction[9].toDouble()
                             )
                             val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
                             if (!contentMetaFile.exists()) {

@@ -605,43 +605,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val key = "${user.name}-avatar"
                     imageCache.get(key)?.let { bitmap = it } ?: run {
                         // Set default avatar first
-                        if (isActive) withContext(Dispatchers.Main) {
-                            ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.apply {
-                                when (view) {
-                                    is Chip -> view.chipIcon = this
-                                    is TextView -> {
-                                        (view.textSize * 1.2).roundToInt().let {
-                                            val size = maxOf(48, it)
-                                            this.setBounds(0, 0, size, size)
-                                        }
-                                        view.setCompoundDrawables(this, null, null, null)
-                                    }
-                                }
-                            }
-                        }
+                        if (isActive) ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.let { drawAvatar(it, view) }
 
-                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
-
-                        bitmap?.let { imageCache.put(key, it) }
+                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
+                        bitmap?.let { bmp -> imageCache.put(key, bmp) }
                     }
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                if (isActive) withContext(Dispatchers.Main) {
+            }
+            catch (e: Exception) { e.printStackTrace() }
+            finally {
+                if (isActive) {
                     if (drawable == null && bitmap != null) drawable = BitmapDrawable(view.resources, Tools.getRoundBitmap(view.context, bitmap!!))
-                    drawable?.run {
-                        when (view) {
-                            is Chip -> view.chipIcon = this
-                            is TextView -> {
-                                (view.textSize * 1.2).roundToInt().let {
-                                    val size = maxOf(48, it)
-                                    this.setBounds(0, 0, size, size)
-                                }
-                                view.setCompoundDrawables(this, null, null, null)
-                            }
-                        }
-                    }
+                    drawable?.let { drawAvatar(it, view) }
                 }
 
                 callBack?.onLoadComplete()
@@ -650,6 +625,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // Replacing previous job
         replacePrevious(jobKey, job)
+    }
+
+    private suspend fun drawAvatar(drawable: Drawable, view: View) {
+        withContext(Dispatchers.Main) {
+            when (view) {
+                is Chip -> view.chipIcon = drawable
+                is TextView -> {
+                    maxOf(48, (view.textSize * 1.2).roundToInt()).let { size -> drawable.setBounds(0, 0, size, size) }
+                    view.setCompoundDrawables(drawable, null, null, null)
+                }
+            }
+        }
     }
 
     fun getPreview(remotePhoto: RemotePhoto): Bitmap? {
