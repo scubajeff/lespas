@@ -575,6 +575,32 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    fun updateJointAlbumContentMeta(albumId: String, addition: List<RemotePhoto>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val targetShare = _shareWithMe.value.find { it.albumId == albumId }!!
+                var mediaList: MutableList<RemotePhoto>
+
+                webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
+                if (!mediaList.isNullOrEmpty()) {
+                    mediaList.addAll(addition)
+                    when (targetShare.sortOrder) {
+                        Album.BY_NAME_ASC -> mediaList.sortWith(compareBy { it.photo.name })
+                        Album.BY_NAME_DESC -> mediaList.sortWith(compareByDescending { it.photo.name })
+                        Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith(compareBy { it.photo.dateTaken })
+                        Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith(compareByDescending { it.photo.dateTaken })
+                    }
+/*
+                    File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
+                        it.write(createContentMeta(null, mediaList).encodeToByteArray())
+                    }
+*/
+                    webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
     fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {
         var response: Response? = null
         var result: Pair<ExifInterface, Long>? = null

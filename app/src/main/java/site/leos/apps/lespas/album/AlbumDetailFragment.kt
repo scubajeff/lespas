@@ -447,6 +447,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     // If this is a MOVE operation, show moving result in source album immediately, result in target album however can't be shown until the next sync finished
                     if (destinationViewModel.shouldRemoveOriginal()) actionModel.deletePhotosLocalRecord(photoList)
+                    // Update joint album's content meta file, require connection to server, if fail, content meta will not be updated until owner sync once.
+                    if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) imageLoaderModel.updateJointAlbumContentMeta(targetAlbum.eTag, destinationViewModel.getRemotePhotos())
 
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), null).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
