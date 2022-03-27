@@ -680,69 +680,79 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
 
-                        webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
-                            val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
-                            val version = try { lespasJson.getInt("version") } catch (e: JSONException) { 1 }
-                            when {
-                                // TODO Make sure later version of content meta file downward compatible
-                                version >= 2 -> {
-                                    val meta = lespasJson.getJSONArray("photos")
-                                    for (i in 0 until meta.length()) {
-                                        // Create photos by merging from content meta file and webDAV PROPFIND (eTag, lastModified are not available in content meta)
-                                        // TODO: shall we update content meta to include eTag and lastModified?
-                                        meta.getJSONObject(i).apply {
-                                            pId = getString("id")
-                                            changedPhotos.find { p -> p.id == pId }?.let {
-                                                try {
-                                                    getInt("orientation")
-                                                } catch (e: JSONException) {
-                                                    // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
-                                                    // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
-                                                    //Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
-                                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
-                                                    return@use
-                                                }
-                                                photoMeta.add(
-                                                    Photo(
-                                                        id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
-                                                        eTag = it.eTag,
-                                                        dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
-                                                        width = getInt("width"), height = getInt("height"),
-                                                        caption = getString("caption"),
-                                                        orientation = getInt("orientation"),
-                                                        latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
+                        try {
+                            webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
+                                val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
+                                val version = try {
+                                    lespasJson.getInt("version")
+                                } catch (e: JSONException) {
+                                    1
+                                }
+                                when {
+                                    // TODO Make sure later version of content meta file downward compatible
+                                    version >= 2 -> {
+                                        val meta = lespasJson.getJSONArray("photos")
+                                        for (i in 0 until meta.length()) {
+                                            // Create photos by merging from content meta file and webDAV PROPFIND (eTag, lastModified are not available in content meta)
+                                            // TODO: shall we update content meta to include eTag and lastModified?
+                                            meta.getJSONObject(i).apply {
+                                                pId = getString("id")
+                                                changedPhotos.find { p -> p.id == pId }?.let {
+                                                    try {
+                                                        getInt("orientation")
+                                                    } catch (e: JSONException) {
+                                                        // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
+                                                        // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
+                                                        //Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
+                                                        contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                                        return@use
+                                                    }
+                                                    photoMeta.add(
+                                                        Photo(
+                                                            id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
+                                                            eTag = it.eTag,
+                                                            dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
+                                                            width = getInt("width"), height = getInt("height"),
+                                                            caption = getString("caption"),
+                                                            orientation = getInt("orientation"),
+                                                            latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
 /*
                                                         id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
                                                         eTag = it.eTag,
                                                         dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
                                                         width = getInt("width"), height = getInt("height"),
 */
+                                                        )
                                                     )
-                                                )
 
-                                                //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
+                                                    //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
 
-                                                // Maintain album start and end date
-                                                with(photoMeta.last().dateTaken) {
-                                                    if (this > changedAlbum.endDate) changedAlbum.endDate = this
-                                                    if (this < changedAlbum.startDate) changedAlbum.startDate = this
+                                                    // Maintain album start and end date
+                                                    with(photoMeta.last().dateTaken) {
+                                                        if (this > changedAlbum.endDate) changedAlbum.endDate = this
+                                                        if (this < changedAlbum.startDate) changedAlbum.startDate = this
+                                                    }
+
+                                                    changedPhotos.remove(it)
                                                 }
-
-                                                changedPhotos.remove(it)
                                             }
                                         }
+
+                                        photoRepository.upsert(photoMeta)
+
+                                        if (changedPhotos.isEmpty()) changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
                                     }
-
-                                    photoRepository.upsert(photoMeta)
-
-                                    if (changedPhotos.isEmpty()) changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
-                                }
-                                else -> {
-                                    // Version 1 content meta file, won't work for latest version quick sync, fall back to normal sync
-                                    // Should mark content meta update here, since older client might change json file even without modified any content, like when publish an album
-                                    contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                    else -> {
+                                        // Version 1 content meta file, won't work for latest version quick sync, fall back to normal sync
+                                        // Should mark content meta update here, since older client might change json file even without modified any content, like when publish an album
+                                        contentMetaUpdatedNeeded.add(changedAlbum.name)
+                                    }
                                 }
                             }
+                        } catch (e: OkHttpWebDavException) {
+                            // If content meta file is not availalbe, create it
+                            if (e.statusCode == 404) contentMetaUpdatedNeeded.add(changedAlbum.name)
+                            else throw e
                         }
                     } else {
                         // There are updates done on server, quit quick sync
