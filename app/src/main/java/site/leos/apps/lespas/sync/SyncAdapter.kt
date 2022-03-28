@@ -210,7 +210,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
-                        with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", action.folderId, application)) {
+                        val normalMimeType = when(action.folderId){
+                            "image/agif" -> "image/gif"
+                            "image/awebp" -> "image/webp"
+                            else -> action.folderId
+                        }
+                        with (webDav.upload(localFile, "$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
                             // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
                                 val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
@@ -306,8 +311,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Joint Album's content meta file will be downloaded in app's file folder, later Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META will pick it up there and send it to server
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
-                        // TODO change agif, awebp to gif, webp before upload
-                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", action.folderId, application)) {
+                        val normalMimeType = when(action.folderId){
+                            "image/agif" -> "image/gif"
+                            "image/awebp" -> "image/webp"
+                            else -> action.folderId
+                        }
+                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
                             // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
                             val metaFromAction = action.fileId.split('|')
                             val metaString = String.format(Locale.ROOT,
