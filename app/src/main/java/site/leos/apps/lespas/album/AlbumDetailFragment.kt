@@ -441,7 +441,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
 
                     // Since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                    if (targetAlbum.id.isEmpty()) actions.add(Action(0, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                    if (targetAlbum.id.isEmpty()) actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
 
                     actionModel.addActions(actions)
 
