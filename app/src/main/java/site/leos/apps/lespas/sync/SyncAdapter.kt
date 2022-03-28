@@ -750,9 +750,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                             }
                         } catch (e: OkHttpWebDavException) {
-                            // If content meta file is not availalbe, create it
+                            // If content meta file is not available, quit quick sync
                             if (e.statusCode == 404) contentMetaUpdatedNeeded.add(changedAlbum.name)
                             else throw e
+                        } catch (e: JSONException) {
+                            // JSON parsing error, quit quick sync
+                            contentMetaUpdatedNeeded.add(changedAlbum.name)
                         }
                     } else {
                         // There are updates done on server, quit quick sync
@@ -1138,7 +1141,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
             }
         }
-        // TODO consolidate these exception handling codes
+        // Catch exception here so that sync can go on if anything bad happen in this function, album meta file will be recreated if the current one is broken or missing
         catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ${e.statusCode}", e.stackTraceString) }
         catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
         catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
