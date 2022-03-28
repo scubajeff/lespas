@@ -396,12 +396,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun createJointAlbumContentMetaFile(albumId: String, remotePhotos: List<RemotePhoto>?) {
-        try {
-            File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
-                it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
+                    it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 

@@ -302,8 +302,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
                     // Property fileId holds string "joint album's id|dateTaken|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // Property fileName holds media file name
-                    // Media file is located in app's private folder
-                    // Joint Album's content meta file is located in app's file folder
+                    // Media file should locate in app's file folder
+                    // Joint Album's content meta file will be downloaded in app's file folder, later Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META will pick it up there and send it to server
                     val localFile = File(localRootFolder, action.fileName)
                     if (localFile.exists()) {
                         // TODO change agif, awebp to gif, webp before upload
@@ -334,7 +334,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
                     // Property folderId holds joint album's id
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Actual album meta json file is created/modified by ACTION_ADD_FILES_TO_JOINT_ALBUM
+                    // Actual album meta json file is prepared by ACTION_ADD_FILES_TO_JOINT_ALBUM in app's file folder
                     val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
                     File(localRootFolder, fileName).apply {
                         // TODO conflicting, some other users might change this publication's content

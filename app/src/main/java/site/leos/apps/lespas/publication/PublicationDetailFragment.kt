@@ -120,6 +120,7 @@ class PublicationDetailFragment: Fragment() {
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             if (uris.isNotEmpty()) {
                 // Save joint album's content meta file with existing content, so that later when Action.ACTION_ADD_FILES_TO_JOINT_ALBUM is processing by SyncAdapter, new addition's meta can be added to this file
+                // When processing Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, SyncAdapter will download this file if it's not available, but since we have the photo list ready, creating the file here to save one download action
                 shareModel.createJointAlbumContentMetaFile(share.albumId, photoListAdapter.currentList)
 
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
