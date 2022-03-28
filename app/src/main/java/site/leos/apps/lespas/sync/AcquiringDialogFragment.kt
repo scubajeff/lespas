@@ -223,13 +223,21 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         }
 
                         if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                            // Get media's metadata
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
                             val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId, false)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
-                            // PublicationDetailFragment pass joint album's albumId in property album.eTag
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM, meta.mimeType, album.coverFileName.substringBeforeLast('/'), "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}", fileId, System.currentTimeMillis(), 1))
+
+                            // DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
+                            actions.add(Action(
+                                null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
+                                meta.mimeType,
+                                album.coverFileName.substringBeforeLast('/'),
+                                "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                fileId, System.currentTimeMillis(), 1
+                            ))
                         } else {
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
@@ -261,7 +269,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                 if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
                     if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
-                        // Update joint album content meta. PublicationDetailFragment pass joint album's albumId in property album.eTag
+                        // Update joint album content meta, DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {
                         if (album.id == fakeAlbumId) {

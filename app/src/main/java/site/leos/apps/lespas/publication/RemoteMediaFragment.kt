@@ -1,8 +1,6 @@
 package site.leos.apps.lespas.publication
 
-import android.accounts.AccountManager
 import android.annotation.SuppressLint
-import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -28,6 +26,7 @@ import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -37,8 +36,10 @@ import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.SyncAdapter
+import java.time.OffsetDateTime
 import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -55,7 +56,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
 
-    private var acquired = false
     private var albumId = ""
 
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
@@ -230,12 +230,33 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onViewCreated(view, savedInstanceState)
 
         // When DestinationDialog returns
-        destinationModel.getDestination().observe(viewLifecycleOwner) { album ->
-            album?.let {
-                shareModel.acquireMediaFromShare(pAdapter.currentList[currentPositionModel.getCurrentPositionValue()], it)
+        destinationModel.getDestination().observe(viewLifecycleOwner) {
+            it?.let { targetAlbum ->
+                destinationModel.getRemotePhotos()[0].let { remotePhoto ->
+                    ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(mutableListOf<Action>().apply {
+                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
+                        if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                            targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
+                                add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
+                                    targetFolder,
+                                    metaString,
+                                    "${remotePhoto.photo.name}|true",
+                                    System.currentTimeMillis(), 1
+                                ))
 
-                // If destination is user's own album, trigger sync with server
-                if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) acquired = true
+                                // Target album is Joint Album, update it's content metadata file
+                                add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
+                            }
+                        } else {
+                            add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
+                                "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}",
+                                metaString,
+                                "${remotePhoto.photo.name}|false",
+                                System.currentTimeMillis(), 1
+                            ))
+                        }
+                    })
+                }
             }
         }
     }
@@ -282,12 +303,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
             requestedOrientation = previousOrientationSetting
         }
-
-        // If new acquisition happened, sync with server at once
-        if (acquired) ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-            putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_REMOTE_CHANGES)
-        })
 
         super.onDestroy()
     }

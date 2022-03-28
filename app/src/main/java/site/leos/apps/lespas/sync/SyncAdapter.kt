@@ -17,11 +17,9 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
+import okhttp3.CacheControl
 import okhttp3.internal.http2.StreamResetException
 import okio.IOException
-import okio.buffer
-import okio.sink
-import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -31,7 +29,6 @@ import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.FileNotFoundException
@@ -305,7 +302,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Property fileId holds string "joint album's id|dateTaken|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // Property fileId holds string "joint album's id|dateTaken|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // Property fileName holds media file name
                     // Media file should locate in app's file folder
                     // Joint Album's content meta file will be downloaded in app's file folder, later Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META will pick it up there and send it to server
@@ -317,38 +314,57 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             else -> action.folderId
                         }
                         with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
-                            // After upload, update joint album's content meta json file, this file will be uploaded to server after all added media files in this batch has been uploaded
-                            val metaFromAction = action.fileId.split('|')
-                            val metaString = String.format(Locale.ROOT,
-                                // Use PHOTO_META_JSON_V2 string while deleting it's trailing ',', add ',' at the beginning, add JSON closing ']}}' at the end
-                                ",${NCShareViewModel.PHOTO_META_JSON_V2.dropLast(1)}]}}",
-                                this.first.substring(0, 8).toInt().toString(), action.fileName, metaFromAction[1].toLong(), action.folderId, metaFromAction[2].toInt(), metaFromAction[3].toInt(), metaFromAction[4].toInt(), metaFromAction[5], metaFromAction[6].toDouble(), metaFromAction[7].toDouble(), metaFromAction[8].toDouble(), metaFromAction[9].toDouble()
-                            )
-                            val contentMetaFile = File(localRootFolder, "${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}")
-                            if (!contentMetaFile.exists()) {
-                                // Download content meta file if it's not ready, if user added photo from Publication Detail screen the file will exist, if user added photo by sharing from other apps, this file does not exist
-                                webDav.download("${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${metaFromAction[0]}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", contentMetaFile, null)
-                            }
-                            var newMetaString: String
-                            contentMetaFile.source().buffer().use { newMetaString = it.readUtf8() }
-                            newMetaString = newMetaString.dropLast(3) + metaString
-                            contentMetaFile.sink(false).buffer().use { it.write(newMetaString.encodeToByteArray()) }
+                            logChangeToFile(action.fileId, this.first.substring(0, 8).toInt().toString(), action.fileName)
 
                             // No need to keep the media file, other user owns the album after all
                             localFile.delete()
                         }
                     }
                 }
+                Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
+                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // fileId holds string "target album's id|dateTaken|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // fileName is a string "file name|ture or false, whether it's joint album"
 
+                    val fileName: String
+                    val targetIsJointAlbum: Boolean
+                    action.fileName.split('|').let {
+                        fileName = it[0]
+                        targetIsJointAlbum = it[1].toBoolean()
+                    }
+                    val newFileId: String
+                    resourceRoot.substringBeforeLast('/').let { baseUrl ->
+                        // webdav copy/move target file path will be sent in http call's header, need to be encoded here
+                        newFileId = webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${baseUrl}/${action.folderId}/${fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName)}").first.substring(0, 8).toInt().toString()
+                    }
+                    if (targetIsJointAlbum) logChangeToFile(action.fileId, newFileId, fileName)
+                }
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
                     // Property folderId holds joint album's id
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Actual album meta json file is prepared by ACTION_ADD_FILES_TO_JOINT_ALBUM in app's file folder
-                    val fileName = "${action.folderId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}"
-                    File(localRootFolder, fileName).apply {
-                        // TODO conflicting, some other users might change this publication's content
-                        if (this.exists()) webDav.upload(this, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/$fileName", NCShareViewModel.MIME_TYPE_JSON, application)
-                        this.delete()   // We don't actually need this at local after updating it
+
+                    // TODO conflicting, some other users might change this publication's content, during this short period of time??
+                    val updateLogFile = File(localRootFolder, "${action.folderId}${CHANGE_LOG_FILENAME_SUFFIX}")
+                    val contentMetaUrl = "${resourceRoot.substringBeforeLast('/')}/${action.folderName}/${action.folderId}${CONTENT_META_FILE_SUFFIX}"
+                    val contentMetaFile = File(localRootFolder, "${action.folderId}${CONTENT_META_FILE_SUFFIX}")
+
+                    // Download Joint Album's latest content meta file, should skip http cache
+                    webDav.download(contentMetaUrl, contentMetaFile, CacheControl.FORCE_NETWORK)
+                    val oldContentMeta = contentMetaFile.inputStream().bufferedReader().readText()
+
+                    try {
+                        val updateLog = updateLogFile.inputStream().bufferedReader().readText()
+                        // append changes log at the end of current content metadata, by deleting log's trailing ',', add ',' at the beginning, add JSON closing ']}}' at the end
+                        webDav.upload(oldContentMeta.dropLast(3) + "," + updateLog.dropLast(1) + "]}}", contentMetaUrl, MIME_TYPE_JSON)
+
+                        try { updateLogFile.delete() } catch (e: Exception) {}
+                    }
+                    catch(e: FileNotFoundException) {
+                        // If somehow update log file is missing, abandon this action
+                    }
+                    finally {
+                        try { contentMetaFile.delete() } catch (e: Exception) {}
                     }
                 }
 
@@ -373,25 +389,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_ALBUM_BGM-> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
                 }
-                Action.ACTION_COPY_ON_SERVER -> {
-                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
-                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
-                    // fileName is source file name
-                    // webdav copy/move target file is specify in http call's header, need to be encoded here
-                    resourceRoot.substringBeforeLast('/').let { baseUrl -> webDav.copy("${baseUrl}/${action.folderId}/${action.fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}") }
-                }
-                Action.ACTION_MOVE_ON_SERVER -> {
-                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
-                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
-                    // fileName is source file name
-                    // webdav copy/move target file is specify in http call's header, need to be encoded here
-                    resourceRoot.substringBeforeLast('/').let { baseUrl -> webDav.move("${baseUrl}/${action.folderId}/${action.fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}") }
-                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
             actionRepository.delete(action)
         }
+    }
+
+    private fun logChangeToFile(meta: String, newFileId: String, fileName: String) {
+        val metaFromAction = meta.split('|')
+        val jsonString = String.format(Locale.ROOT, PHOTO_META_JSON_V2, newFileId, fileName, metaFromAction[1].toLong(), metaFromAction[2], metaFromAction[3].toInt(), metaFromAction[4].toInt(), metaFromAction[5].toInt(), metaFromAction[6], metaFromAction[7].toDouble(), metaFromAction[8].toDouble(), metaFromAction[9].toDouble(), metaFromAction[10].toDouble())
+        val file = File(localRootFolder, "${metaFromAction[0]}${CHANGE_LOG_FILENAME_SUFFIX}")
+        if (!file.exists()) file.createNewFile()
+        file.appendText(jsonString)
     }
 
     private fun syncRemoteChanges() {
@@ -586,7 +596,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                         // Content meta file
-                        remotePhoto.contentType == NCShareViewModel.MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
+                        remotePhoto.contentType == MIME_TYPE_JSON && remotePhoto.name.startsWith(changedAlbum.id) -> {
                             // If there is a file name as "{albumId}.json" or "{albumId}-content.json". mark down latest meta (both album meta and conent meta) update timestamp,
                             contentModifiedTime = maxOf(contentModifiedTime, remotePhoto.modified)
                         }
@@ -603,7 +613,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Recreate metadata file on server if there are missing
                 remotePhotoList.find { it.name == "${changedAlbum.id}.json" } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
-                remotePhotoList.find { it.name == "${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
+                remotePhotoList.find { it.name == "${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
 
                 // *****************************************************
                 // Syncing album meta, deal with album cover, sort order
@@ -690,7 +700,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         var pId: String
 
                         try {
-                            webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
+                            webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
                                 val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
                                 val version = try {
                                     lespasJson.getInt("version")
@@ -742,6 +752,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         if (this < changedAlbum.startDate) changedAlbum.startDate = this
                                                     }
 
+                                                    // Meta data is available, no need to download it
                                                     changedPhotos.remove(it)
                                                 }
                                             }
@@ -749,6 +760,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                                         photoRepository.upsert(photoMeta)
 
+                                        // If all newly added photos' meta data are available in content meta file (this is the case when photos were added by another client), we can reveal the album in list now.
                                         if (changedPhotos.isEmpty()) changedAlbum.shareId = changedAlbum.shareId and Album.EXCLUDED_ALBUM.inv()
                                     }
                                     else -> {
@@ -1104,7 +1116,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             // If local meta json file created successfully
-            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", NCShareViewModel.MIME_TYPE_JSON, application)
+            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", MIME_TYPE_JSON, application)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -1115,12 +1127,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
-        var content = NCShareViewModel.PHOTO_META_HEADER
+        var content = PHOTO_META_HEADER
         photoRepository.getPhotoMetaInAlbum(albumId).forEach {
-            content += String.format(Locale.ROOT, NCShareViewModel.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
         content = content.dropLast(1) + "]}}"
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${NCShareViewModel.CONTENT_META_FILE_SUFFIX}", NCShareViewModel.MIME_TYPE_JSON)
+        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
@@ -1174,7 +1186,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_ALL = 7
 
         const val BGM_FILENAME_ON_SERVER = ".bgm"
+        const val CONTENT_META_FILE_SUFFIX = "-content.json"
+        const val MIME_TYPE_JSON = "application/json"
         //const val ALBUM_META_JSON = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d},\"sort\":%d}}"
         const val ALBUM_META_JSON_V2 = "{\"lespas\":{\"cover\":{\"id\":\"%s\",\"filename\":\"%s\",\"baseline\":%d,\"width\":%d,\"height\":%d,\"mimetype\":\"%s\",\"orientation\":%d},\"sort\":%d,\"version\":2}}"
+        //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
+        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
+        // Future update of additional fields to content meta file should be added to header, leave photo list at the very last, so that individual photo meta can be added at the end
+        const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
+
+
+        private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
     }
 }

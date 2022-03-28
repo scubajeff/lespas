@@ -260,5 +260,5 @@
     <string name="chinese_map_title">Chinesische Karten-App verwenden</string>
     <string name="chinese_map_summary">Alle Kartenanwendungen in China verwenden ein einheitliches Koordinatensystem.</string>
     <string name="map_header">Karte</string>
-    <string name="msg_server_operation">Die Fotos werden im Zielalbum angezeigt, nachdem der Eigentümer des Albums eine Synchronisierung durchgeführt hat.</string>
+    <string name="msg_server_operation">Die Fotos werden nach der Synchronisierung mit dem Server im Zielalbum angezeigt.</string>
 </resources>

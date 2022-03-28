@@ -42,8 +42,6 @@ import okhttp3.FormBody
 import okhttp3.Response
 import okhttp3.internal.headersContentLength
 import okio.IOException
-import okio.buffer
-import okio.sink
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -57,6 +55,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.InputStream
@@ -378,31 +377,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     private fun createContentMeta(photoMeta: List<PhotoMeta>?, remotePhotos: List<RemotePhoto>?): String {
-        var content = PHOTO_META_HEADER
+        var content = SyncAdapter.PHOTO_META_HEADER
 
         photoMeta?.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         remotePhotos?.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
         return content.dropLast(1) + "]}}"
-    }
-
-    fun createJointAlbumContentMetaFile(albumId: String, remotePhotos: List<RemotePhoto>?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
-                    it.write(createContentMeta(null, remotePhotos).encodeToByteArray())
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }
     }
 
     fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
@@ -418,7 +407,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
-                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -457,12 +446,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         withContext(Dispatchers.IO) {
             try {
-                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
+                webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork || this.second) doRefresh = false
                     this.first.use { _publicationContentMeta.value = getContentMeta(it, share) }
                 }
 
-                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -532,73 +521,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         return result
-    }
-
-    fun acquireMediaFromShare(remotePhoto: RemotePhoto, toAlbum: Album) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val destFolder: String = when (toAlbum.id) {
-                    PublicationDetailFragment.JOINT_ALBUM_ID -> "$resourceRoot${Uri.encode(toAlbum.name, "/")}"
-                    else -> "$resourceRoot$lespasBase/${Uri.encode(toAlbum.name, "/")}".also { if (toAlbum.id.isEmpty()) webDav.createFolder(it) }
-                }
-
-                // TODO do we really need to update Joint Album's content meta file after modification?? the way doing this will generate this json file in current version, which will not be compatible with future one
-                //  if we don't update, all changes to the Joint Album will be shown after the owner of it sync once, and conflict might happen during this period.
-                //  This is really problematic since we don't have a proper server side app!!!
-                // Copy media file on server. If file already exists in target folder, this will throw OkHttpWebDavException, it's OK since no more things need to do in this circumstance
-                //webDav.copy("$resourceRoot${photo.path}", "${destFolder}/${Uri.encode(photo.path.substringAfterLast('/'))}")
-                webDav.copy("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", "${destFolder}/${remotePhoto.photo.name}")
-
-                if (toAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
-                    // Update joint album's content meta. For user's own album, it's content meta will be updated during next server sync
-                    // TODO: care for rollback if anything goes wrong?
-
-                    // Target album's id is passed in property eTag
-                    val targetShare = _shareWithMe.value.find { it.albumId == toAlbum.eTag }!!
-                    var mediaList: MutableList<RemotePhoto>
-
-                    webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
-                    if (!mediaList.isNullOrEmpty()) {
-                        mediaList.add(remotePhoto)
-                        when (targetShare.sortOrder) {
-                            Album.BY_NAME_ASC -> mediaList.sortWith(compareBy { it.photo.name })
-                            Album.BY_NAME_DESC -> mediaList.sortWith(compareByDescending { it.photo.name })
-                            Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith(compareBy { it.photo.dateTaken })
-                            Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith(compareByDescending { it.photo.dateTaken })
-                        }
-                        webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    fun updateJointAlbumContentMeta(albumId: String, addition: List<RemotePhoto>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val targetShare = _shareWithMe.value.find { it.albumId == albumId }!!
-                var mediaList: MutableList<RemotePhoto>
-
-                webDav.getStream("${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", true, CacheControl.FORCE_NETWORK).use { mediaList = getContentMeta(it, targetShare).toMutableList() }
-                if (!mediaList.isNullOrEmpty()) {
-                    mediaList.addAll(addition)
-                    when (targetShare.sortOrder) {
-                        Album.BY_NAME_ASC -> mediaList.sortWith(compareBy { it.photo.name })
-                        Album.BY_NAME_DESC -> mediaList.sortWith(compareByDescending { it.photo.name })
-                        Album.BY_DATE_TAKEN_ASC -> mediaList.sortWith(compareBy { it.photo.dateTaken })
-                        Album.BY_DATE_TAKEN_DESC -> mediaList.sortWith(compareByDescending { it.photo.dateTaken })
-                    }
-/*
-                    File("$localFileFolder/$albumId$CONTENT_META_FILE_SUFFIX").sink(false).buffer().use {
-                        it.write(createContentMeta(null, mediaList).encodeToByteArray())
-                    }
-*/
-                    webDav.upload(createContentMeta(null, mediaList), "${resourceRoot}${targetShare.sharePath}/${targetShare.albumId}$CONTENT_META_FILE_SUFFIX", MIME_TYPE_JSON)
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }
     }
 
     fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {
@@ -1189,13 +1111,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
         private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
-
-        const val MIME_TYPE_JSON = "application/json"
-        const val CONTENT_META_FILE_SUFFIX = "-content.json"
-        // Future update of additional fields to content meta file should be added to header, leave photo list at the very last, so that individual photo meta can be added at the end
-        const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
-        //const val PHOTO_META_JSON = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d},"
-        const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
 
         const val SHARE_TYPE_USER = 0
         private const val SHARE_TYPE_USER_STRING = "user"

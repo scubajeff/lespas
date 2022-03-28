@@ -50,7 +50,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         //File(cacheFolder, VIDEO_CACHE_FOLDER).mkdirs()
     }
 
-    fun copy(source: String, dest: String) { copyOrMove(true, source, dest) }
+    fun copy(source: String, dest: String): Pair<String, String> { return copyOrMove(true, source, dest) }
 
     fun createFolder(folderName: String): String {
         httpClient.newCall(Request.Builder().url(folderName).method("MKCOL", null).build()).execute().use { response ->
@@ -188,7 +188,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         }
     }
 
-    fun move(source: String, dest: String) { copyOrMove(false, source, dest) }
+    fun move(source: String, dest: String): Pair<String, String> { return copyOrMove(false, source, dest) }
 
     fun ocsDelete(url: String) {
         httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()).execute().use {}
@@ -267,7 +267,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
             // Upload chunks
             // Longer timeout adapting to slow connection
-            val uploadHttpClient = httpClient.newBuilder().readTimeout(2, TimeUnit.MINUTES).writeTimeout(2, TimeUnit.MINUTES).build()
+            val uploadHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
             while(index < size) {
                 if (sp.getBoolean(wifionlyKey, true)) {
                     if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
@@ -310,10 +310,12 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         return result
     }
 
-    private fun copyOrMove(copy: Boolean, source: String, dest: String) {
+    fun copyOrMove(copy: Boolean, source: String, dest: String): Pair<String, String> {
+        val copyHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
         val hb = Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T")
-        httpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
-            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+        copyHttpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
+            if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+            else throw OkHttpWebDavException(response)
         }
     }
 

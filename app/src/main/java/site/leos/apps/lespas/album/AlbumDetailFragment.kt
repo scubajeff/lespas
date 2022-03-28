@@ -64,6 +64,7 @@ import java.io.File
 import java.lang.Runnable
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -428,27 +429,33 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     val targetFolder = if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${lespasPath}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val photoList = mutableListOf<Photo>()
 
+                    var metaString: String
                     val actions = mutableListOf<Action>()
                     destinationViewModel.getRemotePhotos().forEach { remotePhoto ->
                         // No matter the photo is uploaded or not, add action to move or copy on server. If it's not yet uploaded, another Action.ACTION_ADD_FILES_ON_SERVER should be in the pending list by now
-                        if (remotePhoto.photo.id == album.cover) {
-                            // Can't move cover photo
-                            actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, "", remotePhoto.photo.name, System.currentTimeMillis(), 1))
-                        } else {
-                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", remotePhoto.photo.name, System.currentTimeMillis(), 1))
-                            photoList.add(remotePhoto.photo)
+                        remotePhoto.photo.let { photo ->
+                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
+                            if (photo.id == album.cover) {
+                                // Can't move cover photo
+                                actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                            } else {
+                                actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                                photoList.add(photo)
+                            }
                         }
                     }
 
-                    // Since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
-                    if (targetAlbum.id.isEmpty()) actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                    when(targetAlbum.id) {
+                        // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                        "" -> actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                        // Update Joint Album's content metadata
+                        PublicationDetailFragment.JOINT_ALBUM_ID -> actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
+                    }
 
                     actionModel.addActions(actions)
 
                     // If this is a MOVE operation, show moving result in source album immediately, result in target album however can't be shown until the next sync finished
                     if (destinationViewModel.shouldRemoveOriginal()) actionModel.deletePhotosLocalRecord(photoList)
-                    // Update joint album's content meta file, require connection to server, if fail, content meta will not be updated until owner sync once.
-                    if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) imageLoaderModel.updateJointAlbumContentMeta(targetAlbum.eTag, destinationViewModel.getRemotePhotos())
 
                     if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_server_operation), null).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
