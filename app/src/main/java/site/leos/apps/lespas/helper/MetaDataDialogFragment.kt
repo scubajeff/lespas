@@ -98,7 +98,16 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     }
 
                     withContext(Dispatchers.Main) {
-                        view.findViewById<TextView>(R.id.info_size).text = if (size == 0L) String.format("%sw × %sh", "$width", "$height") else String.format("%s, %s", Tools.humanReadableByteCountSI(size), String.format("%sw × %sh", "$width", "$height"))
+                        val pWidth: Int
+                        val pHeight: Int
+                        if (orientation == 90 || orientation == 270) {
+                            pWidth = height
+                            pHeight = width
+                        } else {
+                            pWidth = width
+                            pHeight = height
+                        }
+                        view.findViewById<TextView>(R.id.info_size).text = if (size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
                         view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
 
                         exif?.apply {
