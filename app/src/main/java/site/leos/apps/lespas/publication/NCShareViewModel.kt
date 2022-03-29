@@ -654,16 +654,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
-        val job: Job
-
-        job = viewModelScope.launch(downloadDispatcher) {
+        val job = viewModelScope.launch(downloadDispatcher) {
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
             val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
 
             try {
                 var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
-                var key = "${imagePhoto.photo.id}$type"
+                var key = if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) "camera${imagePhoto.photo.id.substringAfterLast("/media/")}" else "${imagePhoto.photo.id}$type"
                 if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
 
                 (if (forceNetwork) null else imageCache.get(key))?.let {
@@ -793,17 +791,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 else -> (height - imagePhoto.coverBaseLine).let { Rect(Integer.max(it - (width.toFloat() * 9 / 21).toInt(), 0), 0, it, width - 1) }
                                             }
 
-                                        var sampleSize = when (width) {
-                                            in (0..1439) -> 1
-                                            in (1439..3000) -> 2
-                                            else -> 4
+                                        val option = BitmapFactory.Options().apply {
+                                            var sampleSize = when (width) {
+                                                in (0..1439) -> 1
+                                                in (1439..3000) -> 2
+                                                else -> 4
+                                            }
+                                            if (type == TYPE_SMALL_COVER) sampleSize *= 2
+
+                                            inSampleSize = sampleSize
                                         }
-                                        if (type == TYPE_SMALL_COVER) sampleSize *= 2
 
                                         try {
                                             ensureActive()
                                             @Suppress("DEPRECATION")
-                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, null)?.let { bmp ->
+                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, option)?.let { bmp ->
                                                 ensureActive()
                                                 if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
                                                 else bmp
