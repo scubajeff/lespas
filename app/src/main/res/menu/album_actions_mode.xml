@@ -15,4 +15,9 @@
         android:title="@string/action_set_remote"
         android:icon="@drawable/ic_baseline_wb_cloudy_24"
         app:showAsAction="never" />
+    <item android:id="@+id/select_all"
+        android:title="@string/action_select_all"
+        android:icon="@drawable/ic_baseline_select_all_24"
+        app:showAsAction="never" />
+
 </menu>

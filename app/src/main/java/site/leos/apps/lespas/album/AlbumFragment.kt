@@ -550,6 +550,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), null, requestKey = CONFIRM_TOGGLE_REMOTE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
+            R.id.select_all -> {
+                mAdapter.currentList.forEach {
+                    if (it.id != CameraRollFragment.FROM_CAMERA_ROLL) selectionTracker.select(it.id)
+                }
+                true
+            }
             else -> false
         }
     }
