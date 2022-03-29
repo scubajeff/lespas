@@ -152,16 +152,7 @@ class PublicationDetailFragment: Fragment() {
 
         currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
-            val sortedList = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                addAll(it)
-                when(share.sortOrder) {
-                    Album.BY_NAME_ASC -> sortWith(compareBy { rp -> rp.photo.name })
-                    Album.BY_NAME_DESC -> sortWith(compareByDescending { rp -> rp.photo.name })
-                    Album.BY_DATE_TAKEN_ASC -> sortWith(compareBy { rp -> rp.photo.dateTaken })
-                    Album.BY_DATE_TAKEN_DESC -> sortWith(compareByDescending { rp -> rp.photo.dateTaken })
-                }
-            }
-            photoListAdapter.submitList(sortedList) {
+            photoListAdapter.submitList(it) {
                 // Setup UI in this submitList commitCallback
                 loadingIndicator?.run {
                     isEnabled = false
