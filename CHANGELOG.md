@@ -1,3 +1,12 @@
+## Version 2.5.4
+* Fixed bugs halting sync process when upgrading from release 2.4.x
+* When copying/moving photos to Joint Album or remote album, file operations are carried out on server only
+* Fixed various bugs when adding photos to Joint Album
+* Fixed button not responding in camera roll photo list screen
+* Fixed bug preventing some photos from being "Today in history" artwork to Muzei
+* Support Chinese made Map app when sharing location to them. Yes, they use a bizarre coordinate system. 
+* Other improvements and bugs fixes
+
 ## Version 2.5.3
 * New login and re-login screen, more robust implementation and follow your Nextcloud server's theming
 * Fixed crash when asking for storage access permission

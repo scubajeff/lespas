@@ -1,0 +1,6 @@
+* Se han corregido errores que detenían el proceso de sincronización al actualizar desde la versión 2.4.x
+* Al copiar/mover fotos al Álbum Conjunto o al álbum remoto, las operaciones de archivo se llevan a cabo sólo en el servidor
+* Se han corregido varios errores al añadir fotos al Álbum Conjunto
+* Arreglado el botón que no responde en la pantalla de la lista de fotos del carrete de la cámara
+* Corregido el error que impedía que algunas fotos fueran "Hoy en la historia" en Muzei
+* Otras mejoras y correcciones de errores

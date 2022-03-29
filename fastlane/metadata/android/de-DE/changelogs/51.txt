@@ -1,0 +1,6 @@
+* Fehler behoben, der den Synchronisierungsprozess beim Upgrade von Version 2.4.x anhielt.
+* Beim Kopieren/Verschieben von Fotos in ein gemeinsames Album oder ein entferntes Album werden die Dateioperationen nur auf dem Server ausgeführt
+* Verschiedene Fehler beim Hinzufügen von Fotos zu Joint Album behoben
+* Behoben: Die Schaltfläche in der Fotoliste der Kamerarolle reagierte nicht.
+* Fehler behoben, der verhinderte, dass einige Fotos als "Heute in der Geschichte"-Artwork in Muzei angezeigt wurden
+* Weitere Verbesserungen und Fehlerkorrekturen

@@ -1,0 +1,6 @@
+* Correction des bogues interrompant le processus de synchronisation lors de la mise à niveau de la version 2.4.x.
+* Lors de la copie/déplacement des photos vers l'Album Commun ou l'album distant, les opérations de fichier sont effectuées sur le serveur seulement.
+* Correction de divers bogues lors de l'ajout de photos à l'album commun.
+* Correction du bouton qui ne répond pas dans l'écran de la liste des photos de la camera roll.
+* Correction d'un bogue empêchant certaines photos d'être affichées "Aujourd'hui dans l'histoire" sur Muzei.
+* Autres améliorations et corrections de bogues
