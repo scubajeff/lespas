@@ -24,12 +24,18 @@ import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
+import org.json.JSONException
+import org.json.JSONObject
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoMeta
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
+import java.io.InputStream
 import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -648,5 +654,102 @@ object Tools {
         long += (150.0 * sin( x / 12.0 * PI) + 300.0 * sin(x / 30.0 * PI)) * 2.0 / 3.0
 
         return long
+    }
+
+    fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC): List<NCShareViewModel.RemotePhoto> {
+        val result = mutableListOf<NCShareViewModel.RemotePhoto>()
+
+        val lespasJson = try {
+            JSONObject(inputStream.reader().readText()).getJSONObject("lespas")
+        } catch (e: JSONException) { return result }
+
+        val version = try {
+            lespasJson.getInt("version")
+        } catch (e: JSONException) {
+            1
+        }
+
+        val photos = lespasJson.getJSONArray("photos")
+        for (i in 0 until photos.length()) {
+            photos.getJSONObject(i).apply {
+                when {
+                    // TODO make sure later version json file downward compatible
+                    version >= 2 -> {
+                        try {
+                            getInt("orientation")
+                            result.add(
+                                NCShareViewModel.RemotePhoto(
+                                    Photo(
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        // Version 2 additions
+                                        orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
+                                        // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
+                                        eTag = Photo.ETAG_FAKE
+                                    ), sharePath
+                                )
+                            )
+                        } catch (e: JSONException) {
+                            try {
+                                result.add(
+                                    NCShareViewModel.RemotePhoto(
+                                        Photo(
+                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                            // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
+                                            eTag = Photo.ETAG_FAKE
+                                        ), sharePath
+                                    )
+                                )
+                            } catch (e: JSONException) {}
+                        }
+                    }
+                    // Version 1 of content meta json
+                    else -> {
+                        try {
+                            result.add(
+                                NCShareViewModel.RemotePhoto(
+                                    Photo(
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
+                                        eTag = Photo.ETAG_FAKE
+                                    ), sharePath
+                                )
+                            )
+                        } catch (e: JSONException) {}
+                    }
+                }
+            }
+        }
+        when (sortOrder) {
+            Album.BY_NAME_ASC -> result.sortWith(compareBy { it.photo.name })
+            Album.BY_NAME_DESC -> result.sortWith(compareByDescending { it.photo.name })
+            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
+        }
+
+        return result
+    }
+
+    fun photosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
+        var content = SyncAdapter.PHOTO_META_HEADER
+
+        remotePhotos.forEach {
+            //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
+            with(it.photo) {
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+            }
+        }
+
+        return content.dropLast(1) + "]}}"
+    }
+
+    fun metasToJSONString(photoMeta: List<PhotoMeta>): String {
+        var content = SyncAdapter.PHOTO_META_HEADER
+
+        photoMeta.forEach {
+            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+        }
+
+        return content.dropLast(1) + "]}}"
     }
 }

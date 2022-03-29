@@ -52,20 +52,16 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
-import site.leos.apps.lespas.photo.PhotoMeta
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
-import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.util.*
 import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -376,24 +372,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    private fun createContentMeta(photoMeta: List<PhotoMeta>?, remotePhotos: List<RemotePhoto>?): String {
-        var content = SyncAdapter.PHOTO_META_HEADER
-
-        photoMeta?.forEach {
-            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
-        }
-
-        remotePhotos?.forEach {
-            //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
-            with(it.photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
-            }
-        }
-
-        return content.dropLast(1) + "]}}"
-    }
-
     fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -406,7 +384,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     //    here for a while as a counter measure
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
-                        val content = createContentMeta(photoRepository.getPhotoMetaInAlbum(album.fileId), null)
+                        val content = Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(album.fileId))
                         webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
                     }
 
@@ -448,79 +426,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             try {
                 webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork || this.second) doRefresh = false
-                    this.first.use { _publicationContentMeta.value = getContentMeta(it, share) }
+                    this.first.use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder) }
                 }
 
-                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = getContentMeta(it, share) }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-    }
-
-    private fun getContentMeta(inputStream: InputStream, share: ShareWithMe): List<RemotePhoto> {
-        val result = mutableListOf<RemotePhoto>()
-
-        val lespasJson = JSONObject(inputStream.bufferedReader().readText()).getJSONObject("lespas")
-        val version = try {
-            lespasJson.getInt("version")
-        } catch (e: JSONException) {
-            1
-        }
-        val photos = lespasJson.getJSONArray("photos")
-        for (i in 0 until photos.length()) {
-            photos.getJSONObject(i).apply {
-                when {
-                    // TODO make sure later version json file downward compatible
-                    version >= 2 -> {
-                        try {
-                            getInt("orientation")
-                            result.add(
-                                RemotePhoto(
-                                    Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
-                                        // Version 2 additions
-                                        orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
-                                        // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
-                                        eTag = Photo.ETAG_FAKE
-                                    ), share.sharePath
-                                )
-                            )
-                        } catch (e: JSONException) {
-                            result.add(
-                                RemotePhoto(
-                                    Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
-                                        // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
-                                        eTag = Photo.ETAG_FAKE
-                                    ), share.sharePath
-                                )
-                            )
-                        }
-                    }
-                    // Version 1 of content meta json
-                    else -> {
-                        result.add(
-                            RemotePhoto(
-                                Photo(
-                                    id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
-                                    // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
-                                    eTag = Photo.ETAG_FAKE
-                                ), share.sharePath
-                            )
-                        )
-                    }
-                }
-            }
-        }
-        when (share.sortOrder) {
-            Album.BY_NAME_ASC -> result.sortWith(compareBy { it.photo.name })
-            Album.BY_NAME_DESC -> result.sortWith(compareByDescending { it.photo.name })
-            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
-            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
-        }
-
-        return result
     }
 
     fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {

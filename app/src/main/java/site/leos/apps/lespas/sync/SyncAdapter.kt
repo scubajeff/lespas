@@ -17,7 +17,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import androidx.preference.PreferenceManager
-import okhttp3.CacheControl
 import okhttp3.internal.http2.StreamResetException
 import okio.IOException
 import org.json.JSONException
@@ -29,9 +28,11 @@ import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileWriter
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
@@ -313,11 +314,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             "image/awebp" -> "image/webp"
                             else -> action.folderId
                         }
-                        with (webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
-                            logChangeToFile(action.fileId, this.first.substring(0, 8).toInt().toString(), action.fileName)
+                        try {
+                            with(webDav.upload(localFile, "${resourceRoot.substringBeforeLast('/')}${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
+                                logChangeToFile(action.fileId, this.first.substring(0, 8).toInt().toString(), action.fileName)
 
-                            // No need to keep the media file, other user owns the album after all
-                            localFile.delete()
+                                // No need to keep the media file, other user owns the album after all
+                                localFile.delete()
+                            }
+                        } catch (e: OkHttpWebDavException) {
+                            // WebDAV return 403 if file already existed in target folder
+                            if (e.statusCode != 403) throw e
                         }
                     }
                 }
@@ -333,12 +339,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         fileName = it[0]
                         targetIsJointAlbum = it[1].toBoolean()
                     }
-                    val newFileId: String
                     resourceRoot.substringBeforeLast('/').let { baseUrl ->
                         // webdav copy/move target file path will be sent in http call's header, need to be encoded here
-                        newFileId = webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${baseUrl}/${action.folderId}/${fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName)}").first.substring(0, 8).toInt().toString()
+                        try {
+                            webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${baseUrl}/${action.folderId}/${fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName)}").run {
+                                if (targetIsJointAlbum) logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
+                            }
+                        } catch (e: OkHttpWebDavException) {
+                            // WebDAV return 403 if file already existed in target folder
+                            if (e.statusCode != 403) throw e
+                        }
                     }
-                    if (targetIsJointAlbum) logChangeToFile(action.fileId, newFileId, fileName)
                 }
                 Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META-> {
                     // Property folderId holds joint album's id
@@ -347,24 +358,25 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // TODO conflicting, some other users might change this publication's content, during this short period of time??
                     val updateLogFile = File(localRootFolder, "${action.folderId}${CHANGE_LOG_FILENAME_SUFFIX}")
                     val contentMetaUrl = "${resourceRoot.substringBeforeLast('/')}/${action.folderName}/${action.folderId}${CONTENT_META_FILE_SUFFIX}"
-                    val contentMetaFile = File(localRootFolder, "${action.folderId}${CONTENT_META_FILE_SUFFIX}")
 
                     // Download Joint Album's latest content meta file, should skip http cache
-                    webDav.download(contentMetaUrl, contentMetaFile, CacheControl.FORCE_NETWORK)
-                    val oldContentMeta = contentMetaFile.inputStream().bufferedReader().readText()
+                    val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
+                        addAll(Tools.readContentMeta(webDav.getStream(contentMetaUrl, false, null), action.folderName))
+                    }
 
                     try {
-                        val updateLog = updateLogFile.inputStream().bufferedReader().readText()
-                        // append changes log at the end of current content metadata, by deleting log's trailing ',', add ',' at the beginning, add JSON closing ']}}' at the end
-                        webDav.upload(oldContentMeta.dropLast(3) + "," + updateLog.dropLast(1) + "]}}", contentMetaUrl, MIME_TYPE_JSON)
+                        // Append change log
+                        Tools.readContentMeta(updateLogFile.inputStream(), action.folderName).forEach { changeItem ->
+                            // photo fileId should be unique
+                            photos.firstOrNull { it.photo.id == changeItem.photo.id } ?: run { photos.add(changeItem) }
+                        }
+
+                        webDav.upload(Tools.photosToMetaJSONString(photos), contentMetaUrl, MIME_TYPE_JSON)
 
                         try { updateLogFile.delete() } catch (e: Exception) {}
                     }
                     catch(e: FileNotFoundException) {
-                        // If somehow update log file is missing, abandon this action
-                    }
-                    finally {
-                        try { contentMetaFile.delete() } catch (e: Exception) {}
+                        // If somehow update log file is missing, like when all photos added already existed in Joint Album, abandon this action
                     }
                 }
 
@@ -396,12 +408,37 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
-    private fun logChangeToFile(meta: String, newFileId: String, fileName: String) {
+    private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
         val metaFromAction = meta.split('|')
-        val jsonString = String.format(Locale.ROOT, PHOTO_META_JSON_V2, newFileId, fileName, metaFromAction[1].toLong(), metaFromAction[2], metaFromAction[3].toInt(), metaFromAction[4].toInt(), metaFromAction[5].toInt(), metaFromAction[6], metaFromAction[7].toDouble(), metaFromAction[8].toDouble(), metaFromAction[9].toDouble(), metaFromAction[10].toDouble())
-        val file = File(localRootFolder, "${metaFromAction[0]}${CHANGE_LOG_FILENAME_SUFFIX}")
-        if (!file.exists()) file.createNewFile()
-        file.appendText(jsonString)
+        val logFile = File(localRootFolder, "${metaFromAction[0]}${CHANGE_LOG_FILENAME_SUFFIX}")
+
+        try {
+            mutableListOf<NCShareViewModel.RemotePhoto>().apply {
+                if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "")) }
+                else logFile.createNewFile()
+
+                val date = LocalDateTime.ofEpochSecond(metaFromAction[1].toLong(), 0, OffsetDateTime.now().offset)
+                add(
+                    NCShareViewModel.RemotePhoto(
+                        Photo(
+                            id = newFileId, albumId = metaFromAction[0], name = fileName, eTag = "",
+                            dateTaken = date, lastModified = date,
+                            width = metaFromAction[3].toInt(), height = metaFromAction[4].toInt(),
+                            mimeType = metaFromAction[2],
+                            orientation = metaFromAction[5].toInt(), caption = metaFromAction[6],
+                            latitude = metaFromAction[7].toDouble(), longitude = metaFromAction[8].toDouble(), altitude = metaFromAction[9].toDouble(), bearing = metaFromAction[10].toDouble(),
+                        ), "", 0
+                    )
+                )
+
+                FileWriter(logFile).let { file ->
+                    file.write(Tools.photosToMetaJSONString(this))
+                    file.close()
+                }
+            }
+        } catch (e: Exception) {
+            // Log replay is not base on best effort, don't halt the sync process
+        }
     }
 
     private fun syncRemoteChanges() {
@@ -1127,12 +1164,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
-        var content = PHOTO_META_HEADER
-        photoRepository.getPhotoMetaInAlbum(albumId).forEach {
-            content += String.format(Locale.ROOT, PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
-        }
-        content = content.dropLast(1) + "]}}"
-        webDav.upload(content, "$resourceRoot/${Uri.encode(albumName)}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
+        webDav.upload(Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(albumId)), "$resourceRoot/${Uri.encode(albumName)}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
