@@ -93,15 +93,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         lifecycleScope.launch(Dispatchers.IO) {
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                             val theAlbum: Album = if (remoteAlbum.shareBy.isNotEmpty())
-/*
-                                Album(
-                                    id = PublicationDetailFragment.JOINT_ALBUM_ID,
-                                    name = album.cover.substringBeforeLast('/'),
-                                    lastModified = LocalDateTime.now(),
-                                    eTag = album.id,
-                                    shareId = Album.NULL_ALBUM,
-                                )
-*/
                             album.copy(id = PublicationDetailFragment.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id)
                             else album
 
@@ -117,14 +108,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 remoteAlbum.album.run {
                     publicationModel.setImagePhoto(
                         NCShareViewModel.RemotePhoto(Photo(
-/*
-                        id = cover, albumId = id,
-                        name = if ((Tools.isRemoteAlbum(album) && cover != coverFileName.substringAfterLast('/')) || lastModified == LocalDateTime.MAX) coverFileName.substringAfterLast('/') else coverFileName,
-                        width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
-                        dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
-                        // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
-                        eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
-*/
                         id = cover, albumId = id, name = coverFileName, width = coverWidth, height = coverHeight, mimeType = coverMimeType, orientation = coverOrientation,
                         dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
@@ -251,19 +234,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         if (name.isNotEmpty()) {
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                             // Return with album id field empty, calling party will know this is a new album
-                            destinationModel.setDestination(
-/*
-                                Album(
-                                    "", name,
-                                    LocalDateTime.MAX, LocalDateTime.MIN,
-                                    "", 0, 0, 0,
-                                    LocalDateTime.now(), Album.BY_DATE_TAKEN_ASC, "",
-                                    if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM,
-                                    1f
-                                )
-*/
-                                Album(name = name, lastModified = LocalDateTime.now(), shareId = if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM)
-                            )
+                            destinationModel.setDestination(Album(name = name, lastModified = LocalDateTime.now(), shareId = if (remoteAlbumCheckBox.isChecked) Album.REMOTE_ALBUM else Album.NULL_ALBUM))
 
                             // Clear editing mode
                             destinationModel.setEditMode(false)
@@ -285,45 +256,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             val base = getString(R.string.lespas_base_folder_name)
             val remoteAlbums = mutableListOf<RemoteAlbum>()
             albums.forEach { album ->
-/*
-                if (Tools.isRemoteAlbum(album) && album.cover != album.coverFileName) album.coverFileName = "${base}/${album.name}/${album.coverFileName}"
-                if (album.id != ignoreAlbum) albums.add(album)
-*/
                 if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", ""))
             }
-            //albumAdapter.submitList(albums.plus(nullAlbum).toMutableList())
             albumAdapter.submitList(remoteAlbums.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
 
             jointAlbumLiveData.observe(viewLifecycleOwner, Observer { shared->
-/*
-                val jointAlbums = mutableListOf<Album>()
-                for (publication in shared) {
-                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
-                        //Album(publication.albumId, publication.albumName, LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, publication.shareBy, Album.NULL_ALBUM, JOINT_PUBLICATION)
-                        Album(
-                            publication.albumId, publication.albumName,
-                            LocalDateTime.now(), LocalDateTime.now(),
-                            "", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
-                            LocalDateTime.MAX,      // Denotes publication
-                            publication.sortOrder,
-                            publication.shareBy,    // Pass shareby in property eTag
-                            Album.NULL_ALBUM, 1f,
-                            "${publication.sharePath}/${publication.cover.coverFileName}", publication.cover.coverMimeType, publication.cover.coverOrientation
-                        )
-                    )
-                }
-                if (jointAlbums.isNotEmpty()) {
-                    val newAlbumList = albumAdapter.currentList.toMutableList()
-                    if (newAlbumList.last().id.isEmpty()) newAlbumList.removeLast()
-                    newAlbumList.addAll(jointAlbums)
-                    albumAdapter.submitList(newAlbumList.plus(nullAlbum).toMutableList())
-                }
-                if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
-*/
                 val jointAlbums = mutableListOf<RemoteAlbum>()
                 for (publication in shared) {
                     if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(RemoteAlbum(
-                        //Album(publication.albumId, publication.albumName, LocalDateTime.now(), LocalDateTime.now(), "${publication.sharePath}/${publication.coverFileName}", publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight, LocalDateTime.now(), publication.sortOrder, publication.shareBy, Album.NULL_ALBUM, JOINT_PUBLICATION)
                         Album(
                             publication.albumId, publication.albumName,
                             LocalDateTime.now(), LocalDateTime.now(),
@@ -421,12 +361,10 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                             imageLoader(remoteAlbum, this, coverType)
                             currentAlbumId = remoteAlbum.album.id
                         }
-                        //if (remoteAlbum.shareBy.isNotEmpty()) avatarLoader(NCShareViewModel.Sharee(remoteAlbum.shareBy, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
                         scaleType = ImageView.ScaleType.CENTER_CROP
                     }
                     tvName.apply {
                         text = remoteAlbum.album.name
-                        //setCompoundDrawables(if (remoteAlbum.shareBy.isEmpty() && Tools.isRemoteAlbum(remoteAlbum.album)) cloudDrawable else null, null, null, null)
                         when {
                             remoteAlbum.shareBy.isNotEmpty() -> avatarLoader(NCShareViewModel.Sharee(remoteAlbum.shareBy, "", NCShareViewModel.SHARE_TYPE_USER), itemView.findViewById<TextView>(R.id.avatar))
                             Tools.isRemoteAlbum(remoteAlbum.album) -> setCompoundDrawables(cloudDrawable, null, null, null)
@@ -441,7 +379,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DestViewHolder {
             val view = LayoutInflater.from(parent.context).inflate(if (viewType == 1) R.layout.recyclerview_item_destination_joint else R.layout.recyclerview_item_destination, parent, false)
-            //val view = LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_destination, parent, false)
             view.findViewById<TextView>(R.id.name)?.apply {
                 compoundDrawablePadding = 16
                 TextViewCompat.setCompoundDrawableTintList(this, ColorStateList.valueOf(currentTextColor))
