@@ -19,6 +19,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -280,7 +281,12 @@ class PublicationDetailFragment: Fragment() {
                         shareId = Album.REMOTE_ALBUM,
                         lastModified = LocalDateTime.MIN
                     ),
-                    photoListAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    Tools.getPhotosWithCoordinate(
+                        mutableListOf<Photo>().apply { photoListAdapter.currentList.forEach { add(it.photo) }},
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.nearby_convergence_pref_key), true),
+                        share.sortOrder
+                    )
+                ), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -348,13 +354,6 @@ class PublicationDetailFragment: Fragment() {
         }
 
         fun isMetaDisplayed(): Boolean = displayMeta
-
-        fun getPhotoWithCoordinate(): List<Photo> {
-            return mutableListOf<Photo>().apply {
-                currentList.forEach { if (it.photo.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.photo.mimeType)) add(it.photo) }
-                toList()
-            }
-        }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

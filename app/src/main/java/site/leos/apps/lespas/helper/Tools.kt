@@ -752,4 +752,75 @@ object Tools {
 
         return content.dropLast(1) + "]}}"
     }
+
+    fun getPhotosWithCoordinate(list: List<Photo>, autoConvergent: Boolean, albumSortOrder: Int): List<Photo> {
+        val result = mutableListOf<Photo>()
+
+        mutableListOf<Photo>().run {
+            val photos = (if (albumSortOrder == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
+
+            photos.forEach { if (it.latitude != Photo.NO_GPS_DATA) add(it) }
+
+            if (autoConvergent) {
+                add(0, Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))
+                add(Photo(dateTaken = LocalDateTime.MAX, lastModified = LocalDateTime.MAX))
+
+                var start: Photo = get(0)
+                var end: Photo = get(1)
+                var index = 1
+
+                val offset = OffsetDateTime.now().offset
+                val maximum = 20 * 60   // 20 minutes maximum
+                var secondsToStart: Long
+                var secondsToEnd: Long
+                var startEpochSecond = start.dateTaken.toEpochSecond(offset)
+                var endEpochSecond = end.dateTaken.toEpochSecond(offset)
+
+                photos.forEach { photo ->
+                    when(photo.id) {
+                        start.id -> {}
+                        end.id -> {
+                            result.add(end)
+                            start = end
+                            end = get(++index)
+                            startEpochSecond = endEpochSecond
+                            endEpochSecond = end.dateTaken.toEpochSecond(offset)
+                        }
+                        else -> {
+                            photo.dateTaken.toEpochSecond(offset).run {
+                                secondsToStart = abs(this - startEpochSecond)
+                                secondsToEnd = abs(endEpochSecond - this)
+                            }
+                            when {
+                                (secondsToStart < maximum) && (secondsToEnd > maximum) ->
+                                    result.add(photo.copy(latitude = start.latitude, longitude = start.longitude, altitude = start.altitude, bearing = start.bearing).apply {
+                                        start = this
+                                        startEpochSecond = start.dateTaken.toEpochSecond(offset)
+                                    })
+                                (secondsToStart > maximum) && (secondsToEnd < maximum) -> result.add(photo.copy(latitude = end.latitude, longitude = end.longitude, altitude = end.altitude, bearing = end.bearing))
+                                (secondsToStart < maximum) && (secondsToEnd < maximum) -> result.add(
+                                    if (secondsToStart < secondsToEnd) photo.copy(latitude = start.latitude, longitude = start.longitude, altitude = start.altitude, bearing = start.bearing).apply {
+                                        start = this
+                                        startEpochSecond = start.dateTaken.toEpochSecond(offset)
+                                    }
+                                    else photo.copy(latitude = end.latitude, longitude = end.longitude, altitude = end.altitude, bearing = end.bearing)
+                                )
+                                else -> {}
+                            }
+                        }
+                    }
+                }
+            } else result.addAll(this)
+        }
+
+        return when(albumSortOrder) {
+            Album.BY_DATE_TAKEN_ASC-> result.sortedWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC-> result.sortedWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC-> result.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+            Album.BY_NAME_DESC-> result.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+            Album.BY_DATE_MODIFIED_ASC-> result.sortedWith(compareBy { it.lastModified })
+            Album.BY_DATE_MODIFIED_DESC-> result.sortedWith(compareByDescending { it.lastModified })
+            else -> result
+        }
+    }
 }
