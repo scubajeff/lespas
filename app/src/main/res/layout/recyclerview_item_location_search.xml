@@ -5,8 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginRight="@dimen/extra_padding"
-    android:layout_marginTop="@dimen/extra_padding"
+    android:layout_marginRight="@dimen/big_padding"
+    android:layout_marginTop="@dimen/big_padding"
     android:padding="@dimen/big_padding"
     android:foreground="?android:attr/selectableItemBackground"
     android:background="@drawable/album_item_background"
@@ -14,7 +14,7 @@
     android:transitionGroup="true">
 
     <site.leos.apps.lespas.helper.DullConstraintLayout
-        android:id="@+id/item_container"
+        android:id="@+id/photo_container"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -22,7 +22,7 @@
         app:layout_constraintDimensionRatio="H,1:1">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/items"
+            android:id="@+id/photos"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scrollbars="none"
@@ -36,7 +36,8 @@
             android:elevation="4dp"
             android:textAlignment="center"
             android:textAppearance="?attr/textAppearanceHeadline2"
-            android:textColor="#c0d0d0d0"
+            android:textColor="@android:color/darker_gray"
+            android:alpha="0.75"
             android:elegantTextHeight="true"
             android:textStyle="italic"
             tools:text="125"/>
@@ -46,8 +47,8 @@
     <TextView
         android:id="@+id/locality"
         android:layout_width="match_parent"
-        android:layout_height="30dp"
-        app:layout_constraintTop_toBottomOf="@id/item_container"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/photo_container"
         app:layout_constraintLeft_toLeftOf="parent"
         android:layout_marginTop="@dimen/small_padding"
         android:lines="1"
@@ -62,7 +63,7 @@
     <TextView
         android:id="@+id/country"
         android:layout_width="match_parent"
-        android:layout_height="26dp"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/locality"
         app:layout_constraintLeft_toLeftOf="parent"
         android:lines="1"

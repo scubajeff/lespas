@@ -54,7 +54,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
         emptyView = view.findViewById(R.id.emptyview)
         if (requireArguments().getBoolean(SEARCH_COLLECTION)) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
 
-        resultView = view.findViewById<RecyclerView>(R.id.category_list).apply {
+        resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
             adapter = resultAdapter
         }
 
@@ -116,7 +116,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             private val tvCountry = itemView.findViewById<TextView>(R.id.country)
             private val tvLocality = itemView.findViewById<TextView>(R.id.locality)
             private val tvCount = itemView.findViewById<TextView>(R.id.count)
-            private val rvPhoto = itemView.findViewById<RecyclerView>(R.id.items)
+            private val rvPhoto = itemView.findViewById<RecyclerView>(R.id.photos)
             private val photoRVViewPool = RecyclerView.RecycledViewPool()
 
             init {
