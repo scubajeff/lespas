@@ -644,12 +644,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
             val photos = when(sortOrder) {
-                Album.BY_DATE_TAKEN_ASC-> collection.sortedWith(compareBy { it.dateTaken })
-                Album.BY_DATE_TAKEN_DESC-> collection.sortedWith(compareByDescending { it.dateTaken })
-                Album.BY_DATE_MODIFIED_ASC-> collection.sortedWith(compareBy { it.lastModified })
-                Album.BY_DATE_MODIFIED_DESC-> collection.sortedWith(compareByDescending { it.lastModified })
-                Album.BY_NAME_ASC-> collection.sortedWith(compareBy { it.name })
-                Album.BY_NAME_DESC-> collection.sortedWith(compareByDescending { it.name })
+                Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE-> collection.sortedWith(compareBy { it.dateTaken })
+                Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE-> collection.sortedWith(compareByDescending { it.dateTaken })
+                Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE-> collection.sortedWith(compareBy { it.name })
+                Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE-> collection.sortedWith(compareByDescending { it.name })
                 else-> collection
             }
 

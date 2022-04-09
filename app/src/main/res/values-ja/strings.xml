@@ -209,4 +209,5 @@
     <string name="chinese_map_summary">中国の地図アプリは、すべて独自の座標系を使用しています。</string>
     <string name="map_header">地図</string>
     <string name="msg_server_operation">サーバーと同期した後、ターゲットアルバムに写真が表示されます。</string>
+    <string name="item_wide_list">タイトル表示</string>
 </resources>

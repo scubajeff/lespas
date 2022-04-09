@@ -33,4 +33,5 @@ class AlbumRepository(application: Application){
     fun setAsRemote(albumIds: List<String>, asRemote: Boolean) { if (asRemote) albumDao.setAsRemote(albumIds) else albumDao.setAsLocal(albumIds) }
     fun fixBGM(albumId: String, bgmId: String, bgmETag: String) { albumDao.fixBGM(albumId, bgmId, bgmETag) }
     fun getAllAlbumAttribute(): List<IDandAttribute> = albumDao.getAllAlbumAttribute()
+    fun setWideList(albumId: String, wideList: Boolean) { if (wideList) albumDao.enableWideList(albumId) else albumDao.disableWideList(albumId) }
 }

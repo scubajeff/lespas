@@ -617,6 +617,7 @@ object Tools {
 
     fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
+    fun isWideListAlbum(album: Album): Boolean = album.sortOrder in 100..200
 
     private const val PI = 3.1415926535897932384626
     private const val EE = 0.00669342162296594323
@@ -720,10 +721,10 @@ object Tools {
             }
         }
         when (sortOrder) {
-            Album.BY_NAME_ASC -> result.sortWith(compareBy { it.photo.name })
-            Album.BY_NAME_DESC -> result.sortWith(compareByDescending { it.photo.name })
-            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
-            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy { it.photo.name })
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.name })
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.dateTaken })
         }
 
         return result

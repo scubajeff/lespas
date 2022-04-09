@@ -41,6 +41,21 @@ data class Album(
         const val BY_DATE_MODIFIED_DESC = 3
         const val BY_NAME_ASC = 4
         const val BY_NAME_DESC = 5
+        const val BY_COUNTRY_ASC = 6
+        const val BY_COUNTRY_DESC = 7
+        const val BY_PERSON_ASC = 8
+        const val BY_PERSON_DESC = 9
+        // Wide list
+        const val BY_DATE_TAKEN_ASC_WIDE = 100
+        const val BY_DATE_TAKEN_DESC_WIDE = 101
+        const val BY_DATE_MODIFIED_ASC_WIDE = 102
+        const val BY_DATE_MODIFIED_DESC_WIDE = 103
+        const val BY_NAME_ASC_WIDE = 104
+        const val BY_NAME_DESC_WIDE = 105
+        const val BY_COUNTRY_ASC_WIDE = 106
+        const val BY_COUNTRY_DESC_WIDE = 107
+        const val BY_PERSON_ASC_WIDE = 108
+        const val BY_PERSON_DESC_WIDE = 109
 
         const val NULL_ALBUM = 0                // Use by DestinationDialogFragment to add a fake album item used for "Add new album" function
         const val SHARED_ALBUM = 1 shl 0        // Album is shared on server
@@ -165,4 +180,9 @@ abstract class AlbumDao: BaseDao<Album>() {
     // Not including hidden album
     @Query("SELECT id, name, shareId FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
     abstract fun getAllAlbumAttribute(): List<IDandAttribute>
+
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder + 100 WHERE id = :albumId")
+    abstract fun enableWideList(albumId: String)
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - 100 WHERE id = :albumId")
+    abstract fun disableWideList(albumId: String)
 }

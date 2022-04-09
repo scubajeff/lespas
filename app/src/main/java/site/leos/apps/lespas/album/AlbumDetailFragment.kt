@@ -68,6 +68,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.math.abs
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var album: Album
@@ -266,7 +267,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onViewCreated(view, savedInstanceState)
 
         dateIndicator = view.findViewById(R.id.date_indicator)
-        recyclerView = view.findViewById(R.id.photogrid)
+        recyclerView = view.findViewById(R.id.photo_grid)
 
         postponeEnterTransition()
         ViewCompat.setTransitionName(recyclerView, album.id)
@@ -274,13 +275,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         with(recyclerView) {
             // Special span size to show cover at the top of the grid
-            val defaultSpanCount = (layoutManager as GridLayoutManager).spanCount
-            layoutManager = GridLayoutManager(context, defaultSpanCount).apply {
-                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                    override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
-                }
-            }
-
+            layoutManager = newLayoutManger()
             adapter = mAdapter
 
             selectionTracker = Builder(
@@ -330,7 +325,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 private val titleBar = (activity as? AppCompatActivity)?.supportActionBar
                 // Title text use TextAppearance.MaterialComponents.Headline5 style, which has textSize of 24sp
                 private val titleTextSizeInPixel = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 24f, requireContext().resources.displayMetrics).toInt()
-                private val lm = recyclerView.layoutManager as GridLayoutManager
 
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
@@ -339,7 +333,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         RecyclerView.SCROLL_STATE_IDLE-> {
                             // Hide the date indicator after showing it for 1 minute
                             if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
-                            if (lm.findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
+                            if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
                         }
                     }
                 }
@@ -352,7 +346,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         dateIndicator.isVisible = false
                         showTitleText()
                     } else {
-                        lm.run {
+                        (recyclerView.layoutManager as GridLayoutManager).run {
                             // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
                             if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
@@ -371,7 +365,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 private fun showTitleText() {
                     // Show/hide title text in titleBar base on visibility of cover view's title
-                    if (lm.findFirstVisibleItemPosition() == 0) {
+                    if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() == 0) {
                         val rect = Rect()
                         (recyclerView.findViewHolderForAdapterPosition(0) as PhotoGridAdapter.CoverViewHolder).itemView.findViewById<TextView>(R.id.title).getGlobalVisibleRect(rect)
 
@@ -386,7 +380,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
             // Cover might changed, photo might be deleted, so get updates from latest here
+            val oldListType = this.album.sortOrder
             this.album = it.album
+
+            // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter
+            if (abs(oldListType - this.album.sortOrder) == 100) {
+                recyclerView.adapter = null
+                recyclerView.layoutManager = newLayoutManger()
+                recyclerView.adapter = mAdapter
+            }
 
             mAdapter.setAlbum(it)
             (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
@@ -560,13 +562,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
         menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
         menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
-
         when(album.sortOrder) {
-            Album.BY_DATE_TAKEN_ASC-> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
-            Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
-            Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
-            Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
         }
+
+        menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album)
 
         // Disable publish function when this is a newly created album which does not exist on server yet
         if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
@@ -633,6 +636,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
             R.id.option_menu_bgm-> {
                 if (parentFragmentManager.findFragmentByTag(BGM_DIALOG) == null) BGMDialogFragment.newInstance(album).show(parentFragmentManager, BGM_DIALOG)
+                true
+            }
+            R.id.option_menu_wide_list-> {
+                albumModel.setWideList(album.id, !Tools.isWideListAlbum(album))
+                saveSortOrderChanged = true
                 true
             }
             else-> false
@@ -718,7 +726,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Scroll to the top after sort, since cover photo has album's id as it's id, scroll to this id means scroll to the top
         scrollTo = album.id
 
-        albumModel.setSortOrder(album.id, newOrder)
+        albumModel.setSortOrder(album.id, if (Tools.isWideListAlbum(album)) newOrder + 100 else newOrder)
         saveSortOrderChanged = true
     }
 
@@ -868,11 +876,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
     }
 
+    private fun newLayoutManger(): GridLayoutManager {
+        val defaultSpanCount = resources.getInteger(if (Tools.isWideListAlbum(album)) R.integer.photo_grid_span_count_wide else R.integer.photo_grid_span_count)
+        return GridLayoutManager(context, defaultSpanCount).apply {
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
+            }
+        }
+    }
+
     // Adapter for photo grid
     class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
-        var photos = mutableListOf<Photo>()
+        private var isWideList = false
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
@@ -933,10 +950,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
             private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
             private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private var tvTitle: TextView? = if (isWideList) itemView.findViewById(R.id.title) else null
 
             fun bindViewItem(photo: Photo) {
                 itemView.let {
-                    it.isActivated = selectionTracker.isSelected(photo.id)
+                    it.isSelected = selectionTracker.isSelected(photo.id)
 
                     with(ivPhoto) {
                         if (currentPhotoName != photo.name) {
@@ -948,16 +966,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
 
-                        if (it.isActivated) {
+                        if (it.isSelected) {
                             colorFilter = selectedFilter
-                            ivSelectionMark.visibility = View.VISIBLE
+                            ivSelectionMark.isVisible = true
+                            tvTitle?.isVisible = false
                         } else {
                             clearColorFilter()
-                            ivSelectionMark.visibility = View.GONE
+                            ivSelectionMark.isVisible = false
+                            tvTitle?.isVisible = true
                         }
                     }
 
-                    ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isActivated) View.VISIBLE else View.GONE
+                    tvTitle?.text = photo.name
+
+                    ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isSelected) View.VISIBLE else View.GONE
                 }
             }
 
@@ -979,7 +1001,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
                 CoverViewHolder(view)
             }
-            else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+            else PhotoViewHolder(LayoutInflater.from(parent.context).inflate(if (isWideList) R.layout.recyclerview_item_photo_wide else R.layout.recyclerview_item_photo, parent, false))
 
         }
 
@@ -997,23 +1019,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         internal fun setAlbum(album: AlbumWithPhotos) {
             this.album = album.album
-            photos = mutableListOf()
-            photos.addAll(
-                when(album.album.sortOrder) {
-                    Album.BY_DATE_TAKEN_ASC-> album.photos.sortedWith(compareBy { it.dateTaken })
-                    Album.BY_DATE_TAKEN_DESC-> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                    Album.BY_DATE_MODIFIED_ASC-> album.photos.sortedWith(compareBy { it.lastModified })
-                    Album.BY_DATE_MODIFIED_DESC-> album.photos.sortedWith(compareByDescending { it.lastModified })
-                    Album.BY_NAME_ASC-> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-                    Album.BY_NAME_DESC-> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
-                    else-> album.photos
-                }
-            )
-            // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
-            // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
-            // set albumId to album's name, so that album name changes can be updated
-            album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
-            submitList(photos)
+            isWideList = Tools.isWideListAlbum(this.album)
+            mutableListOf<Photo>().let { photos ->
+                photos.addAll(
+                    when (album.album.sortOrder) {
+                        Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
+                        Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
+                        Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        else -> album.photos
+                    }
+                )
+                // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+                // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
+                // set albumId to album's name, so that album name changes can be updated
+                album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
+                submitList(photos)
+            }
         }
 
         //internal fun getRecipient(): List<NCShareViewModel.Recipient> = recipients
