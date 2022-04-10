@@ -20,7 +20,7 @@
     <string name="fab_add_photos">写真の追加</string>
     <string name="confirm_delete">本当にこの操作を行ってもいいのでしょうか？</string>
     <string name="yes_delete">削除に同意しました</string>
-    <string name="rename_to">アルバム名の変更</string>
+    <string name="rename_album">アルバム名の変更</string>
     <string name="total_photo">%1$dの写真</string>
     <string name="duration_days">旅行 %1$d 日</string>
     <string name="duration_weeks">旅行 %1$d 週</string>
@@ -80,7 +80,7 @@
     <string name="invalid_character_found">ディレクトリシンボル「\\」または「/」の使用禁止</string>
     <string name="invalid_name_found">この名前の使用は許可されていません</string>
     <string name="name_too_long">名前が長すぎる</string>
-    <string name="album_existed">同名のアルバムがすでに存在する</string>
+    <string name="name_existed">名前が既に存在する</string>
     <string name="leading_dots_found">名前の前に記号「.」を付けることはできません。</string>
     <string name="preparing_files">写真を加工中</string>
     <string name="preparing_files_progress">%2$dの写真のうち、%1$dに取り組んでいます。</string>
@@ -209,5 +209,7 @@
     <string name="chinese_map_summary">中国の地図アプリは、すべて独自の座標系を使用しています。</string>
     <string name="map_header">地図</string>
     <string name="msg_server_operation">サーバーと同期した後、ターゲットアルバムに写真が表示されます。</string>
-    <string name="item_wide_list">タイトル表示</string>
+    <string name="item_wide_list">名前を表示</string>
+    <string name="action_rename_media">リネーム</string>
+    <string name="rename_media">新名称</string>
 </resources>

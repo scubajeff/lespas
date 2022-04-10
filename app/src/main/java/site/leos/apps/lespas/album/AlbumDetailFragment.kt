@@ -107,6 +107,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
+    private var mediaRenameAction: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
 
@@ -296,6 +297,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         val selectionSize = selectionTracker.selection.size()
 
                         snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled && !Tools.isMediaPlayable(mAdapter.getPhotoBy(selectionTracker.selection.first()).mimeType)
+                        // Not allow to change name for not yet uploaded photo TODO make it possible
+                        mediaRenameAction?.isVisible = selectionSize == 1 && mAdapter.getPhotoBy(selectionTracker.selection.first()).eTag != Photo.ETAG_NOT_YET_UPLOADED
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
@@ -466,39 +469,49 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         // Rename result handler
-        parentFragmentManager.setFragmentResultListener(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { key, bundle->
-            if (key == AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME) {
-                bundle.getString(AlbumRenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
-                    with(sharedByMe.with.isNotEmpty()) {
-                        actionModel.renameAlbum(album.id, album.name, newName, this)
+        parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle->
+            bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
+                when(bundle.getInt(RenameDialogFragment.REQUEST_TYPE)) {
+                    RenameDialogFragment.REQUEST_TYPE_ALBUM -> {
+                        with(sharedByMe.with.isNotEmpty()) {
+                            actionModel.renameAlbum(album.id, album.name, newName, this)
 
-                        // Nextcloud server won't propagate folder name changes to shares for a reason, see https://github.com/nextcloud/server/issues/2063
-                        // In our case, I think it's a better UX to do it because name is a key aspect of album, so...
-                        // TODO What if sharedByMe is not available when working offline
-                        if (this) publishModel.renameShare(sharedByMe, newName)
+                            // Nextcloud server won't propagate folder name changes to shares for a reason, see https://github.com/nextcloud/server/issues/2063
+                            // In our case, I think it's a better UX to do it because name is a key aspect of album, so...
+                            // TODO What if sharedByMe is not available when working offline
+                            if (this) publishModel.renameShare(sharedByMe, newName)
+                        }
+
+                        // Set title to new name
+                        (activity as? AppCompatActivity)?.supportActionBar?.title = newName
+                        album.name = newName
                     }
-
-                    // Set title to new name
-                    (activity as? AppCompatActivity)?.supportActionBar?.title = newName
-                    album.name = newName
-                }
-            }
-        }
-
-        // Confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
-                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                    DELETE_REQUEST_KEY-> {
-                        if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
-                            val photos = mutableListOf<Photo>()
-                            for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
-                            if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
+                    RenameDialogFragment.REQUEST_TYPE_PHOTO -> {
+                        mAdapter.getPhotoBy(selectionTracker.selection.first()).let { photo ->
+                            val newFileName = photo.name.substringAfterLast('.').let { ext ->
+                                if (ext.isNotEmpty()) "${newName}.${ext}" else newName
+                            }
+                            actionModel.renamePhoto(photo, album, newFileName)
                         }
                         selectionTracker.clearSelection()
                     }
-                    STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, true))
+                    else -> {}
                 }
+            } ?: run { selectionTracker.clearSelection() }
+        }
+
+        // Confirm dialog result handler
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                DELETE_REQUEST_KEY-> {
+                    if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
+                        val photos = mutableListOf<Photo>()
+                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
+                        if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
+                    }
+                    selectionTracker.clearSelection()
+                }
+                STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, true))
             }
         }
     }
@@ -590,7 +603,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
                         // name check should include hidden ones
                         it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
-                        if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) AlbumRenameDialogFragment.newInstance(album.name, names).show(parentFragmentManager, RENAME_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
                     }
                 }
                 true
@@ -652,6 +665,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         mode?.menuInflater?.inflate(R.menu.album_detail_actions_mode, menu)
 
         snapseedEditAction = menu.findItem(R.id.snapseed_edit)
+        mediaRenameAction = menu.findItem(R.id.rename_media)
 
         // Disable snapseed edit action menu if Snapseed is not installed, update snapseed action menu icon too
         with(PreferenceManager.getDefaultSharedPreferences(context)) {
@@ -710,6 +724,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(rp, album.id, true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 } else shareOut(false, SHARE_TO_LESPAS)
+
+                true
+            }
+            R.id.rename_media -> {
+                mutableListOf<String>().let { names ->
+                    mAdapter.currentList.let { photos -> for (i in 1 until photos.size) { names.add(photos[i].name.substringBeforeLast('.')) }}
+                    if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null)
+                        RenameDialogFragment.newInstance(mAdapter.getPhotoBy(selectionTracker.selection.first()).name.substringBeforeLast('.'), names, RenameDialogFragment.REQUEST_TYPE_PHOTO).show(parentFragmentManager, RENAME_DIALOG)
+                }
 
                 true
             }
@@ -977,7 +1000,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         }
                     }
 
-                    tvTitle?.text = photo.name
+                    tvTitle?.text = photo.name.substringBeforeLast('.')
 
                     ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isSelected) View.VISIBLE else View.GONE
                 }
@@ -1018,23 +1041,28 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun setAlbum(album: AlbumWithPhotos) {
-            this.album = album.album
-            isWideList = Tools.isWideListAlbum(this.album)
-            mutableListOf<Photo>().let { photos ->
-                photos.addAll(
-                    when (album.album.sortOrder) {
-                        Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
-                        Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                        Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-                        Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
-                        else -> album.photos
-                    }
-                )
-                // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
-                // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
-                // set albumId to album's name, so that album name changes can be updated
-                album.album.run { photos.add(0, album.photos.find { it.name == album.album.coverFileName }!!.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
-                submitList(photos)
+            // Find cover photo first, since after cover photo being renamed, several database changes will be triggered and a miss-match will happen
+            album.photos.find { it.name == album.album.coverFileName }?.let { coverPhoto ->
+                this.album = album.album
+                isWideList = Tools.isWideListAlbum(this.album)
+
+                mutableListOf<Photo>().let { photos ->
+                    // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+                    // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
+                    // set albumId to album's name, so that album name changes can be updated
+                    album.album.run { photos.add(coverPhoto.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
+
+                    photos.addAll(
+                        when (album.album.sortOrder) {
+                            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
+                            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
+                            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+                            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                            else -> album.photos
+                        }
+                    )
+                    submitList(photos)
+                }
             }
         }
 

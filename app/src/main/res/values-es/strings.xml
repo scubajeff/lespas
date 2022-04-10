@@ -13,7 +13,7 @@
     <string name="fab_add_photos">Agregar fotos</string>
     <string name="confirm_delete">¿Estás seguro de borrar?</string>
     <string name="yes_delete">Sí, borrar</string>
-    <string name="rename_to">Cambiar el nombre del álbum a</string>
+    <string name="rename_album">Cambiar el nombre del álbum a</string>
     <string name="total_photo">Fotos: %1$d</string>
     <string name="duration_days">Días: %1$d</string>
     <string name="duration_weeks">Semanas: %1$d</string>
@@ -54,7 +54,7 @@
     <string name="invalid_character_found">El separador de caminos \'\\\' \'/\' no está permitido</string>
     <string name="invalid_name_found">Nombre no permitido</string>
     <string name="name_too_long">El nombre es demasiado largo.</string>
-    <string name="album_existed">El álbum ya existía</string>
+    <string name="name_existed">El nombre ya existe</string>
     <string name="leading_dots_found">El prefijo \'.\' no está permitido</string>
     <string name="preparing_files">Preparando fotos</string>
     <string name="preparing_files_progress">Preparando fotos %1$d de %2$d</string>
@@ -209,5 +209,7 @@
     <string name="chinese_map_summary">Todas las aplicaciones de mapas de China utilizan un único sistema de coordenadas.</string>
     <string name="map_header">Mapa</string>
     <string name="msg_server_operation">Las fotos aparecerán en el álbum de destino después de la sincronización con el servidor.</string>
-    <string name="item_wide_list">Mostrar título</string>
+    <string name="item_wide_list">Mostrar nombre</string>
+    <string name="action_rename_media">Renombrar</string>
+    <string name="rename_media">Nuevo nombre</string>
 </resources>

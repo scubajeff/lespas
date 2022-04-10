@@ -185,4 +185,7 @@ abstract class AlbumDao: BaseDao<Album>() {
     abstract fun enableWideList(albumId: String)
     @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - 100 WHERE id = :albumId")
     abstract fun disableWideList(albumId: String)
+
+    @Query("UPDATE  ${Album.TABLE_NAME} SET coverFileName = :newCoverFileName WHERE id = :albumId")
+    abstract fun changeCoverFileName(albumId: String, newCoverFileName: String)
 }

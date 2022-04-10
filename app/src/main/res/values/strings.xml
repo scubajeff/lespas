@@ -56,7 +56,8 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Are you sure you want to delete?</string>
     <string name="yes_delete">Yes, delete</string>
-    <string name="rename_to">Change album name to</string>
+    <string name="rename_album">Change album name to</string>
+    <string name="rename_media">New name</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Days: %1$d</string>
     <string name="duration_weeks">Weeks: %1$d</string>
@@ -202,7 +203,7 @@
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>
-    <string name="album_existed">Album already exists</string>
+    <string name="name_existed">Name already exists</string>
     <string name="leading_dots_found">Prefix \'.\' not allowed</string>
 
     <!-- Acquiring DialogFragment -->
@@ -251,13 +252,14 @@
     <string name="item_datedesc">Date Descending</string>
     <string name="item_nameasc">Name Ascending</string>
     <string name="item_namedesc">Name Descending</string>
-    <string name="item_wide_list">Show title</string>
+    <string name="item_wide_list">Show name</string>
     <string name="action_share">Share</string>
     <string name="action_remove">Remove</string>
     <string name="action_hide">Hide</string>
     <string name="action_set_remote">Set as Remote</string>
     <string name="action_set_local">Set as Local</string>
     <string name="action_reuse">To album…</string>
+    <string name="action_rename_media">Rename</string>
     <string name="action_select_all">Select all</string>
     <string name="selected_count">%1$d selected</string>
 

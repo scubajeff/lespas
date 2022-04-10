@@ -132,6 +132,12 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+    fun renamePhoto(photo: Photo, album: Album, newName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            actionRepository.addAction(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, photo.name, newName, System.currentTimeMillis(), 1))
+        }
+    }
+
     fun updateCover(albumId: String, cover: Cover) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.setCover(albumId, cover)
@@ -166,11 +172,13 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+/*
     fun refreshAlbumList() {
         viewModelScope.launch(Dispatchers.IO) {
             actionRepository.addAction(Action(null, Action.ACTION_REFRESH_ALBUM_LIST, "", "", "", "", System.currentTimeMillis(), 1))
         }
     }
+*/
 
     fun updateBGM(albumName: String, mimeType: String, bgmFileName: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_BGM, mimeType, albumName, bgmFileName, bgmFileName, System.currentTimeMillis(), 1)) }}
     fun removeBGM(albumName: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_DELETE_ALBUM_BGM, "", albumName, "", "", System.currentTimeMillis(), 1)) }}

@@ -40,6 +40,7 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
@@ -624,8 +625,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 // Album content meta needs update
                                 contentMetaUpdatedNeeded.add(changedAlbum.name)
 
+                                // Parsing new filename for dataTaken string of yyyyMMddHHmmss or yyyyMMdd_HHmmss
+                                Tools.parseFileName(remotePhoto.name)?.let { try { photoRepository.updateDateTaken(remotePhotoId, LocalDateTime.parse(it, DateTimeFormatter.ofPattern(Tools.DATE_FORMAT_PATTERN))) } catch (e: Exception) {}}
+
                                 // If album's cover's filename changed on server
                                 if (remotePhotoId == changedAlbum.cover) {
+                                    albumRepository.changeCoverFileName(changedAlbum.id, remotePhoto.name)
                                     changedAlbum.coverFileName = remotePhoto.name
                                     metaUpdatedNeeded.add(changedAlbum.name)
                                 }

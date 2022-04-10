@@ -254,15 +254,17 @@ object Tools {
     // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
     private const val wechatPattern = "^mmexport([0-9]{10}).*"
     private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
-    private fun parseFileName(fileName: String): String? {
-        var matcher = Pattern.compile(wechatPattern).matcher(fileName)
-        @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-        return if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+    fun parseFileName(fileName: String): String? {
+        return try {
+            var matcher = Pattern.compile(wechatPattern).matcher(fileName)
+            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+            if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
                 if (matcher.matches()) matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }
                 else null
             }
+        } catch (e: Exception) { null }
     }
 
     private fun isUnknown(date: String?): Boolean {

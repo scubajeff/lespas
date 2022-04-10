@@ -11,7 +11,7 @@
     <string name="network_error">網絡異常，請稍後再試</string>
     <string name="fab_add_photos">添加照片</string>
     <string name="confirm_delete">您確定執行此項操作嗎？</string>
-    <string name="rename_to">更改相冊名</string>
+    <string name="rename_album">更改相冊名</string>
     <string name="total_photo">%1$d張相</string>
     <string name="duration_days">行程%1$d日</string>
     <string name="duration_weeks">行程%1$d個禮拜</string>
@@ -38,7 +38,7 @@
     <string name="invalid_character_found">禁止使用目錄符號\'\\\'或\'/\'</string>
     <string name="invalid_name_found">不允許使用該名字</string>
     <string name="name_too_long">名字過長</string>
-    <string name="album_existed">同名相冊已存在</string>
+    <string name="name_existed">該名字已存在</string>
     <string name="leading_dots_found">唔允許在名字前添加符號\'.\'</string>
     <string name="preparing_files">正在處理照片</string>
     <string name="preparing_files_progress">正在處理%2$d張照片中的第%1$d張</string>
@@ -209,5 +209,7 @@
     <string name="chinese_map_summary">大陸地圖App採用獨特坐標系統。</string>
     <string name="map_header">地圖</string>
     <string name="msg_server_operation">與伺服器實現同步後，照片才會在目標相冊中出現。</string>
-    <string name="item_wide_list">顯示標題</string>
+    <string name="item_wide_list">顯示名稱</string>
+    <string name="action_rename_media">改名</string>
+    <string name="rename_media">新名字</string>
 </resources>

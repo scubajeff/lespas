@@ -34,4 +34,5 @@ class AlbumRepository(application: Application){
     fun fixBGM(albumId: String, bgmId: String, bgmETag: String) { albumDao.fixBGM(albumId, bgmId, bgmETag) }
     fun getAllAlbumAttribute(): List<IDandAttribute> = albumDao.getAllAlbumAttribute()
     fun setWideList(albumId: String, wideList: Boolean) { if (wideList) albumDao.enableWideList(albumId) else albumDao.disableWideList(albumId) }
+    fun changeCoverFileName(albumId: String, newCoverFileName: String) { albumDao.changeCoverFileName(albumId, newCoverFileName) }
 }
