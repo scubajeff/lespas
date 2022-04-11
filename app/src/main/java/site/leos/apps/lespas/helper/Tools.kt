@@ -814,12 +814,10 @@ object Tools {
         }
 
         return when(albumSortOrder) {
-            Album.BY_DATE_TAKEN_ASC-> result.sortedWith(compareBy { it.dateTaken })
-            Album.BY_DATE_TAKEN_DESC-> result.sortedWith(compareByDescending { it.dateTaken })
-            Album.BY_NAME_ASC-> result.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-            Album.BY_NAME_DESC-> result.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
-            Album.BY_DATE_MODIFIED_ASC-> result.sortedWith(compareBy { it.lastModified })
-            Album.BY_DATE_MODIFIED_DESC-> result.sortedWith(compareByDescending { it.lastModified })
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortedWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortedWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
             else -> result
         }
     }

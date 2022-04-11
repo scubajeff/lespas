@@ -97,8 +97,6 @@ class LocationResultByLocalitiesFragment: Fragment() {
             }
 
             resultAdapter.submitList(items.sortedWith(compareBy<LocationSearchHostFragment.LocationSearchResult, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.country }.then(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.locality })))
-            //resultAdapter.submitList(items.sortedWith(compareBy({ it.country }, { it.locality })))
-            //resultAdapter.submitList(result.map { it.copy() }.sortedWith(compareBy({it.country}, {it.locality})))
         }
     }
 
