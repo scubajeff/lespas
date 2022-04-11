@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.publication.NCShareViewModel
+import java.text.Collator
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -95,7 +96,8 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality))
             }
 
-            resultAdapter.submitList(items.sortedWith(compareBy({ it.country }, { it.locality })))
+            resultAdapter.submitList(items.sortedWith(compareBy<LocationSearchHostFragment.LocationSearchResult, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.country }.then(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.locality })))
+            //resultAdapter.submitList(items.sortedWith(compareBy({ it.country }, { it.locality })))
             //resultAdapter.submitList(result.map { it.copy() }.sortedWith(compareBy({it.country}, {it.locality})))
         }
     }
