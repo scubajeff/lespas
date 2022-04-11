@@ -278,9 +278,9 @@ class NCLoginFragment: Fragment() {
                                 try {
                                     response.body?.string()?.let { json ->
                                         JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
-                                            try { theming.color = Color.parseColor(getString("color")) } catch (e: java.lang.Exception) {}
-                                            try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: java.lang.Exception) {}
-                                            try { theming.slogan = getString("slogan") } catch (e: java.lang.Exception) {}
+                                            try { theming.color = Color.parseColor(getString("color")) } catch (e: Exception) {}
+                                            try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: Exception) {}
+                                            try { theming.slogan = getString("slogan") } catch (e: Exception) {}
 /*
                                             OkHttpClient.Builder().apply {
                                                 if (acceptSelfSign) hostnameVerifier { _, _ -> true }
