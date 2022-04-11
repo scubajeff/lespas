@@ -64,6 +64,7 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.text.Collator
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -744,8 +745,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     when (sortOrder) {
                         Album.BY_DATE_TAKEN_ASC -> sourceList.sortedWith(compareBy { it.endDate })
                         Album.BY_DATE_TAKEN_DESC -> sourceList.sortedWith(compareByDescending { it.endDate })
-                        Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-                        Album.BY_NAME_DESC -> sourceList.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                        Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                        Album.BY_NAME_DESC -> sourceList.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
                         else -> sourceList
                     }
                 )

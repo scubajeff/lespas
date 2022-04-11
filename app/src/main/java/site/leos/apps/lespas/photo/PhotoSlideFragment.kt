@@ -55,6 +55,7 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
+import java.text.Collator
 import java.util.*
 import kotlin.math.atan2
 
@@ -646,8 +647,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             val photos = when(sortOrder) {
                 Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE-> collection.sortedWith(compareBy { it.dateTaken })
                 Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE-> collection.sortedWith(compareByDescending { it.dateTaken })
-                Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE-> collection.sortedWith(compareBy { it.name })
-                Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE-> collection.sortedWith(compareByDescending { it.name })
+                Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE-> collection.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE-> collection.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
                 else-> collection
             }
 

@@ -62,6 +62,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
 import java.lang.Runnable
+import java.text.Collator
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -1056,8 +1057,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         when (album.album.sortOrder) {
                             Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
                             Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
-                            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name })
+                            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
                             else -> album.photos
                         }
                     )
