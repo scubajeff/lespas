@@ -275,27 +275,27 @@ class NCLoginFragment: Fragment() {
 
                         httpCall?.execute()?.use { response ->
                             if (response.isSuccessful) {
-                                response.body?.string()?.let { json ->
-                                    JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
-                                        try { theming.color = Color.parseColor(getString("color")) } catch (e: java.lang.Exception) {}
-                                        try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: java.lang.Exception) {}
-                                        try { theming.slogan = getString("slogan") } catch (e: java.lang.Exception) {}
+                                try {
+                                    response.body?.string()?.let { json ->
+                                        JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
+                                            try { theming.color = Color.parseColor(getString("color")) } catch (e: java.lang.Exception) {}
+                                            try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: java.lang.Exception) {}
+                                            try { theming.slogan = getString("slogan") } catch (e: java.lang.Exception) {}
 /*
-                                        OkHttpClient.Builder().apply {
-                                            if (acceptSelfSign) hostnameVerifier { _, _ -> true }
-                                            readTimeout(20, TimeUnit.SECONDS)
-                                            writeTimeout(20, TimeUnit.SECONDS)
-                                        }.build().newCall(Request.Builder().url(getString("logo")).build()).execute().use { source ->
-                                            File()
-                                        }
+                                            OkHttpClient.Builder().apply {
+                                                if (acceptSelfSign) hostnameVerifier { _, _ -> true }
+                                                readTimeout(20, TimeUnit.SECONDS)
+                                                writeTimeout(20, TimeUnit.SECONDS)
+                                            }.build().newCall(Request.Builder().url(getString("logo")).build()).execute().use { source ->
+                                                File()
+                                            }
 */
+                                        }
                                     }
-                                }
+                                } catch (e: JSONException) {}
                             }
                             response.code
                         } ?: 999
-                    } catch (e: JSONException) {
-                        999
                     } catch (e: SSLPeerUnverifiedException) {
                         // This certificate is issued by user installed CA, let user decided whether to trust it or not
                         998
