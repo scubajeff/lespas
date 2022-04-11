@@ -212,4 +212,6 @@
     <string name="item_wide_list">Afficher le nom</string>
     <string name="action_rename_media">Renommer</string>
     <string name="rename_media">Nouveau nom</string>
+    <string name="nearby_convergence_title">Convergence automatique des photos proches</string>
+    <string name="nearby_convergence_summary">Lors de la lecture d\'un diaporama sur une carte, les photos convergent vers celles qui sont proches et qui ont des coordonnées GPS.</string>
 </resources>

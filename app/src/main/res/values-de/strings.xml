@@ -264,4 +264,6 @@
     <string name="item_wide_list">Name anzeigen</string>
     <string name="action_rename_media">Umbenennen</string>
     <string name="rename_media">Neuer Name</string>
+    <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>
+    <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
 </resources>

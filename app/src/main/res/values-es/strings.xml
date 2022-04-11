@@ -212,4 +212,6 @@
     <string name="item_wide_list">Mostrar nombre</string>
     <string name="action_rename_media">Renombrar</string>
     <string name="rename_media">Nuevo nombre</string>
+    <string name="nearby_convergence_title">Convergencia automática de fotos cercanas</string>
+    <string name="nearby_convergence_summary">Al reproducir el pase de diapositivas en el mapa, las fotos convergen en la más cercana que tenga coordenadas GPS.</string>
 </resources>

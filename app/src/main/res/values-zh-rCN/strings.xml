@@ -212,4 +212,6 @@
     <string name="item_wide_list">显示名称</string>
     <string name="action_rename_media">改名</string>
     <string name="rename_media">新名字</string>
+    <string name="nearby_convergence_title">自动归集附近照片</string>
+    <string name="nearby_convergence_summary">在地图上播放旅程时，自动将照片归集到附近的有GPS坐标的照片上。</string>
 </resources>

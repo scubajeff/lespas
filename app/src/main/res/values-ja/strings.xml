@@ -212,4 +212,6 @@
     <string name="item_wide_list">名前を表示</string>
     <string name="action_rename_media">リネーム</string>
     <string name="rename_media">新名称</string>
+    <string name="nearby_convergence_title">近くの写真を自動収束</string>
+    <string name="nearby_convergence_summary">地図上でスライドショーを再生すると、GPS座標を持つ近くの写真に収束します。</string>
 </resources>
