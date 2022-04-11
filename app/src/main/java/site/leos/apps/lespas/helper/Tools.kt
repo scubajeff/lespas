@@ -39,10 +39,7 @@ import java.io.InputStream
 import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.text.CharacterIterator
-import java.text.DecimalFormat
-import java.text.SimpleDateFormat
-import java.text.StringCharacterIterator
+import java.text.*
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -254,15 +251,17 @@ object Tools {
     // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
     private const val wechatPattern = "^mmexport([0-9]{10}).*"
     private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
-    private fun parseFileName(fileName: String): String? {
-        var matcher = Pattern.compile(wechatPattern).matcher(fileName)
-        @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-        return if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+    fun parseFileName(fileName: String): String? {
+        return try {
+            var matcher = Pattern.compile(wechatPattern).matcher(fileName)
+            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+            if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
                 if (matcher.matches()) matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }
                 else null
             }
+        } catch (e: Exception) { null }
     }
 
     private fun isUnknown(date: String?): Boolean {
@@ -617,6 +616,7 @@ object Tools {
 
     fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
+    fun isWideListAlbum(album: Album): Boolean = album.sortOrder in 100..200
 
     private const val PI = 3.1415926535897932384626
     private const val EE = 0.00669342162296594323
@@ -720,10 +720,10 @@ object Tools {
             }
         }
         when (sortOrder) {
-            Album.BY_NAME_ASC -> result.sortWith(compareBy { it.photo.name })
-            Album.BY_NAME_DESC -> result.sortWith(compareByDescending { it.photo.name })
-            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
-            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.dateTaken })
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
         }
 
         return result

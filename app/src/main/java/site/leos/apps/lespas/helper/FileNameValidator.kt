@@ -7,7 +7,7 @@ import com.google.android.material.textfield.TextInputEditText
 import site.leos.apps.lespas.R
 import java.util.regex.Pattern
 
-class AlbumNameValidator(private val edittext: TextInputEditText, private val usedName: ArrayList<String>): TextWatcher {
+class FileNameValidator(private val edittext: TextInputEditText, private val usedName: ArrayList<String>): TextWatcher {
     private val slashesPattern =  Pattern.compile("[^\\\\/]+\\z")
     private val devPattern = Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![.])\\z")
     private val leadingDotPattern = Pattern.compile("^\\..*")
@@ -24,7 +24,7 @@ class AlbumNameValidator(private val edittext: TextInputEditText, private val us
             !slashesPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.invalid_character_found)
             leadingDotPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.leading_dots_found)
             !devPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.invalid_name_found)
-            txt in usedName -> edittext.error = context.getString(R.string.album_existed)
+            txt in usedName -> edittext.error = context.getString(R.string.name_existed)
         }
     }
 }

@@ -85,7 +85,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        view.findViewById<RecyclerView>(R.id.photogrid)?.apply {
+        view.findViewById<RecyclerView>(R.id.photo_grid)?.apply {
             adapter = photoAdapter
             ViewCompat.setTransitionName(this, locality)
         }

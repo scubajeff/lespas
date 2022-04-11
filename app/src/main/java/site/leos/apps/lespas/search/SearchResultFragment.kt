@@ -101,7 +101,7 @@ class SearchResultFragment : Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        searchResultRecyclerView = view.findViewById(R.id.photogrid)
+        searchResultRecyclerView = view.findViewById(R.id.photo_grid)
         searchResultRecyclerView.adapter = searchResultAdapter
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 

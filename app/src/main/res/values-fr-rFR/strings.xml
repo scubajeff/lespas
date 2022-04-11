@@ -12,7 +12,7 @@
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
     <string name="fab_add_photos">Ajouter des photos</string>
     <string name="confirm_delete">Êtes-vous sûr de supprimer?</string>
-    <string name="rename_to">Changer le nom de l\'album en</string>
+    <string name="rename_album">Changer le nom de l\'album en</string>
     <string name="total_photo">Photos: %1$d</string>
     <string name="duration_days">Journées: %1$d</string>
     <string name="duration_weeks">Semaines: %1$d</string>
@@ -39,7 +39,7 @@
     <string name="invalid_character_found">Le séparateur de chemin \"\\\" \"/\" n\'est pas autorisé</string>
     <string name="invalid_name_found">Nom non autorisé</string>
     <string name="name_too_long">Nom trop long</string>
-    <string name="album_existed">L\'album existe déjà</string>
+    <string name="name_existed">Le nom existe déjà</string>
     <string name="leading_dots_found">Le préfixe \".\" n\'est pas autorisé</string>
     <string name="preparing_files">Préparation le photo</string>
     <string name="preparing_files_progress">Préparation le photo %1$d de %2$d</string>
@@ -209,4 +209,7 @@
     <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
     <string name="map_header">Carte</string>
     <string name="msg_server_operation">Les photos apparaîtront dans l\'album cible après la synchronisation avec le serveur.</string>
+    <string name="item_wide_list">Afficher le nom</string>
+    <string name="action_rename_media">Renommer</string>
+    <string name="rename_media">Nouveau nom</string>
 </resources>

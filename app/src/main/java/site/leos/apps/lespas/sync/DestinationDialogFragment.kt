@@ -44,7 +44,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
-import site.leos.apps.lespas.helper.AlbumNameValidator
+import site.leos.apps.lespas.helper.FileNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
@@ -285,7 +285,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             })
 
             // Create new title validator dictionary with current album names
-            newAlbumTitleTextInputEditText.addTextChangedListener(AlbumNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album-> this.add(album.name)} }))
+            newAlbumTitleTextInputEditText.addTextChangedListener(FileNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album-> this.add(album.name)} }))
         })
     }
 

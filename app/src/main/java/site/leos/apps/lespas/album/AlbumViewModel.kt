@@ -45,4 +45,6 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
             photoRepository.setAsLocal(albumIds)
         }
     }
+
+    fun setWideList(albumId: String, wideList: Boolean) { viewModelScope.launch(Dispatchers.IO) { albumRepository.setWideList(albumId, wideList) }}
 }

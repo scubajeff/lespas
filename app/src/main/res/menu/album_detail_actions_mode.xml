@@ -23,6 +23,10 @@
         android:icon="@drawable/ic_baseline_snapseed_24"
         app:showAsAction="ifRoom" />
 
+    <item android:id="@+id/rename_media"
+        android:title="@string/action_rename_media"
+        app:showAsAction="never" />
+
     <item android:id="@+id/select_all"
         android:title="@string/action_select_all"
         android:icon="@drawable/ic_baseline_select_all_24"

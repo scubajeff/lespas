@@ -9,14 +9,13 @@
     tools:context="album.AlbumDetailFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/photogrid"
+        android:id="@+id/photo_grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="1dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="@integer/photo_grid_span_count"
         tools:ignore="RtlHardcoded,RtlSymmetry"
-        tools:listitem="@layout/recyclerview_item_photo" />
+        tools:listitem="@layout/recyclerview_item_photo"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/date_indicator"

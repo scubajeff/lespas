@@ -32,7 +32,7 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Sind Sie sicher, dass Sie löschen wollen?</string>
     <string name="yes_delete">Ja, löschen!</string>
-    <string name="rename_to">Album umbenennen in</string>
+    <string name="rename_album">Album umbenennen in</string>
     <string name="total_photo">Fotos: %1$d</string>
     <string name="duration_days">Tage: %1$d</string>
     <string name="duration_weeks">Wochen: %1$d</string>
@@ -125,7 +125,7 @@
     <string name="invalid_character_found">Die Zeichen \'\\\' \'/\' sind im Namen nicht erlaubt.</string>
     <string name="invalid_name_found">Name nicht erlaubt</string>
     <string name="name_too_long">Name zu lang</string>
-    <string name="album_existed">Album existiert bereits</string>
+    <string name="name_existed">Name existiert bereits</string>
     <string name="leading_dots_found">Präfix \'.\' nicht erlaubt</string>
 
     <!-- Acquiring DialogFragment -->
@@ -261,4 +261,7 @@
     <string name="chinese_map_summary">Alle Kartenanwendungen in China verwenden ein einheitliches Koordinatensystem.</string>
     <string name="map_header">Karte</string>
     <string name="msg_server_operation">Die Fotos werden nach der Synchronisierung mit dem Server im Zielalbum angezeigt.</string>
+    <string name="item_wide_list">Name anzeigen</string>
+    <string name="action_rename_media">Umbenennen</string>
+    <string name="rename_media">Neuer Name</string>
 </resources>

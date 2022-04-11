@@ -39,7 +39,7 @@
     <!-- AlbumDetail fragment -->
     <string name="confirm_delete">Tem certeza que quer excluir?</string>
     <string name="yes_delete">Sim, excluir</string>
-    <string name="rename_to">Mudar nome do álbum para</string>
+    <string name="rename_album">Mudar nome do álbum para</string>
     <string name="total_photo">Fotos: %1$d</string>
     <string name="duration_days">Dias: %1$d</string>
     <string name="duration_weeks">Semanas: %1$d</string>
@@ -154,7 +154,7 @@
     <string name="invalid_character_found">"Separador de caminho '\\' '/' não permitido nos nomes de arquivo"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Nome não permitido</string>
     <string name="name_too_long">Nome muito longo</string>
-    <string name="album_existed">Álbum já existe</string>
+    <string name="name_existed">O nome já existe</string>
     <string name="leading_dots_found">Prefixo \'.\' não permitido</string>
 
     <!-- Acquiring DialogFragment -->
@@ -271,4 +271,7 @@
     <string name="chinese_map_summary">Todas as aplicações de mapas da China utilizam um sistema de coordenadas único.</string>
     <string name="map_header">Mapa</string>
     <string name="msg_server_operation">As fotos aparecerão no álbum de destino após a sincronização com o servidor.</string>
+    <string name="item_wide_list">Mostrar nome</string>
+    <string name="action_rename_media">Renomear</string>
+    <string name="rename_media">Novo nome</string>
 </resources>
