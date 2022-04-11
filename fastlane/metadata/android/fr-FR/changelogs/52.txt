@@ -1,0 +1,5 @@
+* Correction du problème de connexion avec les instances Nextcloud qui ne prennent pas en charge la thématisation par défaut.
+* Une nouvelle disposition des détails peut être choisie pour afficher le nom de fichier du média, utile pour l'album de collection vidéo.
+* Nouvelle fonction de renommage des médias. Peut être utilisé pour changer la date de prise de photo aussi si le nom contient un modèle comme 'yyyyMMddHHmmss' ou 'yyyyMMdd_HHmmss'.
+* Nouvelle option pour faire converger les photos proches lors de la lecture du diaporama sur la carte.
+* Autres améliorations et corrections de bugs

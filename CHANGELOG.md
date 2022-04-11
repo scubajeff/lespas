@@ -1,3 +1,9 @@
+## Version 2.5.5
+* Fixed login problem with Nextcloud instances which does not support theming by default
+* New detail layout can be choosed to display media filename, useful for video collection album
+* New media rename function. Can be used to change photo taken date too if name contains pattern like 'yyyyMMddHHmmss' or 'yyyyMMdd_HHmmss'
+* New option to converge nearby photos when playing slideshow on map
+
 ## Version 2.5.4
 * Fixed bugs halting sync process when upgrading from release 2.4.x
 * When copying/moving photos to Joint Album or remote album, file operations are carried out on server only

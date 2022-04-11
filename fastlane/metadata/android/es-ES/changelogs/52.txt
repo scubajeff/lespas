@@ -1,0 +1,5 @@
+* Corregido el problema de inicio de sesión con las instancias de Nextcloud que no soportan la tematización por defecto
+* Nuevo diseño de detalle que puede ser elegido para mostrar el nombre del archivo de los medios de comunicación, útil para el álbum de la colección de vídeo
+* Nueva función de cambio de nombre de los medios de comunicación. Se puede utilizar para cambiar la fecha de la foto si el nombre contiene un patrón como 'aaaaMMddHHmmss' o 'aaaaMMdd_HHmmss'.
+* Nueva opción para hacer converger las fotos cercanas cuando se reproduce la presentación en el mapa
+* Otras mejoras y correcciones de errores

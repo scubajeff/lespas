@@ -1,0 +1,5 @@
+* Corrigido o problema de login com as instâncias Nextcloud que não suporta a temática por padrão.
+* Novo layout de detalhes pode ser escolhido para exibir o nome do arquivo de mídia, útil para o álbum de coleção de vídeo
+* Nova função de renomear a mídia. Pode ser usado para mudar a data da foto tirada também se o nome contiver padrão como 'yyyyyMMddHHmmss' ou 'yyyyyMMdd_HHHmmss'.
+* Nova opção para convergir fotos nas proximidades ao reproduzir slideshow no mapa
+* Outras melhorias e correções de bugs

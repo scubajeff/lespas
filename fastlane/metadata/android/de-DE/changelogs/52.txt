@@ -1,0 +1,5 @@
+* Login-Problem mit Nextcloud-Instanzen behoben, die standardmäßig kein Theming unterstützen
+* Neues Detail-Layout kann gewählt werden, um den Dateinamen der Medien anzuzeigen, nützlich für Video-Sammelalbum
+* Neue Funktion zum Umbenennen von Medien. Kann auch zum Ändern des Aufnahmedatums verwendet werden, wenn der Name ein Muster wie 'yyyyMMddHHmmss' oder 'yyyyMMdd_HHmmss' enthält.
+* Neue Option zum Zusammenführen von Fotos in der Nähe beim Abspielen der Diashow auf der Karte
+* Weitere Verbesserungen und Fehlerkorrekturen

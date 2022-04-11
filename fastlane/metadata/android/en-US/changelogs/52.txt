@@ -1,0 +1,5 @@
+* Fixed login problem with Nextcloud instances which does not support theming by default
+* New detail layout can be choosed to display media filename, useful for video collection album
+* New media rename function. Can be used to change photo taken date too if name contains pattern like 'yyyyMMddHHmmss' or 'yyyyMMdd_HHmmss'
+* New option to converge nearby photos when playing slideshow on map
+* Other improvements and bugs fixes
