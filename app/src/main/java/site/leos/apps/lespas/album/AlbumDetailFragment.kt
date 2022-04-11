@@ -116,11 +116,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var lespasPath: String
 
+    private lateinit var sp: SharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setHasOptionsMenu(true)
 
+        sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
         album = arguments?.getParcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
         lespasPath = getString(R.string.lespas_base_folder_name)
@@ -181,7 +184,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
-                    if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
+                    if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
                             unregisterContentObserver(snapseedOutputObserver)
                             registerContentObserver(
@@ -217,7 +220,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
                             if (workInfo != null) {
                                 // If replace original is on, remove old bitmaps from cache and take care of cover too
-                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                     imageLoaderModel.invalidPhoto(sharedPhoto.id)
                                     // Update cover if needed, cover id can be found only in adapter
                                     mAdapter.updateCover(sharedPhoto)
@@ -521,10 +524,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
-            stripExif = getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
-            isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
-        }
+        stripExif = sp.getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
+        isSnapseedEnabled = sp.getBoolean(getString(R.string.snapseed_pref_key), false)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -645,7 +646,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(album, mAdapter.getPhotoWithCoordinate()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(
+                    R.id.container_root,
+                    PhotosInMapFragment.newInstance(album, Tools.getPhotosWithCoordinate(mAdapter.currentList, sp.getBoolean(getString(R.string.nearby_convergence_pref_key), true), album.sortOrder)),
+                    PhotosInMapFragment::class.java.canonicalName
+                ).addToBackStack(null).commit()
                 true
             }
             R.id.option_menu_bgm-> {
@@ -669,18 +674,16 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         mediaRenameAction = menu.findItem(R.id.rename_media)
 
         // Disable snapseed edit action menu if Snapseed is not installed, update snapseed action menu icon too
-        with(PreferenceManager.getDefaultSharedPreferences(context)) {
-            isSnapseedEnabled = getBoolean(getString(R.string.snapseed_pref_key), false)
-            snapseedEditAction?.isVisible = isSnapseedEnabled
+        isSnapseedEnabled = sp.getBoolean(getString(R.string.snapseed_pref_key), false)
+        snapseedEditAction?.isVisible = isSnapseedEnabled
 
-            if (isSnapseedEnabled) {
-                if (getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
-                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_24)
-                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_replace)
-                } else {
-                    snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24)
-                    snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_add)
-                }
+        if (isSnapseedEnabled) {
+            if (sp.getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_24)
+                snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_replace)
+            } else {
+                snapseedEditAction?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24)
+                snapseedEditAction?.title = getString(R.string.button_text_edit_in_snapseed_add)
             }
         }
 
@@ -1083,12 +1086,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
-        internal fun getPhotoWithCoordinate(): List<Photo> {
-            return mutableListOf<Photo>().apply {
-                currentList.forEach { if (it.latitude != Photo.NO_GPS_DATA && !Tools.isMediaPlayable(it.mimeType)) add(it) }
-                toList()
-            }
-        }
 
         class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)

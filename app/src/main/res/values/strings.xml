@@ -173,6 +173,9 @@
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
     <string name="chinese_map_title">Use Chinese Map App</string>
     <string name="chinese_map_summary">All map apps of China use an unique coordinate system.</string>
+    <string name="nearby_convergence_pref_key" translatable="false">NEARBY_CONVERGENCE</string>
+    <string name="nearby_convergence_title">Auto convergence of nearby photos</string>
+    <string name="nearby_convergence_summary">When playing slideshow on map, convergent photos to the nearby one which has GPS coordinate.</string>
 
     <string name="account_header">Account</string>
     <string name="relogin_pref_key" translatable="false">RELOGIN</string>

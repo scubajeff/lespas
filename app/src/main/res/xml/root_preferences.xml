@@ -150,6 +150,12 @@
             app:summary="@string/chinese_map_summary"
             app:singleLineTitle="false"
             app:defaultValue="false" />
+        <SwitchPreferenceCompat
+            app:key="@string/nearby_convergence_pref_key"
+            app:title="@string/nearby_convergence_title"
+            app:summary="@string/nearby_convergence_summary"
+            app:singleLineTitle="false"
+            app:defaultValue="true" />
     </PreferenceCategory>
 
     <PreferenceCategory
