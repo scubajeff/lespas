@@ -720,10 +720,10 @@ object Tools {
             }
         }
         when (sortOrder) {
-            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy { it.photo.name })
-            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.name })
-            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.dateTaken })
-            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.dateTaken })
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
         }
 
         return result
