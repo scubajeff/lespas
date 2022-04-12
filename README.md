@@ -58,6 +58,9 @@ I believe when someone start searching his/her memory for a moment in the past, 
 ### Why use folder but not tag to group photos?
 Les Pas uses folders to group photos on the server, e.g., each album in Les Pas app has a one-to-one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folders, and Nextcloud has it's own file tagging support too. But not every picture format supports tagging, that makes tagging picture file a feature that will heavily rely on platform specific functions. I would like my data (and yours too) to be platform neutral instead.
 
+### I have a hugh photo collection organized in nested folders, Les Pas only support a flat folder structure.
+Our user @steviehs make a cool <a href=https://gitlab.com/steviehs/stevemisc>script</a> to help you out.
+
 ### Why does Les Pas use a lot of storage space?
 If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br> 
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
