@@ -7,7 +7,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
 
 class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog) {
@@ -28,7 +27,6 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
             REQUEST_TYPE_PHOTO -> getString(R.string.rename_media)
             else -> ""
         }
-        view.findViewById<TextInputLayout>(R.id.rename_textinputlayout).requestFocus()
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {
             // Use append to move cursor to the end of text
             if (savedInstanceState == null) append(arguments?.getString(OLD_NAME))
@@ -50,6 +48,8 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
                 }
                 true
             }
+
+            requestFocus()
         }
     }
 

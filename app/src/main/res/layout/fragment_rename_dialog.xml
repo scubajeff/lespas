@@ -26,14 +26,12 @@
             tools:text="@string/rename_album" />
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/rename_textinputlayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/dialog_title_textview"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            android:padding="@dimen/small_padding"
             app:errorEnabled="true"
             style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
             app:boxStrokeColor="?attr/colorSecondaryVariant">
@@ -45,7 +43,9 @@
                 android:inputType="textAutoCorrect"
                 android:textCursorDrawable="@null"
                 android:maxLines="1"
-                android:imeOptions="actionGo" />
+                android:selectAllOnFocus="true"
+                android:imeOptions="actionGo"
+                tools:text="name"/>
         </com.google.android.material.textfield.TextInputLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>
