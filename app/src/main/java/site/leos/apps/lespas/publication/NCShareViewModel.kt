@@ -187,7 +187,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
                         if (getString("item_type") == "folder") {
-                            // Only interested in shares of subfolders under lespas/
                             folderId = getString("item_source")
                             permission = getInt("permissions")
                             result.find { existed -> existed.albumId == folderId }?.let { existed ->
@@ -198,18 +197,18 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     existed.sharedTime = getLong("stime")
                                 }
                             } ?: run {
-                                // New sharedWithMe entry
+                                // New sharedWithMe entry, cover, lastModified and sortOrder properties will be set in getAlbumMetaForShareWithMe()
                                 result.add(
                                     ShareWithMe(
-                                        getString("id"),
-                                        getString("file_target"),
-                                        folderId,
-                                        getString("path").substringAfterLast('/'),
-                                        getString("uid_owner"),
-                                        getString("displayname_owner"),
-                                        permission,
-                                        getLong("stime"),
-                                        Cover(Album.NO_COVER, 0, 0, 0, Album.NO_COVER, "", 0), Album.BY_DATE_TAKEN_ASC, 0L
+                                        shareId = getString("id"),
+                                        sharePath = getString("file_target"),
+                                        albumId = folderId,
+                                        albumName = getString("path").substringAfterLast('/'),
+                                        shareBy = getString("uid_owner"),
+                                        shareByLabel = getString("displayname_owner"),
+                                        permission = permission,
+                                        sharedTime = getLong("stime"),
+                                        cover = Cover(Album.NO_COVER, 0, 0, 0, Album.NO_COVER, "", 0), Album.BY_DATE_TAKEN_ASC, 0L
                                     )
                                 )
                             }
@@ -226,6 +225,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             e.printStackTrace()
         } catch (e: JSONException) {
             e.printStackTrace()
+        } catch (e: OkHttpWebDavException) {
+            Log.e(">>>>>>>>>>>>", "${e.statusCode} ${e.printStackTrace()}")
         }
     }
 
@@ -240,7 +241,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val lastModified = HashMap<String, Long>()
         val offset = OffsetDateTime.now().offset
         var sPath = "."     // A string that could never be a folder's name
-        shares.forEach { share ->
+        result.forEach { share ->
             share.sharePath.substringBeforeLast('/').apply {
                 if (this != sPath) {
                     sPath = this
@@ -250,8 +251,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
 
         // Retrieve share's meta data
-        val total = shares.size
-        shares.forEachIndexed { i, share ->
+        val total = result.size
+        result.forEachIndexed { i, share ->
             _shareWithMeProgress.value = ((i * 100.0) / total).toInt()
             share.lastModified = lastModified[share.albumId] ?: 0L
             try {
