@@ -16,6 +16,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
 import java.io.File
@@ -146,42 +147,52 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
             if (response.isSuccessful) {
-                val parser = XmlPullParserFactory.newInstance().newPullParser()
-                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
-                //parser.setInput(response.body!!.byteStream(), null)
-                parser.setInput(response.body!!.byteStream().bufferedReader())
+                try {
+                    val parser = XmlPullParserFactory.newInstance().newPullParser()
+                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+                    //parser.setInput(response.body!!.byteStream(), null)
+                    parser.setInput(response.body!!.byteStream().bufferedReader())
 
-                var res = DAVResource()
-                var text = ""
-                while (parser.next() != XmlPullParser.END_DOCUMENT) {
-                    when (parser.eventType) {
-                        XmlPullParser.START_TAG -> {
-                            when (parser.name) {
-                                RESPONSE_TAG -> res = DAVResource()
+                    var res = DAVResource()
+                    var text = ""
+                    while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                        when (parser.eventType) {
+                            XmlPullParser.START_TAG -> {
+                                when (parser.name) {
+                                    RESPONSE_TAG -> res = DAVResource()
+                                }
                             }
-                        }
-                        XmlPullParser.TEXT -> text = parser.text
-                        XmlPullParser.END_TAG -> {
-                            when (parser.name) {
-                                HREF_TAG -> res.name = URI(
-                                    if (text.endsWith('/')) {
-                                        res.isFolder = true
-                                        text.dropLast(1).substringAfterLast('/')
-                                    } else {
-                                        res.isFolder = false
-                                        text.substringAfterLast('/')
-                                    }).path
-                                OC_UNIQUE_ID -> res.fileId = text
-                                DAV_GETETAG -> res.eTag = text
-                                DAV_GETCONTENTTYPE -> res.contentType = text
-                                DAV_GETLASTMODIFIED -> res.modified = Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime()
-                                DAV_SHARE_TYPE -> res.isShared = true
-                                RESPONSE_TAG -> result.add(res)
-                                DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
+                            XmlPullParser.TEXT -> text = parser.text
+                            XmlPullParser.END_TAG -> {
+                                when (parser.name) {
+                                    HREF_TAG -> res.name = URI(
+                                        if (text.endsWith('/')) {
+                                            res.isFolder = true
+                                            text.dropLast(1).substringAfterLast('/')
+                                        } else {
+                                            res.isFolder = false
+                                            text.substringAfterLast('/')
+                                        }
+                                    ).path
+                                    OC_UNIQUE_ID -> res.fileId = text
+                                    DAV_GETETAG -> res.eTag = text
+                                    DAV_GETCONTENTTYPE -> res.contentType = text
+                                    DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
+                                    DAV_SHARE_TYPE -> res.isShared = true
+                                    DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
+                                    RESPONSE_TAG -> {
+                                        text = ""
+                                        result.add(res)
+                                    }
+                                }
                             }
                         }
                     }
                 }
+                // Catch all XML parsing exceptions here, note that returned result in these situations would be partial
+                catch (e: XmlPullParserException) { e.printStackTrace() }
+                catch (e: IllegalArgumentException) { e.printStackTrace() }
+                catch (e: IOException) { e.printStackTrace() }
             } else { throw OkHttpWebDavException(response) }
 
             return result
