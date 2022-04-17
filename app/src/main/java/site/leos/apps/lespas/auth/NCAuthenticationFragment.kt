@@ -2,6 +2,8 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.Account
 import android.accounts.AccountManager
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
@@ -125,13 +127,17 @@ class NCAuthenticationFragment: Fragment() {
 
                     webView?.let {
                         if (webView.alpha == 0f) {
+                            authWebpageBG.background = ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_background))
+
                             authWebpage.apply {
                                 alpha = 0f
-                                animate().alpha(1f).duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                                requestFocus()
+                                animate().alpha(1f).setDuration(resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()).setListener(object: AnimatorListenerAdapter() {
+                                    override fun onAnimationEnd(animation: Animator?) {
+                                        requestFocus()
+                                        super.onAnimationEnd(animation)
+                                    }
+                                })
                             }
-
-                            authWebpageBG.background = null
                         }
                     }
                 }
