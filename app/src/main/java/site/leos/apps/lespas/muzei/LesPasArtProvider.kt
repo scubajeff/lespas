@@ -30,6 +30,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 
 class LesPasArtProvider: MuzeiArtProvider() {
@@ -125,7 +126,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     when {
                                         recentList.size == 1 -> recentList[0]
                                         recentList.isNotEmpty() -> recentList[Random.nextInt(recentList.size)]
-                                        else -> photoList[Random.nextInt(photoList.size)]
+                                        else -> photoList[ThreadLocalRandom.current().nextInt(photoList.size)]
                                     }
                                 }
                             }
@@ -145,7 +146,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     }
                                 }
                             }
-                            else -> photoList[Random.nextInt(photoList.size)]
+                            else -> photoList[ThreadLocalRandom.current().nextInt(photoList.size)]
                         }
                     }
                 }?.let { photo ->
