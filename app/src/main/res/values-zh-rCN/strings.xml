@@ -187,7 +187,7 @@
     <string name="backup_done">相机相册备份已完成。</string>
     <string name="backup_waiting">相机相册中还有%1$,d个文件正在等待备份。</string>
     <string name="not_hiding">隐藏相册表里已有以下相册：%1$s</string>
-    <string name="default_sort_order_title">默认照片排序规则</string>
+    <string name="default_sort_order_title">新建相册的照片排序规则</string>
     <string name="msg_set_as_remote">相册设置为“远程相册”后，该相册的媒体文件将从本机存储中删除，继续操作吗？</string>
     <string name="msg_set_as_local">相册设置为“本地相册”后，该相册的媒体文件将从服务器下载到本机，继续操作吗？</string>
     <string name="action_set_remote">设为远程相册</string>

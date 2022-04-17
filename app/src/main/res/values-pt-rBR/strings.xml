@@ -76,7 +76,7 @@
     <string name="theme_auto_entries">Seguir o sistema</string>
     <string name="auto_rotate_title">Rotacionar tela para combinar com a proporção da foto</string>
     <string name="auto_replay_title">Reproduzir vídeo automaticamente</string>
-    <string name="default_sort_order_title">Ordenação padrão de fotos</string>
+    <string name="default_sort_order_title">Ordem padrão de classificação de fotos para o novo álbum</string>
 
     <string name="cameraroll_as_album_title">Mostrar fotos da câmera como um álbum</string>
     <string name="gallery_launcher_title">Ícone para abrir galeria</string>

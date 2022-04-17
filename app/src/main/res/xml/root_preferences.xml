@@ -26,6 +26,7 @@
         <ListPreference
             app:key="@string/default_sort_order_pref_key"
             app:title="@string/default_sort_order_title"
+            app:singleLineTitle="false"
             app:entries="@array/default_sort_order_entries"
             app:entryValues="@array/default_sort_order_values"
             app:defaultValue="0"
