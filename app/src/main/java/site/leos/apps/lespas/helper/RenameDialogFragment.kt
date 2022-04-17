@@ -4,6 +4,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
+import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
@@ -51,6 +52,8 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
 
             requestFocus()
         }
+
+        requireDialog().window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
     override fun onCancel(dialog: DialogInterface) {
