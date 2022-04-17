@@ -186,7 +186,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
-                        if (getString("item_type") == "folder") {
+                        if (getString("item_type") == "folder" && getInt("share_type") <= SHARE_TYPE_GROUP) {
+                            // Only process folder share with share type of user(0) or group(1)
                             folderId = getString("item_source")
                             permission = getInt("permissions")
                             result.find { existed -> existed.albumId == folderId }?.let { existed ->
@@ -1029,9 +1030,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
 
         const val SHARE_TYPE_USER = 0
-        private const val SHARE_TYPE_USER_STRING = "user"
         const val SHARE_TYPE_GROUP = 1
-        private const val SHARE_TYPE_GROUP_STRING = "group"
+        const val SHARE_TYPE_PUBLIC = 3
+        //private const val SHARE_TYPE_USER_STRING = "user"
+        //private const val SHARE_TYPE_GROUP_STRING = "group"
+        //private const val SHARE_TYPE_PUBLIC_STRING = "public"
 
         const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
