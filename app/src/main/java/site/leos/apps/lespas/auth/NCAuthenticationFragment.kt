@@ -42,6 +42,7 @@ import java.net.URL
 class NCAuthenticationFragment: Fragment() {
     private lateinit var authWebpage: WebView
     private lateinit var authWebpageBG: ViewGroup
+    private var sloganView: TextView? = null
 
     private var reLogin: Boolean = false
     private lateinit var theming: NCLoginFragment.AuthenticateViewModel.NCThemimg
@@ -128,6 +129,7 @@ class NCAuthenticationFragment: Fragment() {
                     webView?.let {
                         if (webView.alpha == 0f) {
                             authWebpageBG.background = ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_background))
+                            sloganView?.clearAnimation()
 
                             authWebpage.apply {
                                 alpha = 0f
@@ -169,7 +171,7 @@ class NCAuthenticationFragment: Fragment() {
 
             if (theming.color != Color.TRANSPARENT) view.findViewById<FrameLayout>(R.id.theme_background).background = ColorDrawable(theming.color)
             if (theming.slogan.isNotEmpty()) {
-                view.findViewById<TextView>(R.id.slogan).run {
+                sloganView = view.findViewById<TextView>(R.id.slogan).apply {
                     text = theming.slogan
                     setTextColor(theming.textColor)
 
