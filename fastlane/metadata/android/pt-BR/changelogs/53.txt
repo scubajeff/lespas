@@ -1,0 +1,2 @@
+* Corrigida a falha em alguns casos de borda quando o servidor Nextcloud retorna valor nulo para atributos de arquivo como 'última modificação'.
+* Outras melhorias e correções de bugs

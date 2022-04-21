@@ -1,0 +1,2 @@
+* Fixed crash in some edge cases when Nextcloud server return null value for file attributes like 'last modified'
+* Other improvements and bugs fixes

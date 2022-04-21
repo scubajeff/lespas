@@ -1,0 +1,2 @@
+* Behebung eines Absturzes in einigen Randfällen, wenn der Nextcloud-Server einen Nullwert für Dateiattribute wie 'last modified' zurückgibt
+* Andere Verbesserungen und Fehlerkorrekturen

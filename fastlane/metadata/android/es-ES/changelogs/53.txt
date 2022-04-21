@@ -1,0 +1,2 @@
+* Corregido el fallo en algunos casos extremos cuando el servidor Nextcloud devuelve un valor nulo para los atributos de los archivos como "última modificación".
+* Otras mejoras y correcciones de errores

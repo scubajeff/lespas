@@ -1,0 +1,2 @@
+* Correction d'un crash dans certains cas limites lorsque le serveur Nextcloud renvoie une valeur nulle pour des attributs de fichiers comme 'last modified'.
+* Autres améliorations et corrections de bogues

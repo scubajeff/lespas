@@ -1,3 +1,6 @@
+## Version 2.5.6
+* Fixed crash in some edge cases when Nextcloud server return null value for file attributes like 'last modified'
+
 ## Version 2.5.5
 * Fixed login problem with Nextcloud instances which does not support theming by default
 * New detail layout can be choosed to display media filename, useful for video collection album
