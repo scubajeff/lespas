@@ -6,5 +6,5 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
-    android:textColor="@color/color_text_light"
+    android:textColor="?primaryTextWhite"
     tools:text="Title" />

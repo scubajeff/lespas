@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.publication.NCShareViewModel
 
 class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_publish_dialog) {
@@ -176,7 +177,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
     class RecipientAutoCompleteAdapter(@NonNull context: Context, @LayoutRes private val layoutRes: Int, @NonNull private val sharees: List<NCShareViewModel.Sharee>, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
     ): ArrayAdapter<NCShareViewModel.Sharee>(context, layoutRes, sharees), Filterable {
-        private val matchedColor = ContextCompat.getColor(context, R.color.color_secondary)
+        private val matchedColor = Tools.getAttributeColor(context, android.R.attr.colorSecondary)
         private var filteredSharees = sharees
         private var currentInput: String? = ""
 

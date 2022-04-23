@@ -32,8 +32,12 @@
                 android:layout_weight="1"
                 android:text="@string/copy_files"
                 style="?attr/materialButtonOutlinedStyle"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
+                app:rippleColor="@color/color_secondary_variant_faded"
+                android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_copy_24"
-                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
+                android:drawableTint="@color/toggle_group_button_icon" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/move"
                 android:layout_width="0dp"
@@ -41,8 +45,12 @@
                 android:layout_weight="1"
                 android:text="@string/move_files"
                 style="?attr/materialButtonOutlinedStyle"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
+                app:rippleColor="@color/color_secondary_variant_faded"
+                android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_move_24"
-                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
+                android:drawableTint="@color/toggle_group_button_icon" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <androidx.recyclerview.widget.RecyclerView
@@ -61,7 +69,7 @@
             android:layout_height="1dp"
             app:layout_constraintTop_toBottomOf="@id/clipdata_recyclerview"
             android:layout_marginVertical="@dimen/big_padding"
-            android:background="@android:color/darker_gray"
+            android:background="?android:attr/textColorSecondary"
             android:clickable="false" />
 
         <TextView
@@ -70,8 +78,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/divider"
             android:padding="@dimen/small_padding"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Button"
-            android:textColor="@color/color_on_primary_invert"
+            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             android:text="@string/to_album" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -109,7 +116,9 @@
                 android:id="@+id/create_remote_album"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/checkbox_text_set_remote" />
+                android:text="@string/checkbox_text_set_remote"
+                android:textColor="?android:attr/textColorPrimary"
+                android:buttonTint="?android:attr/textColorPrimary" />
 
         </com.google.android.material.textfield.TextInputLayout>
 

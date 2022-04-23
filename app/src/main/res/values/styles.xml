@@ -21,23 +21,7 @@
         <item name="cornerSizeTopLeft">20dp</item>
     </style>
 
-    <style name="Theme.AppCompat.NoActionBar.Translucent" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:background">@color/dark_gray_overlay_background</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:colorBackgroundCacheHint">@null</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:windowShowWallpaper">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowAnimationStyle">@android:style/Animation</item>
-        <item name="fontFamily">sans-serif-condensed</item>
-    </style>
-
     <style name="LightEdgeEffectColor">
         <item name="android:colorEdgeEffect">@color/lespas_white</item>
-    </style>
-
-    <style name="Theme.LesPas.ActionBar" parent="@style/Widget.MaterialComponents.ActionBar.Primary">
-        <item name="android:textColor">@color/color_text_light</item>
     </style>
 </resources>

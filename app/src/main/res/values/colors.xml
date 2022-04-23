@@ -8,8 +8,8 @@
     <!-- Straight from https://vanschneider.com/colors -->
     <color name="color_primary">#DE633A</color>
     <color name="color_primary_variant">#C15733</color>
-    <color name="color_on_primary">@color/lespas_white</color>
-    <color name="color_on_primary_invert">@color/lespas_black</color>
+    <color name="color_on_primary">@color/lespas_black</color>
+    <color name="color_on_primary_invert">@color/lespas_white</color>
     <color name="color_secondary">#2B8E7E</color> <!-- 61BFAD -->
     <color name="color_secondary_variant">#236E5F</color>
     <color name="color_secondary_variant_faded">#20236E5F</color>
@@ -30,4 +30,8 @@
     <color name="ic_launcher_gallery_background">#2B8E7E</color>
 
     <color name="dark_gray_overlay_background">#80000000</color>
+
+    <color name="color_primary_variant_true_black">#2B2D2C</color>
+    <color name="color_secondary_variant_true_black">#E9E7D8</color>
+    <color name="color_secondary_variant_fade_true_black">#40E9E7D8</color>
 </resources>

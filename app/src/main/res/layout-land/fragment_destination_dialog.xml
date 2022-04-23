@@ -32,8 +32,12 @@
                 android:layout_weight="1"
                 android:text="@string/copy_files"
                 style="?attr/materialButtonOutlinedStyle"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
+                app:rippleColor="@color/color_secondary_variant_faded"
+                android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_copy_24"
-                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
+                android:drawableTint="@color/toggle_group_button_icon" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/move"
                 android:layout_width="0dp"
@@ -41,8 +45,12 @@
                 android:layout_weight="1"
                 android:text="@string/move_files"
                 style="?attr/materialButtonOutlinedStyle"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
+                app:rippleColor="@color/color_secondary_variant_faded"
+                android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_move_24"
-                android:drawableTint="@color/mtrl_text_btn_text_color_selector" />
+                android:drawableTint="@color/toggle_group_button_icon" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <androidx.recyclerview.widget.RecyclerView
@@ -71,8 +79,7 @@
             app:layout_constraintTop_toBottomOf="@id/divider"
             app:layout_constraintLeft_toLeftOf="parent"
             android:padding="@dimen/small_padding"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Button"
-            android:textColor="@color/color_on_primary_invert"
+            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             android:text="@string/to_album" />
 
         <androidx.recyclerview.widget.RecyclerView

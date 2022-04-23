@@ -31,7 +31,7 @@
         android:includeFontPadding="false"
         android:clickable="false"
         android:textSize="12sp"
-        android:textColor="@color/color_text_dark"
+        android:textColor="?primaryTextBlack"
         android:textAllCaps="false"
         app:shapeAppearance="@style/DateIndicatorShape"
         android:visibility="gone"

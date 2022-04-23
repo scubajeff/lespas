@@ -8,4 +8,5 @@
     android:layout_marginTop="12dp"
     android:paddingBottom="@dimen/mini_padding"
     android:clickable="false"
+    android:textColor="?android:attr/textColorPrimary"
     tools:text = "12/25" />

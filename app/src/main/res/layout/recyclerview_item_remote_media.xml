@@ -40,7 +40,7 @@
         android:paddingVertical="@dimen/tiny_padding"
         android:paddingHorizontal="@dimen/small_padding"
         style="@style/TextAppearance.AppCompat.Caption"
-        android:textColor="@color/color_text_light"
+        android:textColor="?primaryTextWhite"
         android:textAlignment="textEnd"
         android:shadowDx="1"
         android:shadowDy="1"

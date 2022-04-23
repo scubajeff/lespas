@@ -13,7 +13,7 @@
         app:layout_constraintTop_toTopOf="@id/replace_bgm"
         app:layout_constraintLeft_toLeftOf="parent"
         android:background="@android:color/transparent"
-        android:tint="@color/color_on_primary_invert"
+        android:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_play_arrow_24"
         tools:ignore="ContentDescription" />
 
@@ -24,7 +24,7 @@
         app:layout_constraintTop_toTopOf="@id/replace_bgm"
         app:layout_constraintLeft_toLeftOf="parent"
         android:background="@android:color/transparent"
-        android:tint="@color/color_on_primary_invert"
+        android:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_pause_24"
         tools:ignore="ContentDescription" />
 
@@ -36,8 +36,8 @@
         app:layout_constraintLeft_toRightOf="@id/guideline"
         app:layout_constraintRight_toLeftOf="@id/replace_bgm"
         android:paddingHorizontal="@dimen/tiny_padding"
-        app:scrubber_color="@color/color_primary"
-        app:played_color="@color/color_primary"
+        app:scrubber_color="?colorPrimary"
+        app:played_color="?colorPrimary"
         app:buffered_color="@android:color/darker_gray" />
 
     <androidx.constraintlayout.widget.Guideline
@@ -54,6 +54,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@id/remove_bgm"
         android:background="@android:color/transparent"
+        android:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_music_note_24"
         tools:ignore="ContentDescription" />
 
@@ -64,7 +65,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:background="@android:color/transparent"
-        android:tint="@color/color_on_primary_invert"
+        android:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_delete_24"
         tools:ignore="ContentDescription" />
 </androidx.constraintlayout.widget.ConstraintLayout>

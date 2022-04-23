@@ -21,7 +21,6 @@
             app:layout_constraintTop_toTopOf="parent"
             android:padding="@dimen/small_padding"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Button"
-            android:textColor="@color/color_on_primary_invert"
             android:textAllCaps="false"
             android:text="@string/hidden_albums" />
 
@@ -44,6 +43,7 @@
             android:layout_marginTop="@dimen/big_padding"
             android:enabled="false"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:textColor="?attr/colorButtonText"
             android:text="@string/item_unhide"/>
 
         <com.google.android.material.button.MaterialButton
@@ -54,6 +54,7 @@
             app:layout_constraintRight_toLeftOf="@id/unhide_button"
             android:layout_marginRight="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:textColor="?attr/colorButtonText"
             android:text="@android:string/cancel"
             tools:ignore="RtlHardcoded" />
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -214,4 +214,5 @@
     <string name="rename_media">新名字</string>
     <string name="nearby_convergence_title">自動歸集附近照片</string>
     <string name="nearby_convergence_summary">在地圖上播放旅程時，自動將照片歸集到附近的有GPS坐標的照片上。</string>
+    <string name="true_black_title">採用暗黑深色主题</string>
 </resources>

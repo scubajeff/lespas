@@ -34,6 +34,7 @@
             app:layout_constraintTop_toBottomOf="@id/message_textview"
             android:layout_marginTop="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:textColor="?attr/colorButtonText"
             android:text="@android:string/ok"/>
 
         <com.google.android.material.button.MaterialButton
@@ -44,6 +45,7 @@
             app:layout_constraintRight_toLeftOf="@id/ok_button"
             android:layout_marginTop="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            android:textColor="?attr/colorButtonText"
             android:text="@android:string/cancel"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

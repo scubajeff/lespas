@@ -276,4 +276,5 @@
     <string name="rename_media">Novo nome</string>
     <string name="nearby_convergence_title">Convergem automaticamente fotos próximas</string>
     <string name="nearby_convergence_summary">Ao reproduzir slideshow no mapa, converge as fotos para a próxima que tem coordenada GPS.</string>
+    <string name="true_black_title">Verdadeiro tema negro e escuro</string>
 </resources>

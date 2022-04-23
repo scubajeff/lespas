@@ -68,17 +68,17 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="@dimen/big_padding"
-                app:strokeColor="@color/publication_type_toggle"
-                app:backgroundTint="@color/publication_type_toggle_background"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
                 app:rippleColor="@color/color_secondary_variant_faded"
                 app:icon="@drawable/ic_baseline_solo_album_24"
-                app:iconTint="@color/publication_type_toggle_icon"
+                app:iconTint="@color/toggle_group_button_icon"
                 app:iconSize="@dimen/big_padding"
                 style="?attr/materialButtonOutlinedStyle"
                 android:textAllCaps="false"
                 android:text="@string/solo_album"
                 android:tooltipText="@string/solo_album_tooltips"
-                android:textColor="@color/publication_type_toggle"
+                android:textColor="@color/toggle_group_button"
                 tools:ignore="UnusedAttribute" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/joint_album"
@@ -90,17 +90,17 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 app:cornerRadius="@dimen/big_padding"
-                app:strokeColor="@color/publication_type_toggle"
-                app:backgroundTint="@color/publication_type_toggle_background"
+                app:strokeColor="@color/toggle_group_button"
+                app:backgroundTint="@color/toggle_group_button_background"
                 app:rippleColor="@color/color_secondary_variant_faded"
                 app:icon="@drawable/ic_baseline_joint_album_24"
-                app:iconTint="@color/publication_type_toggle_icon"
+                app:iconTint="@color/toggle_group_button_icon"
                 app:iconSize="@dimen/big_padding"
                 style="?attr/materialButtonOutlinedStyle"
                 android:textAllCaps="false"
                 android:text="@string/joint_album"
                 android:tooltipText="@string/joint_album_tooltips"
-                android:textColor="@color/publication_type_toggle"
+                android:textColor="@color/toggle_group_button"
                 tools:ignore="UnusedAttribute" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -114,6 +114,7 @@
             android:layout_marginRight="@dimen/extra_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
             android:text="@string/publish_button_text"
+            android:textColor="?attr/colorButtonText"
             tools:ignore="RtlHardcoded" />
 
         <com.google.android.material.button.MaterialButton
@@ -124,7 +125,8 @@
             app:layout_constraintRight_toLeftOf="@id/ok_button"
             android:layout_marginTop="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:text="@android:string/cancel"/>
+            android:text="@android:string/cancel"
+            android:textColor="?attr/colorButtonText" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

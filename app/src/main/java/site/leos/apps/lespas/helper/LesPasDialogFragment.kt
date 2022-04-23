@@ -71,7 +71,7 @@ open class LesPasDialogFragment(private val layoutId: Int): DialogFragment() {
             fun newInstance(context: Context, strokeColor: Int, smallRadius: Boolean) = MaterialShapeDrawable(
                 ShapeAppearanceModel.builder().setAllCornerSizes(context.resources.getDimension(if (smallRadius) R.dimen.dialog_frame_radius_small else R.dimen.dialog_frame_radius)).setAllCorners(ConcaveRoundedCornerTreatment()).build()
             ).apply {
-                fillColor = ColorStateList.valueOf(context.resources.getColor(R.color.color_background, null))
+                fillColor = ColorStateList.valueOf(Tools.getAttributeColor(context, android.R.attr.colorBackground))
                 if (strokeColor != NO_STROKE) { setStroke(4.0f, strokeColor) }
             }
         }

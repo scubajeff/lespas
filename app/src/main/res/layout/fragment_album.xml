@@ -51,5 +51,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:contentDescription="@string/fab_add_photos"
         android:tooltipText="@string/fab_add_photos"
-        android:src="@drawable/ic_baseline_add_24"/>
+        android:src="@drawable/ic_baseline_add_24"
+        app:tint="?android:attr/textColorPrimary"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

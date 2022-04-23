@@ -35,7 +35,7 @@
         android:ellipsize="middle"
         android:singleLine="true"
         style="@style/TextAppearance.MaterialComponents.Caption"
-        android:textColor="@color/color_text_light"
+        android:textColor="?primaryTextWhite"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="1"

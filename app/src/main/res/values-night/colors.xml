@@ -2,8 +2,8 @@
 <resources>
     <color name="color_primary">#A64C2E</color>
     <color name="color_primary_variant">#74414A</color>
-    <color name="color_on_primary">@color/lespas_black</color>
-    <color name="color_on_primary_invert">@color/lespas_white</color>
+    <color name="color_on_primary">@color/lespas_white</color>
+    <color name="color_on_primary_invert">@color/lespas_black</color>
     <color name="color_secondary">#88CEC5</color>
     <color name="color_secondary_variant">#3FAB9C</color>
     <color name="color_secondary_variant_faded">#503FAB9C</color>

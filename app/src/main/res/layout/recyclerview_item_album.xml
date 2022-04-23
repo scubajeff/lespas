@@ -21,10 +21,10 @@
             android:id="@+id/coverart"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="H,21:9"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:scaleType="centerCrop"
             tools:src="@drawable/login_background_gradient_1" />
 
         <androidx.core.widget.ContentLoadingProgressBar
@@ -44,7 +44,7 @@
             android:paddingTop="@dimen/small_padding"
             android:paddingBottom="@dimen/big_padding"
             android:paddingHorizontal="@dimen/small_padding"
-            android:background="@drawable/album_item_background">
+            android:background="@color/album_item_background">
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/title"

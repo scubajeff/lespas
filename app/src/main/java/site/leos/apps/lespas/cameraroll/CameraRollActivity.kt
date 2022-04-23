@@ -25,6 +25,7 @@ import java.io.File
 
 class CameraRollActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        Tools.applyTheme(this, R.style.Theme_LesPas_Cameraroll, R.style.Theme_LesPas_Cameraroll_TrueBlack)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 

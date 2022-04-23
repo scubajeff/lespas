@@ -115,7 +115,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             cameraRollAsAlbumMenu?.isVisible = !this
 
             // Selection based on bindingAdapterPosition, must be cleared
-            selectionTracker.clearSelection()
+            try { selectionTracker.clearSelection() } catch (e: UninitializedPropertyAccessException) {}
         }
     }
 
@@ -356,7 +356,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 setDisplayShowTitleEnabled(true)
                 title = getString(R.string.app_name)
             }
-            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+            window.statusBarColor = Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)
         }
 
         if (showCameraRoll) {

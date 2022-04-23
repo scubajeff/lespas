@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingTop="?attr/actionBarSize"
-    android:background="@drawable/album_item_background">
+    android:background="@color/album_item_background">
 
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/photo"

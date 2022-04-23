@@ -266,4 +266,5 @@
     <string name="rename_media">Neuer Name</string>
     <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>
     <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
+    <string name="true_black_title">Echtes schwarzes dunkles Thema</string>
 </resources>

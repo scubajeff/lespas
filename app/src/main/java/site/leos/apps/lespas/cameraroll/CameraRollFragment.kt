@@ -471,8 +471,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             skipCollapsed = true
 
             addBottomSheetCallback(object: BottomSheetBehavior.BottomSheetCallback() {
-                val primaryColor = ContextCompat.getColor(requireContext(), R.color.color_on_primary_invert)
-                val backgroundColor = ContextCompat.getColor(requireContext(), R.color.color_background)
+                val primaryColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
+                val backgroundColor = Tools.getAttributeColor(requireContext(), android.R.attr.colorBackground)
 
                 @SuppressLint( "SwitchIntDef")
                 override fun onStateChanged(view: View, newState: Int) {

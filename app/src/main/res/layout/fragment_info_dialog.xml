@@ -133,7 +133,8 @@
             app:layout_constraintTop_toBottomOf="@id/map"
             android:layout_marginTop="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:text="@android:string/ok"/>
+            android:text="@android:string/ok"
+            android:textColor="?attr/colorButtonText" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/map_button"
@@ -144,6 +145,7 @@
             android:layout_marginRight="@dimen/small_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
             android:text="@string/button_text_map"
+            android:textColor="?attr/colorButtonText"
             android:visibility="gone"
             tools:ignore="RtlHardcoded" />
 

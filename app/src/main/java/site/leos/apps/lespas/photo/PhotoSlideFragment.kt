@@ -477,7 +477,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.run {
                 displayOptions = previousTitleBarDisplayOption
-                setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_primary)))
+                setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
             }
             requestedOrientation = previousOrientationSetting
         }

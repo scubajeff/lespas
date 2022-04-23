@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="primaryTextWhite" format="color" />
+    <attr name="primaryTextBlack" format="color" />
+
+    <attr name="colorButtonText" format="color" />
+
+    <attr name="colorBottomSheetBackground" format="color" />
+    <attr name="colorAnimatedPlaceHolder" format="color" />
+    <attr name="colorSecondaryVariantFade" format="color" />
+    <attr name="colorHighlightPrimary" format="color" />
+    <attr name="colorToggleButtonOnToolbar" format="color" />
+</resources>

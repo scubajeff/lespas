@@ -25,7 +25,7 @@
         android:lines="1"
         android:ellipsize="marquee"
         android:textAppearance="?attr/textAppearanceCaption"
-        android:textColor="@color/color_text_light"
+        android:textColor="?primaryTextWhite"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="1"

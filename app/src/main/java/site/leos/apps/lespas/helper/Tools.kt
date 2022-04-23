@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
@@ -19,6 +20,8 @@ import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
@@ -820,5 +823,28 @@ object Tools {
             Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
             else -> result
         }
+    }
+
+    fun getAttributeResourceId(context: Context, attrId: Int): Int {
+        TypedValue().let {
+            context.theme.resolveAttribute(attrId, it, true)
+            return it.resourceId
+        }
+    }
+
+    fun getAttributeColor(context: Context, attrId: Int): Int {
+        TypedValue().let {
+            context.theme.resolveAttribute(attrId, it, true)
+            return ContextCompat.getColor(context, it.resourceId)
+        }
+    }
+
+    fun applyTheme(context: AppCompatActivity, normalThemeId: Int, trueBlackThemeId: Int) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        sp.getString(context.getString(R.string.auto_theme_perf_key), context.getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
+        if (sp.getBoolean(context.getString(R.string.true_black_pref_key), false) && (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            context.setTheme(trueBlackThemeId)
+        } else context.setTheme(normalThemeId)
     }
 }

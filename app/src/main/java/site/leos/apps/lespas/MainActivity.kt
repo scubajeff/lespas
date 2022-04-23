@@ -48,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         sp = PreferenceManager.getDefaultSharedPreferences(this)
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -58,10 +57,12 @@ class MainActivity : AppCompatActivity() {
             loggedIn = false
             setTheme(R.style.Theme_LesPas_NoTitleBar)
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
+            super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
             if (savedInstanceState == null) supportFragmentManager.beginTransaction().add(R.id.container_root, NCLoginFragment()).commit()
         } else {
-            sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
+            Tools.applyTheme(this, R.style.Theme_LesPas, R.style.Theme_LesPas_TrueBlack)
+            super.onCreate(savedInstanceState)
             setContentView(R.layout.activity_main)
 
             supportFragmentManager.setFragmentResultListener(ACTIVITY_DIALOG_REQUEST_KEY, this) { key, bundle ->

@@ -22,6 +22,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Tools.applyTheme(this, R.style.Theme_LesPas_Transparent, R.style.Theme_LesPas_Transparent_TrueBlack)
         super.onCreate(savedInstanceState)
 
         // Make sure photo's folder created
@@ -44,13 +45,13 @@ class ShareReceiverActivity: AppCompatActivity() {
         }
 
         if (files.isNotEmpty()) {
-            destinationModel.getDestination().observe (this, { album->
+            destinationModel.getDestination().observe (this) { album ->
                 album?.apply {
                     // Acquire files
                     if (supportFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
                         AcquiringDialogFragment.newInstance(files, album, destinationModel.shouldRemoveOriginal()).show(supportFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
-            })
+            }
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
                 DestinationDialogFragment.newInstance(files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false)).show(supportFragmentManager, TAG_DESTINATION_DIALOG)

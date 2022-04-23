@@ -97,6 +97,8 @@
     <string name="theme_light_values" translatable="false">1</string>
     <string name="theme_dark_values" translatable="false">2</string>
     <string name="theme_auto_values" translatable="false">-1</string>
+    <string name="true_black_pref_key" translatable="false">TRUE_BLACK_THEME</string>
+    <string name="true_black_title">True black dark theme</string>
     <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Rotate screen to match photo aspect ratio</string>
     <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>

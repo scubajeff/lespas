@@ -10,6 +10,6 @@
     android:paddingLeft="1dp"
     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
     app:spanCount="@integer/photo_grid_span_count"
-    android:background="@drawable/album_item_background"
+    android:background="@color/album_item_background"
     tools:listitem="@layout/recyclerview_item_photo"
     tools:ignore="RtlHardcoded,RtlSymmetry"/>
