@@ -6,6 +6,7 @@
         <item name="actionBarStyle">@style/Theme.LesPas.ActionBar</item>
         <item name="android:actionBarStyle">@style/Theme.LesPas.ActionBar</item>
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.LesPas.AlertDialog</item>
 
         <item name="android:windowActivityTransitions">true</item>
         <item name="windowActionBarOverlay">true</item>
@@ -70,6 +71,7 @@
         <item name="colorAnimatedPlaceHolder">?primaryTextWhite</item>
         <item name="colorToggleButtonOnToolbar">#4B4D4C</item>
         <item name="colorHighlightPrimary">?primaryTextWhite</item>
+
 
         <item name="colorControlNormal">@color/color_gray_out</item>
         <item name="colorControlActivated">?primaryTextWhite</item>
@@ -163,5 +165,12 @@
     <style name="Theme.LesPas.ActionBar" parent="@style/Widget.MaterialComponents.ActionBar.Primary">
         <item name="background">?colorPrimary</item>
         <item name="android:textColor">?attr/primaryTextWhite</item>
+    </style>
+
+    <style name="ThemeOverlay.LesPas.AlertDialog" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="buttonBarButtonStyle">@style/Widget.LesPas.Button.Borderless</item>
+    </style>
+    <style name="Widget.LesPas.Button.Borderless" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:textColor">?colorButtonText</item>
     </style>
 </resources>
