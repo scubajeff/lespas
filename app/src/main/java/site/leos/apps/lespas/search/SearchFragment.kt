@@ -26,6 +26,7 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
+    private lateinit var categoryView: RecyclerView
     private var destinationToggleGroup: MaterialButtonToggleGroup? = null
     private var lastSelection = 0
     // Flag indicating if we have existing albums or not
@@ -112,7 +113,8 @@ class SearchFragment : Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        view.findViewById<RecyclerView>(R.id.category_list).adapter = categoryAdapter
+        categoryView = view.findViewById(R.id.category_list)
+        categoryView.adapter = categoryAdapter
 
         // Not ready to search confirm exit dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
@@ -170,7 +172,7 @@ class SearchFragment : Fragment() {
                     }
                     R.id.search_album-> {
                         if (noAlbum) {
-                            if (!onMenuCreation) Snackbar.make(destinationToggleGroup!!, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
+                            if (!onMenuCreation) Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
                             this.check(R.id.search_cameraroll)
                         }
                         onMenuCreation = false

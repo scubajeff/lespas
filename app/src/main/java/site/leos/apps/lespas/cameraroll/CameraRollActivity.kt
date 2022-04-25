@@ -39,11 +39,15 @@ class CameraRollActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             // Sync with server at startup
-            ContentResolver.requestSync(AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
-            })
+            AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                if (accounts.isNotEmpty()) {
+                    ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_BOTH_WAY)
+                    })
+                }
+            }
 
             if (!PreferenceManager.getDefaultSharedPreferences(this).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                 // We need external SD mounted writable
