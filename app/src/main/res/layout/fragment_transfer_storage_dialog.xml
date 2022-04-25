@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_marginBottom="@dimen/small_padding"
-            android:progressDrawable="@drawable/thicker_progressbar_horizontal"
+            android:progressDrawable="@drawable/progressbar_horizontal_thick"
             style="?android:attr/progressBarStyleHorizontal"
             android:max="100"
             android:visibility="gone"/>
