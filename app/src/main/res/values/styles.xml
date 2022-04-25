@@ -20,8 +20,4 @@
         <item name="cornerFamilyTopLeft">cut</item>
         <item name="cornerSizeTopLeft">20dp</item>
     </style>
-
-    <style name="LightEdgeEffectColor">
-        <item name="android:colorEdgeEffect">@color/lespas_white</item>
-    </style>
 </resources>

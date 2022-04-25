@@ -14,7 +14,6 @@
         android:orientation="horizontal"
         android:background="@android:color/black"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        android:theme="@style/LightEdgeEffectColor"
         tools:listitem="@layout/viewpager_item_photo" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
