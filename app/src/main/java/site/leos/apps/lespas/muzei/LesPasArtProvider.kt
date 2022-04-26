@@ -30,7 +30,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 
 class LesPasArtProvider: MuzeiArtProvider() {
@@ -120,33 +119,34 @@ class LesPasArtProvider: MuzeiArtProvider() {
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()
+                        val random = Random(System.currentTimeMillis())
                         when (sp.getInt(LesPasArtProviderSettingActivity.KEY_PREFER, LesPasArtProviderSettingActivity.PREFER_RANDOM)) {
                             LesPasArtProviderSettingActivity.PREFER_LATEST -> {
                                 photoList.filter { p -> Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1 }.let { recentList ->
                                     when {
                                         recentList.size == 1 -> recentList[0]
-                                        recentList.isNotEmpty() -> recentList[Random.nextInt(recentList.size)]
-                                        else -> photoList[ThreadLocalRandom.current().nextInt(photoList.size)]
+                                        recentList.isNotEmpty() -> recentList[random.nextInt(recentList.size)]
+                                        else -> photoList[random.nextInt(photoList.size)]
                                     }
                                 }
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
                                 photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { hits ->
                                     when(hits.size) {
-                                        0 -> photoList[Random.nextInt(photoList.size)]
+                                        0 -> photoList[random.nextInt(photoList.size)]
                                         1 -> hits[0]
                                         else -> {
-                                            var index = Random.nextInt(hits.size)
+                                            var index = random.nextInt(hits.size)
                                             lastAddedArtwork?.let {
                                                 // Prevent from choosing the last one again
-                                                while(hits[index].id == it.token) index = Random.nextInt(hits.size)
+                                                while(hits[index].id == it.token) index = random.nextInt(hits.size)
                                             }
                                             hits[index]
                                         }
                                     }
                                 }
                             }
-                            else -> photoList[ThreadLocalRandom.current().nextInt(photoList.size)]
+                            else -> photoList[random.nextInt(photoList.size)]
                         }
                     }
                 }?.let { photo ->
