@@ -128,7 +128,7 @@ class NCAuthenticationFragment: Fragment() {
 
                     webView?.let {
                         if (webView.alpha == 0f) {
-                            authWebpageBG.background = ColorDrawable(ContextCompat.getColor(requireContext(), R.color.color_background))
+                            authWebpageBG.background = ColorDrawable(ContextCompat.getColor(webView.context, R.color.color_background))
                             sloganView?.clearAnimation()
 
                             authWebpage.apply {
@@ -185,7 +185,7 @@ class NCAuthenticationFragment: Fragment() {
                     }
                 }
             } else {
-                authWebpageBG.background = (ContextCompat.getDrawable(requireContext(), R.drawable.animated_placeholder) as AnimatedVectorDrawable).apply {
+                authWebpageBG.background = (ContextCompat.getDrawable(authWebpageBG.context, R.drawable.animated_placeholder) as AnimatedVectorDrawable).apply {
                     if (theming.color != Color.TRANSPARENT) {
                         setTintList(ColorStateList.valueOf(theming.color))
                         setTintMode(PorterDuff.Mode.ADD)

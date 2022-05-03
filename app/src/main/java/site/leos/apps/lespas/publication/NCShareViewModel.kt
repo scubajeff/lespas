@@ -60,7 +60,6 @@ import java.io.FileNotFoundException
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -741,12 +740,24 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+/*
                                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
                                                         if (this is AnimatedImageDrawable) {
                                                             if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
                                                             start()
                                                         }
                                                     }
+*/
+                                                    // Some framework implementation will crash when using ByteBuffer as ImageDrawable source
+                                                    val tempFile = File(localCacheFolder, imagePhoto.photo.name)
+                                                    tempFile.outputStream().run { sourceStream.copyTo(this, 8192) }
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(tempFile)).apply {
+                                                        if (this is AnimatedImageDrawable) {
+                                                            if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                                            start()
+                                                        }
+                                                    }
+                                                    tempFile.delete()
                                                     null
                                                 } else {
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
