@@ -117,7 +117,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         shareeJob = lifecycleScope.launch { publishModel.sharees.collect {
             it.let {
                 allSharees = it
-                autoCompleteTextView.setAdapter(RecipientAutoCompleteAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, it) { name, view ->
+                autoCompleteTextView.setAdapter(RecipientAutoCompleteAdapter(autoCompleteTextView.context, android.R.layout.simple_spinner_dropdown_item, it) { name, view ->
                     publishModel.getAvatar(name, view, null)
                 })
             }
@@ -144,9 +144,9 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
             if (index == -1) {
                 // selected sharee not in selected recipients group yet
                 recipientChipGroup.addView(
-                    (LayoutInflater.from(context).inflate(R.layout.chip_recipient, null) as Chip).apply {
+                    (LayoutInflater.from(recipientChipGroup.context).inflate(R.layout.chip_recipient, null) as Chip).apply {
                         this.text = recipient.label
-                        if (recipient.type == NCShareViewModel.SHARE_TYPE_GROUP) chipIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_group_24)
+                        if (recipient.type == NCShareViewModel.SHARE_TYPE_GROUP) chipIcon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_group_24)
                         publishModel.getAvatar(recipient, this, null)
                         setOnClickListener { chipView ->
                             chipView.startAnimation(

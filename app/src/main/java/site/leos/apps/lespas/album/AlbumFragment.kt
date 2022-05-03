@@ -356,7 +356,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 setDisplayShowTitleEnabled(true)
                 title = getString(R.string.app_name)
             }
-            window.statusBarColor = Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)
+            window.statusBarColor = Tools.getAttributeColor(this, android.R.attr.colorPrimary)
         }
 
         if (showCameraRoll) {
@@ -533,7 +533,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         publishViewModel.unPublish(albums)
                     }
                     if (refused.isNotEmpty()) {
-                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(requireContext().getColor(R.color.color_primary)).setTextColor(requireContext().getColor(R.color.color_text_light)).show()
+                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(ContextCompat.getColor(recyclerView.context, R.color.color_primary)).setTextColor(ContextCompat.getColor(recyclerView.context, R.color.color_text_light)).show()
                     }
                 }
 

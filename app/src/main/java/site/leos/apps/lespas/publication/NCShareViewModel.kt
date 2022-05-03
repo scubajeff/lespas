@@ -60,7 +60,6 @@ import java.io.FileNotFoundException
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-import java.nio.ByteBuffer
 import java.time.OffsetDateTime
 import java.util.concurrent.Executors
 import kotlin.math.min
@@ -741,7 +740,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
+                                                    //animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
+                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(sourceStream.readBytes())).apply {
                                                         if (this is AnimatedImageDrawable) {
                                                             if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
                                                             start()

@@ -13,7 +13,6 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import android.view.WindowManager
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -45,12 +44,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accounts: Array<Account>
     private var loggedIn = true
 
-    private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
-
     override fun onCreate(savedInstanceState: Bundle?) {
         sp = PreferenceManager.getDefaultSharedPreferences(this)
-
-        accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
         if (accounts.isEmpty()) {
@@ -97,8 +92,6 @@ class MainActivity : AppCompatActivity() {
                             supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumDetailFragment.newInstance(album, intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_PHOTO) ?: ""), AlbumDetailFragment::class.java.canonicalName).commit()
                         }.start()
                     } ?: run {
-                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
-
                         lifecycleScope.launch {
                             // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
                             if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
@@ -108,15 +101,15 @@ class MainActivity : AppCompatActivity() {
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                 }
-                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                            else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission(), {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
                             // If Snapseed is not installed, disable Snapseed integration
-                            packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run {
-                                sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }
-                            }
+                            packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run { sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }}
 
                             // Sync when receiving network tickle
                             ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
                         }
+
+                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                     }
                 }
 

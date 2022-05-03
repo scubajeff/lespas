@@ -85,7 +85,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         // Create new album
                         destinationModel.setEditMode(true)
 
-                        TransitionManager.beginDelayedTransition(rootLayout, TransitionInflater.from(requireContext()).inflateTransition(R.transition.destination_dialog_new_album))
+                        TransitionManager.beginDelayedTransition(rootLayout, TransitionInflater.from(rootLayout.context).inflateTransition(R.transition.destination_dialog_new_album))
                         showNewAlbumEditText()
                     }
                     else {
