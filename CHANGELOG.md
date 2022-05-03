@@ -1,3 +1,8 @@
+## Version 2.5.8
+* Fixed crash while showing message when user try to search in empty album list
+* Fixed crash when trying to play animated GIF/WebP in some OEM ROM which doesn't implement certain Android APIs
+* Fixed crashes reported in Google Play console
+
 ## Version 2.5.7
 * True black theme
 

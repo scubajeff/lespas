@@ -1,0 +1,4 @@
+* Corregido el fallo al mostrar un mensaje cuando el usuario intenta buscar en una lista de álbumes vacía
+* Corregido el fallo al intentar reproducir GIF/WebP animados en algunas ROMs OEM que no implementan ciertas APIs de Android
+* Corregidos los fallos reportados en la consola de Google Play
+* Otras mejoras y correcciones de errores
