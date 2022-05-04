@@ -277,4 +277,8 @@
     <string name="nearby_convergence_title">Convergem automaticamente fotos próximas</string>
     <string name="nearby_convergence_summary">Ao reproduzir slideshow no mapa, converge as fotos para a próxima que tem coordenada GPS.</string>
     <string name="true_black_title">Verdadeiro tema negro e escuro</string>
+    <string name="tooltips_fetch_backup">Mostrar backups no servidor</string>
+    <string name="tooltips_show_cameraroll">Mostrar rolo de câmera</string>
+    <string name="msg_empty_server_backup">Sem backups no servidor. Você ativou o backup automático do rolo da câmera na configuração?</string>
+    <string name="msg_joint_album_not_updated_locally">As mudanças feitas no Álbum Conjunto serão mostradas depois que o proprietário do álbum as confirmar.</string>
 </resources>

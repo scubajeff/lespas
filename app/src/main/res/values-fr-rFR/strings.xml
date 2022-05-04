@@ -215,4 +215,8 @@
     <string name="nearby_convergence_title">Convergence automatique des photos proches</string>
     <string name="nearby_convergence_summary">Lors de la lecture d\'un diaporama sur une carte, les photos convergent vers celles qui sont proches et qui ont des coordonnées GPS.</string>
     <string name="true_black_title">Thème noir véritable</string>
+    <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
+    <string name="tooltips_show_cameraroll">Afficher les rouleaux de caméra</string>
+    <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de l\'appareil photo dans les paramètres ?</string>
+    <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album commun seront affichées après que le propriétaire de l\'album les aura confirmées.</string>
 </resources>

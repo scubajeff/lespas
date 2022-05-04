@@ -567,10 +567,26 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
         } else {
             // Video is now streaming, there is no local cache available, and might take some time to download, so we resort to Download Manager
+/*
             (context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager).enqueue(
                 DownloadManager.Request(Uri.parse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}"))
                     .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name)
                     .setTitle(remotePhoto.photo.name)
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .addRequestHeader("Authorization", "Basic $token")
+            )
+*/
+            batchDownload(context, listOf(remotePhoto))
+        }
+    }
+
+    fun batchDownload(context: Context, targets: List<RemotePhoto>) {
+        val dm = context.getSystemService(Activity.DOWNLOAD_SERVICE) as DownloadManager
+        targets.forEach { remotePhoto ->
+            dm.enqueue(
+                DownloadManager.Request(Uri.parse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}"))
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, remotePhoto.photo.name.substringAfterLast("/"))
+                    .setTitle(remotePhoto.photo.name.substringAfterLast("/"))
                     .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                     .addRequestHeader("Authorization", "Basic $token")
             )
@@ -705,6 +721,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             ensureActive()
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
+                                    // Photo is from remote album and is already uploaded
                                     if (type == TYPE_FULL) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                                         // Show cached low resolution bitmap first if loading full size bitmap
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
@@ -716,6 +733,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
+                                    // Photo is from local Camrea roll
                                     if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                                         // Show cached low resolution bitmap first if we need to rotate the picture which will take times
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
@@ -723,14 +741,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                     }
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
-                                else -> try {
-                                    File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
-                                } catch (e: FileNotFoundException) {
-                                    // Fall back to network fetching if loading local file failed
-                                    withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                    webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                        httpCallMap.replace(coroutineContext.job, second)
-                                        first
+                                else -> {
+                                    // Photo is from local album or not being uploaded yet, e.g., in local storage
+                                    try {
+                                        File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
+                                    } catch (e: FileNotFoundException) {
+                                        // Fall back to network fetching if loading local file failed
+                                        withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
+                                        webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
+                                            httpCallMap.replace(coroutineContext.job, second)
+                                            first
+                                        }
                                     }
                                 }
                             }?.use { sourceStream ->
@@ -768,11 +789,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 val option = BitmapFactory.Options().apply {
                                                     inSampleSize = if (imagePhoto.photo.width * imagePhoto.photo.height > 33333334) 2 else 1
                                                     if (type == TYPE_QUATER) inSampleSize *= 2
+                                                    // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
+                                                    if (imagePhoto.photo.width == 0) inSampleSize = 2
                                                 }
 
                                                 ensureActive()
                                                 BitmapFactory.decodeStream(sourceStream, null, option)?.run {
                                                     ensureActive()
+                                                    if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.width == 0) {
+                                                        // This is a early backup of camera roll which do not has meta info yet
+                                                        getMediaExif(imagePhoto)?.first?.let { exif ->
+                                                            imagePhoto.photo.orientation = exif.rotationDegrees
+                                                        }
+                                                    }
                                                     if (
                                                         imagePhoto.photo.orientation != 0 &&
                                                         ((imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) || imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL)
@@ -887,7 +916,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     mediaMetadataRetriever = MediaMetadataRetriever().apply {
                         job.ensureActive()
                         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED)
-                            setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
+                            // Should allow "/" in photo's remote path string, obviously, and name string, that's for fetching camera backups on server
+                            setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
                         else setDataSource("${localFileFolder}/${imagePhoto.photo.id}")
 
                         job.ensureActive()

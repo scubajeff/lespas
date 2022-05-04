@@ -49,6 +49,8 @@ import javax.net.ssl.SSLPeerUnverifiedException
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
 ) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
     private lateinit var webDav: OkHttpWebDav
+    private lateinit var baseUrl: String
+    private lateinit var hrefBase: String
     private lateinit var resourceRoot: String
     private lateinit var dcimRoot: String
     private lateinit var localRootFolder: String
@@ -158,15 +160,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         AccountManager.get(application).run {
             val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
-            val serverRoot = getUserData(account, context.getString(R.string.nc_userdata_server))
+            baseUrl = getUserData(account, context.getString(R.string.nc_userdata_server))
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
 
-            resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
-            dcimRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
+            val davEndPoint = application.getString(R.string.dav_files_endpoint)
+            hrefBase = "/${baseUrl.substringAfter("//").substringAfter("/")}${davEndPoint}${userName}"
+            resourceRoot = "$baseUrl${davEndPoint}$userName${application.getString(R.string.lespas_base_folder_name)}"
+            dcimRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}${userName}/DCIM"
             localRootFolder = Tools.getLocalRoot(application)
 
             webDav = OkHttpWebDav(
-                userName, peekAuthToken(account, serverRoot), serverRoot, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
                 null,
                 "LesPas_${application.getString(R.string.lespas_version)}",
                 0,
@@ -189,15 +193,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Don't try to do too many works here, as the local sync should be as simple as making several webdav calls, so that if any thing bad happen, we will be catched by
             // exceptions handling down below, and start again right here in later sync, e.g. atomic
             when (action.action) {
-                Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
-                    contentMetaUpdatedNeeded.add(action.folderName)
-                }
-
-                Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}")
-                }
-
                 Action.ACTION_ADD_FILES_ON_SERVER -> {
                     // folderId: file mimetype
                     // folderName: album name
@@ -256,6 +251,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     }
+                }
+
+                Action.ACTION_DELETE_FILES_ON_SERVER -> {
+                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+                    contentMetaUpdatedNeeded.add(action.folderName)
+                }
+
+                Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
+                    webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}")
+                }
+
+/*
+                Action.ACTION_BATCH_DELETE_FILE_ON_SERVER -> {
+                    // fileName: filenames separated by '|', all filenames are relative, folder start at 'lespas/', 'shared_with_me/' or 'DCIM/'
+                    webDav.batchDelete(action.fileName.split('|'), baseUrl, hrefBase)
+                }
+*/
+
+                Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> {
+                    webDav.delete("${resourceRoot.substringBeforeLast("/")}/${action.folderName}/${action.fileName}")
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
@@ -329,7 +344,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
-                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/' or 'DCIM/
                     // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
                     // fileId holds string "target album's id|dateTaken|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // fileName is a string "file name|ture or false, whether it's joint album"
@@ -343,8 +358,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     resourceRoot.substringBeforeLast('/').let { baseUrl ->
                         // webdav copy/move target file path will be sent in http call's header, need to be encoded here
                         try {
-                            webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${baseUrl}/${action.folderId}/${fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName)}").run {
-                                if (targetIsJointAlbum) logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
+                            webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${baseUrl}/${action.folderId}/${fileName}", "${baseUrl}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName.substringAfterLast("/"))}").run {
+                                if (targetIsJointAlbum && action.fileId.isNotEmpty()) logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
                             }
                         } catch (e: OkHttpWebDavException) {
                             // WebDAV return 403 if file already existed in target folder
@@ -1039,16 +1054,22 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             var lastTime = sp.getLong(SettingsFragment.LAST_BACKUP, 0L)
             val contentUri = MediaStore.Files.getContentUri("external")
+            val dateTakenColumnName = "datetaken"     // MediaStore.MediaColumns.DATE_TAKEN, hardcoded here since it's only available in Android Q or above
+            val orientationColumnName = "orientation"     // MediaStore.MediaColumns.ORIENTATION, hardcoded here since it's only available in Android Q or above
             @Suppress("DEPRECATION")
             val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
             val projection = arrayOf(
                 MediaStore.Files.FileColumns._ID,
                 pathSelection,
+                dateTakenColumnName,
+                orientationColumnName,
                 MediaStore.Files.FileColumns.DATE_ADDED,
                 MediaStore.Files.FileColumns.MEDIA_TYPE,
                 MediaStore.Files.FileColumns.MIME_TYPE,
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
                 MediaStore.Files.FileColumns.SIZE,
+                MediaStore.Files.FileColumns.WIDTH,
+                MediaStore.Files.FileColumns.HEIGHT,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
                     "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${lastTime})"
@@ -1060,6 +1081,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                 val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                 val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+                val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+                val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+                val dateTakenColumn = cursor.getColumnIndexOrThrow(dateTakenColumnName)
+                val orientationColumn = cursor.getColumnIndexOrThrow(orientationColumnName)
 
                 var relativePath: String
                 var fileName: String
@@ -1111,6 +1136,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     }
+
+                    webDav.patch(
+                        "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}",
+                        "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + cursor.getLong(dateTakenColumn) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
+                        "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
+                        "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
+                        "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + cursor.getInt(heightColumn) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>"
+                    )
 
                     // New timestamp when success
                     lastTime = cursor.getLong(dateColumn) + 1
@@ -1231,7 +1264,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val PHOTO_META_JSON_V2 = "{\"id\":\"%s\",\"name\":\"%s\",\"stime\":%d,\"mime\":\"%s\",\"width\":%d,\"height\":%d,\"orientation\":%d,\"caption\":\"%s\",\"latitude\":%.5f,\"longitude\":%.5f,\"altitude\":%.5f,\"bearing\":%.5f},"
         // Future update of additional fields to content meta file should be added to header, leave photo list at the very last, so that individual photo meta can be added at the end
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
-
 
         private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
     }

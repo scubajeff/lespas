@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="vector"
+            android:width="24dp"
+            android:height="24dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:name="path"
+                android:pathData="M 12 4 C 15.64 4 18.67 6.59 19.35 10.04 C 21.95 10.22 24 12.36 24 15 C 24 17.76 21.76 20 19 20 L 6 20 C 2.69 20 0 17.31 0 14 C 0 10.91 2.34 8.36 5.35 8.04 C 6.6 5.64 9.11 4 12 4"
+                android:fillColor="?android:attr/textColorPrimary"
+                android:strokeWidth="1"/>
+            <group android:name="group"
+                android:pivotX="12"
+                android:pivotY="13">
+                <path
+                    android:name="path_1"
+                    android:pathData="M 17 12.974 L 17 8.974 L 16 9.974 C 15.09 8.764 13.64 7.974 12 7.974 C 9.24 7.974 7 10.214 7 12.974 C 7 15.734 9.24 17.974 12 17.974 C 14.05 17.974 15.81 16.744 16.58 14.974 L 14.24 14.974 C 13.69 15.584 12.89 15.974 12 15.974 C 10.34 15.974 9 14.634 9 12.974 C 9 11.314 10.34 9.974 12 9.974 C 13.09 9.974 14.04 10.554 14.56 11.414 L 13 12.974 Z"
+                    android:fillColor="?android:attr/colorBackground"
+                    android:strokeWidth="0.02"/>
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="group">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="rotation"
+                    android:duration="1000"
+                    android:repeatCount="infinite"
+                    android:valueFrom="0"
+                    android:valueTo="360"
+                    android:valueType="floatType"
+                    android:interpolator="@android:anim/linear_interpolator"/>
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

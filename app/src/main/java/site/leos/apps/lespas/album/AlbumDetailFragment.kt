@@ -82,8 +82,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private lateinit var mAdapter: PhotoGridAdapter
 
     private lateinit var selectionTracker: SelectionTracker<String>
-    private lateinit var sharedSelection: MutableSet<String>
-    private lateinit var lastSelection: MutableSet<String>
+    private var sharedSelection = mutableSetOf<String>()
+    private var lastSelection = mutableSetOf<String>()
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val actionModel: ActionViewModel by activityViewModels()
@@ -129,8 +129,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         lespasPath = getString(R.string.lespas_base_folder_name)
 
         // Must be restore here
-        lastSelection = mutableSetOf()
-        sharedSelection = mutableSetOf()
         savedInstanceState?.let {
             lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
