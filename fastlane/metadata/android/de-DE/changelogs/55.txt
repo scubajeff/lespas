@@ -1,0 +1,4 @@
+* Absturz bei der Anzeige einer Meldung behoben, wenn der Benutzer versucht, in einer leeren Albenliste zu suchen
+* Behobener Absturz beim Versuch, animierte GIF/WebP in einigen OEM ROMs abzuspielen, die bestimmte Android-APIs nicht implementieren
+* Behebung von Abstürzen, die in der Google Play-Konsole gemeldet wurden
+* Andere Verbesserungen und Fehlerbehebungen

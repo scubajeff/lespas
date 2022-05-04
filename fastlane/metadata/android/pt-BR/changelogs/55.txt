@@ -1,0 +1,4 @@
+* Corrigida a falha ao mostrar a mensagem quando o usuário tenta procurar na lista de álbuns vazios
+* Corrigida a falha ao tentar jogar GIF/WebP animado em alguma ROM OEM que não implementa certos APIs do Android
+* Reporta falhas corrigidas no console do Google Play
+* Outras melhorias e correções de bugs

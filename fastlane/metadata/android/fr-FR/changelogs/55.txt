@@ -1,0 +1,4 @@
+* Correction d'une erreur lors de l'affichage d'un message lorsque l'utilisateur tente de rechercher dans une liste d'albums vide.
+* Correction d'une erreur lors de la lecture d'un GIF animé/WebP dans certaines ROM OEM qui n'implémentent pas certaines API Android.
+* Correction des pannes signalées dans la console Google Play
+* Autres améliorations et corrections de bogues
