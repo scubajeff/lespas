@@ -733,29 +733,25 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int, callback: () -> Unit) {
-            val sortedList = mutableListOf<Album>()
-            val sourceList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
+            val albumList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
 
-            if (sourceList.isNotEmpty()) {
+            if (albumList.isNotEmpty()) {
                 // save camera roll album
-                val firstAlbum = sourceList.first()
-                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sourceList.removeAt(0)
+                val firstAlbum = albumList.first()
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) albumList.removeAt(0)
 
-                sortedList.addAll(
-                    when (sortOrder) {
-                        Album.BY_DATE_TAKEN_ASC -> sourceList.sortedWith(compareBy { it.endDate })
-                        Album.BY_DATE_TAKEN_DESC -> sourceList.sortedWith(compareByDescending { it.endDate })
-                        Album.BY_NAME_ASC -> sourceList.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                        Album.BY_NAME_DESC -> sourceList.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                        else -> sourceList
-                    }
-                )
+                when (sortOrder) {
+                    Album.BY_DATE_TAKEN_ASC -> albumList.sortWith(compareBy { it.endDate })
+                    Album.BY_DATE_TAKEN_DESC -> albumList.sortWith(compareByDescending { it.endDate })
+                    Album.BY_NAME_ASC -> albumList.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                    Album.BY_NAME_DESC -> albumList.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                }
 
                 // restore camera roll album
-                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) sortedList.add(0, firstAlbum)
+                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) albumList.add(0, firstAlbum)
             }
 
-            submitList(sortedList) { callback() }
+            submitList(albumList) { callback() }
         }
 
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
