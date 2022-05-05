@@ -59,6 +59,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var volume: MutableList<StorageVolume>
     private lateinit var accounts: Array<Account>
     private var isSnapseedNotInstalled = true
+    private var syncWhenClosing = false
 
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
     private val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -267,6 +268,17 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         super.onStop()
     }
 
+    override fun onDestroyView() {
+        if (syncWhenClosing) {
+            ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+            })
+        }
+        super.onDestroyView()
+    }
+
     override fun onPreferenceTreeClick(preference: Preference?): Boolean =
         when (preference?.key) {
             getString(R.string.sync_pref_key) -> {
@@ -416,6 +428,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
             LAST_BACKUP -> showBackupSummary()
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
+            getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
             else -> {}
         }
     }
