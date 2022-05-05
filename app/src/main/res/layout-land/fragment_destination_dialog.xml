@@ -34,7 +34,7 @@
                 style="?attr/materialButtonOutlinedStyle"
                 app:strokeColor="@color/toggle_group_button"
                 app:backgroundTint="@color/toggle_group_button_background"
-                app:rippleColor="@color/color_secondary_variant_faded"
+                app:rippleColor="?colorSecondaryVariantFade"
                 android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_copy_24"
                 android:drawableTint="@color/toggle_group_button_icon" />
@@ -47,7 +47,7 @@
                 style="?attr/materialButtonOutlinedStyle"
                 app:strokeColor="@color/toggle_group_button"
                 app:backgroundTint="@color/toggle_group_button_background"
-                app:rippleColor="@color/color_secondary_variant_faded"
+                app:rippleColor="?colorSecondaryVariantFade"
                 android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_move_24"
                 android:drawableTint="@color/toggle_group_button_icon" />

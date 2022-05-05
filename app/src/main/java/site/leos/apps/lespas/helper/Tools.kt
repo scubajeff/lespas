@@ -816,13 +816,14 @@ object Tools {
             } else result.addAll(this)
         }
 
-        return when(albumSortOrder) {
-            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortedWith(compareBy { it.dateTaken })
-            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortedWith(compareByDescending { it.dateTaken })
-            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            else -> result
+        when(albumSortOrder) {
+            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
         }
+
+        return result
     }
 
     fun getAttributeResourceId(context: Context, attrId: Int): Int {
