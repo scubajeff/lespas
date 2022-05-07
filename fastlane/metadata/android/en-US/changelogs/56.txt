@@ -1,0 +1,2 @@
+* Fixed sync setting error that accidentally turns off album auto sync. You might need to take a look at the 'Setting'.
+* Other improvements and bugs fixes

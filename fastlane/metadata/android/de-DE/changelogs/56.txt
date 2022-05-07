@@ -1,0 +1,2 @@
+* Fehler in den Synchronisierungseinstellungen behoben, der die automatische Synchronisierung von Alben versehentlich ausschaltet. Möglicherweise müssen Sie einen Blick auf die 'Einstellung' werfen.
+* Andere Verbesserungen und Fehlerbehebungen

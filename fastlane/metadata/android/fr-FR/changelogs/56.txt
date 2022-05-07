@@ -1,0 +1,2 @@
+* Correction d'une erreur de réglage de la synchronisation qui désactive accidentellement la synchronisation automatique des albums. Vous pouvez avoir besoin de jeter un coup d'oeil au 'Paramètres'.
+* Autres améliorations et corrections de bogues

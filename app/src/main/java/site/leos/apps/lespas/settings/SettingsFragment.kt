@@ -403,11 +403,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     else {
                     // Preference check state is about to be toggled, but not toggled yet
                         if (perf.isChecked) {
-                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                                it.isChecked = false
-                                it.isEnabled = true
-                            }
-                        } else {
                             // Check and disable periodic sync setting if user enable camera roll backup
                             findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                                 it.isChecked = true
@@ -420,6 +415,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                                     apply()
                                 }
                             }
+                        } else {
+                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                                it.isChecked = false
+                                it.isEnabled = true
+                            }
                         }
                         toggleAutoSync(!(perf.isChecked))
                         showBackupSummary()
@@ -428,7 +428,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
             LAST_BACKUP -> showBackupSummary()
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
-            getString(R.string.wifionly_pref_key) -> sharedPreferences?.getBoolean(key, true)?.let { syncWhenClosing = true }
+            getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
             else -> {}
         }
     }
