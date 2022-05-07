@@ -1,3 +1,6 @@
+## Version 2.5.9
+* Fixed sync setting error that accidentally turns off album auto sync. You might need to take a look at the 'Setting'.
+
 ## Version 2.5.8
 * Fixed crash while showing message when user try to search in empty album list
 * Fixed crash when trying to play animated GIF/WebP in some OEM ROM which doesn't implement certain Android APIs

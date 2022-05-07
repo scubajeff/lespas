@@ -1,0 +1,2 @@
+* Corrigido erro de ajuste de sincronização que desliga acidentalmente a sincronização automática do álbum. Talvez você precise dar uma olhada na 'Configurar'.
+* Outras melhorias e correções de bugs
