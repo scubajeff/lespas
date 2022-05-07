@@ -403,11 +403,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     else {
                     // Preference check state is about to be toggled, but not toggled yet
                         if (perf.isChecked) {
-                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                                it.isChecked = false
-                                it.isEnabled = true
-                            }
-                        } else {
                             // Check and disable periodic sync setting if user enable camera roll backup
                             findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
                                 it.isChecked = true
@@ -419,6 +414,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                                     putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
                                     apply()
                                 }
+                            }
+                        } else {
+                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                                it.isChecked = false
+                                it.isEnabled = true
                             }
                         }
                         toggleAutoSync(!(perf.isChecked))
