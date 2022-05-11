@@ -866,9 +866,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         "content" -> {
                             cr.query(uri, null, null, null, null)?.use { cursor ->
                                 cursor.moveToFirst()
-                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
+                                try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it } } catch (e: IllegalArgumentException) {}
                                 // Store file size in property shareId
-                                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() }
+                                try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() } } catch (e: IllegalArgumentException) {}
                             }
                         }
                         "file" -> {
