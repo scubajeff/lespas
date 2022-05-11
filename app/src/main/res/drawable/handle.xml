@@ -4,6 +4,6 @@
     <corners android:radius="@dimen/mini_padding"/>
     <gradient
         android:angle="270"
-        android:startColor="?primaryTextBlack"
+        android:startColor="@color/lespas_black"
         android:endColor="@android:color/darker_gray" />
 </shape>

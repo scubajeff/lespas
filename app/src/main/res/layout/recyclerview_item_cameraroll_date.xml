@@ -7,7 +7,6 @@
     android:layout_height="@dimen/camera_roll_grid_size"
     android:paddingLeft="@dimen/small_padding"
     android:paddingTop="@dimen/tiny_padding"
-    android:background="?backgroundColor"
     android:clickable="false"
     tools:ignore="RtlHardcoded,RtlSymmetry">
 
