@@ -8,6 +8,7 @@
     android:layout_marginRight="@dimen/extra_padding"
     android:layout_marginTop="@dimen/extra_padding"
     android:foreground="?android:attr/selectableItemBackground"
+    android:background="@drawable/album_item_background"
     android:clickable="true"
     android:focusable="true">
 
@@ -21,7 +22,6 @@
         app:layout_constraintRight_toRightOf="parent"
         android:padding="@dimen/big_padding"
         android:scaleType="fitCenter"
-        android:background="@color/album_item_background"
         tools:src="@drawable/ic_baseline_animal_24"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

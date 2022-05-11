@@ -9,7 +9,7 @@
     android:layout_marginTop="@dimen/big_padding"
     android:padding="@dimen/big_padding"
     android:foreground="?android:attr/selectableItemBackground"
-    android:background="@color/album_item_background"
+    android:background="@drawable/album_item_background"
     tools:ignore="RtlHardcoded"
     android:transitionGroup="true">
 

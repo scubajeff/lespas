@@ -1149,29 +1149,23 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 lastModified = LocalDateTime.MIN,
                             )
 
-                            photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
-                                MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
+                    photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                        MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
+                    }
+                    when (uri.scheme) {
+                        "content" -> {
+                            cr.query(uri, null, null, null, null)?.use { cursor ->
+                                cursor.moveToFirst()
+                                try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it } } catch (e: IllegalArgumentException) {}
+                                // Store file size in property shareId
+                                try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() } } catch (e: Exception) {}
                             }
-                            when (uri.scheme) {
-                                "content" -> {
-                                    cr.query(uri, null, null, null, null)?.use { cursor ->
-                                        cursor.moveToFirst()
-                                        cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it }
-                                        // Store file size in property shareId
-                                        cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let {
-                                            photo.shareId = try {
-                                                it.toInt()
-                                            } catch (e: NumberFormatException) {
-                                                0
-                                            }
-                                        }
-                                    }
-                                }
-                                "file" -> {
-                                    uri.path?.let { photo.name = it.substringAfterLast('/') }
-                                    shouldDisableShare = true
-                                }
-                            }
+                        }
+                        "file" -> {
+                            uri.path?.let { photo.name = it.substringAfterLast('/') }
+                            shouldDisableShare = true
+                        }
+                    }
 
                             if (photo.mimeType.startsWith("video/")) {
                                 MediaMetadataRetriever().run {

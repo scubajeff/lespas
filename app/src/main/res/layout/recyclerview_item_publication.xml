@@ -34,7 +34,7 @@
             android:paddingTop="@dimen/big_padding"
             android:paddingBottom="@dimen/big_padding"
             android:paddingHorizontal="@dimen/small_padding"
-            android:background="@color/album_item_background">
+            android:background="@drawable/album_item_background">
 
             <androidx.appcompat.widget.AppCompatTextView
                 android:id="@+id/title"
