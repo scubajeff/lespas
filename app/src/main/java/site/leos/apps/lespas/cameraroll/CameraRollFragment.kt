@@ -1366,9 +1366,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             backups.toMutableList().run {
                 removeAll { removeList.contains(it.id) }
 
-                if (position[1] >= size) position[1] = max(size - 1, 0)
-                mediaList.postValue(this)
-                backups = this
+                if (size == 0) {
+                    vmState.postValue(STATE_BACKUP_NOT_AVAILABLE)
+                    mediaList.postValue(cameraRoll)
+                }
+                else {
+                    if (position[1] >= size) position[1] = max(size - 1, 0)
+                    mediaList.postValue(this)
+                    backups = this
+                }
             }
         }
 
