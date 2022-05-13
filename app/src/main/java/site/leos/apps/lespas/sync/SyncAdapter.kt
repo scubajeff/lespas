@@ -517,7 +517,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 } else {
                     // Skip newly created hidden album on server, do not sync changes of it until it's un-hidden
-                    if (hidden) return@forEach
+                    //if (hidden) return@forEach
 
                     // No hit on local, a new album from server, (make sure the 'cover' property is set to Album.NO_COVER, denotes a new album which will NOT be included in album list)
                     // Default album attribute set to "Remote" for any album not created by this device
