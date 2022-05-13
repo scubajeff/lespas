@@ -182,6 +182,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
+            { ids -> ids.forEach { selectionTracker.select(it) }},
             { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type)},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -1452,7 +1453,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val longClickListener: (List<String>) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -1514,6 +1515,19 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 with(item.dateTaken) {
                     //itemView.findViewById<TextView>(R.id.date).text = "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}   |   ${String.format(itemView.context.getString(R.string.total_photo), item.shareId)}"
                     tvDate.text = "${format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))}, ${dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
+                }
+
+                tvDate.setOnLongClickListener {
+                    val ids = mutableListOf<String>()
+                    var index = currentList.indexOf(item)
+                    while(true) {
+                        index++
+                        if (index == currentList.size) break
+                        if (currentList[index].mimeType.isEmpty()) break
+                        ids.add(currentList[index].id)
+                    }
+                    longClickListener(ids)
+                    true
                 }
             }
         }
