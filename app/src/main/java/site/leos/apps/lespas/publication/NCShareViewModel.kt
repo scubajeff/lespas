@@ -678,7 +678,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             try {
                 var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
-                var key = if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) "camera${imagePhoto.photo.id.substringAfterLast("/media/")}" else "${imagePhoto.photo.id}$type"
+                //var key = if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) "camera${imagePhoto.photo.id.substringAfterLast("/media/")}" else "${imagePhoto.photo.id}$type"
+                var key = "${imagePhoto.photo.id}$type"
                 if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
 
                 (if (forceNetwork) null else imageCache.get(key))?.let {
@@ -688,9 +689,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     // Cache missed
 
                     bitmap = when (type) {
-                        TYPE_VIDEO -> {
-                            getVideoThumbnail(coroutineContext.job, imagePhoto)
-                        }
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
@@ -714,6 +712,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             }
                         }
+                        TYPE_VIDEO -> {
+                            getVideoThumbnail(coroutineContext.job, imagePhoto)
+                        }
+                        TYPE_EMPTY_ROLL_COVER -> ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
                         else -> {
                             // For GIF, AGIF, AWEBP cover
                             if (imagePhoto.coverBaseLine == Album.SPECIAL_COVER_BASELINE) type = TYPE_FULL
@@ -1059,6 +1061,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val TYPE_QUATER = "_quater"
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
+        const val TYPE_EMPTY_ROLL_COVER = "empty"
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
 

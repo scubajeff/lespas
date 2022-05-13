@@ -964,6 +964,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     startWithThisMedia = ""
                 }
                 mediaPager.scrollToPosition(camerarollModel.getCurrentPosition())
+
+                if (it.size == 0) {
+                    (requireActivity() as AppCompatActivity).supportActionBar?.hide()
+                    startPostponedEnterTransition()
+                }
             }
 
             if (bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) updateMetaDisplay()
@@ -1583,6 +1588,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     companion object {
         //const val FROM_CAMERA_ROLL = "!@#$%^&*()_+alkdfj4654"
         const val FROM_CAMERA_ROLL = "0"
+        const val EMPTY_ROLL_COVER_ID = "0"
 
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
         private const val KEY_URI = "KEY_URI"

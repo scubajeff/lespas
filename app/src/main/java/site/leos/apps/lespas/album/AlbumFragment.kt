@@ -96,7 +96,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
     private var showCameraRoll = true
-    private var cameraRollAlbum: Album? = null
+    private lateinit var cameraRollAlbum: Album
     private var mediaStoreVersion = ""
     private var mediaStoreGeneration = 0L
 
@@ -184,7 +184,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
                         eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
-                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, NCShareViewModel.TYPE_COVER)
+                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, if (cover == CameraRollFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
                 }
             },
             { view -> publishViewModel.cancelSetImagePhoto(view) },
@@ -220,9 +220,11 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) {
-            val list = mutableListOf<Album>().apply { addAll(it) }
+            val list = mutableListOf<Album>().apply {
+                if (showCameraRoll) add(cameraRollAlbum)
+                addAll(it)
+            }
 
-            if (showCameraRoll) cameraRollAlbum?.let { cameraroll -> list.add(0, cameraroll) }
             mAdapter.setAlbums(list, currentSortOrder) {
                 if (scrollTo != -1) {
                     recyclerView.scrollToPosition(scrollTo)
@@ -363,8 +365,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             requireContext().apply {
                 val newVersion = MediaStore.getVersion(this)
                 val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
-                if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
-                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration)?.apply { mAdapter.setCameraRollAlbum(this) }
+                if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
+                else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
             }
         }
     }
@@ -604,7 +606,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    private fun getCameraRoll(version: String, generation: Long): Album? {
+    private fun getCameraRoll(version: String, generation: Long): Album {
         cameraRollAlbum = Tools.getCameraRollAlbum(requireContext().contentResolver, getString(R.string.item_camera_roll))
         mediaStoreVersion = version
         mediaStoreGeneration = generation
