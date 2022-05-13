@@ -147,7 +147,7 @@ class NCAuthenticationFragment: Fragment() {
                 // Have to allow self-signed certificate
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-                    if (error?.primaryError == SslError.SSL_IDMISMATCH && authenticateModel.getAccount().selfSigned) handler?.proceed() else handler?.cancel()
+                    if (error?.primaryError == SslError.SSL_IDMISMATCH && authenticateModel.getCredential().selfSigned) handler?.proceed() else handler?.cancel()
                 }
             }
 
@@ -194,7 +194,12 @@ class NCAuthenticationFragment: Fragment() {
                 }
             }
 
-            authWebpage.loadUrl("${authenticateModel.getAccount().serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+            authenticateModel.getCredential().run {
+                if (username.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                else {
+                    prepareCredential(this.serverUrl, username, token)
+                }
+            }
         }
 
         // Confirm dialog result handler
@@ -261,7 +266,7 @@ class NCAuthenticationFragment: Fragment() {
         // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
         // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
         val host = if (server.startsWith("http")) server else "https://${server}"
-        val currentUsername = authenticateModel.getAccount().username
+        val currentUsername = authenticateModel.getCredential().username
 
         authenticateModel.setToken(username, token, host)
 
@@ -282,26 +287,26 @@ class NCAuthenticationFragment: Fragment() {
     }
 
     private fun saveCredential() {
-        val ncAccount = authenticateModel.getAccount()
-        val url = URL(ncAccount.serverUrl)
+        val credential = authenticateModel.getCredential()
+        val url = URL(credential.serverUrl)
         val account: Account
 
         AccountManager.get(requireContext()).run {
             if (!reLogin) {
-                account = Account("${ncAccount.username}@${url.host}", getString(R.string.account_type_nc))
+                account = Account("${credential.username}@${url.host}", getString(R.string.account_type_nc))
                 addAccountExplicitly(account, "", null)
             } else {
                 account = getAccountsByType(getString(R.string.account_type_nc))[0]
             }
 
-            setAuthToken(account, ncAccount.serverUrl, ncAccount.token)    // authTokenType set to server address
-            setUserData(account, getString(R.string.nc_userdata_server), ncAccount.serverUrl)
+            setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
+            setUserData(account, getString(R.string.nc_userdata_server), credential.serverUrl)
             setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
             setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
             setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
-            setUserData(account, getString(R.string.nc_userdata_username), ncAccount.username)
-            setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("${ncAccount.username}:${ncAccount.token}".encodeToByteArray(), Base64.NO_WRAP))
-            setUserData(account, getString(R.string.nc_userdata_selfsigned), ncAccount.selfSigned.toString())
+            setUserData(account, getString(R.string.nc_userdata_username), credential.username)
+            setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("${credential.username}:${credential.token}".encodeToByteArray(), Base64.NO_WRAP))
+            setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
             notifyAccountAuthenticated(account)
         }
     }

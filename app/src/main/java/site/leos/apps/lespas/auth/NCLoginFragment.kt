@@ -119,13 +119,13 @@ class NCLoginFragment: Fragment() {
         inputArea = view.findViewById<TextInputLayout>(R.id.input_area).apply {
             findViewById<TextView>(com.google.android.material.R.id.textinput_prefix_text).setOnClickListener {
                 authenticateModel.toggleUseHttps()
-                inputArea.prefixText = if (authenticateModel.getAccount().https) "https://" else "http://"
+                inputArea.prefixText = if (authenticateModel.getCredential().https) "https://" else "http://"
             }
         }
         hostEditText = view.findViewById<TextInputEditText>(R.id.host).apply {
             setOnEditorActionListener { _, actionId, keyEvent ->
                 if (actionId == EditorInfo.IME_ACTION_GO || keyEvent.keyCode == KeyEvent.KEYCODE_ENTER) {
-                    checkServer((if (authenticateModel.getAccount().https) "https://" else "http://") + text.toString().trim())
+                    checkServer((if (authenticateModel.getCredential().https) "https://" else "http://") + text.toString().trim())
                     true
                 } else false
             }
@@ -160,7 +160,7 @@ class NCLoginFragment: Fragment() {
                         .setIcon(ContextCompat.getDrawable(hostEditText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)) })
                         .setTitle(getString(R.string.verify_ssl_certificate_title))
                         .setCancelable(false)
-                        .setMessage(getString(R.string.verify_ssl_certificate_message, authenticateModel.getAccount().serverUrl.substringAfterLast("://").substringBefore('/')))
+                        .setMessage(getString(R.string.verify_ssl_certificate_message, authenticateModel.getCredential().serverUrl.substringAfterLast("://").substringBefore('/')))
                         .setPositiveButton(R.string.accept_certificate) { _, _ -> authenticateModel.pingServer(null, true) }
                         .setNegativeButton(android.R.string.cancel) { _, _ -> showError(1001) }
                         .create().show()
@@ -254,15 +254,15 @@ class NCLoginFragment: Fragment() {
     }
 
     class AuthenticateViewModel : ViewModel() {
-        private val account = NCAccount()
+        private val credential = NCCredential()
         private var theming = NCThemimg()
         private var pingJob: Job? = null
         private var httpCall: Call? = null
 
         // Use nextcloud server capabilities OCS endpoint to validate host
         fun pingServer(serverUrl: String?, acceptSelfSign: Boolean) {
-            serverUrl?.let { account.serverUrl = it }
-            account.selfSigned = acceptSelfSign
+            serverUrl?.let { credential.serverUrl = it }
+            credential.selfSigned = acceptSelfSign
 
             pingJob = viewModelScope.launch(Dispatchers.IO) {
                 pingResult.postValue(
@@ -318,14 +318,14 @@ class NCLoginFragment: Fragment() {
         private val pingResult = SingleLiveEvent<Int>()
         fun getPingResult() = pingResult
 
-        fun toggleUseHttps() { account.https = !account.https }
+        fun toggleUseHttps() { credential.https = !credential.https }
         fun setToken(username: String, token: String, serverUrl: String? = null) {
-            account.username = username
-            account.token = token
-            serverUrl?.let { account.serverUrl = it }
+            credential.username = username
+            credential.token = token
+            serverUrl?.let { credential.serverUrl = it }
         }
-        fun setSelfSigned(selfSigned: Boolean) { account.selfSigned = selfSigned }
-        fun getAccount() = account
+        fun setSelfSigned(selfSigned: Boolean) { credential.selfSigned = selfSigned }
+        fun getCredential() = credential
 
         fun isPinging() = pingJob?.isActive ?: false
         fun stopPinging() { pingJob?.let {
@@ -340,7 +340,7 @@ class NCLoginFragment: Fragment() {
         fun getAuthResult() = authResult
         fun setAuthResult(result: Int) { this.authResult.postValue(result) }
 
-        data class NCAccount(
+        data class NCCredential(
             var serverUrl: String = "",
             var username: String = "",
             var token: String = "",
