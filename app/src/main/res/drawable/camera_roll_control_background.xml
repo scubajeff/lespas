@@ -4,6 +4,6 @@
 
     <solid android:color="?attr/colorBottomSheetBackground"/>
     <corners
-        android:topLeftRadius="@dimen/small_padding"
-        android:topRightRadius="@dimen/small_padding" />
+        android:topLeftRadius="@dimen/mini_padding"
+        android:topRightRadius="@dimen/mini_padding" />
 </shape>

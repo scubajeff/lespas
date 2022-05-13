@@ -732,7 +732,19 @@ object Tools {
         return result
     }
 
-    fun photosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
+    fun photosToMetaJSONString(photos: List<Photo>): String {
+        var content = SyncAdapter.PHOTO_META_HEADER
+
+        photos.forEach { photo ->
+            with(photo) {
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+            }
+        }
+
+        return content.dropLast(1) + "]}}"
+    }
+
+    fun remotePhotosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
 
         remotePhotos.forEach {

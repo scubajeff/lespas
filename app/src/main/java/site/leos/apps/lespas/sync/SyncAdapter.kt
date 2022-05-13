@@ -387,7 +387,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             photos.firstOrNull { it.photo.id == changeItem.photo.id } ?: run { photos.add(changeItem) }
                         }
 
-                        webDav.upload(Tools.photosToMetaJSONString(photos), contentMetaUrl, MIME_TYPE_JSON)
+                        webDav.upload(Tools.remotePhotosToMetaJSONString(photos), contentMetaUrl, MIME_TYPE_JSON)
 
                         try { updateLogFile.delete() } catch (e: Exception) {}
                     }
@@ -448,7 +448,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 )
 
                 FileWriter(logFile).let { file ->
-                    file.write(Tools.photosToMetaJSONString(this))
+                    file.write(Tools.remotePhotosToMetaJSONString(this))
                     file.close()
                 }
             }

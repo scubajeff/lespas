@@ -10,6 +10,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +20,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 
@@ -63,6 +65,14 @@ class CameraRollActivity : AppCompatActivity() {
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+
+                // Setup observer to fire up SyncAdapter
+                ViewModelProvider(this)[ActionViewModel::class.java].allPendingActions.observe(this) { actions ->
+                    if (actions.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                    })
+                }
             } else {
                 finish()
                 return
