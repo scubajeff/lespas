@@ -734,12 +734,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
         }
         toggleCameraRollButton.setOnClickListener {
-            camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
-            camerarollModel.fetchCameraRoll()
+            if (camerarollModel.getVMState().value != CameraRollViewModel.STATE_SHOWING_DEVICE) {
+                camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+                camerarollModel.fetchCameraRoll()
+            }
         }
         toggleBackupsButton.setOnClickListener {
-            camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
-            camerarollModel.fetchPhotoFromServerBackup()
+            if (camerarollModel.getVMState().value == CameraRollViewModel.STATE_SHOWING_DEVICE) {
+                camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+                camerarollModel.fetchPhotoFromServerBackup()
+            }
         }
         closeButton.setOnClickListener { if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN }
 
