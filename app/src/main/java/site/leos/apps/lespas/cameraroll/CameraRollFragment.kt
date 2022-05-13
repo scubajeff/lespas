@@ -15,10 +15,7 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.ColorDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.TypedValue
@@ -611,13 +608,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 // TODO any better way to detect mediaPager's scroll to event?
                                 updateMetaDisplay()
                             } else {
-*/
                                 // If there are more than 1 media in the list, get ready to show BottomSheet expanded state
                                 if (!closeButton.isVisible) {
                                     updateExpandedDisplay()
                                     camerarollModel.getCurrentPhoto()?.let { quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(it.id)) }
                                 }
-//                            }
+                            }
+
+ */
+                            updateExpandedDisplay()
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             selectionTracker.clearSelection()
@@ -733,8 +732,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 // For camera backups on server
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
         }
-        toggleCameraRollButton.setOnClickListener { camerarollModel.fetchCameraRoll() }
-        toggleBackupsButton.setOnClickListener { camerarollModel.fetchPhotoFromServerBackup() }
+        toggleCameraRollButton.setOnClickListener {
+            camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+            camerarollModel.fetchCameraRoll()
+        }
+        toggleBackupsButton.setOnClickListener {
+            camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+            camerarollModel.fetchPhotoFromServerBackup()
+        }
         closeButton.setOnClickListener { if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN }
 
         // Acquiring new medias
@@ -910,9 +915,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        //outState.putString(KEY_SCROLL_TO, mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition()).id)
         outState.putParcelableArrayList(KEY_LAST_SELECTION, lastSelection)
         outState.putInt(KEY_BOTTOMSHEET_STATE, bottomSheet.state)
+        camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
     }
 
     override fun onDestroyView() {
@@ -974,9 +979,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             if (bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) updateMetaDisplay()
 
             (quickScroll.adapter as QuickScrollAdapter).submitList(it) {
-                camerarollModel.getCurrentPhoto()?.let { photo -> quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(photo.id)) }
+                camerarollModel.getQuickScrollState()?.let { savedState -> quickScroll.layoutManager?.onRestoreInstanceState(savedState) }
             }
-
 
             if (toggleBackupsButton.isChecked) {
                 aBadge.number = it.size
@@ -1338,6 +1342,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 vmState.postValue(STATE_SHOWING_DEVICE)
                 mediaList.postValue(cameraRoll)
             }
+
         }
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
 
@@ -1400,6 +1405,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             return result
         }
+
+        private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
+        fun saveQuickScrollState(state: Parcelable?) { quickScrollState[getCurrentSource()] = state }
+        fun getQuickScrollState(): Parcelable? = quickScrollState[getCurrentSource()]
 
         companion object {
             const val STATE_SHOWING_DEVICE = 0
@@ -1524,7 +1533,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
-        override fun submitList(list: MutableList<Photo>?, callBack: Runnable?) {
+        override fun submitList(list: MutableList<Photo>?, commitCallback: Runnable?) {
             list?.apply {
                 // Group by date
                 val listGroupedByDate = mutableListOf<Photo>()
@@ -1551,7 +1560,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
 */
 
-                super.submitList(listGroupedByDate, callBack)
+                super.submitList(listGroupedByDate, commitCallback)
             }
         }
 
