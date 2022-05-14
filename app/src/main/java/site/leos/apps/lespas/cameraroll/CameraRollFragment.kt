@@ -182,7 +182,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
-            { ids -> ids.forEach { selectionTracker.select(it) }},
             { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type)},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
@@ -1440,8 +1439,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
         override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
 
-        //fun findMediaPosition(photo: Photo): Int = (currentList as List<Photo>).indexOf(photo)
-        //fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
         fun patchMeta(photoId: String, exif: ExifInterface) {
             currentList.find { it.id == photoId }?.let { photo ->
                 photo.orientation = exif.rotationDegrees
@@ -1457,7 +1454,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val longClickListener: (List<String>) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
+    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -1522,15 +1519,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
 
                 tvDate.setOnLongClickListener {
-                    val ids = mutableListOf<String>()
                     var index = currentList.indexOf(item)
                     while(true) {
                         index++
                         if (index == currentList.size) break
                         if (currentList[index].mimeType.isEmpty()) break
-                        ids.add(currentList[index].id)
+                        selectionTracker.select(currentList[index].id)
                     }
-                    longClickListener(ids)
                     true
                 }
             }
