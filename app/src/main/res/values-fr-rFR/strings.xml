@@ -215,4 +215,6 @@
     <string name="nearby_convergence_title">Convergence automatique des photos proches</string>
     <string name="nearby_convergence_summary">Lors de la lecture d\'un diaporama sur une carte, les photos convergent vers celles qui sont proches et qui ont des coordonnées GPS.</string>
     <string name="true_black_title">Thème noir véritable</string>
+    <string name="sync_summary_finished">Tous les albums sont synchronisés.</string>
+    <string name="sync__summary_waiting">%1$,d éléments en attente dans le pipeline de synchronisation, datant d\'aussi loin que %2$s.</string>
 </resources>

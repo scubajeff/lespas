@@ -111,7 +111,6 @@
         <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
             app:title="@string/background_sync_title"
-            app:summaryOn="@string/background_sync_summary"
             app:singleLineTitle="false"
             app:defaultValue="false"/>
 

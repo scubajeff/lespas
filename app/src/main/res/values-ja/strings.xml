@@ -215,4 +215,6 @@
     <string name="nearby_convergence_title">近くの写真を自動収束</string>
     <string name="nearby_convergence_summary">地図上でスライドショーを再生すると、GPS座標を持つ近くの写真に収束します。</string>
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
+    <string name="sync_summary_finished">すべてのアルバムが同期されました。</string>
+    <string name="sync__summary_waiting">同期パイプラインで待機中の %1$,d 個のアイテム、日付は %2$s までさかのぼります。</string>
 </resources>

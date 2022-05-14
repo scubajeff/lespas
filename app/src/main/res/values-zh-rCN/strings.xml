@@ -215,4 +215,6 @@
     <string name="nearby_convergence_title">自动归集附近照片</string>
     <string name="nearby_convergence_summary">在地图上播放旅程时，自动将照片归集到附近的有GPS坐标的照片上。</string>
     <string name="true_black_title">采用深邃黑深色主题</string>
+    <string name="sync_summary_finished">所有相册已同步。</string>
+    <string name="sync__summary_waiting">从%2$s开始，还有%1$,d个相册操作未与服务器同步。</string>
 </resources>
