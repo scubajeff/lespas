@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.auth
 
+//import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
@@ -7,8 +8,8 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
-import android.graphics.drawable.Drawable
 import android.os.*
+import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -26,7 +27,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
+import com.google.android.material.progressindicator.IndeterminateDrawable
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
@@ -47,11 +49,12 @@ import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
+import kotlin.math.roundToInt
 
 class NCLoginFragment: Fragment() {
     private lateinit var inputArea: TextInputLayout
     private lateinit var hostEditText: TextInputEditText
-    private lateinit var loadingSpinner: Drawable
+    private lateinit var loadingIndicator: IndeterminateDrawable<CircularProgressIndicatorSpec>
 
     private var doAnimation = true
 
@@ -136,11 +139,13 @@ class NCLoginFragment: Fragment() {
                 }
             }
         }
-        loadingSpinner = CircularProgressDrawable(requireContext()).apply {
-            strokeWidth = 6.0f
-            centerRadius = 16.0f
-            setColorSchemeColors(ContextCompat.getColor(requireContext(), R.color.color_primary))
-            hostEditText.textSize.toInt().let { setBounds(0, 0, it, it) }
+
+        requireContext().let { ctx ->
+            loadingIndicator = IndeterminateDrawable.createCircularDrawable(
+                ctx,
+                // 22sp is android default large text size
+                CircularProgressIndicatorSpec(ctx, null).apply { this.indicatorSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 22f, ctx.resources.displayMetrics).roundToInt() }
+            )
         }
 
         authenticateModel.getPingResult().observe(viewLifecycleOwner) { result ->
@@ -225,7 +230,7 @@ class NCLoginFragment: Fragment() {
             }
             ICON_MODE_PINGING -> {
                 inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
-                inputArea.endIconDrawable = loadingSpinner.apply { (this as CircularProgressDrawable).start() }
+                inputArea.endIconDrawable = loadingIndicator
                 inputArea.setEndIconOnClickListener {  }
             }
         }
