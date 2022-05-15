@@ -381,7 +381,7 @@ object Tools {
         return medias
     }
 
-    fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album? {
+    fun getCameraRollAlbum(cr: ContentResolver, albumName: String): Album {
         val externalStorageUri = MediaStore.Files.getContentUri("external")
         var startDate = LocalDateTime.MIN
         var endDate: LocalDateTime
@@ -438,9 +438,16 @@ object Tools {
                         shareId = Album.NULL_ALBUM,
                         coverOrientation = orientation,
                     )
-                } else return null
-            } ?: return null
-        } catch (e: Exception) { return null }
+                }
+            }
+        } catch (e: Exception) {}
+
+        return Album(
+            id = CameraRollFragment.FROM_CAMERA_ROLL, name = albumName,
+            lastModified = LocalDateTime.now(), startDate = LocalDateTime.now(), endDate = LocalDateTime.now(),
+            sortOrder = Album.BY_DATE_TAKEN_DESC, eTag = Album.ETAG_CAMERA_ROLL_ALBUM, shareId = Album.NULL_ALBUM,
+            cover = CameraRollFragment.EMPTY_ROLL_COVER_ID, coverWidth = 192, coverHeight = 108,
+        )
     }
 
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
@@ -732,7 +739,19 @@ object Tools {
         return result
     }
 
-    fun photosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
+    fun photosToMetaJSONString(photos: List<Photo>): String {
+        var content = SyncAdapter.PHOTO_META_HEADER
+
+        photos.forEach { photo ->
+            with(photo) {
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+            }
+        }
+
+        return content.dropLast(1) + "]}}"
+    }
+
+    fun remotePhotosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
 
         remotePhotos.forEach {

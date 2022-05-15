@@ -68,7 +68,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
             }
 
             photo?.apply {
-                view.findViewById<TextView>(R.id.info_filename).text = name
+                view.findViewById<TextView>(R.id.info_filename).text = name.substringAfterLast("/")
                 view.findViewById<TextView>(R.id.info_shotat).text = dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
 
                 lifecycleScope.launch(Dispatchers.IO) {

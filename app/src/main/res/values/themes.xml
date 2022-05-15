@@ -62,7 +62,7 @@
         <item name="android:colorEdgeEffect">?attr/primaryTextWhite</item>
 
         <item name="android:textColorPrimary">?primaryTextWhite</item>
-        <item name="android:textColorPrimaryInverse">?primaryTextWhite</item>
+        <item name="android:textColorPrimaryInverse">?primaryTextBlack</item>
         <item name="android:textColorSecondary">#707070</item>
         <item name="android:textColorSecondaryInverse">#707070</item>
 

@@ -27,8 +27,11 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
@@ -69,6 +72,15 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             if (!response.isSuccessful) throw OkHttpWebDavException(response)
         }
     }
+/*
+    fun batchDelete(targets: List<String>, baseUrl: String, baseHREFFolder: String) {
+        var elements = ""
+        targets.forEach { elements += String.format(Locale.ROOT, BATCH_TARGET_ELEMENT, "${baseHREFFolder}${Uri.encode(it, "/")}") }
+        httpClient.newCall(Request.Builder().url(baseUrl).method("BDELETE", (String.format(Locale.ROOT, BATCH_BODY, "delete", elements, "delete")).toRequestBody("text/xml".toMediaType())).build()).execute().use { response ->
+            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+        }
+    }
+*/
 
     fun download(source: String, dest: String, cacheControl: CacheControl?) {
         val reqBuilder = Request.Builder().url(source)
@@ -165,15 +177,15 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                             XmlPullParser.TEXT -> text = parser.text
                             XmlPullParser.END_TAG -> {
                                 when (parser.name) {
-                                    HREF_TAG -> res.name = URI(
-                                        if (text.endsWith('/')) {
+                                    HREF_TAG -> res.name = URI(text).path.let { path ->
+                                        if (path.endsWith('/')) {
                                             res.isFolder = true
-                                            text.dropLast(1).substringAfterLast('/')
+                                            path.dropLast(1).substringAfterLast('/')
                                         } else {
                                             res.isFolder = false
-                                            text.substringAfterLast('/')
+                                            path.substringAfterLast('/')
                                         }
-                                    ).path
+                                    }
                                     OC_UNIQUE_ID -> res.fileId = text
                                     DAV_GETETAG -> res.eTag = text
                                     DAV_GETCONTENTTYPE -> res.contentType = text
@@ -182,6 +194,83 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
                                     RESPONSE_TAG -> {
                                         text = ""
+                                        result.add(res)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // Catch all XML parsing exceptions here, note that returned result in these situations would be partial
+                catch (e: XmlPullParserException) { e.printStackTrace() }
+                catch (e: IllegalArgumentException) { e.printStackTrace() }
+                catch (e: IOException) { e.printStackTrace() }
+            } else { throw OkHttpWebDavException(response) }
+
+            return result
+        }
+    }
+
+    fun listWithExtraMeta(targetName: String, depth: String): List<DAVResource> {
+        val result = mutableListOf<DAVResource>()
+
+        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+            var currentFolderId = ""
+            val offset = OffsetDateTime.now().offset
+            val prefix = targetName.substringAfter("//").substringAfter("/")
+
+            if (response.isSuccessful) {
+                try {
+                    val parser = XmlPullParserFactory.newInstance().newPullParser()
+                    parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+                    parser.setInput(response.body!!.byteStream().bufferedReader())
+
+                    var res = DAVResource()
+                    var text = ""
+                    while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                        when (parser.eventType) {
+                            XmlPullParser.START_TAG -> {
+                                when (parser.name) {
+                                    RESPONSE_TAG -> {
+                                        res = DAVResource()
+                                        res.dateTaken = LocalDateTime.MIN
+                                    }
+                                }
+                            }
+                            XmlPullParser.TEXT -> text = parser.text
+                            XmlPullParser.END_TAG -> {
+                                when (parser.name) {
+                                    HREF_TAG -> {
+                                        // Use URI.path to get escaped octets decoded
+                                        res.name = URI(text).path.substringAfter(prefix).let { path ->
+                                            if (path.endsWith('/')) {
+                                                res.isFolder = true
+                                                path.dropLast(1)
+                                            } else {
+                                                res.isFolder = false
+                                                path
+                                            }
+                                        }
+                                    }
+                                    OC_UNIQUE_ID -> {
+                                        res.fileId = text
+                                        if (res.isFolder) currentFolderId = text
+                                        else res.albumId = currentFolderId
+                                    }
+                                    DAV_GETETAG -> res.eTag = text
+                                    DAV_GETCONTENTTYPE -> res.contentType = text
+                                    DAV_GETLASTMODIFIED -> {
+                                        res.modified = try { LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME) } catch (e: DateTimeParseException) { LocalDateTime.now() }
+                                    }
+                                    DAV_SHARE_TYPE -> res.isShared = true
+                                    DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
+                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { LocalDateTime.ofEpochSecond(text.toLong() / 1000, 0, offset) } catch (e: Exception) { LocalDateTime.MIN }
+                                    LESPAS_WIDTH -> res.width = try { text.toInt() } catch (e: NumberFormatException) { 0 }
+                                    LESPAS_HEIGHT -> res.height = try { text.toInt() } catch (e: NumberFormatException) { 0 }
+                                    LESPAS_ORIENTATION -> res.orientation = try { text.toInt() } catch (e: NumberFormatException) { 0 }
+                                    RESPONSE_TAG -> {
+                                        text = ""
+                                        if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
                                         result.add(res)
                                     }
                                 }
@@ -213,6 +302,10 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun ocsPost(url: String, body: RequestBody) {
         httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use {}
+    }
+
+    fun patch(url: String, payload: String) {
+        httpClient.newCall(Request.Builder().url(url).cacheControl(CacheControl.FORCE_NETWORK).method("PROPPATCH", String.format(Locale.ROOT, PROPPATCH_EXTRA_META_BODY, payload).toRequestBody("text/xml".toMediaType())).header("Brief", "t").build()).execute().use {}
     }
 
     fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
@@ -348,6 +441,11 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         var isFolder: Boolean = false,
         var isShared: Boolean = false,
         var size: Long = 0L,
+        var albumId: String = "",
+        var dateTaken: LocalDateTime = LocalDateTime.now(),
+        var width: Int = 0,
+        var height: Int = 0,
+        var orientation: Int = 0,
     ): Parcelable
 
     companion object {
@@ -359,6 +457,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         // PROPFIND depth
         const val JUST_FOLDER_DEPTH = "0"
         const val FOLDER_CONTENT_DEPTH = "1"
+        const val RECURSIVE_DEPTH = "infinity"
 
         // PROPFIND properties namespace
         private const val DAV_NS = "DAV:"
@@ -381,7 +480,20 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         private const val OC_SIZE = "size"
         private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
-        private const val PROPFIND_BODY = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
+        // LesPas properties
+        const val LESPAS_DATE_TAKEN = "pictureDateTaken"
+        const val LESPAS_WIDTH = "pictureWidth"
+        const val LESPAS_HEIGHT = "pictureHeight"
+        const val LESPAS_ORIENTATION = "pictureOrientation"
+
+        private const val XML_HEADER = "<?xml version=\"1.0\"?>"
+        private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
+        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/></d:prop></d:propfind>"
+        private const val PROPPATCH_EXTRA_META_BODY = "${XML_HEADER}<d:propertyupdate xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:set><d:prop>%s</d:prop></d:set></d:propertyupdate>"
+/*
+        private const val BATCH_BODY = "${XML_HEADER}<D:%s xmlns:D=\"$DAV_NS\"><D:target>%s</D:target></D:%s>"
+        private const val BATCH_TARGET_ELEMENT = "<D:href>%s</D:href>"
+*/
 
         private const val RESPONSE_TAG = "response"
         private const val HREF_TAG = "href"

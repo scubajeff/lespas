@@ -39,6 +39,8 @@ data class Action (
        const val ACTION_REFRESH_ALBUM_LIST = 17
        const val ACTION_COPY_ON_SERVER = 18
        const val ACTION_MOVE_ON_SERVER = 19
+       //const val ACTION_BATCH_DELETE_FILE_ON_SERVER = 20
+       const val ACTION_DELETE_CAMERA_BACKUP_FILE = 21
    }
 }
 

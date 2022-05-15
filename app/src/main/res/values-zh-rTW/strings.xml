@@ -165,7 +165,7 @@
     <string name="action_reuse">至相冊…</string>
     <string name="preparing_shares">正在準備分享檔案……</string>
     <string name="striping_exif">正在洗掉圖片EXIF隱私資料……</string>
-    <string name="show_list_first">啟動相機相冊時顯示檔案列表</string>
+    <string name="show_list_first">啟動相機相冊時顯示照片列表</string>
     <string name="button_text_map">地圖App</string>
     <string name="object_location">拍照地點</string>
     <string name="item_location_search">拍照地點</string>
@@ -217,4 +217,8 @@
     <string name="true_black_title">採用暗黑深色主题</string>
     <string name="sync_summary_finished">所有相冊已同步。</string>
     <string name="sync__summary_waiting">從%2$s開始，還有%1$,d個相冊操作未與伺服器同步。</string>
+    <string name="tooltips_fetch_backup">列示伺服器上的備份</string>
+    <string name="tooltips_show_cameraroll">顯示本機相機相冊</string>
+    <string name="msg_empty_server_backup">伺服器上沒有備份。相機相冊自動備份設定開啟了嗎？</string>
+    <string name="msg_joint_album_not_updated_locally">更新將於合作相冊創建者確認後方會呈現。</string>
 </resources>

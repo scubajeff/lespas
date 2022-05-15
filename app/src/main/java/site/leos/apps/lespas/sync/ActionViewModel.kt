@@ -184,6 +184,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun removeBGM(albumName: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_DELETE_ALBUM_BGM, "", albumName, "", "", System.currentTimeMillis(), 1)) }}
 
     fun addActions(actions: List<Action>) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addActions(actions) }}
+    fun addAction(action: Action) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(action) }}
 
     private fun removeLocalMediaFile(photo: Photo) {
         try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}

@@ -111,7 +111,7 @@
     <string name="button_text_share">共有</string>
     <string name="action_remove">削除</string>
     <string name="action_select_all">全てを選択</string>
-    <string name="selected_count">項目 %1$d が選択されました。</string>
+    <string name="selected_count">項目%1$dが選択</string>
     <string name="empty_camera_roll">カメラのアルバムは空です。</string>
     <string name="tooltips_search_album">アルバム内検索</string>
     <string name="tooltips_search_cameraroll">カメラアルバム内検索</string>
@@ -217,4 +217,8 @@
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
     <string name="sync_summary_finished">すべてのアルバムが同期されました。</string>
     <string name="sync__summary_waiting">同期パイプラインで待機中の %1$,d 個のアイテム、日付は %2$s までさかのぼります。</string>
+    <string name="tooltips_fetch_backup">サーバー上のバックアップを表示</string>
+    <string name="tooltips_show_cameraroll">カメラロールを表示する</string>
+    <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
+    <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
 </resources>

@@ -217,4 +217,8 @@
     <string name="true_black_title">Tema negro verdadero</string>
     <string name="sync_summary_finished">Todos los álbumes están sincronizados.</string>
     <string name="sync__summary_waiting">%1$,d elementos en espera en la cadena de sincronización, con fecha desde %2$s.</string>
+    <string name="tooltips_fetch_backup">Mostrar las copias de seguridad en el servidor</string>
+    <string name="tooltips_show_cameraroll">Mostrar el rollo de la cámara</string>
+    <string name="msg_empty_server_backup">No hay copias de seguridad en el servidor. Has activado la copia de seguridad automática del rollo de la cámara en la configuración?</string>
+    <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
 </resources>

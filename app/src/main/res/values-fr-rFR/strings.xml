@@ -217,4 +217,8 @@
     <string name="true_black_title">Thème noir véritable</string>
     <string name="sync_summary_finished">Tous les albums sont synchronisés.</string>
     <string name="sync__summary_waiting">%1$,d éléments en attente dans le pipeline de synchronisation, datant d\'aussi loin que %2$s.</string>
+    <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
+    <string name="tooltips_show_cameraroll">Afficher les rouleaux de caméra</string>
+    <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de l\'appareil photo dans les paramètres ?</string>
+    <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album commun seront affichées après que le propriétaire de l\'album les aura confirmées.</string>
 </resources>

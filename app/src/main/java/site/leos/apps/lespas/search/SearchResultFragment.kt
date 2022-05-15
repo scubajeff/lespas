@@ -79,7 +79,7 @@ class SearchResultFragment : Fragment() {
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id), CameraRollFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
             { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
