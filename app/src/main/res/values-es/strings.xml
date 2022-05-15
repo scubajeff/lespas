@@ -215,4 +215,6 @@
     <string name="nearby_convergence_title">Convergencia automática de fotos cercanas</string>
     <string name="nearby_convergence_summary">Al reproducir el pase de diapositivas en el mapa, las fotos convergen en la más cercana que tenga coordenadas GPS.</string>
     <string name="true_black_title">Tema negro verdadero</string>
+    <string name="sync_summary_finished">Todos los álbumes están sincronizados.</string>
+    <string name="sync__summary_waiting">%1$,d elementos en espera en la cadena de sincronización, con fecha desde %2$s.</string>
 </resources>

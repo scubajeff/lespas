@@ -277,4 +277,6 @@
     <string name="nearby_convergence_title">Convergem automaticamente fotos próximas</string>
     <string name="nearby_convergence_summary">Ao reproduzir slideshow no mapa, converge as fotos para a próxima que tem coordenada GPS.</string>
     <string name="true_black_title">Verdadeiro tema negro e escuro</string>
+    <string name="sync_summary_finished">Todos os álbuns estão sincronizados.</string>
+    <string name="sync__summary_waiting">Os itens em %1$,d que aguardam em sincronia, remontam a %2$s.</string>
 </resources>

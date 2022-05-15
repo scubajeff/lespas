@@ -50,8 +50,13 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
     private var summaryString: String? = null
@@ -69,6 +74,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
+
+    private var syncPreference: Preference? = null
+    private val actionModel: ActionViewModel by activityViewModels()
 
     private var actionBarHeight = 0
 
@@ -129,6 +137,65 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
     }
 
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        volume = (requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes
+        accounts = AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))
+
+        setPreferencesFromResource(R.xml.root_preferences, rootKey)
+        syncPreference = findPreference(getString(R.string.sync_pref_key))
+
+        findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
+            if (sharedPreferences.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values)) == getString(R.string.theme_light_values)) {
+                // Disable true black theme switch if fixed light theme selected
+                isEnabled = false
+                isChecked = false
+            } else isEnabled = true
+        }
+
+        findPreference<Preference>(getString(R.string.transfer_pref_key))?.let {
+            it.isVisible = volume.size > 1
+            if (it.isVisible) {
+                val inInternal = it.sharedPreferences.getBoolean(KEY_STORAGE_LOCATION, true)
+                it.title = getString(if (inInternal) R.string.transfer_to_external else R.string.transfer_to_internal)
+//                savedInstanceState ?: run {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    totalSize = Tools.getStorageSize(requireContext())
+                    withContext(Dispatchers.Main) {
+                        if (inInternal && volume[1].state != Environment.MEDIA_MOUNTED) {
+                            it.isEnabled = false
+                            it.summary = getString(R.string.external_storage_not_writable)
+                        } else {
+                            it.isEnabled = isEnoughSpace(it.sharedPreferences)
+                            if (!it.isEnabled) it.summary = getString(R.string.not_enough_space_message, Tools.humanReadableByteCountSI(totalSize), getString(if (inInternal) R.string.external_storage else R.string.internal_storage))
+                        }
+                    }
+                }
+//                }
+            }
+        }
+
+        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+            // Make sure SYNC preference acts accordingly
+            if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                it.isChecked = true
+                showBackupSummary()
+                it.isEnabled = false
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
+            summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
+        }
+
+        // Toggle some switches off when Storage Access permission is missing
+        if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = false
+            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = false
+            findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+            //toggleAutoSync(false)
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -168,63 +235,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 }
             }
         }
-    }
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        volume = (requireContext().getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes
-        accounts = AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))
-
-        setPreferencesFromResource(R.xml.root_preferences, rootKey)
-
-        findPreference<SwitchPreferenceCompat>(getString(R.string.true_black_pref_key))?.run {
-            if (sharedPreferences.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values)) == getString(R.string.theme_light_values)) {
-                // Disable true black theme switch if fixed light theme selected
-                isEnabled = false
-                isChecked = false
-            } else isEnabled = true
-        }
-
-        findPreference<Preference>(getString(R.string.transfer_pref_key))?.let {
-            it.isVisible = volume.size > 1
-            if (it.isVisible) {
-                val inInternal = it.sharedPreferences.getBoolean(KEY_STORAGE_LOCATION, true)
-                it.title = getString(if (inInternal) R.string.transfer_to_external else R.string.transfer_to_internal)
-//                savedInstanceState ?: run {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        totalSize = Tools.getStorageSize(requireContext())
-                        withContext(Dispatchers.Main) {
-                            if (inInternal && volume[1].state != Environment.MEDIA_MOUNTED) {
-                                it.isEnabled = false
-                                it.summary = getString(R.string.external_storage_not_writable)
-                            } else {
-                                it.isEnabled = isEnoughSpace(it.sharedPreferences)
-                                if (!it.isEnabled) it.summary = getString(R.string.not_enough_space_message, Tools.humanReadableByteCountSI(totalSize), getString(if (inInternal) R.string.external_storage else R.string.internal_storage))
-                            }
-                        }
-                    }
-//                }
-            }
-        }
-
-        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
-            // Make sure SYNC preference acts accordingly
-            if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                it.isChecked = true
-                showBackupSummary()
-                it.isEnabled = false
-            }
-        }
-
-        findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
-            summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
-        }
-
-        // Toggle some switches off when Storage Access permission is missing
-        if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = false
-            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = false
-            findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
-            //toggleAutoSync(false)
+        actionModel.allPendingActions.observe(viewLifecycleOwner) { actions ->
+            syncPreference?.summary =
+                if (actions.isEmpty()) getString(R.string.sync_summary_finished)
+                else getString(R.string.sync__summary_waiting, actions.size, Instant.ofEpochMilli(actions[0].date).atZone(ZoneId.systemDefault()).toLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
+                //else getString(R.string.sync__summary_waiting, actions.size, Instant.ofEpochMilli(actions[0].date))
         }
     }
 
@@ -447,6 +463,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
              */
         }
         else ContentResolver.removePeriodicSync(accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
+
+        syncWhenClosing = on
     }
 
     private fun showStatistic(preference: Preference) {

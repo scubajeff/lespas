@@ -170,6 +170,8 @@
     <string name="wifionly_title">Sync only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
+    <string name="sync_summary_finished">All albums synced.</string>
+    <string name="sync__summary_waiting">%1$,d items waiting in sync pipeline, date back as early as %2$s.</string>
 
     <string name="map_header">Map</string>
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
