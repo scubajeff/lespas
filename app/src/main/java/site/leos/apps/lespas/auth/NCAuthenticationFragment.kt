@@ -118,15 +118,11 @@ class NCAuthenticationFragment: Fragment() {
                     return false
                 }
 
-                override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
-                    if (errorResponse != null) view?.reload()   // TODO: better error handling
-                    super.onReceivedHttpError(view, request, errorResponse)
-                }
-
                 override fun onPageFinished(webView: WebView?, url: String?) {
                     super.onPageFinished(webView, url)
 
                     webView?.let {
+                        // Reveal webview after Nextcloud login process landing page loaded
                         if (webView.alpha == 0f) {
                             authWebpageBG.background = ColorDrawable(ContextCompat.getColor(webView.context, R.color.color_background))
                             sloganView?.clearAnimation()
@@ -142,6 +138,11 @@ class NCAuthenticationFragment: Fragment() {
                             }
                         }
                     }
+                }
+
+                override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
+                    errorResponse?.let { view?.reload() }   // TODO: better error handling
+                    super.onReceivedHttpError(view, request, errorResponse)
                 }
 
                 // Have to allow self-signed certificate
@@ -196,9 +197,7 @@ class NCAuthenticationFragment: Fragment() {
 
             authenticateModel.getCredential().run {
                 if (username.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
-                else {
-                    prepareCredential(this.serverUrl, username, token)
-                }
+                else prepareCredential(serverUrl, username, token)
             }
         }
 
