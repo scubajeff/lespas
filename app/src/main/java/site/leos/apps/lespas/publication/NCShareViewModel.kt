@@ -878,7 +878,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
 
                     // Stop loading indicator
-                    view.background = null
+                    //view.background = null
+                    view.setBackgroundResource(0)
                 }
                 callBack?.onLoadComplete()
             }
