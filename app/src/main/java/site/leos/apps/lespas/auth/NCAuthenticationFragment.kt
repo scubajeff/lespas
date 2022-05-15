@@ -17,7 +17,6 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
-import android.graphics.drawable.ColorDrawable
 import android.net.http.SslError
 import android.os.Bundle
 import android.util.Base64
@@ -109,7 +108,7 @@ class NCAuthenticationFragment: Fragment() {
                                 parentFragmentManager.popBackStack()
                             }
 
-                            // Don't load this uri with webview
+                            // Don't load this page in webview
                             return true
                         }
                     }
@@ -124,13 +123,15 @@ class NCAuthenticationFragment: Fragment() {
                     webView?.let {
                         // Reveal webview after Nextcloud login process landing page loaded
                         if (webView.alpha == 0f) {
-                            authWebpageBG.background = ColorDrawable(ContextCompat.getColor(webView.context, R.color.color_background))
+                            //authWebpageBG.background.let { if (it is AnimatedVectorDrawable) it.stop() }
+                            authWebpageBG.setBackgroundColor(ContextCompat.getColor(webView.context, R.color.color_background))
                             sloganView?.clearAnimation()
 
                             authWebpage.apply {
                                 alpha = 0f
                                 animate().alpha(1f).setDuration(resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()).setListener(object: AnimatorListenerAdapter() {
                                     override fun onAnimationEnd(animation: Animator?) {
+                                        authWebpage.alpha = 1f
                                         requestFocus()
                                         super.onAnimationEnd(animation)
                                     }
@@ -170,7 +171,7 @@ class NCAuthenticationFragment: Fragment() {
             // Show a loading sign first
             authWebpage.alpha = 0f
 
-            if (theming.color != Color.TRANSPARENT) view.findViewById<FrameLayout>(R.id.theme_background).background = ColorDrawable(theming.color)
+            if (theming.color != Color.TRANSPARENT) view.findViewById<FrameLayout>(R.id.theme_background).setBackgroundColor(theming.color)
             if (theming.slogan.isNotEmpty()) {
                 sloganView = view.findViewById<TextView>(R.id.slogan).apply {
                     text = theming.slogan
