@@ -1,0 +1,5 @@
+* New: manage camera roll archive on server
+* New: show sync status in Setting menu
+* Fixed crash when opening app on Android 9
+* Fixed QR code scanning function in Login screen
+* Other improvements and bugs fixes

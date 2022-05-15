@@ -1,0 +1,5 @@
+* Novo: gerenciar o arquivo de rolos de câmera no servidor
+* Novo: mostrar status de sincronização no menu Setting
+* Corrigida a falha ao abrir o aplicativo no Android 9
+* Função de varredura fixa de código QR na tela de Login
+* Outras melhorias e correções de bugs

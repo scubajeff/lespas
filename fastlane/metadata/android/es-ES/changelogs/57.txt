@@ -1,0 +1,5 @@
+* Nuevo: gestionar el archivo del rollo de la cámara en el servidor
+* Nuevo: mostrar el estado de sincronización en el menú de ajustes
+* Corregido el fallo al abrir la aplicación en Android 9
+* Corregida la función de escaneo de códigos QR en la pantalla de inicio de sesión
+* Otras mejoras y correcciones de errores

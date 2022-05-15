@@ -1,3 +1,9 @@
+## Version 2.5.10
+* New: manage camera roll archive on server
+* New: show sync status in Setting menu
+* Fixed crash when opening app on Android 9
+* Fixed QR code scanning function in Login screen
+
 ## Version 2.5.9
 * Fixed sync setting error that accidentally turns off album auto sync. You might need to take a look at the 'Setting'.
 

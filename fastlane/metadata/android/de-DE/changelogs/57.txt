@@ -1,0 +1,5 @@
+* Neu: Verwaltung des Kamerarollenarchivs auf dem Server
+* Neu: Anzeige des Synchronisierungsstatus im Einstellungsmenü
+* Absturz beim Öffnen der App unter Android 9 behoben
+* Funktion zum Scannen von QR-Codes im Anmeldebildschirm behoben
+* Weitere Verbesserungen und Fehlerkorrekturen

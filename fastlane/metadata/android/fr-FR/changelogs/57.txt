@@ -1,0 +1,5 @@
+* Nouveau : gestion des archives de la liste des caméras sur le serveur
+* Nouveau : affichage de l'état de la synchronisation dans le menu Paramètres
+* Correction d'un crash à l'ouverture de l'application sous Android 9
+* Correction de la fonction de lecture du code QR dans l'écran de connexion
+* Autres améliorations et corrections de bugs
