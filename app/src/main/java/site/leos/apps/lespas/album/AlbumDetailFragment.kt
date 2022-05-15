@@ -356,7 +356,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 dateIndicator.let {
-                                    it.text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC) mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
+                                    it.text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC || album.sortOrder == Album.BY_NAME_ASC_WIDE || album.sortOrder == Album.BY_NAME_DESC_WIDE)
+                                        mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
                                     else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
                                     it.isVisible = true
