@@ -104,8 +104,6 @@
 
         <!-- Customize your theme here. -->
         <item name="android:windowActivityTransitions">true</item>
-        <item name="android:windowSharedElementsUseOverlay">false</item>
-        <item name="android:windowContentOverlay">@null</item>
     </style>
 
     <!-- Normal Theme for ShareReceiverActivity -->
