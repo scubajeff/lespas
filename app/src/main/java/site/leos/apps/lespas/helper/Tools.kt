@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
@@ -8,6 +9,8 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
@@ -533,6 +536,28 @@ object Tools {
                 drawBitmap(bitmap, 0f, 0f, null)
             }
         }
+    }
+
+    fun getSelectedMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_selected_24)
+    fun getPlayMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_play_mark_24)
+    private fun getScaledDrawable(context: Activity, scale: Float, resId: Int): Drawable {
+        val size: Int = (
+            scale * (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                DisplayMetrics().run {
+                    @Suppress("DEPRECATION")
+                    context.windowManager.defaultDisplay.getRealMetrics(this)
+                    this.widthPixels
+                }
+            } else context.windowManager.currentWindowMetrics.bounds.width())
+        ).toInt()
+
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        ContextCompat.getDrawable(context, resId)?.apply {
+            setBounds(0, 0, size, size)
+            draw(Canvas(bmp))
+        }
+
+        return BitmapDrawable(context.resources, bmp)
     }
 
     @Suppress("DEPRECATION")

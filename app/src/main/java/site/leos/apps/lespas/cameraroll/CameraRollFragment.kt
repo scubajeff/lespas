@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
@@ -320,6 +321,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
+        quickScrollAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / quickScrollGridSpanCount)))
+        quickScrollAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / quickScrollGridSpanCount))
 
         playerViewModel.setWindow(requireActivity().window)
 
@@ -1458,16 +1461,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
+        private var playMark: Drawable? = null
+        private var selectedMark: Drawable? = null
 
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentId = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
-            private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
-            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
 
             fun bind(item: Photo) {
                 itemView.let {
-                    it.isActivated = selectionTracker.isSelected(item.id)
+                    it.isSelected = selectionTracker.isSelected(item.id)
 
                     with(ivPhoto) {
                         if (currentId != item.id) {
@@ -1476,18 +1479,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             currentId = item.id
                         }
 
-                        if (this.isActivated) {
-                            colorFilter = selectedFilter
-                            ivSelectionMark.visibility = View.VISIBLE
-                        } else {
-                            clearColorFilter()
-                            ivSelectionMark.visibility = View.GONE
+                        foreground = when {
+                            it.isSelected -> selectedMark
+                            Tools.isMediaPlayable(item.mimeType) -> playMark
+                            else -> null
                         }
+
+                        if (this.isSelected) colorFilter = selectedFilter
+                        else clearColorFilter()
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
                     }
-
-                    ivPlayMark.visibility = if (Tools.isMediaPlayable(item.mimeType)) View.VISIBLE else View.GONE
                 }
             }
 
@@ -1582,6 +1584,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 super.submitList(listGroupedByDate, commitCallback)
             }
         }
+
+        internal fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
+        internal fun setSelectedMarkDrawable(newDrawable: Drawable) { selectedMark = newDrawable }
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].id.isEmpty()) DATE_TYPE else MEDIA_TYPE
 

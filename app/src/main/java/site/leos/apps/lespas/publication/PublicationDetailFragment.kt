@@ -1,6 +1,7 @@
 package site.leos.apps.lespas.publication
 
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
@@ -141,8 +142,10 @@ class PublicationDetailFragment: Fragment() {
         val vg = inflater.inflate(R.layout.fragment_publication_detail, container, false)
 
         photoList = vg.findViewById<RecyclerView>(R.id.photo_list).apply {
-            layoutManager = StaggeredGridLayoutManager(resources.getInteger(R.integer.publication_detail_grid_span_count), StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
+            val defaultSpanCount = resources.getInteger(R.integer.publication_detail_grid_span_count)
+            layoutManager = StaggeredGridLayoutManager(defaultSpanCount, StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
             adapter = photoListAdapter
+            photoListAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), 0.25f / defaultSpanCount))
         }
 
         return vg
@@ -296,11 +299,11 @@ class PublicationDetailFragment: Fragment() {
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
         private val mBoundViewHolders = mutableSetOf<ViewHolder>()
         private var displayMeta = false
+        private var playMark: Drawable? = null
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentPhotoId = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.media)
-            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.media).apply { foregroundGravity = Gravity.CENTER }
             private val tvMeta = itemView.findViewById<TextView>(R.id.meta)
 
             fun bind(item: NCShareViewModel.RemotePhoto, position: Int) {
@@ -318,10 +321,9 @@ class PublicationDetailFragment: Fragment() {
                             applyTo(it)
                         }
                     }
+                    foreground = if (Tools.isMediaPlayable(item.photo.mimeType)) playMark else null
                     setOnClickListener { clickListener(this, currentList, position) }
                 }
-
-                ivPlayMark.visibility = if (Tools.isMediaPlayable(item.photo.mimeType)) View.VISIBLE else View.GONE
 
                 tvMeta.apply {
                     text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
@@ -354,6 +356,7 @@ class PublicationDetailFragment: Fragment() {
         }
 
         fun isMetaDisplayed(): Boolean = displayMeta
+        fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

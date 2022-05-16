@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.database.ContentObserver
 import android.graphics.*
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -904,6 +905,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun newLayoutManger(): GridLayoutManager {
         val defaultSpanCount = resources.getInteger(if (Tools.isWideListAlbum(album)) R.integer.photo_grid_span_count_wide else R.integer.photo_grid_span_count)
+        mAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album)) 0.24f else 0.32f) / defaultSpanCount))
+        mAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album)) 0.16f else 0.25f) / defaultSpanCount))
+
         return GridLayoutManager(context, defaultSpanCount).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
@@ -920,6 +924,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var recipients = mutableListOf<NCShareViewModel.Recipient>()
         private var recipientText = ""
+        private var playMark: Drawable? = null
+        private var selectedMark: Drawable? = null
 
         inner class CoverViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentCover = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN)
@@ -973,9 +979,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentPhotoName = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo)
-            private val ivSelectionMark = itemView.findViewById<ImageView>(R.id.selection_mark)
-            private val ivPlayMark = itemView.findViewById<ImageView>(R.id.play_mark)
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
             private var tvTitle: TextView? = if (isWideList) itemView.findViewById(R.id.title) else null
 
             fun bindViewItem(photo: Photo) {
@@ -990,22 +994,24 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             currentPhotoName = photo.name
                         }
 
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
+                        foreground = when {
+                            it.isSelected -> selectedMark
+                            Tools.isMediaPlayable(photo.mimeType) -> playMark
+                            else -> null
+                        }
 
                         if (it.isSelected) {
                             colorFilter = selectedFilter
-                            ivSelectionMark.isVisible = true
                             tvTitle?.isVisible = false
                         } else {
                             clearColorFilter()
-                            ivSelectionMark.isVisible = false
                             tvTitle?.isVisible = true
                         }
+
+                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
                     }
 
                     tvTitle?.text = photo.name.substringBeforeLast('.')
-
-                    ivPlayMark.visibility = if (Tools.isMediaPlayable(photo.mimeType) && !it.isSelected) View.VISIBLE else View.GONE
                 }
             }
 
@@ -1074,6 +1080,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             this.recipients = share.with
             notifyItemChanged(0)
         }
+
+        internal fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
+        internal fun setSelectedMarkDrawable(newDrawable: Drawable) { selectedMark = newDrawable }
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }

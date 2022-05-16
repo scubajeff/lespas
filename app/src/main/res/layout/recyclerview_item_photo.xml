@@ -7,7 +7,6 @@
     android:layout_height="wrap_content"
     android:layout_marginRight="1dp"
     android:layout_marginBottom="1dp"
-    android:foreground="?android:attr/selectableItemBackground"
     tools:ignore="RtlHardcoded">
 
     <ImageView
@@ -16,37 +15,7 @@
         android:layout_height="0dp"
         app:layout_constraintDimensionRatio="H,1:1"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         android:scaleType="centerCrop"
         tools:src="@drawable/login_background_gradient_2"/>
-
-    <ImageView
-        android:id="@+id/selection_mark"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintWidth_percent="0.25"
-        android:elevation="2dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_baseline_selected_24"
-        android:visibility="gone"/>
-
-    <ImageView
-        android:id="@+id/play_mark"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintWidth_percent="0.32"
-        android:src="@drawable/ic_baseline_play_mark_24"
-        android:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
