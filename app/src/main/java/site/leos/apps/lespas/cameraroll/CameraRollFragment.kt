@@ -58,6 +58,8 @@ import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.*
@@ -70,8 +72,7 @@ import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.search.SearchResultFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -79,6 +80,7 @@ import java.util.*
 import kotlin.collections.contains
 import kotlin.math.atan2
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -104,6 +106,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var sourceToggleGroup: MaterialButtonToggleGroup
     private lateinit var toggleCameraRollButton: MaterialButton
     private lateinit var toggleBackupsButton: MaterialButton
+    private lateinit var datePickerButton: ImageButton
     private lateinit var cBadge: BadgeDrawable
     private lateinit var aBadge: BadgeDrawable
 
@@ -373,6 +376,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         sourceToggleGroup = view.findViewById(R.id.source_toggle_group)
         toggleCameraRollButton = view.findViewById(R.id.source_device)
         toggleBackupsButton = view.findViewById(R.id.source_backups)
+        datePickerButton = view.findViewById(R.id.date_picker_button)
 
         toggleCameraRollButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(cBadge, toggleCameraRollButton) }
         toggleBackupsButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(aBadge, toggleBackupsButton) }
@@ -658,6 +662,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (slideOffset >= 0) {
                         buttonGroup.isVisible = true
                         sourceToggleGroup.isVisible = allowToggleContent
+                        datePickerButton.isVisible = true
 
                         val alpha = 255 - (255 * slideOffset).toInt()
                         val buttonGroupAlpha = 256 - (128 * slideOffset)
@@ -670,6 +675,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                         quickScroll.foreground = ColorDrawable(ColorUtils.setAlphaComponent(backgroundColor, alpha))
                         sourceToggleGroup.alpha = (255 - alpha) / 255.0f
+                        datePickerButton.alpha = (255 - alpha) / 255.0f
                     }
                 }
             })
@@ -744,7 +750,28 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         toggleBackupsButton.setOnClickListener {
             if (camerarollModel.getVMState().value == CameraRollViewModel.STATE_SHOWING_DEVICE) {
                 camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+                datePickerButton.isEnabled = false
                 camerarollModel.fetchPhotoFromServerBackup()
+            }
+        }
+        datePickerButton.setOnClickListener {
+
+            quickScrollAdapter.dateRange().let { dateRange ->
+                MaterialDatePicker.Builder.datePicker()
+                    .setCalendarConstraints(CalendarConstraints.Builder().setValidator(object: CalendarConstraints.DateValidator {
+                        override fun describeContents(): Int = 0
+                        override fun writeToParcel(dest: Parcel?, flags: Int) {}
+                        override fun isValid(date: Long): Boolean = quickScrollAdapter.hasDate(date)
+                    }).setStart(dateRange.first).setEnd(dateRange.second).setOpenAt(quickScrollAdapter.getDateByPosition((quickScroll.layoutManager as GridLayoutManager).findFirstVisibleItemPosition())).build())
+                    .setTheme(R.style.ThemeOverlay_LesPas_DatePicker)
+                    .build()
+                    .apply {
+                        addOnPositiveButtonClickListener { picked ->
+                            val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastVisibleItemPosition()
+                            quickScrollAdapter.getPositionByDate(picked).let { newPosition ->
+                                quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount)) }
+                        }
+                    }.show(parentFragmentManager, null)
             }
         }
         closeButton.setOnClickListener { if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN }
@@ -985,8 +1012,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             if (bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) updateMetaDisplay()
 
+            datePickerButton.isEnabled = false
             (quickScroll.adapter as QuickScrollAdapter).submitList(it) {
                 camerarollModel.getQuickScrollState()?.let { savedState -> quickScroll.layoutManager?.onRestoreInstanceState(savedState) }
+                datePickerButton.isEnabled = true
             }
 
             if (toggleBackupsButton.isChecked) {
@@ -1051,6 +1080,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             isVisible = mState
             isEnabled = mState
             alpha = if (mState) 1f else 0f
+        }
+        datePickerButton.run {
+            isVisible = state
+            isEnabled = state
+            alpha = if (state) 1f else 0f
         }
     }
 
@@ -1568,7 +1602,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                     listGroupedByDate.add(media)
                 }
-
 /*
                 // Get total for each date
                 var sectionCount = 0
@@ -1593,6 +1626,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+
+        fun hasDate(date: Long): Boolean {
+            val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+            return (currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
+        }
+        fun dateRange(): Pair<Long, Long> {
+            return Pair(currentList.last().dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli())
+        }
+        fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli() - date < 86400000 }
+        fun getDateByPosition(position: Int): Long = currentList[position].dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli()
+
         class PhotoKeyProvider(private val adapter: QuickScrollAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)

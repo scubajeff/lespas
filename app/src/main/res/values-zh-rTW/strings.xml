@@ -221,4 +221,5 @@
     <string name="tooltips_show_cameraroll">顯示本機相機相冊</string>
     <string name="msg_empty_server_backup">伺服器上沒有備份。相機相冊自動備份設定開啟了嗎？</string>
     <string name="msg_joint_album_not_updated_locally">更新將於合作相冊創建者確認後方會呈現。</string>
+    <string name="tooltips_date_picker">選擇日期</string>
 </resources>

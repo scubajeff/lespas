@@ -273,4 +273,5 @@
     <string name="tooltips_show_cameraroll">Kamerarolle anzeigen</string>
     <string name="msg_empty_server_backup">Keine Backups auf dem Server. Haben Sie die automatische Sicherung der Kamerarolle in den Einstellungen aktiviert?</string>
     <string name="msg_joint_album_not_updated_locally">Änderungen, die an einem gemeinsamen Album vorgenommen wurden, werden angezeigt, nachdem der Eigentümer des Albums sie bestätigt hat.</string>
+    <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
 </resources>
