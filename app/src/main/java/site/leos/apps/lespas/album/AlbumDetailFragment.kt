@@ -783,18 +783,20 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 // Synced file is named after id, not yet synced file is named after file's name
                 destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
 
-                if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                    imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
-                } else {
-                    //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
-                    sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
-                    // This TEMP_CACHE_FOLDER is created by MainActivity
+                try {
+                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                        imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
+                    } else {
+                        //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
+                        sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
+                        // This TEMP_CACHE_FOLDER is created by MainActivity
 
-                    // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                    if (strip && Tools.hasExif(photo.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    else sourceFile.copyTo(destFile, true, 4096)
-                    true
-                }
+                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
+                        if (strip && Tools.hasExif(photo.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
+                        else sourceFile.copyTo(destFile, true, 4096)
+                        true
+                    }
+                } catch (e: Exception) { false }
             }) uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
         }
 
