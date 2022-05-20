@@ -623,6 +623,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
 
  */
+                            camerarollModel.getCurrentPhoto()?.id?.let { id -> quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(id)) }
                             updateExpandedDisplay()
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
@@ -1216,6 +1217,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private var backups = mutableListOf<Photo>()
         private val cr = ctx.contentResolver
         private val vmState = MutableLiveData<Int>()
+        private val position = arrayListOf(0, 0)
+        private var shouldDisableRemove = false
+        private var shouldDisableShare = false
+        private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
 
         init {
             vmState.postValue(STATE_SHOWING_DEVICE)
@@ -1419,15 +1424,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        //private var currentPosition = 0
-        private val position = arrayListOf(0, 0)
         private fun getCurrentSource() = vmState.value?.let { if (it > 0) 1 else 0 } ?: 0
         fun setCurrentPosition(newPosition: Int) { position[getCurrentSource()] = newPosition }
         fun getCurrentPosition(): Int = position[getCurrentSource()]
         fun getCurrentPhoto(): Photo? = mediaList.value?.let { if (it.size == 0) null else it[position[getCurrentSource()]] }
 
-        private var shouldDisableRemove = false
-        private var shouldDisableShare = false
         fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
 
@@ -1453,7 +1454,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             return result
         }
 
-        private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
         fun saveQuickScrollState(state: Parcelable?) { quickScrollState[getCurrentSource()] = state }
         fun getQuickScrollState(): Parcelable? = quickScrollState[getCurrentSource()]
 
