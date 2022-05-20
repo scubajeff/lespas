@@ -1,6 +1,9 @@
 package site.leos.apps.lespas.cameraroll
 
 import android.accounts.AccountManager
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
@@ -21,6 +24,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.TypedValue
 import android.view.*
+import android.view.animation.BounceInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -52,6 +56,7 @@ import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.RecyclerView.*
 import androidx.transition.Transition
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils
@@ -136,6 +141,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private var shareOutJob: Job? = null
 
+    private val sx = PropertyValuesHolder.ofFloat("scaleX", 1.0f, 0.8f, 1.0f)
+    private val sy = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 0.8f, 1.0f)
+    private val tx = PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -172,7 +181,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                 }},
             { view-> imageLoaderModel.cancelSetImagePhoto(view) }
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+        ).apply { stateRestorationPolicy = Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
@@ -186,9 +195,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
-            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type)},
-            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type) },
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) },
+            { view -> flashPhoto(view) },
+            { view -> flashDate(view) }
+        ).apply { stateRestorationPolicy = Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         savedInstanceState?.let {
             (requireActivity() as AppCompatActivity).supportActionBar?.hide()
@@ -486,22 +497,22 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             PagerSnapHelper().attachToRecyclerView(this)
 
             // Detect swipe up gesture and show BottomSheet
-            addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
+            addOnItemTouchListener(object: SimpleOnItemTouchListener() {
                 override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean = gestureDetector.onTouchEvent(e)
             })
 
-            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            addOnScrollListener(object: OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
 
                     when(newState) {
-                        RecyclerView.SCROLL_STATE_DRAGGING-> {
+                        SCROLL_STATE_DRAGGING -> {
                             // Dismiss BottomSheet when user starts scrolling
                             bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                         }
-                        RecyclerView.SCROLL_STATE_IDLE-> {
+                        SCROLL_STATE_IDLE -> {
                             // Save current position in VM
-                            (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().let { pos -> camerarollModel.setCurrentPosition(if (pos == RecyclerView.NO_POSITION) 0 else pos) }
+                            (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().let { pos -> camerarollModel.setCurrentPosition(if (pos == NO_POSITION) 0 else pos) }
 
                             // Update meta display textview after scrolled
                             updateMetaDisplay()
@@ -531,7 +542,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        mediaPagerAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+        mediaPagerAdapter.registerAdapterDataObserver(object : AdapterDataObserver() {
             override fun onChanged() {
                 super.onChanged()
                 toggleEmptyView()
@@ -558,7 +569,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         mediaPagerEmptyView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
 
         quickScrollEmptyView.setOnTouchListener { _, _ -> false }
-        quickScrollAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+        quickScrollAdapter.registerAdapterDataObserver(object : AdapterDataObserver() {
             override fun onChanged() {
                 super.onChanged()
                 toggleEmptyView()
@@ -623,8 +634,21 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
 
  */
-                            camerarollModel.getCurrentPhoto()?.id?.let { id -> quickScroll.scrollToPosition(quickScrollAdapter.getPhotoPosition(id)) }
                             updateExpandedDisplay()
+
+                            // Flash photo to indicate it's position
+                            camerarollModel.getCurrentPhoto()?.id?.let { photoId ->
+                                quickScrollAdapter.getPhotoPosition(photoId).let { pos ->
+                                    quickScroll.findViewHolderForAdapterPosition(pos)?.itemView?.findViewById<ImageView>(R.id.photo)?.let {
+                                        // Flash current photo in list if it's within current range
+                                        view -> flashPhoto(view)
+                                    } ?: run {
+                                        // Scroll to the current photo and flash it after it's view ready
+                                        quickScroll.scrollToPosition(pos)
+                                        quickScrollAdapter.setFlashPhoto(photoId)
+                                    }
+                                }
+                            }
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             selectionTracker.clearSelection()
@@ -770,7 +794,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         addOnPositiveButtonClickListener { picked ->
                             val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastVisibleItemPosition()
                             quickScrollAdapter.getPositionByDate(picked).let { newPosition ->
-                                quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount)) }
+                                quickScroll.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view -> flashDate(view)
+                                } ?: run {
+                                    quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount))
+                                    quickScrollAdapter.setFlashDate(picked)
+                                }
+                            }
                         }
                     }.show(parentFragmentManager, null)
             }
@@ -1086,6 +1115,23 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             isVisible = state
             isEnabled = state
             alpha = if (state) 1f else 0f
+        }
+    }
+
+    fun flashPhoto(view: View) {
+        ObjectAnimator.ofPropertyValuesHolder(view, sx, sy).run {
+            duration = 800
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = BounceInterpolator()
+            start()
+        }
+    }
+    fun flashDate(view: View) {
+        ObjectAnimator.ofPropertyValuesHolder(view, tx).run {
+            duration = 800
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = BounceInterpolator()
+            start()
         }
     }
 
@@ -1491,14 +1537,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit, private val flashPhoto: (View) -> Unit, private val flashDate: (View) -> Unit
+    ): ListAdapter<Photo, ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var flashPhotoId = ""
+        private var flashDateId = LocalDate.MIN
+        private val defaultOffset = OffsetDateTime.now().offset     //ZoneId.ofOffset("UTC", ZoneOffset.UTC)
 
-        inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class MediaViewHolder(itemView: View): ViewHolder(itemView) {
             private var currentId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
 
@@ -1523,6 +1572,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         else clearColorFilter()
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
+
+                        if (flashPhotoId == item.id) {
+                            flashPhotoId = ""
+                            flashPhoto(ivPhoto)
+                        }
                     }
                 }
             }
@@ -1544,7 +1598,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 */
 
-        inner class HorizontalDateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class HorizontalDateViewHolder(itemView: View): ViewHolder(itemView) {
             private val tvDate = itemView.findViewById<TextView>(R.id.date)
 
             @SuppressLint("SetTextI18n")
@@ -1564,10 +1618,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                     true
                 }
+
+                if (item.dateTaken.toLocalDate().isEqual(flashDateId)) {
+                    flashDateId = LocalDate.MIN
+                    flashDate(tvDate)
+                }
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
 /*
             if (viewType == MEDIA_TYPE) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll, parent, false))
             else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date, parent, false))
@@ -1575,7 +1634,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             if (viewType == MEDIA_TYPE) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
             else HorizontalDateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             if (holder is MediaViewHolder) holder.bind(currentList[position])
             //else if (holder is DateViewHolder) holder.bind(currentList[position])
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
@@ -1629,13 +1688,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         fun hasDate(date: Long): Boolean {
             val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
-            return (currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.toLocalDate().isEqual(theDate) }) != RecyclerView.NO_POSITION
+            return (currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.toLocalDate().isEqual(theDate) }) != NO_POSITION
         }
         fun dateRange(): Pair<Long, Long> {
-            return Pair(currentList.last().dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli())
+            return Pair(currentList.last().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli())
         }
-        fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli() - date < 86400000 }
-        fun getDateByPosition(position: Int): Long = currentList[position].dateTaken.atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli()
+        fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
+        fun getDateByPosition(position: Int): Long = currentList[position].dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
+        fun setFlashPhoto(photoId: String) { flashPhotoId = photoId }
+        fun setFlashDate(date: Long) { flashDateId = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate() }
 
         class PhotoKeyProvider(private val adapter: QuickScrollAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
