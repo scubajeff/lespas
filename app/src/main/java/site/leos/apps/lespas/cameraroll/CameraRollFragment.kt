@@ -1640,9 +1640,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
         }
 
+/*
+        override fun onViewDetachedFromWindow(holder: ViewHolder) {
+            if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.photo).let { cancelLoader(it) }
+            super.onViewDetachedFromWindow(holder)
+        }
+*/
+
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             }
             super.onDetachedFromRecyclerView(recyclerView)
         }
