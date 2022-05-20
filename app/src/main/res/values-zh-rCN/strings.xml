@@ -221,4 +221,6 @@
     <string name="tooltips_show_cameraroll">显示本机相机相册</string>
     <string name="msg_empty_server_backup">服务器上没有备份。相机相册自动备份设置开关打开了吗？</string>
     <string name="msg_joint_album_not_updated_locally">更新将在合作相册创建者确认后呈现。</string>
+    <string name="title_in_archive">相机相册备份中的%1$s</string>
+    <string name="tooltips_search_archive">在相机相册备份中搜索</string>
 </resources>

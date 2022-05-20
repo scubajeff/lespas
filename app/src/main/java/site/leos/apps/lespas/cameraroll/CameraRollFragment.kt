@@ -121,7 +121,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
+    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, requireArguments().getString(KEY_URI), requireArguments().getBoolean(KEY_IN_ARCHIVE)) }
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()) }
     private val actionModel: ActionViewModel by viewModels()
 
@@ -1172,11 +1172,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     @Suppress("UNCHECKED_CAST")
-    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
+    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri, inArchive) as T
     }
 
-    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?): ViewModel() {
+    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModel() {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var cameraRoll = mutableListOf<Photo>()
         private var backups = mutableListOf<Photo>()
@@ -1184,8 +1184,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val vmState = MutableLiveData<Int>()
 
         init {
-            vmState.postValue(STATE_SHOWING_DEVICE)
-            fetchCameraRoll()
+            if (inArchive) {
+                vmState.postValue(STATE_FETCHING_BACKUP)
+                fetchPhotoFromServerBackup()
+            } else {
+                vmState.postValue(STATE_SHOWING_DEVICE)
+                fetchCameraRoll()
+            }
         }
 
         fun getVMState(): LiveData<Int> = vmState
@@ -1429,7 +1434,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             const val STATE_FETCHING_BACKUP = 2
             const val STATE_BACKUP_NOT_AVAILABLE = 3
 
-            private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
+            const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
         }
     }
 
@@ -1624,6 +1629,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         const val EMPTY_ROLL_COVER_ID = "0"
 
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
+        private const val KEY_IN_ARCHIVE = "KEY_IN_ARCHIVE"
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
         private const val KEY_BOTTOMSHEET_STATE = "KEY_BOTTOMSHEET_STATE"
@@ -1637,7 +1643,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(scrollTo: String = "") = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
+        fun newInstance(scrollTo: String = "", inArchive: Boolean = false) = CameraRollFragment().apply {
+            arguments = Bundle().apply {
+                putString(KEY_SCROLL_TO, scrollTo)
+                putBoolean(KEY_IN_ARCHIVE, inArchive)
+            }
+        }
 
         @JvmStatic
         fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}

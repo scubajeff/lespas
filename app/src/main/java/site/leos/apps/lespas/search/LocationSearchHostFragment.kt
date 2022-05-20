@@ -9,6 +9,7 @@ import android.view.*
 import androidx.activity.OnBackPressedCallback
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
@@ -33,7 +34,8 @@ import java.util.*
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
     private var menu: Menu? = null
-    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getBoolean(SEARCH_COLLECTION)) }
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
+    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,11 +52,18 @@ class LocationSearchHostFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         searchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            loadingProgressBar?.setProgressCompat(progress, true)
-            if (progress == 100) disableMenuItem(R.id.option_menu_search_progress)
+            when(progress) {
+                0 -> loadingProgressBar?.isIndeterminate = true
+                100 -> disableMenuItem(R.id.option_menu_search_progress)
+                else -> loadingProgressBar?.apply {
+                    isIndeterminate = false
+                    setProgressCompat(progress, true)
+                }
+
+            }
         })
 
-        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getBoolean(SEARCH_COLLECTION)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
+        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_TARGET)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -83,15 +92,23 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class LocationSearchViewModelFactory(private val application: Application, private val searchCollection: Boolean): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchCollection) as T
+    class LocationSearchViewModelFactory(private val application: Application, private val searchTarget: Int, private val remoteImageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchTarget, remoteImageModel) as T
     }
 
-    class LocationSearchViewModel(application: Application, searchCollection: Boolean): AndroidViewModel(application) {
+    class LocationSearchViewModel(application: Application, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {
         val photoRepository = PhotoRepository(application)
+        private val resultList = mutableListOf<LocationSearchResult>()
+        private val result = MutableLiveData<List<LocationSearchResult>>()
+        private val progress = SingleLiveEvent<Int>()
 
         private var job = viewModelScope.launch(Dispatchers.IO) {
-            (if (searchCollection) photoRepository.getAllImageNotHidden() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
+            progress.postValue(0)
+            when(searchTarget) {
+                R.id.search_album -> PhotoRepository(application).getAllImageNotHidden()
+                R.id.search_cameraroll -> Tools.getCameraRoll(application.contentResolver, true)
+                else -> remoteImageModel.getCameraRollArchive()
+            }.run {
                 val lespasBaseFolder = application.getString(R.string.lespas_base_folder_name)
                 val cr = application.contentResolver
                 val albums = AlbumRepository(application).getAllAlbumAttribute()
@@ -102,40 +119,45 @@ class LocationSearchHostFragment: Fragment() {
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) {
-                        (if (searchCollection) {
-                            //ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                            if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
-                            else return@forEachIndexed
-                        } else {
-                            try {
-                                cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
-                            } catch (e: SecurityException) {
-                                cr.openInputStream(Uri.parse(photo.id))
-                            } catch (e: UnsupportedOperationException) {
-                                cr.openInputStream(Uri.parse(photo.id))
-                            }?.let { ExifInterface(it).latLong } ?: run { null }
-                        })?.also { latLong ->
+                        when(searchTarget) {
+                            R.id.search_album -> {
+                                //ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
+                                if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
+                                else return@forEachIndexed
+                            }
+                            R.id.search_cameraroll -> {
+                                try {
+                                    cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
+                                } catch (e: SecurityException) {
+                                    cr.openInputStream(Uri.parse(photo.id))
+                                } catch (e: UnsupportedOperationException) {
+                                    cr.openInputStream(Uri.parse(photo.id))
+                                }?.let { ExifInterface(it).latLong } ?: run { null }
+                            }
+                            R.id.search_archive -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.latLong
+                            else -> null
+                        }?.also { latLong ->
                             if (photo.country.isEmpty()) {
                                 try {
                                     nominatim.getFromLocation(latLong[0], latLong[1], 1)
                                 } catch (e: IOException) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
                                         val locality = it.locality ?: it.adminArea ?: ""
-                                        if (searchCollection) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
+                                        if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
                                         Pair(it.countryName, locality)
                                     } else null
                                 } ?: run { null }
                             } else {
                                 Pair(photo.country, photo.locality)
                             }?.apply {
-                                if (searchCollection) {
+                                if (searchTarget == R.id.search_album) {
                                     val album = albums.find { it.id == photo.albumId }
                                     album?.let {
                                         rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
                                     } ?: run {
                                         return@forEachIndexed
                                     }
-                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), "")
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else "/DCIM")
 
                                 resultList.find { result -> result.country == this.first && result.locality == this.second }
                                     ?.let { existed ->
@@ -162,11 +184,7 @@ class LocationSearchHostFragment: Fragment() {
             super.onCleared()
         }
 
-        private val resultList = mutableListOf<LocationSearchResult>()
-        private val result = MutableLiveData<List<LocationSearchResult>>()
         fun getResult(): LiveData<List<LocationSearchResult>> = result
-
-        private val progress = SingleLiveEvent<Int>()
         fun getProgress(): SingleLiveEvent<Int> = progress
 
 /*
@@ -184,9 +202,9 @@ class LocationSearchHostFragment: Fragment() {
     )
 
     companion object {
-        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
 
         @JvmStatic
-        fun newInstance(searchCollection: Boolean) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
+        fun newInstance(target: Int) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
     }
 }

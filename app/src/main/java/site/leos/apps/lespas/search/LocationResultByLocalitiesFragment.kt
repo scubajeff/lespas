@@ -23,14 +23,18 @@ import java.text.Collator
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
     private lateinit var emptyView: ImageView
 
+    private var searchTarget = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
 
         resultAdapter = LocationSearchResultAdapter(
             { result, view ->
@@ -39,7 +43,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country, searchTarget), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -52,8 +56,15 @@ class LocationResultByLocalitiesFragment: Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        emptyView = view.findViewById(R.id.emptyview)
-        if (requireArguments().getBoolean(SEARCH_COLLECTION)) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
+        emptyView = view.findViewById<ImageView>(R.id.emptyview).apply {
+            setImageResource(
+                when(searchTarget) {
+                    R.id.search_album -> R.drawable.ic_baseline_footprint_24
+                    R.id.search_archive -> R.drawable.ic_baseline_archive_24
+                    else -> R.drawable.ic_baseline_camera_roll_24
+                }
+            )
+        }
 
         resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
             adapter = resultAdapter
@@ -103,7 +114,14 @@ class LocationResultByLocalitiesFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = getString(if (requireArguments().getBoolean(SEARCH_COLLECTION)) R.string.title_in_album else R.string.title_in_cameraroll, getString(R.string.item_location_search))
+            title = getString(
+                when(searchTarget) {
+                    R.id.search_album -> R.string.title_in_album
+                    R.id.search_cameraroll -> R.string.title_in_cameraroll
+                    else -> R.string.title_in_archive
+                },
+                getString(R.string.item_location_search)
+            )
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
@@ -178,9 +196,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
     }
 
     companion object {
-        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
 
         @JvmStatic
-        fun newInstance(searchCollection: Boolean) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
+        fun newInstance(target: Int) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
     }
 }

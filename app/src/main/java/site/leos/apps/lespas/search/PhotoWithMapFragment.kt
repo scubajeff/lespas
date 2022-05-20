@@ -19,9 +19,11 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,27 +44,30 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.YesNoDialogFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.ShareReceiverActivity
+import site.leos.apps.lespas.publication.PublicationDetailFragment
+import site.leos.apps.lespas.sync.*
 import java.io.File
 import java.util.*
 
 class PhotoWithMapFragment: Fragment() {
     private lateinit var remotePhoto: NCShareViewModel.RemotePhoto
-    private val imageLoaderModel: NCShareViewModel by activityViewModels()
+    private var target = 0
+
     private lateinit var mapView: MapView
     private lateinit var photoView: PhotoView
 
     private var stripExif = "2"
     private var shareOutJob: Job? = null
     private var shareOutUri = arrayListOf<Uri>()
+
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        target = requireArguments().getInt(KEY_TARGET)
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -115,11 +120,40 @@ class PhotoWithMapFragment: Fragment() {
                 }
             }
         }
-        destinationModel.getDestination().observe(viewLifecycleOwner) { album ->
-            album?.apply {
-                // Acquire files
-                if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null)
-                    AcquiringDialogFragment.newInstance(shareOutUri, this, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+        destinationModel.getDestination().observe(viewLifecycleOwner) {
+            it?.let { targetAlbum ->
+                if (destinationModel.doOnServer()) {
+                    val actions = mutableListOf<Action>()
+
+                    when (targetAlbum.id) {
+                        "" -> {
+                            // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                            actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                        }
+                        PublicationDetailFragment.JOINT_ALBUM_ID -> {
+                            Snackbar.make(mapView, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).apply {
+                                animationMode = Snackbar.ANIMATION_MODE_FADE
+                                setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
+                                setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
+                            }.show()
+                        }
+                    }
+
+                    actions.add(Action(
+                        null,
+                        if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
+                        remotePhoto.remotePath,
+                        if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
+                        "",
+                        "${remotePhoto.photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}",
+                        System.currentTimeMillis(), 1
+                    ))
+
+                    ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(actions)
+                } else {
+                    // Acquire files
+                    if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(shareOutUri, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
             }
         }
     }
@@ -148,7 +182,10 @@ class PhotoWithMapFragment: Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_with_map_menu, menu)
-        menu.findItem(R.id.option_menu_lespas).isVisible = remotePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL
+        menu.findItem(R.id.option_menu_lespas).isVisible = target != R.id.search_album
+        menu.findItem(R.id.option_menu_share).icon = ContextCompat.getDrawable(requireContext(), if (target == R.id.search_archive) R.drawable.ic_baseline_archivev_download_24 else R.drawable.ic_baseline_share_24)
+
+        // See if map app installed
         Intent(Intent.ACTION_VIEW).apply {
             data = Uri.parse("geo:0.0,0.0?z=20")
             resolveActivity(requireActivity().packageManager)?.let { menu.findItem(R.id.option_menu_open_in_map_app).isEnabled = true }
@@ -158,19 +195,24 @@ class PhotoWithMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
-                // Allow removing original (e.g. move) is too much. TODO or is it?
-                prepareShares(remotePhoto.photo, false, requireContext().contentResolver)?.let {
-                    shareOutUri = arrayListOf(it)
-                    if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(shareOutUri, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                }
+                if (target == R.id.search_cameraroll) {
+                    // Allow removing original (e.g. move) is too much. TODO or is it?
+                    prepareShares(remotePhoto.photo, false, requireContext().contentResolver)?.let {
+                        shareOutUri = arrayListOf(it)
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(shareOutUri, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    }
+                } else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 true
             }
             R.id.option_menu_share -> {
-                if (stripExif == getString(R.string.strip_ask_value)) {
-                    if (Tools.hasExif(remotePhoto.photo.mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else shareOut(false)
-                } else shareOut(stripExif == getString(R.string.strip_on_value))
+                if (target == R.id.search_archive) imageLoaderModel.batchDownload(requireContext(), listOf(remotePhoto))
+                else {
+                    if (stripExif == getString(R.string.strip_ask_value)) {
+                        if (Tools.hasExif(remotePhoto.photo.mimeType)) {
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                        } else shareOut(false)
+                    } else shareOut(stripExif == getString(R.string.strip_on_value))
+                }
                 true
             }
             R.id.option_menu_open_in_map_app -> {
@@ -267,6 +309,7 @@ class PhotoWithMapFragment: Fragment() {
 
     companion object {
         private const val KEY_PHOTO = "KEY_PHOTO"
+        private const val KEY_TARGET = "KEY_TARGET"
 
         const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"
@@ -274,6 +317,11 @@ class PhotoWithMapFragment: Fragment() {
         private const val STRIP_REQUEST_KEY = "PHOTO_WITH_MAP_STRIP_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(photo: NCShareViewModel.RemotePhoto) = PhotoWithMapFragment().apply { arguments = Bundle().apply { putParcelable(KEY_PHOTO, photo) }}
+        fun newInstance(photo: NCShareViewModel.RemotePhoto, target: Int) = PhotoWithMapFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable(KEY_PHOTO, photo)
+                putInt(KEY_TARGET, target)
+            }
+        }
     }
 }
