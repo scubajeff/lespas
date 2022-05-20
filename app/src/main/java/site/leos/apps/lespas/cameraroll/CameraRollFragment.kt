@@ -687,7 +687,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (slideOffset >= 0) {
                         buttonGroup.isVisible = true
                         sourceToggleGroup.isVisible = allowToggleContent
-                        datePickerButton.isVisible = true
+                        datePickerButton.isVisible = allowToggleContent
 
                         val alpha = 255 - (255 * slideOffset).toInt()
                         val buttonGroupAlpha = 256 - (128 * slideOffset)
@@ -1112,9 +1112,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             alpha = if (mState) 1f else 0f
         }
         datePickerButton.run {
-            isVisible = state
-            isEnabled = state
-            alpha = if (state) 1f else 0f
+            isVisible = mState
+            isEnabled = mState
+            alpha = if (mState) 1f else 0f
         }
     }
 
