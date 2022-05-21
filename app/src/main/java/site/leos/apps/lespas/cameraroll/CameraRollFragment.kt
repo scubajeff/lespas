@@ -1006,14 +1006,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             //with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
             camerarollModel.getCurrentPhoto()?.run {
                 dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-                sizeTextView.text = Tools.humanReadableByteCountSI(shareId.toLong())
+                dateTextView.isVisible = true
 
+                shareId.toLong().let { size ->
+                    sizeTextView.text = Tools.humanReadableByteCountSI(size)
+                    sizeTextView.isVisible = size > 0
+                }
             }
         } catch (e: IndexOutOfBoundsException) {}
 
         val primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
-        dateTextView.isVisible = true
-        sizeTextView.isVisible = true
         dateTextView.setTextColor(primaryTextColor)
         sizeTextView.setTextColor(primaryTextColor)
     }
