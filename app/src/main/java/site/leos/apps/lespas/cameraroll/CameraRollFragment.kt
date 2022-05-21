@@ -174,7 +174,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
                 //mediaPagerAdapter.findMediaPosition(photo).let { pos ->
-                camerarollModel.findPhotoPosition(photo).let { pos ->
+                camerarollModel.findPhotoPosition(photo.id).let { pos ->
                     if (pos != -1) {
                         mediaPager.scrollToPosition(pos)
                         camerarollModel.setCurrentPosition(pos)
@@ -1358,8 +1358,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
 
-        fun getPhotoById(photoId: String): Photo? = if (vmState.value == STATE_SHOWING_BACKUP) backups.find { it.id == photoId } else cameraRoll.find { it.id == photoId }
-        fun findPhotoPosition(photo: Photo): Int = if (vmState.value == STATE_SHOWING_BACKUP) backups.indexOf(photo) else cameraRoll.indexOf(photo)
+        fun getPhotoById(photoId: String): Photo? = mediaList.value?.let { list -> list.find { it.id == photoId }}
+        fun findPhotoPosition(photoId: String): Int = mediaList.value?.let { list -> list.indexOfFirst { it.id == photoId }} ?: -1
         fun removeMedias(removeList: List<Uri>) {
             // Remove from system if running on Android 10 or lower
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) removeList.forEach { media-> cr.delete(media, null, null) }
