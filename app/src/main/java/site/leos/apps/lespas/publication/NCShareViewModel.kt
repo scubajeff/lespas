@@ -433,6 +433,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     ))
                 }
             }
+            result.sortByDescending { it.dateTaken }
 
             // Save a snapshot
             File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
