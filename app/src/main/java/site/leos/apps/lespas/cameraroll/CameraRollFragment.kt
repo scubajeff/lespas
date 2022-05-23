@@ -689,18 +689,18 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         sourceToggleGroup.isVisible = allowToggleContent
                         datePickerButton.isVisible = allowToggleContent
 
-                        val alpha = 255 - (255 * slideOffset).toInt()
-                        val buttonGroupAlpha = 256 - (128 * slideOffset)
+                        var alpha = 1.0f - min(0.25f, slideOffset) * 4
 
-                        buttonGroup.alpha = if (allowToggleContent) alpha / 255.0f else buttonGroupAlpha / 255.0f
-                        with(ColorUtils.setAlphaComponent(primaryColor, alpha)) {
+                        buttonGroup.alpha = if (allowToggleContent) alpha else slideOffset / 2
+                        with(ColorUtils.setAlphaComponent(primaryColor, (alpha * 255).toInt())) {
                             dateTextView.setTextColor(this)
                             sizeTextView.setTextColor(this)
                         }
 
-                        quickScroll.foreground = ColorDrawable(ColorUtils.setAlphaComponent(backgroundColor, alpha))
-                        sourceToggleGroup.alpha = (255 - alpha) / 255.0f
-                        datePickerButton.alpha = (255 - alpha) / 255.0f
+                        quickScroll.foreground = ColorDrawable(ColorUtils.setAlphaComponent(backgroundColor, (alpha * 255).toInt()))
+                        alpha = (max(slideOffset, 0.75f) - 0.75f) * 4
+                        sourceToggleGroup.alpha = alpha
+                        datePickerButton.alpha = alpha
                     }
                 }
             })
