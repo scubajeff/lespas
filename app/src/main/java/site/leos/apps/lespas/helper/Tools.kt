@@ -651,7 +651,7 @@ object Tools {
 
     fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
-    fun isWideListAlbum(album: Album): Boolean = album.sortOrder in 100..200
+    fun isWideListAlbum(album: Album): Boolean = album.sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..200
 
     private const val PI = 3.1415926535897932384626
     private const val EE = 0.00669342162296594323
