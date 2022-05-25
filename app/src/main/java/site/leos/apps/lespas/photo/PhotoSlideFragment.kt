@@ -266,19 +266,21 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
 
-                    pAdapter.getPhotoAt(position).run {
-                        currentPhotoModel.setCurrentPosition(position + 1)
-                        if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    try {
+                        pAdapter.getPhotoAt(position).run {
+                            currentPhotoModel.setCurrentPosition(position + 1)
+                            if (autoRotate) requireActivity().requestedOrientation = if (this.width > this.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
-                        // Can't delete cover
-                        removeButton.isEnabled = this.id != album.cover
-                        with(!(Tools.isMediaPlayable(this.mimeType))) {
-                            // Can't set video as avatar
-                            setAsButton.isEnabled = this
-                            // Can't Snapseed video
-                            snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
+                            // Can't delete cover
+                            removeButton.isEnabled = this.id != album.cover
+                            with(!(Tools.isMediaPlayable(this.mimeType))) {
+                                // Can't set video as avatar
+                                setAsButton.isEnabled = this
+                                // Can't Snapseed video
+                                snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
+                            }
                         }
-                    }
+                    } catch (e: IndexOutOfBoundsException) {}
                 }
             })
 
@@ -381,8 +383,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
                     startActivity(Intent().apply {
                         action = Intent.ACTION_SEND
-                        data = it.first
-                        type = it.second
+                        setDataAndType(it.first, it.second)
                         putExtra(Intent.EXTRA_STREAM, it.first)
                         flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                         setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
@@ -640,8 +641,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
-        override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
-        override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType
+        override fun getItemTransitionName(position: Int): String = getItem(position).id
+        override fun getItemMimeType(position: Int): String = getItem(position).mimeType
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
             val photos = when(sortOrder) {
@@ -655,7 +656,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             submitList(photos.toMutableList())
         }
 
-        fun getPhotoAt(position: Int): Photo = currentList[position] as Photo
+        fun getPhotoAt(position: Int): Photo = currentList[position]
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
