@@ -24,7 +24,6 @@ import java.io.InputStream
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.net.URI
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -34,7 +33,7 @@ import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class OkHttpWebDav(private val userId: String, password: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
+class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient
     private var cachedHttpClient: OkHttpClient? = null
@@ -42,7 +41,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     init {
         val builder = OkHttpClient.Builder().apply {
             if (selfSigned) hostnameVerifier { _, _ -> true }
-            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", Credentials.basic(userId, password, StandardCharsets.UTF_8)).build()) }
+            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic $secret").build()) }
             addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
             readTimeout(20, TimeUnit.SECONDS)
             writeTimeout(20, TimeUnit.SECONDS)

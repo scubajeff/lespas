@@ -80,7 +80,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private var webDav: OkHttpWebDav
 
     private val baseUrl: String
-    private val userName: String
     private val token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
@@ -99,12 +98,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     init {
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
-            userName = getUserData(account, application.getString(R.string.nc_userdata_username))
+            val userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(
-                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
+                userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
         }

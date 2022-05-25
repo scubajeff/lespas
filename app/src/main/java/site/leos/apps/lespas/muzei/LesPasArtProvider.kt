@@ -167,7 +167,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
                                     webDav = OkHttpWebDav(
                                         userName,
-                                        peekAuthToken(accounts[0], serverRoot),
+                                        getUserData(accounts[0], application.getString(R.string.nc_userdata_secret)),
                                         serverRoot,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
                                         null,
