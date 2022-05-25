@@ -407,7 +407,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-            pAdapter.setPhotos(photos, album.sortOrder)
+            pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         }
 
@@ -676,6 +676,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val coverAppliedStatus = SingleLiveEvent<Boolean>()
         fun coverApplied(applied: Boolean) { coverAppliedStatus.value = applied}
         fun getCoverAppliedStatus(): SingleLiveEvent<Boolean> = coverAppliedStatus
+
+        private var currentQuery = ""
+        fun setCurrentQuery(query: String) { currentQuery = query }
+        fun getCurrentQuery(): String = currentQuery
     }
 
     companion object {
