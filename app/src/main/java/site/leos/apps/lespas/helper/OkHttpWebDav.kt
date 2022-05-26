@@ -485,6 +485,10 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         const val LESPAS_WIDTH = "pictureWidth"
         const val LESPAS_HEIGHT = "pictureHeight"
         const val LESPAS_ORIENTATION = "pictureOrientation"
+        const val LESPAS_LATITUDE = "pictureLatitude"
+        const val LESPAS_LONGITUDE = "pictureLongitude"
+        const val LESPAS_ALTITUDE = "pictureAltitude"
+        const val LESPAS_BEARING = "pictureBearing"
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
         private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
