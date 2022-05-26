@@ -59,6 +59,7 @@ class SearchResultFragment : Fragment() {
         searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
 
         searchResultAdapter = SearchResultAdapter(
+            searchTarget,
             { result, imageView ->
                 if (searchTarget == R.id.search_album) {
                     lifecycleScope.launch(Dispatchers.IO) {
@@ -281,7 +282,7 @@ class SearchResultFragment : Fragment() {
         fun getProgress(): SingleLiveEvent<Int> = progress
     }
 
-    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class SearchResultAdapter(private val searchTarget: Int, private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -303,7 +304,7 @@ class SearchResultFragment : Fragment() {
                 }
                 //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 tvLabel.text =
-                    if (item.remotePhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[item.remotePhoto.photo.albumId]
+                    if (searchTarget == R.id.search_album) albumNames[item.remotePhoto.photo.albumId]
                     else item.remotePhoto.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
             }
         }
