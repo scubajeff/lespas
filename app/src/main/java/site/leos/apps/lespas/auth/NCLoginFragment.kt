@@ -276,7 +276,7 @@ class NCLoginFragment: Fragment() {
                             if (acceptSelfSign) hostnameVerifier { _, _ -> true }
                             readTimeout(20, TimeUnit.SECONDS)
                             writeTimeout(20, TimeUnit.SECONDS)
-                        }.build().newCall(Request.Builder().url("${serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
+                        }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
 
                         httpCall?.execute()?.use { response ->
                             if (response.isSuccessful) {
