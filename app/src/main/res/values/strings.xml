@@ -23,6 +23,7 @@
     <string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
     <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
     <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
+    <string name="nc_userdata_loginname" translatable="false">NC_LOGINNAME</string>
     <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
     <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
     <string name="verify_ssl_certificate_title">Bad SSL Certificate</string>
