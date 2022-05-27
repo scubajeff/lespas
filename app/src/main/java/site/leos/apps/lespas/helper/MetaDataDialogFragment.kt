@@ -91,7 +91,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             }?.use { ExifInterface(it) }
                         }
                     } else {
-                        (ViewModelProvider(requireActivity())[NCShareViewModel::class.java].getMediaExif(requireArguments().getParcelable(KEY_REMOTE_MEDIA)!!))?.also {
+                        (ViewModelProvider(requireActivity())[NCShareViewModel::class.java].getMediaExif(requireArguments().getParcelable(KEY_REMOTE_MEDIA)!!))?.let {
                             exif = it.first
                             size = it.second
                         }
@@ -141,7 +141,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 view.findViewById<TextView>(R.id.info_artist).text = t
                             }
 
-                            if (albumId == CameraRollFragment.FROM_CAMERA_ROLL) latLong?.let {
+                            latLong?.let {
                                 latitude = it[0]
                                 longitude = it[1]
                             }
