@@ -430,6 +430,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         width = dav.width, height = dav.height, orientation = dav.orientation,
                         // Store file size in property shareId
                         shareId = dav.size.toInt(),
+                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing
                     ))
                 }
             }

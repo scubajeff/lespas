@@ -118,8 +118,7 @@ object Tools {
                         // GPS data
                         exif.latLong?.let { latlong = it }
                         altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
-                        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+                        bearing = getBearing(exif)
 
                         // Taken date
                         timeString = getImageFileDate(exif, fileName)
@@ -693,6 +692,7 @@ object Tools {
 
     fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC): List<NCShareViewModel.RemotePhoto> {
         val result = mutableListOf<NCShareViewModel.RemotePhoto>()
+        val defaultOffset = OffsetDateTime.now().offset
 
         val lespasJson = try {
             JSONObject(inputStream.reader().readText()).getJSONObject("lespas")
@@ -715,7 +715,7 @@ object Tools {
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, defaultOffset),
                                         // Version 2 additions
                                         orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
@@ -728,7 +728,7 @@ object Tools {
                                 result.add(
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
-                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, defaultOffset),
                                             // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                             eTag = Photo.ETAG_FAKE
                                         ), sharePath
@@ -743,7 +743,7 @@ object Tools {
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, defaultOffset),
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                         eTag = Photo.ETAG_FAKE
                                     ), sharePath
@@ -766,10 +766,11 @@ object Tools {
 
     fun photosToMetaJSONString(photos: List<Photo>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
+        val defaultOffset = OffsetDateTime.now().offset
 
         photos.forEach { photo ->
             with(photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(defaultOffset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -778,11 +779,12 @@ object Tools {
 
     fun remotePhotosToMetaJSONString(remotePhotos: List<NCShareViewModel.RemotePhoto>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
+        val defaultOffset = OffsetDateTime.now().offset
 
         remotePhotos.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(defaultOffset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -791,10 +793,11 @@ object Tools {
 
     fun metasToJSONString(photoMeta: List<PhotoMeta>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
+        val defaultOffset = OffsetDateTime.now().offset
 
         photoMeta.forEach {
-            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(defaultOffset), it.mimeType, it.width, it.height)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(defaultOffset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"
@@ -891,5 +894,12 @@ object Tools {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             context.setTheme(trueBlackThemeId)
         } else context.setTheme(normalThemeId)
+    }
+
+    fun getBearing(exif: ExifInterface): Double {
+        var bearing = Photo.NO_GPS_DATA
+        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
+        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+        return bearing
     }
 }

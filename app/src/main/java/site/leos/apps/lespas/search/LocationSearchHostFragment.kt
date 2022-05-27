@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.net.Uri
 import android.os.Build
@@ -22,13 +23,17 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionRepository
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
@@ -97,11 +102,13 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     class LocationSearchViewModel(application: Application, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {
-        val photoRepository = PhotoRepository(application)
+        private val photoRepository = PhotoRepository(application)
         private val resultList = mutableListOf<LocationSearchResult>()
         private val result = MutableLiveData<List<LocationSearchResult>>()
         private val progress = SingleLiveEvent<Int>()
+        private val patchActions = mutableListOf<Action>()
 
+        @SuppressLint("RestrictedApi")
         private var job = viewModelScope.launch(Dispatchers.IO) {
             progress.postValue(0)
             when(searchTarget) {
@@ -116,12 +123,17 @@ class LocationSearchHostFragment: Fragment() {
                 var rp = NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), "")
                 val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
 
+                var latitude = Photo.GPS_DATA_UNKNOWN
+                var longitude = Photo.GPS_DATA_UNKNOWN
+                var altitude = Photo.GPS_DATA_UNKNOWN
+                var bearing = Photo.GPS_DATA_UNKNOWN
+                val defaultOffset = OffsetDateTime.now().offset
+
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) {
                         when(searchTarget) {
                             R.id.search_album -> {
-                                //ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
                                 if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
                                 else return@forEachIndexed
                             }
@@ -132,9 +144,43 @@ class LocationSearchHostFragment: Fragment() {
                                     cr.openInputStream(Uri.parse(photo.id))
                                 } catch (e: UnsupportedOperationException) {
                                     cr.openInputStream(Uri.parse(photo.id))
-                                }?.let { ExifInterface(it).latLong } ?: run { null }
+                                }?.let { try { ExifInterface(it).latLong } catch (e: NullPointerException) { return@forEachIndexed }
+                                } ?: run { return@forEachIndexed }
                             }
-                            R.id.search_archive -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.latLong
+                            R.id.search_archive -> {
+                                when(photo.latitude) {
+                                    Photo.NO_GPS_DATA -> return@forEachIndexed
+                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif ->
+                                        exif.latLong?.run {
+                                            latitude = this[0]
+                                            longitude = this[1]
+                                            altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                                            bearing = Tools.getBearing(exif)
+                                        } ?: run {
+                                            latitude = Photo.NO_GPS_DATA
+                                            longitude = Photo.NO_GPS_DATA
+                                            altitude = Photo.NO_GPS_DATA
+                                            bearing = Photo.NO_GPS_DATA
+                                        }
+
+                                        // Patch WebDAV properties in archive
+                                        patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
+                                            "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + exif.rotationDegrees + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: (photo.dateTaken.toEpochSecond(defaultOffset) * 1000)) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
+                                            photo.name, System.currentTimeMillis(), 1)
+                                        )
+
+                                        exif.latLong
+                                    }
+                                    else -> doubleArrayOf(photo.latitude, photo.longitude)
+                                }
+                            }
                             else -> null
                         }?.also { latLong ->
                             if (photo.country.isEmpty()) {
@@ -177,7 +223,7 @@ class LocationSearchHostFragment: Fragment() {
             // Show progress to the end
             delay(500)
             progress.postValue(100)
-        }
+        }.apply { invokeOnCompletion { if (patchActions.isNotEmpty()) ActionRepository(getApplication()).addActions(patchActions) }}
 
         override fun onCleared() {
             job.cancel()

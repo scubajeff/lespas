@@ -418,6 +418,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_DELETE_ALBUM_BGM-> {
                     webDav.delete("$resourceRoot/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
                 }
+                Action.ACTION_PATCH_PROPERTIES -> {
+                    // Property folderName holds target folder name, relative to user's home folder
+                    // Property fileName holds target file name
+                    // Property fileId holds patch payload
+                    //Log.e(">>>>>>>>>>", "patching ${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName} ${action.fileId}")
+                    webDav.patch("${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName}", action.fileId)
+                }
             }
 
             // TODO: Error retry strategy, directory etag update, etc.
@@ -1117,7 +1124,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             } catch (e: UnsupportedOperationException) {
                                 ContentUris.withAppendedId(contentUri, cursor.getLong(idColumn))
                             }
-                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, application.contentResolver, cursor.getLong(sizeColumn), application)
+                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, cursor.getLong(sizeColumn), application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)
@@ -1153,9 +1160,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     latitude = latLong[0]
                                     longitude = latLong[1]
                                     altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                                    bearing = Photo.NO_GPS_DATA
-                                    exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
-                                    if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+                                    bearing = Tools.getBearing(exif)
                                 } ?: run {
                                     // No GPS data
                                     latitude = Photo.NO_GPS_DATA
@@ -1170,7 +1175,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Patch photo's DAV properties to accelerate future operations on camera roll archive
                     try {
                         webDav.patch(
-                            "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}",
+                            "${dcimRoot}/${relativePath}/${fileName}",
                             "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + cursor.getLong(dateTakenColumn) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
