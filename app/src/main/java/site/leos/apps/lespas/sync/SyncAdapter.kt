@@ -1174,9 +1174,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Patch photo's DAV properties to accelerate future operations on camera roll archive
                     try {
+                        var mDate = cursor.getLong(dateTakenColumn)
+                        if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
                         webDav.patch(
                             "${dcimRoot}/${relativePath}/${fileName}",
-                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + cursor.getLong(dateTakenColumn) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
+                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + cursor.getInt(heightColumn) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +

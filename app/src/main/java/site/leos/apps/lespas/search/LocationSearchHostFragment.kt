@@ -33,7 +33,7 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionRepository
 import java.io.IOException
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
@@ -127,7 +127,6 @@ class LocationSearchHostFragment: Fragment() {
                 var longitude = Photo.GPS_DATA_UNKNOWN
                 var altitude = Photo.GPS_DATA_UNKNOWN
                 var bearing = Photo.GPS_DATA_UNKNOWN
-                val defaultOffset = OffsetDateTime.now().offset
 
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
@@ -164,6 +163,7 @@ class LocationSearchHostFragment: Fragment() {
                                         }
 
                                         // Patch WebDAV properties in archive
+                                        // exif.dateTimeOriginal, exif.dateTimeDigitized both return timestamp in UTC time zone
                                         patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
                                             "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
@@ -172,7 +172,7 @@ class LocationSearchHostFragment: Fragment() {
                                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + exif.rotationDegrees + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
-                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: (photo.dateTaken.toEpochSecond(defaultOffset) * 1000)) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
+                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: (photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli())) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
                                             photo.name, System.currentTimeMillis(), 1)
                                         )
 
