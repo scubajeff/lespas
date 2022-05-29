@@ -164,7 +164,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 else imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView!!, type) {
                     startPostponedEnterTransition()
                     if (photo.width == 0 && photo.mimeType.startsWith("image")) {
-                        // Patching photo's meta after it has been downloaded
+                        // Patching photo's meta after it has been fetched
                         Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
                     }
                 }},
@@ -1459,6 +1459,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 exif.latLong?.let { latLong ->
                     photo.latitude = latLong[0]
                     photo.longitude = latLong[1]
+                    photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                    photo.bearing = Tools.getBearing(exif)
                 }
             }
         }
