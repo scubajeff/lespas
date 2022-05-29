@@ -764,7 +764,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
             mutableListOf<Album>().run {
                 addAll(currentList)
-                removeAt(0)
+                if (size > 0) removeAt(0)
                 add(0, cameraRollAlbum)
                 submitList(this)
             }
