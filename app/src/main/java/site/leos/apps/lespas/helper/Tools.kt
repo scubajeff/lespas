@@ -45,44 +45,39 @@ import java.io.InputStream
 import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.text.*
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.text.CharacterIterator
+import java.text.Collator
+import java.text.DecimalFormat
+import java.text.StringCharacterIterator
+import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.*
 
 object Tools {
-    const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
     val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
     const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})"
 
-    @SuppressLint("SimpleDateFormat")
+    @SuppressLint("SimpleDateFormat", "RestrictedApi")
     @JvmOverloads
     fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false): Photo {
-        val dateFormatter = SimpleDateFormat(DATE_FORMAT_PATTERN).apply { timeZone = TimeZone.getDefault() }
-        var timeString: String?
         var mMimeType = mimeType
         var width = 0
         var height = 0
-        var tDate: LocalDateTime = LocalDateTime.now()
         var latlong: DoubleArray = doubleArrayOf(Photo.NO_GPS_DATA, Photo.NO_GPS_DATA)
         var altitude = Photo.NO_GPS_DATA
         var bearing = Photo.NO_GPS_DATA
         //var caption = ""
         var orientation = 0
-
         val isLocalFileExist = localPath.isNotEmpty()
-        val lastModified = Date(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis())
+        var dateTaken: LocalDateTime = LocalDateTime.now()
+        val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.systemDefault())
 
         if (mimeType.startsWith("video/", true)) {
             metadataRetriever?.run {
-                tDate = getVideoFileDate(this, fileName)
+                dateTaken = getVideoFileDate(this, fileName) ?: lastModified
 
                 extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let { rotate ->
                     orientation = rotate.toInt()
@@ -101,9 +96,9 @@ object Tools {
                 }
             }
         } else {
-            // See if we can guess the taken date from file name
-            timeString = parseFileName(fileName)
-            if (isUnknown(timeString)) timeString = dateFormatter.format(lastModified)
+            // Get default date taken value
+            dateTaken = parseDateFromFileName(fileName) ?: lastModified
+            //dateTaken = parseDateFromFileName(fileName) ?: lastModified
 
             when(val imageFormat = mimeType.substringAfter("image/", "")) {
                 in FORMATS_WITH_EXIF-> {
@@ -122,14 +117,10 @@ object Tools {
                         if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
 
                         // Taken date
-                        timeString = getImageFileDate(exif, fileName)
-                        if (isUnknown(timeString)) {
-                            timeString = dateFormatter.format(lastModified)
-
-                            if (updateCreationDate) {
-                                exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
-                                saveExif = true
-                            }
+                        getImageTakenDate(exif)?.let { dateTaken = it }
+                        if (updateCreationDate) {
+                            exif.setDateTime(dateTaken.toInstant(OffsetTime.now().offset).toEpochMilli())
+                            saveExif = true
                         }
 
                         width = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
@@ -205,17 +196,11 @@ object Tools {
                 width = options.outWidth
                 height = options.outHeight
             } catch (e: Exception) {}
-
-            tDate = try {
-                LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
-            } catch (e: DateTimeParseException) {
-                dateToLocalDateTime(lastModified)
-            }
         }
 
         return Photo(
             mimeType = mMimeType,
-            dateTaken = tDate, lastModified = dateToLocalDateTime(lastModified),
+            dateTaken = dateTaken, lastModified = lastModified,
             width = width, height = height,
             //caption = caption,
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
@@ -225,8 +210,8 @@ object Tools {
     }
 
     @SuppressLint("SimpleDateFormat")
-    fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime {
-        var videoDate: LocalDateTime = LocalDateTime.MIN
+    fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime? {
+        var videoDate: LocalDateTime? = LocalDateTime.MIN
 
         // Try get creation date from metadata
         extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
@@ -235,46 +220,36 @@ object Tools {
 
         // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
         // Could not get creation date from metadata, try guessing from file name
-        if (videoDate.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseFileName(fileName)?.run { LocalDateTime.parse(this, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)) } ?: LocalDateTime.now()
+        if (videoDate?.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseDateFromFileName(fileName)
 
         return videoDate
     }
 
-    fun getImageFileDate(exifInterface: ExifInterface, fileName: String): String? {
-        var timeString: String?
-
-        timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-        if (isUnknown(timeString)) timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-        //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-
-        // Could not get creation date from exif, try guessing from file name
-        if (isUnknown(timeString)) timeString = parseFileName(fileName)
-
-        return timeString
+    @SuppressLint("RestrictedApi")
+    fun getImageTakenDate(exif: ExifInterface): LocalDateTime? {
+        var mDate: LocalDateTime? = null
+        try {
+            // exif.dateTimeOriginal and exif.dateTimeDigitized are in UTC time zone
+            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) }}
+        } catch (e: Exception) {}
+        return mDate
     }
 
-
-    // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
-    private const val wechatPattern = "^mmexport([0-9]{10}).*"
+    // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
+    private const val wechatPattern = "^mmexport([0-9]{13}).*"
+    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss
     private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
-    fun parseFileName(fileName: String): String? {
+    fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
-            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-            if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+            if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.systemDefault()) }
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
-                if (matcher.matches()) matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }
+                if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
                 else null
             }
         } catch (e: Exception) { null }
     }
-
-    private fun isUnknown(date: String?): Boolean {
-        return (date == null || date.isEmpty() || date == "    :  :     :  :  ")
-    }
-
-    fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 

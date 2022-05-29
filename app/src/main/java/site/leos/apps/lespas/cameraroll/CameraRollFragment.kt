@@ -1288,7 +1288,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             if (photo.mimeType.startsWith("video/")) {
                                 MediaMetadataRetriever().run {
                                     setDataSource(ctx, uri)
-                                    photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
+                                    Tools.getVideoFileDate(this, photo.name)?.let { photo.dateTaken = it }
                                     extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { photo.width = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
                                     extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { photo.height = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
                                     release()
@@ -1299,14 +1299,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                         val exif = ExifInterface(cr.openInputStream(uri)!!)
 
                                         // Get date
-                                        photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
-                                            try {
-                                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern(Tools.DATE_FORMAT_PATTERN))
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                LocalDateTime.now()
-                                            }
-                                        } ?: LocalDateTime.now()
+                                        photo.dateTaken = Tools.getImageTakenDate(exif) ?: Tools.parseDateFromFileName(photo.name) ?: LocalDateTime.now()
 
                                         photo.orientation = exif.rotationDegrees
                                         exif.latLong?.let {
