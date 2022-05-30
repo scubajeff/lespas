@@ -135,7 +135,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             fun bind(item: LocationSearchHostFragment.LocationSearchResult) {
                 tvLocality.text = item.locality
                 tvCountry.text = item.country
-                tvCount.text = if (item.total > 4) item.total.toString() else ""
+                tvCount.text = if (item.total >= 4) item.total.toString() else ""
 
                 photoAdapter.submitList(item.photos)
 
