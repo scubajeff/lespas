@@ -60,7 +60,7 @@ object Tools {
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
     const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})"
 
-    @SuppressLint("SimpleDateFormat", "RestrictedApi")
+    @SuppressLint("RestrictedApi")
     @JvmOverloads
     fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false): Photo {
         var mMimeType = mimeType
@@ -209,7 +209,6 @@ object Tools {
         //return Photo("", "", "", Photo.ETAG_NOT_YET_UPLOADED, tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
     }
 
-    @SuppressLint("SimpleDateFormat")
     fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime? {
         var videoDate: LocalDateTime? = LocalDateTime.MIN
 
@@ -229,8 +228,7 @@ object Tools {
     fun getImageTakenDate(exif: ExifInterface): LocalDateTime? {
         var mDate: LocalDateTime? = null
         try {
-            // exif.dateTimeOriginal and exif.dateTimeDigitized are in UTC time zone
-            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) }}
+            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }}
         } catch (e: Exception) {}
         return mDate
     }
