@@ -780,7 +780,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
         datePickerButton.setOnClickListener {
-
             quickScrollAdapter.dateRange().let { dateRange ->
                 MaterialDatePicker.Builder.datePicker()
                     .setCalendarConstraints(CalendarConstraints.Builder().setValidator(object: CalendarConstraints.DateValidator {
@@ -792,11 +791,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     .build()
                     .apply {
                         addOnPositiveButtonClickListener { picked ->
-                            val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastVisibleItemPosition()
+                            val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()
                             quickScrollAdapter.getPositionByDate(picked).let { newPosition ->
                                 quickScroll.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view -> flashDate(view)
                                 } ?: run {
                                     quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount))
+                                    // flash the date after it has revealed
                                     quickScrollAdapter.setFlashDate(picked)
                                 }
                             }
