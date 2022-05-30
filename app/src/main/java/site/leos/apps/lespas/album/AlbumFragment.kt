@@ -88,6 +88,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var cameraRollAsAlbumMenu: MenuItem? = null
     private var unhideMenu: MenuItem? = null
     private var toggleRemoteMenu: MenuItem? = null
+    private var sortByMenu: MenuItem? = null
 
     private var scrollTo = -1
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
@@ -231,6 +232,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     scrollTo = -1
                 }
             }
+
+            sortByMenu?.run { isEnabled = it.isNotEmpty() }
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
@@ -397,6 +400,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
         unhideMenu = menu.findItem(R.id.option_menu_unhide)
+        sortByMenu = menu.findItem(R.id.option_menu_sortby)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
