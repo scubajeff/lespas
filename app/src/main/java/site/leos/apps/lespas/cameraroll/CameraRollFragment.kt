@@ -793,11 +793,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         addOnPositiveButtonClickListener { picked ->
                             val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()
                             quickScrollAdapter.getPositionByDate(picked).let { newPosition ->
-                                quickScroll.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view -> flashDate(view)
+                                quickScroll.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view ->
+                                    // new position is visible on screen now
+                                    if (newPosition == currentBottom) quickScroll.scrollToPosition(newPosition + 1)
+                                    flashDate(view)
                                 } ?: run {
-                                    quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount))
                                     // flash the date after it has revealed
                                     quickScrollAdapter.setFlashDate(picked)
+                                    quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount))
                                 }
                             }
                         }
