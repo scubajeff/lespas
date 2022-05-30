@@ -98,7 +98,6 @@ object Tools {
         } else {
             // Get default date taken value
             dateTaken = parseDateFromFileName(fileName) ?: lastModified
-            //dateTaken = parseDateFromFileName(fileName) ?: lastModified
 
             when(val imageFormat = mimeType.substringAfter("image/", "")) {
                 in FORMATS_WITH_EXIF-> {
@@ -206,7 +205,6 @@ object Tools {
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
             orientation = if (keepOriginalOrientation) orientation else 0
         )
-        //return Photo("", "", "", Photo.ETAG_NOT_YET_UPLOADED, tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
     }
 
     fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime? {
@@ -248,6 +246,9 @@ object Tools {
             }
         } catch (e: Exception) { null }
     }
+
+    fun epochToLocalDateTime(epoch: Long): LocalDateTime =
+        if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
@@ -677,18 +678,22 @@ object Tools {
             1
         }
 
+        var mDate: LocalDateTime
         val photos = lespasJson.getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
+                mDate = try { epochToLocalDateTime(getLong("stime")) } catch (e: DateTimeException) { LocalDateTime.now() }
                 when {
                     // TODO make sure later version json file downward compatible
                     version >= 2 -> {
                         try {
+                            // Version checking, trigger exception
                             getInt("orientation")
+
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                         // Version 2 additions
                                         orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
@@ -701,7 +706,7 @@ object Tools {
                                 result.add(
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
-                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                             // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                             eTag = Photo.ETAG_FAKE
                                         ), sharePath
@@ -716,7 +721,7 @@ object Tools {
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                         eTag = Photo.ETAG_FAKE
                                     ), sharePath
@@ -742,7 +747,7 @@ object Tools {
 
         photos.forEach { photo ->
             with(photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -755,7 +760,7 @@ object Tools {
         remotePhotos.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -766,8 +771,8 @@ object Tools {
         var content = SyncAdapter.PHOTO_META_HEADER
 
         photoMeta.forEach {
-            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"

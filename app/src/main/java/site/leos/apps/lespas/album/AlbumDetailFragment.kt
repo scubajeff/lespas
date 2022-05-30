@@ -443,7 +443,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     destinationViewModel.getRemotePhotos().forEach { remotePhoto ->
                         // No matter the photo is uploaded or not, add action to move or copy on server. If it's not yet uploaded, another Action.ACTION_ADD_FILES_ON_SERVER should be in the pending list by now
                         remotePhoto.photo.let { photo ->
-                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
+                            metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(OffsetDateTime.now().offset).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
                             if (photo.id == album.cover) {
                                 // Can't move cover photo
                                 actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))

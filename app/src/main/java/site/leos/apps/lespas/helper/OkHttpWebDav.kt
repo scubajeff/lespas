@@ -27,7 +27,6 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -216,7 +215,6 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             var currentFolderId = ""
-            val offset = OffsetDateTime.now().offset
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
             if (response.isSuccessful) {
@@ -264,7 +262,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                     }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
-                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { LocalDateTime.ofEpochSecond(text.toLong() / 1000, 0, offset) } catch (e: Exception) { LocalDateTime.MIN }
+                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { Tools.epochToLocalDateTime(text.toLong()) } catch (e: Exception) { LocalDateTime.MIN }
                                     LESPAS_WIDTH -> res.width = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_HEIGHT -> res.height = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_ORIENTATION -> res.orientation = try { text.toInt() } catch (e: NumberFormatException) { 0 }
