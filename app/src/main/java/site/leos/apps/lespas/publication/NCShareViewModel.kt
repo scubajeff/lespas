@@ -419,6 +419,32 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         _publicationContentMeta.value = mutableListOf()
     }
 
+    fun getCameraRollArchive(): List<Photo> {
+        val result = mutableListOf<Photo>()
+        try {
+            webDav.listWithExtraMeta("$resourceRoot/DCIM", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+                if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+                    result.add(Photo(
+                        id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
+                        dateTaken = dav.dateTaken, lastModified = dav.modified,
+                        width = dav.width, height = dav.height, orientation = dav.orientation,
+                        // Store file size in property shareId
+                        shareId = dav.size.toInt(),
+                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing
+                    ))
+                }
+            }
+            result.sortByDescending { it.dateTaken }
+
+            // Save a snapshot
+            File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
+                it.write(Tools.photosToMetaJSONString(result))
+            }
+        } catch (e: Exception) {}
+
+        return result
+    }
+
     @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
         var doRefresh = true

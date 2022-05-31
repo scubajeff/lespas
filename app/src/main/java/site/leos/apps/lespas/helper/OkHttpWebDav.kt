@@ -19,6 +19,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -27,7 +28,6 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -216,7 +216,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             var currentFolderId = ""
-            val offset = OffsetDateTime.now().offset
+            val defaultZoneId = ZoneId.systemDefault()
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
             if (response.isSuccessful) {
@@ -264,10 +264,14 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
                                     }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
-                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { LocalDateTime.ofEpochSecond(text.toLong() / 1000, 0, offset) } catch (e: Exception) { LocalDateTime.MIN }
+                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { LocalDateTime.ofInstant(Instant.ofEpochMilli(text.toLong()), defaultZoneId) } catch (e: Exception) { LocalDateTime.MIN }
                                     LESPAS_WIDTH -> res.width = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_HEIGHT -> res.height = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_ORIENTATION -> res.orientation = try { text.toInt() } catch (e: NumberFormatException) { 0 }
+                                    LESPAS_LATITUDE -> res.latitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_LONGITUDE -> res.longitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_ALTITUDE -> res.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     RESPONSE_TAG -> {
                                         text = ""
                                         if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
@@ -446,6 +450,10 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         var width: Int = 0,
         var height: Int = 0,
         var orientation: Int = 0,
+        var latitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var longitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var altitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var bearing: Double = Photo.GPS_DATA_UNKNOWN,
     ): Parcelable
 
     companion object {
@@ -485,10 +493,14 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         const val LESPAS_WIDTH = "pictureWidth"
         const val LESPAS_HEIGHT = "pictureHeight"
         const val LESPAS_ORIENTATION = "pictureOrientation"
+        const val LESPAS_LATITUDE = "pictureLatitude"
+        const val LESPAS_LONGITUDE = "pictureLongitude"
+        const val LESPAS_ALTITUDE = "pictureAltitude"
+        const val LESPAS_BEARING = "pictureBearing"
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
         private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
-        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/></d:prop></d:propfind>"
+        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/><oc:$LESPAS_LATITUDE/><oc:$LESPAS_LONGITUDE/><oc:$LESPAS_ALTITUDE/><oc:$LESPAS_BEARING/></d:prop></d:propfind>"
         private const val PROPPATCH_EXTRA_META_BODY = "${XML_HEADER}<d:propertyupdate xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:set><d:prop>%s</d:prop></d:set></d:propertyupdate>"
 /*
         private const val BATCH_BODY = "${XML_HEADER}<D:%s xmlns:D=\"$DAV_NS\"><D:target>%s</D:target></D:%s>"

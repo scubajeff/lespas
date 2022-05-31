@@ -62,7 +62,7 @@ class PhotosInMapFragment: Fragment() {
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
     private var album: Album? = null
-    private var remotePhoto: MutableList<NCShareViewModel.RemotePhoto>? = null
+    private var remotePhotos: MutableList<NCShareViewModel.RemotePhoto>? = null
     private var poiBoundingBox: BoundingBox? = null
 
     private lateinit var rootPath: String
@@ -133,8 +133,8 @@ class PhotosInMapFragment: Fragment() {
                 playerHandler = Handler(bgmPlayer.applicationLooper)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
-            remotePhoto = mutableListOf()
-            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhoto?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
+            remotePhotos = mutableListOf()
+            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
         }
     }
 
@@ -166,12 +166,12 @@ class PhotosInMapFragment: Fragment() {
                 val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
                 spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt() - (requireActivity() as AppCompatActivity).supportActionBar!!.height
 
-                if (locality != null) remotePhoto = ViewModelProvider(
+                if (locality != null) remotePhotos = ViewModelProvider(
                     requireParentFragment(),
-                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true)
+                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel)
                 )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos
 
-                remotePhoto?.forEach { remotePhoto ->
+                remotePhotos?.forEach { remotePhoto ->
                     poi = GeoPoint(remotePhoto.photo.latitude, remotePhoto.photo.longitude)
                     val marker = Marker(mapView).apply {
                         position = poi
@@ -476,6 +476,7 @@ class PhotosInMapFragment: Fragment() {
         private const val KEY_LOCALITY = "KEY_LOCALITY"
         private const val KEY_COUNTRY = "KEY_COUNTRY"
         private const val KEY_ALBUM_NAMES = "KEY_ALBUM_NAMES"
+        private const val KEY_TARGET = "KEY_TARGET"
         private const val KEY_ALBUM = "KEY_ALBUM"
         private const val KEY_PHOTOS = "KEY_PHOTOS"
 
@@ -483,11 +484,12 @@ class PhotosInMapFragment: Fragment() {
         private const val ANIMATION_TIME = 800L
 
         @JvmStatic
-        fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>) = PhotosInMapFragment().apply {
+        fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>, target: Int) = PhotosInMapFragment().apply {
             arguments = Bundle().apply {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
                 putSerializable(KEY_ALBUM_NAMES, albumNames)
+                putInt(KEY_TARGET, target)
             }
         }
 

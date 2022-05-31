@@ -41,7 +41,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var photoAdapter: PhotoAdapter
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,7 +59,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo, requireArguments().getInt(KEY_TARGET)), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -108,7 +108,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
             R.id.option_menu_in_map-> {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList(), requireArguments().getInt(KEY_TARGET)), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -162,12 +162,14 @@ class LocationResultSingleLocalityFragment: Fragment() {
     companion object {
         private const val KEY_LOCALITY = "KEY_LOCALITY"
         private const val KEY_COUNTRY = "KEY_COUNTRY"
+        private const val KEY_TARGET = "KEY_TARGET"
 
         @JvmStatic
-        fun newInstance(locality: String, country: String) = LocationResultSingleLocalityFragment().apply {
+        fun newInstance(locality: String, country: String, target: Int) = LocationResultSingleLocalityFragment().apply {
             arguments = Bundle().apply {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
+                putInt(KEY_TARGET, target)
             }
         }
     }

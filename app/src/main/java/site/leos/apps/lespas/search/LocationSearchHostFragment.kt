@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.search
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.net.Uri
 import android.os.Build
@@ -9,6 +10,7 @@ import android.view.*
 import androidx.activity.OnBackPressedCallback
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
@@ -21,19 +23,24 @@ import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
+import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionRepository
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
     private var loadingProgressBar: CircularProgressIndicator? = null
     private var menu: Menu? = null
-    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getBoolean(SEARCH_COLLECTION)) }
+    private val imageLoaderModel: NCShareViewModel by activityViewModels()
+    private val searchViewModel: LocationSearchViewModel by viewModels { LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,11 +57,18 @@ class LocationSearchHostFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         searchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            loadingProgressBar?.setProgressCompat(progress, true)
-            if (progress == 100) disableMenuItem(R.id.option_menu_search_progress)
+            when(progress) {
+                0 -> loadingProgressBar?.isIndeterminate = true
+                100 -> disableMenuItem(R.id.option_menu_search_progress)
+                else -> loadingProgressBar?.apply {
+                    isIndeterminate = false
+                    setProgressCompat(progress, true)
+                }
+
+            }
         })
 
-        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getBoolean(SEARCH_COLLECTION)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
+        if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_TARGET)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -83,15 +97,25 @@ class LocationSearchHostFragment: Fragment() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class LocationSearchViewModelFactory(private val application: Application, private val searchCollection: Boolean): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchCollection) as T
+    class LocationSearchViewModelFactory(private val application: Application, private val searchTarget: Int, private val remoteImageModel: NCShareViewModel): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = LocationSearchViewModel(application, searchTarget, remoteImageModel) as T
     }
 
-    class LocationSearchViewModel(application: Application, searchCollection: Boolean): AndroidViewModel(application) {
-        val photoRepository = PhotoRepository(application)
+    class LocationSearchViewModel(application: Application, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(application) {
+        private val photoRepository = PhotoRepository(application)
+        private val resultList = mutableListOf<LocationSearchResult>()
+        private val result = MutableLiveData<List<LocationSearchResult>>()
+        private val progress = SingleLiveEvent<Int>()
+        private val patchActions = mutableListOf<Action>()
 
+        @SuppressLint("RestrictedApi")
         private var job = viewModelScope.launch(Dispatchers.IO) {
-            (if (searchCollection) photoRepository.getAllImageNotHidden() else Tools.getCameraRoll(application.contentResolver, true).toList()).run {
+            progress.postValue(0)
+            when(searchTarget) {
+                R.id.search_album -> PhotoRepository(application).getAllImageNotHidden()
+                R.id.search_cameraroll -> Tools.getCameraRoll(application.contentResolver, true)
+                else -> remoteImageModel.getCameraRollArchive()
+            }.run {
                 val lespasBaseFolder = application.getString(R.string.lespas_base_folder_name)
                 val cr = application.contentResolver
                 val albums = AlbumRepository(application).getAllAlbumAttribute()
@@ -99,43 +123,87 @@ class LocationSearchHostFragment: Fragment() {
                 var rp = NCShareViewModel.RemotePhoto(Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), "")
                 val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
 
+                var latitude = Photo.GPS_DATA_UNKNOWN
+                var longitude = Photo.GPS_DATA_UNKNOWN
+                var altitude = Photo.GPS_DATA_UNKNOWN
+                var bearing = Photo.GPS_DATA_UNKNOWN
+
                 this.asReversed().forEachIndexed { i, photo ->
                     progress.postValue((i * 100.0 / total).toInt())
                     if (Tools.hasExif(photo.mimeType)) {
-                        (if (searchCollection) {
-                            //ExifInterface("$baseFolder/${if (File(baseFolder, photo.id).exists()) photo.id else photo.name}")
-                            if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
-                            else return@forEachIndexed
-                        } else {
-                            try {
-                                cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
-                            } catch (e: SecurityException) {
-                                cr.openInputStream(Uri.parse(photo.id))
-                            } catch (e: UnsupportedOperationException) {
-                                cr.openInputStream(Uri.parse(photo.id))
-                            }?.let { ExifInterface(it).latLong } ?: run { null }
-                        })?.also { latLong ->
+                        when(searchTarget) {
+                            R.id.search_album -> {
+                                if (photo.latitude != Photo.NO_GPS_DATA) doubleArrayOf(photo.latitude, photo.longitude)
+                                else return@forEachIndexed
+                            }
+                            R.id.search_cameraroll -> {
+                                try {
+                                    cr.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(photo.id)) else Uri.parse(photo.id))
+                                } catch (e: SecurityException) {
+                                    cr.openInputStream(Uri.parse(photo.id))
+                                } catch (e: UnsupportedOperationException) {
+                                    cr.openInputStream(Uri.parse(photo.id))
+                                }?.let { try { ExifInterface(it).latLong } catch (e: NullPointerException) { return@forEachIndexed }
+                                } ?: run { return@forEachIndexed }
+                            }
+                            R.id.search_archive -> {
+                                when(photo.latitude) {
+                                    Photo.NO_GPS_DATA -> return@forEachIndexed
+                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif ->
+                                        exif.latLong?.run {
+                                            latitude = this[0]
+                                            longitude = this[1]
+                                            altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                                            bearing = Tools.getBearing(exif)
+                                        } ?: run {
+                                            latitude = Photo.NO_GPS_DATA
+                                            longitude = Photo.NO_GPS_DATA
+                                            altitude = Photo.NO_GPS_DATA
+                                            bearing = Photo.NO_GPS_DATA
+                                        }
+
+                                        // Patch WebDAV properties in archive
+                                        // exif.dateTimeOriginal, exif.dateTimeDigitized both return timestamp in UTC time zone
+                                        patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
+                                            "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + exif.rotationDegrees + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
+                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: (photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli())) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
+                                            photo.name, System.currentTimeMillis(), 1)
+                                        )
+
+                                        exif.latLong
+                                    }
+                                    else -> doubleArrayOf(photo.latitude, photo.longitude)
+                                }
+                            }
+                            else -> null
+                        }?.also { latLong ->
                             if (photo.country.isEmpty()) {
                                 try {
                                     nominatim.getFromLocation(latLong[0], latLong[1], 1)
                                 } catch (e: IOException) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
                                         val locality = it.locality ?: it.adminArea ?: ""
-                                        if (searchCollection) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
+                                        if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
                                         Pair(it.countryName, locality)
                                     } else null
                                 } ?: run { null }
                             } else {
                                 Pair(photo.country, photo.locality)
                             }?.apply {
-                                if (searchCollection) {
+                                if (searchTarget == R.id.search_album) {
                                     val album = albums.find { it.id == photo.albumId }
                                     album?.let {
                                         rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
                                     } ?: run {
                                         return@forEachIndexed
                                     }
-                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), "")
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else "/DCIM")
 
                                 resultList.find { result -> result.country == this.first && result.locality == this.second }
                                     ?.let { existed ->
@@ -155,18 +223,14 @@ class LocationSearchHostFragment: Fragment() {
             // Show progress to the end
             delay(500)
             progress.postValue(100)
-        }
+        }.apply { invokeOnCompletion { if (patchActions.isNotEmpty()) ActionRepository(getApplication()).addActions(patchActions) }}
 
         override fun onCleared() {
             job.cancel()
             super.onCleared()
         }
 
-        private val resultList = mutableListOf<LocationSearchResult>()
-        private val result = MutableLiveData<List<LocationSearchResult>>()
         fun getResult(): LiveData<List<LocationSearchResult>> = result
-
-        private val progress = SingleLiveEvent<Int>()
         fun getProgress(): SingleLiveEvent<Int> = progress
 
 /*
@@ -184,9 +248,9 @@ class LocationSearchHostFragment: Fragment() {
     )
 
     companion object {
-        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
 
         @JvmStatic
-        fun newInstance(searchCollection: Boolean) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
+        fun newInstance(target: Int) = LocationSearchHostFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
     }
 }

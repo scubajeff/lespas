@@ -94,7 +94,7 @@ class SearchFragment : Fragment() {
             in 1..4 -> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
             5 -> {
 /*
@@ -180,7 +180,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun launchLocationSearch() {
-        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId == R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
+        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {

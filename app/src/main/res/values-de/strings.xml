@@ -275,4 +275,6 @@
     <string name="msg_joint_album_not_updated_locally">Änderungen, die an einem gemeinsamen Album vorgenommen wurden, werden angezeigt, nachdem der Eigentümer des Albums sie bestätigt hat.</string>
     <string name="option_menu_search">Suche nach Name</string>
     <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
+    <string name="title_in_archive">%1$s in Kamera-Backups</string>
+    <string name="tooltips_search_archive">In Kamerarollensicherungen</string>
 </resources>

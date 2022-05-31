@@ -223,4 +223,6 @@
     <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album commun seront affichées après que le propriétaire de l\'album les aura confirmées.</string>
     <string name="option_menu_search">Rechercher le nom</string>
     <string name="tooltips_date_picker">Choisir une date</string>
+    <string name="title_in_archive">%1$s dans les sauvegardes de la caméra</string>
+    <string name="tooltips_search_archive">Dans les sauvegardes de la liste d\'appareils photo</string>
 </resources>

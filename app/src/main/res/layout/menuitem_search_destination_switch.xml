@@ -9,7 +9,7 @@
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/search_destination_toogle_group"
-        android:layout_width="116dp"
+        android:layout_width="174dp"
         android:layout_height="?attr/actionBarSize"
         android:paddingVertical="12dp"
         android:paddingRight="@dimen/big_padding"
@@ -50,6 +50,24 @@
             app:strokeColor="@color/search_destination_switch_text"
             android:tooltipText="@string/tooltips_search_cameraroll"
             app:icon="@drawable/ic_baseline_camera_roll_24"
+            app:iconSize="18dp"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/search_destination_switch_text"
+            tools:ignore="UnusedAttribute" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/search_archive"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            style="?attr/materialButtonOutlinedStyle"
+            app:strokeColor="@color/search_destination_switch_text"
+            android:tooltipText="@string/tooltips_search_archive"
+            app:icon="@drawable/ic_baseline_archive_24"
             app:iconSize="18dp"
             app:iconGravity="textStart"
             app:iconPadding="0dp"

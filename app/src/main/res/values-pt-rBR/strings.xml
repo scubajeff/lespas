@@ -285,4 +285,6 @@
     <string name="msg_joint_album_not_updated_locally">As mudanças feitas no Álbum Conjunto serão mostradas depois que o proprietário do álbum as confirmar.</string>
     <string name="option_menu_search">Busca por nome</string>
     <string name="tooltips_date_picker">Escolha uma data</string>
+    <string name="title_in_archive">%1$s em Backups de Câmera</string>
+    <string name="tooltips_search_archive">Pesquisar nos Backups de rolo de câmera</string>
 </resources>

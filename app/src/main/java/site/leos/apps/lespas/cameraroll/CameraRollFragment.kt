@@ -129,7 +129,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
+    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, requireArguments().getString(KEY_URI), requireArguments().getBoolean(KEY_IN_ARCHIVE)) }
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()) }
     private val actionModel: ActionViewModel by viewModels()
 
@@ -176,7 +176,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 else imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView!!, type) {
                     startPostponedEnterTransition()
                     if (photo.width == 0 && photo.mimeType.startsWith("image")) {
-                        // Patching photo's meta after it has been downloaded
+                        // Patching photo's meta after it has been fetched
                         Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
                     }
                 }},
@@ -186,7 +186,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
                 //mediaPagerAdapter.findMediaPosition(photo).let { pos ->
-                camerarollModel.findPhotoPosition(photo).let { pos ->
+                camerarollModel.findPhotoPosition(photo.id).let { pos ->
                     if (pos != -1) {
                         mediaPager.scrollToPosition(pos)
                         camerarollModel.setCurrentPosition(pos)
@@ -1068,14 +1068,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             //with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
             camerarollModel.getCurrentPhoto()?.run {
                 dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-                sizeTextView.text = Tools.humanReadableByteCountSI(shareId.toLong())
+                dateTextView.isVisible = true
 
+                shareId.toLong().let { size ->
+                    sizeTextView.text = Tools.humanReadableByteCountSI(size)
+                    sizeTextView.isVisible = size > 0
+                }
             }
         } catch (e: IndexOutOfBoundsException) {}
 
         val primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
-        dateTextView.isVisible = true
-        sizeTextView.isVisible = true
         dateTextView.setTextColor(primaryTextColor)
         sizeTextView.setTextColor(primaryTextColor)
     }
@@ -1256,11 +1258,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     @Suppress("UNCHECKED_CAST")
-    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
+    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri, inArchive) as T
     }
 
-    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?): ViewModel() {
+    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModel() {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var cameraRoll = mutableListOf<Photo>()
         private var backups = mutableListOf<Photo>()
@@ -1272,8 +1274,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
 
         init {
-            vmState.postValue(STATE_SHOWING_DEVICE)
-            fetchCameraRoll()
+            if (inArchive) {
+                vmState.postValue(STATE_FETCHING_BACKUP)
+                fetchPhotoFromServerBackup()
+            } else {
+                vmState.postValue(STATE_SHOWING_DEVICE)
+                fetchCameraRoll()
+            }
         }
 
         fun getVMState(): LiveData<Int> = vmState
@@ -1441,8 +1448,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
 
-        fun getPhotoById(photoId: String): Photo? = if (vmState.value == STATE_SHOWING_BACKUP) backups.find { it.id == photoId } else cameraRoll.find { it.id == photoId }
-        fun findPhotoPosition(photo: Photo): Int = if (vmState.value == STATE_SHOWING_BACKUP) backups.indexOf(photo) else cameraRoll.indexOf(photo)
+        fun getPhotoById(photoId: String): Photo? = mediaList.value?.let { list -> list.find { it.id == photoId }}
+        fun findPhotoPosition(photoId: String): Int = mediaList.value?.let { list -> list.indexOfFirst { it.id == photoId }} ?: -1
         fun removeMedias(removeList: List<Uri>) {
             // Remove from system if running on Android 10 or lower
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) removeList.forEach { media-> cr.delete(media, null, null) }
@@ -1512,7 +1519,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             const val STATE_FETCHING_BACKUP = 2
             const val STATE_BACKUP_NOT_AVAILABLE = 3
 
-            private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
+            const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
         }
     }
 
@@ -1535,6 +1542,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 exif.latLong?.let { latLong ->
                     photo.latitude = latLong[0]
                     photo.longitude = latLong[1]
+                    photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                    photo.bearing = Tools.getBearing(exif)
                 }
             }
         }
@@ -1739,6 +1748,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         const val EMPTY_ROLL_COVER_ID = "0"
 
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
+        private const val KEY_IN_ARCHIVE = "KEY_IN_ARCHIVE"
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
         private const val KEY_BOTTOMSHEET_STATE = "KEY_BOTTOMSHEET_STATE"
@@ -1752,7 +1762,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(scrollTo: String = "") = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
+        fun newInstance(scrollTo: String = "", inArchive: Boolean = false) = CameraRollFragment().apply {
+            arguments = Bundle().apply {
+                putString(KEY_SCROLL_TO, scrollTo)
+                putBoolean(KEY_IN_ARCHIVE, inArchive)
+            }
+        }
 
         @JvmStatic
         fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}
