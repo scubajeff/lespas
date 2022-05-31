@@ -3,6 +3,13 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item android:id="@+id/option_menu_search"
+        android:title="@string/option_menu_search"
+        android:icon="@drawable/ic_baseline_search_24"
+        android:orderInCategory="6"
+        app:showAsAction="always|collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        android:visible="false" />
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="7"

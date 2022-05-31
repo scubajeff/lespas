@@ -21,6 +21,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.appcompat.widget.SearchView
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -119,29 +120,33 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var sp: SharedPreferences
 
+    private var searchOptionMenu: MenuItem? = null
+    private var currentQuery = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setHasOptionsMenu(true)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        album = arguments?.getParcelable(KEY_ALBUM)!!
+        album = requireArguments().getParcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
         lespasPath = getString(R.string.lespas_base_folder_name)
 
         // Must be restore here
         savedInstanceState?.let {
-            lastSelection = it.getStringArray(SELECTION)?.toMutableSet() ?: mutableSetOf()
-            sharedSelection = it.getStringArray(SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
-            saveSortOrderChanged = it.getBoolean(SORT_ORDER_CHANGED)
-        } ?: run { arguments?.getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
+            lastSelection = it.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
+            sharedSelection = it.getStringArray(KEY_SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
+        } ?: run { requireArguments().getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
             album.id,
             { view, position ->
                 currentPhotoModel.run {
-                    setCurrentPosition(position)
-                    setLastPosition(position)
+                    (if (currentQuery.isEmpty()) position else position + 1).let { pos ->
+                        setCurrentPosition(pos)
+                        setLastPosition(pos)
+                    }
                 }
 
                 ViewCompat.setTransitionName(recyclerView, null)
@@ -289,8 +294,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 PhotoGridAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key.isNotEmpty()
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != album.id
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position != 0 || mAdapter.getPhotoAt(0).id != album.id
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
@@ -372,32 +377,35 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 private fun showTitleText() {
                     // Show/hide title text in titleBar base on visibility of cover view's title
-                    if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() == 0) {
+                    try {
                         val rect = Rect()
                         (recyclerView.findViewHolderForAdapterPosition(0) as PhotoGridAdapter.CoverViewHolder).itemView.findViewById<TextView>(R.id.title).getGlobalVisibleRect(rect)
 
                         if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
                         else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
-                    }
+                    } catch (e: Exception) {}
                 }
             })
         }
 
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
+        currentQuery = currentPhotoModel.getCurrentQuery()
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
             // Cover might changed, photo might be deleted, so get updates from latest here
             val oldListType = this.album.sortOrder
             this.album = it.album
 
-            // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter
+            // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
             if (abs(oldListType - this.album.sortOrder) == 100) {
                 recyclerView.adapter = null
                 recyclerView.layoutManager = newLayoutManger()
                 recyclerView.adapter = mAdapter
+
+                updateSearchMenu()
             }
 
-            mAdapter.setAlbum(it)
+            mAdapter.setAlbum(it, currentQuery)
             (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
             // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
@@ -530,9 +538,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putStringArray(SELECTION, lastSelection.toTypedArray())
-        outState.putStringArray(SHARED_SELECTION, sharedSelection.toTypedArray())
-        outState.putBoolean(SORT_ORDER_CHANGED, saveSortOrderChanged)
+        outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
+        outState.putStringArray(KEY_SHARED_SELECTION, sharedSelection.toTypedArray())
+    }
+
+    override fun onStop() {
+        currentPhotoModel.setCurrentQuery(currentQuery)
+
+        // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
+        if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
+
+        super.onStop()
     }
 
     override fun onDestroyView() {
@@ -545,9 +561,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     override fun onDestroy() {
-        // Time to update album meta file if sort order changed in this session, if cover is not uploaded yet, meta will be maintained in SyncAdapter when cover fileId is available
-        if (saveSortOrderChanged && !album.cover.contains('.')) actionModel.updateAlbumSortOrderInMeta(album)
-
         requireContext().apply {
             unregisterReceiver(snapseedCatcher)
             contentResolver.unregisterContentObserver(snapseedOutputObserver)
@@ -560,6 +573,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.album_detail_menu, menu)
         mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+        searchOptionMenu = menu.findItem(R.id.option_menu_search)
 
         run map@{
             mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
@@ -568,6 +582,40 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     return@map
                 }
+            }
+        }
+
+        updateSearchMenu()
+    }
+
+    private fun updateSearchMenu() {
+        searchOptionMenu?.let {
+            if (Tools.isWideListAlbum(album)) {
+                it.isVisible = true
+
+                (it.actionView as SearchView).run {
+                    if (currentQuery.isNotEmpty()) {
+                        it.expandActionView()
+                        setQuery(currentQuery, false)
+                    }
+
+                    queryHint = getString(R.string.option_menu_search)
+
+                    setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                        override fun onQueryTextSubmit(query: String?): Boolean = false
+                        override fun onQueryTextChange(newText: String?): Boolean {
+                            (newText ?: "").let { query ->
+                                mAdapter.filter(query)
+                                currentQuery = query
+                            }
+                            return false
+                        }
+                    })
+                }
+            } else {
+                it.isVisible = false
+                it.collapseActionView()
+                currentQuery = ""
             }
         }
     }
@@ -912,7 +960,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         return GridLayoutManager(context, defaultSpanCount).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int { return if (position == 0) defaultSpanCount else 1 }
+                override fun getSpanSize(position: Int): Int { return if (position == 0 && mAdapter.getPhotoAt(0).id == album.id) defaultSpanCount else 1 }
             }
         }
     }
@@ -921,6 +969,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
+        protected lateinit var photos: List<Photo>
         private var isWideList = false
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -1023,7 +1072,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        override fun getItemViewType(position: Int): Int = if (position == 0) TYPE_COVER else TYPE_PHOTO
+        override fun getItemViewType(position: Int): Int = if (currentList[position].id == this.album.id) TYPE_COVER else TYPE_PHOTO
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
             recipientText = parent.context.getString(R.string.published_to)
@@ -1051,7 +1100,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
-        internal fun setAlbum(album: AlbumWithPhotos) {
+        internal fun setAlbum(album: AlbumWithPhotos, query: String = "") {
             // Find cover photo first, since after cover photo being renamed, several database changes will be triggered and a miss-match will happen
             album.photos.find { it.name == album.album.coverFileName }?.let { coverPhoto ->
                 this.album = album.album
@@ -1063,16 +1112,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     // set albumId to album's name, so that album name changes can be updated
                     album.album.run { photos.add(coverPhoto.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
 
-                    photos.addAll(
-                        when (album.album.sortOrder) {
-                            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
-                            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                            else -> album.photos
-                        }
-                    )
-                    submitList(photos)
+                    this.photos = when (album.album.sortOrder) {
+                        Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
+                        Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
+                        Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                        Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                        else -> album.photos
+                    }
+                    photos.addAll(this.photos)
+
+                    if (query.isNotEmpty()) filter(query)
+                    else submitList(photos)
                 }
             }
         }
@@ -1096,6 +1146,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+        internal fun filter(query: String) {
+            if (query.isEmpty()) setAlbum(AlbumWithPhotos(this.album, this.photos))
+            else {
+                this.photos.filter { it.name.contains(query) }.let { filtered ->
+                    submitList(filtered)
+                }
+            }
+        }
 
         class PhotoKeyProvider(private val adapter: PhotoGridAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
@@ -1129,9 +1187,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BGM_DIALOG = "BGM_DIALOG"
-        private const val SELECTION = "SELECTION"
-        private const val SHARED_SELECTION = "SHARED_SELECTION"
-        private const val SORT_ORDER_CHANGED = "SORT_ORDER_CHANGED"
+
+        private const val KEY_SELECTION = "KEY_SELECTION"
+        private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"
 
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"

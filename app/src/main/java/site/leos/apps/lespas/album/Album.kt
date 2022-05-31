@@ -181,9 +181,9 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT id, name, shareId FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
     abstract fun getAllAlbumAttribute(): List<IDandAttribute>
 
-    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder + 100 WHERE id = :albumId")
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder + ${Album.BY_DATE_TAKEN_ASC_WIDE} WHERE id = :albumId")
     abstract fun enableWideList(albumId: String)
-    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - 100 WHERE id = :albumId")
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - ${Album.BY_DATE_TAKEN_ASC_WIDE} WHERE id = :albumId")
     abstract fun disableWideList(albumId: String)
 
     @Query("UPDATE  ${Album.TABLE_NAME} SET coverFileName = :newCoverFileName WHERE id = :albumId")
