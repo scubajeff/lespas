@@ -1,3 +1,9 @@
+## Version 2.5.11
+* New: name filter for albums with "Show Name" option turned on
+* New: AI object detection and location search for camera roll backups on server
+* New: Date picker in the camera roll list
+* Fixed login using self-signed certificate
+
 ## Version 2.5.10
 * New: manage camera roll archive on server
 * New: show sync status in Setting menu
