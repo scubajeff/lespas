@@ -39,7 +39,7 @@ import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import java.time.OffsetDateTime
+import java.time.ZoneId
 import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -234,7 +234,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             it?.let { targetAlbum ->
                 destinationModel.getRemotePhotos()[0].let { remotePhoto ->
                     ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(mutableListOf<Action>().apply {
-                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
+                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
                         if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
                             targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
                                 add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,

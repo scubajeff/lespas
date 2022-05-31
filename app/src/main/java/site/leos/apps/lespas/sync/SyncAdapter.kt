@@ -37,11 +37,8 @@ import java.io.FileWriter
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
@@ -320,7 +317,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_ADD_FILES_TO_JOINT_ALBUM-> {
                     // Property folderId holds MIME type
                     // Property folderName holds joint album share path, start from Nextcloud server defined share path
-                    // Property fileId holds string "joint album's id|dateTaken|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // Property fileId holds string "joint album's id|dateTaken epoch milli second|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // Property fileName holds media file name
                     // Media file should locate in app's file folder
                     // Joint Album's content meta file will be downloaded in app's file folder, later Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META will pick it up there and send it to server
@@ -347,7 +344,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
                     // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/' or 'DCIM/
                     // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
-                    // fileId holds string "target album's id|dateTaken|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
+                    // fileId holds string "target album's id|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // fileName is a string "file name|ture or false, whether it's joint album"
 
                     val fileName: String
@@ -441,7 +438,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "")) }
                 else logFile.createNewFile()
 
-                val date = LocalDateTime.ofEpochSecond(metaFromAction[1].toLong(), 0, OffsetDateTime.now().offset)
+                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong()) } catch (e: Exception) { LocalDateTime.now() }
                 add(
                     NCShareViewModel.RemotePhoto(
                         Photo(
@@ -461,7 +458,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
             }
         } catch (e: Exception) {
-            // Log replay is not base on best effort, don't halt the sync process
+            // Log replay is now base on best effort, don't halt the sync process
         }
     }
 
@@ -649,7 +646,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 contentMetaUpdatedNeeded.add(changedAlbum.name)
 
                                 // Parsing new filename for dataTaken string of yyyyMMddHHmmss or yyyyMMdd_HHmmss
-                                Tools.parseFileName(remotePhoto.name)?.let { try { photoRepository.updateDateTaken(remotePhotoId, LocalDateTime.parse(it, DateTimeFormatter.ofPattern(Tools.DATE_FORMAT_PATTERN))) } catch (e: Exception) {}}
+                                Tools.parseDateFromFileName(remotePhoto.name)?.let { photoRepository.updateDateTaken(remotePhotoId, it) }
 
                                 // If album's cover's filename changed on server
                                 if (remotePhotoId == changedAlbum.cover) {
@@ -795,7 +792,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         Photo(
                                                             id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
                                                             eTag = it.eTag,
-                                                            dateTaken = Instant.ofEpochSecond(getLong("stime")).atZone(ZoneId.systemDefault()).toLocalDateTime(), lastModified = it.lastModified,
+                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"))} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
                                                             width = getInt("width"), height = getInt("height"),
                                                             caption = getString("caption"),
                                                             orientation = getInt("orientation"),

@@ -235,7 +235,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
                                 meta.mimeType,
                                 album.coverFileName.substringBeforeLast('/'),
-                                "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                "${album.eTag}|${meta.dateTaken.toInstant(OffsetDateTime.now().offset).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
                                 fileId, System.currentTimeMillis(), 1
                             ))
                         } else {
