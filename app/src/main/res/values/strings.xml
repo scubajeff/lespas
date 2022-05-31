@@ -277,6 +277,7 @@
     <!-- Camera Roll Fragment -->
     <string name="tooltips_show_cameraroll">Show camera roll</string>
     <string name="tooltips_fetch_backup">Show backups on server</string>
+    <string name="tooltips_date_picker">Pick a date</string>
     <string name="msg_empty_server_backup">No backups on server. Have you enabled camera roll auto backup in setting?</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
 

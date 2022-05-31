@@ -10,4 +10,5 @@
     <attr name="colorSecondaryVariantFade" format="color" />
     <attr name="colorHighlightPrimary" format="color" />
     <attr name="colorToggleButtonOnToolbar" format="color" />
+    <attr name="colorErrorDatePicker" format="color" />
 </resources>

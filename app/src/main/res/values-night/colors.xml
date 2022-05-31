@@ -13,6 +13,7 @@
     <color name="color_recipient_chip_text">#B2FFFFFF</color>
     <color name="color_gray_out">#606060</color>
     <color name="color_remote_media_grid_background">#20F9F7E8</color>
+    <color name="color_error_date_picker">@color/color_error</color>
 
     <color name="album_item_selected_background">#89937A</color>
 </resources>

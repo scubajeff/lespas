@@ -23,6 +23,7 @@
     <color name="color_gray_out">@android:color/darker_gray</color>
     <color name="color_avatar_default_background">#FFEFE8D8</color>
     <color name="color_remote_media_grid_background">#201B1D1C</color>
+    <color name="color_error_date_picker">@android:color/holo_red_dark</color>
 
     <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
 
@@ -34,4 +35,5 @@
     <color name="color_primary_variant_true_black">#2B2D2C</color>
     <color name="color_secondary_variant_true_black">#E9E7D8</color>
     <color name="color_secondary_variant_fade_true_black">#40E9E7D8</color>
+    <color name="color_error_date_picker_true_black">@color/color_error</color>
 </resources>

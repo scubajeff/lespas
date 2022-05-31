@@ -1,4 +1,8 @@
 <resources>
+    <style name="DateIndicatorShape">
+        <item name="cornerFamilyTopLeft">cut</item>
+        <item name="cornerSizeTopLeft">20dp</item>
+    </style>
 
     <style name="Widget.LesPas.ButtonBar.Fullscreen" parent="Widget.AppCompat.ButtonBar">
         <item name="android:layout_width">0dp</item>
@@ -16,8 +20,7 @@
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
 
-    <style name="DateIndicatorShape">
-        <item name="cornerFamilyTopLeft">cut</item>
-        <item name="cornerSizeTopLeft">20dp</item>
+    <style name="ThemeOverlay.LesPas.DatePicker" parent="@style/ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorError">?colorErrorDatePicker</item>
     </style>
 </resources>

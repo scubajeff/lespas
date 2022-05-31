@@ -40,6 +40,7 @@
         <item name="colorAnimatedPlaceHolder">?colorPrimary</item>
         <item name="colorToggleButtonOnToolbar">?colorPrimaryVariant</item>
         <item name="colorHighlightPrimary">?colorPrimary</item>
+        <item name="colorErrorDatePicker">@color/color_error_date_picker</item>
 
         <item name="android:statusBarColor">?attr/colorPrimary</item>
     </style>
@@ -71,7 +72,7 @@
         <item name="colorAnimatedPlaceHolder">?primaryTextWhite</item>
         <item name="colorToggleButtonOnToolbar">#4B4D4C</item>
         <item name="colorHighlightPrimary">?primaryTextWhite</item>
-
+        <item name="colorErrorDatePicker">@color/color_error_date_picker_true_black</item>
 
         <item name="colorControlNormal">@color/color_gray_out</item>
         <item name="colorControlActivated">?primaryTextWhite</item>

@@ -222,4 +222,5 @@
     <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
     <string name="option_menu_search">名前検索</string>
+    <string name="tooltips_date_picker">日付を選択する</string>
 </resources>
