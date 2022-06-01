@@ -104,13 +104,13 @@ dependencies {
     //implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
 
     // Muzei api
-    implementation 'com.google.android.apps.muzei:muzei-api:3.4.0'
+    implementation 'com.google.android.apps.muzei:muzei-api:3.4.1'
 
     // OSMdroid and OSMbonuspack
-    implementation('org.osmdroid:osmdroid-android:6.1.11')  {
+    implementation('org.osmdroid:osmdroid-android:6.1.13')  {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
-    implementation('com.github.MKergall:osmbonuspack:6.7.0') {
+    implementation('com.github.MKergall:osmbonuspack:6.9.0') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
 
