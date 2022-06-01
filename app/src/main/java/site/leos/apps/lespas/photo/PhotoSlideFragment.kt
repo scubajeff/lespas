@@ -547,10 +547,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {
         Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
-            .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-            //.setAnchorView(window.decorView.rootView)
-            .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-            .setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
 /*
             .addCallback(object: Snackbar.Callback() {
                 override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {

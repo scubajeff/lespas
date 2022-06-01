@@ -928,11 +928,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     } else {
                         var msg = getString(R.string.msg_error_preparing_share_out_files)
                         if (Tools.isRemoteAlbum(album)) msg += " ${getString(R.string.msg_check_network)}"
-                        Snackbar.make(recyclerView, msg, Snackbar.LENGTH_LONG).apply {
-                            animationMode = Snackbar.ANIMATION_MODE_FADE
-                            setBackgroundTint(ContextCompat.getColor(recyclerView.context, R.color.color_primary))
-                            setTextColor(ContextCompat.getColor(recyclerView.context, R.color.color_text_light))
-                        }.show()
+                        Snackbar.make(recyclerView, msg, Snackbar.LENGTH_LONG).show()
                     }
                 }
             } catch (e: CancellationException) {

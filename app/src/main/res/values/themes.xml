@@ -13,6 +13,11 @@
 
         <item name="primaryTextWhite">@color/color_text_light</item>
         <item name="primaryTextBlack">@color/color_text_dark</item>
+
+        <!-- SnackBar theming -->
+        <item name="snackbarStyle">@style/Theme.LesPas.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Theme.LesPas.SnackbarButton</item>
+        <item name="snackbarTextViewStyle">@style/Theme.LesPas.SnackbarTextLabel</item>
     </style>
 
     <!-- Primary theme -->
@@ -171,5 +176,20 @@
     </style>
     <style name="Widget.LesPas.Button.Borderless" parent="Widget.AppCompat.Button.Borderless">
         <item name="android:textColor">?colorButtonText</item>
+    </style>
+
+    <!-- SnackBar theming -->
+    <style name="Theme.LesPas.Snackbar" parent="Widget.MaterialComponents.Snackbar">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Snackbar</item>
+    </style>
+    <style name="Theme.LesPas.SnackbarButton" parent="Widget.MaterialComponents.Button.TextButton.Snackbar">
+        <item name="android:textColor">@color/color_error</item>
+    </style>
+    <style name="Theme.LesPas.SnackbarTextLabel" parent="Widget.MaterialComponents.Snackbar.TextView">
+        <item name="android:textColor">?primaryTextWhite</item>
+    </style>
+    <style name="ThemeOverlay.App.Snackbar" parent="">
+        <item name="backgroundTint">@color/color_primary</item>
+        <item name="actionTextColorAlpha">1</item>
     </style>
 </resources>

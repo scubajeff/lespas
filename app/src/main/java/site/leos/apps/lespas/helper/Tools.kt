@@ -600,13 +600,7 @@ object Tools {
                     indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
                 }, 0)
             } catch (e: Exception) {}
-            animationMode = Snackbar.ANIMATION_MODE_FADE
-            setBackgroundTint(ContextCompat.getColor(ctx, R.color.color_primary))
-            setTextColor(ContextCompat.getColor(ctx, R.color.color_text_light))
-            cancelAction?.let {
-                setAction(android.R.string.cancel, it)
-                setActionTextColor(ContextCompat.getColor(anchorView.context, R.color.color_error))
-            }
+            cancelAction?.let { setAction(android.R.string.cancel, it) }
         }
     }
 

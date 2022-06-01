@@ -823,13 +823,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                         }
-                        PublicationDetailFragment.JOINT_ALBUM_ID -> {
-                            Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).apply {
-                                animationMode = Snackbar.ANIMATION_MODE_FADE
-                                setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-                                setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
-                            }.show()
-                        }
+                        PublicationDetailFragment.JOINT_ALBUM_ID -> Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
                     }
 
                     destinationModel.getRemotePhotos().forEach { remotePhoto ->
@@ -882,11 +876,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     setSourceGroupState(false)
                     setButtonGroupState(true)
                     allowToggleContent = false
-                    Snackbar.make(mediaPager, getString(R.string.msg_empty_server_backup), Snackbar.LENGTH_LONG).apply {
-                        animationMode = Snackbar.ANIMATION_MODE_FADE
-                        setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-                        setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
-                    }.show()
+                    Snackbar.make(mediaPager, getString(R.string.msg_empty_server_backup), Snackbar.LENGTH_LONG).show()
                 }
             }
         })

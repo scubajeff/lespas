@@ -42,7 +42,7 @@ class SearchFragment : Fragment() {
 
         categoryAdapter = CategoryAdapter { category ->
             if (destinationToggleGroup?.checkedButtonId == R.id.search_album && noAlbum) {
-                Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
+                Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).show()
                 return@CategoryAdapter
             }
             if (destinationToggleGroup?.checkedButtonId == R.id.search_cameraroll) {

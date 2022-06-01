@@ -539,7 +539,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         publishViewModel.unPublish(albums)
                     }
                     if (refused.isNotEmpty()) {
-                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(ContextCompat.getColor(recyclerView.context, R.color.color_primary)).setTextColor(ContextCompat.getColor(recyclerView.context, R.color.color_text_light)).show()
+                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).show()
                     }
                 }
 
