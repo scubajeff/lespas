@@ -350,6 +350,11 @@ class PublicationDetailFragment: Fragment() {
             super.onViewRecycled(holder)
         }
 
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.media)?.let { cancelLoading(it) }}
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+
         fun toggleMetaDisplay() {
             displayMeta = !displayMeta
             for (holder in mBoundViewHolders) holder.toggleMeta()
