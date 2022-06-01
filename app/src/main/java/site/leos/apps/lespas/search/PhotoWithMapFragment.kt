@@ -5,10 +5,7 @@ import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.Matrix
+import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -34,7 +31,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.AlbumRepository
@@ -96,7 +92,14 @@ class PhotoWithMapFragment: Fragment() {
 
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         mapView = view.findViewById<MapView>(R.id.map).apply {
-            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                floatArrayOf(
+                    0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
+                    0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
+                    0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
+                    0f, 0f, 0f, 1f, 0f,
+                )
+            ))
             setMultiTouchControls(true)
             setUseDataConnection(true)
             setTileSource(TileSourceFactory.MAPNIK)

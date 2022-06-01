@@ -4,6 +4,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -35,7 +36,6 @@ import org.osmdroid.views.MapController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
@@ -151,7 +151,14 @@ class PhotosInMapFragment: Fragment() {
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
 
         mapView.apply {
-            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                floatArrayOf(
+                    0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
+                    0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
+                    0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
+                    0f, 0f, 0f, 1f, 0f,
+                )
+            ))
             setMultiTouchControls(true)
             setUseDataConnection(true)
             overlays.add(CopyrightOverlay(requireContext()))

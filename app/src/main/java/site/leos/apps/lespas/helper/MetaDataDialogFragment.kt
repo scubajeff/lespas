@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -28,7 +29,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.TilesOverlay
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
@@ -174,7 +174,16 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                         it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
                                         this.overlays.add(it)
                                     }
-                                    if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                                    if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
+                                        overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                                            floatArrayOf(
+                                                0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
+                                                0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
+                                                0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
+                                                0f, 0f, 0f, 1f, 0f,
+                                            )
+                                        ))
+                                    }
                                     invalidate()
 
                                     isVisible = true
