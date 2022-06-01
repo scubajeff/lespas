@@ -38,8 +38,12 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
         resultAdapter = LocationSearchResultAdapter(
             { result, view ->
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                reenterTransition = MaterialElevationScale(true).apply {
+                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                    excludeTarget(view, true)
+                    excludeChildren(view, true)
+                }
+                //exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)

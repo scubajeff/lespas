@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialContainerTransform
-import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,12 +49,14 @@ class LocationResultSingleLocalityFragment: Fragment() {
         photoAdapter = PhotoAdapter(
             { photo, view, labelView ->
                 labelView.isVisible = false
+/*
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(true).apply {
                     duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                     excludeTarget(view, true)
                     excludeTarget(labelView, true)
                 }
+*/
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
@@ -76,7 +77,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
-            //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }
     }
 
