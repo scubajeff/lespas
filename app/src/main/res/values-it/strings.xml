@@ -11,11 +11,11 @@
 
     <!-- NCLogin fragment -->
     <string name="welcome_message_title">Ti diamo il benvenuto su Les Pas!</string>
-    <string name="welcome_message">Per iniziare, consenti l\'accesso al tuo server Nextcloud.</string>
+    <string name="welcome_message">Per iniziare, consenti l\'accesso sul tuo server Nextcloud.</string>
     <string name="button_text_scan">Scannerizza password</string>
     <string name="host_textinput_label">Indirizzo del server</string>
     <string name="url_helper_text">per esempio: https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Tocca il prefisso per attivare l\'HTTP non sicuro</string>
+    <string name="http_toggle_helper_text">Per attivare l\'HTTP non sicuro, tocca il prefisso</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
@@ -36,7 +36,7 @@
     <string name="certificate_error">Errore del certificato del sito.</string>
 
     <!-- NCAuthentication fragment -->
-    <string name="login_to_new_account">Stai entrando con un nuovo account. Prima esci dall\'account corrente, poi riavvia Les Pas. Vuoi effettuare il logout\?</string>
+    <string name="login_to_new_account">Stai accedendo con un nuovo account. Prima esci dall\'account corrente, poi riavvia Les Pas. Vuoi uscire\?</string>
     <string name="menu_item_qr_scanner_title">Scannerizza il codice QR</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
@@ -67,7 +67,7 @@
     <string name="strip_exif_msg">%1$s\?</string>
     <string name="strip_exif_yes">Sì</string>
     <string name="strip_exif_no">No</string>
-    <string name="preparing_shares">Preparazione dei file per la condivisione in corso…</string>
+    <string name="preparing_shares">Preparazione dei file per la condivisione in corso…</string> <!-- length -->
     <string name="striping_exif">Rimozione dei dati EXIF in corso…</string>
     <string name="msg_error_preparing_share_out_files">La preparazione dei file non è andata a buon fine.</string>
     <string name="msg_check_network">Verifica la connessione al server.</string>
@@ -160,7 +160,7 @@
     <string name="sync_header">Sincronizzazione</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup del rullino foto</string>
-    <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \'DCIM/%1$s\'.</string>
+    <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \"DCIM/%1$s\".</string>
     <string name="backup_done">Tutti gli elementi del rullino foto sono stati copiati.</string>
     <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d.</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
@@ -205,11 +205,11 @@
     <string name="checkbox_text_set_remote">Album remoto, i file verranno salvati solo sul server.</string>
 
     <!-- Album Rename DialogFragment -->
-    <string name="invalid_character_found">Separatore di percorso '\\' '/' non consentito</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
+    <string name="invalid_character_found">Separatore di percorso \"\\\" \"/\" non consentito</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Nome non valido</string>
     <string name="name_too_long">Nome troppo lungo</string>
     <string name="name_existed">Nome già esistente</string>
-    <string name="leading_dots_found">Prefisso \'.\' non consentito</string>
+    <string name="leading_dots_found">Prefisso \".\" non consentito</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparazione foto</string>
@@ -284,7 +284,7 @@
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">Pubblicazioni degli amici</string>
-    <string name="confirm_download_publication">Stai utilizzando la rete mobile, confermi di voler visualizzare la pubblicazione?</string>
+    <string name="confirm_download_publication">Stai utilizzando la rete mobile, confermi di voler visualizzare la pubblicazione\?</string>
     <string name="yes_i_do">Confermo</string>
 
     <!-- Publication Detail Fragment -->
