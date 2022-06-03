@@ -258,8 +258,8 @@ object Tools {
 
     // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
-    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss
-    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
+    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
