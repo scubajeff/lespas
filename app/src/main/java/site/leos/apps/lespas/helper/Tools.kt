@@ -58,11 +58,10 @@ import kotlin.math.*
 object Tools {
     val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
-    const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})"
 
     @SuppressLint("RestrictedApi")
     @JvmOverloads
-    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false): Photo {
+    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false, uri: Uri? = null, cr: ContentResolver? = null): Photo {
         var mMimeType = mimeType
         var width = 0
         var height = 0
@@ -77,7 +76,10 @@ object Tools {
 
         if (mimeType.startsWith("video/", true)) {
             metadataRetriever?.run {
-                dateTaken = getVideoFileDate(this, fileName) ?: lastModified
+                getVideoDateAndLocation(this, fileName).let {
+                    dateTaken = it.first ?: lastModified
+                    latlong = it.second
+                }
 
                 extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let { rotate ->
                     orientation = rotate.toInt()
@@ -89,10 +91,6 @@ object Tools {
                         extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { width = it.toInt() }
                         extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { height = it.toInt() }
                     }
-                }
-                extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let {
-                    val iso6709matcher = Pattern.compile(ISO_6709_PATTERN).matcher(it)
-                    if (iso6709matcher.matches()) iso6709matcher.run { try { latlong = doubleArrayOf(group(1)?.toDouble() ?: Photo.NO_GPS_DATA, group(2)?.toDouble() ?: Photo.NO_GPS_DATA) } catch (e: Exception) {} }
                 }
             }
         } else {
@@ -125,7 +123,7 @@ object Tools {
                         height = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
 
                         orientation = exif.rotationDegrees
-                        if (orientation != 0) {
+                        if (orientation != 0 && !keepOriginalOrientation) {
                             if (isLocalFileExist) {
                                 // Either by acquiring file from local or downloading media file from server for Local album, must rotate file
                                 try {
@@ -169,27 +167,30 @@ object Tools {
                         }
                     }
 
-                    if (imageFormat == "webp" && isLocalFileExist) {
+                    if (imageFormat == "webp") {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             // Set my own image/awebp mimetype for animated WebP
-                            if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                            if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                            else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/awebp" }
                         }
                     }
                 }
                 "gif"-> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && isLocalFileExist) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
-                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                        if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                        else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/agif" }
                     }
                 }
                 else-> {}
             }
 
             // Get image width and height for local album if they can't fetched from EXIF
-            if (isLocalFileExist && width == 0) try {
+            if (width == 0) try {
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
-                    BitmapFactory.decodeFile(localPath, this)
+                    if (isLocalFileExist) BitmapFactory.decodeFile(localPath, this)
+                    else uri?.let { BitmapFactory.decodeStream(cr!!.openInputStream(it), null, this) }
                 }
                 width = options.outWidth
                 height = options.outHeight
@@ -206,19 +207,44 @@ object Tools {
         )
     }
 
-    fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime? {
-        var videoDate: LocalDateTime? = LocalDateTime.MIN
-
-        // Try get creation date from metadata
-        extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
-            try { videoDate = LocalDateTime.parse(cDate, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'")) } catch (e: Exception) { e.printStackTrace() }
+    private const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})/"
+    fun getVideoLocation(extractor: MediaMetadataRetriever): DoubleArray {
+        val latLong = doubleArrayOf(Photo.NO_GPS_DATA, Photo.NO_GPS_DATA)
+        extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let {
+            val matcher = Pattern.compile(ISO_6709_PATTERN).matcher(it)
+            if (matcher.matches()) {
+                try {
+                    latLong[0] = matcher.group(1)?.toDouble() ?: Photo.NO_GPS_DATA
+                    latLong[1] = matcher.group(2)?.toDouble() ?: Photo.NO_GPS_DATA
+                } catch (e: Exception) {}
+            }
         }
+        return latLong
+    }
 
+    private fun getVideoDateAndLocation(extractor: MediaMetadataRetriever, fileName: String): Pair<LocalDateTime?, DoubleArray> {
+        val latLong = getVideoLocation(extractor)
+
+        // For video file produced by phone camera, MediaMetadataRetriever.METADATA_KEY_DATE always return date value in UTC since there is no safe way to determine the timezone
+        // However file name usually has a pattern of yyyyMMdd_HHmmss which can be parsed to a date adjusted by correct timezone
+        var videoDate = parseDateFromFileName(fileName)
+
+        // If date can't be parsed from file name, try get creation date from metadata
+        if (videoDate == null) extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
+            try {
+                videoDate = LocalDateTime.parse(cDate, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'"))
+                // Try adjust date according to timezone derived from longitude, although it's not always correct, especially for countries observe only one timezone adjustment, like China
+                if (videoDate != null && latLong[1] != Photo.NO_GPS_DATA) videoDate = videoDate?.plusHours((latLong[1]/15).toLong())
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+        // Eventually user can always use changing name function to manually adjust media's creation date information
+/*
         // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
         // Could not get creation date from metadata, try guessing from file name
         if (videoDate?.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseDateFromFileName(fileName)
+*/
 
-        return videoDate
+        return Pair(videoDate, latLong)
     }
 
     @SuppressLint("RestrictedApi")
@@ -232,8 +258,8 @@ object Tools {
 
     // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
-    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss
-    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
+    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
@@ -251,7 +277,7 @@ object Tools {
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
-    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in FORMATS_WITH_EXIF
+    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter("image/", "") in FORMATS_WITH_EXIF
 
     @SuppressLint("DefaultLocale")
     fun humanReadableByteCountSI(size: Long): String {
@@ -344,7 +370,7 @@ object Tools {
                             height = cursor.getInt(heightColumn),
                             mimeType = mimeType,
                             shareId = cursor.getInt(sizeColumn),                  // Saving photo size value in shareId property
-                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property
+                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property, keep original orientation, CameraRollFragment will handle the rotation
                         )
                     )
                 }

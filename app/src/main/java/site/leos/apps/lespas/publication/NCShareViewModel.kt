@@ -463,13 +463,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {
+    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface?, Long>? {
         var response: Response? = null
-        var result: Pair<ExifInterface, Long>? = null
+        var result: Pair<ExifInterface?, Long>? = null
 
         try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true)
-            result = Pair(ExifInterface(response.body!!.byteStream()), response.headersContentLength())
+            result = Pair(if (Tools.hasExif(remotePhoto.photo.mimeType)) ExifInterface(response.body!!.byteStream()) else null, response.headersContentLength())
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
