@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.Configuration.UI_MODE_NIGHT_MASK
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.ColorMatrixColorFilter
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -76,19 +77,34 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     if (remotePhotoSharePath.isEmpty()) {
                         if (albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
                             with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
-                                //with("${Tools.getLocalRoot(requireContext())}/${if (eTag.isNotEmpty()) id else name}") {
                                 size = File(this).length()
-                                exif = try { ExifInterface(this) } catch (e: Exception) { null }
+                                if (Tools.hasExif(mimeType)) exif = try { ExifInterface(this) } catch (e: Exception) { null }
                             }
                         } else {
                             size = shareId.toLong()
-                            exif = try {
-                                (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(Uri.parse(id)) else Uri.parse(id)))
-                            } catch (e: SecurityException) {
-                                requireContext().contentResolver.openInputStream(Uri.parse(id))
-                            } catch (e: UnsupportedOperationException) {
-                                requireContext().contentResolver.openInputStream(Uri.parse(id))
-                            }?.use { ExifInterface(it) }
+                            val pUri = Uri.parse(id)
+                            if (Tools.hasExif(mimeType)) {
+                                exif = try {
+                                    (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
+                                } catch (e: SecurityException) {
+                                    requireContext().contentResolver.openInputStream(pUri)
+                                } catch (e: UnsupportedOperationException) {
+                                    requireContext().contentResolver.openInputStream(pUri)
+                                }?.use { ExifInterface(it) }
+                            } else {
+                                if (mimeType.startsWith("video/")) {
+                                    MediaMetadataRetriever().run {
+                                        try {
+                                            setDataSource(requireContext(), pUri)
+                                            Tools.getVideoLocation(this).let {
+                                                latitude = it[0]
+                                                longitude = it[1]
+                                            }
+                                        } catch (e: SecurityException) {}
+                                        release()
+                                    }
+                                }
+                            }
                         }
                     } else {
                         (ViewModelProvider(requireActivity())[NCShareViewModel::class.java].getMediaExif(requireArguments().getParcelable(KEY_REMOTE_MEDIA)!!))?.let {
@@ -145,64 +161,64 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 latitude = it[0]
                                 longitude = it[1]
                             }
+                        }
 
-                            if (latitude != Photo.NO_GPS_DATA) {
-                                with(mapView) {
-                                    // Initialization
-                                    // TODO user setting?
-                                    setMultiTouchControls(true)
-                                    setUseDataConnection(true)
-                                    setTileSource(TileSourceFactory.MAPNIK)
-                                    isFlingEnabled = false
-                                    overlays.add(CopyrightOverlay(requireContext()))
+                        if (latitude != Photo.NO_GPS_DATA) {
+                            with(mapView) {
+                                // Initialization
+                                // TODO user setting?
+                                setMultiTouchControls(true)
+                                setUseDataConnection(true)
+                                setTileSource(TileSourceFactory.MAPNIK)
+                                isFlingEnabled = false
+                                overlays.add(CopyrightOverlay(requireContext()))
 
-                                    // Enable map panning inside Scrollview
-                                    setOnTouchListener { v, event ->
-                                        when (event.action) {
-                                            MotionEvent.ACTION_DOWN -> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
-                                            MotionEvent.ACTION_UP -> v.parent.parent.requestDisallowInterceptTouchEvent(false)
-                                        }
-
-                                        false
+                                // Enable map panning inside Scrollview
+                                setOnTouchListener { v, event ->
+                                    when (event.action) {
+                                        MotionEvent.ACTION_DOWN -> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
+                                        MotionEvent.ACTION_UP -> v.parent.parent.requestDisallowInterceptTouchEvent(false)
                                     }
 
-                                    val poi = GeoPoint(latitude, longitude)
-                                    controller.setZoom(18.5)
-                                    controller.setCenter(poi)
-                                    Marker(this).let {
-                                        it.position = poi
-                                        it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-                                        this.overlays.add(it)
-                                    }
-                                    if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
-                                        overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
-                                            floatArrayOf(
-                                                0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
-                                                0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
-                                                0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
-                                                0f, 0f, 0f, 1f, 0f,
-                                            )
-                                        ))
-                                    }
-                                    invalidate()
-
-                                    isVisible = true
+                                    false
                                 }
 
-                                mapIntent.data = Uri.parse(
-                                    if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
-                                        Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
-                                    else "geo:${latitude},${longitude}?z=20"
-                                )
-                                mapIntent.resolveActivity(requireActivity().packageManager)?.let {
-                                    mapButton.apply {
-                                        setOnClickListener {
-                                            startActivity(mapIntent)
-                                            dismiss()
-                                        }
+                                val poi = GeoPoint(latitude, longitude)
+                                controller.setZoom(18.5)
+                                controller.setCenter(poi)
+                                Marker(this).let {
+                                    it.position = poi
+                                    it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
+                                    this.overlays.add(it)
+                                }
+                                if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
+                                    overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                                        floatArrayOf(
+                                            0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
+                                            0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
+                                            0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
+                                            0f, 0f, 0f, 1f, 0f,
+                                        )
+                                    ))
+                                }
+                                invalidate()
 
-                                        isVisible = true
+                                isVisible = true
+                            }
+
+                            mapIntent.data = Uri.parse(
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
+                                    Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
+                                else "geo:${latitude},${longitude}?z=20"
+                            )
+                            mapIntent.resolveActivity(requireActivity().packageManager)?.let {
+                                mapButton.apply {
+                                    setOnClickListener {
+                                        startActivity(mapIntent)
+                                        dismiss()
                                     }
+
+                                    isVisible = true
                                 }
                             }
                         }

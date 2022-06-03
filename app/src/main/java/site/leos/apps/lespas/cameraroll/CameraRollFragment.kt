@@ -82,7 +82,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import kotlin.collections.contains
 import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
@@ -1307,6 +1306,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         // Store file size in property shareId
                                         shareId = dav.size.toInt(),
+                                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
                                     )
                                 )
                             }
@@ -1335,91 +1335,56 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             viewModelScope.launch(Dispatchers.IO) {
                 if (cameraRoll.isEmpty()) {
                     fileUri?.apply {
+                        // Launched as picture viewer
                         Tools.getFolderFromUri(this, cr)?.let { uri ->
+                            // If we can access the folder
                             //Log.e(">>>>>", "${uri.first}   ${uri.second}")
                             cameraRoll.addAll(Tools.listMediaContent(uri.first, cr, imageOnly = false, strict = true))
                             setCurrentPosition(cameraRoll.indexOfFirst { it.id.substringAfterLast('/') == uri.second })
                         } ?: run {
+                            // Single file, need to do housework here
+
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
                             val uri = Uri.parse(this)
-                            //val photo = Photo(this, FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
-                            val photo = Photo(
-                                id = this,      // fileUri shared in as photo's id in Camera Roll album
-                                albumId = FROM_CAMERA_ROLL,
-                                shareId = 0,     // Temporarily use shareId for saving file's size TODO maximum 4GB
-                                dateTaken = LocalDateTime.now(),
-                                lastModified = LocalDateTime.MIN,
-                            )
-
-                            photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                            val mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
                                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
                             }
+                            var filename = ""
+                            var size = 0
                             when (uri.scheme) {
                                 "content" -> {
-                                    cr.query(uri, null, null, null, null)?.use { cursor ->
-                                        cursor.moveToFirst()
-                                        try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it } } catch (e: IllegalArgumentException) {}
-                                        // Store file size in property shareId
-                                        try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() } } catch (e: Exception) {}
-                                    }
+                                    try {
+                                        cr.query(uri, null, null, null, null)?.use { cursor ->
+                                            cursor.moveToFirst()
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { filename = it } } catch (e: IllegalArgumentException) { }
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { size = it.toInt() }} catch (e: Exception) {
+                                            }
+                                        }
+                                    } catch (e: Exception) {}
                                 }
                                 "file" -> {
-                                    uri.path?.let { photo.name = it.substringAfterLast('/') }
+                                    uri.path?.let { filename = it.substringAfterLast('/') }
                                     shouldDisableShare = true
                                 }
                             }
 
-                            if (photo.mimeType.startsWith("video/")) {
-                                MediaMetadataRetriever().run {
-                                    setDataSource(ctx, uri)
-                                    Tools.getVideoFileDate(this, photo.name)?.let { photo.dateTaken = it }
-                                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { photo.width = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
-                                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { photo.height = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
-                                    release()
-                                }
-                            } else {
-                                when (photo.mimeType.substringAfter("image/", "")) {
-                                    in Tools.FORMATS_WITH_EXIF -> {
-                                        val exif = ExifInterface(cr.openInputStream(uri)!!)
-
-                                        // Get date
-                                        photo.dateTaken = Tools.getImageTakenDate(exif) ?: Tools.parseDateFromFileName(photo.name) ?: LocalDateTime.now()
-
-                                        photo.orientation = exif.rotationDegrees
-                                        exif.latLong?.let {
-                                            photo.latitude = it[0]
-                                            photo.longitude = it[1]
-                                        }
-                                        photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                                        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let {
-                                            photo.bearing = try {
-                                                it.toDouble()
-                                            } catch (e: NumberFormatException) {
-                                                Photo.NO_GPS_DATA
-                                            }
-                                        }
-                                        if (photo.bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let {
-                                            photo.bearing = try {
-                                                it.toDouble()
-                                            } catch (e: NumberFormatException) {
-                                                Photo.NO_GPS_DATA
-                                            }
-                                        }
-                                    }
-                                }
-
-                                BitmapFactory.Options().run {
-                                    inJustDecodeBounds = true
-                                    BitmapFactory.decodeStream(cr.openInputStream(uri), null, this)
-                                    photo.width = outWidth
-                                    photo.height = outHeight
-                                }
-                            }
+                            var metadataRetriever: MediaMetadataRetriever? = null
+                            var exifInterface: ExifInterface? = null
+                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null }
+                            else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.let { ExifInterface(it) }} catch (e: Exception) {}
+                            val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr,).copy(
+                                albumId = FROM_CAMERA_ROLL,
+                                name = filename,
+                                id = this,                  // fileUri shared in as photo's id in Camera Roll album
+                                shareId = size,             // Temporarily use shareId for saving file's size TODO maximum 4GB
+                            )
+                            metadataRetriever?.release()
 
                             cameraRoll.add(photo)
                         }
                     } ?: run {
+                        // Launched as camera roll manager
                         cameraRoll.addAll(Tools.getCameraRoll(cr, false))
                     }
                 }

@@ -504,6 +504,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 if (ext.isNotEmpty()) "${newName}.${ext}" else newName
                             }
                             actionModel.renamePhoto(photo, album, newFileName)
+
+                            // Local database changes, parsing new name for updated date, etc., are handle in SyncAdapter after rename action successfully sync with server
                         }
                         selectionTracker.clearSelection()
                     }
