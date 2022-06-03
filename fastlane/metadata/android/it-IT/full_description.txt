@@ -1,0 +1,26 @@
+Les Pas è un'app galleria gratuita, moderna, leggera e veloce. Organizza le tue foto, GIF e acquisizioni video all'interno di album per visualizzarle e condividerle facilmente. Grazie alla sincronizzazione a due vie integrata con il tuo server Nextcloud, i tuoi file rimarranno privati e al sicuro.
+
+Features:
+- Simple, beautiful and fast photos & videos viewing
+- Organized photos and videos in albums
+- Manage your phone's camera roll and auto backup to server
+- Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
+- Share albums and album slideshow with other Nextcloud users (check prerequisite at https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
+- Joint album which you and other Nextcloud users can edit together
+- Search for photos by objects with AI
+- Search photos by location, show album in map (map data provided by OpenStreetMap project)
+- Integrate with Snapseed for photo editing on mobile devices
+- Integrate with Muzei Live Wallpaper app
+- Share to social networks, option provided to strip photo's EXIF before sharing
+- Theme design inspired by Wes Anderson's works
+- Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage
+- Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
+- Open-source
+
+This project build using the following open source software:
+- OkHttp https://square.github.io/okhttp
+- PhotoView https://github.com/chrisbanes/PhotoView
+- osmdroid https://github.com/osmdroid/osmdroid
+- Android Open Source Project https://source.android.com
+- TensorFlow https://www.tensorflow.org
+- OpenStreetMap https://www.openstreetmap.org
