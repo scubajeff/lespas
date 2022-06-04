@@ -806,7 +806,7 @@ object Tools {
         mutableListOf<Photo>().run {
             val photos = (if (albumSortOrder == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
 
-            photos.forEach { if (it.latitude != Photo.NO_GPS_DATA) add(it) }
+            photos.forEach { if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) add(it) }
 
             if (autoConvergent) {
                 add(0, Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))

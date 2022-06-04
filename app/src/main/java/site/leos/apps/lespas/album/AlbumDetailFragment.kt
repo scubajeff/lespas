@@ -425,7 +425,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
             lifecycleScope.launch {
                 it.photos.forEach { photo ->
-                    if (photo.latitude != Photo.NO_GPS_DATA) {
+                    if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
                         mapOptionMenu?.isVisible = true
                         return@launch
                     }
@@ -579,7 +579,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         run map@{
             mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
-                if (it.latitude != Photo.NO_GPS_DATA) {
+                if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) {
                     mapOptionMenu?.isVisible = true
 
                     return@map

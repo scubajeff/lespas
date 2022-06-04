@@ -172,7 +172,7 @@ class PublicationDetailFragment: Fragment() {
                 }
 
                 it.forEach { remotePhoto ->
-                    if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                    if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
                         mapMenuItem?.isVisible = true
                         mapMenuItem?.isEnabled = true
 
@@ -251,7 +251,7 @@ class PublicationDetailFragment: Fragment() {
 
             run map@{
                 mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
-                    if (it.photo.latitude != Photo.NO_GPS_DATA) {
+                    if (it.photo.mimeType.startsWith("image/") && it.photo.latitude != Photo.NO_GPS_DATA) {
                         mapMenuItem?.isEnabled = true
                         mapMenuItem?.isVisible = true
 
