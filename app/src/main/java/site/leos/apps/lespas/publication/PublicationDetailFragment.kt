@@ -216,6 +216,11 @@ class PublicationDetailFragment: Fragment() {
         outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
     }
 
+    override fun onDestroyView() {
+        photoList.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
         try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (e:Exception) {}
@@ -239,7 +244,7 @@ class PublicationDetailFragment: Fragment() {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
 
-        if (!photoListAdapter.currentList.isNullOrEmpty()) {
+        if (photoListAdapter.currentList.isNotEmpty()) {
             loadingIndicator?.isEnabled = false
             loadingIndicator?.isVisible = false
             showMetaMenuItem?.isEnabled = true

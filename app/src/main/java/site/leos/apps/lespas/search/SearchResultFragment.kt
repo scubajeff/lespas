@@ -177,6 +177,11 @@ class SearchResultFragment : Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        searchResultRecyclerView.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_result_menu, menu)
@@ -317,9 +322,7 @@ class SearchResultFragment : Fragment() {
         }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-            for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
-            }
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             super.onDetachedFromRecyclerView(recyclerView)
         }
 

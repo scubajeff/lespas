@@ -38,6 +38,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var country: String
 
     private lateinit var photoAdapter: PhotoAdapter
+    private lateinit var photoList: RecyclerView
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel) }
@@ -86,7 +87,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        view.findViewById<RecyclerView>(R.id.photo_grid)?.apply {
+        photoList = view.findViewById(R.id.photo_grid)
+        photoList.run {
             adapter = photoAdapter
             ViewCompat.setTransitionName(this, locality)
         }
@@ -102,6 +104,11 @@ class LocationResultSingleLocalityFragment: Fragment() {
             title = locality
             displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
         }
+    }
+
+    override fun onDestroyView() {
+        photoList.adapter = null
+        super.onDestroyView()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

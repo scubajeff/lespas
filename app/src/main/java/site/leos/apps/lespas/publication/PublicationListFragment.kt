@@ -126,6 +126,11 @@ class PublicationListFragment: Fragment() {
         shareSelected?.let { outState.putParcelable(SELECTED_SHARE, it) }
     }
 
+    override fun onDestroyView() {
+        shareListRecyclerView.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.publication_list_menu, menu)
