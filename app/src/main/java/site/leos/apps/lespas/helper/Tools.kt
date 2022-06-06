@@ -233,13 +233,15 @@ object Tools {
         if (videoDate == null) extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
             try {
                 videoDate = LocalDateTime.parse(cDate, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'"))
+                // If metadata tells a funky date, reset it. extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE) return 1904/01/01 as default if it can't find "creation_time" tag in the video file
+                if (videoDate?.year == 1904) videoDate = null
                 // Try adjust date according to timezone derived from longitude, although it's not always correct, especially for countries observe only one timezone adjustment, like China
                 if (videoDate != null && latLong[1] != Photo.NO_GPS_DATA) videoDate = videoDate?.plusHours((latLong[1]/15).toLong())
             } catch (e: Exception) { e.printStackTrace() }
         }
         // Eventually user can always use changing name function to manually adjust media's creation date information
 /*
-        // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
+        // If metadata tells a funky date, reset it. extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE) return 1904/01/01 as default if it can't find "creation_time" tag in the video file
         // Could not get creation date from metadata, try guessing from file name
         if (videoDate?.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseDateFromFileName(fileName)
 */
@@ -273,7 +275,9 @@ object Tools {
     }
 
     fun epochToLocalDateTime(epoch: Long): LocalDateTime =
-        if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        try {
+            if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
