@@ -592,7 +592,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun updateSearchMenu() {
         searchOptionMenu?.let {
-            if (Tools.isWideListAlbum(album)) {
+            if (Tools.isWideListAlbum(album.sortOrder)) {
                 it.isVisible = true
 
                 (it.actionView as SearchView).run {
@@ -634,7 +634,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
         }
 
-        menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album)
+        menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album.sortOrder)
 
         // Disable publish function when this is a newly created album which does not exist on server yet
         if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
@@ -708,7 +708,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.option_menu_wide_list-> {
-                albumModel.setWideList(album.id, !Tools.isWideListAlbum(album))
+                albumModel.setWideList(album.id, !Tools.isWideListAlbum(album.sortOrder))
                 saveSortOrderChanged = true
                 true
             }
@@ -803,7 +803,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Scroll to the top after sort, since cover photo has album's id as it's id, scroll to this id means scroll to the top
         scrollTo = album.id
 
-        albumModel.setSortOrder(album.id, if (Tools.isWideListAlbum(album)) newOrder + 100 else newOrder)
+        albumModel.setSortOrder(album.id, if (Tools.isWideListAlbum(album.sortOrder)) newOrder + 100 else newOrder)
         saveSortOrderChanged = true
     }
 
@@ -952,9 +952,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     }
 
     private fun newLayoutManger(): GridLayoutManager {
-        val defaultSpanCount = resources.getInteger(if (Tools.isWideListAlbum(album)) R.integer.photo_grid_span_count_wide else R.integer.photo_grid_span_count)
-        mAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album)) 0.24f else 0.32f) / defaultSpanCount))
-        mAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album)) 0.16f else 0.25f) / defaultSpanCount))
+        val defaultSpanCount = resources.getInteger(if (Tools.isWideListAlbum(album.sortOrder)) R.integer.photo_grid_span_count_wide else R.integer.photo_grid_span_count)
+        mAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.24f else 0.32f) / defaultSpanCount))
+        mAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), (if (Tools.isWideListAlbum(album.sortOrder)) 0.16f else 0.25f) / defaultSpanCount))
 
         return GridLayoutManager(context, defaultSpanCount).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -1102,7 +1102,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             // Find cover photo first, since after cover photo being renamed, several database changes will be triggered and a miss-match will happen
             album.photos.find { it.name == album.album.coverFileName }?.let { coverPhoto ->
                 this.album = album.album
-                isWideList = Tools.isWideListAlbum(this.album)
+                isWideList = Tools.isWideListAlbum(this.album.sortOrder)
 
                 mutableListOf<Photo>().let { photos ->
                     // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
