@@ -808,7 +808,7 @@ object Tools {
         val result = mutableListOf<Photo>()
 
         mutableListOf<Photo>().run {
-            val photos = (if (albumSortOrder == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
+            val photos = (if (albumSortOrder % 100 == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
 
             photos.forEach { if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) add(it) }
 
