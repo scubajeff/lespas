@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:id="@+id/option_menu_search"
@@ -9,7 +10,8 @@
         app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         android:visible="false"
-        android:enabled="false" />
+        android:enabled="false"
+        tools:ignore="AlwaysShowAction" />
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="96"
@@ -37,6 +39,6 @@
         android:id="@+id/option_menu_search_progress"
         android:title=""
         android:orderInCategory="96"
-        app:showAsAction="ifRoom"
+        app:showAsAction="always"
         app:actionLayout="@layout/menuitem_search_progress" />
 </menu>

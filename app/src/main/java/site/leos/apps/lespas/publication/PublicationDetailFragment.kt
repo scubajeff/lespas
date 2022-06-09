@@ -1,5 +1,6 @@
 package site.leos.apps.lespas.publication
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -23,6 +24,7 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.*
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
@@ -217,6 +219,7 @@ class PublicationDetailFragment: Fragment() {
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
 
+    @SuppressLint("InflateParams")
     override fun onResume() {
         super.onResume()
 
@@ -260,6 +263,10 @@ class PublicationDetailFragment: Fragment() {
         inflater.inflate(R.menu.publication_detail_menu, menu)
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+        (loadingIndicator?.actionView?.findViewById(R.id.search_progress) as CircularProgressIndicator).run {
+            isIndeterminate = true
+            show()
+        }
         addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
         mapMenuItem = menu.findItem(R.id.option_menu_in_map)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
