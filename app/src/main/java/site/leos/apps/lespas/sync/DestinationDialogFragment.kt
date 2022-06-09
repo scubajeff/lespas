@@ -50,7 +50,6 @@ import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
@@ -93,7 +92,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         lifecycleScope.launch(Dispatchers.IO) {
                             destinationModel.setRemoveOriginal(copyOrMoveToggleGroup.checkedButtonId == R.id.move)
                             val theAlbum: Album = if (remoteAlbum.shareBy.isNotEmpty())
-                            album.copy(id = PublicationDetailFragment.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id)
+                            album.copy(id = Album.JOINT_ALBUM_ID, coverFileName = "${remoteAlbum.sharePath}/${album.coverFileName}", eTag = album.id)
                             else album
 
                             withContext(Dispatchers.Main) {

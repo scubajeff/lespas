@@ -33,6 +33,7 @@ import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -40,7 +41,6 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.YesNoDialogFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
 import java.util.*
@@ -133,16 +133,16 @@ class PhotoWithMapFragment: Fragment() {
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                         }
-                        PublicationDetailFragment.JOINT_ALBUM_ID -> Snackbar.make(mapView, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
+                        Album.JOINT_ALBUM_ID -> Snackbar.make(mapView, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
                     }
 
                     actions.add(Action(
                         null,
                         if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
                         remotePhoto.remotePath,
-                        if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
+                        if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
                         "",
-                        "${remotePhoto.photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}",
+                        "${remotePhoto.photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}",
                         System.currentTimeMillis(), 1
                     ))
 

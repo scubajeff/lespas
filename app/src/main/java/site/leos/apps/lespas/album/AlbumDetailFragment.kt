@@ -58,7 +58,6 @@ import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
@@ -443,7 +442,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             it?.let { targetAlbum ->
                 if (destinationViewModel.doOnServer()) {
                     val actionId = if (destinationViewModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${lespasPath}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${lespasPath}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val photoList = mutableListOf<Photo>()
 
                     var metaString: String
@@ -454,9 +453,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             metaString = "${targetAlbum.eTag}|${photo.dateTaken.toInstant(OffsetDateTime.now().offset).toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}"
                             if (photo.id == album.cover) {
                                 // Can't move cover photo
-                                actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                                actions.add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
                             } else {
-                                actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                                actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, metaString, "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
                                 photoList.add(photo)
                             }
                         }
@@ -466,7 +465,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
                         "" -> actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                         // Update Joint Album's content metadata
-                        PublicationDetailFragment.JOINT_ALBUM_ID -> actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
+                        Album.JOINT_ALBUM_ID -> actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
                     }
 
                     actionModel.addActions(actions)

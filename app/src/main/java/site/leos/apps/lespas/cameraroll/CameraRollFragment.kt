@@ -70,10 +70,10 @@ import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.search.SearchResultFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
@@ -814,7 +814,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
                     val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val removeList = mutableListOf<String>()
 
                     when (targetAlbum.id) {
@@ -822,12 +822,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                         }
-                        PublicationDetailFragment.JOINT_ALBUM_ID -> Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
+                        Album.JOINT_ALBUM_ID -> Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
                     }
 
                     destinationModel.getRemotePhotos().forEach { remotePhoto ->
                         remotePhoto.photo.let { photo ->
-                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
                             removeList.add(photo.id)
                         }
                     }

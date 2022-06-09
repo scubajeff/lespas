@@ -35,6 +35,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -235,7 +236,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 destinationModel.getRemotePhotos()[0].let { remotePhoto ->
                     ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(mutableListOf<Action>().apply {
                         val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
-                        if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                        if (targetAlbum.id == Album.JOINT_ALBUM_ID) {
                             targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
                                 add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
                                     targetFolder,

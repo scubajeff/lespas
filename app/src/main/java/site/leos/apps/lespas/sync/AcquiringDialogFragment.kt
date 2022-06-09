@@ -33,7 +33,6 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
@@ -121,7 +120,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
 
     override fun onDestroy() {
-        if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) {
+        if (album.id != Album.JOINT_ALBUM_ID) {
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(Intent().apply {
                 action = BROADCAST_REMOVE_ORIGINAL
                 putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
@@ -208,7 +207,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             } catch (e: UnsupportedOperationException) {
                                 application.contentResolver.openInputStream(uri)
                             }?.use { input ->
-                                //File(if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
+                                //File(if (album.id == Album.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
                                 File(appRootFolder, fileId).outputStream().use { output ->
                                     totalBytes += input.copyTo(output, 8192)
                                 }
@@ -222,7 +221,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             return@launch
                         }
 
-                        if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                        if (album.id == Album.JOINT_ALBUM_ID) {
                             // Get media's metadata
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
@@ -268,7 +267,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                 if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
-                    if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                    if (album.id == Album.JOINT_ALBUM_ID) {
                         // Update joint album content meta, DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {

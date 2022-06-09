@@ -141,7 +141,7 @@ class PublicationDetailFragment: Fragment() {
                         //Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
                         Album(
                             lastModified = LocalDateTime.now(),
-                            id = JOINT_ALBUM_ID, name = share.albumName,
+                            id = Album.JOINT_ALBUM_ID, name = share.albumName,
                             coverFileName = "${share.sharePath}/",
                             eTag = share.albumId,
                         ),
@@ -468,8 +468,6 @@ class PublicationDetailFragment: Fragment() {
 
     companion object {
         private const val TAG_ACQUIRING_DIALOG = "JOINT_ALBUM_ACQUIRING_DIALOG"
-
-        const val JOINT_ALBUM_ID = "joint"
 
         private const val ARGUMENT_SHARE = "ARGUMENT_SHARE"
 
