@@ -361,7 +361,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 dateIndicator.let {
-                                    it.text = if (album.sortOrder == Album.BY_NAME_ASC || album.sortOrder == Album.BY_NAME_DESC || album.sortOrder == Album.BY_NAME_ASC_WIDE || album.sortOrder == Album.BY_NAME_DESC_WIDE)
+                                    it.text = if (album.sortOrder % 100 == Album.BY_NAME_ASC || album.sortOrder % 100 == Album.BY_NAME_DESC)
                                         mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
                                     else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
 
@@ -626,11 +626,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
         menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
         menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
-        when(album.sortOrder) {
-            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
-            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
-            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
-            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+        when(album.sortOrder % 100) {
+            Album.BY_DATE_TAKEN_ASC -> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+            Album.BY_DATE_TAKEN_DESC -> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+            Album.BY_NAME_ASC -> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+            Album.BY_NAME_DESC -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
         }
 
         menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album.sortOrder)
@@ -1109,11 +1109,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     // set albumId to album's name, so that album name changes can be updated
                     album.album.run { photos.add(coverPhoto.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
 
-                    this.photos = when (album.album.sortOrder) {
-                        Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> album.photos.sortedWith(compareBy { it.dateTaken })
-                        Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                        Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                        Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                    this.photos = when (album.album.sortOrder % 100) {
+                        Album.BY_DATE_TAKEN_ASC -> album.photos.sortedWith(compareBy { it.dateTaken })
+                        Album.BY_DATE_TAKEN_DESC -> album.photos.sortedWith(compareByDescending { it.dateTaken })
+                        Album.BY_NAME_ASC -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                        Album.BY_NAME_DESC -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
                         else -> album.photos
                     }
                     photos.addAll(this.photos)
