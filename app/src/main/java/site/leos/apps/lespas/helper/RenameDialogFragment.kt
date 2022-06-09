@@ -8,6 +8,7 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
 
 class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog) {
@@ -25,7 +26,10 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<TextView>(R.id.dialog_title_textview).text = when(requestType) {
             REQUEST_TYPE_ALBUM -> getString(R.string.rename_album)
-            REQUEST_TYPE_PHOTO -> getString(R.string.rename_media)
+            REQUEST_TYPE_PHOTO -> {
+                view.findViewById<TextInputLayout>(R.id.rename_textinputlayout)?.helperText = getString(R.string.hint_timestamp_pattern)
+                getString(R.string.rename_media)
+            }
             else -> ""
         }
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {

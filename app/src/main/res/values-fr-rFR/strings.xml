@@ -225,4 +225,5 @@
     <string name="tooltips_date_picker">Choisir une date</string>
     <string name="title_in_archive">%1$s dans les sauvegardes de la caméra</string>
     <string name="tooltips_search_archive">Dans les sauvegardes de la liste d\'appareils photo</string>
+    <string name="hint_timestamp_pattern">La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom.</string>
 </resources>

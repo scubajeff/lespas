@@ -277,4 +277,5 @@
     <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
     <string name="title_in_archive">%1$s in Kamera-Backups</string>
     <string name="tooltips_search_archive">In Kamerarollensicherungen</string>
+    <string name="hint_timestamp_pattern">Das Erstellungsdatum des Fotos kann durch Einfügen des Musters yyyyMMdd_hhmmss in den Namen geändert werden.</string>
 </resources>

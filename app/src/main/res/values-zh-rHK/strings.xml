@@ -225,4 +225,5 @@
     <string name="tooltips_date_picker">選擇日期</string>
     <string name="title_in_archive">相機相冊備份中之%1$s</string>
     <string name="tooltips_search_archive">在相機相冊備份中搜索</string>
+    <string name="hint_timestamp_pattern">名字中若包含字串yyyyMMdd_hhmmss，將可設定相片拍攝時間。</string>
 </resources>

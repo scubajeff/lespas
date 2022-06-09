@@ -26,6 +26,7 @@
             tools:text="@string/rename_album" />
 
         <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/rename_textinputlayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/dialog_title_textview"

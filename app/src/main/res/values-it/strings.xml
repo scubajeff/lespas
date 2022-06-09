@@ -322,4 +322,5 @@
     <string name="exclude_albums">Escludi da:</string>
     <string name="prefer_latest">Recenti</string>
     <string name="skip_late_night_update">Salta aggiornamento notturno</string>
+    <string name="hint_timestamp_pattern">La data di creazione della foto può essere modificata includendo il modello yyyyMMdd_hhmmss nel nome.</string>
 </resources>

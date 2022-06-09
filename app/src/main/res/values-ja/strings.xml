@@ -225,4 +225,5 @@
     <string name="tooltips_date_picker">日付を選択する</string>
     <string name="title_in_archive">カメラバックアップの%1$s</string>
     <string name="tooltips_search_archive">カメラロールバックアップで検索</string>
+    <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
 </resources>

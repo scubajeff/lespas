@@ -207,12 +207,13 @@
     <string name="to_new_album">To New Album:</string>
     <string name="checkbox_text_set_remote">Remote album, media files stored in server only.</string>
 
-    <!-- Album Rename DialogFragment -->
+    <!-- Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>
     <string name="name_existed">Name already exists</string>
     <string name="leading_dots_found">Prefix \'.\' not allowed</string>
+    <string name="hint_timestamp_pattern">"Photo\'s creation date can be changed by including pattern yyyyMMdd_hhmmss in name."</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photo</string>
