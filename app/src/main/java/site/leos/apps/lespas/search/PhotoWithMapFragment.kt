@@ -94,9 +94,9 @@ class PhotoWithMapFragment: Fragment() {
         mapView = view.findViewById<MapView>(R.id.map).apply {
             if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
                 floatArrayOf(
-                    0.9f, 0f, 0f, 0f, -96f,  // red, reduce brightness by 1/4, reduced contrast by 1/10
-                    0f, 0.9f, 0f, 0f, -96f,  // green, reduce brightness to 1/4, reduced contrast by 1/10
-                    0f, 0f, 0.9f, 0f, -96f,  // blue, reduce brightness to 1/4, reduced contrast by 1/10
+                    1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
+                    0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
+                    0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
                     0f, 0f, 0f, 1f, 0f,
                 )
             ))
