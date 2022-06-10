@@ -17,13 +17,12 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.*
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -44,9 +43,15 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     private var mapIntent = Intent(Intent.ACTION_VIEW)
     private lateinit var mapView: MapView
     private lateinit var mapButton: MaterialButton
-    private var photo: Photo? = null
-    private var remotePhotoSharePath = ""
-    private var size = 0L
+    private lateinit var photo: NCShareViewModel.RemotePhoto
+    private lateinit var exifModel: ExifModel
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        requireArguments().getParcelable<Photo>(KEY_MEDIA)?.let { photo = NCShareViewModel.RemotePhoto(it, "") }
+        requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { photo = it }
+        exifModel = ViewModelProvider(this, ExifModelFactory(requireActivity(), photo))[ExifModel::class.java]
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -58,179 +63,111 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         // Don't abuse map tile source
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
 
-        try {
-            requireArguments().getParcelable<Photo>(KEY_MEDIA)?.let {
-                remotePhotoSharePath = ""
-                photo = it
-            }
-            requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let {
-                remotePhotoSharePath = it.remotePath
-                photo = it.photo
-            }
+        // Show basic information
+        view.findViewById<TextView>(R.id.info_filename).text = photo.photo.name.substringAfterLast("/")
+        view.findViewById<TextView>(R.id.info_shotat).text = photo.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
 
-            photo?.apply {
-                view.findViewById<TextView>(R.id.info_filename).text = name.substringAfterLast("/")
-                view.findViewById<TextView>(R.id.info_shotat).text = dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
+        exifModel.getPhotoMeta().observe(viewLifecycleOwner, Observer { photoMeta ->
+            with(photoMeta.photo) {
+                // Size row
+                val pWidth: Int
+                val pHeight: Int
+                if (orientation == 90 || orientation == 270) {
+                    pWidth = height
+                    pHeight = width
+                } else {
+                    pWidth = width
+                    pHeight = height
+                }
+                view.findViewById<TextView>(R.id.info_size).text = if (photoMeta.size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(photoMeta.size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
+                view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
 
-                lifecycleScope.launch(Dispatchers.IO) {
-                    var exif: ExifInterface? = null
-                    if (remotePhotoSharePath.isEmpty()) {
-                        if (albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
-                            with(if (File("${Tools.getLocalRoot(requireContext())}/${id}").exists()) "${Tools.getLocalRoot(requireContext())}/${id}" else "${Tools.getLocalRoot(requireContext())}/${name}") {
-                                size = File(this).length()
-                                if (Tools.hasExif(mimeType)) exif = try { ExifInterface(this) } catch (e: Exception) { null }
-                            }
-                        } else {
-                            size = shareId.toLong()
-                            val pUri = Uri.parse(id)
-                            if (Tools.hasExif(mimeType)) {
-                                exif = try {
-                                    (requireContext().contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
-                                } catch (e: SecurityException) {
-                                    requireContext().contentResolver.openInputStream(pUri)
-                                } catch (e: UnsupportedOperationException) {
-                                    requireContext().contentResolver.openInputStream(pUri)
-                                }?.use { ExifInterface(it) }
-                            } else {
-                                if (mimeType.startsWith("video/")) {
-                                    MediaMetadataRetriever().run {
-                                        try {
-                                            setDataSource(requireContext(), pUri)
-                                            Tools.getVideoLocation(this).let {
-                                                latitude = it[0]
-                                                longitude = it[1]
-                                            }
-                                        } catch (e: SecurityException) {}
-                                        release()
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        (ViewModelProvider(requireActivity())[NCShareViewModel::class.java].getMediaExif(requireArguments().getParcelable(KEY_REMOTE_MEDIA)!!))?.let {
-                            exif = it.first
-                            size = it.second
-                        }
-                    }
+                if (photoMeta.mfg.isNotEmpty()) {
+                    view.findViewById<TableRow>(R.id.mfg_row).visibility = View.VISIBLE
+                    view.findViewById<TextView>(R.id.info_camera_mfg).text = photoMeta.mfg
+                }
+                if (photoMeta.model.isNotEmpty()) {
+                    view.findViewById<TableRow>(R.id.model_row).visibility = View.VISIBLE
+                    view.findViewById<TextView>(R.id.info_camera_model).text = photoMeta.model
+                }
+                if (photoMeta.params.trim().isNotEmpty()) {
+                    view.findViewById<TableRow>(R.id.param_row).visibility = View.VISIBLE
+                    view.findViewById<TextView>(R.id.info_parameter).text = photoMeta.params
+                }
+                if (photoMeta.artist.isNotEmpty()) {
+                    view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
+                    view.findViewById<TextView>(R.id.info_artist).text = photoMeta.artist
+                }
 
-                    withContext(Dispatchers.Main) {
-                        val pWidth: Int
-                        val pHeight: Int
-                        if (orientation == 90 || orientation == 270) {
-                            pWidth = height
-                            pHeight = width
-                        } else {
-                            pWidth = width
-                            pHeight = height
-                        }
-                        view.findViewById<TextView>(R.id.info_size).text = if (size == 0L) String.format("%sw × %sh", "$pWidth", "$pHeight") else String.format("%s, %s", Tools.humanReadableByteCountSI(size), String.format("%sw × %sh", "$pWidth", "$pHeight"))
-                        view.findViewById<TableRow>(R.id.size_row).visibility = View.VISIBLE
+                try {
+                    if (latitude != Photo.NO_GPS_DATA) {
+                        with(mapView) {
+                            // Initialization
+                            setMultiTouchControls(true)
+                            setUseDataConnection(true)
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            isFlingEnabled = false
+                            overlays.add(CopyrightOverlay(requireContext()))
 
-                        exif?.apply {
-                            var t = getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
-                            if (t.isNotEmpty()) {
-                                view.findViewById<TableRow>(R.id.mfg_row).visibility = View.VISIBLE
-                                view.findViewById<TextView>(R.id.info_camera_mfg).text = t
-                            }
-
-                            t = (getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (getAttribute(ExifInterface.TAG_LENS_MODEL)?.let { "\n${it.trim()}" } ?: "")
-                            if (t.isNotEmpty()) {
-                                view.findViewById<TableRow>(R.id.model_row).visibility = View.VISIBLE
-                                view.findViewById<TextView>(R.id.info_camera_model).text = t
-                            }
-
-                            t = ((getAttribute(ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM) ?: getAttribute(ExifInterface.TAG_FOCAL_LENGTH))?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/", "1").toInt()}mm  " } ?: "") +
-                                    (getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f$it  " } ?: "") +
-                                    (getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let {
-                                        val exp = it.toFloat()
-                                        if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
-                                    } ?: "") +
-                                    (getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
-                            if (t.trim().isNotEmpty()) {
-                                view.findViewById<TableRow>(R.id.param_row).visibility = View.VISIBLE
-                                view.findViewById<TextView>(R.id.info_parameter).text = t
-                            }
-
-                            t = getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
-                            if (t.isNotEmpty()) {
-                                view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
-                                view.findViewById<TextView>(R.id.info_artist).text = t
-                            }
-
-                            latLong?.let {
-                                latitude = it[0]
-                                longitude = it[1]
-                            }
-                        }
-
-                        if (latitude != Photo.NO_GPS_DATA) {
-                            with(mapView) {
-                                // Initialization
-                                // TODO user setting?
-                                setMultiTouchControls(true)
-                                setUseDataConnection(true)
-                                setTileSource(TileSourceFactory.MAPNIK)
-                                isFlingEnabled = false
-                                overlays.add(CopyrightOverlay(requireContext()))
-
-                                // Enable map panning inside Scrollview
-                                setOnTouchListener { v, event ->
-                                    when (event.action) {
-                                        MotionEvent.ACTION_DOWN -> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
-                                        MotionEvent.ACTION_UP -> v.parent.parent.requestDisallowInterceptTouchEvent(false)
-                                    }
-
-                                    false
+                            // Enable map panning inside Scrollview
+                            setOnTouchListener { v, event ->
+                                when (event.action) {
+                                    MotionEvent.ACTION_DOWN -> v.parent.parent.requestDisallowInterceptTouchEvent(true)  // TODO if layout xml changed, do make sure we get hold of the scrollview here
+                                    MotionEvent.ACTION_UP -> v.parent.parent.requestDisallowInterceptTouchEvent(false)
                                 }
 
-                                val poi = GeoPoint(latitude, longitude)
-                                controller.setZoom(18.5)
-                                controller.setCenter(poi)
-                                Marker(this).let {
-                                    it.position = poi
-                                    it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
-                                    this.overlays.add(it)
+                                false
+                            }
+
+                            val poi = GeoPoint(latitude, longitude)
+                            controller.setZoom(18.5)
+                            controller.setCenter(poi)
+                            Marker(this).let {
+                                it.position = poi
+                                it.icon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_location_marker_24)
+                                this.overlays.add(it)
+                            }
+                            if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
+                                overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                                    floatArrayOf(
+                                        1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
+                                        0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
+                                        0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
+                                        0f, 0f, 0f, 1f, 0f,
+                                    )
+                                ))
+                            }
+                            invalidate()
+
+                            isVisible = true
+                        }
+
+                        mapIntent.data = Uri.parse(
+                            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
+                                Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
+                            else "geo:${latitude},${longitude}?z=20"
+                        )
+                        mapIntent.resolveActivity(requireActivity().packageManager)?.let {
+                            mapButton.apply {
+                                setOnClickListener {
+                                    startActivity(mapIntent)
+                                    dismiss()
                                 }
-                                if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
-                                    overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
-                                        floatArrayOf(
-                                            1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
-                                            0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
-                                            0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
-                                            0f, 0f, 0f, 1f, 0f,
-                                        )
-                                    ))
-                                }
-                                invalidate()
 
                                 isVisible = true
                             }
-
-                            mapIntent.data = Uri.parse(
-                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.chinese_map_pref_key), false))
-                                    Tools.wGS84ToGCJ02(doubleArrayOf(latitude, longitude)).let { "geo:${it[0]},${it[1]}?z=20" }
-                                else "geo:${latitude},${longitude}?z=20"
-                            )
-                            mapIntent.resolveActivity(requireActivity().packageManager)?.let {
-                                mapButton.apply {
-                                    setOnClickListener {
-                                        startActivity(mapIntent)
-                                        dismiss()
-                                    }
-
-                                    isVisible = true
-                                }
+                        }
+                        // TODO use map text overlay instead
+                        if (locality.isNotEmpty() && country.isNotEmpty()) {
+                            view.findViewById<TextView>(R.id.locality).run {
+                                visibility = View.VISIBLE
+                                text = String.format("%s, %s", locality, country)
                             }
                         }
                     }
-                }
-            } ?: run {
-                parentFragmentManager.popBackStack()
+                } catch (e: Exception) {}
             }
-        } catch (e:Exception) {
-            e.printStackTrace()
-            parentFragmentManager.popBackStack()
-        }
+        })
     }
 
     override fun onResume() {
@@ -242,6 +179,96 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         mapView.onPause()
         super.onPause()
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private class ExifModelFactory(private val context: FragmentActivity, private val photo: NCShareViewModel.RemotePhoto): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = ExifModel(context, photo) as T
+    }
+
+    private class ExifModel(context: FragmentActivity, rPhoto: NCShareViewModel.RemotePhoto): ViewModel() {
+        val photoMeta = MutableLiveData<PhotoMeta>()
+
+        init {
+            viewModelScope.launch(Dispatchers.IO) {
+                val pm = PhotoMeta(rPhoto.photo)
+                var exif: ExifInterface? = null
+
+                try {
+                    if (rPhoto.remotePath.isEmpty()) {
+                        if (rPhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
+                            val fPath = Tools.getLocalRoot(context)
+                            with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {
+                                pm.size = File(this).length()
+                                if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (e: Exception) { null }
+                            }
+                        } else {
+                            pm.size = rPhoto.photo.shareId.toLong()
+                            val pUri = Uri.parse(rPhoto.photo.id)
+                            if (Tools.hasExif(rPhoto.photo.mimeType)) {
+                                exif = try {
+                                    (context.contentResolver.openInputStream(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.setRequireOriginal(pUri) else pUri))
+                                } catch (e: SecurityException) {
+                                    context.contentResolver.openInputStream(pUri)
+                                } catch (e: UnsupportedOperationException) {
+                                    context.contentResolver.openInputStream(pUri)
+                                }?.use { ExifInterface(it) }
+                            } else {
+                                if (rPhoto.photo.mimeType.startsWith("video/")) {
+                                    MediaMetadataRetriever().run {
+                                        try {
+                                            setDataSource(context, pUri)
+                                            Tools.getVideoLocation(this).let {
+                                                pm.photo.latitude = it[0]
+                                                pm.photo.longitude = it[1]
+                                            }
+                                        } catch (e: SecurityException) {}
+                                        release()
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        (ViewModelProvider(context))[NCShareViewModel::class.java].getMediaExif(rPhoto)?.let {
+                            exif = it.first
+                            pm.size = it.second
+                        }
+                    }
+
+                    exif?.run {
+                        pm.mfg = getAttribute(ExifInterface.TAG_MAKE)?.substringBefore(" ") ?: ""
+                        pm.model = (getAttribute(ExifInterface.TAG_MODEL)?.trim() ?: "") + (getAttribute(ExifInterface.TAG_LENS_MODEL)?.let { "\n${it.trim()}" } ?: "")
+                        pm.params = ((getAttribute(ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM) ?: getAttribute(ExifInterface.TAG_FOCAL_LENGTH))?.let { "${it.substringBefore("/").toInt() / it.substringAfter("/", "1").toInt()}mm  " } ?: "") +
+                                (getAttribute(ExifInterface.TAG_F_NUMBER)?.let { "f$it  " } ?: "") +
+                                (getAttribute(ExifInterface.TAG_EXPOSURE_TIME)?.let {
+                                    val exp = it.toFloat()
+                                    if (exp < 1) "1/${(1 / it.toFloat()).roundToInt()}s  " else "${exp.roundToInt()}s  "
+                                } ?: "") +
+                                (getAttribute(ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY)?.let { "ISO$it" } ?: "")
+                        pm.artist = getAttribute((ExifInterface.TAG_ARTIST)) ?: ""
+
+                        latLong?.let {
+                            pm.photo.latitude = it[0]
+                            pm.photo.longitude = it[1]
+                        }
+                    }
+
+                    photoMeta.postValue(pm)
+
+                } catch (e: Exception) {}
+            }
+        }
+
+        fun getPhotoMeta(): LiveData<PhotoMeta> = photoMeta
+    }
+
+    data class PhotoMeta(
+        val photo: Photo,
+        var size: Long = 0L,
+        var mfg: String = "",
+        var model: String = "",
+        var params: String = "",
+        var artist: String = "",
+    )
 
     companion object {
         const val KEY_MEDIA = "KEY_MEDIA"
