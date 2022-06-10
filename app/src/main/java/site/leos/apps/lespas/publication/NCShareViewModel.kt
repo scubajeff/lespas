@@ -725,9 +725,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             callBack?.onLoadComplete()
                         }
                     } catch (e: Exception) {}
-                }
+                } else view.setImageDrawable(null)
             }
-        }
+        } else view.setImageDrawable(null)
+
         // For items of remote album, show loading animation
         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
             view.background = loadingDrawable.apply { start() }
