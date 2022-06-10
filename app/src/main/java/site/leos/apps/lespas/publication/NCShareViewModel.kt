@@ -1158,6 +1158,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             try {
                 when {
+                    position >= mediaSize -> byteRead = -1
                     position + size < HEADER_SIZE -> {
                         //Log.e(">>>>>>>>>>>>>", "reading in head buffer $position $size")
                         position.toInt().let { startIndex -> header.copyInto(buffer, offset, startIndex, startIndex + size) }
