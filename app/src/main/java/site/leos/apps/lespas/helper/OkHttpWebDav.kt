@@ -102,6 +102,17 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getCallFactory() = httpClient
 
+    fun getCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Call {
+        val reqBuilder = Request.Builder().url(source)
+        return (if (useCache) {
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            cachedHttpClient!!.newCall(reqBuilder.get().build())
+        } else {
+            httpClient.newCall(reqBuilder.get().build())
+        })
+    }
+    fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(source).header("Range", "bytes=${rangeStartAt}-").get().build())
+
     fun getRawResponse(source: String, useCache: Boolean): Response {
         val reqBuilder = Request.Builder().url(source)
         return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
@@ -109,13 +120,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamCall(source, useCache, cacheControl).first
     fun getStreamCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Call> {
-        val reqBuilder = Request.Builder().url(source)
-        (if (useCache) {
-            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            cachedHttpClient!!.newCall(reqBuilder.get().build())
-        } else {
-            httpClient.newCall(reqBuilder.get().build())
-        }).run {
+        getCall(source, useCache, cacheControl).run {
             execute().also { response ->
                 if (response.isSuccessful) return Pair(response.body!!.byteStream(), this)
                 else {
@@ -215,7 +220,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         val result = mutableListOf<DAVResource>()
 
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
-            var currentFolderId = ""
+            @Suppress("UNUSED_VARIABLE") var currentFolderId = ""
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
             if (response.isSuccessful) {
@@ -469,23 +474,23 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
         // PROPFIND properties namespace
         private const val DAV_NS = "DAV:"
         private const val OC_NS = "http://owncloud.org/ns"
-        private const val NC_NS = "http://nextcloud.org/ns"
+        //private const val NC_NS = "http://nextcloud.org/ns"
 
         // Standard properties
         private const val DAV_GETETAG = "getetag"
         private const val DAV_GETLASTMODIFIED = "getlastmodified"
         private const val DAV_GETCONTENTTYPE = "getcontenttype"
-        private const val DAV_RESOURCETYPE = "resourcetype"
+        //private const val DAV_RESOURCETYPE = "resourcetype"
         private const val DAV_GETCONTENTLENGTH = "getcontentlength"
         private const val DAV_SHARE_TYPE = "share-type"
 
         // Nextcloud properties
         private const val OC_UNIQUE_ID = "fileid"
         private const val OC_SHARETYPE = "share-types"
-        private const val OC_CHECKSUMS = "checksums"
-        private const val NC_HASPREVIEW = "has-preview"
-        private const val OC_SIZE = "size"
-        private const val OC_DATA_FINGERPRINT = "data-fingerprint"
+        //private const val OC_CHECKSUMS = "checksums"
+        //private const val NC_HASPREVIEW = "has-preview"
+        //private const val OC_SIZE = "size"
+        //private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
         // LesPas properties
         const val LESPAS_DATE_TAKEN = "pictureDateTaken"

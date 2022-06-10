@@ -131,6 +131,11 @@ class LocationResultByLocalitiesFragment: Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        resultView.adapter = null
+        super.onDestroyView()
+    }
+
     class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<LocationSearchHostFragment.LocationSearchResult, LocationSearchResultAdapter.ViewHolder>(LocationSearchResultDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -168,6 +173,10 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_location_search, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<RecyclerView>(R.id.photos)?.adapter = null }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
     }
 
     class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchHostFragment.LocationSearchResult>() {

@@ -246,6 +246,11 @@ class PublicationDetailFragment: Fragment() {
         super.onStop()
     }
 
+    override fun onDestroyView() {
+        photoList.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
         try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (e:Exception) {}

@@ -266,6 +266,11 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
     }
 
+    override fun onDestroyView() {
+        slider.adapter = null
+        super.onDestroyView()
+    }
+
     @Suppress("DEPRECATION")
     override fun onDestroy() {
         // BACK TO NORMAL UI

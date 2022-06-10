@@ -168,6 +168,11 @@ class SearchFragment : Fragment() {
         destinationToggleGroup?.let { outState.putInt(LAST_SELECTION, it.checkedButtonId) }
     }
 
+    override fun onDestroyView() {
+        categoryView.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_menu, menu)

@@ -978,6 +978,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onDestroyView() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+        mediaPager.adapter = null
+        quickScroll.adapter = null
 
         super.onDestroyView()
     }
