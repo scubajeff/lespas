@@ -690,7 +690,6 @@ object Tools {
 
     fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC): List<NCShareViewModel.RemotePhoto> {
         val result = mutableListOf<NCShareViewModel.RemotePhoto>()
-        val defaultOffset = OffsetDateTime.now().offset
 
         val lespasJson = try {
             JSONObject(inputStream.reader().readText()).getJSONObject("lespas")
@@ -768,7 +767,6 @@ object Tools {
 
     fun photosToMetaJSONString(photos: List<Photo>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
-        val defaultOffset = OffsetDateTime.now().offset
 
         photos.forEach { photo ->
             with(photo) {
@@ -794,7 +792,6 @@ object Tools {
 
     fun metasToJSONString(photoMeta: List<PhotoMeta>): String {
         var content = SyncAdapter.PHOTO_META_HEADER
-        val defaultOffset = OffsetDateTime.now().offset
 
         photoMeta.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
