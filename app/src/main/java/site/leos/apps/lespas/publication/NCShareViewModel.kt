@@ -63,6 +63,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -708,6 +709,21 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
+
+        // For full image, show a thumbnail version first
+        if (viewType == TYPE_FULL) {
+            imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                // Show cached low resolution bitmap first if loading full size bitmap
+                view.setImageBitmap(it)
+                callBack?.onLoadComplete()
+            }
+        }
+        // For items of remote album, show loading animation
+        if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+            view.background = loadingDrawable.apply { start() }
+            callBack?.onLoadComplete()
+        }
+
         val job = viewModelScope.launch(downloadDispatcher) {
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
@@ -729,7 +745,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, view, type, forceNetwork)
+                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
@@ -745,11 +761,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                                 else -> {
                                     // File is available locally, already rotated to it's upright position. Fall back to remote
-                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, view, type) }
+                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
                                 }
                             }
                         }
-                        TYPE_VIDEO -> getVideoThumbnail(coroutineContext.job, imagePhoto, view)
+                        TYPE_VIDEO -> getVideoThumbnail(coroutineContext.job, imagePhoto)
                         TYPE_EMPTY_ROLL_COVER -> ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
                         else -> {
                             // For GIF, AGIF, AWEBP cover
@@ -759,23 +775,24 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     // Photo is from remote album and is already uploaded
+/*
                                     if (type == TYPE_FULL) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                                         // Show cached low resolution bitmap first if loading full size bitmap
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
                                         callBack?.onLoadComplete()
-                                    } else withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                    webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                        httpCallMap.replace(coroutineContext.job, second)
-                                        first
                                     }
+*/
+                                    getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     // Photo is from local Camrea roll
+/*
                                     if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                                         // Show cached low resolution bitmap first if we need to rotate the picture which will take times
                                         withContext(Dispatchers.Main) { view.setImageBitmap(it) }
                                         callBack?.onLoadComplete()
                                     }
+*/
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
                                 else -> {
@@ -784,16 +801,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                     } catch (e: FileNotFoundException) {
                                         // Fall back to network fetching if loading local file failed
-                                        withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                        webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                            httpCallMap.replace(coroutineContext.job, second)
-                                            first
-                                        }
+                                        getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                     }
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
-                                    TYPE_FULL, TYPE_QUARTER -> {
+                                    //TYPE_FULL, TYPE_QUARTER -> {
+                                    TYPE_FULL -> {
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
@@ -825,7 +839,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
                                                 val option = BitmapFactory.Options().apply {
                                                     inSampleSize = if (imagePhoto.photo.width * imagePhoto.photo.height > 33333334) 2 else 1
-                                                    if (type == TYPE_QUARTER) inSampleSize *= 2
+                                                    //if (type == TYPE_QUARTER) inSampleSize *= 2
                                                     // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
                                                     if (imagePhoto.photo.width == 0) inSampleSize = 2
                                                 }
@@ -898,14 +912,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) { Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}") }
-            catch (e: Exception) { e.printStackTrace() }
+            catch (e: OkHttpWebDavException) {
+                //Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
+            }
+            catch (e: Exception) {
+                //e.printStackTrace()
+            }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
 
                     // Stop loading indicator
-                    //view.background = null
                     view.setBackgroundResource(0)
                 }
                 callBack?.onLoadComplete()
@@ -932,7 +949,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         replacePrevious(jobKey, job)
     }
 
-    private suspend fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto, view: View): Bitmap? {
+    private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
         return if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
             val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -957,7 +974,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
             // Download from server
             bitmap ?: run {
-                withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
                 bitmap = getRemoteVideoThumbnail(imagePhoto, job)
 
                 // Cache thumbnail in local
@@ -990,33 +1006,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    private suspend fun getRemoteThumbnail(job: Job, imagePhoto: RemotePhoto, view: ImageView, type: String, forceNetwork: Boolean = false): Bitmap? {
+    private fun getRemoteThumbnail(job: Job, imagePhoto: RemotePhoto, type: String, forceNetwork: Boolean = false): Bitmap? {
         var bitmap: Bitmap?
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap = try {
-            withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-            job.ensureActive()
-            webDav.getStreamCall("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).run {
-                httpCallMap.replace(job, second)
-
-                first.use {
-                    job.ensureActive()
-                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
-                }
+            getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null, job).use {
+                job.ensureActive()
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
             }
         } catch(e: Exception) { null }
 
         bitmap ?: run {
             // If preview is not available, we have to use the actual image file
-            job.ensureActive()
-            webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null).run {
-                httpCallMap.replace(job, second)
-
-                first.use {
-                    job.ensureActive()
-                    bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
-                }
+            getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null, job).use {
+                job.ensureActive()
+                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let {
                 job.ensureActive()
@@ -1027,6 +1032,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         bitmap?.let { if (forceNetwork) photoRepository.resetNetworkRefresh(imagePhoto.photo.id) }
 
         return bitmap
+    }
+
+    private fun getImageStream(source: String, useCache: Boolean, cacheControl: CacheControl?, job: Job): InputStream {
+        webDav.getCall(source, useCache, cacheControl).run {
+            httpCallMap.replace(job, this)
+            job.ensureActive()
+            execute().also { response ->
+                if (response.isSuccessful) return response.body!!.byteStream()
+                else {
+                    response.close()
+                    throw OkHttpWebDavException(response)
+                }
+            }
+        }
     }
 
     fun cancelSetImagePhoto(view: View) {
@@ -1073,7 +1092,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             while(retry <= MAXIMUM_RETRY) {
                 job.ensureActive()
                 try {
-                    webDav.getCall(mediaUrl).run {
+                    webDav.getCall(mediaUrl, true, null).run {
                         callMap[job] = this
                         execute().also { response ->
                             mediaSize = response.headersContentLength()
@@ -1282,7 +1301,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
-        const val TYPE_QUARTER = "_quarter"
+        //const val TYPE_QUARTER = "_quarter"
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
         const val TYPE_EMPTY_ROLL_COVER = "empty"

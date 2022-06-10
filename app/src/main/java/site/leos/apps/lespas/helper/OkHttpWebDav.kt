@@ -102,7 +102,15 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getCallFactory() = httpClient
 
-    fun getCall(source: String): Call = cachedHttpClient!!.newCall(Request.Builder().url(source).get().build())
+    fun getCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Call {
+        val reqBuilder = Request.Builder().url(source)
+        return (if (useCache) {
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            cachedHttpClient!!.newCall(reqBuilder.get().build())
+        } else {
+            httpClient.newCall(reqBuilder.get().build())
+        })
+    }
     fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(source).header("Range", "bytes=${rangeStartAt}-").get().build())
 
     fun getRawResponse(source: String, useCache: Boolean): Response {
@@ -112,13 +120,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamCall(source, useCache, cacheControl).first
     fun getStreamCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Call> {
-        val reqBuilder = Request.Builder().url(source)
-        (if (useCache) {
-            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            cachedHttpClient!!.newCall(reqBuilder.get().build())
-        } else {
-            httpClient.newCall(reqBuilder.get().build())
-        }).run {
+        getCall(source, useCache, cacheControl).run {
             execute().also { response ->
                 if (response.isSuccessful) return Pair(response.body!!.byteStream(), this)
                 else {
