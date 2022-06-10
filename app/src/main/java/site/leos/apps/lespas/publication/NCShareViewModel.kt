@@ -713,9 +713,19 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // For full image, show a thumbnail version first
         if (viewType == TYPE_FULL) {
             imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                // Show cached low resolution bitmap first if loading full size bitmap
+                // Show cached low resolution bitmap first before loading full size bitmap
                 view.setImageBitmap(it)
                 callBack?.onLoadComplete()
+            } ?: run {
+                // For camera roll items, load thumbnail if cache missed
+                if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+                    try {
+                        view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null).let {
+                            view.setImageBitmap(it)
+                            callBack?.onLoadComplete()
+                        }
+                    } catch (e: Exception) {}
+                }
             }
         }
         // For items of remote album, show loading animation
@@ -775,24 +785,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     // Photo is from remote album and is already uploaded
-/*
-                                    if (type == TYPE_FULL) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                                        // Show cached low resolution bitmap first if loading full size bitmap
-                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
-                                        callBack?.onLoadComplete()
-                                    }
-*/
                                     getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     // Photo is from local Camrea roll
-/*
-                                    if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                                        // Show cached low resolution bitmap first if we need to rotate the picture which will take times
-                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
-                                        callBack?.onLoadComplete()
-                                    }
-*/
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
                                 else -> {
@@ -812,17 +808,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-/*
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
-                                                        if (this is AnimatedImageDrawable) {
-                                                            if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                                                            start()
-                                                        }
-                                                    }
-*/
                                                     // Some framework implementation will crash when using ByteBuffer as ImageDrawable source
                                                     val tempFile = File(localCacheFolder, imagePhoto.photo.name)
+                                                    ensureActive()
                                                     tempFile.outputStream().run { sourceStream.copyTo(this, 8192) }
+                                                    ensureActive()
                                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(tempFile)).apply {
                                                         if (this is AnimatedImageDrawable) {
                                                             if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
@@ -832,6 +822,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     tempFile.delete()
                                                     null
                                                 } else {
+                                                    ensureActive()
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
                                                 }
                                             }
