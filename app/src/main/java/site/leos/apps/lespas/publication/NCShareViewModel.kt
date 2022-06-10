@@ -698,7 +698,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val cr = application.contentResolver
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
-    private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_placeholder) as AnimatedVectorDrawable
+    private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator) as AnimatedVectorDrawable
+    private val loadingDrawableLV = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()
@@ -731,7 +732,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         // For items of remote album, show loading animation
         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-            view.background = loadingDrawable.apply { start() }
+            view.background = (if (viewType == TYPE_FULL) loadingDrawableLV else loadingDrawable).apply { start() }
             callBack?.onLoadComplete()
         }
 

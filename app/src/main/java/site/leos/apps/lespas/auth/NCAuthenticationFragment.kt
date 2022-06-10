@@ -187,7 +187,7 @@ class NCAuthenticationFragment: Fragment() {
                     }
                 }
             } else {
-                authWebpageBG.background = (ContextCompat.getDrawable(authWebpageBG.context, R.drawable.animated_placeholder) as AnimatedVectorDrawable).apply {
+                authWebpageBG.background = (ContextCompat.getDrawable(authWebpageBG.context, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable).apply {
                     if (theming.color != Color.TRANSPARENT) {
                         setTintList(ColorStateList.valueOf(theming.color))
                         setTintMode(PorterDuff.Mode.ADD)
