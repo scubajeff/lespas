@@ -384,13 +384,13 @@ class PublicationDetailFragment: Fragment() {
                         imageLoader(item, this)
                         ViewCompat.setTransitionName(this, item.photo.id)
                         currentPhotoId = item.photo.id
-                    }
-                    if (!showName) {
-                        (itemView as ConstraintLayout).let {
-                            ConstraintSet().apply {
-                                clone(it)
-                                setDimensionRatio(R.id.photo, "H,${item.photo.width}:${item.photo.height}")
-                                applyTo(it)
+                        if (!showName) {
+                            (itemView as ConstraintLayout).let {
+                                ConstraintSet().apply {
+                                    clone(it)
+                                    setDimensionRatio(R.id.photo, "H,${item.photo.width}:${item.photo.height}")
+                                    applyTo(it)
+                                }
                             }
                         }
                     }
