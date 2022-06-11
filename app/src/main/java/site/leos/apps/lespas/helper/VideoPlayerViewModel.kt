@@ -8,10 +8,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -20,25 +18,18 @@ import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
-import java.io.File
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?): AndroidViewModel(application) {
+class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient, cache: SimpleCache): AndroidViewModel(application) {
     private val videoPlayer: ExoPlayer
-    private var cache: SimpleCache? = null
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
     private lateinit var window: Window
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        val builder = ExoPlayer.Builder(application)
-        callFactory?.let {
-            cache = SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
-            builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory)))))
-        }
-        videoPlayer = builder.build().apply {
+        videoPlayer = ExoPlayer.Builder(application).setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory))))).build().apply {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
@@ -134,7 +125,6 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
     }
 
     override fun onCleared() {
-        cache?.release()
         videoPlayer.release()
 
         // Reset screen auto turn off

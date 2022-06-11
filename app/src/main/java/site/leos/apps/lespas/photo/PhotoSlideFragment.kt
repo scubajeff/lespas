@@ -106,7 +106,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
         serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(

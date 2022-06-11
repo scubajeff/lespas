@@ -52,7 +52,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, shareModel.getCallFactory()) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, shareModel.getCallFactory(), shareModel.getPlayerCache()) }
 
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0

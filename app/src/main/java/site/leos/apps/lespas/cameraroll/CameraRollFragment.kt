@@ -129,7 +129,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, requireArguments().getString(KEY_URI), requireArguments().getBoolean(KEY_IN_ARCHIVE)) }
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()) }
     private val actionModel: ActionViewModel by viewModels()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver

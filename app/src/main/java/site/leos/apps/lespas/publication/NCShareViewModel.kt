@@ -32,6 +32,9 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
@@ -99,6 +102,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val photoRepository = PhotoRepository(application)
 
+    private val videoPlayerCache: SimpleCache
+
     fun interface LoadCompleteListener {
         fun onLoadComplete()
     }
@@ -114,6 +119,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
+
+            videoPlayerCache = SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
         }
     }
 
@@ -126,6 +133,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun getCallFactory() = webDav.getCallFactory()
+    fun getPlayerCache() = videoPlayerCache
 
     fun getResourceRoot(): String = resourceRoot
 
@@ -1062,6 +1070,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }}
         downloadDispatcher.close()
         mediaMetadataRetriever.release()
+        videoPlayerCache.release()
         super.onCleared()
     }
 
