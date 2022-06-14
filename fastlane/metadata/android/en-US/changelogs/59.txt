@@ -1,0 +1,6 @@
+* New Italian localization, thanks to github user @chiaratira and @michelafr
+* Name filter for Publications which has 'show title' setting turned on
+* New theme for OpenStreetMap tiles in dark mode
+* Revamp video file meta data extracting, correctly read creation date, extract location data
+* Optimized media file processing, more responsive UI, less freezing
+* Other improvements and bugs fixes

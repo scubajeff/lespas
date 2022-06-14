@@ -1,0 +1,6 @@
+* Nueva localización en italiano, gracias a los usuarios de github @chiaratira y @michelafr
+* Filtro de nombres para las publicaciones que tienen activada la opción de mostrar el título
+* Nuevo tema para los mosaicos de OpenStreetMap en modo oscuro
+* Renovación de la extracción de metadatos de archivos de vídeo, lectura correcta de la fecha de creación y extracción de datos de ubicación
+* Optimización del procesamiento de archivos multimedia, interfaz de usuario más sensible, menos congelación
+* Otras mejoras y correcciones de errores

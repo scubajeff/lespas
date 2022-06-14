@@ -1,0 +1,6 @@
+* Nova localização italiana, graças ao github user @chiaratira e @michelafr
+* Filtro de nome para Publicações que tem a opção "mostrar título" ativada
+* Novo tema para azulejos OpenStreetMap em modo escuro
+* Reformular arquivo de vídeo extraindo meta dados, ler corretamente data de criação, extrair dados de localização
+* Processamento otimizado de arquivos de mídia, IU mais responsiva, menos congelamento
+* Outras melhorias e correções de bugs

@@ -1,0 +1,6 @@
+* Nouvelle localisation en italien, grâce aux utilisateurs de github @chiaratira et @michelafr.
+* Filtre de nom pour les publications dont le paramètre 'show title' est activé.
+* Nouveau thème pour les tuiles OpenStreetMap en mode sombre
+* Révision de l'extraction des méta-données des fichiers vidéo, lecture correcte de la date de création et extraction des données de localisation.
+* Optimisation du traitement des fichiers multimédias, interface plus réactive, moins de gel.
+* Autres améliorations et corrections de bugs

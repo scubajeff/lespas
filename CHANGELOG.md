@@ -1,3 +1,10 @@
+## Version 2.5.12
+* New Italian localization, thanks to github user @chiaratira and @michelafr
+* Name filter for Publications which has 'show title' setting turned on
+* New theme for OpenStreetMap tiles in dark mode
+* Revamp video file meta data extracting, correctly read creation date, extract location data
+* Optimized media file processing, more responsive UI, less freezing
+
 ## Version 2.5.11
 * New: name filter for albums with "Show Name" option turned on
 * New: AI object detection and location search for camera roll backups on server
