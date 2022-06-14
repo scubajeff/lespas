@@ -249,10 +249,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
-                if (toggleCameraRollButton.isChecked) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, lastSelection)).setFillInIntent(null).build())
-                    else camerarollModel.removeMedias(lastSelection)
-                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, lastSelection)).setFillInIntent(null).build())
+                else camerarollModel.removeMedias(lastSelection)
             }
 
             // Immediately sync with server after adding photo to local album
@@ -1253,7 +1251,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri, inArchive) as T
     }
 
-    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModel() {
+    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?, inArchive: Boolean): ViewModel() {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var cameraRoll = mutableListOf<Photo>()
         private var backups = mutableListOf<Photo>()
@@ -1263,6 +1261,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private var shouldDisableRemove = false
         private var shouldDisableShare = false
         private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
+        private val snapshotRemovedList = mutableListOf<String>()
 
         init {
             if (inArchive) {
@@ -1280,6 +1279,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             viewModelScope.launch(Dispatchers.IO) {
                 if (backups.isEmpty()) {
                     var snapshot = mutableListOf<Photo>()
+                    val backupList = mutableListOf<Photo>()
                     try {
                         // Fetch backups from server if needed
                         vmState.postValue(STATE_FETCHING_BACKUP)
@@ -1301,7 +1301,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                         webDav.listWithExtraMeta(dcimRoot, OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                             if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
-                                backups.add(
+                                backupList.add(
                                     Photo(
                                         id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
@@ -1315,15 +1315,21 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         }
                     } catch (e: Exception) {}
 
-                    if (backups.isNotEmpty()) {
-                        backups.sortByDescending { it.dateTaken }
+                    if (backupList.isNotEmpty()) {
+                        backupList.sortByDescending { it.dateTaken }
 
                         // If we have snapshot, make sure recyclerview's current position won't drift after data updated
                         if (snapshot.isNotEmpty()) (getCurrentPhoto()?.name.let { current -> backups.indexOfFirst { it.name == current } }).let { newPosition -> setCurrentPosition(if (newPosition == -1) 0 else newPosition) }
                     } else {
                         // If fail fetching backups from server, use snapshot
-                        if (snapshot.isNotEmpty()) backups.addAll(snapshot)
+                        if (snapshot.isNotEmpty()) backupList.addAll(snapshot)
                     }
+
+                    // Remove those removed in snapshot before archive synced
+                    for (photoId in snapshotRemovedList) { backupList.indexOfFirst { it.id == photoId }.let { index -> if (index != -1) backupList.removeAt(index) }}
+
+                    setBackup(backupList)
+                    snapshotRemovedList.clear()
                 }
 
                 if (backups.isNotEmpty()) {
@@ -1415,21 +1421,30 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         fun removeBackup(removeList: List<String>) {
             // Remove from our list
-            backups.toMutableList().run {
-                removeAll { removeList.contains(it.id) }
+            mediaList.value?.toMutableList()?.let { pList ->
+                for (id in removeList) { pList.indexOfFirst { it.id == id }.let { index -> if (index != -1) pList.removeAt(index) }}
 
-                if (size == 0) {
+                if (pList.size == 0) {
+                    // All element removed
                     vmState.postValue(STATE_BACKUP_NOT_AVAILABLE)
                     mediaList.postValue(cameraRoll)
-                }
-                else {
-                    if (position[1] >= size) position[1] = max(size - 1, 0)
-                    mediaList.postValue(this)
-                    backups = this
+                } else {
+                    // If last element removed
+                    if (position[1] >= pList.size) position[1] = max(pList.size - 1, 0)
+
+                    mediaList.postValue(pList)
+
+                    if (backups.isNotEmpty()) setBackup(pList)
+                    else {
+                        // Removing in snapshot, maintain a removed list in order to show correct list after archive synced
+                        // TODO partial removal
+                        snapshotRemovedList.addAll(removeList)
+                    }
                 }
             }
         }
 
+        @Synchronized private fun setBackup(newList: MutableList<Photo>) { backups = newList }
         private fun getCurrentSource() = vmState.value?.let { if (it > 0) 1 else 0 } ?: 0
         fun setCurrentPosition(newPosition: Int) { position[getCurrentSource()] = newPosition }
         fun getCurrentPosition(): Int = position[getCurrentSource()]
