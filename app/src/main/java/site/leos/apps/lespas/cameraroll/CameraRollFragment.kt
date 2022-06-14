@@ -129,7 +129,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, requireArguments().getString(KEY_URI), requireArguments().getBoolean(KEY_IN_ARCHIVE)) }
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()) }
     private val actionModel: ActionViewModel by viewModels()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
@@ -334,8 +334,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         quickScrollGridSpanCount = resources.getInteger(R.integer.cameraroll_grid_span_count)
         quickScrollAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / quickScrollGridSpanCount)))
         quickScrollAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / quickScrollGridSpanCount))
-
-        playerViewModel.setWindow(requireActivity().window)
 
         // Save current system bar color
         (requireActivity() as AppCompatActivity).window?.run {

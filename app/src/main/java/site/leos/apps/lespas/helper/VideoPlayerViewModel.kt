@@ -1,8 +1,7 @@
 package site.leos.apps.lespas.helper
 
-import android.app.Application
+import android.app.Activity
 import android.net.Uri
-import android.view.Window
 import android.view.WindowManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.media3.common.MediaItem
@@ -21,15 +20,15 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient, cache: SimpleCache): AndroidViewModel(application) {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache): AndroidViewModel(activity.application) {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
-    private lateinit var window: Window
+    private val window = activity.window
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        videoPlayer = ExoPlayer.Builder(application).setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory))))).build().apply {
+        videoPlayer = ExoPlayer.Builder(activity).setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))))).build().apply {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
@@ -50,7 +49,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient, 
             })
 
             // Retrieve repeat mode setting
-            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(application).getBoolean(application.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
+            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
         }
 
         // Mute the video sound during late night hours
@@ -140,6 +139,4 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient, 
         videoMap[uri] ?: run { videoMap[uri] = 0L }
         return videoMap[uri]!!
     }
-
-    fun setWindow(window: Window) { this.window = window }
 }
