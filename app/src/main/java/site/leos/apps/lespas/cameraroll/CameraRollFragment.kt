@@ -1704,7 +1704,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     class PhotoDiffCallback : DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = if (oldItem.id.isEmpty() || newItem.id.isEmpty()) false else oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = true
     }
 
     companion object {
