@@ -288,4 +288,5 @@
     <string name="title_in_archive">%1$s em Backups de Câmera</string>
     <string name="tooltips_search_archive">Pesquisar nos Backups de rolo de câmera</string>
     <string name="hint_timestamp_pattern">A data de criação da foto pode ser alterada incluindo o padrão yyyyyMMdd_hhmmss no nome.</string>
+    <string name="should_allow_launching_other_app">Por favor, permita que o Les Pas lance outros aplicativos em suas configurações de segurança.</string>
 </resources>

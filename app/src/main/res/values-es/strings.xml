@@ -226,4 +226,5 @@
     <string name="title_in_archive">%1$s en las copias de seguridad de la cámara</string>
     <string name="tooltips_search_archive">Buscar en las copias de seguridad de la cámara</string>
     <string name="hint_timestamp_pattern">La fecha de creación de la foto se puede cambiar incluyendo el patrón yyyyMMdd_hhmmss en el nombre.</string>
+    <string name="should_allow_launching_other_app">Permita que Les Pas inicie otras aplicaciones en su configuración de seguridad.</string>
 </resources>

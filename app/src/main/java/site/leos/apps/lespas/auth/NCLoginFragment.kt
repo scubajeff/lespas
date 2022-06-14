@@ -41,6 +41,7 @@ import okhttp3.Request
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import java.net.SocketException
@@ -221,7 +222,12 @@ class NCLoginFragment: Fragment() {
                 if (scannerAvailable) {
                     inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
                     inputArea.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_qr_code_scanner_24)
-                    inputArea.setEndIconOnClickListener { scanRequestLauncher?.launch(scanIntent) }
+                    inputArea.setEndIconOnClickListener {
+                        try { scanRequestLauncher?.launch(scanIntent) }
+                        catch (e: SecurityException) {
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
+                    }
                 } else {
                     inputArea.endIconMode = TextInputLayout.END_ICON_NONE
                     hostEditText.error = null
@@ -374,5 +380,7 @@ class NCLoginFragment: Fragment() {
         private const val ICON_MODE_ERROR = 3
 
         private const val KEY_ERROR_SHOWN = "KEY_ERROR_SHOWN"
+
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
     }
 }

@@ -226,4 +226,5 @@
     <string name="title_in_archive">カメラバックアップの%1$s</string>
     <string name="tooltips_search_archive">カメラロールバックアップで検索</string>
     <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
+    <string name="should_allow_launching_other_app">セキュリティ設定でLes Pasが他のアプリを起動することを許可してください。</string>
 </resources>

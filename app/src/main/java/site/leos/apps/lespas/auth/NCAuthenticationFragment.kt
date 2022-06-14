@@ -255,7 +255,10 @@ class NCAuthenticationFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_qr_scanner -> {
-                scanRequestLauncher?.launch(scanIntent)
+                try { scanRequestLauncher?.launch(scanIntent) }
+                catch (e: SecurityException) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                }
                 true
             }
             else -> false

@@ -333,4 +333,5 @@
     <string name="tooltips_fetch_backup">Mostra i backup sul server</string>
     <string name="tooltips_search_archive">tooltips_search_archive</string>
     <string name="tooltips_show_cameraroll">Mostra il rullino fotografico</string>
+    <string name="should_allow_launching_other_app">Consentire l\'avvio di Les Pas ad altre applicazioni nelle impostazioni di sicurezza.</string>
 </resources>
