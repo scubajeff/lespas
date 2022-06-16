@@ -69,6 +69,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 import kotlin.math.abs
 
@@ -363,7 +364,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 dateIndicator.let {
                                     it.text = if (album.sortOrder % 100 == Album.BY_NAME_ASC || album.sortOrder % 100 == Album.BY_NAME_DESC)
                                         mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
-                                    else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                                    else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
                                     it.isVisible = true
                                 }
