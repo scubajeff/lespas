@@ -349,10 +349,10 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
     }
 
     private fun isPointInsideVerticalThumb(x: Float, y: Float): Boolean =
-        (if (isLayoutRTL) x <= mVerticalThumbWidth else x >= mRecyclerViewWidth - mVerticalThumbWidth) && y >= mVerticalThumbCenterY - mVerticalThumbHeight / 2 && y <= mVerticalThumbCenterY + mVerticalThumbHeight / 2
+        (if (isLayoutRTL) x <= mVerticalThumbWidth else x >= mRecyclerViewWidth - 2 * mVerticalThumbWidth) && y >= mVerticalThumbCenterY - mVerticalThumbHeight / 2 && y <= mVerticalThumbCenterY + mVerticalThumbHeight / 2
 
     private fun isPointInsideHorizontalThumb(x: Float, y: Float): Boolean =
-        y >= mRecyclerViewHeight - mHorizontalThumbHeight && x >= mHorizontalThumbCenterX - mHorizontalThumbWidth / 2 && x <= mHorizontalThumbCenterX + mHorizontalThumbWidth / 2
+        y >= mRecyclerViewHeight - 4 * mHorizontalThumbHeight && x >= mHorizontalThumbCenterX - mHorizontalThumbWidth / 2 && x <= mHorizontalThumbCenterX + mHorizontalThumbWidth / 2
 
     /**
      * Gets the (min, max) vertical positions of the vertical scroll bar.
