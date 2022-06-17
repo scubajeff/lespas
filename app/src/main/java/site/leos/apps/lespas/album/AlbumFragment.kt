@@ -9,6 +9,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -27,6 +28,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
@@ -54,6 +56,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.LesPasDialogFragment
+import site.leos.apps.lespas.helper.LesPasFastScroller
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -313,8 +316,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             // Restore selection state
             if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
-        }
 
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    fab.isVisible = newState == RecyclerView.SCROLL_STATE_IDLE
+                }
+            })
+        }
+        LesPasFastScroller(
+            recyclerView,
+            ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
+            ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
+            resources.getDimensionPixelSize(R.dimen.small_padding), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_size)
+        )
 
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 

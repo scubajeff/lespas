@@ -19,4 +19,6 @@
     <dimen name="destination_cover_width">88dp</dimen>
     <dimen name="destination_cover_height">40dp</dimen>
     <dimen name="destination_title_text_size">13sp</dimen>
+
+    <dimen name="fast_scroll_thumb_size">56dp</dimen>
 </resources>

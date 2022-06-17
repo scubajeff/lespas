@@ -15,6 +15,7 @@
         android:transitionGroup="true"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="@integer/album_grid_span_count"
+        android:scrollbars="none"
         tools:listitem="@layout/recyclerview_item_album" />
 
     <androidx.constraintlayout.widget.Guideline
