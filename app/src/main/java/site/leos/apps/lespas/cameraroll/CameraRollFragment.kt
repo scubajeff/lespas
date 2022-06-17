@@ -816,7 +816,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
         datePickerButton.setOnClickListener {
-            quickScrollAdapter.dateRange().let { dateRange ->
+            quickScrollAdapter.dateRange()?.let { dateRange ->
                 MaterialDatePicker.Builder.datePicker()
                     .setCalendarConstraints(CalendarConstraints.Builder().setValidator(object: CalendarConstraints.DateValidator {
                         override fun describeContents(): Int = 0
@@ -1713,8 +1713,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
             return (currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.toLocalDate().isEqual(theDate) }) != NO_POSITION
         }
-        fun dateRange(): Pair<Long, Long> {
-            return Pair(currentList.last().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli())
+        fun dateRange(): Pair<Long, Long>? {
+            return if (currentList.isNotEmpty()) Pair(currentList.last().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()) else null
         }
         fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
         fun getDateByPosition(position: Int): Long = currentList[position].dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
