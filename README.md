@@ -21,6 +21,7 @@ Features:
 - Theme design inspired by Wes Anderson's works
 - Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage  
 - Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
+- Option to hide album both in Phone and on server
 - Open-source
 
 <p float="left">
