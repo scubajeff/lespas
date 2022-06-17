@@ -58,7 +58,9 @@ import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.*
 import androidx.recyclerview.widget.RecyclerView.*
+import androidx.transition.Fade
 import androidx.transition.Transition
+import androidx.transition.TransitionManager
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -112,6 +114,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var toggleCameraRollButton: MaterialButton
     private lateinit var toggleBackupsButton: MaterialButton
     private lateinit var datePickerButton: ImageButton
+    private lateinit var yearIndicator: MaterialButton
+
     private lateinit var cBadge: BadgeDrawable
     private lateinit var aBadge: BadgeDrawable
 
@@ -384,6 +388,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         toggleCameraRollButton = view.findViewById(R.id.source_device)
         toggleBackupsButton = view.findViewById(R.id.source_backups)
         datePickerButton = view.findViewById(R.id.date_picker_button)
+        yearIndicator = view.findViewById(R.id.year_indicator)
 
         toggleCameraRollButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(cBadge, toggleCameraRollButton) }
         toggleBackupsButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(aBadge, toggleBackupsButton) }
@@ -483,6 +488,39 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             })
 */
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                private val hideHandler = Handler(Looper.getMainLooper())
+                private val hideDateIndicator = Runnable {
+                    TransitionManager.beginDelayedTransition(quickScroll.parent as ViewGroup, Fade().apply { duration = 800 })
+                    yearIndicator.visibility = View.GONE
+                }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+
+                    if (newState == SCROLL_STATE_IDLE && yearIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
+                }
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (dx == 0 && dy == 0) {
+                        // First entry or fragment resume false call, by layout re-calculation, hide dataIndicator
+                        yearIndicator.isVisible = false
+                    } else {
+                        (recyclerView.layoutManager as GridLayoutManager).run {
+                            // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
+                            if ((findLastCompletelyVisibleItemPosition() < quickScrollAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
+                                hideHandler.removeCallbacksAndMessages(null)
+                                yearIndicator.let {
+                                    it.text = quickScrollAdapter.currentList[findLastVisibleItemPosition()].dateTaken.year.toString()
+                                    it.isVisible = true
+                                }
+                            }
+                        }
+                    }
+                }
+            })
         }
         quickScrollAdapter.setSelectionTracker(selectionTracker)
         LesPasFastScroller(
@@ -1125,7 +1163,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             start()
         }
     }
-    fun flashDate(view: View) {
+    private fun flashDate(view: View) {
         ObjectAnimator.ofPropertyValuesHolder(view, tx).run {
             duration = 800
             repeatMode = ValueAnimator.REVERSE
@@ -1386,7 +1424,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             var exifInterface: ExifInterface? = null
                             if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null }
                             else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.let { ExifInterface(it) }} catch (e: Exception) {}
-                            val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr,).copy(
+                            val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
                                 albumId = FROM_CAMERA_ROLL,
                                 name = filename,
                                 id = this,                  // fileUri shared in as photo's id in Camera Roll album
@@ -1508,7 +1546,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 photo.width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
                 photo.height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                 // TODO changing dateTaken property will change photo position in list
-                exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).let { timeString -> }
+                //exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).let { timeString -> }
                 exif.latLong?.let { latLong ->
                     photo.latitude = latLong[0]
                     photo.longitude = latLong[1]
@@ -1644,7 +1682,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 for (media in list) {
                     if (media.dateTaken.toLocalDate() != currentDate) {
                         currentDate = media.dateTaken.toLocalDate()
-                        // Add a fake photo item by taking default value for nearly all properties, denotes a date seperator
+                        // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
                         listGroupedByDate.add(Photo(albumId = FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
                         //listGroupedByDate.add(Photo("", FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
                     }
