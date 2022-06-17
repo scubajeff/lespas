@@ -17,6 +17,7 @@ import android.graphics.*
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.StateListDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
@@ -484,6 +485,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 */
         }
         quickScrollAdapter.setSelectionTracker(selectionTracker)
+        LesPasFastScroller(
+            quickScroll,
+            ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
+            ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
+            resources.getDimensionPixelSize(R.dimen.small_padding), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_size)
+        )
 
         mediaPager = view.findViewById<RecyclerView>(R.id.media_pager).apply {
             adapter = mediaPagerAdapter
