@@ -402,8 +402,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
 
-            isNestedScrollingEnabled = true
-
             selectionTracker = SelectionTracker.Builder(
                 "camerarollSelection",
                 this,
@@ -431,7 +429,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             setSourceGroupState(false)
 
                             bottomSheet.isDraggable = false
-                            isNestedScrollingEnabled = false
                         } else {
                             removeButton.isEnabled = false
                             shareButton.isEnabled = false
@@ -444,7 +441,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             setSourceGroupState(true)
 
                             bottomSheet.isDraggable = true
-                            isNestedScrollingEnabled = true
                         }
                     }
                 })
