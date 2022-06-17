@@ -44,6 +44,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.transition.Fade
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -320,6 +321,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
+
+                    androidx.transition.TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 300 })
                     fab.isVisible = newState == RecyclerView.SCROLL_STATE_IDLE
                 }
             })
