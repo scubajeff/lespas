@@ -100,7 +100,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private lateinit var mediaPagerEmptyView: ImageView
     private lateinit var quickScrollEmptyView: ImageView
-    private lateinit var divider: View
     private lateinit var dateTextView: TextView
     private lateinit var sizeTextView: TextView
     private lateinit var buttonGroup: ConstraintLayout
@@ -374,7 +373,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         mediaPagerEmptyView = view.findViewById(R.id.emptyview)
         quickScrollEmptyView = view.findViewById(R.id.quick_scroll_emptyview)
-        divider = view.findViewById(R.id.divider)
         dateTextView = view.findViewById(R.id.date)
         sizeTextView = view.findViewById(R.id.size)
         infoButton = view.findViewById(R.id.info_button)
