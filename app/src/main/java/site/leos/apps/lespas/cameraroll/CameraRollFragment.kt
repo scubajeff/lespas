@@ -517,7 +517,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             if ((findLastCompletelyVisibleItemPosition() < quickScrollAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 yearIndicator.let {
-                                    it.text = quickScrollAdapter.currentList[findLastVisibleItemPosition()].dateTaken.year.toString()
+                                    it.text = quickScrollAdapter.currentList[findLastVisibleItemPosition()].dateTaken.format(DateTimeFormatter.ofPattern("MMM uuuu"))
                                     it.isVisible = true
                                 }
                             }
