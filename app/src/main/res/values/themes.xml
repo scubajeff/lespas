@@ -35,7 +35,7 @@
         <item name="colorSurface">@color/color_surface</item>
         <item name="android:colorBackground">@color/color_background</item>
         <item name="backgroundColor">@color/color_background</item>
-        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary</item>
 
         <item name="android:textColorPrimary">@color/color_on_primary</item>
         <item name="android:textColorPrimaryInverse">@color/color_on_primary_invert</item>
@@ -101,7 +101,7 @@
         <item name="colorError">@color/color_error</item>
         <item name="android:colorBackground">@color/color_background</item>
         <item name="colorSurface">@color/color_surface</item>
-        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimary</item>
 

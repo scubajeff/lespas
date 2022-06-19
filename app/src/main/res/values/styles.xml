@@ -23,4 +23,8 @@
     <style name="ThemeOverlay.LesPas.DatePicker" parent="@style/ThemeOverlay.MaterialComponents.MaterialCalendar">
         <item name="colorError">?colorErrorDatePicker</item>
     </style>
+
+    <style name="LightEdgeEffectColor">
+        <item name="android:colorEdgeEffect">@color/lespas_white</item>
+    </style>
 </resources>
