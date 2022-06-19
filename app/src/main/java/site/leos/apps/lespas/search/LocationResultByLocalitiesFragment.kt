@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.text.Collator
 
@@ -27,7 +29,6 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
-    private lateinit var emptyView: ImageView
 
     private var searchTarget = 0
 
@@ -60,43 +61,16 @@ class LocationResultByLocalitiesFragment: Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        emptyView = view.findViewById<ImageView>(R.id.emptyview).apply {
-            setImageResource(
+        resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
+            adapter = resultAdapter
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context,
                 when(searchTarget) {
                     R.id.search_album -> R.drawable.ic_baseline_footprint_24
                     R.id.search_archive -> R.drawable.ic_baseline_archive_24
                     else -> R.drawable.ic_baseline_camera_roll_24
                 }
-            )
+            )!!))
         }
-
-        resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
-            adapter = resultAdapter
-        }
-
-        resultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                if (resultAdapter.itemCount == 0) {
-                    resultView.visibility = View.GONE
-                    emptyView.visibility = View.VISIBLE
-                }
-            }
-
-            private fun hideEmptyView() {
-                resultView.visibility = View.VISIBLE
-                emptyView.visibility = View.GONE
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                hideEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                hideEmptyView()
-            }
-        })
 
         searchViewModel.getResult().observe(viewLifecycleOwner) {
             val result = mutableListOf<LocationSearchHostFragment.LocationSearchResult>().apply { addAll(it) }

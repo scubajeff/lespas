@@ -98,8 +98,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var quickScrollAdapter: QuickScrollAdapter
     private var quickScrollGridSpanCount = 0
 
-    private lateinit var mediaPagerEmptyView: ImageView
-    private lateinit var quickScrollEmptyView: ImageView
     private lateinit var dateTextView: TextView
     private lateinit var sizeTextView: TextView
     private lateinit var buttonGroup: ConstraintLayout
@@ -371,8 +369,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         if (!showListFirst) postponeEnterTransition()
 
-        mediaPagerEmptyView = view.findViewById(R.id.emptyview)
-        quickScrollEmptyView = view.findViewById(R.id.quick_scroll_emptyview)
         dateTextView = view.findViewById(R.id.date)
         sizeTextView = view.findViewById(R.id.size)
         infoButton = view.findViewById(R.id.info_button)
@@ -529,6 +525,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                 }
             })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_camera_roll_24)!!))
         }
         quickScrollAdapter.setSelectionTracker(selectionTracker)
         LesPasFastScroller(
@@ -568,6 +566,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                 }
             })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_camera_roll_24)!!))
         }
 
         // Since we are not in immersive mode, set correct photo display width so that right edge can be detected
@@ -589,64 +589,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 observeCameraRoll()
             }
         }
-
-        mediaPagerAdapter.registerAdapterDataObserver(object : AdapterDataObserver() {
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                (mediaPagerAdapter.itemCount == 0).let { isEmpty ->
-                    mediaPager.isVisible = !isEmpty
-                    mediaPagerEmptyView.isVisible = isEmpty
-                }
-            }
-        })
-        mediaPagerEmptyView.setOnClickListener { bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED }
-        mediaPagerEmptyView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
-
-        quickScrollEmptyView.setOnTouchListener { _, _ -> false }
-        quickScrollAdapter.registerAdapterDataObserver(object : AdapterDataObserver() {
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                if (quickScrollAdapter.itemCount == 0) {
-                    if (quickScroll.isVisible) {
-                        quickScroll.isVisible = false
-                        quickScrollEmptyView.isVisible = true
-                    }
-                } else {
-                    if (quickScrollEmptyView.isVisible) {
-                        quickScroll.isVisible = true
-                        quickScrollEmptyView.isVisible = false
-                    }
-                }
-            }
-        })
 
         // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
         (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {

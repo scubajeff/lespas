@@ -55,10 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.helper.LesPasFastScroller
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
@@ -244,37 +241,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { mAdapter.setRecipients(it) }
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it) }
 
-        mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                if (mAdapter.itemCount == 0) {
-                    recyclerView.visibility = View.GONE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.VISIBLE
-                } else {
-                    recyclerView.visibility = View.VISIBLE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.GONE
-                }
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-        })
-
         with(recyclerView) {
             // Stop item from blinking when notifying changes
             (itemAnimator as SimpleItemAnimator).supportsChangeAnimations = false
@@ -326,6 +292,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     fab.isVisible = newState == RecyclerView.SCROLL_STATE_IDLE
                 }
             })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_footprint_24)!!))
         }
         LesPasFastScroller(
             recyclerView,
