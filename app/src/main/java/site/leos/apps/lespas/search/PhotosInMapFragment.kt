@@ -196,7 +196,11 @@ class PhotosInMapFragment: Fragment() {
                                     }
                                     else {
                                         imageLoaderModel.setImagePhoto(remotePhoto, v, NCShareViewModel.TYPE_IN_MAP) {
-                                            (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            try {
+                                                (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            } catch (e: Exception) {
+                                                // If remote image loading fails, Drawable.getIntrinsicHeight() will break
+                                            }
                                         }
                                     }
                                 }
