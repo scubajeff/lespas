@@ -499,12 +499,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     yearIndicator.visibility = View.GONE
                 }
 
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-
-                    if (newState == SCROLL_STATE_IDLE && yearIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
-                }
-
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
 
@@ -520,6 +514,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                     it.text = quickScrollAdapter.currentList[findLastVisibleItemPosition()].dateTaken.format(DateTimeFormatter.ofPattern("MMM uuuu"))
                                     it.isVisible = true
                                 }
+                                hideHandler.postDelayed(hideDateIndicator, 1500)
                             }
                         }
                     }
