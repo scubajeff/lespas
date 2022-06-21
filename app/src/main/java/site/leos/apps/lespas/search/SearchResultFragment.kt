@@ -9,6 +9,7 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -26,6 +27,7 @@ import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -40,7 +42,6 @@ import java.util.*
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
-    private lateinit var emptyView: ImageView
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
@@ -109,39 +110,13 @@ class SearchResultFragment : Fragment() {
         searchResultRecyclerView.adapter = searchResultAdapter
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 
-        emptyView = view.findViewById<ImageView>(R.id.emptyview).apply {
-            setImageResource(
-                when(searchTarget) {
-                    R.id.search_album -> R.drawable.ic_baseline_footprint_24
-                    R.id.search_archive -> R.drawable.ic_baseline_archive_24
-                    else -> R.drawable.ic_baseline_camera_roll_24
-                }
-            )
-        }
-
-        searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                if (searchResultAdapter.itemCount == 0) {
-                    searchResultRecyclerView.visibility = View.GONE
-                    emptyView.visibility = View.VISIBLE
-                }
+        searchResultRecyclerView.addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(requireContext(),
+            when(searchTarget) {
+                R.id.search_album -> R.drawable.ic_baseline_footprint_24
+                R.id.search_archive -> R.drawable.ic_baseline_archive_24
+                else -> R.drawable.ic_baseline_camera_roll_24
             }
-
-            private fun hideEmptyView() {
-                searchResultRecyclerView.visibility = View.VISIBLE
-                emptyView.visibility = View.GONE
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                hideEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                hideEmptyView()
-            }
-        })
+        )!!))
 
         adhocSearchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
             when(progress) {

@@ -342,8 +342,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                     when(newState) {
                         RecyclerView.SCROLL_STATE_IDLE-> {
-                            // Hide the date indicator after showing it for 1 minute
-                            if (dateIndicator.visibility == View.VISIBLE) hideHandler.postDelayed(hideDateIndicator, 1000)
                             if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) titleBar?.setDisplayShowTitleEnabled(true)
                         }
                     }
@@ -368,6 +366,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                                     it.isVisible = true
                                 }
+                                hideHandler.postDelayed(hideDateIndicator, 1500)
                             }
 
                             showTitleText()
