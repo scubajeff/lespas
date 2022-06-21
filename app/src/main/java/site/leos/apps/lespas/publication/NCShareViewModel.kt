@@ -741,7 +741,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         // For items of remote album, show loading animation
         if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
             view.background = (if (viewType == TYPE_FULL) loadingDrawableLV else loadingDrawable).apply { start() }
-            callBack?.onLoadComplete()
+
+            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
+            if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete()
         }
 
         val job = viewModelScope.launch(downloadDispatcher) {
