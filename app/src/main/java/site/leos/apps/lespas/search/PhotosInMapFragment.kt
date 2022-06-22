@@ -89,6 +89,7 @@ class PhotosInMapFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         lespasPath = getString(R.string.lespas_base_folder_name)
+        rootPath = Tools.getLocalRoot(requireContext())
 
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
@@ -96,8 +97,6 @@ class PhotosInMapFragment: Fragment() {
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
             album = getParcelable(KEY_ALBUM)
         }
-
-        rootPath = Tools.getLocalRoot(requireContext())
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -285,10 +284,8 @@ class PhotosInMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_map_slideshow -> {
-                if (isSlideshowPlaying) {
-                    slideshowJob?.cancel()
-                    stopSlideshow()
-                } else {
+                if (isSlideshowPlaying) slideshowJob?.cancel()
+                else {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                     isSlideshowPlaying = true
@@ -296,6 +293,7 @@ class PhotosInMapFragment: Fragment() {
 
                     slideshowJob?.cancel()
                     slideshowJob = lifecycleScope.launch {
+                        // Prepare map and BGM before starting slideshow
                         closeAllInfoWindow()
                         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
 
@@ -309,10 +307,11 @@ class PhotosInMapFragment: Fragment() {
                             bgmPlayer.prepare()
                         }
 
+                        // Loop through all POIs
                         try {
                             for (i in 1 until mapView.overlays.size) {
-                                if (!isActive) break
-                                    (mapView.overlays[i] as Marker).let { stop ->
+                                ensureActive()
+                                (mapView.overlays[i] as Marker).let { stop ->
                                     // Pan map to reveal full image
                                     //poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
 
@@ -329,6 +328,8 @@ class PhotosInMapFragment: Fragment() {
                                             animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
                                         }
                                         animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
+                                        ensureActive()
+                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                                         delay(6400)     // 4000 + 3 * 800
                                     } else {
                                         //mapView.setMapCenterOffset(0, poiCenter)
@@ -336,6 +337,8 @@ class PhotosInMapFragment: Fragment() {
                                             stop.showInfoWindow()
                                         }
                                         animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                        ensureActive()
+                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                                         delay(4000)
                                     }
                                     stop.closeInfoWindow()
@@ -345,9 +348,7 @@ class PhotosInMapFragment: Fragment() {
                         } catch (e: Exception) {
                             // Race condition might happen when user press back key while slideshow is playing
                         }
-
-                        if (isActive) stopSlideshow()
-                    }
+                    }.apply { invokeOnCompletion { stopSlideshow() }}
                 }
                 true
             }
