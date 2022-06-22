@@ -111,7 +111,9 @@ class PhotosInMapFragment: Fragment() {
         })
 
         album?.run {
+            // Show actions only when not called by LocationResultSingleLocalityFragment
             setHasOptionsMenu(true)
+
             window = requireActivity().window
             bgmPlayer = ExoPlayer.Builder(requireContext()).build()
             bgmPlayer.run {
@@ -221,6 +223,11 @@ class PhotosInMapFragment: Fragment() {
                     mapView.overlays.add(marker)
 
                     points.add(poi)
+                }
+
+                // Pre-fetch first POI's image if it's from remote album, get ready to play slideshow
+                remotePhotos?.get(0)?.let {
+                    if (it.remotePath.isNotEmpty() && it.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) imageLoaderModel.setImagePhoto(it, (mapView.overlays[1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                 }
 
                 mapView.invalidate()
