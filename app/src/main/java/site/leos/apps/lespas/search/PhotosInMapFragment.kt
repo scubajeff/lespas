@@ -183,14 +183,14 @@ class PhotosInMapFragment: Fragment() {
                     val marker = Marker(mapView).apply {
                         position = poi
                         icon = pin
-                        if (remotePhoto.remotePath.isEmpty()) loadImage(this, remotePhoto.photo)
+                        if (remotePhoto.remotePath.isEmpty() || remotePhoto.photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) loadImage(this, remotePhoto.photo)
                         relatedObject = spaceHeight
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
                             mView?.apply {
                                 findViewById<ImageView>(R.id.photo)?.let { v ->
-                                    if (remotePhoto.remotePath.isEmpty()) {
+                                    if (remotePhoto.remotePath.isEmpty() || remotePhoto.photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
                                         v.setImageDrawable(marker.image)
                                         (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                     }
