@@ -1,3 +1,8 @@
+## Version 2.5.13
+* Pre-fetch image from server when playing slideshow on map
+* Scroll bar for album list and camera roll list
+* More user friendly camera roll list UI and UX
+
 ## Version 2.5.12
 * New Italian localization, thanks to github user @chiaratira and @michelafr
 * Name filter for Publications which has 'show title' setting turned on
