@@ -225,7 +225,7 @@
     <string name="error_preparing_files">Error preparing files</string>
     <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use a different one.</string>
     <string name="no_media_file_found">No image or video files found among shared data.</string>
-    <string name="same_file_found">Same media file alreday exists.</string>
+    <string name="same_file_found">Same media file already exists.</string>
 
     <!-- Info DialogFragment -->
     <string name="file_name">Name:</string>
