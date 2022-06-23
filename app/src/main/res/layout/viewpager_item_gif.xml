@@ -7,4 +7,4 @@
     android:layout_height="match_parent"
     android:background="@android:color/black"
     android:scaleType="fitCenter"
-    tools:src="@drawable/ic_footprint" />
+    tools:src="@drawable/ic_logo" />

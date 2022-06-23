@@ -15,7 +15,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/map"
         app:layout_constraintLeft_toLeftOf="parent"
-        tools:src="@drawable/ic_footprint"/>
+        tools:src="@drawable/ic_logo"/>
 
     <org.osmdroid.views.MapView
         android:id="@+id/map"

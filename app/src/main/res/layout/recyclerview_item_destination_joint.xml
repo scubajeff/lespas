@@ -15,7 +15,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         android:padding="@dimen/mini_padding"
-        tools:src="@drawable/ic_footprint"
+        tools:src="@drawable/ic_logo"
         tools:ignore="ContentDescription" />
 
     <TextView

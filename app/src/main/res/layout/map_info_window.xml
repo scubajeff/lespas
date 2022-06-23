@@ -13,7 +13,7 @@
         android:adjustViewBounds="true"
         android:scaleType="fitCenter"
         android:layout_gravity="center"
-        tools:src="@drawable/ic_footprint"
+        tools:src="@drawable/ic_logo"
         tools:ignore="ContentDescription" />
 
     <TextView
