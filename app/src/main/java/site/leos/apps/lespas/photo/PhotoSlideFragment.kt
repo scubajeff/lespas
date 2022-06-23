@@ -325,11 +325,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
-                    actionModel.updateCover(album.id, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
+                    actionModel.updateCover(album.id, album.name, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
-                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.id, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.name, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             }
         }

@@ -26,7 +26,7 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
 
 class CoverSettingFragment : Fragment() {
-    private lateinit var albumId: String
+    private lateinit var albumName: String
     private lateinit var currentPhoto: Photo
 
     private lateinit var root: ConstraintLayout
@@ -48,7 +48,7 @@ class CoverSettingFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        albumId = requireArguments().getString(KEY_ALBUM_ID)!!
+        albumName = requireArguments().getString(KEY_ALBUM_NAME)!!
         currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
     }
 
@@ -171,7 +171,7 @@ class CoverSettingFragment : Fragment() {
             currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
-                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(albumId, Cover(id, baseLine, width, height, name, mimeType, orientation))
+                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(this.albumId, albumName, Cover(id, baseLine, width, height, name, mimeType, orientation))
             }
             currentPhotoModel.coverApplied(true)
 
@@ -291,13 +291,13 @@ class CoverSettingFragment : Fragment() {
         private const val FH = "FH"
         private const val DH = "DH"
 
-        private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
+        private const val KEY_ALBUM_NAME = "KEY_ALBUM_NAME"
         private const val KEY_PHOTO = "KEY_PHOTO"
 
         @JvmStatic
-        fun newInstance(albumId: String, photo: Photo) = CoverSettingFragment().apply {
+        fun newInstance(albumName: String, photo: Photo) = CoverSettingFragment().apply {
             arguments = Bundle().apply{
-                putString(KEY_ALBUM_ID, albumId)
+                putString(KEY_ALBUM_NAME, albumName)
                 putParcelable(KEY_PHOTO, photo)
             }
         }

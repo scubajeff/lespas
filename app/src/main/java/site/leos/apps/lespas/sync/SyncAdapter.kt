@@ -306,8 +306,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_UPDATE_ALBUM_META -> {
                     // Property folderId holds id of the album needed meta update
+                    // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
                     albumRepository.getThisAlbum(action.folderId).apply {
-                        if (updateAlbumMeta(id, name, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
+                        if (updateAlbumMeta(id, action.folderName, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
                             // Touch file to avoid re-download
                             try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                         } else throw IOException()
@@ -342,8 +343,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
                 Action.ACTION_COPY_ON_SERVER, Action.ACTION_MOVE_ON_SERVER -> {
-                    // folderId is source folder, starts from 'lespas/' or 'shared_to_me_root/' or 'DCIM/
-                    // folderName is target folder, starts from 'lespas/' or 'shared_to_me_root/'
+                    // folderId is source folder path, starts from 'lespas/' or 'shared_to_me_root/' or 'DCIM/
+                    // folderName is target folder path, starts from 'lespas/' or 'shared_to_me_root/'
                     // fileId holds string "target album's id|dateTaken in milli second epoch|mimetype|width|height|orientation|caption|latitude|longitude|altitude|bearing"
                     // fileName is a string "file name|ture or false, whether it's joint album"
 
