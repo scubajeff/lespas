@@ -13,6 +13,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.ColorDrawable
@@ -68,6 +69,9 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.*
@@ -111,7 +115,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var toggleCameraRollButton: MaterialButton
     private lateinit var toggleBackupsButton: MaterialButton
     private lateinit var datePickerButton: ImageButton
-    private lateinit var yearIndicator: MaterialButton
+    private lateinit var yearIndicator: TextView
 
     private lateinit var cBadge: BadgeDrawable
     private lateinit var aBadge: BadgeDrawable
@@ -382,7 +386,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         toggleCameraRollButton = view.findViewById(R.id.source_device)
         toggleBackupsButton = view.findViewById(R.id.source_backups)
         datePickerButton = view.findViewById(R.id.date_picker_button)
-        yearIndicator = view.findViewById(R.id.year_indicator)
+        yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
+            doOnLayout {
+                background = MaterialShapeDrawable().apply {
+                    fillColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.color_error))
+                    shapeAppearanceModel = ShapeAppearanceModel.builder().setTopLeftCorner(CornerFamily.CUT, yearIndicator.height.toFloat()).build()
+                }
+            }
+        }
 
         toggleCameraRollButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(cBadge, toggleCameraRollButton) }
         toggleBackupsButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(aBadge, toggleBackupsButton) }

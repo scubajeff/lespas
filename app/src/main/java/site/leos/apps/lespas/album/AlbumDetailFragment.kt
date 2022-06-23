@@ -47,7 +47,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import androidx.work.*
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
@@ -79,7 +81,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private var actionMode: ActionMode? = null
 
-    private lateinit var dateIndicator: MaterialButton
+    private lateinit var dateIndicator: TextView
     private lateinit var recyclerView: RecyclerView
     private lateinit var mAdapter: PhotoGridAdapter
 
@@ -275,7 +277,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        dateIndicator = view.findViewById(R.id.date_indicator)
+        dateIndicator = view.findViewById<TextView>(R.id.date_indicator).apply {
+            doOnLayout {
+                background = MaterialShapeDrawable().apply {
+                    fillColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.color_error))
+                    shapeAppearanceModel = ShapeAppearanceModel.builder().setTopLeftCorner(CornerFamily.CUT, dateIndicator.height.toFloat()).build()
+                }
+            }
+        }
         recyclerView = view.findViewById(R.id.photo_grid)
 
         postponeEnterTransition()
@@ -360,8 +369,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             if ((findLastCompletelyVisibleItemPosition() < mAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
                                 hideHandler.removeCallbacksAndMessages(null)
                                 dateIndicator.let {
-                                    it.text = if (album.sortOrder % 100 == Album.BY_NAME_ASC || album.sortOrder % 100 == Album.BY_NAME_DESC)
-                                        mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
+                                    it.text = if (album.sortOrder % 100 == Album.BY_NAME_ASC || album.sortOrder % 100 == Album.BY_NAME_DESC) mAdapter.getPhotoAt(findLastVisibleItemPosition()).name.take(1)
                                     else mAdapter.getPhotoAt(findLastVisibleItemPosition()).dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
 
                                     it.isVisible = true

@@ -17,25 +17,23 @@
         tools:ignore="RtlHardcoded,RtlSymmetry"
         tools:listitem="@layout/recyclerview_item_photo"/>
 
-    <com.google.android.material.button.MaterialButton
+    <TextView
         android:id="@+id/date_indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="@dimen/tiny_padding"
-        android:minHeight="2dp"
-        android:minWidth="0dp"
-        android:paddingStart="28dp"
-        android:backgroundTint="@color/color_error"
-        android:includeFontPadding="false"
-        android:clickable="false"
+        android:layout_marginEnd="@dimen/small_padding"
+        android:layout_marginBottom="@dimen/small_padding"
+        android:paddingVertical="@dimen/tiny_padding"
+        android:paddingRight="@dimen/big_padding"
+        android:paddingLeft="36dp"
+        android:elevation="@dimen/tiny_padding"
         android:textSize="12sp"
         android:textColor="?primaryTextBlack"
         android:textAllCaps="false"
-        app:shapeAppearance="@style/DateIndicatorShape"
         android:visibility="gone"
         tools:text="1999.12.31"
-        tools:ignore="RtlSymmetry" />
+        tools:ignore="RtlHardcoded" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
