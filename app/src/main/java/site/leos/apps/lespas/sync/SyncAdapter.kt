@@ -308,10 +308,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderId holds id of the album needed meta update
                     // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
                     albumRepository.getThisAlbum(action.folderId).apply {
-                        if (updateAlbumMeta(id, action.folderName, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)) {
-                            // Touch file to avoid re-download
-                            try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
-                        } else throw IOException()
+                        updateAlbumMeta(id, action.folderName, Cover(cover, coverBaseline, coverWidth, coverHeight, coverFileName, coverMimeType, coverOrientation), sortOrder)
+
+                        // Touch file to avoid re-download
+                        try { File(localRootFolder, "${id}.json").setLastModified(System.currentTimeMillis() + 10000) } catch (e: Exception) { e.printStackTrace() }
                     }
                 }
 
@@ -1238,27 +1238,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     //private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
-    private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, sortOrder: Int): Boolean {
-        try {
-            val metaFileName = "${albumId}.json"
-            val localFile = File(localRootFolder, metaFileName)
+    private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, sortOrder: Int) {
+        val metaFileName = "${albumId}.json"
+        val localFile = File(localRootFolder, metaFileName)
 
-            // Need this file in phone
-            //FileWriter("$localRootFolder/metaFileName").apply {
-            localFile.writer().use {
-                //it.write(String.format(ALBUM_META_JSON, cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
-                it.write(String.format(Locale.ROOT, ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, cover.coverOrientation, sortOrder))
-            }
-
-            // If local meta json file created successfully
-            webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", MIME_TYPE_JSON, application)
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
+        // Need this file in phone
+        //FileWriter("$localRootFolder/metaFileName").apply {
+        localFile.writer().use {
+            //it.write(String.format(ALBUM_META_JSON, cover.cover, coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, sortOrder))
+            it.write(String.format(Locale.ROOT, ALBUM_META_JSON_V2, cover.cover, cover.coverFileName, cover.coverBaseline, cover.coverWidth, cover.coverHeight, cover.coverMimeType, cover.coverOrientation, sortOrder))
         }
 
-        return true
+        // If local meta json file created successfully
+        webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", MIME_TYPE_JSON, application)
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
