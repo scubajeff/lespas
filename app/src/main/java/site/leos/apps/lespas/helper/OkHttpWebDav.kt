@@ -219,7 +219,9 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     fun listWithExtraMeta(targetName: String, depth: String): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+        // Build a new client without read timeout, since the archive could be hugh
+        httpClient.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build()
+            .newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             @Suppress("UNUSED_VARIABLE") var currentFolderId = ""
             val prefix = targetName.substringAfter("//").substringAfter("/")
 

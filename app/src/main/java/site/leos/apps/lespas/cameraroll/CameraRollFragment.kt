@@ -1312,7 +1312,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 )
                             }
                         }
-                    } catch (e: Exception) {}
+                    } catch (e: Exception) { e.printStackTrace() }
 
                     if (backupList.isNotEmpty()) {
                         backupList.sortByDescending { it.dateTaken }
