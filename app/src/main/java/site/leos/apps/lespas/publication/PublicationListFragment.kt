@@ -18,6 +18,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
+import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime
@@ -156,15 +158,17 @@ class PublicationListFragment: Fragment() {
     ): ListAdapter<NCShareViewModel.ShareWithMe, ShareListAdapter.ViewHolder>(ShareDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentAlbumId = ""
+            private var currentCover = Cover(Album.NO_COVER, -1, 0, 0, "", "", 0)
             private val ivCover = itemView.findViewById<AppCompatImageView>(R.id.coverart)
             private val tvTitle = itemView.findViewById<TextView>(R.id.title)
             private val ivIndicator = itemView.findViewById<ImageView>(R.id.joint_album_indicator)
 
             fun bind(item: NCShareViewModel.ShareWithMe) {
-                if (currentAlbumId != item.albumId) {
+                if (currentAlbumId != item.albumId && currentCover.cover != item.cover.cover && currentCover.coverBaseline != item.cover.coverBaseline) {
                     ivCover.setImageResource(0)
                     imageLoader(item, ivCover)
                     currentAlbumId = item.albumId
+                    currentCover = item.cover
                 }
                 //itemView.findViewById<TextView>(R.id.title).text = String.format(itemView.context.getString(R.string.publication_detail_fragment_title), item.albumName, item.shareByLabel)
                 tvTitle.apply {
@@ -189,15 +193,11 @@ class PublicationListFragment: Fragment() {
             }
             super.onDetachedFromRecyclerView(recyclerView)
         }
-
-        override fun submitList(list: List<NCShareViewModel.ShareWithMe>?) {
-            super.submitList(list?.toMutableList())
-        }
     }
 
     class ShareDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.ShareWithMe>() {
         override fun areItemsTheSame(oldItem: NCShareViewModel.ShareWithMe, newItem: NCShareViewModel.ShareWithMe): Boolean = oldItem.shareId == newItem.shareId
-        override fun areContentsTheSame(oldItem: NCShareViewModel.ShareWithMe, newItem: NCShareViewModel.ShareWithMe): Boolean = (oldItem.shareId == newItem.shareId && oldItem.cover.cover == newItem.cover.cover && oldItem.cover.coverBaseline == newItem.cover.coverBaseline)
+        override fun areContentsTheSame(oldItem: NCShareViewModel.ShareWithMe, newItem: NCShareViewModel.ShareWithMe): Boolean = oldItem.cover.cover == newItem.cover.cover && oldItem.cover.coverBaseline == newItem.cover.coverBaseline && oldItem.albumName == newItem.albumName
     }
 
     companion object {
