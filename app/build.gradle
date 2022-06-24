@@ -50,7 +50,7 @@ android {
 
 dependencies {
     // TensorFlow
-    implementation 'org.tensorflow:tensorflow-lite-support:0.4.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.4.1'
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
 
     // Core
@@ -76,7 +76,7 @@ dependencies {
 
     // Kotlin components
     implementation "androidx.work:work-runtime-ktx:2.7.1"
-    def coroutineVersion = "1.5.2"
+    def coroutineVersion = '1.6.3'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
 
