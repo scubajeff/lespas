@@ -70,7 +70,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },

@@ -3,7 +3,6 @@ package site.leos.apps.lespas.photo
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
@@ -22,6 +21,7 @@ import androidx.transition.Transition
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Cover
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
 
@@ -71,16 +71,9 @@ class CoverSettingFragment : Fragment() {
 
         DisplayMetrics().run {
             val screenWidth: Float
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                @Suppress("DEPRECATION")
-                requireActivity().windowManager.defaultDisplay.getRealMetrics(this)
-                screenWidth = widthPixels.toFloat()
-                screenHeight = heightPixels.toFloat()
-            } else {
-                with(requireActivity().windowManager.currentWindowMetrics.bounds) {
-                    screenWidth = width().toFloat()
-                    screenHeight = height().toFloat()
-                }
+            Tools.getDisplayDimension(requireActivity()).let {
+                screenWidth = it.first.toFloat()
+                screenHeight = it.second.toFloat()
             }
 
             val drawableWidth: Float

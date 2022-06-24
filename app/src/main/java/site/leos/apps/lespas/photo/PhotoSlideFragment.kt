@@ -110,7 +110,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { photo->
                 with(photo) {

@@ -169,7 +169,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
             imageLoaderModel.getResourceRoot(),
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { state->
                 // When in "Show media list at startup" mode, ignore the first hide bottom sheet call which fired by video auto play

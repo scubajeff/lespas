@@ -544,15 +544,7 @@ object Tools {
     fun getSelectedMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_selected_24)
     fun getPlayMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_play_mark_24)
     private fun getScaledDrawable(context: Activity, scale: Float, resId: Int): Drawable {
-        val size: Int = (
-            scale * (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                DisplayMetrics().run {
-                    @Suppress("DEPRECATION")
-                    context.windowManager.defaultDisplay.getRealMetrics(this)
-                    this.widthPixels
-                }
-            } else context.windowManager.currentWindowMetrics.bounds.width())
-        ).toInt()
+        val size: Int = (scale * getDisplayDimension(context).first).toInt()
 
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         ContextCompat.getDrawable(context, resId)?.apply {
@@ -634,14 +626,15 @@ object Tools {
         }
     }
 
-    fun getDisplayWidth(wm: WindowManager): Int {
+    fun getDisplayDimension(context: Activity): Pair<Int, Int> = getDisplayDimension(context.windowManager)
+    fun getDisplayDimension(wm: WindowManager): Pair<Int, Int> {
         return DisplayMetrics().run {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 @Suppress("DEPRECATION")
                 wm.defaultDisplay.getRealMetrics(this)
-                widthPixels
+                Pair(widthPixels, heightPixels)
             } else {
-                wm.currentWindowMetrics.bounds.width()
+                wm.currentWindowMetrics.bounds.let { return Pair(it.width(), it.height()) }
             }
         }
     }

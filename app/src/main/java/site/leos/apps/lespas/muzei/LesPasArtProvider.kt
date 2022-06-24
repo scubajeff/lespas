@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.os.Build
-import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.preference.PreferenceManager
 import com.google.android.apps.muzei.api.provider.Artwork
@@ -49,19 +48,9 @@ class LesPasArtProvider: MuzeiArtProvider() {
         val pHeight: Int
 
         // Get screen real metrics
-        val wm = context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            with(DisplayMetrics()) {
-                @Suppress("DEPRECATION")
-                wm.defaultDisplay.getRealMetrics(this)
-                sWidth = widthPixels
-                sHeight = heightPixels
-            }
-        } else {
-            with(wm.maximumWindowMetrics.bounds) {
-                sWidth = width()
-                sHeight = height()
-            }
+        Tools.getDisplayDimension(context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager).let {
+            sWidth = it.first
+            sHeight = it.second
         }
 
         // Adapt to original orientation
