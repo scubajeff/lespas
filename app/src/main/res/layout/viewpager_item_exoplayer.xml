@@ -8,5 +8,5 @@
     android:background="@android:color/black"
     app:keep_content_on_player_reset="true"
     app:resize_mode="fit"
-    app:surface_type="surface_view"
+    app:surface_type="texture_view"
     app:controller_layout_id="@layout/exoplayer_control_view"/>
