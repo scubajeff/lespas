@@ -5,7 +5,6 @@ import android.view.View
 import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -25,7 +24,6 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
     private lateinit var bgmPlayer: ExoPlayer
 
     private lateinit var playButton: ImageButton
-    private lateinit var pauseButton: ImageButton
     private lateinit var removeButton: ImageButton
 
     private lateinit var replaceBGMLauncher: ActivityResultLauncher<String>
@@ -66,6 +64,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
 
         view.apply {
             findViewById<ImageButton>(R.id.replace_bgm).setOnClickListener { replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)}
+            playButton = findViewById(R.id.exo_play)
             removeButton = findViewById<ImageButton>(R.id.remove_bgm).apply {
                 setOnClickListener {
                     bgmPlayer.stop()
@@ -80,9 +79,6 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                 }
             }
 
-            pauseButton = findViewById(R.id.exo_pause)
-            playButton = findViewById(R.id.exo_play)
-
             bgmPlayer = ExoPlayer.Builder(requireContext()).build()
             bgmPlayer.apply {
                 repeatMode = ExoPlayer.REPEAT_MODE_OFF
@@ -95,15 +91,6 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                             bgmPlayer.seekTo(0)
                             bgmPlayer.stop()
                         }
-                    }
-
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        super.onIsPlayingChanged(isPlaying)
-
-                        playButton.isEnabled = !isPlaying
-                        playButton.isVisible = !isPlaying
-                        pauseButton.isEnabled = isPlaying
-                        pauseButton.isVisible = isPlaying
                     }
                 })
                 if (hasBGM()) prepareMedia()
