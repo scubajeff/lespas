@@ -81,7 +81,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 */
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        playerViewModel.resetPlayer()
+        //playerViewModel.resetPlayer()
 
         for (i in 0 until currentList.size) {
             recyclerView.findViewHolderForAdapterPosition(i)?.let { holder ->
