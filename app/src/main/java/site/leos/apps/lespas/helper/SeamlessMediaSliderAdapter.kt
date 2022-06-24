@@ -1,13 +1,14 @@
 package site.leos.apps.lespas.helper
 
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.ViewCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
@@ -170,7 +171,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         lateinit var videoView: PlayerView
         private lateinit var muteButton: ImageButton
-        private val clVideoViewContainer = itemView.findViewById<ConstraintLayout>(R.id.videoview_container)
 
         fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
@@ -187,16 +187,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
             muteButton.isActivated = !playerViewModel.isMuted()
 
             videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                hideController()
                 controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
-                setOnClickListener { clickListener(!videoView.isControllerVisible) }
 
                 // Need to call imageLoader here to start postponed enter transition
                 ViewCompat.setTransitionName(this, video.transitionName)
                 imageLoader(item, null, NCShareViewModel.TYPE_NULL)
-            }
 
-            clVideoViewContainer.setOnClickListener { clickListener(!videoView.isControllerVisible) }
+                // Wait 1 minute to setup visibility listener, otherwise the toolbar will show briefly
+                Handler(Looper.getMainLooper()).postDelayed({ setControllerVisibilityListener { clickListener(videoView.isControllerVisible) }}, 500)
+            }
         }
     }
 

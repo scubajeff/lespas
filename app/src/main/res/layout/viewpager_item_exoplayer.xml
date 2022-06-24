@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.media3.ui.PlayerView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/videoview_container"
+    android:id="@+id/media"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black">
-
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/media"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:keep_content_on_player_reset="true"
-        app:resize_mode="fit"
-        app:surface_type="surface_view"
-        app:controller_layout_id="@layout/exoplayer_control_view"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    android:background="@android:color/black"
+    app:keep_content_on_player_reset="true"
+    app:resize_mode="fit"
+    app:surface_type="surface_view"
+    app:controller_layout_id="@layout/exoplayer_control_view"/>
