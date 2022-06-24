@@ -3,7 +3,7 @@ package site.leos.apps.lespas.helper
 import android.app.Activity
 import android.net.Uri
 import android.view.WindowManager
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -20,7 +20,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache): AndroidViewModel(activity.application) {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
