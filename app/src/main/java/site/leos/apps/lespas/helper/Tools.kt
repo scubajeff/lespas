@@ -893,4 +893,8 @@ object Tools {
         if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
         return bearing
     }
+
+    fun keepScreenOn(window: Window, on: Boolean) {
+        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
 }

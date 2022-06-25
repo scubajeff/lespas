@@ -2,7 +2,6 @@ package site.leos.apps.lespas.helper
 
 import android.app.Activity
 import android.net.Uri
-import android.view.WindowManager
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -43,8 +42,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
 
-                    if (isPlaying) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    Tools.keepScreenOn(window, isPlaying)
                 }
             })
 
@@ -67,7 +65,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         view.hideController()
 
         // Keep screen on during playing
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, true)
 
         if (uri == currentVideo) {
             // Resuming the same video
@@ -105,7 +103,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
 
         // Reset screen auto turn off
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
     }
 
     fun mute() { videoPlayer.volume = 0f }
@@ -127,7 +125,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         videoPlayer.release()
 
         // Reset screen auto turn off
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
 
         super.onCleared()
     }

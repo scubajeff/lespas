@@ -262,7 +262,7 @@ class PhotosInMapFragment: Fragment() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         album?.run {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            Tools.keepScreenOn(window, false)
             bgmPlayer.release()
         }
 
@@ -293,7 +293,7 @@ class PhotosInMapFragment: Fragment() {
             R.id.option_menu_map_slideshow -> {
                 if (isSlideshowPlaying) slideshowJob?.cancel()
                 else {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    Tools.keepScreenOn(window, true)
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                     isSlideshowPlaying = true
                     playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
@@ -417,7 +417,7 @@ class PhotosInMapFragment: Fragment() {
         mapView.setMapCenterOffset(0, 0)
         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
         if (hasBGM) fadeOutBGM(true)
