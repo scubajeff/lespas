@@ -227,4 +227,5 @@
     <string name="tooltips_search_archive">在相机相册备份中搜索</string>
     <string name="hint_timestamp_pattern">名字中包含的字符串yyyyMMdd_hhmmss将用于设置照片的拍摄时间。</string>
     <string name="should_allow_launching_other_app">请设置允许Les Pas关联启动。</string>
+    <string name="msg_low_storage_space">内部存储空间剩余不足10%，Les Pas将无法与服务器同步。</string>
 </resources>

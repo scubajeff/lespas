@@ -227,4 +227,5 @@
     <string name="tooltips_search_archive">Buscar en las copias de seguridad de la cámara</string>
     <string name="hint_timestamp_pattern">La fecha de creación de la foto se puede cambiar incluyendo el patrón yyyyMMdd_hhmmss en el nombre.</string>
     <string name="should_allow_launching_other_app">Permita que Les Pas inicie otras aplicaciones en su configuración de seguridad.</string>
+    <string name="msg_low_storage_space">Tu espacio de almacenamiento interno está libre en menos de un 10%, esto impedirá que Les Pas se sincronice con el servidor.</string>
 </resources>

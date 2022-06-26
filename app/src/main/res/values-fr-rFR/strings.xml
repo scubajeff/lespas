@@ -227,4 +227,5 @@
     <string name="tooltips_search_archive">Dans les sauvegardes de la liste d\'appareils photo</string>
     <string name="hint_timestamp_pattern">La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom.</string>
     <string name="should_allow_launching_other_app">Veuillez autoriser Les Pas à lancer d\'autres applications dans vos paramètres de sécurité.</string>
+    <string name="msg_low_storage_space">Votre espace de stockage interne est libre à moins de 10%, ce qui empêchera Les Pas de se synchroniser avec le serveur.</string>
 </resources>
