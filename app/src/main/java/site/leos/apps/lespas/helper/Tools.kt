@@ -253,11 +253,11 @@ object Tools {
         return Pair(videoDate, latLong)
     }
 
-    @SuppressLint("RestrictedApi")
-    fun getImageTakenDate(exif: ExifInterface): LocalDateTime? {
+    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? {
         var mDate: LocalDateTime? = null
         try {
-            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()) }}
+            // ExifInterface.dateTimeOriginal and ExifInterface.dateTimeDigitized already offset
+            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) }}
         } catch (e: Exception) {}
         return mDate
     }
