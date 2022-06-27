@@ -19,7 +19,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
@@ -27,7 +27,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        videoPlayer = ExoPlayer.Builder(activity).setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))))).build().apply {
+        videoPlayer = ExoPlayer.Builder(activity).setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().apply { cache?.let { setCache(it) } }.setUpstreamDataSourceFactory(DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))))).build().apply {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
