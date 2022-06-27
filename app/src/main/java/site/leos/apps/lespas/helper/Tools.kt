@@ -169,17 +169,21 @@ object Tools {
 
                     if (imageFormat == "webp") {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            // Set my own image/awebp mimetype for animated WebP
-                            if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
-                            else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/awebp" }
+                            try {
+                                // Set my own image/awebp mimetype for animated WebP
+                                if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                                else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/awebp" }
+                            } catch (e: Exception) {}
                         }
                     }
                 }
                 "gif"-> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
-                        if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
-                        else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/agif" }
+                        try {
+                            if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                            else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/agif" }
+                        } catch (e: Exception) {}
                     }
                 }
                 else-> {}
