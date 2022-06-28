@@ -1,0 +1,7 @@
+* A sincronização fixa falhou após o álbum ter sido renomeado
+* Leitura de data fixa do EXIF sendo compensada
+* Publicação fixa refrescante
+* Tempo limite fixo ao ler grandes arquivos de rolos de câmera
+* Retomar a reprodução do vídeo após a rotação do dispositivo
+* Avisar o usuário sobre o baixo espaço de armazenamento interno
+* Outras melhorias e correções de bugs

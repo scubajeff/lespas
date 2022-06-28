@@ -1,0 +1,7 @@
+* Corregido el fallo de sincronización después de cambiar el nombre del álbum
+* Corregida la lectura de la fecha desde EXIF siendo desplazada
+* Arreglado el refresco de la publicación
+* Corregido el tiempo de espera al leer un archivo grande del rollo de la cámara
+* Reanudar la reproducción de vídeo después de rotar el dispositivo
+* Advertir al usuario de que hay poco espacio de almacenamiento interno
+* Otras mejoras y correcciones de errores

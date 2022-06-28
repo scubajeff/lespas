@@ -1,3 +1,11 @@
+## Version 2.5.14
+* Fixed sync failed after album renamed
+* Fixed date reading from EXIF being offset
+* Fixed refreshing publication
+* Fixed timeout when reading large camera roll archive
+* Resume video playing after device rotated
+* Warn user of low internal storage space
+
 ## Version 2.5.13
 * Pre-fetch image from server when playing slideshow on map
 * Scroll bar for album list and camera roll list

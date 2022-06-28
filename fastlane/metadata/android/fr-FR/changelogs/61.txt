@@ -1,0 +1,7 @@
+* Correction de l'échec de la synchronisation après un changement de nom d'album
+* Correction du décalage de la lecture de la date à partir de l'EXIF
+* Correction du rafraîchissement de la publication
+* Correction du délai d'attente lors de la lecture d'une grande archive de rouleau d'appareil photo
+* Reprise de la lecture d'une vidéo après une rotation de l'appareil
+* Avertissement de l'utilisateur en cas de faible espace de stockage interne
+* Autres améliorations et corrections de bogues
