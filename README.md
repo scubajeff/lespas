@@ -39,11 +39,18 @@ Features:
 </p>
 
 <p float="left">
-  <img alt="Search by Location" src="fastlane//metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
-  <img alt="Show Album in Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
-  <img alt="Show Photo with Map" src="fastlane//metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
-  <img alt="Settings" src="fastlane//metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
+  <img alt="Search by Location" src="fastlane/metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
+  <img alt="Show Album in Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
+  <img alt="Show Photo with Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
+  <img alt="Settings" src="fastlane/metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
 </p>
+
+Here is a short video demonstrate how the slideshow on map works:
+
+
+
+https://user-images.githubusercontent.com/458032/176358778-e67fd157-bc3b-4af9-94aa-b18fcd628cc8.mp4
+
 
 This project is built using the following open source software:
 - <a href=https://square.github.io/okhttp>OkHttp</a>
