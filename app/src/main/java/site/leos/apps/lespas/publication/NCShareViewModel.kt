@@ -730,7 +730,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val httpCallMap = HashMap<Job, Call>()
     private val mediaMetadataRetriever by lazy { MediaMetadataRetriever() }
 
-    @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
@@ -745,7 +744,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 // For camera roll items, load thumbnail if cache missed
                 if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
                     try {
-                        view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null).let {
+                        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, true)
+                                else this
+                            }
+                        })?.let {
                             view.setImageBitmap(it)
                             callBack?.onLoadComplete()
                         }
