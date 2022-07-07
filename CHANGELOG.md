@@ -1,3 +1,7 @@
+## Version 2.5.15
+* Fixed crash when opening camera roll on Android 9 or below
+* Fixed top potion of map covered by title bar when viewing photos on map
+
 ## Version 2.5.14
 * Fixed sync failed after album renamed
 * Fixed date reading from EXIF being offset

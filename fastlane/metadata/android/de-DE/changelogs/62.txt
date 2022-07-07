@@ -1,0 +1,3 @@
+* Absturz beim Öffnen der Kamerarolle unter Android 9 oder niedriger behoben
+* Behoben: Der obere Teil der Karte wird von der Titelleiste verdeckt, wenn Fotos auf der Karte angezeigt werden.
+* Weitere Verbesserungen und Fehlerkorrekturen

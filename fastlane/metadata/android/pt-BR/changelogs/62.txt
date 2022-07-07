@@ -1,0 +1,3 @@
+* Corrigida a falha ao abrir o rolo da câmera no Android 9 ou abaixo
+* Poção superior fixa do mapa coberta pela barra de título ao visualizar as fotos no mapa
+* Outras melhorias e correções de bugs
