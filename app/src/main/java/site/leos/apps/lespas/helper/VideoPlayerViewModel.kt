@@ -17,7 +17,9 @@
 package site.leos.apps.lespas.helper
 
 import android.app.Activity
+import android.content.ContextWrapper
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -39,7 +41,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
-    private val window = activity.window
+    private var window = activity.window
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
@@ -79,6 +81,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     fun resume(view: PlayerView, uri: Uri) {
         // Hide controller view by default
         view.hideController()
+        if (view.context is Activity) window = (view.context as Activity).window
+        if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
         // Keep screen on during playing
         Tools.keepScreenOn(window, true)
