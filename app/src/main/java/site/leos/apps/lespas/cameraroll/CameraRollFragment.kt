@@ -1394,7 +1394,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                             var metadataRetriever: MediaMetadataRetriever? = null
                             var exifInterface: ExifInterface? = null
-                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null }
+                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null } catch (e: RuntimeException) { null }
                             else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.let { ExifInterface(it) }} catch (e: Exception) {}
                             val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
                                 albumId = FROM_CAMERA_ROLL,
