@@ -25,6 +25,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -90,6 +91,7 @@ class CameraRollActivity : AppCompatActivity() {
                     })
                 }
             } else {
+                Toast.makeText(this, getString(R.string.msg_login_first), Toast.LENGTH_LONG).show()
                 finish()
                 return
             }

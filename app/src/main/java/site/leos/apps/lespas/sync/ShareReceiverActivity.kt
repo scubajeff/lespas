@@ -24,9 +24,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -40,6 +42,12 @@ class ShareReceiverActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Tools.applyTheme(this, R.style.Theme_LesPas_Transparent, R.style.Theme_LesPas_Transparent_TrueBlack)
         super.onCreate(savedInstanceState)
+
+        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) {
+            Toast.makeText(this, getString(R.string.msg_login_first), Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
 
         // Make sure photo's folder created
         lifecycleScope.launch(Dispatchers.IO) {
@@ -88,7 +96,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        if (!intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
+        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isNotEmpty() && !intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
             // Request sync immediately if called from other apps
             ContentResolver.requestSync(AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)

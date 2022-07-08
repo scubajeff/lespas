@@ -244,4 +244,5 @@
     <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
     <string name="should_allow_launching_other_app">セキュリティ設定でLes Pasが他のアプリを起動することを許可してください。</string>
     <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
+    <string name="msg_login_first">まず、サーバーにログインしてください。</string>
 </resources>

@@ -306,4 +306,5 @@
     <string name="hint_timestamp_pattern">A data de criação da foto pode ser alterada incluindo o padrão yyyyyMMdd_hhmmss no nome.</string>
     <string name="should_allow_launching_other_app">Por favor, permita que o Les Pas lance outros aplicativos em suas configurações de segurança.</string>
     <string name="msg_low_storage_space">Seu espaço interno de armazenamento é menos de 10% livre, isto impedirá a Les Pas de sincronizar-se com o servidor.</string>
+    <string name="msg_login_first">Por favor, faça primeiro o login em seu servidor.</string>
 </resources>
