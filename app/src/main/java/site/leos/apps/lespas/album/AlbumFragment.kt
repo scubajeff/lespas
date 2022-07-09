@@ -352,8 +352,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
-
-        if (savedInstanceState == null) (requireActivity() as AppCompatActivity).reportFullyDrawn()
     }
 
     override fun onResume() {
