@@ -229,7 +229,7 @@ class PublicationDetailFragment: Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             shareModel.getRemotePhotoList(share, false)
             // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
-            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, useCache = false)
+            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, photo = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), useCache = false)
         }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()

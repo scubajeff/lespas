@@ -574,10 +574,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun downloadFile(media: String, dest: File, stripExif: Boolean, useCache: Boolean = true): Boolean {
+    fun downloadFile(media: String, dest: File, stripExif: Boolean, photo: Photo, useCache: Boolean = true): Boolean {
         return try {
             webDav.getStream("${resourceRoot}${media}", useCache, null).use { remote ->
-                if (stripExif) BitmapFactory.decodeStream(remote)?.compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                if (stripExif) {
+                    BitmapFactory.decodeStream(remote)?.let { bmp->
+                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
+                            .compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                    }
+                }
                 else dest.outputStream().use { local -> remote.copyTo(local, 8192) }
             }
 

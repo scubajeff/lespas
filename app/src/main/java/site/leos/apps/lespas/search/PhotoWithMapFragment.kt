@@ -262,7 +262,7 @@ class PhotoWithMapFragment: Fragment() {
                     if (sourceFile.exists()) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true)) return null
+                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true, photo)) return null
                     }
                 }
 
@@ -273,7 +273,7 @@ class PhotoWithMapFragment: Fragment() {
                     if (sourceFile.exists()) sourceFile.copyTo(destFile, true, 4096)
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false)) return null
+                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false, photo)) return null
                     }
 
                     FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)

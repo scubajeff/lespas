@@ -858,7 +858,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 try {
                     if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                        imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))
+                        imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType), photo)
                     } else {
                         //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
                         sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)

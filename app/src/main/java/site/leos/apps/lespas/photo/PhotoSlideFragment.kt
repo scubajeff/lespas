@@ -581,7 +581,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                 // For remote album and synced photo
-                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))) {
+                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType), photo)) {
                     // TODO notify user
                     return null
                 }
