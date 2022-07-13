@@ -280,7 +280,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toTopOf="parent"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="@dimen/camera_roll_list_horizontal_margin"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                 android:nestedScrollingEnabled="false"
                 app:spanCount="@integer/cameraroll_grid_span_count"

@@ -317,7 +317,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             recyclerView,
             ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
             ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
-            resources.getDimensionPixelSize(R.dimen.small_padding), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_size)
+            resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
 
         fab.setOnClickListener { addFileLauncher.launch("*/*") }

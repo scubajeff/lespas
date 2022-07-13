@@ -555,7 +555,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             quickScroll,
             ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
             ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
-            resources.getDimensionPixelSize(R.dimen.small_padding), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_size)
+            resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
 
         mediaPager = view.findViewById<RecyclerView>(R.id.media_pager).apply {

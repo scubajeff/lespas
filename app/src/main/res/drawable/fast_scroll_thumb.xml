@@ -18,13 +18,13 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
-            <corners android:radius="@dimen/small_padding" />
+            <corners android:radius="@dimen/fast_scroll_thumb_width" />
             <solid android:color="?attr/colorAccent" />
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="@dimen/small_padding" />
+            <corners android:radius="@dimen/fast_scroll_thumb_width" />
             <solid android:color="?attr/colorAccent" />
         </shape>
     </item>

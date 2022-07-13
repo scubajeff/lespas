@@ -36,5 +36,9 @@
     <dimen name="destination_cover_height">40dp</dimen>
     <dimen name="destination_title_text_size">13sp</dimen>
 
-    <dimen name="fast_scroll_thumb_size">56dp</dimen>
+    <dimen name="fast_scroll_thumb_height">56dp</dimen>
+    <dimen name="fast_scroll_thumb_width">8dp</dimen>
+
+    <dimen name="list_horizontal_margin">8dp</dimen>
+    <dimen name="camera_roll_list_horizontal_margin">12dp</dimen>
 </resources>

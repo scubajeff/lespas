@@ -324,8 +324,8 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
     }
 
     override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
-    private fun verticalScrollTo(y: Float) {
-        var y = y
+    private fun verticalScrollTo(yPos: Float) {
+        var y = yPos
         val scrollbarRange = verticalRange
         y = max(scrollbarRange[0].toFloat(), min(scrollbarRange[1].toFloat(), y))
         if (abs(mVerticalThumbCenterY - y) < 2) return
@@ -338,8 +338,8 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
         mVerticalDragY = y
     }
 
-    private fun horizontalScrollTo(x: Float) {
-        var x = x
+    private fun horizontalScrollTo(xPos: Float) {
+        var x = xPos
         val scrollbarRange = horizontalRange
         x = max(scrollbarRange[0].toFloat(), min(scrollbarRange[1].toFloat(), x))
         if (abs(mHorizontalThumbCenterX - x) < 2) return
