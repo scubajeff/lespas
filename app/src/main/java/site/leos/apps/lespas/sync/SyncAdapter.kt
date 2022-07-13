@@ -600,6 +600,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Check network type on every loop, so that user is able to stop sync right in the middle
                 checkConnection()
 
+                val isRemoteAlbum = Tools.isRemoteAlbum(changedAlbum)
                 val localPhotoETags = photoRepository.getETagsMap(changedAlbum.id)
                 val localPhotoNames = photoRepository.getNamesMap(changedAlbum.id)
                 val localPhotoNamesReverse = localPhotoNames.entries.stream().collect(Collectors.toMap({ it.value }) { it.key })
@@ -769,7 +770,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 //*******************************
                 // Quick sync for "Remote" albums
                 //*******************************
-                if (Tools.isRemoteAlbum(changedAlbum) && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
+                if (isRemoteAlbum && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
                     //Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
@@ -870,7 +871,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
 
-                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                    if (isRemoteAlbum) {
                         //Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
                         // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
                         if (changedPhoto.mimeType.startsWith("video", true)) {
@@ -893,7 +894,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) { null }
                     }
 
-                    with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (Tools.isRemoteAlbum(changedAlbum)) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = true)) {
+                    with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (isRemoteAlbum) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = isRemoteAlbum)) {
                         // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
                         // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
                         changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
@@ -910,7 +911,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedPhoto.bearing = this.bearing
                     }
 
-                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                    if (isRemoteAlbum) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
                             // Find out if it's animated GIF or WEBP
                             //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
@@ -973,7 +974,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
 /*
                     // Finally, remove downloaded media file if this is a remote album (happens when adding photo to remote album on server or during app reinstall)
-                    if (Tools.isRemoteAlbum(changedAlbum)) {
+                    if (isRemoteAlbum) {
                         try { File(localRootFolder, changedPhoto.id).delete() } catch (e: Exception) {}
                         if (changedPhoto.mimeType.startsWith("video")) try { File(localRootFolder, "${changedPhoto.id}.thumbnail").delete() } catch (e: Exception) {}
                     }
