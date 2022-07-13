@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
+    <!--
   ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
   ~
   ~   Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,234 +14,268 @@
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
   -->
-
 <resources>
     <string name="app_name">Les Pas</string>
-    <string name="welcome_message_title">Bienvenue à Les Pas!</string>
+    <string name="gallery_app_name">Galerie</string>
+    <!-- MainActivity -->
+    <string name="need_to_restart">Le transfert est terminé. Vous devez maintenant redémarrer Les Pas.</string>
+    <string name="sd_card_not_ready">La carte SD n\'est pas montée ou est en lecture seule.</string>
+    <!-- Authenticator -->
     <string name="error_only_one_account">Un seul compte autorisé</string>
-    <string name="welcome_message">Pour commencer, veuillez accorder l\'accès à votre serveur Nextcloud.</string>
+    <!-- NCLogin fragment -->
+    <string name="welcome_message_title">Bienvenue sur Les Pas !</string>
+    <string name="welcome_message">Pour commencer, veuillez configurer l\'accès à votre serveur Nextcloud.</string>
+    <string name="button_text_scan">Scanner le mot de passe</string>
     <string name="host_textinput_label">Adresse du serveur</string>
-    <string name="url_helper_text">par exemple: https://example.com/nextcloud</string>
-    <string name="host_address_validation_error">L\'hôte non valide.</string>
+    <string name="url_helper_text">Par exemple : https://example.com/nextcloud</string>
+    <string name="http_toggle_helper_text">Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
+    <string name="verify_ssl_certificate_title">Certificat SSL incorrect</string>
+    <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
+    <string name="accept_certificate">Lui faire confiance !</string>
+    <string name="host_address_validation_error">Hôte non valide.</string>
     <string name="host_not_valid">Adresse non valide.</string>
     <string name="unknown_host">Serveur non trouvé.</string>
     <string name="network_error">Erreur de réseau, essayez à nouveau.</string>
+    <string name="certificate_error">Erreur de certificat du site.</string>
+    <!-- NCAuthentication fragment -->
+    <string name="login_to_new_account">Vous vous connectez avec un nouveau compte. Vous devez d\'abord vous déconnecter du compte actuel, puis relancer Les Pas. Procéder à la déconnexion ?</string>
+    <string name="should_allow_launching_other_app">Veuillez autoriser Les Pas à lancer d\'autres applications dans vos paramètres de sécurité.</string>
+    <string name="menu_item_qr_scanner_title">Scanner le QR code</string>
+    <!-- Various Nextcloud access endpoints and naming -->
+    <!-- the trailing '/' is not a typo -->
+    <!-- Album fragment -->
     <string name="fab_add_photos">Ajouter des photos</string>
-    <string name="confirm_delete">Êtes-vous sûr de supprimer?</string>
+    <string name="unlock_please">Déverrouiller les albums cachés</string>
+    <string name="msg_set_as_remote">"Définir l'album comme "Distant" supprimera tous ses fichiers multimédias de cet appareil. Continuer ?"</string>
+    <string name="msg_set_as_local">"Définir l'album comme "Local" téléchargera tous ses fichiers multimédias depuis le serveur, ce qui prendra un certain temps. Continuer ?"</string>
+    <string name="msg_low_storage_space">"Votre espace de stockage libre est inférieur à 10%, cela empêchera Les Pas de se synchroniser avec le serveur."</string>
+    <!-- Album fragment, UnhideDialog fragment -->
+    <string name="hidden_albums">Albums cachés :</string>
+    <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
+    <!-- AlbumDetail fragment -->
+    <string name="confirm_delete">Êtes-vous sûr de vouloir supprimer ?</string>
+    <string name="yes_delete">Supprimer</string>
     <string name="rename_album">Changer le nom de l\'album en</string>
-    <string name="total_photo">Photos: %1$d</string>
-    <string name="duration_days">Journées: %1$d</string>
-    <string name="duration_weeks">Semaines: %1$d</string>
-    <string name="duration_months">Mois: %1$d</string>
-    <string name="duration_years">Années: %1$d</string>
+    <string name="rename_media">Nouveau nom</string>
+    <string name="total_photo">Photos : %1$d</string>
+    <string name="duration_days">Journées : %1$d</string>
+    <string name="duration_weeks">Semaines : %1$d</string>
+    <string name="duration_months">Mois : %1$d</string>
+    <string name="duration_years">Années : %1$d</string>
+    <string name="published_to">Publié sur : %1$s</string>
+    <string name="strip_exif_msg">%1$s ?</string>
+    <string name="strip_exif_yes">Oui</string>
+    <string name="strip_exif_no">Non</string>
+    <string name="preparing_shares">Préparation des partages de fichiers…</string>
+    <string name="striping_exif">Suppression des données EXIF…</string>
+    <string name="msg_error_preparing_share_out_files">Échec de la préparation des fichiers multimédias.</string>
+    <string name="msg_check_network">Vérifiez votre connexion au serveur.</string>
+    <string name="msg_server_operation">Les photos apparaîtront dans l\'album cible après la synchronisation avec le serveur.</string>
+    <string name="option_menu_search">Rechercher un nom</string>
+    <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Couverture d\'album</string>
     <string name="button_text_share">Partager</string>
+    <string name="button_text_set_as">Fond d\'écran</string>
     <string name="button_text_info">Informations</string>
-    <string name="toast_cover_applied">Nouvelle couverture mise en place.</string>
-    <string name="toast_cover_set_canceled">Annulation de la mise en place d\'une nouvelle couverture.</string>
+    <string name="button_text_edit_in_snapseed_replace">Snapseed - Remplacer</string>
+    <string name="button_text_edit_in_snapseed_add">Snapseed - Ajouter</string>
+    <!-- CropCover fragment -->
+    <string name="toast_cover_applied">Nouvelle couverture appliquée.</string>
+    <string name="toast_cover_set_canceled">Annulation de la mise en place de la nouvelle couverture.</string>
+    <!-- Setting fragment -->
     <string name="settings_title">Paramètres</string>
     <string name="view_header">Affichage</string>
+    <string name="auto_theme_title">Thème de l\'application</string>
+    <string name="theme_light_entries">Thème clair</string>
+    <string name="theme_dark_entries">Thème sombre</string>
+    <string name="theme_auto_entries">Suivre le paramétrage du système</string>
+    <string name="true_black_title">Thème noir foncé</string>
     <string name="auto_rotate_title">Rotation de l\'écran selon le format de la photo</string>
+    <string name="auto_replay_title">Reprise automatique de la vidéo</string>
+    <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
+    <string name="cameraroll_as_album_title">Afficher la galerie comme un album</string>
+    <string name="gallery_launcher_title">Icône de la galerie dans le lanceur</string>
+    <string name="show_list_first">Afficher la liste des médias à l\'ouverture de la galerie</string>
+    <string name="edit_header">Retouche</string>
+    <string name="snapseed_integration_title">Intégration de Snapseed</string>
+    <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
+    <string name="snapseed_replace_title">Remplacer l\'original</string>
+    <string name="snapseed_replace_on_summary">Oui, remplacer la photo originale par la version de Snapseed.</string>
+    <string name="snapseed_replace_off_summary">Non, ajouter la version de Snapseed à l\'album. Gérez vous-même les doublons.</string>
+    <string name="privacy_header">Vie privée</string>
+    <string name="strip_exif_title">Supprimer les données EXIF avant le partage</string>
+    <string name="strip_on_entry">Oui, toujours supprimer.</string>
+    <string name="strip_off_entry">Non, ne pas les supprimer.</string>
+    <string name="strip_ask_entry">Toujours demander.</string>
+    <string name="storage_header">Stockage</string>
+    <string name="transfer_to_internal">Transférer des albums vers le stockage interne</string>
+    <string name="transfer_to_external">Transférer des albums sur une carte SD externe</string>
+    <string name="external_storage_not_writable">Actuellement impossible d\'écrire sur une carte SD externe.</string>
+    <string name="confirm_transferring_message">%1$s ? Si vous continuez, veuillez NE PAS mettre à jour les albums avant la fin du processus de transfert.</string>
+    <string name="not_enough_space_message">Espace insuffisant dans %2$s pour transférer %1$s photos.</string>
+    <string name="is_syncing_message">Les Pas se synchronise avec le serveur, il n\'est pas sûr de transférer le stockage maintenant, veuillez réessayer quelques minutes plus tard.</string>
+    <string name="yes_transfer">Continuer</string>
+    <string name="storage_statistic_title">Statistiques</string>
+    <string name="statistic_db_message">%1$,d photos en %2$,d albums</string>
+    <string name="statistic_storage_message">%1$s utilisé sur %2$s</string>
+    <string name="internal_storage">stockage interne</string>
+    <string name="external_storage">carte SD externe</string>
+    <string name="statistic_free_space_message">%1$s disponible sur %2$s</string>
+    <string name="clear_cache_title">Effacer le cache des albums distants</string>
+    <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Continuer ?</string>
+    <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
+    <string name="cache_size_title">Définir la taille du cache des albums distants</string>
+    <string name="cache_size_summary">Taille actuelle du cache : %1$d MB</string>
+    <string name="cache_size_setting_hint">Taille du cache :</string>
     <string name="sync_header">Synchronisation</string>
+    <string name="cameraroll_backup_title">Sauvegarde de la galerie</string>
+    <string name="cameraroll_backup_summary">Les nouvelles photos et vidéos seront automatiquement sauvegardées sur le serveur dans le dossier \'DCIM/%1$s\'.</string>
+    <string name="backup_done">Tous les éléments de la galerie ont été sauvegardés.</string>
+    <string name="backup_waiting">%1$,d élément(s) dans la galerie en attente de sauvegarde.</string>
     <string name="background_sync_title">Synchroniser périodiquement</string>
-    <string name="wifionly_title">Synchroniser uniquement sur le réseau WiFi</string>
-    <string name="wifionly_summary_on">Oui, il ne consommera pas de données mobiles.</string>
-    <string name="wifionly_summary_off">Non, consomme des données mobiles - la prudence est de mise lorsque vous avez une grande collection de photos.</string>
+    <string name="background_sync_summary">Vérifier les changements sur le serveur toutes les 6 heures</string>
+    <string name="wifionly_title">Synchroniser uniquement en WiFi</string>
+    <string name="wifionly_summary_on">Oui, pas de consommation des données mobiles.</string>
+    <string name="wifionly_summary_off">Non, consommation des données mobiles - prudence lorsque vous avez une grande collection de photos.</string>
+    <string name="sync_summary_finished">Tous les albums sont synchronisés.</string>
+    <string name="sync__summary_waiting">%1$,d élément(s) en attente de synchronisation, depuis %2$s.</string>
+    <string name="map_header">Carte</string>
+    <string name="chinese_map_title">Utiliser une application de carte chinoise</string>
+    <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
+    <string name="nearby_convergence_title">Convergence automatique des photos proches</string>
+    <string name="nearby_convergence_summary">Lors de la lecture d\'un diaporama sur la carte, faire converger les photos vers celles à proximité et qui ont des coordonnées GPS.</string>
     <string name="account_header">Compte</string>
-    <string name="logout_title">Déconnexion-vous</string>
-    <string name="msg_logout_dialog">Déconnexion du compte %1$s?</string>
+    <string name="relogin_title">Reconnexion</string>
+    <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
+    <string name="logout_title">Se déconnecter</string>
+    <string name="msg_logout_dialog">Déconnexion du compte %1$s ?</string>
+    <string name="yes_logout">Déconnexion</string>
+    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans son propre dossier \"Snapseed\". Accordez l\'autorisation d\'accès au stockage pour lire ces fichiers.</string>
+    <string name="backup_exif_location_permission_rationale">Pour sauvegarder les données GPS enregistrées dans une photo</string>
+    <string name="search_exif_location_permission_rationale">Pour rechercher des informations de localisation dans la galerie photos</string>
+    <string name="read_exif_location_permission_rationale">Pour afficher les informations de localisation des photos</string>
+    <string name="need_access_media_location_permission">Les Pas a besoin de l\'autorisation \"Fichiers et contenus multimédias\".</string>
+    <string name="proceed_request">Continuer</string>
+    <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
+    <!-- Destination DialogFragment -->
     <string name="copy_files">Copier</string>
+    <string name="move_files">Déplacer</string>
     <string name="create_new_album">Créer un nouvel album</string>
-    <string name="invalid_character_found">Le séparateur de chemin \"\\\" \"/\" n\'est pas autorisé</string>
+    <string name="to_album">Vers l\'album :</string>
+    <string name="to_new_album">Vers nouvel album :</string>
+    <string name="checkbox_text_set_remote">Album distant, fichiers multimédias stockés uniquement sur le serveur.</string>
+    <!-- Rename DialogFragment -->
+    <string name="invalid_character_found">"Séparateur de chemin "\\" "/" non autorisé dans les noms de fichiers"</string>
+    <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Nom non autorisé</string>
     <string name="name_too_long">Nom trop long</string>
     <string name="name_existed">Le nom existe déjà</string>
-    <string name="leading_dots_found">Le préfixe \".\" n\'est pas autorisé</string>
-    <string name="preparing_files">Préparation le photo</string>
-    <string name="preparing_files_progress">Préparation le photo %1$d de %2$d</string>
+    <string name="leading_dots_found">Préfixe \".\" non autorisé</string>
+    <string name="hint_timestamp_pattern">"La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom."</string>
+    <!-- Acquiring DialogFragment -->
+    <string name="preparing_files">Préparation des photos</string>
+    <string name="preparing_files_progress">Préparation de la photo %1$d sur %2$d</string>
     <string name="finished_preparing_files">Préparation des photos terminée</string>
-    <string name="it_takes_time">Envoi de données %1$s au serveur. Cela peut prendre un certain temps avant que de nouvelles photos n\'apparaissant sur le serveur. La confirmation de album commun est également requise.</string>
-    <string name="file_name">Fichier:</string>
-    <string name="shot_at">Créé:</string>
-    <string name="size">Taille:</string>
-    <string name="camera_manufacturer">Fabricant:</string>
-    <string name="camera_model">Modèle</string>
-    <string name="parameter">Param:</string>
-    <string name="artist">Artiste:</string>
+    <string name="it_takes_time">Besoin d\'envoyer %1$s de données au serveur. Cela peut prendre un certain temps avant que de nouvelles photos n\'apparaissent sur le serveur. La confirmation des utilisateurs d\'un album partagé est également requise.</string>
+    <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
+    <string name="error_preparing_files">Erreur lors de la préparation des fichiers</string>
+    <string name="access_right_violation">L\'application de partage ne suit pas les directives d\'accès au stockage Android, par conséquent, Les Pas ne peut pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser une autre.</string>
+    <string name="no_media_file_found">Aucun fichier image ou vidéo trouvé parmi les données partagées.</string>
+    <string name="same_file_found">Le même fichier multimédia existe déjà.</string>
+    <!-- Info DialogFragment -->
+    <string name="file_name">Fichier :</string>
+    <string name="shot_at">Créé :</string>
+    <string name="size">Taille :</string>
+    <string name="camera_manufacturer">Fabricant :</string>
+    <string name="camera_model">Modèle :</string>
+    <string name="parameter">Param. :</string>
+    <string name="artist">Artiste :</string>
+    <string name="button_text_map">App. de carte</string>
+    <!-- Album Publish DialogFragment -->
+    <string name="publish_album">Publier vers :</string>
+    <string name="publish_button_text">Publier</string>
+    <string name="joint_album">Partagé</string>
+    <string name="joint_album_tooltips">Les destinataires peuvent modifier.</string>
+    <string name="solo_album">Personnel</string>
+    <string name="solo_album_tooltips">Lecture seule pour les destinataires.</string>
+    <!--
+        
+    <string name="permission_to_edit">Allow recipient updating album</string>
+    -->
+    <!-- Toolbar actions -->
     <string name="item_settings">Paramètres</string>
+    <string name="item_search">Rechercher</string>
+    <string name="item_location_search">Lieu</string>
+    <string name="item_camera_roll">Galerie</string>
+    <string name="item_unhide">Albums cachés</string>
     <string name="item_rename">Renommer l\'album</string>
+    <string name="item_publish">Publier l\'album</string>
+    <string name="item_bgm">Gérer la musique de fond</string>
+    <string name="item_sortby">Trier par</string>
+    <string name="item_dateasc">Date croissante</string>
+    <string name="item_datedesc">Date décroissante</string>
+    <string name="item_nameasc">Nom croissant</string>
+    <string name="item_namedesc">Nom décroissant</string>
+    <string name="item_wide_list">Afficher le nom</string>
     <string name="action_share">Partager</string>
     <string name="action_remove">Supprimer</string>
-    <string name="selected_count">%1$d sélectionné</string>
-    <string name="theme_auto_entries">Suivre le paramétrage du système</string>
-    <string name="theme_dark_entries">Thème sombre</string>
-    <string name="theme_light_entries">Thème clair</string>
-    <string name="auto_theme_title">Thème de l\'application</string>
-    <string name="yes_delete">Supprimer</string>
-    <string name="yes_logout">Déconnexion</string>
-    <string name="action_select_all">Sélectionner tout</string>
-    <string name="access_right_violation">L\'application de partage ne suit pas la directive Android Storage Access Guideline, Les Pas ne peuvent donc pas recevoir ces fichiers. Veuillez mettre à jour l\'application de partage ou en utiliser d\'autres.</string>
-    <string name="error_preparing_files">Erreur de préparation des fichiers</string>
-    <string name="background_sync_summary">Vérifiez la mise à jour du serveur toutes les 6 heures</string>
-    <string name="no_media_file_found">Aucun fichier image ou vidéo ne peut être trouvé parmi les données partagées.</string>
-    <string name="button_text_set_as">Fond d\'écran</string>
-    <string name="mind_network_setting">Veuillez noter que le réglage actuel de la synchronisation empêche Les Pas d\'utiliser le réseau mobile.</string>
-    <string name="snapseed_integration_title">L\'intégration de Snapseed</string>
-    <string name="snapseed_replace_title">Remplacer l\'original</string>
-    <string name="snapseed_replace_on_summary">Oui, remplacez la photo originale par la version de Snapseed.</string>
-    <string name="snapseed_replace_off_summary">Non, ajoutez la version de Snapseed à l\'album. Gérez vous-même les doublons.</string>
-    <string name="storage_access_permission_rationale">Snapseed enregistre les fichiers dans le dossier \"Snapseed\", en accordant la permission d\'accéder à ces fichiers.</string>
-    <string name="proceed_request">Continuer</string>
-    <string name="snapseed_integration_summary">Note : Veuillez laisser Snapseed utiliser le format de sortie JPEG.</string>
-    <string name="item_sortby">Trier par</string>
-    <string name="item_dateasc">Date Croissante</string>
-    <string name="item_datedesc">Date Décroissante</string>
-    <string name="item_nameasc">Nom Croissante</string>
-    <string name="item_namedesc">Nom Décroissante</string>
-    <string name="button_text_edit_in_snapseed_replace">Snapseed - Remplacer</string>
-    <string name="item_camera_roll">Rouleau de Caméra</string>
-    <string name="cameraroll_backup_title">Rouleau de caméra de sauvegarde</string>
-    <string name="cameraroll_backup_summary">Les nouvelles photos et des vidéos seront automatiquement sauvegardées sur le serveur dans le dossier \'DCIM/%1$s\'.</string>
-    <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la rouleau de caméra</string>
-    <string name="gallery_app_name">Galerie</string>
-    <string name="gallery_launcher_title">Icône du lanceur de galerie</string>
-    <string name="same_file_found">Le même fichier existait déjà.</string>
-    <string name="verify_ssl_certificate_title">Mauvais certificat SSL</string>
-    <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
-    <string name="accept_certificate">Faites-lui confiance !</string>
-    <string name="certificate_error">Erreur de certificat de site.</string>
-    <string name="item_search">Rechercher</string>
-    <string name="object_unknown">INCONNU</string>
-    <string name="object_animal">Animal</string>
-    <string name="object_plant">Plante</string>
-    <string name="object_food">Alimentation</string>
-    <string name="object_vehicle">Véhicule</string>
-    <string name="tooltips_search_album">Dans les albums</string>
-    <string name="tooltips_search_cameraroll">Dans les rouleaux de caméra</string>
+    <string name="action_hide">Cacher</string>
+    <string name="action_set_remote">Définir comme Distant</string>
+    <string name="action_set_local">Définir comme Local</string>
+    <string name="action_reuse">Vers l\'album …</string>
+    <string name="action_rename_media">Renommer</string>
+    <string name="action_select_all">Tout sélectionner</string>
+    <string name="selected_count">%1$d sélectionné(s)</string>
+    <!-- Camera Roll Activity -->
+    <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la galerie</string>
+    <!-- Camera Roll Fragment -->
+    <string name="tooltips_show_cameraroll">Afficher la galerie</string>
+    <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
+    <string name="tooltips_date_picker">Choisir une date</string>
+    <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de la galerie dans les paramètres ?</string>
+    <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album partagé seront affichées une fois que le propriétaire de l\'album les aura confirmées.</string>
+    <!-- Search Fragment -->
+    <string name="tooltips_search_album">Rechercher dans les albums</string>
+    <string name="tooltips_search_cameraroll">Rechercher dans la galerie</string>
+    <string name="tooltips_search_archive">Rechercher dans les sauvegardes de la galerie</string>
+    <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
+    <string name="button_text_leave">Quitter</string>
+    <string name="need_albums">Veuillez d\'abord créer un album.</string>
+    <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s dans les albums</string>
     <string name="title_in_cameraroll">%1$s dans la galerie</string>
-    <string name="button_text_leave">Sortie</string>
-    <string name="condition_to_perform_search">Il doit y avoir au moins un album existant OU une autorisation d\'accès au stockage accordée pour exécuter la fonction de recherche.</string>
-    <string name="need_albums">Veuillez d\'abord créer un album.</string>
-    <string name="to_album">Vers l\'album :</string>
-    <string name="move_files">Déplacer</string>
-    <string name="storage_header">Stockage</string>
-    <string name="transfer_to_internal">Transfert d\'albums vers le stockage interne</string>
-    <string name="transfer_to_external">Transfert d\'albums vers une carte SD externe</string>
-    <string name="external_storage_not_writable">Ne peux pas écrire sur la carte SD externe maintenant.</string>
-    <string name="confirm_transferring_message">%1$s ? Si vous procédez, veuillez NE PAS faire de mise à jour des albums avant la fin du processus de transfert.</string>
-    <string name="not_enough_space_message">Il ne reste pas assez d\'espace dans %2$s pour transférer %1$s photos.</string>
-    <string name="is_syncing_message">Les Pas est en train de se synchroniser avec le serveur, il n\'est pas sûr de transférer du stockage maintenant, veuillez réessayer quelques minutes plus tard.</string>
-    <string name="yes_transfer">Allez-y</string>
-    <string name="storage_statistic_title">Statistiques</string>
-    <string name="statistic_db_message">%1$,d photos en %2$,d albums</string>
-    <string name="statistic_storage_message">%1$s utilisé dans %2$s</string>
-    <string name="internal_storage">stockage interne</string>
-    <string name="external_storage">carte SD externe</string>
-    <string name="statistic_free_space_message">%1$s disponible en %2$s</string>
-    <string name="need_to_restart">Le transfert de stockage est terminé. Vous devez maintenant redémarrer Les Pas.</string>
-    <string name="sd_card_not_ready">La carte SD n\'est pas montée ou est en lecture seule.</string>
-    <string name="published_to">Publié à : %1$s</string>
-    <string name="item_publish">Publier l\'album</string>
-    <string name="publish_album">Publier vers :</string>
-    <string name="publish_button_text">Régler</string>
-    <string name="publication_list_fragment_title">Publication des amis</string>
-    <string name="item_show_meta">Afficher les métadonnées</string>
+    <string name="title_in_archive">%1$s dans les sauvegardes de la galerie</string>
+    <!-- Publication List Fragment -->
+    <string name="publication_list_fragment_title">"Publications des amis"</string>
+    <string name="confirm_download_publication">Vous êtes connecté au réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>
     <string name="yes_i_do">Bien sûr</string>
-    <string name="confirm_download_publication">Vous êtes maintenant sur le réseau mobile, êtes-vous sûr de vouloir voir cette publication maintenant ?</string>
-    <string name="item_refresh_publication">Rafraîchir les publications</string>
-    <string name="joint_album">Commun</string>
-    <string name="solo_album">Solo</string>
-    <string name="joint_album_tooltips">Les destinataires peuvent modifier.</string>
-    <string name="solo_album_tooltips">Vue des destinataires uniquement.</string>
-    <string name="muzei_provider_description">Le moment de Les Pas</string>
-    <string name="exclude_albums">Exclure les photos de :</string>
-    <string name="prefer_day_in_history">Hier et aujourd\'hui</string>
-    <string name="prefer">Préférer :</string>
-    <string name="prefer_latest">Récent</string>
-    <string name="prefer_random">Au hasard (solution de rechange à tout ce qui précède)</string>
-    <string name="http_toggle_helper_text">Touchez le préfixe pour activer le HTTP non sécurisé.</string>
-    <string name="cameraroll_as_album_title">Afficher le rouleau de la Caméra comme un album</string>
-    <string name="relogin_title">Re-connexion</string>
-    <string name="relogin_summary">Si vous avez accidentellement révoqué la clé d\'accès de Les Pas sur le serveur.</string>
-    <string name="auto_replay_title">Reprise automatique de la vidéo</string>
+    <!-- Publication Detail Fragment -->
+    <string name="item_show_meta">Afficher les métadonnées</string>
+    <string name="item_refresh_publication">Actualiser les publications</string>
+    <!-- Remote Media Fragment -->
     <string name="button_text_download">Télécharger</string>
     <string name="button_text_add_to_lespas">Ajouter à l\'album</string>
     <string name="downloading_message">Le fichier %1$s sera enregistré dans le répertoire de téléchargement.</string>
-    <string name="strip_exif_title">Supprimer des données EXIF avant le partage</string>
-    <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
-    <string name="edit_header">Re-touche</string>
-    <string name="privacy_header">Vie privée</string>
-    <string name="strip_exif_no">Non</string>
-    <string name="strip_ask_entry">Demandez toujours.</string>
-    <string name="strip_exif_msg">%1$s?</string>
-    <string name="strip_off_entry">Non, laissez-le.</string>
-    <string name="strip_on_entry">Oui, toujours supprimer.</string>
-    <string name="strip_exif_yes">Oui</string>
-    <string name="action_reuse">Vers l\'album…</string>
-    <string name="striping_exif">Suppression des données EXIF…</string>
-    <string name="preparing_shares">Préparation des partages de fichiers…</string>
-    <string name="show_list_first">Afficher la liste des médias au démarrage du rouleau de la caméra</string>
-    <string name="button_text_map">App. de carte</string>
-    <string name="object_location">Lieu</string>
-    <string name="item_location_search">Lieu</string>
-    <string name="option_menu_in_map">Tout sur la carte</string>
-    <string name="object_face">Visage</string>
-    <string name="action_hide">Cacher</string>
-    <string name="hidden_albums">Albums cachés :</string>
-    <string name="item_unhide">Dévoiler</string>
-    <string name="button_text_scan">Scanner le mot de passe</string>
+    <!-- Location Search Fragment -->
+    <string name="option_menu_in_map">Tout afficher sur une carte</string>
+    <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Diaporama</string>
-    <string name="backup_exif_location_permission_rationale">Pour sauvegarder les données GPS enregistrées dans une photo</string>
-    <string name="search_exif_location_permission_rationale">Pour rechercher des informations de localisation dans le rouleau de l\'appareil photo</string>
-    <string name="read_exif_location_permission_rationale">Pour afficher les informations de localisation des photos</string>
-    <string name="need_access_media_location_permission">Les Pas a besoin de l\'autorisation d\'Access Media Location.</string>
-    <string name="unlock_please">Déverrouiller les albums cachés</string>
-    <string name="item_bgm">Gérer la BGM</string>
-    <string name="option_menu_mute">Basculer la sourdine</string>
-    <string name="skip_late_night_update">Passer la mise à jour tardive</string>
-    <string name="backup_done">Tous les éléments du rouleau de la caméra ont été sauvegardés.</string>
-    <string name="backup_waiting">%1$,d éléments dans la liste des photos en attente de sauvegarde.</string>
-    <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
-    <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
-    <string name="msg_set_as_remote">Le fait de définir l\'album comme \"Distant\" supprimera tous ses fichiers multimédias de cet appareil. Comment procéder ?</string>
-    <string name="msg_set_as_local">Si vous définissez l\'album comme \"Local\", tous les fichiers multimédias seront téléchargés depuis le serveur, ce qui prendra un certain temps. Comment procéder ?</string>
-    <string name="action_set_remote">Définir comme Distant</string>
-    <string name="action_set_local">Définir comme Local</string>
-    <string name="msg_check_network">Vérifiez la connexion de votre serveur.</string>
-    <string name="msg_error_preparing_share_out_files">Ne pas préparer les fichiers médias.</string>
-    <string name="to_new_album">Au nouvel album :</string>
-    <string name="clear_cache_title">Effacer le cache de l\'album distants</string>
-    <string name="msg_clear_cache">Tous les fichiers d\'images distantes seront supprimés du cache. Comment procéder ?</string>
-    <string name="msg_restart_to_take_effect">Redémarrez l\'application pour que les nouveaux paramètres prennent effet.</string>
-    <string name="cache_size_title">Définir la taille du cache de l\'album distant</string>
-    <string name="cache_size_summary">Taille actuelle du cache : %1$dMB</string>
-    <string name="cache_size_setting_hint">Taille du cache :</string>
-    <string name="button_text_edit_in_snapseed_add">Snapseed - Ajouter</string>
-    <string name="checkbox_text_set_remote">Album distant, fichiers multimédia stockés sur le serveur uniquement.</string>
-    <string name="login_to_new_account">Vous vous connectez avec un nouveau compte. Vous devez d\'abord vous déconnecter du compte actuel, puis relancer Les Pas. Procéder à la déconnexion ?</string>
-    <string name="menu_item_qr_scanner_title">Scanner le code QR</string>
-    <string name="chinese_map_title">Utiliser l\'application de carte chinoise</string>
-    <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
-    <string name="map_header">Carte</string>
-    <string name="msg_server_operation">Les photos apparaîtront dans l\'album cible après la synchronisation avec le serveur.</string>
-    <string name="item_wide_list">Afficher le nom</string>
-    <string name="action_rename_media">Renommer</string>
-    <string name="rename_media">Nouveau nom</string>
-    <string name="nearby_convergence_title">Convergence automatique des photos proches</string>
-    <string name="nearby_convergence_summary">Lors de la lecture d\'un diaporama sur une carte, les photos convergent vers celles qui sont proches et qui ont des coordonnées GPS.</string>
-    <string name="true_black_title">Thème noir véritable</string>
-    <string name="sync_summary_finished">Tous les albums sont synchronisés.</string>
-    <string name="sync__summary_waiting">%1$,d éléments en attente dans le pipeline de synchronisation, datant d\'aussi loin que %2$s.</string>
-    <string name="tooltips_fetch_backup">Afficher les sauvegardes sur le serveur</string>
-    <string name="tooltips_show_cameraroll">Afficher les rouleaux de caméra</string>
-    <string name="msg_empty_server_backup">Aucune sauvegarde sur le serveur. Avez-vous activé la sauvegarde automatique de l\'appareil photo dans les paramètres ?</string>
-    <string name="msg_joint_album_not_updated_locally">Les modifications apportées à l\'album commun seront affichées après que le propriétaire de l\'album les aura confirmées.</string>
-    <string name="option_menu_search">Rechercher le nom</string>
-    <string name="tooltips_date_picker">Choisir une date</string>
-    <string name="title_in_archive">%1$s dans les sauvegardes de la caméra</string>
-    <string name="tooltips_search_archive">Dans les sauvegardes de la liste d\'appareils photo</string>
-    <string name="hint_timestamp_pattern">La date de création de la photo peut être modifiée en incluant le motif yyyyMMdd_hhmmss dans le nom.</string>
-    <string name="should_allow_launching_other_app">Veuillez autoriser Les Pas à lancer d\'autres applications dans vos paramètres de sécurité.</string>
-    <string name="msg_low_storage_space">Votre espace de stockage interne est libre à moins de 10%, ce qui empêchera Les Pas de se synchroniser avec le serveur.</string>
+    <string name="option_menu_mute">Mettre en sourdine</string>
+    <!-- Image Recognition -->
+    <!-- Object label -->
+    <string name="object_unknown">INCONNU</string>
+    <string name="object_animal">Animal</string>
+    <string name="object_plant">Plante</string>
+    <string name="object_food">Aliments</string>
+    <string name="object_vehicle">Véhicule</string>
+    <string name="object_location">Lieu</string>
+    <string name="object_face">Visage</string>
+    <!-- Muzei Artwork Provider -->
+    <string name="muzei_provider_description">Le moment de Les Pas</string>
+    <string name="prefer">Préférer :</string>
+    <string name="prefer_day_in_history">Hier et aujourd\'hui</string>
+    <string name="prefer_random">Aléatoire (solution de rechange à tout ce qui précède)</string>
+    <string name="exclude_albums">Exclure les photos de :</string>
+    <string name="prefer_latest">Récent</string>
+    <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
 </resources>
