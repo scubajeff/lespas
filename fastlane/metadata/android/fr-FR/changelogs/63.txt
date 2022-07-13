@@ -1,0 +1,6 @@
+* Correction de l'extinction automatique de l'écran lorsque l'appareil pivote pendant la lecture d'une vidéo.
+* Correction de l'ajout d'images en mode portrait du serveur à l'album "Local", l'image n'a pas été tournée en conséquence.
+* Correction de la rotation incorrecte de la photo en mode portrait dans l'album "Remote" lors du partage.
+* Correction de la mise en page lors de l'affichage de la photo en mode portrait dans l'album "Remote" avec la carte.
+* Mise à jour de la traduction française grâce à l'utilisateur de github @Choukajohn.
+* Autres améliorations et corrections de bogues

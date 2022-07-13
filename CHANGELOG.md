@@ -1,3 +1,10 @@
+## Version 2.5.16
+* Fixed screen auto-off when device rotated during video playing
+* Fixed when adding portrait mode pictures from server to 'Local' album, the picture didn't rotated accordingly
+* Fixed portrait mode photo in 'Remote' album not correctly rotated when sharing out
+* Fixed layout when viewing portrait mode photo in 'Remote' album with map
+* Updated French translation thanks to github user @Choukajohn
+
 ## Version 2.5.15
 * Fixed crash when opening camera roll on Android 9 or below
 * Fixed top potion of map covered by title bar when viewing photos on map

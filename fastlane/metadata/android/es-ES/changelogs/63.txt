@@ -1,0 +1,6 @@
+* Corregido el apagado automático de la pantalla cuando el dispositivo giraba durante la reproducción de un vídeo
+* Arreglado el problema de que al añadir fotos en modo retrato desde el servidor al álbum "Local", la foto no giraba correctamente
+* Corregida la foto en modo retrato en el álbum "Remoto" que no giraba correctamente al compartirla
+* Se ha corregido el diseño al ver la foto en modo retrato en el álbum "Remoto" con el mapa
+* Actualización de la traducción al francés gracias al usuario de github @Choukajohn
+* Otras mejoras y correcciones de errores

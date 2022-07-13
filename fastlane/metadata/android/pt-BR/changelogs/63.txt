@@ -1,0 +1,6 @@
+* Desligamento automático da tela fixa quando o dispositivo gira durante a reprodução do vídeo
+* Fixada ao adicionar fotos em modo retrato do servidor ao álbum 'Local', a foto não girava de acordo
+* Foto fixa em modo retrato no álbum 'Remote' não rodou corretamente ao compartilhar
+* Layout fixo ao visualizar a foto em modo retrato no álbum 'Remote' com mapa
+* Tradução francesa atualizada graças ao usuário do github @Choukajohn
+* Outras melhorias e correções de bugs

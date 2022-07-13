@@ -1,0 +1,6 @@
+* Behoben: Der Bildschirm schaltete sich automatisch aus, wenn das Gerät während der Videowiedergabe gedreht wurde.
+* Behoben: Beim Hinzufügen von Hochformat-Bildern vom Server zum 'Lokalen' Album wurde das Bild nicht entsprechend gedreht.
+* Behoben: Hochformat-Fotos im "Remote"-Album wurden bei der Freigabe nicht korrekt gedreht.
+* Behobenes Layout beim Betrachten von Hochformat-Fotos im 'Remote'-Album mit Karte
+* Aktualisierte französische Übersetzung dank Github-Benutzer @Choukajohn
+* Weitere Verbesserungen und Fehlerkorrekturen
