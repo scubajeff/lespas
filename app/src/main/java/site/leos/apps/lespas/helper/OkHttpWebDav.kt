@@ -397,7 +397,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
 
             // Upload chunks
             // Longer timeout adapting to slow connection
-            val uploadHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
+            val uploadHttpClient = httpClient.newBuilder().readTimeout(10, TimeUnit.MINUTES).writeTimeout(10, TimeUnit.MINUTES).build()
             while(index < size) {
                 if (sp.getBoolean(wifionlyKey, true)) {
                     if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
@@ -421,15 +421,14 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
             //Log.e(">>>>>>>", "start assemblying")
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
-                httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).callTimeout(7, TimeUnit.MINUTES).build()
-                    .newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
-                        if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
-                        else {
-                            // Upload interrupted, delete uploaded chunks
-                            //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-                            throw OkHttpWebDavException(response)
-                        }
+                uploadHttpClient.newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                    if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                    else {
+                        // Upload interrupted, delete uploaded chunks
+                        //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        throw OkHttpWebDavException(response)
                     }
+                }
             }
             catch (e: InterruptedIOException) { e.printStackTrace() }
             catch (e: SocketTimeoutException) { e.printStackTrace() }
@@ -441,7 +440,7 @@ class OkHttpWebDav(private val userId: String, password: String, serverAddress: 
     }
 
     fun copyOrMove(copy: Boolean, source: String, dest: String): Pair<String, String> {
-        val copyHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
+        val copyHttpClient = httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).build()
         val hb = Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T")
         copyHttpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
