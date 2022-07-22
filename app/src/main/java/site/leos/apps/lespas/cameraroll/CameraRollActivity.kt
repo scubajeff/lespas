@@ -97,4 +97,11 @@ class CameraRollActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        supportFragmentManager.fragments.apply {
+            if (this.isNotEmpty()) this.last().let { if (it is MainActivity.OnWindowFocusChangedListener) it.onWindowFocusChanged(hasFocus) }
+        }
+    }
 }
