@@ -118,7 +118,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val photoRepository = PhotoRepository(application)
 
-    private val videoPlayerCache: SimpleCache
+    private val videoPlayerCache: SimpleCache?
 
     fun interface LoadCompleteListener {
         fun onLoadComplete()
@@ -136,11 +136,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
 
-            videoPlayerCache = try {
-                SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
-            } catch (e: Exception) {
-                SimpleCache(File(application.cacheDir, "video1"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
-            }
+            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
         }
     }
 
@@ -1104,7 +1100,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }}
         downloadDispatcher.close()
         mediaMetadataRetriever.release()
-        videoPlayerCache.release()
+        videoPlayerCache?.release()
         super.onCleared()
     }
 

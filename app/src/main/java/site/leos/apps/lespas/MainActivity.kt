@@ -44,6 +44,7 @@ import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.auth.NCLoginFragment
+import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
@@ -125,7 +126,13 @@ class MainActivity : AppCompatActivity() {
                             ContentResolver.setSyncAutomatically(accounts[0], getString(R.string.sync_authority), true)
                         }
 
-                        supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
+                        if (intent.action == LAUNCH_CAMERAROLL) {
+                            intent.data?.let {
+                                supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(it), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
+                            } ?: run {
+                                supportFragmentManager.beginTransaction().add(R.id.container_root, CameraRollFragment.newInstance(), CameraRollFragment.TAG_FROM_CAMERAROLL_ACTIVITY).commit()
+                            }
+                        } else supportFragmentManager.beginTransaction().add(R.id.container_root, AlbumFragment.newInstance()).commit()
                     }
                 }
 
@@ -216,5 +223,6 @@ class MainActivity : AppCompatActivity() {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
+        const val LAUNCH_CAMERAROLL = "LAUNCH_CAMERAROLL"
     }
 }
