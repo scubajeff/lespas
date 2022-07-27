@@ -143,7 +143,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
-        currentSortOrder = savedInstanceState?.getInt(KEY_SORT_ORDER, Album.BY_DATE_TAKEN_DESC) ?: Album.BY_DATE_TAKEN_DESC
 
         setHasOptionsMenu(true)
 
@@ -213,10 +212,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         requireContext().run {
-            showCameraRoll = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
             // TODO only check first volume
             getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
-            PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+
+            with(PreferenceManager.getDefaultSharedPreferences(this)) {
+                registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+                showCameraRoll = getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+                currentSortOrder = getInt(ALBUM_LIST_SORT_ORDER, Album.BY_DATE_TAKEN_DESC)
+            }
         }
     }
 
@@ -388,7 +391,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
-        outState.putInt(KEY_SORT_ORDER, currentSortOrder)
     }
 
     override fun onDestroyView() {
@@ -476,6 +478,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
 
                 mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
+
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
 
                 return true
             }
@@ -888,9 +892,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
-        private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
+
+        private const val ALBUM_LIST_SORT_ORDER = "ALBUM_LIST_SORT_ORDER"
 
         @JvmStatic
         fun newInstance() = AlbumFragment()
