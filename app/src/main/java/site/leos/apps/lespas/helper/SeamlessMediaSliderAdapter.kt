@@ -20,6 +20,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
+import android.provider.ContactsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -112,19 +113,14 @@ abstract class SeamlessMediaSliderAdapter<T>(
     fun setDisplayWidth(width: Int) { displayWidth = width }
 
     inner class PhotoViewHolder(itemView: View, private val displayWidth: Int): RecyclerView.ViewHolder(itemView) {
-        private val ivMedia = itemView.findViewById<PhotoView>(R.id.media)
+        private val ivMedia: PhotoView
         private var baseWidth = 0f
         private var currentWidth = 0
         private var edgeDetected = 0
 
         init {
-            ivMedia.setAllowParentInterceptOnEdge(true)
-        }
-
-        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
-            ivMedia.apply {
-                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
-                ViewCompat.setTransitionName(this, transitionName)
+            ivMedia = itemView.findViewById<PhotoView>(R.id.media).apply {
+                setAllowParentInterceptOnEdge(true)
                 maximumScale = 5.0f
                 mediumScale = 2.5f
 
@@ -167,15 +163,25 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 }
             }
         }
-    }
-
-    inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val ivMedia = itemView.findViewById<ImageView>(R.id.media)
 
         fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
-                setOnClickListener { clickListener(null) }
+                ViewCompat.setTransitionName(this, transitionName)
+            }
+        }
+    }
+
+    inner class AnimatedViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val ivMedia: ImageView
+
+        init {
+            ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { setOnClickListener { clickListener(null) } }
+        }
+
+        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
+            ivMedia.apply {
+                imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
             }
         }
@@ -185,26 +191,30 @@ abstract class SeamlessMediaSliderAdapter<T>(
         var videoUri: Uri = Uri.EMPTY
         private var videoMimeType = ""
 
-        lateinit var videoView: PlayerView
-        private lateinit var muteButton: ImageButton
+        var videoView: PlayerView
+        private var muteButton: ImageButton
+
+        init {
+            videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
+                controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
+            }
+
+            muteButton = itemView.findViewById<ImageButton>(R.id.exo_mute).apply {
+                setOnClickListener {
+                    playerViewModel.toggleMuteState()
+                    isActivated = isActivated == false
+                }
+            }
+        }
 
         fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
             videoMimeType = video.mimeType
 
-            muteButton = itemView.findViewById<ImageButton>(R.id.exo_mute).apply {
-                isActivated = !playerViewModel.isMuted()
-                setOnClickListener {
-                    playerViewModel.toggleMuteState()
-                    muteButton.isActivated = muteButton.isActivated == false
-                }
-            }
             // Muted by default during late night hours
             muteButton.isActivated = !playerViewModel.isMuted()
 
-            videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
-
+            videoView.apply {
                 // Need to call imageLoader here to start postponed enter transition
                 ViewCompat.setTransitionName(this, video.transitionName)
                 imageLoader(item, null, NCShareViewModel.TYPE_NULL)

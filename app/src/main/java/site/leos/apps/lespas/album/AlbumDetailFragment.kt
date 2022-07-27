@@ -1051,8 +1051,17 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentPhotoName = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
-            private var tvTitle: TextView? = if (isWideList) itemView.findViewById(R.id.title) else null
+            private val ivPhoto: ImageView
+            private var tvTitle: TextView?
+
+            init {
+                ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply {
+                    setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
+                    foregroundGravity = Gravity.CENTER
+                }
+
+                tvTitle = if (isWideList) itemView.findViewById(R.id.title) else null
+            }
 
             fun bindViewItem(photo: Photo) {
                 itemView.let {
@@ -1080,7 +1089,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                             tvTitle?.isVisible = true
                         }
 
-                        setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
+                        //setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(this, bindingAdapterPosition) }
                     }
 
                     tvTitle?.text = photo.name.substringBeforeLast('.')
