@@ -32,15 +32,6 @@
     <string name="host_textinput_label">Indirizzo del server</string>
     <string name="url_helper_text">per esempio: https://example.com/nextcloud</string>
     <string name="http_toggle_helper_text">Per attivare l\'HTTP non sicuro, tocca il prefisso</string>
-    <string name="nextcloud_credential_scheme" translatable="false">nc</string>
-    <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
-    <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
-    <string name="nc_userdata_server_protocol" translatable="false">NC_SERVER_PROTOCOL</string>
-    <string name="nc_userdata_server_host" translatable="false">NC_SERVER_HOST</string>
-    <string name="nc_userdata_server_port" translatable="false">NC_SERVER_PORT</string>
-    <string name="nc_userdata_username" translatable="false">NC_USERNAME</string>
-    <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
-    <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
     <string name="verify_ssl_certificate_title">Certificato SSL non valido</string>
     <string name="verify_ssl_certificate_message">Il certificato del server %1$s NON PUÒ essere verificato, vuoi fidarti del server e continuare\?</string>
     <string name="accept_certificate">Mi fido!</string>
@@ -54,10 +45,6 @@
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">Stai accedendo con un nuovo account. Prima esci dall\'account corrente, poi riavvia Les Pas. Vuoi uscire\?</string>
     <string name="menu_item_qr_scanner_title">Scannerizza il codice QR</string>
-
-    <!-- Various Nextcloud access endpoints and naming -->
-    <string name="lespas_base_folder_name" translatable="false">/lespas</string>
-    <string name="dav_files_endpoint" translatable="false">/remote.php/dav/files/</string>  <!-- the trailing '/' is not a typo -->
 
     <!-- Album fragment -->
     <string name="fab_add_photos">Aggiungi foto</string>
@@ -105,51 +92,33 @@
     <string name="settings_title">Impostazioni</string>
 
     <string name="view_header">Visualizza</string>
-    <string name="auto_theme_perf_key" translatable="false">AUTO_THEME</string>
     <string name="auto_theme_title">Tema dell\'app</string>
     <string name="theme_light_entries">Tema chiaro</string>
     <string name="theme_dark_entries">Tema scuro</string>
     <string name="theme_auto_entries">Segui le impostazioni di sistema</string>
-    <string name="theme_light_values" translatable="false">1</string>
-    <string name="theme_dark_values" translatable="false">2</string>
-    <string name="theme_auto_values" translatable="false">-1</string>
-    <string name="true_black_pref_key" translatable="false">TRUE_BLACK_THEME</string>
     <string name="true_black_title">Tema nero intenso</string>
-    <string name="auto_rotate_perf_key" translatable="false">AUTO_ROTATE</string>
     <string name="auto_rotate_title">Ruota lo schermo in base al formato della foto</string>
-    <string name="auto_replay_perf_key" translatable="false">AUTO_REPLAY</string>
     <string name="auto_replay_title">Riproduci di nuovo il video automaticamente</string>
-    <string name="default_sort_order_pref_key" translatable="false">PHOTO_SORT_ORDER</string>
     <string name="default_sort_order_title">Ordine delle foto predefinito per nuovo album</string>
 
-    <string name="cameraroll_as_album_perf_key" translatable="false">CAMERAROLL_AS_ALBUM</string>
     <string name="cameraroll_as_album_title">Mostra rullino foto come album</string>
-    <string name="gallery_launcher_pref_key" translatable="false">GALLERY</string>
     <string name="gallery_launcher_title">Icona di avvio della galleria</string>
-    <string name="roll_list_first_perf_key" translatable="false">SHOW_ROLL_LIST_FIRST</string>
     <string name="show_list_first">Mostra l\'elenco dei file multimediali all\'avvio del rullino foto</string>
 
     <string name="edit_header">Modifica</string>
-    <string name="snapseed_pref_key" translatable="false">SNAPSEED</string>
     <string name="snapseed_integration_title">Integrazione con Snapseed</string>
     <string name="snapseed_integration_summary">Nota: consenti a Snapseed di usare il formato JPEG</string>
-    <string name="snapseed_replace_pref_key" translatable="false">SNAPSEED_REPLACE</string>
     <string name="snapseed_replace_title">Sostituisci originale</string>
     <string name="snapseed_replace_on_summary">Sì, sostituisci la foto originale con la versione di Snapseed.</string>
     <string name="snapseed_replace_off_summary">No, aggiungi la versione di Snapseed all\'album. Gestisci i duplicati autonomamente.</string>
 
     <string name="privacy_header">Privacy</string>
-    <string name="strip_exif_pref_key" translatable="false">STRIP_EXIF_CHOICE</string>
     <string name="strip_exif_title">Rimuovi i dati EXIF prima della condivisione</string>
     <string name="strip_on_entry">Sì, rimuovi sempre.</string>
     <string name="strip_off_entry">No, non rimuovere.</string>
     <string name="strip_ask_entry">Chiedimelo sempre.</string>
-    <string name="strip_on_value" translatable="false">1</string>
-    <string name="strip_off_value" translatable="false">0</string>
-    <string name="strip_ask_value" translatable="false">2</string>
 
     <string name="storage_header">Archivio</string>
-    <string name="transfer_pref_key" translatable="false">TRANSFER_STORAGE</string>
     <string name="transfer_to_internal">Trasferire album su archivio interno</string>
     <string name="transfer_to_external">Trasferire album su scheda SD</string>
     <string name="external_storage_not_writable">Impossibile scrivere sulla scheda SD.</string>
@@ -157,49 +126,39 @@
     <string name="not_enough_space_message">Spazio insufficiente su %2$s per trasferire %1$s foto.</string>
     <string name="is_syncing_message">È in corso la sincronizzazione con il server. Trasferire file ora non è sicuro, riprova tra qualche minuto.</string>
     <string name="yes_transfer">Continua</string>
-    <string name="storage_statistic_pref_key" translatable="false">STATISTIC</string>
     <string name="storage_statistic_title">Statistiche</string>
     <string name="statistic_db_message">%1$,d foto in %2$,d album</string>
     <string name="statistic_storage_message">Spazio utilizzato su %2$s: %1$s</string>
     <string name="internal_storage">archivio interno</string>
     <string name="external_storage">scheda SD esterna</string>
     <string name="statistic_free_space_message">Spazio disponibile su %2$s: %1$s</string>
-    <string name="clear_cache_pref_key" translatable="false">CLEAR_REMOTE_CACHE</string>
     <string name="clear_cache_title">Svuota cache dell\'album remoto</string>
     <string name="msg_clear_cache">Tutti i file della cache dell\'album remoto saranno rimossi. Continuare\?</string>
     <string name="msg_restart_to_take_effect">Per rendere effettive le nuove impostazioni, riavvia l\'app.</string>
-    <string name="cache_size_pref_key" translatable="false">SET_CACHE_SIZE</string>
     <string name="cache_size_title">Imposta la dimensione della cache dell\'album remoto</string>
     <string name="cache_size_summary">Dimensione corrente della cache: %1$dMB</string>
     <string name="cache_size_setting_hint">Dimensione della cache:</string>
 
     <string name="sync_header">Sincronizzazione</string>
-    <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup del rullino foto</string>
     <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \"DCIM/%1$s\".</string>
     <string name="backup_done">Tutti gli elementi del rullino foto sono stati copiati.</string>
     <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d.</string>
-    <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sincronizza periodicamente</string>
     <string name="background_sync_summary">Controlla modifiche al server ogni 6 ore</string>
-    <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sincronizza solo tramite Wi-Fi</string>
     <string name="wifionly_summary_on">Non utilizza dati mobili.</string>
     <string name="wifionly_summary_off">Utilizza dati mobili – fai attenzione se hai una grande quantità di foto.</string>
 
     <string name="map_header">Mappa</string>
-    <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
     <string name="chinese_map_title">Usa app di navigazione cinese</string>
     <string name="chinese_map_summary">Tutte le app di navigazione cinesi usano un sistema di coordinate unico.</string>
-    <string name="nearby_convergence_pref_key" translatable="false">NEARBY_CONVERGENCE</string>
     <string name="nearby_convergence_title">Raggruppa automaticamente le foto scattate in luoghi vicini</string>
     <string name="nearby_convergence_summary">Durante la presentazione sulla mappa, le foto si raggruppano attorno alla più vicina con coordinate GPS.</string>
 
     <string name="account_header">Account</string>
-    <string name="relogin_pref_key" translatable="false">RELOGIN</string>
     <string name="relogin_title">Nuovo login</string>
     <string name="relogin_summary">Se hai accidentalmente revocato la chiave di accesso di Les Pas sul server.</string>
-    <string name="logout_pref_key" translatable="false">LOGOUT</string>
     <string name="logout_title">Logout</string>
     <string name="msg_logout_dialog">Uscire dall\'account %1$s\?</string>
     <string name="yes_logout">Sì, esci</string>
@@ -304,7 +263,6 @@
     <string name="yes_i_do">Confermo</string>
 
     <!-- Publication Detail Fragment -->
-    <string name="publication_detail_fragment_title" translatable="false">"%1$s  |  %2$s"</string>
     <string name="item_show_meta">Mostra metadati</string>
     <string name="item_refresh_publication">Aggiorna pubblicazioni</string>
 
