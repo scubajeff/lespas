@@ -180,6 +180,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 showListFirst = false
                 allowToggleContent = false
             }
+
+            if (getBoolean(getString(R.string.cameraroll_backup_pref_key), false)) {
+                // Kick start server backup
+                AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                    if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.BACKUP_CAMERA_ROLL)
+                    })
+                }
+            }
         }
 
         // Create adapter here so that it won't leak
@@ -276,11 +287,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
 
             // Immediately sync with server after adding photo to local album
-            ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-            })
+            AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                })
+            }
         }
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
