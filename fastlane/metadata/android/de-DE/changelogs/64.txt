@@ -1,0 +1,5 @@
+* Korrektes Lesen des Zeitstempels der Fotoerstellung, der einen Zeitzonenversatz von EXIF hat
+* Sortierreihenfolge der Albenliste beibehalten
+* Behobener Absturz beim Abspielen von Videos in der Galerie-App, während die Les Pas-App noch im Hintergrund läuft
+* Längere Zeitüberschreitung, um die Synchronisierung bei schlechter Verbindung zu erleichtern
+* Weitere Verbesserungen und Fehlerkorrekturen

@@ -1,4 +1,10 @@
-## Version 2.5.16
+## Version 2.5.17
+* Correctly read photo creation timestamp which has timezone offset from EXIF
+* Persist album list sorting order
+* Fixed crash when playing video in Gallery app while Les Pas app is still running in the background
+* Longer timeout to facilitate syncing on lousy connection
+
+* ## Version 2.5.16
 * Fixed screen auto-off when device rotated during video playing
 * Fixed when adding portrait mode pictures from server to 'Local' album, the picture didn't rotated accordingly
 * Fixed portrait mode photo in 'Remote' album not correctly rotated when sharing out
