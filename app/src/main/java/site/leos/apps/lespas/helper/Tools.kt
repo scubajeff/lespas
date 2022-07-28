@@ -269,14 +269,14 @@ object Tools {
         return Pair(videoDate, latLong)
     }
 
-    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? {
-        var mDate: LocalDateTime? = null
+    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
         try {
-            // ExifInterface.dateTimeOriginal and ExifInterface.dateTimeDigitized already offset
-            exif.dateTimeOriginal?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) } ?: run { exif.dateTimeDigitized?.let { mDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of("UTC")) }}
-        } catch (e: Exception) {}
-        return mDate
-    }
+            exif.dateTimeOriginal?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL) ?: "Z"))
+            } ?: run {
+                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED) ?: "Z")) }
+            }
+        } catch (e: Exception) { null }
 
     // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
     private const val wechatPattern = "^mmexport([0-9]{13}).*"
