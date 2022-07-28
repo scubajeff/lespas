@@ -25,5 +25,7 @@
     app:keep_content_on_player_reset="true"
     app:resize_mode="fit"
     app:use_controller="true"
+    app:show_timeout="3000"
+    app:auto_show="false"
     app:surface_type="texture_view"
     app:controller_layout_id="@layout/exoplayer_control_view"/>

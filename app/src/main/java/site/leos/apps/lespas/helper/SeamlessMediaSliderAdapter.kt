@@ -28,6 +28,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.core.view.ViewCompat
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.ListAdapter
@@ -70,9 +71,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder) {
-            is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), clickListener, imageLoader)
-            is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), clickListener, imageLoader)
-            else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), clickListener, imageLoader)
+            is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> holder.bind(getItem(position), getVideoItem(position), imageLoader)
+            is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> holder.bind(getItem(position), getItemTransitionName(position), imageLoader)
+            else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
         }
     }
 
@@ -164,7 +165,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
@@ -179,7 +180,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             ivMedia = itemView.findViewById<ImageView>(R.id.media).apply { setOnClickListener { clickListener(null) } }
         }
 
-        fun <T> bind(photo: T, transitionName: String, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
+        fun <T> bind(photo: T, transitionName: String, imageLoader: (T, ImageView?, String) -> Unit) {
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
@@ -196,7 +197,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
 
         init {
             videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                controllerShowTimeoutMs = CONTROLLER_VIEW_TIMEOUT
+                setControllerVisibilityListener(PlayerControlView.VisibilityListener { visibility -> clickListener(visibility == View.VISIBLE) })
             }
 
             muteButton = itemView.findViewById<ImageButton>(R.id.exo_mute).apply {
@@ -207,7 +208,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
-        fun <T> bind(item: T, video: VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (T, ImageView?, String) -> Unit) {
+        fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
             videoMimeType = video.mimeType
 
@@ -218,9 +219,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 // Need to call imageLoader here to start postponed enter transition
                 ViewCompat.setTransitionName(this, video.transitionName)
                 imageLoader(item, null, NCShareViewModel.TYPE_NULL)
-
-                // Wait 1 minute to setup visibility listener, otherwise the toolbar will show briefly
-                Handler(Looper.getMainLooper()).postDelayed({ setControllerVisibilityListener { clickListener(videoView.isControllerVisible) }}, 500)
             }
         }
     }
@@ -238,7 +236,5 @@ abstract class SeamlessMediaSliderAdapter<T>(
         private const val TYPE_PHOTO = 0
         private const val TYPE_ANIMATED = 1
         private const val TYPE_VIDEO = 2
-
-        private const val CONTROLLER_VIEW_TIMEOUT = 3000
     }
 }
