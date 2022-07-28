@@ -27,5 +27,5 @@
     app:use_controller="true"
     app:show_timeout="3000"
     app:auto_show="false"
-    app:surface_type="texture_view"
+    app:surface_type="surface_view"
     app:controller_layout_id="@layout/exoplayer_control_view"/>
