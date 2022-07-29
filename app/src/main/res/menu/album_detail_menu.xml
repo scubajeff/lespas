@@ -56,7 +56,7 @@
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="13"
+        android:orderInCategory="14"
         app:showAsAction="never">
         <menu>
             <item
@@ -80,7 +80,7 @@
     <item
         android:id="@+id/option_menu_wide_list"
         android:title="@string/item_wide_list"
-        android:orderInCategory="14"
+        android:orderInCategory="13"
         android:checkable="true"
         app:showAsAction="never" />
     <item
