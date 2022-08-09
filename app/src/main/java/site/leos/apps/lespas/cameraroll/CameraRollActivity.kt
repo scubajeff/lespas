@@ -26,13 +26,12 @@ import site.leos.apps.lespas.helper.Tools
 class CameraRollActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Launch MainActivity
-        Tools.applyTheme(this, R.style.Theme_LesPas_Cameraroll, R.style.Theme_LesPas_Cameraroll_TrueBlack)
         super.onCreate(savedInstanceState)
         Intent().apply {
             setClass(this@CameraRollActivity, MainActivity::class.java)
             action = MainActivity.LAUNCH_CAMERAROLL
             data = intent.data
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION or Intent.FLAG_ACTIVITY_NO_HISTORY)
             overridePendingTransition(0, 0)
             finish()
             overridePendingTransition(0, 0)

@@ -76,6 +76,7 @@
         </activity>
         <activity
             android:name=".cameraroll.CameraRollActivity"
+            android:theme="@style/Theme.LesPas.Transparent"
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:exported="true">
