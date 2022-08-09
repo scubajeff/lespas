@@ -1177,7 +1177,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
         internal fun filter(query: String) {
-            if (query.isEmpty()) setAlbum(AlbumWithPhotos(this.album, this.photos))
+            if (query.isEmpty()) try { setAlbum(AlbumWithPhotos(this.album, this.photos)) } catch (e: UninitializedPropertyAccessException) {}
             else {
                 this.photos.filter { it.name.contains(query) }.let { filtered ->
                     submitList(filtered)
