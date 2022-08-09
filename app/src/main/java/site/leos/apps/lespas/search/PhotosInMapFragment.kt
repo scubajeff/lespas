@@ -57,6 +57,7 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import site.leos.apps.lespas.BuildConfig
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
@@ -73,7 +74,7 @@ import java.util.*
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class PhotosInMapFragment: Fragment() {
+class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private var locality: String? = null
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
@@ -283,6 +284,10 @@ class PhotosInMapFragment: Fragment() {
         }
 
         super.onDestroy()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (!hasFocus && isSlideshowPlaying) slideshowJob?.cancel()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
