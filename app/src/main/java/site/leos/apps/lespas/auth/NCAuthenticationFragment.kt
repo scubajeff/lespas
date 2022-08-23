@@ -73,7 +73,7 @@ class NCAuthenticationFragment: Fragment() {
     private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
 
     private var actionBarHeight = 0
-    private var currentUsername = ""
+    private var currentLoginName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,8 +101,8 @@ class NCAuthenticationFragment: Fragment() {
                 // TODO Show scan error
             }
 
-            // Get current account userName
-            currentUsername = authenticateModel.getCredential().username
+            // Get current account loginName
+            currentLoginName = authenticateModel.getCredential().loginName
         }
 
         actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
@@ -219,8 +219,8 @@ class NCAuthenticationFragment: Fragment() {
             }
 
             authenticateModel.getCredential().run {
-                if (username.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
-                else authenticateModel.fetchUserId(serverUrl, username, token, true)
+                if (loginName.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                else authenticateModel.fetchUserId(serverUrl, loginName, token, true)
             }
         }
 
@@ -298,7 +298,7 @@ class NCAuthenticationFragment: Fragment() {
 
     private fun prepareCredentialAndQuit() {
         if (reLogin) {
-            if (authenticateModel.getCredential().username != currentUsername) {
+            if (authenticateModel.getCredential().loginName != currentLoginName) {
                 // Re-login to a new account
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
                     ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), getString(R.string.yes_logout), true, CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -324,21 +324,21 @@ class NCAuthenticationFragment: Fragment() {
                     if (this.isNotEmpty()) {
                         account = this[0]
                         setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
-                        setUserData(account, getString(R.string.nc_userdata_secret), "${credential.username}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
+                        setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
                         ViewModelProvider(requireActivity())[NCShareViewModel::class.java].updateWebDavAccessToken(requireContext())
                     } else return
                 }
             } else {
-                account = Account("${credential.username}@${url.host}", getString(R.string.account_type_nc))
+                account = Account("${credential.loginName}@${url.host}", getString(R.string.account_type_nc))
                 addAccountExplicitly(account, "", null)
                 setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
                 setUserData(account, getString(R.string.nc_userdata_server), credential.serverUrl)
                 setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
                 setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
                 setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
-                setUserData(account, getString(R.string.nc_userdata_loginname), credential.username)
-                setUserData(account, getString(R.string.nc_userdata_username), credential.userId)
-                setUserData(account, getString(R.string.nc_userdata_secret), "${credential.username}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
+                setUserData(account, getString(R.string.nc_userdata_loginname), credential.loginName)
+                setUserData(account, getString(R.string.nc_userdata_username), credential.userName)
+                setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
                 setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
             }
 

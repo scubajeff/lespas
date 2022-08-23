@@ -369,13 +369,13 @@ class NCLoginFragment: Fragment() {
                             if (credential.selfSigned) hostnameVerifier { _, _ -> true }
                             readTimeout(20, TimeUnit.SECONDS)
                             writeTimeout(20, TimeUnit.SECONDS)
-                            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic ${"${credential.username}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64()}").build()) }
+                            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic ${"${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64()}").build()) }
                         }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_USER_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
 
                         httpCall?.execute()?.use { response ->
                             if (response.isSuccessful) {
                                 response.body?.string()?.let { json ->
-                                    credential.userId = JSONObject(json).getJSONObject("ocs").getJSONObject("data").getString("id")
+                                    credential.userName = JSONObject(json).getJSONObject("ocs").getJSONObject("data").getString("id")
                                     fetchUserIdResult.postValue(true)
                                 }
                             }
@@ -389,10 +389,10 @@ class NCLoginFragment: Fragment() {
         }
 
         fun setToken(username: String, token: String, serverUrl: String = "", userId: String = "") {
-            credential.username = username
+            credential.loginName = username
             credential.token = token
             credential.serverUrl = serverUrl
-            credential.userId = userId
+            credential.userName = userId
         }
         fun toggleUseHttps() { credential.https = !credential.https }
         fun setSelfSigned(selfSigned: Boolean) { credential.selfSigned = selfSigned }
@@ -405,11 +405,11 @@ class NCLoginFragment: Fragment() {
 
         data class NCCredential(
             var serverUrl: String = "",
-            var username: String = "",
+            var loginName: String = "",
             var token: String = "",
             var selfSigned: Boolean = false,
             var https: Boolean = true,
-            var userId: String = "",
+            var userName: String = "",
         )
 
         @Parcelize
