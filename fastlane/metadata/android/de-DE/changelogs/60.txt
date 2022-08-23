@@ -1,0 +1,4 @@
+* Vorabruf von Bildern vom Server beim Abspielen einer Diashow auf der Karte
+* Bildlaufleiste für Album- und Kamerarollenliste
+* Benutzerfreundlichere UI und UX der Kamerarollenliste
+* Weitere Verbesserungen und Fehlerkorrekturen

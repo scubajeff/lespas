@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-parcelize'
-    id 'com.google.devtools.ksp' version "1.6.21-1.0.5"
+    id 'com.google.devtools.ksp' version "1.7.10-1.0.6"
 }
 
 android {
@@ -12,8 +12,8 @@ android {
         applicationId 'site.leos.apps.lespas'
         minSdk 25
         targetSdk 31
-        versionCode 57
-        versionName '2.5.10'
+        versionCode 64
+        versionName '2.5.17'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         archivesBaseName = "LesPas-v$versionName"
@@ -33,7 +33,8 @@ android {
             ext.enableCrashlytics = false
         }
         release {
-            minifyEnabled false
+            shrinkResources true
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -50,17 +51,17 @@ android {
 
 dependencies {
     // TensorFlow
-    implementation 'org.tensorflow:tensorflow-lite-support:0.1.0'
-    implementation 'org.tensorflow:tensorflow-lite-gpu:2.4.0'
+    implementation 'org.tensorflow:tensorflow-lite-support:0.4.1'
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
 
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.activity:activity-ktx:1.4.0'
-    implementation 'androidx.fragment:fragment-ktx:1.4.1'
+    implementation 'androidx.core:core-ktx:1.8.0'
+    implementation 'androidx.activity:activity-ktx:1.5.1'
+    implementation 'androidx.fragment:fragment-ktx:1.5.2'
 
     // Room components
-    def roomVersion = "2.4.2"
+    def roomVersion = "2.4.3"
     implementation "androidx.room:room-runtime:$roomVersion"
     annotationProcessor "androidx.room:room-compiler:$roomVersion"
     ksp "androidx.room:room-compiler:$roomVersion"
@@ -68,7 +69,7 @@ dependencies {
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     // Lifecycle components
-    def lifecycleVersion = "2.4.1"
+    def lifecycleVersion = "2.5.1"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
@@ -76,13 +77,13 @@ dependencies {
 
     // Kotlin components
     implementation "androidx.work:work-runtime-ktx:2.7.1"
-    def coroutineVersion = "1.5.2"
+    def coroutineVersion = '1.6.3'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
 
     // Other UI components
-    implementation 'com.google.android.material:material:1.6.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.recyclerview:recyclerview-selection:1.1.0'
@@ -104,13 +105,13 @@ dependencies {
     //implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
 
     // Muzei api
-    implementation 'com.google.android.apps.muzei:muzei-api:3.4.0'
+    implementation 'com.google.android.apps.muzei:muzei-api:3.4.1'
 
     // OSMdroid and OSMbonuspack
-    implementation('org.osmdroid:osmdroid-android:6.1.11')  {
+    implementation('org.osmdroid:osmdroid-android:6.1.13')  {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
-    implementation('com.github.MKergall:osmbonuspack:6.7.0') {
+    implementation('com.github.MKergall:osmbonuspack:6.9.0') {
         exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
 

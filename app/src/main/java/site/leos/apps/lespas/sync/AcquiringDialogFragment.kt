@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.sync
 
 import android.app.Application
@@ -33,7 +49,6 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import java.io.File
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
@@ -121,7 +136,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
 
     override fun onDestroy() {
-        if (album.id != PublicationDetailFragment.JOINT_ALBUM_ID) {
+        if (album.id != Album.JOINT_ALBUM_ID) {
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(Intent().apply {
                 action = BROADCAST_REMOVE_ORIGINAL
                 putExtra(BROADCAST_REMOVE_ORIGINAL_EXTRA, if (finished) arguments?.getBoolean(KEY_REMOVE_ORIGINAL) == true else false)
@@ -208,7 +223,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             } catch (e: UnsupportedOperationException) {
                                 application.contentResolver.openInputStream(uri)
                             }?.use { input ->
-                                //File(if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
+                                //File(if (album.id == Album.JOINT_ALBUM_ID) cacheFolder else appRootFolder, fileId).outputStream().use { output ->
                                 File(appRootFolder, fileId).outputStream().use { output ->
                                     totalBytes += input.copyTo(output, 8192)
                                 }
@@ -222,7 +237,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             return@launch
                         }
 
-                        if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                        if (album.id == Album.JOINT_ALBUM_ID) {
                             // Get media's metadata
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
@@ -235,7 +250,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 null, Action.ACTION_ADD_FILES_TO_JOINT_ALBUM,
                                 meta.mimeType,
                                 album.coverFileName.substringBeforeLast('/'),
-                                "${album.eTag}|${meta.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
+                                "${album.eTag}|${meta.dateTaken.toInstant(OffsetDateTime.now().offset).toEpochMilli()}|${meta.mimeType}|${meta.width}|${meta.height}|${meta.orientation}|${meta.caption}|${meta.latitude}|${meta.longitude}|${meta.altitude}|${meta.bearing}",
                                 fileId, System.currentTimeMillis(), 1
                             ))
                         } else {
@@ -268,7 +283,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                 if (actions.isEmpty()) setProgress(NO_MEDIA_FILE_FOUND, "")
                 else {
-                    if (album.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                    if (album.id == Album.JOINT_ALBUM_ID) {
                         // Update joint album content meta, DestinationDialogFragment pass joint album's albumId in property album.eTag, share path in coverFileName
                         actions.add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, album.eTag, album.coverFileName.substringBeforeLast('/'), "", "", System.currentTimeMillis(), 1))
                     } else {

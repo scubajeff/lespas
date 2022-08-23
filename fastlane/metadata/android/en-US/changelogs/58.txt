@@ -1,0 +1,5 @@
+* New: name filter for albums with "Show Name" option turned on
+* New: AI object detection and location search for camera roll backups on server
+* New: Date picker in the camera roll list
+* Fixed login using self-signed certificate
+* Other improvements and bugs fixes

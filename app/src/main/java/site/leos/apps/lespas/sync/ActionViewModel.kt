@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.sync
 
 import android.app.Application
@@ -138,12 +154,11 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun updateCover(albumId: String, cover: Cover) {
+    fun updateCover(albumId: String, albumName: String, cover: Cover) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.setCover(albumId, cover)
-
             // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-            if (!cover.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, "", "", "", System.currentTimeMillis(), 1))
+            if (!cover.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, albumName, "", "", System.currentTimeMillis(), 1))
 
             // If album has not been uploaded yet, update pending action ACTION_ADD_DIRECTORY_ON_SERVER's cover id action table too
             actionRepository.updateCoverInPendingActions(albumId, cover.cover)
@@ -153,7 +168,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun updateAlbumSortOrderInMeta(album: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-            if (!album.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, "", "", "", System.currentTimeMillis(), 1))
+            if (!album.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
         }
     }
 

@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
@@ -13,6 +29,7 @@ import android.graphics.drawable.AnimatedImageDrawable
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.media.MediaDataSource
 import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -31,17 +48,25 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.parcelize.Parcelize
 import okhttp3.CacheControl
 import okhttp3.Call
 import okhttp3.FormBody
 import okhttp3.Response
+import okhttp3.internal.closeQuietly
 import okhttp3.internal.headersContentLength
+import okio.BufferedSource
 import okio.IOException
+import okio.buffer
+import okio.source
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -57,6 +82,7 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.InputStream
 import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -68,7 +94,7 @@ import kotlin.math.roundToInt
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
     private val _shareWithMe = MutableStateFlow<List<ShareWithMe>>(arrayListOf())
-    private val _shareWithMeProgress = MutableStateFlow<Int>(0)
+    private val _shareWithMeProgress = MutableStateFlow(0)
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
@@ -91,6 +117,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val photoRepository = PhotoRepository(application)
 
+    private val videoPlayerCache: SimpleCache?
+
     fun interface LoadCompleteListener {
         fun onLoadComplete()
     }
@@ -106,6 +134,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
+
+            videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
         }
     }
 
@@ -130,9 +160,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun getCallFactory() = webDav.getCallFactory()
+    fun getPlayerCache() = videoPlayerCache
 
     fun getResourceRoot(): String = resourceRoot
 
+/*
     val themeColor: Flow<Int> = flow {
         var color = 0
 
@@ -145,6 +177,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             e.printStackTrace()
         }
     }.flowOn(Dispatchers.IO)
+*/
 
     private fun refreshShareByMe(): MutableList<ShareByMe> {
         val result = mutableListOf<ShareByMe>()
@@ -156,7 +189,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
                         if (getString("item_type") == "folder") {
-                            // Only interested in shares of subfolders under lespas/
+                            // Only interested in shares of sub-folders under lespas/
                             sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname"), getInt("share_type")))
 
                             @Suppress("SimpleRedundantLet")
@@ -366,12 +399,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+/*
     fun publish(albums: List<ShareByMe>) {
         viewModelScope.launch(Dispatchers.IO) {
             createShares(albums)
             _shareByMe.value = refreshShareByMe()
         }
     }
+*/
 
     fun unPublish(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -430,6 +465,32 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         _publicationContentMeta.value = mutableListOf()
     }
 
+    fun getCameraRollArchive(): List<Photo> {
+        val result = mutableListOf<Photo>()
+        try {
+            webDav.listWithExtraMeta("$resourceRoot/DCIM", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+                if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
+                    result.add(Photo(
+                        id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
+                        dateTaken = dav.dateTaken, lastModified = dav.modified,
+                        width = dav.width, height = dav.height, orientation = dav.orientation,
+                        // Store file size in property shareId
+                        shareId = dav.size.toInt(),
+                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing
+                    ))
+                }
+            }
+            result.sortByDescending { it.dateTaken }
+
+            // Save a snapshot
+            File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
+                it.write(Tools.photosToMetaJSONString(result))
+            }
+        } catch (e: Exception) {}
+
+        return result
+    }
+
     @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
         var doRefresh = true
@@ -448,13 +509,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface, Long>? {
+    fun getMediaExif(remotePhoto: RemotePhoto): Pair<ExifInterface?, Long>? {
         var response: Response? = null
-        var result: Pair<ExifInterface, Long>? = null
+        var result: Pair<ExifInterface?, Long>? = null
 
         try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true)
-            result = Pair(ExifInterface(response.body!!.byteStream()), response.headersContentLength())
+            result = Pair(if (Tools.hasExif(remotePhoto.photo.mimeType)) ExifInterface(response.body!!.byteStream()) else null, response.headersContentLength())
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {
@@ -524,10 +585,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun downloadFile(media: String, dest: File, stripExif: Boolean, useCache: Boolean = true): Boolean {
+    fun downloadFile(media: String, dest: File, stripExif: Boolean, photo: Photo, useCache: Boolean = true): Boolean {
         return try {
             webDav.getStream("${resourceRoot}${media}", useCache, null).use { remote ->
-                if (stripExif) BitmapFactory.decodeStream(remote)?.compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                if (stripExif) {
+                    BitmapFactory.decodeStream(remote)?.let { bmp->
+                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
+                            .compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                    }
+                }
                 else dest.outputStream().use { local -> remote.copyTo(local, 8192) }
             }
 
@@ -672,16 +738,53 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     private val cr = application.contentResolver
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
-    private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_placeholder) as AnimatedVectorDrawable
+    private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator) as AnimatedVectorDrawable
+    private val loadingDrawableLV = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
     private val imageCache = ImageCache(((application.getSystemService(Context.ACTIVITY_SERVICE)) as ActivityManager).memoryClass / MEMORY_CACHE_SIZE * 1024 * 1024)
     private val decoderJobMap = HashMap<Int, Job>()
     private val httpCallMap = HashMap<Job, Call>()
+    private val mediaMetadataRetriever by lazy { MediaMetadataRetriever() }
 
-    @SuppressLint("NewApi")
     @Suppress("BlockingMethodInNonBlockingContext")
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
+
+        // For full image, show a thumbnail version first
+        if (viewType == TYPE_FULL) {
+            imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
+                // Show cached low resolution bitmap first before loading full size bitmap
+                view.setImageBitmap(it)
+                callBack?.onLoadComplete()
+            } ?: run {
+                // For camera roll items, load thumbnail if cache missed
+                if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+                    try {
+                        (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            view.context.contentResolver.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width / 4, imagePhoto.photo.height / 4), null)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            MediaStore.Images.Thumbnails.getThumbnail(cr, imagePhoto.photo.id.substringAfterLast('/').toLong(), MediaStore.Images.Thumbnails.MINI_KIND, null).run {
+                                if (imagePhoto.photo.orientation != 0) Bitmap.createBitmap(this, 0, 0, this.width, this.height, Matrix().also { it.preRotate(imagePhoto.photo.orientation.toFloat()) }, true)
+                                else this
+                            }
+                        })?.let {
+                            view.setImageBitmap(it)
+                            callBack?.onLoadComplete()
+                        }
+                    } catch (e: Exception) {}
+                } else view.setImageDrawable(null)
+            }
+        } else view.setImageDrawable(null)
+
+        // For items of remote album, show loading animation
+        if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+            view.background = (if (viewType == TYPE_FULL) loadingDrawableLV else loadingDrawable).apply { start() }
+
+            // Showing photo in map requires drawable's intrinsicHeight to find proper marker position, it's not yet available
+            if (viewType != TYPE_IN_MAP) callBack?.onLoadComplete()
+        }
+
         val job = viewModelScope.launch(downloadDispatcher) {
             var bitmap: Bitmap? = null
             var animatedDrawable: Drawable? = null
@@ -703,7 +806,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
                             when {
-                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, view, type, forceNetwork)
+                                imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> getRemoteThumbnail(coroutineContext.job, imagePhoto, type, forceNetwork)
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                         ImageDecoder.decodeBitmap(ImageDecoder.createSource(cr, Uri.parse(imagePhoto.photo.id))) { decoder, _, _ -> decoder.setTargetSampleSize(thumbnailSize) }
@@ -719,13 +822,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                                 else -> {
                                     // File is available locally, already rotated to it's upright position. Fall back to remote
-                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, view, type) }
+                                    BitmapFactory.decodeFile("${localFileFolder}/${imagePhoto.photo.id}", BitmapFactory.Options().apply { inSampleSize = thumbnailSize }) ?: run { getRemoteThumbnail(coroutineContext.job, imagePhoto, type) }
                                 }
                             }
                         }
-                        TYPE_VIDEO -> {
-                            getVideoThumbnail(coroutineContext.job, imagePhoto)
-                        }
+                        TYPE_VIDEO -> getVideoThumbnail(coroutineContext.job, imagePhoto)
                         TYPE_EMPTY_ROLL_COVER -> ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
                         else -> {
                             // For GIF, AGIF, AWEBP cover
@@ -735,23 +836,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             when {
                                 imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> {
                                     // Photo is from remote album and is already uploaded
-                                    if (type == TYPE_FULL) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                                        // Show cached low resolution bitmap first if loading full size bitmap
-                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
-                                        callBack?.onLoadComplete()
-                                    } else withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                    webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                        httpCallMap.replace(coroutineContext.job, second)
-                                        first
-                                    }
+                                    getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                 }
                                 imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> {
                                     // Photo is from local Camrea roll
-                                    if (imagePhoto.photo.orientation != 0) imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
-                                        // Show cached low resolution bitmap first if we need to rotate the picture which will take times
-                                        withContext(Dispatchers.Main) { view.setImageBitmap(it) }
-                                        callBack?.onLoadComplete()
-                                    }
                                     cr.openInputStream(Uri.parse(imagePhoto.photo.id))
                                 }
                                 else -> {
@@ -760,31 +848,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                         File("${localFileFolder}/${imagePhoto.photo.id}").inputStream()
                                     } catch (e: FileNotFoundException) {
                                         // Fall back to network fetching if loading local file failed
-                                        withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-                                        webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null).run {
-                                            httpCallMap.replace(coroutineContext.job, second)
-                                            first
-                                        }
+                                        getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true, null, coroutineContext.job)
                                     }
                                 }
                             }?.use { sourceStream ->
                                 when (type) {
-                                    TYPE_FULL, TYPE_QUATER -> {
+                                    //TYPE_FULL, TYPE_QUARTER -> {
+                                    TYPE_FULL -> {
                                         when {
                                             (imagePhoto.photo.mimeType == "image/awebp" || imagePhoto.photo.mimeType == "image/agif") ||
                                             (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL && (imagePhoto.photo.mimeType == "image/webp" || imagePhoto.photo.mimeType == "image/gif")) -> {
                                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-/*
-                                                    animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(sourceStream.readBytes()))).apply {
-                                                        if (this is AnimatedImageDrawable) {
-                                                            if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
-                                                            start()
-                                                        }
-                                                    }
-*/
                                                     // Some framework implementation will crash when using ByteBuffer as ImageDrawable source
                                                     val tempFile = File(localCacheFolder, imagePhoto.photo.name)
+                                                    ensureActive()
                                                     tempFile.outputStream().run { sourceStream.copyTo(this, 8192) }
+                                                    ensureActive()
                                                     animatedDrawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(tempFile)).apply {
                                                         if (this is AnimatedImageDrawable) {
                                                             if (sp.getBoolean(autoReplayKey, true)) this.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
@@ -794,6 +873,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                     tempFile.delete()
                                                     null
                                                 } else {
+                                                    ensureActive()
                                                     BitmapFactory.decodeStream(sourceStream, null, BitmapFactory.Options().apply { inSampleSize = if (imagePhoto.photo.width < 2000) 2 else 8 })
                                                 }
                                             }
@@ -801,7 +881,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
                                                 val option = BitmapFactory.Options().apply {
                                                     inSampleSize = if (imagePhoto.photo.width * imagePhoto.photo.height > 33333334) 2 else 1
-                                                    if (type == TYPE_QUATER) inSampleSize *= 2
+                                                    //if (type == TYPE_QUARTER) inSampleSize *= 2
                                                     // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
                                                     if (imagePhoto.photo.width == 0) inSampleSize = 2
                                                 }
@@ -857,23 +937,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                             inSampleSize = sampleSize
                                         }
 
-                                        try {
+                                        ensureActive()
+                                        @Suppress("DEPRECATION")
+                                        (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, option)?.let { bmp ->
                                             ensureActive()
-                                            @Suppress("DEPRECATION")
-                                            (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(sourceStream) else BitmapRegionDecoder.newInstance(sourceStream, false))?.decodeRegion(rect, option)?.let { bmp ->
-                                                ensureActive()
-                                                if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
-                                                else bmp
-                                            }
-                                        } catch (e: Exception) {
-                                            // Fall back to video
-                                            // TODO this is for v1 meta which do not contain cover's mimetype information, should be remove in future release
-                                            getVideoThumbnail(coroutineContext.job, imagePhoto)
+                                            if (orientation != 0) Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate(orientation.toFloat()) }, true)
+                                            else bmp
                                         }
                                     }
-                                    else -> {
-                                        null
-                                    }
+                                    else -> { null }
                                 }
                             }
                         }
@@ -882,103 +954,116 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (bitmap != null && type != TYPE_FULL) imageCache.put(key, bitmap)
                 }
             }
-            catch (e: OkHttpWebDavException) { Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}") }
-            catch (e: Exception) { e.printStackTrace() }
+            catch (e: OkHttpWebDavException) {
+                //Log.e(">>>>>>>>>>", "${e.statusCode} ${e.stackTraceString}")
+            }
+            catch (e: Exception) {
+                //e.printStackTrace()
+            }
             finally {
                 if (isActive) withContext(Dispatchers.Main) {
                     animatedDrawable?.let { view.setImageDrawable(it) } ?: run { view.setImageBitmap(bitmap ?: placeholderBitmap) }
 
                     // Stop loading indicator
-                    //view.background = null
                     view.setBackgroundResource(0)
                 }
                 callBack?.onLoadComplete()
             }
+        }.apply {
+            invokeOnCompletion {
+                try {
+                    it?.cause.let { cause ->
+                        if (cause is CancellationException) {
+                            decoderJobMap[jobKey]?.let { job ->
+                                httpCallMap[job]?.let { httpCall ->
+                                    httpCall.cancel()
+                                    httpCallMap.remove(job)
+                                }
+                            }
+                        } else httpCallMap.remove(job)
+                    }
+                    decoderJobMap.remove(jobKey)
+                } catch (e: Exception) {}
+            }
         }
-        job.invokeOnCompletion { try { httpCallMap.remove(job) } catch (e: Exception) {} }
 
         // Replacing previous job
         replacePrevious(jobKey, job)
     }
 
     private fun getVideoThumbnail(job: Job, imagePhoto: RemotePhoto): Bitmap? {
-        var mediaMetadataRetriever: MediaMetadataRetriever? = null
-        return try {
-            if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
-                val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    try {
-                        cr.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
-                    } catch (e: ArithmeticException) {
-                        // Some Android Q Rom, like AEX for EMUI 9, throw this exception
-                        @Suppress("DEPRECATION")
-                        MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
-                    }
-                } else {
+        return if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
+            val photoId = imagePhoto.photo.id.substringAfterLast('/').toLong()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    cr.loadThumbnail(Uri.parse(imagePhoto.photo.id), Size(imagePhoto.photo.width, imagePhoto.photo.height), null)
+                } catch (e: Exception) {
+                    // Some Android Q Rom, like AEX for EMUI 9, throw ArithmeticException
                     @Suppress("DEPRECATION")
                     MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
                 }
             } else {
-                var bitmap: Bitmap? = null
-                val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
-
-                // Load from local cache
-                if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
-
-                // Download from server
-                bitmap ?: run {
-                    mediaMetadataRetriever = MediaMetadataRetriever().apply {
-                        job.ensureActive()
-                        if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED)
-                            // Should allow "/" in photo's remote path string, obviously, and name string, that's for fetching camera backups on server
-                            setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
-                        else setDataSource("${localFileFolder}/${imagePhoto.photo.id}")
-
-                        job.ensureActive()
-                        bitmap = getFrameAtTime(0L)
-
-                        release()
-                    }
-
-                    // Cache thumbnail in local
-                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
-                }
-
-                bitmap
+                @Suppress("DEPRECATION")
+                MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
             }
-        } catch (e: Exception) {
-            mediaMetadataRetriever?.release()
-            null
+        } else {
+            var bitmap: Bitmap? = null
+            val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
+
+            // Load from local cache
+            if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
+
+            // Download from server
+            bitmap ?: run {
+                bitmap = getRemoteVideoThumbnail(imagePhoto, job)
+
+                // Cache thumbnail in local
+                bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
+            }
+
+            bitmap
         }
     }
 
-    private suspend fun getRemoteThumbnail(job: Job, imagePhoto: RemotePhoto, view: ImageView, type: String, forceNetwork: Boolean = false): Bitmap? {
+    @Synchronized private fun getRemoteVideoThumbnail(imagePhoto: RemotePhoto, job: Job): Bitmap? {
+        job.ensureActive()
+        var bitmap: Bitmap?
+        var remoteDataSource: VideoMetaDataMediaSource? = null
+
+        mediaMetadataRetriever.apply {
+            if (imagePhoto.remotePath.isNotEmpty() && imagePhoto.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                // Should allow "/" in photo's remote path string, obviously, and name string, that's for fetching camera backups on server
+                //setDataSource("$resourceRoot${Uri.encode(imagePhoto.remotePath, "/")}/${Uri.encode(imagePhoto.photo.name, "/")}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })
+                remoteDataSource = VideoMetaDataMediaSource(imagePhoto, resourceRoot, webDav, job, httpCallMap)
+                setDataSource(remoteDataSource)
+            } else setDataSource("${localFileFolder}/${imagePhoto.photo.id}")
+
+            bitmap = getFrameAtTime(0L, MediaMetadataRetriever.OPTION_NEXT_SYNC)
+
+            // Call MediaDataSource close() here so that http calls can be cancelled asap
+            remoteDataSource?.close()
+        }
+
+        return bitmap
+    }
+
+    private fun getRemoteThumbnail(job: Job, imagePhoto: RemotePhoto, type: String, forceNetwork: Boolean = false): Bitmap? {
         var bitmap: Bitmap?
 
         // Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
         bitmap = try {
-            withContext(Dispatchers.Main) { view.background = loadingDrawable.apply { start() }}
-            job.ensureActive()
-            webDav.getStreamCall("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).run {
-                httpCallMap.replace(job, second)
-
-                first.use {
-                    job.ensureActive()
-                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
-                }
+            getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null, job).use {
+                job.ensureActive()
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if (type == TYPE_GRID) 2 else 1 })
             }
         } catch(e: Exception) { null }
 
         bitmap ?: run {
             // If preview is not available, we have to use the actual image file
-            job.ensureActive()
-            webDav.getStreamCall("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null).run {
-                httpCallMap.replace(job, second)
-
-                first.use {
-                    job.ensureActive()
-                    bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
-                }
+            getImageStream("$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}", true,null, job).use {
+                job.ensureActive()
+                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8 })
             }
             if (imagePhoto.photo.orientation != 0) bitmap?.let {
                 job.ensureActive()
@@ -991,11 +1076,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun cancelSetImagePhoto(view: View) {
-        decoderJobMap[System.identityHashCode(view)]?.apply {
-            httpCallMap[this]?.cancel()
-            cancel()
+    private fun getImageStream(source: String, useCache: Boolean, cacheControl: CacheControl?, job: Job): InputStream {
+        webDav.getCall(source, useCache, cacheControl).run {
+            httpCallMap.replace(job, this)
+            job.ensureActive()
+            execute().also { response ->
+                if (response.isSuccessful) return response.body!!.byteStream()
+                else {
+                    response.close()
+                    throw OkHttpWebDavException(response)
+                }
+            }
         }
+    }
+
+    fun cancelSetImagePhoto(view: View) {
+        System.identityHashCode(view).let { jobKey -> decoderJobMap[jobKey]?.cancel() }
     }
 
     fun invalidPhoto(photoId: String) {
@@ -1009,9 +1105,188 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
     override fun onCleared() {
         //File(localCacheFolder, OkHttpWebDav.VIDEO_CACHE_FOLDER).deleteRecursively()
-        decoderJobMap.forEach { if (it.value.isActive) it.value.cancel() }
+        decoderJobMap.forEach { if (it.value.isActive) {
+            httpCallMap[it.value]?.cancel()
+            it.value.cancel()
+        }}
         downloadDispatcher.close()
+        mediaMetadataRetriever.release()
+        videoPlayerCache?.release()
         super.onCleared()
+    }
+
+    class VideoMetaDataMediaSource(imagePhoto: RemotePhoto, resourceRoot: String, private val webDav: OkHttpWebDav, private val job: Job, private val callMap: HashMap<Job, Call>): MediaDataSource() {
+        private val mediaUrl: String
+        private var mediaSize: Long = 0
+        private val header = ByteArray(HEADER_SIZE)
+        private var tail: ByteArray? = null
+        private var tailStart: Long = 0
+
+        private var mBufferSource: BufferedSource? = null
+        private var mWorkBuffer: BufferedSource? = null
+        private var mBufferOffset: Long = 0
+        private var mBufferRangeStart: Long = Long.MAX_VALUE
+
+        init {
+            mediaUrl = "$resourceRoot${imagePhoto.remotePath}/${imagePhoto.photo.name}"
+            //Log.e(">>>>>>>>>>>", "loading $mediaUrl")
+            // Get header and media size
+            var retry = 0
+            while(retry <= MAXIMUM_RETRY) {
+                job.ensureActive()
+                try {
+                    webDav.getCall(mediaUrl, true, null).run {
+                        callMap[job] = this
+                        execute().also { response ->
+                            mediaSize = response.headersContentLength()
+                            tailStart = mediaSize - (mediaSize / 20)
+                            response.body!!.byteStream().source().buffer().use {
+                                var byteRead = 0
+                                while(byteRead < HEADER_SIZE) {
+                                    byteRead += it.read(header, byteRead, HEADER_SIZE - byteRead)
+                                }
+                            }
+                        }
+                    }
+                    break
+                } catch (e: SocketTimeoutException) {
+                    retry++
+                    //Log.e(">>>>>>>>>>>", "head reading retry $retry")
+                    sleep(retry * BACKOFF_INTERVAL)
+                }
+            }
+        }
+
+        private fun seekAt(position: Long) {
+            //Log.e(">>>>>>>>>>>>>>", "seekAt $position ${mediaSize - position}")
+            // Cancel previous call
+            mWorkBuffer?.close()
+            mBufferSource?.close()
+            callMap[job]?.cancel()
+
+            var retry = 0
+            while(retry <= MAXIMUM_RETRY) {
+                try {
+                    webDav.getRangeCall(mediaUrl, position).run {
+                        callMap[job] = this
+                        job.ensureActive()
+                        this.execute().let { response ->
+                            response.body?.let {
+                                mBufferSource = it.byteStream().source().buffer()
+                                mWorkBuffer = mBufferSource?.peek()
+                                mBufferOffset = position
+                                mBufferRangeStart = position
+                            }
+                        }
+                    }
+                    break
+                } catch (e: SocketTimeoutException) {
+                    retry++
+                    //Log.e(">>>>>>>>>>>", "seek reading retry $retry")
+                    sleep(retry * BACKOFF_INTERVAL)
+                }
+            }
+        }
+
+        override fun close() {
+            callMap[job]?.cancel()
+            callMap.remove(job)
+            //Log.e(">>>>>>>>>>", "closed $mediaUrl\n\n\n")
+        }
+
+        override fun getSize(): Long = mediaSize    //.apply { Log.e(">>>>>>>>>>", "getSize $this") }
+
+        override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
+            var byteRead = 0
+
+            try {
+                when {
+                    position >= mediaSize -> byteRead = -1
+                    position + size < HEADER_SIZE -> {
+                        //Log.e(">>>>>>>>>>>>>", "reading in head buffer $position $size")
+                        position.toInt().let { startIndex -> header.copyInto(buffer, offset, startIndex, startIndex + size) }
+                        byteRead = size
+                    }
+                    position > tailStart -> {
+                        //Log.e(">>>>>>>>>>>>>", "reading in tail buffer $position $size")
+                        tail ?: run {
+                            callMap[job]?.cancel()
+                            var retry = 0
+                            while(retry <= MAXIMUM_RETRY) {
+                                try {
+                                    webDav.getRangeCall(mediaUrl, position).run {
+                                        callMap[job] = this
+                                        job.ensureActive()
+                                        this.execute().let { response ->
+                                            response.body?.let { body ->
+                                                body.byteStream().source().buffer().use { s ->
+                                                    val tailSize = (mediaSize - position).toInt()   //.apply { Log.e(">>>>>>>>>>>", "tail buffer size: $this") }
+                                                    tail = ByteArray(tailSize)
+
+                                                    var br = 0
+                                                    while(br < tailSize) br += s.read(tail!!, br, tailSize - br)
+                                                }
+                                                tailStart = position
+                                            }
+                                        }
+                                    }
+                                    break
+                                } catch (e: SocketTimeoutException) {
+                                    retry++
+                                    //Log.e(">>>>>>>>>>>", "tail reading retry $retry")
+                                    sleep(retry * BACKOFF_INTERVAL)
+                                }
+                            }
+                        }
+
+                        (position - tailStart).toInt().let { startIndex -> tail!!.copyInto(buffer, offset, startIndex, min(startIndex + size, tail!!.size)) }
+                        byteRead = size
+                    }
+                    else -> {
+                        //Log.e(">>>>>>>>>>>>>", "reading in middle buffer $position $size")
+                        // Re-seek when reading beyond buffer start
+                        if (position < mBufferRangeStart) seekAt(position)
+
+                        when {
+                            position == mBufferOffset -> {}
+                            position > mBufferOffset -> {
+                                //Log.e(">>>>>>", "forward from $currentOffset to $position by ${position - currentOffset}")
+                                // Jump forward for longer than 2MB, re-seek to avoid over-reading TODO is it worth another http call
+                                if (position - mBufferOffset > SKIP_LIMIT) seekAt(position)
+                                else {
+                                    // Jump forward for less than 2MB ahead, use skip
+                                    mWorkBuffer?.skip(position - mBufferOffset)
+                                    mBufferOffset = position
+                                }
+                            }
+                            else -> {
+                                // Jump backward, rewind without another http call
+                                //Log.e(">>>>>>>>>>>", "rewind from $mBufferOffset to $position by ${position - mBufferOffset}")
+                                mWorkBuffer?.closeQuietly()
+                                mWorkBuffer = mBufferSource?.peek()
+                                mWorkBuffer?.skip(position - mBufferRangeStart)
+                                mBufferOffset = position
+                            }
+                        }
+                        job.ensureActive()
+                        byteRead = mWorkBuffer?.read(buffer, offset, size) ?: -1
+                        if (byteRead != -1) mBufferOffset += byteRead
+                    }
+                }
+            } catch (e: CancellationException) {
+                //Log.e(">>>>>>>>>>>", "job cancel, closing datasource")
+                close()
+            }
+
+            return byteRead
+        }
+
+        companion object {
+            private const val HEADER_SIZE = 312 * 1024          // 312K header box size
+            private const val SKIP_LIMIT = 2 * 1024 * 1024L     // 2MB skip limit
+            private const val MAXIMUM_RETRY = 2                 // Maximum retry for http read timeout
+            private const val BACKOFF_INTERVAL = 800L           // Retry backoff interval in millisecond
+        }
     }
 
     class ImageCache(maxSize: Int) : LruCache<String, Bitmap>(maxSize) {
@@ -1070,7 +1345,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val TYPE_FULL = "_full"
         const val TYPE_COVER = "_cover"
         const val TYPE_SMALL_COVER = "_smallcover"
-        const val TYPE_QUATER = "_quater"
+        //const val TYPE_QUARTER = "_quarter"
         const val TYPE_VIDEO = "_video"
         const val TYPE_IN_MAP = "_map"
         const val TYPE_EMPTY_ROLL_COVER = "empty"
@@ -1080,14 +1355,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=lespas&subfiles=true&reshares=false&format=json"
         private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
-        private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
+        //private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
         private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
 
         const val SHARE_TYPE_USER = 0
         const val SHARE_TYPE_GROUP = 1
-        const val SHARE_TYPE_PUBLIC = 3
+        //const val SHARE_TYPE_PUBLIC = 3
         //private const val SHARE_TYPE_USER_STRING = "user"
         //private const val SHARE_TYPE_GROUP_STRING = "group"
         //private const val SHARE_TYPE_PUBLIC_STRING = "public"
@@ -1096,8 +1371,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
         const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ
-        private const val PERMISSION_CAN_DELETE = 8
-        private const val PERMISSION_CAN_SHARE = 16
-        private const val PERMISSION_ALL = 31
+        //private const val PERMISSION_CAN_DELETE = 8
+        //private const val PERMISSION_CAN_SHARE = 16
+        //private const val PERMISSION_ALL = 31
     }
 }

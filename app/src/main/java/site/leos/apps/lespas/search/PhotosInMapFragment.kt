@@ -1,9 +1,26 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.search
 
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
@@ -35,12 +52,12 @@ import org.osmdroid.views.MapController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.CopyrightOverlay
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.infowindow.InfoWindow
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import site.leos.apps.lespas.BuildConfig
+import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
@@ -57,12 +74,12 @@ import java.util.*
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class PhotosInMapFragment: Fragment() {
+class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private var locality: String? = null
     private var country: String? = null
     private var albumNames: HashMap<String, String>? = null
     private var album: Album? = null
-    private var remotePhoto: MutableList<NCShareViewModel.RemotePhoto>? = null
+    private var remotePhotos: MutableList<NCShareViewModel.RemotePhoto>? = null
     private var poiBoundingBox: BoundingBox? = null
 
     private lateinit var rootPath: String
@@ -89,6 +106,7 @@ class PhotosInMapFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         lespasPath = getString(R.string.lespas_base_folder_name)
+        rootPath = Tools.getLocalRoot(requireContext())
 
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
@@ -96,8 +114,6 @@ class PhotosInMapFragment: Fragment() {
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
             album = getParcelable(KEY_ALBUM)
         }
-
-        rootPath = Tools.getLocalRoot(requireContext())
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -112,7 +128,9 @@ class PhotosInMapFragment: Fragment() {
         })
 
         album?.run {
+            // Show actions only when not called by LocationResultSingleLocalityFragment
             setHasOptionsMenu(true)
+
             window = requireActivity().window
             bgmPlayer = ExoPlayer.Builder(requireContext()).build()
             bgmPlayer.run {
@@ -133,8 +151,8 @@ class PhotosInMapFragment: Fragment() {
                 playerHandler = Handler(bgmPlayer.applicationLooper)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
-            remotePhoto = mutableListOf()
-            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhoto?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
+            remotePhotos = mutableListOf()
+            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
         }
     }
 
@@ -151,7 +169,14 @@ class PhotosInMapFragment: Fragment() {
         org.osmdroid.config.Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
 
         mapView.apply {
-            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+            if (this.context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
+                floatArrayOf(
+                    1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
+                    0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
+                    0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
+                    0f, 0f, 0f, 1f, 0f,
+                )
+            ))
             setMultiTouchControls(true)
             setUseDataConnection(true)
             overlays.add(CopyrightOverlay(requireContext()))
@@ -166,30 +191,34 @@ class PhotosInMapFragment: Fragment() {
                 val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
                 spaceHeight = mapView.height / 2 - pin!!.intrinsicHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, mapView.context.resources.displayMetrics).roundToInt() - (requireActivity() as AppCompatActivity).supportActionBar!!.height
 
-                if (locality != null) remotePhoto = ViewModelProvider(
+                if (locality != null) remotePhotos = ViewModelProvider(
                     requireParentFragment(),
-                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true)
+                    LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel)
                 )[LocationSearchHostFragment.LocationSearchViewModel::class.java].getResult().value?.find { it.locality == locality && it.country == country }?.photos
 
-                remotePhoto?.forEach { remotePhoto ->
+                remotePhotos?.forEach { remotePhoto ->
                     poi = GeoPoint(remotePhoto.photo.latitude, remotePhoto.photo.longitude)
                     val marker = Marker(mapView).apply {
                         position = poi
                         icon = pin
-                        if (remotePhoto.remotePath.isEmpty()) loadImage(this, remotePhoto.photo)
+                        if (remotePhoto.remotePath.isEmpty() || remotePhoto.photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) loadImage(this, remotePhoto.photo)
                         relatedObject = spaceHeight
                     }
                     marker.infoWindow = object : InfoWindow(R.layout.map_info_window, mapView) {
                         override fun onOpen(item: Any?) {
                             mView?.apply {
                                 findViewById<ImageView>(R.id.photo)?.let { v ->
-                                    if (remotePhoto.remotePath.isEmpty()) {
+                                    if (remotePhoto.remotePath.isEmpty() || remotePhoto.photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) {
                                         v.setImageDrawable(marker.image)
                                         (marker.image.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
                                     }
                                     else {
                                         imageLoaderModel.setImagePhoto(remotePhoto, v, NCShareViewModel.TYPE_IN_MAP) {
-                                            (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            try {
+                                                (v.drawable.intrinsicHeight - marker.relatedObject as Int).apply { mapView.setMapCenterOffset(0, if (this > 0) this else 0) }
+                                            } catch (e: Exception) {
+                                                // If remote image loading fails, Drawable.getIntrinsicHeight() will break
+                                            }
                                         }
                                     }
                                 }
@@ -211,6 +240,11 @@ class PhotosInMapFragment: Fragment() {
                     mapView.overlays.add(marker)
 
                     points.add(poi)
+                }
+
+                // Pre-fetch first POI's image if it's from remote album, get ready to play slideshow
+                remotePhotos?.get(0)?.let {
+                    if (it.remotePath.isNotEmpty() && it.photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) imageLoaderModel.setImagePhoto(it, (mapView.overlays[1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                 }
 
                 mapView.invalidate()
@@ -245,11 +279,15 @@ class PhotosInMapFragment: Fragment() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         album?.run {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            Tools.keepScreenOn(window, false)
             bgmPlayer.release()
         }
 
         super.onDestroy()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (!hasFocus && isSlideshowPlaying) slideshowJob?.cancel()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -274,17 +312,16 @@ class PhotosInMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_map_slideshow -> {
-                if (isSlideshowPlaying) {
-                    slideshowJob?.cancel()
-                    stopSlideshow()
-                } else {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                if (isSlideshowPlaying) slideshowJob?.cancel()
+                else {
+                    Tools.keepScreenOn(window, true)
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                     isSlideshowPlaying = true
                     playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
 
                     slideshowJob?.cancel()
                     slideshowJob = lifecycleScope.launch {
+                        // Prepare map and BGM before starting slideshow
                         closeAllInfoWindow()
                         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
 
@@ -298,10 +335,11 @@ class PhotosInMapFragment: Fragment() {
                             bgmPlayer.prepare()
                         }
 
+                        // Loop through all POIs
                         try {
                             for (i in 1 until mapView.overlays.size) {
-                                if (!isActive) break
-                                    (mapView.overlays[i] as Marker).let { stop ->
+                                ensureActive()
+                                (mapView.overlays[i] as Marker).let { stop ->
                                     // Pan map to reveal full image
                                     //poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
 
@@ -318,6 +356,8 @@ class PhotosInMapFragment: Fragment() {
                                             animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
                                         }
                                         animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
+                                        ensureActive()
+                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                                         delay(6400)     // 4000 + 3 * 800
                                     } else {
                                         //mapView.setMapCenterOffset(0, poiCenter)
@@ -325,6 +365,8 @@ class PhotosInMapFragment: Fragment() {
                                             stop.showInfoWindow()
                                         }
                                         animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                        ensureActive()
+                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
                                         delay(4000)
                                     }
                                     stop.closeInfoWindow()
@@ -334,9 +376,7 @@ class PhotosInMapFragment: Fragment() {
                         } catch (e: Exception) {
                             // Race condition might happen when user press back key while slideshow is playing
                         }
-
-                        if (isActive) stopSlideshow()
-                    }
+                    }.apply { invokeOnCompletion { stopSlideshow() }}
                 }
                 true
             }
@@ -398,7 +438,7 @@ class PhotosInMapFragment: Fragment() {
         mapView.setMapCenterOffset(0, 0)
         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
         if (hasBGM) fadeOutBGM(true)
@@ -476,6 +516,7 @@ class PhotosInMapFragment: Fragment() {
         private const val KEY_LOCALITY = "KEY_LOCALITY"
         private const val KEY_COUNTRY = "KEY_COUNTRY"
         private const val KEY_ALBUM_NAMES = "KEY_ALBUM_NAMES"
+        private const val KEY_TARGET = "KEY_TARGET"
         private const val KEY_ALBUM = "KEY_ALBUM"
         private const val KEY_PHOTOS = "KEY_PHOTOS"
 
@@ -483,11 +524,12 @@ class PhotosInMapFragment: Fragment() {
         private const val ANIMATION_TIME = 800L
 
         @JvmStatic
-        fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>) = PhotosInMapFragment().apply {
+        fun newInstance(locality: String, country: String, albumNames: HashMap<String, String>, target: Int) = PhotosInMapFragment().apply {
             arguments = Bundle().apply {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
                 putSerializable(KEY_ALBUM_NAMES, albumNames)
+                putInt(KEY_TARGET, target)
             }
         }
 

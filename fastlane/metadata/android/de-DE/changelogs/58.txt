@@ -1,0 +1,5 @@
+* Neu: Namensfilter für Alben mit aktivierter Option "Name anzeigen".
+* Neu: KI-Objekterkennung und Standortsuche für Kamera-Roll-Backups auf dem Server
+* Neu: Datumsauswahl in der Kamerarollenliste
+* Behoben: Login mit selbstsigniertem Zertifikat
+* Weitere Verbesserungen und Fehlerkorrekturen

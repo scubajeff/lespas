@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.helper
 
 import android.accounts.NetworkErrorException
@@ -19,6 +35,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -26,7 +43,6 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -101,6 +117,17 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun getCallFactory() = httpClient
 
+    fun getCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Call {
+        val reqBuilder = Request.Builder().url(source)
+        return (if (useCache) {
+            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
+            cachedHttpClient!!.newCall(reqBuilder.get().build())
+        } else {
+            httpClient.newCall(reqBuilder.get().build())
+        })
+    }
+    fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(source).header("Range", "bytes=${rangeStartAt}-").get().build())
+
     fun getRawResponse(source: String, useCache: Boolean): Response {
         val reqBuilder = Request.Builder().url(source)
         return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()
@@ -108,13 +135,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun getStream(source: String, useCache: Boolean, cacheControl: CacheControl?): InputStream = getStreamCall(source, useCache, cacheControl).first
     fun getStreamCall(source: String, useCache: Boolean, cacheControl: CacheControl?): Pair<InputStream, Call> {
-        val reqBuilder = Request.Builder().url(source)
-        (if (useCache) {
-            cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
-            cachedHttpClient!!.newCall(reqBuilder.get().build())
-        } else {
-            httpClient.newCall(reqBuilder.get().build())
-        }).run {
+        getCall(source, useCache, cacheControl).run {
             execute().also { response ->
                 if (response.isSuccessful) return Pair(response.body!!.byteStream(), this)
                 else {
@@ -213,9 +234,10 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun listWithExtraMeta(targetName: String, depth: String): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
-            var currentFolderId = ""
-            val offset = OffsetDateTime.now().offset
+        // Build a new client without read timeout, since the archive could be hugh
+        httpClient.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build()
+            .newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+            @Suppress("UNUSED_VARIABLE") var currentFolderId = ""
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
             if (response.isSuccessful) {
@@ -263,10 +285,14 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
-                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { LocalDateTime.ofEpochSecond(text.toLong() / 1000, 0, offset) } catch (e: Exception) { LocalDateTime.MIN }
+                                    LESPAS_DATE_TAKEN -> res.dateTaken = try { Tools.epochToLocalDateTime(text.toLong()) } catch (e: Exception) { LocalDateTime.MIN }
                                     LESPAS_WIDTH -> res.width = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_HEIGHT -> res.height = try { text.toInt() } catch (e: NumberFormatException) { 0 }
                                     LESPAS_ORIENTATION -> res.orientation = try { text.toInt() } catch (e: NumberFormatException) { 0 }
+                                    LESPAS_LATITUDE -> res.latitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_LONGITUDE -> res.longitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_ALTITUDE -> res.altitude = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
+                                    LESPAS_BEARING -> res.bearing = try { text.toDouble() } catch (e: NumberFormatException) { Photo.NO_GPS_DATA }
                                     RESPONSE_TAG -> {
                                         text = ""
                                         if (res.dateTaken == LocalDateTime.MIN) res.dateTaken = res.modified
@@ -370,7 +396,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
             // Upload chunks
             // Longer timeout adapting to slow connection
-            val uploadHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
+            val uploadHttpClient = httpClient.newBuilder().readTimeout(10, TimeUnit.MINUTES).writeTimeout(10, TimeUnit.MINUTES).build()
             while(index < size) {
                 if (sp.getBoolean(wifionlyKey, true)) {
                     if ((ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
@@ -394,15 +420,14 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             //Log.e(">>>>>>>", "start assemblying")
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
-                httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).callTimeout(7, TimeUnit.MINUTES).build()
-                    .newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
-                        if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
-                        else {
-                            // Upload interrupted, delete uploaded chunks
-                            //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
-                            throw OkHttpWebDavException(response)
-                        }
+                uploadHttpClient.newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                    if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
+                    else {
+                        // Upload interrupted, delete uploaded chunks
+                        //try { httpClient.newCall(Request.Builder().url(chunkFolder).delete().build()).execute().use {} } catch (e: Exception) { e.printStackTrace() }
+                        throw OkHttpWebDavException(response)
                     }
+                }
             }
             catch (e: InterruptedIOException) { e.printStackTrace() }
             catch (e: SocketTimeoutException) { e.printStackTrace() }
@@ -414,7 +439,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun copyOrMove(copy: Boolean, source: String, dest: String): Pair<String, String> {
-        val copyHttpClient = httpClient.newBuilder().readTimeout(4, TimeUnit.MINUTES).writeTimeout(4, TimeUnit.MINUTES).build()
+        val copyHttpClient = httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).build()
         val hb = Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T")
         copyHttpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
@@ -445,6 +470,10 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         var width: Int = 0,
         var height: Int = 0,
         var orientation: Int = 0,
+        var latitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var longitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var altitude: Double = Photo.GPS_DATA_UNKNOWN,
+        var bearing: Double = Photo.GPS_DATA_UNKNOWN,
     ): Parcelable
 
     companion object {
@@ -461,33 +490,37 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         // PROPFIND properties namespace
         private const val DAV_NS = "DAV:"
         private const val OC_NS = "http://owncloud.org/ns"
-        private const val NC_NS = "http://nextcloud.org/ns"
+        //private const val NC_NS = "http://nextcloud.org/ns"
 
         // Standard properties
         private const val DAV_GETETAG = "getetag"
         private const val DAV_GETLASTMODIFIED = "getlastmodified"
         private const val DAV_GETCONTENTTYPE = "getcontenttype"
-        private const val DAV_RESOURCETYPE = "resourcetype"
+        //private const val DAV_RESOURCETYPE = "resourcetype"
         private const val DAV_GETCONTENTLENGTH = "getcontentlength"
         private const val DAV_SHARE_TYPE = "share-type"
 
         // Nextcloud properties
         private const val OC_UNIQUE_ID = "fileid"
         private const val OC_SHARETYPE = "share-types"
-        private const val OC_CHECKSUMS = "checksums"
-        private const val NC_HASPREVIEW = "has-preview"
-        private const val OC_SIZE = "size"
-        private const val OC_DATA_FINGERPRINT = "data-fingerprint"
+        //private const val OC_CHECKSUMS = "checksums"
+        //private const val NC_HASPREVIEW = "has-preview"
+        //private const val OC_SIZE = "size"
+        //private const val OC_DATA_FINGERPRINT = "data-fingerprint"
 
         // LesPas properties
         const val LESPAS_DATE_TAKEN = "pictureDateTaken"
         const val LESPAS_WIDTH = "pictureWidth"
         const val LESPAS_HEIGHT = "pictureHeight"
         const val LESPAS_ORIENTATION = "pictureOrientation"
+        const val LESPAS_LATITUDE = "pictureLatitude"
+        const val LESPAS_LONGITUDE = "pictureLongitude"
+        const val LESPAS_ALTITUDE = "pictureAltitude"
+        const val LESPAS_BEARING = "pictureBearing"
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
         private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
-        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/></d:prop></d:propfind>"
+        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/><oc:$LESPAS_LATITUDE/><oc:$LESPAS_LONGITUDE/><oc:$LESPAS_ALTITUDE/><oc:$LESPAS_BEARING/></d:prop></d:propfind>"
         private const val PROPPATCH_EXTRA_META_BODY = "${XML_HEADER}<d:propertyupdate xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:set><d:prop>%s</d:prop></d:set></d:propertyupdate>"
 /*
         private const val BATCH_BODY = "${XML_HEADER}<D:%s xmlns:D=\"$DAV_NS\"><D:target>%s</D:target></D:%s>"

@@ -1,0 +1,5 @@
+* Nuevo: filtro de nombres para álbumes con la opción "Mostrar nombre" activada
+* Nuevo: Detección de objetos de IA y búsqueda de ubicación para las copias de seguridad del rollo de la cámara en el servidor
+* Nuevo: Selector de fecha en la lista del rollo de la cámara
+* Corregido el inicio de sesión con certificado autofirmado
+* Otras mejoras y correcciones de errores

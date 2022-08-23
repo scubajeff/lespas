@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <dimen name="camera_roll_grid_size">144dp</dimen>
     <dimen name="camera_roll_date_grid_size">56dp</dimen>
     <dimen name="exoplayer_control_layout_vertical_margin">64dp</dimen>
+
+    <dimen name="fast_scroll_thumb_height">112dp</dimen>
+    <dimen name="fast_scroll_thumb_width">14dp</dimen>
+
+    <dimen name="list_horizontal_margin">16dp</dimen>
+    <dimen name="camera_roll_list_horizontal_margin">20dp</dimen>
 </resources>

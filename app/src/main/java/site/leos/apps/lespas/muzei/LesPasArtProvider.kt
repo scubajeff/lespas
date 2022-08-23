@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.muzei
 
 import android.accounts.AccountManager
@@ -7,7 +23,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.os.Build
-import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.preference.PreferenceManager
 import com.google.android.apps.muzei.api.provider.Artwork
@@ -49,19 +64,9 @@ class LesPasArtProvider: MuzeiArtProvider() {
         val pHeight: Int
 
         // Get screen real metrics
-        val wm = context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            with(DisplayMetrics()) {
-                @Suppress("DEPRECATION")
-                wm.defaultDisplay.getRealMetrics(this)
-                sWidth = widthPixels
-                sHeight = heightPixels
-            }
-        } else {
-            with(wm.maximumWindowMetrics.bounds) {
-                sWidth = width()
-                sHeight = height()
-            }
+        Tools.getDisplayDimension(context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager).let {
+            sWidth = it.first
+            sHeight = it.second
         }
 
         // Adapt to original orientation
@@ -103,7 +108,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
             setClass(context!!, MainActivity::class.java)
             putExtra(FROM_MUZEI_PHOTO, artwork.token)
             putExtra(FROM_MUZEI_ALBUM, artwork.metadata!!.split(',')[0])
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
         return PendingIntent.getActivity(context!!, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

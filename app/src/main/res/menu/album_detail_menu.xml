@@ -1,8 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <menu
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <item android:id="@+id/option_menu_search"
+        android:title="@string/option_menu_search"
+        android:icon="@drawable/ic_baseline_search_24"
+        android:orderInCategory="6"
+        app:showAsAction="always|collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        android:visible="false" />
     <item android:id="@+id/option_menu_in_map"
         android:title="@string/option_menu_in_map"
         android:orderInCategory="7"
@@ -33,7 +56,7 @@
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="13"
+        android:orderInCategory="14"
         app:showAsAction="never">
         <menu>
             <item
@@ -57,7 +80,7 @@
     <item
         android:id="@+id/option_menu_wide_list"
         android:title="@string/item_wide_list"
-        android:orderInCategory="14"
+        android:orderInCategory="13"
         android:checkable="true"
         app:showAsAction="never" />
     <item

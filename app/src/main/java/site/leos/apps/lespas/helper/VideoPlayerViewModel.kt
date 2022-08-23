@@ -1,17 +1,33 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.helper
 
-import android.app.Application
+import android.app.Activity
+import android.content.ContextWrapper
 import android.net.Uri
-import android.view.Window
-import android.view.WindowManager
-import androidx.lifecycle.AndroidViewModel
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -20,25 +36,23 @@ import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
-import java.io.File
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?): AndroidViewModel(application) {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?): ViewModel() {
     private val videoPlayer: ExoPlayer
-    private var cache: SimpleCache? = null
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
-    private lateinit var window: Window
+    private var window = activity.window
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
-        val builder = ExoPlayer.Builder(application)
-        callFactory?.let {
-            cache = SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application))
-            builder.setMediaSourceFactory(DefaultMediaSourceFactory(CacheDataSource.Factory().setCache(cache!!).setUpstreamDataSourceFactory(DefaultDataSource.Factory(application, OkHttpDataSource.Factory(callFactory)))))
-        }
-        videoPlayer = builder.build().apply {
+        val okHttpDSFactory = DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))
+        videoPlayer = ExoPlayer.Builder(activity)
+            .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.CONTENT_TYPE_MOVIE).build(), true)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(if (cache != null) CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(okHttpDSFactory) else okHttpDSFactory))
+            .build()
+        .apply {
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     super.onPlaybackStateChanged(playbackState)
@@ -53,13 +67,12 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
 
-                    if (isPlaying) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    Tools.keepScreenOn(window, isPlaying)
                 }
             })
 
             // Retrieve repeat mode setting
-            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(application).getBoolean(application.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
+            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
         }
 
         // Mute the video sound during late night hours
@@ -75,9 +88,11 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
     fun resume(view: PlayerView, uri: Uri) {
         // Hide controller view by default
         view.hideController()
+        if (view.context is Activity) window = (view.context as Activity).window
+        if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
         // Keep screen on during playing
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, true)
 
         if (uri == currentVideo) {
             // Resuming the same video
@@ -115,7 +130,7 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         }
 
         // Reset screen auto turn off
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
     }
 
     fun mute() { videoPlayer.volume = 0f }
@@ -134,11 +149,10 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
     }
 
     override fun onCleared() {
-        cache?.release()
         videoPlayer.release()
 
         // Reset screen auto turn off
-        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        Tools.keepScreenOn(window, false)
 
         super.onCleared()
     }
@@ -150,6 +164,4 @@ class VideoPlayerViewModel(application: Application, callFactory: OkHttpClient?)
         videoMap[uri] ?: run { videoMap[uri] = 0L }
         return videoMap[uri]!!
     }
-
-    fun setWindow(window: Window) { this.window = window }
 }

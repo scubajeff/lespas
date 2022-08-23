@@ -1,0 +1,4 @@
+* Récupération préalable de l'image du serveur lors de la lecture du diaporama sur la carte.
+* Barre de défilement pour la liste des albums et la liste des appareils photo.
+* Interface utilisateur plus conviviale pour la liste du rouleau d'appareil photo.
+* Autres améliorations et corrections de bugs

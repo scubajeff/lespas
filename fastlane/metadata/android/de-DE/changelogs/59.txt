@@ -1,0 +1,6 @@
+* Neue italienische Lokalisierung, dank der Github-Benutzer @chiaratira und @michelafr
+* Namensfilter für Publikationen, bei denen die Einstellung 'Titel anzeigen' aktiviert ist
+* Neues Thema für OpenStreetMap-Kacheln im dunklen Modus
+* Überarbeitung der Extraktion von Metadaten von Videodateien, korrektes Auslesen des Erstellungsdatums, Extraktion von Ortsdaten
+* Optimierte Verarbeitung von Mediendateien, reaktionsschnellere Benutzeroberfläche, weniger Einfrieren
+* Weitere Verbesserungen und Fehlerkorrekturen

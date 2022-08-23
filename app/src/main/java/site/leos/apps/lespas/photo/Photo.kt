@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.photo
 
 import android.os.Parcelable
@@ -45,7 +61,8 @@ data class Photo(
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
         const val NEED_REFRESH = 1 shl 1        // Need to refresh photo's preview from server
 
-        const val NO_GPS_DATA = -1000.0
+        const val NO_GPS_DATA = -1000.0         // Photo does not contain GPS data
+        const val GPS_DATA_UNKNOWN = -10000.0   // Use in processing camera roll server archive, GPS data not yet available, need extracting from EXIF
         const val NO_ADDRESS = ""
         const val NO_CLASSIFICATION = ""
         const val DEFAULT_MIMETYPE = "image/jpeg"

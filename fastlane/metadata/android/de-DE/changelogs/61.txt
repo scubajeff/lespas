@@ -1,0 +1,7 @@
+* Fehlgeschlagene Synchronisation nach Albumumbenennung behoben
+* Behoben, dass das Datum aus der EXIF-Datei versetzt gelesen wurde
+* Reparierte Aktualisierung der Veröffentlichung
+* Behobene Zeitüberschreitung beim Lesen eines großen Kamerarollenarchivs
+* Fortsetzung der Videowiedergabe nach Drehung des Geräts
+* Warnung bei geringem internen Speicherplatz
+* Weitere Verbesserungen und Fehlerkorrekturen

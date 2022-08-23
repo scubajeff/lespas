@@ -1,5 +1,20 @@
-<resources>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
 
+<resources>
     <style name="Widget.LesPas.ButtonBar.Fullscreen" parent="Widget.AppCompat.ButtonBar">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
@@ -16,8 +31,11 @@
         <item name="android:windowExitAnimation">@anim/dialog_exiting</item>
     </style>
 
-    <style name="DateIndicatorShape">
-        <item name="cornerFamilyTopLeft">cut</item>
-        <item name="cornerSizeTopLeft">20dp</item>
+    <style name="ThemeOverlay.LesPas.DatePicker" parent="@style/ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="colorError">?colorErrorDatePicker</item>
+    </style>
+
+    <style name="LightEdgeEffectColor">
+        <item name="android:colorEdgeEffect">@color/lespas_white</item>
     </style>
 </resources>

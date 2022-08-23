@@ -1,0 +1,5 @@
+* Novo: filtro de nomes para álbuns com a opção "Show Name" ativada
+* Novo: Detecção de objetos AI e busca de localização para backups de rolos de câmera no servidor
+* Novo: Selecionador de datas na lista de rolos de câmera
+* Login fixo usando certificado autoassinado
+* Outras melhorias e correções de bugs

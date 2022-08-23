@@ -1,0 +1,7 @@
+* Fixed sync failed after album renamed
+* Fixed date reading from EXIF being offset
+* Fixed refreshing publication
+* Fixed timeout when reading large camera roll archive
+* Resume video playing after device rotated
+* Warn user of low internal storage space
+* Other improvements and bugs fixes

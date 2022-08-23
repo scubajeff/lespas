@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.helper
 
 import android.content.DialogInterface
@@ -8,6 +24,7 @@ import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import site.leos.apps.lespas.R
 
 class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog) {
@@ -25,7 +42,10 @@ class RenameDialogFragment: LesPasDialogFragment(R.layout.fragment_rename_dialog
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<TextView>(R.id.dialog_title_textview).text = when(requestType) {
             REQUEST_TYPE_ALBUM -> getString(R.string.rename_album)
-            REQUEST_TYPE_PHOTO -> getString(R.string.rename_media)
+            REQUEST_TYPE_PHOTO -> {
+                view.findViewById<TextInputLayout>(R.id.rename_textinputlayout)?.helperText = getString(R.string.hint_timestamp_pattern)
+                getString(R.string.rename_media)
+            }
             else -> ""
         }
         view.findViewById<TextInputEditText>(R.id.rename_textinputedittext).run {

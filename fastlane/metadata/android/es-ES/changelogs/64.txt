@@ -1,0 +1,5 @@
+* Leer correctamente la fecha de creación de la foto que tiene un desfase de zona horaria de EXIF
+* Persiste el orden de clasificación de la lista de álbumes
+* Se ha corregido el fallo que se producía al reproducir un vídeo en la aplicación Galería mientras la aplicación Les Pas seguía funcionando en segundo plano.
+* Mayor tiempo de espera para facilitar la sincronización en caso de mala conexión.
+* Otras mejoras y correcciones de errores

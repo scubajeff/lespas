@@ -1,0 +1,3 @@
+* Fixed crash when opening camera roll on Android 9 or below
+* Fixed top potion of map covered by title bar when viewing photos on map
+* Other improvements and bugs fixes

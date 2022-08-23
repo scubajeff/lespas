@@ -1,3 +1,46 @@
+## Version 2.5.17
+* Correctly read photo creation timestamp which has timezone offset from EXIF
+* Persist album list sorting order
+* Fixed crash when playing video in Gallery app while Les Pas app is still running in the background
+* Longer timeout to facilitate syncing on lousy connection
+
+* ## Version 2.5.16
+* Fixed screen auto-off when device rotated during video playing
+* Fixed when adding portrait mode pictures from server to 'Local' album, the picture didn't rotated accordingly
+* Fixed portrait mode photo in 'Remote' album not correctly rotated when sharing out
+* Fixed layout when viewing portrait mode photo in 'Remote' album with map
+* Updated French translation thanks to github user @Choukajohn
+
+## Version 2.5.15
+* Fixed crash when opening camera roll on Android 9 or below
+* Fixed top potion of map covered by title bar when viewing photos on map
+
+## Version 2.5.14
+* Fixed sync failed after album renamed
+* Fixed date reading from EXIF being offset
+* Fixed refreshing publication
+* Fixed timeout when reading large camera roll archive
+* Resume video playing after device rotated
+* Warn user of low internal storage space
+
+## Version 2.5.13
+* Pre-fetch image from server when playing slideshow on map
+* Scroll bar for album list and camera roll list
+* More user friendly camera roll list UI and UX
+
+## Version 2.5.12
+* New Italian localization, thanks to github user @chiaratira and @michelafr
+* Name filter for Publications which has 'show title' setting turned on
+* New theme for OpenStreetMap tiles in dark mode
+* Revamp video file meta data extracting, correctly read creation date, extract location data
+* Optimized media file processing, more responsive UI, less freezing
+
+## Version 2.5.11
+* New: name filter for albums with "Show Name" option turned on
+* New: AI object detection and location search for camera roll backups on server
+* New: Date picker in the camera roll list
+* Fixed login using self-signed certificate
+
 ## Version 2.5.10
 * New: manage camera roll archive on server
 * New: show sync status in Setting menu

@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="gallery_app_name">Galerie</string>
@@ -273,4 +289,12 @@
     <string name="tooltips_show_cameraroll">Kamerarolle anzeigen</string>
     <string name="msg_empty_server_backup">Keine Backups auf dem Server. Haben Sie die automatische Sicherung der Kamerarolle in den Einstellungen aktiviert?</string>
     <string name="msg_joint_album_not_updated_locally">Änderungen, die an einem gemeinsamen Album vorgenommen wurden, werden angezeigt, nachdem der Eigentümer des Albums sie bestätigt hat.</string>
+    <string name="option_menu_search">Suche nach Name</string>
+    <string name="tooltips_date_picker">Wählen Sie ein Datum</string>
+    <string name="title_in_archive">%1$s in Kamera-Backups</string>
+    <string name="tooltips_search_archive">In Kamerarollensicherungen</string>
+    <string name="hint_timestamp_pattern">Das Erstellungsdatum des Fotos kann durch Einfügen des Musters yyyyMMdd_hhmmss in den Namen geändert werden.</string>
+    <string name="should_allow_launching_other_app">Bitte erlauben Sie Les Pas das Starten anderer Anwendungen in Ihren Sicherheitseinstellungen.</string>
+    <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
+    <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
 </resources>

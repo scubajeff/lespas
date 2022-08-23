@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="verify_ssl_certificate_message">Server %1$sの証明書の検証に失敗したが、サーバを信頼して続行するか？</string>
@@ -221,4 +237,12 @@
     <string name="tooltips_show_cameraroll">カメラロールを表示する</string>
     <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
     <string name="msg_joint_album_not_updated_locally">ジョイントアルバムに加えた変更は、アルバムの所有者が確認した後に表示されます。</string>
+    <string name="option_menu_search">名前検索</string>
+    <string name="tooltips_date_picker">日付を選択する</string>
+    <string name="title_in_archive">カメラバックアップの%1$s</string>
+    <string name="tooltips_search_archive">カメラロールバックアップで検索</string>
+    <string name="hint_timestamp_pattern">写真の作成日は、名前にyyyyMMdd_hhmmssというパターンを含めることで変更することができます。</string>
+    <string name="should_allow_launching_other_app">セキュリティ設定でLes Pasが他のアプリを起動することを許可してください。</string>
+    <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
+    <string name="msg_login_first">まず、サーバーにログインしてください。</string>
 </resources>

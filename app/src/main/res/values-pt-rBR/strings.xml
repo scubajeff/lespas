@@ -1,3 +1,19 @@
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="gallery_app_name">Galeria</string>
@@ -283,4 +299,12 @@
     <string name="tooltips_show_cameraroll">Mostrar rolo de câmera</string>
     <string name="msg_empty_server_backup">Sem backups no servidor. Você ativou o backup automático do rolo da câmera na configuração?</string>
     <string name="msg_joint_album_not_updated_locally">As mudanças feitas no Álbum Conjunto serão mostradas depois que o proprietário do álbum as confirmar.</string>
+    <string name="option_menu_search">Busca por nome</string>
+    <string name="tooltips_date_picker">Escolha uma data</string>
+    <string name="title_in_archive">%1$s em Backups de Câmera</string>
+    <string name="tooltips_search_archive">Pesquisar nos Backups de rolo de câmera</string>
+    <string name="hint_timestamp_pattern">A data de criação da foto pode ser alterada incluindo o padrão yyyyyMMdd_hhmmss no nome.</string>
+    <string name="should_allow_launching_other_app">Por favor, permita que o Les Pas lance outros aplicativos em suas configurações de segurança.</string>
+    <string name="msg_low_storage_space">Seu espaço interno de armazenamento é menos de 10% livre, isto impedirá a Les Pas de sincronizar-se com o servidor.</string>
+    <string name="msg_login_first">Por favor, faça primeiro o login em seu servidor.</string>
 </resources>

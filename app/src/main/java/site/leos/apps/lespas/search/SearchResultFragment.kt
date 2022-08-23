@@ -1,8 +1,23 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.search
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +25,7 @@ import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -27,6 +43,7 @@ import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.*
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
@@ -41,23 +58,27 @@ import java.util.*
 class SearchResultFragment : Fragment() {
     private lateinit var searchResultAdapter: SearchResultAdapter
     private lateinit var searchResultRecyclerView: RecyclerView
-    private lateinit var emptyView: ImageView
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val albumModel: AlbumViewModel by activityViewModels()
     private val adhocSearchViewModel: AdhocSearchViewModel by viewModels {
-        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getBoolean(SEARCH_COLLECTION), imageLoaderModel)
+        AdhocAdhocSearchViewModelFactory(requireActivity().application, requireArguments().getString(CATEGORY_ID)!!, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel)
     }
 
     private var loadingIndicator: MenuItem? = null
     private var loadingProgressBar: CircularProgressIndicator? = null
 
+    private var searchTarget = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
 
+        searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
+
         searchResultAdapter = SearchResultAdapter(
+            searchTarget,
             { result, imageView ->
-                if (requireArguments().getBoolean(SEARCH_COLLECTION)) {
+                if (searchTarget == R.id.search_album) {
                     lifecycleScope.launch(Dispatchers.IO) {
                         val album: Album = albumModel.getThisAlbum(result.remotePhoto.photo.albumId)
                         withContext(Dispatchers.Main) {
@@ -79,7 +100,7 @@ class SearchResultFragment : Fragment() {
                     }
                     //reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() }
                     parentFragmentManager.beginTransaction().setReorderingAllowed(true).addSharedElement(imageView, ViewCompat.getTransitionName(imageView)!!)
-                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        .replace(R.id.container_root, CameraRollFragment.newInstance(result.remotePhoto.photo.id, searchTarget == R.id.search_archive), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             },
             { remotePhoto: NCShareViewModel.RemotePhoto, view: ImageView -> imageLoaderModel.setImagePhoto(remotePhoto, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
@@ -105,38 +126,25 @@ class SearchResultFragment : Fragment() {
         searchResultRecyclerView.adapter = searchResultAdapter
         adhocSearchViewModel.getResultList().observe(viewLifecycleOwner, Observer { searchResult -> searchResultAdapter.submitList(searchResult.toMutableList()) })
 
-        emptyView = view.findViewById(R.id.emptyview)
-        if (arguments?.getBoolean(SEARCH_COLLECTION)!!) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
-
-        searchResultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                if (searchResultAdapter.itemCount == 0) {
-                    searchResultRecyclerView.visibility = View.GONE
-                    emptyView.visibility = View.VISIBLE
-                }
+        searchResultRecyclerView.addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(requireContext(),
+            when(searchTarget) {
+                R.id.search_album -> R.drawable.ic_baseline_footprint_24
+                R.id.search_archive -> R.drawable.ic_baseline_archive_24
+                else -> R.drawable.ic_baseline_camera_roll_24
             }
-
-            private fun hideEmptyView() {
-                searchResultRecyclerView.visibility = View.VISIBLE
-                emptyView.visibility = View.GONE
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                hideEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                hideEmptyView()
-            }
-        })
+        )!!))
 
         adhocSearchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            loadingProgressBar?.setProgressCompat(progress, true)
-            if (progress == 100) loadingIndicator?.apply {
-                isVisible = false
-                isEnabled = false
+            when(progress) {
+                0 -> loadingProgressBar?.isIndeterminate = true
+                100 -> loadingIndicator?.apply {
+                    isVisible = false
+                    isEnabled = false
+                }
+                else -> loadingProgressBar?.apply {
+                    isIndeterminate = false
+                    setProgressCompat(progress, true)
+                }
             }
         })
 
@@ -147,10 +155,22 @@ class SearchResultFragment : Fragment() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.run {
-            arguments?.let { title = getString(if (it.getBoolean(SEARCH_COLLECTION)) R.string.title_in_album else R.string.title_in_cameraroll, it.getString(CATEGORY_LABEL)) }
+            arguments?.let { title = getString(
+                when(searchTarget) {
+                    R.id.search_album -> R.string.title_in_album
+                    R.id.search_cameraroll -> R.string.title_in_cameraroll
+                    else -> R.string.title_in_archive
+                },
+                it.getString(CATEGORY_LABEL))
+            }
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
+    }
+
+    override fun onDestroyView() {
+        searchResultRecyclerView.adapter = null
+        super.onDestroyView()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -168,29 +188,35 @@ class SearchResultFragment : Fragment() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    class AdhocAdhocSearchViewModelFactory(private val application: Application, private val categoryId: String, private val searchCollection: Boolean, private val remoteImageModel: NCShareViewModel
+    class AdhocAdhocSearchViewModelFactory(private val application: Application, private val categoryId: String, private val searchTarget: Int, private val remoteImageModel: NCShareViewModel
     ): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchCollection, remoteImageModel) as T
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AdhocSearchViewModel(application, categoryId, searchTarget, remoteImageModel) as T
     }
 
-    class AdhocSearchViewModel(app: Application, categoryId: String, searchInAlbums: Boolean, remoteImageModel: NCShareViewModel): AndroidViewModel(app) {
+    class AdhocSearchViewModel(app: Application, categoryId: String, searchTarget: Int, remoteImageModel: NCShareViewModel): AndroidViewModel(app) {
         private val resultList = mutableListOf<Result>()
         private val result = MutableLiveData<List<Result>>()
         private var job: Job? = null
+        private val progress = SingleLiveEvent<Int>()
 
         init {
             // Run job in init(), since it's singleton
             job = viewModelScope.launch(Dispatchers.IO) {
                 val albums = AlbumRepository(app).getAllAlbumAttribute()
-                val photos = if (searchInAlbums) PhotoRepository(app).getAllImageNotHidden() else Tools.getCameraRoll(app.contentResolver, true)
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = Tools.getLocalRoot(app)
                 val lespasBasePath = app.getString(R.string.lespas_base_folder_name)
                 var length: Int
                 var size: Int
                 val option = BitmapFactory.Options()
-                var bitmap: Bitmap?
                 var sharePath: String
+
+                progress.postValue(0)
+                val photos = when(searchTarget) {
+                    R.id.search_album -> PhotoRepository(app).getAllImageNotHidden()
+                    R.id.search_cameraroll -> Tools.getCameraRoll(app.contentResolver, true)
+                    else -> remoteImageModel.getCameraRollArchive()
+                }
 
                 photos.forEachIndexed { i, photo ->
                     if (!isActive) return@launch
@@ -203,8 +229,8 @@ class SearchResultFragment : Fragment() {
                     option.inSampleSize = size
                     sharePath = ""  // Default sharePath string
                     try {
-                        bitmap =
-                            if (searchInAlbums) {
+                        when(searchTarget) {
+                            R.id.search_album -> {
                                 albums.find { it.id == photo.albumId }?.let { album ->
                                     if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                                         // Photo's image file is not at local
@@ -212,10 +238,15 @@ class SearchResultFragment : Fragment() {
                                         remoteImageModel.getPreview(NCShareViewModel.RemotePhoto(photo, sharePath))
                                     } else BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
                                 }
-                            } else BitmapFactory.decodeStream(app.contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
-
-                        // Inference
-                        bitmap?.let {
+                            }
+                            R.id.search_cameraroll -> BitmapFactory.decodeStream(app.contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
+                            R.id.search_archive -> {
+                                sharePath = "/DCIM"
+                                remoteImageModel.getPreview(NCShareViewModel.RemotePhoto(photo, sharePath))
+                            }
+                            else -> null
+                        }?.let {
+                            // Inference
                             with(od.recognizeImage(it)) {
                                 if (this.isNotEmpty()) with(this[0]) {
                                     if (this.classId == categoryId) {
@@ -244,12 +275,10 @@ class SearchResultFragment : Fragment() {
         }
 
         fun getResultList(): LiveData<List<Result>> = result
-
-        private val progress = SingleLiveEvent<Int>()
         fun getProgress(): SingleLiveEvent<Int> = progress
     }
 
-    class SearchResultAdapter(private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
+    class SearchResultAdapter(private val searchTarget: Int, private val clickListener: (Result, ImageView) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
     ): ListAdapter<Result, SearchResultAdapter.ViewHolder>(SearchResultDiffCallback()) {
         private val albumNames = HashMap<String, String>()
 
@@ -271,7 +300,7 @@ class SearchResultFragment : Fragment() {
                 }
                 //tvLabel.text = "${item.subLabel}${String.format("  %.4f", item.similarity)}"
                 tvLabel.text =
-                    if (item.remotePhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) albumNames[item.remotePhoto.photo.albumId]
+                    if (searchTarget == R.id.search_album) albumNames[item.remotePhoto.photo.albumId]
                     else item.remotePhoto.photo.dateTaken.run { "${this.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${this.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" }
             }
         }
@@ -284,9 +313,7 @@ class SearchResultFragment : Fragment() {
         }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-            for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
-            }
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
@@ -312,19 +339,18 @@ class SearchResultFragment : Fragment() {
     )
 
     companion object {
-        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
-
+        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
         private const val CATEGORY_TYPE = "CATEGORY_TYPE"
         private const val CATEGORY_ID = "CATEGORY_ID"
         private const val CATEGORY_LABEL = "CATEGORY_LABEL"
 
         @JvmStatic
-        fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, searchCollection: Boolean) = SearchResultFragment().apply {
+        fun newInstance(categoryType: Int, categoryId: String, categoryLabel: String, target: Int) = SearchResultFragment().apply {
             arguments = Bundle().apply {
                 putInt(CATEGORY_TYPE, categoryType)
                 putString(CATEGORY_ID, categoryId)
                 putString(CATEGORY_LABEL, categoryLabel)
-                putBoolean(SEARCH_COLLECTION, searchCollection)
+                putInt(KEY_SEARCH_TARGET, target)
             }
         }
     }

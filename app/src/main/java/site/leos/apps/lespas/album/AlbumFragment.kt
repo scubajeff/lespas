@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.album
 
 import android.accounts.AccountManager
@@ -9,9 +25,12 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.os.StatFs
 import android.provider.MediaStore
 import android.view.*
 import android.widget.CheckedTextView
@@ -27,6 +46,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.isVisible
 import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
@@ -42,6 +62,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.transition.Fade
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -52,9 +73,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
-import site.leos.apps.lespas.helper.ConfirmDialogFragment
-import site.leos.apps.lespas.helper.LesPasDialogFragment
-import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
@@ -88,6 +107,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var cameraRollAsAlbumMenu: MenuItem? = null
     private var unhideMenu: MenuItem? = null
     private var toggleRemoteMenu: MenuItem? = null
+    private var sortByMenu: MenuItem? = null
 
     private var scrollTo = -1
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
@@ -123,7 +143,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
-        currentSortOrder = savedInstanceState?.getInt(KEY_SORT_ORDER, Album.BY_DATE_TAKEN_DESC) ?: Album.BY_DATE_TAKEN_DESC
 
         setHasOptionsMenu(true)
 
@@ -193,10 +212,14 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         requireContext().run {
-            showCameraRoll = PreferenceManager.getDefaultSharedPreferences(this).getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
             // TODO only check first volume
             getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
-            PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+
+            with(PreferenceManager.getDefaultSharedPreferences(this)) {
+                registerOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
+                showCameraRoll = getBoolean(getString(R.string.cameraroll_as_album_perf_key), true)
+                currentSortOrder = getInt(ALBUM_LIST_SORT_ORDER, Album.BY_DATE_TAKEN_DESC)
+            }
         }
     }
 
@@ -231,42 +254,13 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     scrollTo = -1
                 }
             }
+
+            sortByMenu?.run { isEnabled = it.isNotEmpty() }
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { mAdapter.setRecipients(it) }
         publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it) }
-
-        mAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                if (mAdapter.itemCount == 0) {
-                    recyclerView.visibility = View.GONE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.VISIBLE
-                } else {
-                    recyclerView.visibility = View.VISIBLE
-                    view.findViewById<ImageView>(R.id.emptyview).visibility = View.GONE
-                }
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-        })
 
         with(recyclerView) {
             // Stop item from blinking when notifying changes
@@ -310,8 +304,24 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
             // Restore selection state
             if (lastSelection.isNotEmpty()) lastSelection.forEach { selectionTracker.select(it) }
-        }
 
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+
+                    androidx.transition.TransitionManager.beginDelayedTransition(recyclerView.parent as ViewGroup, Fade().apply { duration = 300 })
+                    fab.isVisible = newState == RecyclerView.SCROLL_STATE_IDLE
+                }
+            })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_footprint_24)!!))
+        }
+        LesPasFastScroller(
+            recyclerView,
+            ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
+            ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(recyclerView.context, R.drawable.fast_scroll_track)!!,
+            resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
+        )
 
         fab.setOnClickListener { addFileLauncher.launch("*/*") }
 
@@ -345,8 +355,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
-
-        if (savedInstanceState == null) (requireActivity() as AppCompatActivity).reportFullyDrawn()
     }
 
     override fun onResume() {
@@ -369,12 +377,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
             }
         }
+
+        // Check internal storage free space, warn user if it's lower than 10% free
+        lifecycleScope.launch(Dispatchers.IO) {
+            StatFs(Environment.getDataDirectory().path).let {
+                if (it.availableBlocksLong < it.blockCountLong / 10) withContext(Dispatchers.Main) {
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), null, false).show(parentFragmentManager, CONFIRM_DIALOG)
+                }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
-        outState.putInt(KEY_SORT_ORDER, currentSortOrder)
     }
 
     override fun onDestroyView() {
@@ -397,6 +413,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
         cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
         unhideMenu = menu.findItem(R.id.option_menu_unhide)
+        sortByMenu = menu.findItem(R.id.option_menu_sortby)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -461,6 +478,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 }
 
                 mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
+
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
 
                 return true
             }
@@ -535,7 +554,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         publishViewModel.unPublish(albums)
                     }
                     if (refused.isNotEmpty()) {
-                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).setBackgroundTint(ContextCompat.getColor(recyclerView.context, R.color.color_primary)).setTextColor(ContextCompat.getColor(recyclerView.context, R.color.color_text_light)).show()
+                        Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).show()
                     }
                 }
 
@@ -764,7 +783,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         internal fun setCameraRollAlbum(cameraRollAlbum: Album) {
             mutableListOf<Album>().run {
                 addAll(currentList)
-                removeAt(0)
+                if (size > 0) removeAt(0)
                 add(0, cameraRollAlbum)
                 submitList(this)
             }
@@ -873,9 +892,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
-        private const val KEY_SORT_ORDER = "KEY_SORT_ORDER"
 
         private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
+
+        private const val ALBUM_LIST_SORT_ORDER = "ALBUM_LIST_SORT_ORDER"
 
         @JvmStatic
         fun newInstance() = AlbumFragment()

@@ -1,0 +1,4 @@
+* Pre-obtención de imágenes del servidor cuando se reproduce la presentación de diapositivas en el mapa
+* Barra de desplazamiento para la lista de álbumes y la lista del rollo de la cámara
+* UI y UX de la lista del rollo de la cámara más fáciles de usar
+* Otras mejoras y correcciones de errores

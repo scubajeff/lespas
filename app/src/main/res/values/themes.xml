@@ -1,3 +1,19 @@
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <!-- Base application theme. -->
     <style name="Theme.LesPas.Base" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
@@ -13,6 +29,11 @@
 
         <item name="primaryTextWhite">@color/color_text_light</item>
         <item name="primaryTextBlack">@color/color_text_dark</item>
+
+        <!-- SnackBar theming -->
+        <item name="snackbarStyle">@style/Theme.LesPas.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/Theme.LesPas.SnackbarButton</item>
+        <item name="snackbarTextViewStyle">@style/Theme.LesPas.SnackbarTextLabel</item>
     </style>
 
     <!-- Primary theme -->
@@ -30,7 +51,7 @@
         <item name="colorSurface">@color/color_surface</item>
         <item name="android:colorBackground">@color/color_background</item>
         <item name="backgroundColor">@color/color_background</item>
-        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary</item>
 
         <item name="android:textColorPrimary">@color/color_on_primary</item>
         <item name="android:textColorPrimaryInverse">@color/color_on_primary_invert</item>
@@ -40,6 +61,7 @@
         <item name="colorAnimatedPlaceHolder">?colorPrimary</item>
         <item name="colorToggleButtonOnToolbar">?colorPrimaryVariant</item>
         <item name="colorHighlightPrimary">?colorPrimary</item>
+        <item name="colorErrorDatePicker">@color/color_error_date_picker</item>
 
         <item name="android:statusBarColor">?attr/colorPrimary</item>
     </style>
@@ -71,7 +93,7 @@
         <item name="colorAnimatedPlaceHolder">?primaryTextWhite</item>
         <item name="colorToggleButtonOnToolbar">#4B4D4C</item>
         <item name="colorHighlightPrimary">?primaryTextWhite</item>
-
+        <item name="colorErrorDatePicker">@color/color_error_date_picker_true_black</item>
 
         <item name="colorControlNormal">@color/color_gray_out</item>
         <item name="colorControlActivated">?primaryTextWhite</item>
@@ -95,7 +117,7 @@
         <item name="colorError">@color/color_error</item>
         <item name="android:colorBackground">@color/color_background</item>
         <item name="colorSurface">@color/color_surface</item>
-        <item name="android:colorEdgeEffect">@color/color_on_primary_invert</item>
+        <item name="android:colorEdgeEffect">@color/color_on_primary</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimary</item>
 
@@ -170,5 +192,20 @@
     </style>
     <style name="Widget.LesPas.Button.Borderless" parent="Widget.AppCompat.Button.Borderless">
         <item name="android:textColor">?colorButtonText</item>
+    </style>
+
+    <!-- SnackBar theming -->
+    <style name="Theme.LesPas.Snackbar" parent="Widget.MaterialComponents.Snackbar">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Snackbar</item>
+    </style>
+    <style name="Theme.LesPas.SnackbarButton" parent="Widget.MaterialComponents.Button.TextButton.Snackbar">
+        <item name="android:textColor">@color/color_error</item>
+    </style>
+    <style name="Theme.LesPas.SnackbarTextLabel" parent="Widget.MaterialComponents.Snackbar.TextView">
+        <item name="android:textColor">?primaryTextWhite</item>
+    </style>
+    <style name="ThemeOverlay.App.Snackbar" parent="">
+        <item name="backgroundTint">@color/color_primary</item>
+        <item name="actionTextColorAlpha">1</item>
     </style>
 </resources>

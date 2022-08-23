@@ -1,0 +1,3 @@
+* Correction d'une erreur lors de l'ouverture du rouleau de l'appareil photo sur Android 9 ou inférieur.
+* Correction de la partie supérieure de la carte couverte par la barre de titre lors de l'affichage des photos sur la carte.
+* Autres améliorations et corrections de bogues

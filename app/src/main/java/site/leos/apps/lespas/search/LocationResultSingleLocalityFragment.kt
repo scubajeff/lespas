@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.search
 
 import android.graphics.Color
@@ -20,7 +36,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialContainerTransform
-import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,9 +54,10 @@ class LocationResultSingleLocalityFragment: Fragment() {
     private lateinit var country: String
 
     private lateinit var photoAdapter: PhotoAdapter
+    private lateinit var photoList: RecyclerView
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_TARGET), imageLoaderModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,16 +66,18 @@ class LocationResultSingleLocalityFragment: Fragment() {
         photoAdapter = PhotoAdapter(
             { photo, view, labelView ->
                 labelView.isVisible = false
+/*
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 exitTransition = MaterialElevationScale(true).apply {
                     duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
                     excludeTarget(view, true)
                     excludeTarget(labelView, true)
                 }
+*/
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, PhotoWithMapFragment.newInstance(photo, requireArguments().getInt(KEY_TARGET)), PhotoWithMapFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -76,7 +94,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
-            //fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
+            fadeMode = MaterialContainerTransform.FADE_MODE_CROSS
         }
     }
 
@@ -85,7 +103,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         postponeEnterTransition()
 
-        view.findViewById<RecyclerView>(R.id.photo_grid)?.apply {
+        photoList = view.findViewById(R.id.photo_grid)
+        photoList.run {
             adapter = photoAdapter
             ViewCompat.setTransitionName(this, locality)
         }
@@ -103,12 +122,17 @@ class LocationResultSingleLocalityFragment: Fragment() {
         }
     }
 
+    override fun onDestroyView() {
+        photoList.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_in_map-> {
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList()), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_child_fragment, PhotosInMapFragment.newInstance(locality, country, photoAdapter.getAlbumNameList(), requireArguments().getInt(KEY_TARGET)), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
                 true
             }
             else-> false
@@ -162,12 +186,14 @@ class LocationResultSingleLocalityFragment: Fragment() {
     companion object {
         private const val KEY_LOCALITY = "KEY_LOCALITY"
         private const val KEY_COUNTRY = "KEY_COUNTRY"
+        private const val KEY_TARGET = "KEY_TARGET"
 
         @JvmStatic
-        fun newInstance(locality: String, country: String) = LocationResultSingleLocalityFragment().apply {
+        fun newInstance(locality: String, country: String, target: Int) = LocationResultSingleLocalityFragment().apply {
             arguments = Bundle().apply {
                 putString(KEY_LOCALITY, locality)
                 putString(KEY_COUNTRY, country)
+                putInt(KEY_TARGET, target)
             }
         }
     }

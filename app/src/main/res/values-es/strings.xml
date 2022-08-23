@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="error_only_one_account">Sólo se permite una cuenta</string>
@@ -221,4 +237,12 @@
     <string name="tooltips_show_cameraroll">Mostrar el rollo de la cámara</string>
     <string name="msg_empty_server_backup">No hay copias de seguridad en el servidor. Has activado la copia de seguridad automática del rollo de la cámara en la configuración?</string>
     <string name="msg_joint_album_not_updated_locally">Los cambios realizados en el Álbum Conjunto se mostrarán después de que el propietario del álbum los confirme.</string>
+    <string name="option_menu_search">Buscar por nombre</string>
+    <string name="tooltips_date_picker">Elige una fecha</string>
+    <string name="title_in_archive">%1$s en las copias de seguridad de la cámara</string>
+    <string name="tooltips_search_archive">Buscar en las copias de seguridad de la cámara</string>
+    <string name="hint_timestamp_pattern">La fecha de creación de la foto se puede cambiar incluyendo el patrón yyyyMMdd_hhmmss en el nombre.</string>
+    <string name="should_allow_launching_other_app">Permita que Les Pas inicie otras aplicaciones en su configuración de seguridad.</string>
+    <string name="msg_low_storage_space">Tu espacio de almacenamiento interno está libre en menos de un 10%, esto impedirá que Les Pas se sincronice con el servidor.</string>
+    <string name="msg_login_first">Por favor, inicie sesión en su servidor primero.</string>
 </resources>

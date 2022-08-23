@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -8,7 +24,7 @@
     android:layout_marginVertical="@dimen/exoplayer_control_layout_vertical_margin"
     android:layout_marginHorizontal="@dimen/exoplayer_control_layout_horizontal_margin"
     android:padding="@dimen/big_padding"
-    android:background="#40000000" >
+    android:background="#40808080" >
 
     <ImageButton
         android:id="@+id/exo_mute"
@@ -46,8 +62,9 @@
     <View
         android:id="@id/exo_progress_placeholder"
         android:layout_width="0dp"
-        android:layout_height="40dp"
+        android:layout_height="16dp"
         app:layout_constraintTop_toTopOf="@id/exo_mute"
+        app:layout_constraintBottom_toBottomOf="@id/exo_mute"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginLeft="80dp"
@@ -55,7 +72,7 @@
         tools:ignore="RtlHardcoded" />
 
     <TextView
-        android:id="@+id/exo_position"
+        android:id="@id/exo_position"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="@id/exo_mute"

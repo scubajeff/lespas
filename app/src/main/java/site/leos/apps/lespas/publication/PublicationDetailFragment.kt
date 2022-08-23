@@ -1,5 +1,22 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.publication
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -10,6 +27,7 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
@@ -21,14 +39,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import androidx.recyclerview.widget.*
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
@@ -58,25 +75,38 @@ class PublicationDetailFragment: Fragment() {
     private var loadingIndicator: MenuItem? = null
     private var showMetaMenuItem: MenuItem? = null
     private var addPhotoMenuItem: MenuItem? = null
+    private var searchMenuItem: MenuItem? = null
     private var mapMenuItem: MenuItem? = null
 
     private var currentItem = -1
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
 
+    private var showName = false
+    private lateinit var currentQuery: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        share = arguments?.getParcelable(SHARE)!!
+        share = arguments?.getParcelable(ARGUMENT_SHARE)!!
+        showName = Tools.isWideListAlbum(share.sortOrder)
 
-        savedInstanceState?.apply { currentItem = getInt(CURRENT_ITEM) }
+        savedInstanceState?.apply {
+            currentItem = getInt(KEY_CURRENT_ITEM)
+        }
 
         photoListAdapter = PhotoListAdapter(
             { view, mediaList, position->
                 currentItem = position
 
-                with (photoList.layoutManager as StaggeredGridLayoutManager) {
-                    currentPositionModel.saveCurrentRange(findFirstVisibleItemPositions(null)[0], findLastVisibleItemPositions(null)[spanCount-1])
+                if (showName) {
+                    with(photoList.layoutManager as GridLayoutManager) {
+                        currentPositionModel.saveCurrentRange(findFirstVisibleItemPosition(), findLastVisibleItemPosition())
+                    }
+                } else {
+                    with(photoList.layoutManager as StaggeredGridLayoutManager) {
+                        currentPositionModel.saveCurrentRange(findFirstVisibleItemPositions(null)[0], findLastVisibleItemPositions(null)[spanCount - 1])
+                    }
                 }
 
                 reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
@@ -98,7 +128,7 @@ class PublicationDetailFragment: Fragment() {
             { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            if (savedInstanceState?.run { getBoolean(SHOW_META, false) } == true) {
+            if (savedInstanceState?.run { getBoolean(KEY_SHOW_META, false) } == true) {
                 toggleMetaDisplay()
             }
         }
@@ -112,7 +142,7 @@ class PublicationDetailFragment: Fragment() {
         setExitSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
                 if (names?.isNotEmpty() == true) photoList.findViewHolderForAdapterPosition(currentItem)?.let {
-                    sharedElements?.put(names[0], it.itemView.findViewById(R.id.media))
+                    sharedElements?.put(names[0], it.itemView.findViewById(R.id.photo))
                 }
             }
         })
@@ -127,7 +157,7 @@ class PublicationDetailFragment: Fragment() {
                         //Album(JOINT_ALBUM_ID, share.sharePath, LocalDateTime.MIN, LocalDateTime.MAX, "", 0, 0, 0, LocalDateTime.now(), 0, share.albumId, 0, 1F),
                         Album(
                             lastModified = LocalDateTime.now(),
-                            id = JOINT_ALBUM_ID, name = share.albumName,
+                            id = Album.JOINT_ALBUM_ID, name = share.albumName,
                             coverFileName = "${share.sharePath}/",
                             eTag = share.albumId,
                         ),
@@ -141,9 +171,19 @@ class PublicationDetailFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val vg = inflater.inflate(R.layout.fragment_publication_detail, container, false)
 
+        currentQuery = currentPositionModel.getLastQuery()
+
         photoList = vg.findViewById<RecyclerView>(R.id.photo_list).apply {
-            val defaultSpanCount = resources.getInteger(R.integer.publication_detail_grid_span_count)
-            layoutManager = StaggeredGridLayoutManager(defaultSpanCount, StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
+            val defaultSpanCount: Int
+            if (showName) {
+                defaultSpanCount = 2
+                layoutManager = GridLayoutManager(requireContext(), defaultSpanCount)
+                photoListAdapter.setShowName(true)
+            } else {
+                defaultSpanCount = resources.getInteger(R.integer.publication_detail_grid_span_count)
+                layoutManager = StaggeredGridLayoutManager(defaultSpanCount, StaggeredGridLayoutManager.VERTICAL).apply { gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS }
+            }
+
             adapter = photoListAdapter
             photoListAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), 0.25f / defaultSpanCount))
         }
@@ -156,13 +196,13 @@ class PublicationDetailFragment: Fragment() {
 
         currentPositionModel.getCurrentPosition().observe(viewLifecycleOwner) { currentItem = it }
         shareModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) {
-            photoListAdapter.submitList(it) {
+            photoListAdapter.setList(it, currentQuery) {
                 // Setup UI in this submitList commitCallback
                 loadingIndicator?.run {
                     isEnabled = false
                     isVisible = false
                 }
-                showMetaMenuItem?.run {
+                (if (showName) searchMenuItem else showMetaMenuItem)?.run {
                     isVisible = true
                     isEnabled = true
                 }
@@ -172,29 +212,30 @@ class PublicationDetailFragment: Fragment() {
                 }
 
                 it.forEach { remotePhoto ->
-                    if (remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
+                    if (remotePhoto.photo.mimeType.startsWith("image/") && remotePhoto.photo.latitude != Photo.NO_GPS_DATA) {
                         mapMenuItem?.isVisible = true
                         mapMenuItem?.isEnabled = true
 
-                        return@submitList
+                        return@setList
                     }
                 }
             }
 
             if (currentItem != -1) with(currentPositionModel.getLastRange()) {
-                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as StaggeredGridLayoutManager).scrollToPosition(currentItem)
+                if (currentItem < this.first || currentItem > this.second) (photoList.layoutManager as RecyclerView.LayoutManager).scrollToPosition(currentItem)
             }
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
             shareModel.getRemotePhotoList(share, false)
             // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
-            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, useCache = false)
+            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, photo = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), useCache = false)
         }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
     }
 
+    @SuppressLint("InflateParams")
     override fun onResume() {
         super.onResume()
 
@@ -212,8 +253,18 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(CURRENT_ITEM, currentItem)
-        outState.putBoolean(SHOW_META, photoListAdapter.isMetaDisplayed())
+        outState.putInt(KEY_CURRENT_ITEM, currentItem)
+        outState.putBoolean(KEY_SHOW_META, photoListAdapter.isMetaDisplayed())
+    }
+
+    override fun onStop() {
+        currentPositionModel.saveCurrentQuery(currentQuery)
+        super.onStop()
+    }
+
+    override fun onDestroyView() {
+        photoList.adapter = null
+        super.onDestroyView()
     }
 
     override fun onDestroy() {
@@ -233,17 +284,50 @@ class PublicationDetailFragment: Fragment() {
         inflater.inflate(R.menu.publication_detail_menu, menu)
 
         loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+        (loadingIndicator?.actionView?.findViewById(R.id.search_progress) as CircularProgressIndicator).run {
+            isIndeterminate = true
+            show()
+        }
         addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
         mapMenuItem = menu.findItem(R.id.option_menu_in_map)
         showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
             icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
         }
+        searchMenuItem = menu.findItem(R.id.option_menu_search)
+        searchMenuItem?.apply {
+            (actionView as SearchView).run {
+                if (currentQuery.isNotEmpty()) {
+                    searchMenuItem?.expandActionView()
+                    setQuery(currentQuery, false)
+                }
 
-        if (!photoListAdapter.currentList.isNullOrEmpty()) {
+                queryHint = getString(R.string.option_menu_search)
+
+                setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                    override fun onQueryTextSubmit(query: String?): Boolean = false
+                    override fun onQueryTextChange(newText: String?): Boolean {
+                        (newText ?: "").let { query ->
+                            photoListAdapter.filter(query)
+                            currentQuery = query
+                        }
+                        return false
+                    }
+                })
+            }
+        }
+
+        if (photoListAdapter.currentList.isNotEmpty()) {
             loadingIndicator?.isEnabled = false
             loadingIndicator?.isVisible = false
-            showMetaMenuItem?.isEnabled = true
-            showMetaMenuItem?.isVisible = true
+
+            if (showName) {
+                searchMenuItem?.isVisible = true
+                searchMenuItem?.isEnabled = true
+            } else {
+                showMetaMenuItem?.isEnabled = true
+                showMetaMenuItem?.isVisible = true
+            }
+
             if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
                 addPhotoMenuItem?.isEnabled = true
                 addPhotoMenuItem?.isVisible = true
@@ -251,7 +335,7 @@ class PublicationDetailFragment: Fragment() {
 
             run map@{
                 mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
-                    if (it.photo.latitude != Photo.NO_GPS_DATA) {
+                    if (it.photo.mimeType.startsWith("image/") && it.photo.latitude != Photo.NO_GPS_DATA) {
                         mapMenuItem?.isEnabled = true
                         mapMenuItem?.isVisible = true
 
@@ -297,65 +381,85 @@ class PublicationDetailFragment: Fragment() {
 
     class PhotoListAdapter(private val clickListener: (ImageView, List<NCShareViewModel.RemotePhoto>, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
+        private val pList = mutableListOf<NCShareViewModel.RemotePhoto>()
         private val mBoundViewHolders = mutableSetOf<ViewHolder>()
+        private var showName = false
         private var displayMeta = false
         private var playMark: Drawable? = null
 
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private var currentPhotoId = ""
-            private val ivPhoto = itemView.findViewById<ImageView>(R.id.media).apply { foregroundGravity = Gravity.CENTER }
+            private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
             private val tvMeta = itemView.findViewById<TextView>(R.id.meta)
+            private val tvName = itemView.findViewById<TextView>(R.id.title)
 
-            fun bind(item: NCShareViewModel.RemotePhoto, position: Int) {
+            fun bind(item: NCShareViewModel.RemotePhoto) {
                 ivPhoto.apply {
                     if (currentPhotoId != item.photo.id) {
                         this.setImageResource(0)
                         imageLoader(item, this)
                         ViewCompat.setTransitionName(this, item.photo.id)
                         currentPhotoId = item.photo.id
-                    }
-                    (itemView as ConstraintLayout).let {
-                        ConstraintSet().apply {
-                            clone(it)
-                            setDimensionRatio(R.id.media, "H,${item.photo.width}:${item.photo.height}")
-                            applyTo(it)
+                        if (!showName) {
+                            (itemView as ConstraintLayout).let {
+                                ConstraintSet().apply {
+                                    clone(it)
+                                    setDimensionRatio(R.id.photo, "H,${item.photo.width}:${item.photo.height}")
+                                    applyTo(it)
+                                }
+                            }
                         }
                     }
                     foreground = if (Tools.isMediaPlayable(item.photo.mimeType)) playMark else null
-                    setOnClickListener { clickListener(this, currentList, position) }
+                    setOnClickListener { clickListener(this, currentList, currentList.indexOf(item)) }
                 }
 
-                tvMeta.apply {
+                tvName?.text = item.photo.name.substringBeforeLast('.')
+
+                tvMeta?.apply {
                     text = String.format("%s, %s", item.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), item.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
                     visibility = if (displayMeta) View.VISIBLE else View.GONE
                 }
             }
 
             fun toggleMeta() {
-                tvMeta.visibility = if (displayMeta) View.VISIBLE else View.GONE
+                tvMeta?.visibility = if (displayMeta) View.VISIBLE else View.GONE
             }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoListAdapter.ViewHolder =
-            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_remote_media, parent, false))
+            ViewHolder(LayoutInflater.from(parent.context).inflate(if (showName) R.layout.recyclerview_item_photo_wide else R.layout.recyclerview_item_remote_media, parent, false))
 
         override fun onBindViewHolder(holder: PhotoListAdapter.ViewHolder, position: Int) {
-            holder.bind(getItem(position), position)
+            holder.bind(getItem(position))
             mBoundViewHolders.add(holder)
         }
 
         override fun onViewRecycled(holder: ViewHolder) {
             mBoundViewHolders.remove(holder)
-            cancelLoading(holder.itemView.findViewById(R.id.media) as View)
+            cancelLoading(holder.itemView.findViewById(R.id.photo) as View)
             super.onViewRecycled(holder)
         }
 
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoading(it) }}
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+
+        fun setList(list: List<NCShareViewModel.RemotePhoto>, query: String, callback: Runnable) {
+            pList.clear()
+            pList.addAll(list)
+            submitList(pList.filter { it.photo.name.contains(query) }.toMutableList(), callback)
+        }
+        fun setShowName(showName: Boolean) { this.showName = showName }
+        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query) }.toMutableList()) }
+
+        fun isMetaDisplayed(): Boolean = displayMeta
         fun toggleMetaDisplay() {
             displayMeta = !displayMeta
             for (holder in mBoundViewHolders) holder.toggleMeta()
         }
 
-        fun isMetaDisplayed(): Boolean = displayMeta
         fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
     }
 
@@ -366,30 +470,32 @@ class PublicationDetailFragment: Fragment() {
 
     class CurrentPublicationViewModel: ViewModel() {
         private val currentPosition = SingleLiveEvent<Int>()
-        private var firstItem = -1
-        private var lastItem = -1
-
         fun setCurrentPosition(pos: Int) { currentPosition.value = pos }
         fun getCurrentPosition(): SingleLiveEvent<Int> = currentPosition
         fun getCurrentPositionValue(): Int = currentPosition.value ?: -1
 
+        private var firstItem = -1
+        private var lastItem = -1
         fun saveCurrentRange(start: Int, end: Int) {
             firstItem = start
             lastItem = end
         }
         fun getLastRange(): Pair<Int, Int> = Pair(firstItem, lastItem)
+
+        private var currentQuery = ""
+        fun saveCurrentQuery(query: String) { currentQuery = query }
+        fun getLastQuery() = currentQuery
     }
 
     companion object {
         private const val TAG_ACQUIRING_DIALOG = "JOINT_ALBUM_ACQUIRING_DIALOG"
 
-        const val JOINT_ALBUM_ID = "joint"
+        private const val ARGUMENT_SHARE = "ARGUMENT_SHARE"
 
-        private const val SHARE = "SHARE"
-        private const val CURRENT_ITEM = "CLICKED_ITEM"
-        private const val SHOW_META = "SHOW_META"
+        private const val KEY_CURRENT_ITEM = "KEY_CURRENT_ITEM"
+        private const val KEY_SHOW_META = "KEY_SHOW_META"
 
         @JvmStatic
-        fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply { arguments = Bundle().apply { putParcelable(SHARE, share) }}
+        fun newInstance(share: NCShareViewModel.ShareWithMe) = PublicationDetailFragment().apply { arguments = Bundle().apply { putParcelable(ARGUMENT_SHARE, share) }}
     }
 }

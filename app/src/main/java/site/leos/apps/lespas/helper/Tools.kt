@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
@@ -45,44 +61,41 @@ import java.io.InputStream
 import java.net.URLDecoder
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.text.*
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.text.CharacterIterator
+import java.text.Collator
+import java.text.DecimalFormat
+import java.text.StringCharacterIterator
+import java.time.*
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.*
 
 object Tools {
-    const val DATE_FORMAT_PATTERN = "yyyy:MM:dd HH:mm:ss"
     val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
-    const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})"
 
-    @SuppressLint("SimpleDateFormat")
+    @SuppressLint("RestrictedApi")
     @JvmOverloads
-    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false): Photo {
-        val dateFormatter = SimpleDateFormat(DATE_FORMAT_PATTERN).apply { timeZone = TimeZone.getDefault() }
-        var timeString: String?
+    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false, uri: Uri? = null, cr: ContentResolver? = null): Photo {
         var mMimeType = mimeType
         var width = 0
         var height = 0
-        var tDate: LocalDateTime = LocalDateTime.now()
         var latlong: DoubleArray = doubleArrayOf(Photo.NO_GPS_DATA, Photo.NO_GPS_DATA)
         var altitude = Photo.NO_GPS_DATA
         var bearing = Photo.NO_GPS_DATA
         //var caption = ""
         var orientation = 0
-
         val isLocalFileExist = localPath.isNotEmpty()
-        val lastModified = Date(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis())
+        var dateTaken: LocalDateTime = LocalDateTime.now()
+        val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.systemDefault())
 
         if (mimeType.startsWith("video/", true)) {
             metadataRetriever?.run {
-                tDate = getVideoFileDate(this, fileName)
+                getVideoDateAndLocation(this, fileName).let {
+                    dateTaken = it.first ?: lastModified
+                    latlong = it.second
+                }
 
                 extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.let { rotate ->
                     orientation = rotate.toInt()
@@ -95,15 +108,10 @@ object Tools {
                         extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { height = it.toInt() }
                     }
                 }
-                extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let {
-                    val iso6709matcher = Pattern.compile(ISO_6709_PATTERN).matcher(it)
-                    if (iso6709matcher.matches()) iso6709matcher.run { try { latlong = doubleArrayOf(group(1)?.toDouble() ?: Photo.NO_GPS_DATA, group(2)?.toDouble() ?: Photo.NO_GPS_DATA) } catch (e: Exception) {} }
-                }
             }
         } else {
-            // See if we can guess the taken date from file name
-            timeString = parseFileName(fileName)
-            if (isUnknown(timeString)) timeString = dateFormatter.format(lastModified)
+            // Get default date taken value
+            dateTaken = parseDateFromFileName(fileName) ?: lastModified
 
             when(val imageFormat = mimeType.substringAfter("image/", "")) {
                 in FORMATS_WITH_EXIF-> {
@@ -118,25 +126,20 @@ object Tools {
                         // GPS data
                         exif.latLong?.let { latlong = it }
                         altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
-                        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+                        bearing = getBearing(exif)
 
                         // Taken date
-                        timeString = getImageFileDate(exif, fileName)
-                        if (isUnknown(timeString)) {
-                            timeString = dateFormatter.format(lastModified)
-
-                            if (updateCreationDate) {
-                                exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, timeString)
-                                saveExif = true
-                            }
+                        getImageTakenDate(exif)?.let { dateTaken = it }
+                        if (updateCreationDate) {
+                            exif.setDateTime(dateTaken.toInstant(OffsetTime.now().offset).toEpochMilli())
+                            saveExif = true
                         }
 
                         width = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
                         height = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
 
                         orientation = exif.rotationDegrees
-                        if (orientation != 0) {
+                        if (orientation != 0 && !keepOriginalOrientation) {
                             if (isLocalFileExist) {
                                 // Either by acquiring file from local or downloading media file from server for Local album, must rotate file
                                 try {
@@ -180,105 +183,125 @@ object Tools {
                         }
                     }
 
-                    if (imageFormat == "webp" && isLocalFileExist) {
+                    if (imageFormat == "webp") {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            // Set my own image/awebp mimetype for animated WebP
-                            if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                            try {
+                                // Set my own image/awebp mimetype for animated WebP
+                                if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
+                                else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/awebp" }
+                            } catch (e: Exception) {}
                         }
                     }
                 }
                 "gif"-> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && isLocalFileExist) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         // Set my own image/agif mimetype for animated GIF
-                        if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                        try {
+                            if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
+                            else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/agif" }
+                        } catch (e: Exception) {}
                     }
                 }
                 else-> {}
             }
 
             // Get image width and height for local album if they can't fetched from EXIF
-            if (isLocalFileExist && width == 0) try {
+            if (width == 0) try {
                 val options = BitmapFactory.Options().apply {
                     inJustDecodeBounds = true
-                    BitmapFactory.decodeFile(localPath, this)
+                    if (isLocalFileExist) BitmapFactory.decodeFile(localPath, this)
+                    else uri?.let { BitmapFactory.decodeStream(cr!!.openInputStream(it), null, this) }
                 }
                 width = options.outWidth
                 height = options.outHeight
             } catch (e: Exception) {}
-
-            tDate = try {
-                LocalDateTime.parse(timeString, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
-            } catch (e: DateTimeParseException) {
-                dateToLocalDateTime(lastModified)
-            }
         }
 
         return Photo(
             mimeType = mMimeType,
-            dateTaken = tDate, lastModified = dateToLocalDateTime(lastModified),
+            dateTaken = dateTaken, lastModified = lastModified,
             width = width, height = height,
             //caption = caption,
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
             orientation = if (keepOriginalOrientation) orientation else 0
         )
-        //return Photo("", "", "", Photo.ETAG_NOT_YET_UPLOADED, tDate, dateToLocalDateTime(lastModified), width, height, mMimeType, 0)
     }
 
-    @SuppressLint("SimpleDateFormat")
-    fun getVideoFileDate(extractor: MediaMetadataRetriever, fileName: String): LocalDateTime {
-        var videoDate: LocalDateTime = LocalDateTime.MIN
-
-        // Try get creation date from metadata
-        extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
-            try { videoDate = LocalDateTime.parse(cDate, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'")) } catch (e: Exception) { e.printStackTrace() }
+    private const val ISO_6709_PATTERN = "([+-][0-9]{2}.[0-9]{4})([+-][0-9]{3}.[0-9]{4})/"
+    fun getVideoLocation(extractor: MediaMetadataRetriever): DoubleArray {
+        val latLong = doubleArrayOf(Photo.NO_GPS_DATA, Photo.NO_GPS_DATA)
+        extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_LOCATION)?.let {
+            val matcher = Pattern.compile(ISO_6709_PATTERN).matcher(it)
+            if (matcher.matches()) {
+                try {
+                    latLong[0] = matcher.group(1)?.toDouble() ?: Photo.NO_GPS_DATA
+                    latLong[1] = matcher.group(2)?.toDouble() ?: Photo.NO_GPS_DATA
+                } catch (e: Exception) {}
+            }
         }
+        return latLong
+    }
 
-        // If metadata tells a funky date, reset it. Apple platform seems to set the date 1904/01/01 as default
+    private fun getVideoDateAndLocation(extractor: MediaMetadataRetriever, fileName: String): Pair<LocalDateTime?, DoubleArray> {
+        val latLong = getVideoLocation(extractor)
+
+        // For video file produced by phone camera, MediaMetadataRetriever.METADATA_KEY_DATE always return date value in UTC since there is no safe way to determine the timezone
+        // However file name usually has a pattern of yyyyMMdd_HHmmss which can be parsed to a date adjusted by correct timezone
+        var videoDate = parseDateFromFileName(fileName)
+
+        // If date can't be parsed from file name, try get creation date from metadata
+        if (videoDate == null) extractor.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE)?.let { cDate->
+            try {
+                videoDate = LocalDateTime.parse(cDate, DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSS'Z'"))
+                // If metadata tells a funky date, reset it. extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE) return 1904/01/01 as default if it can't find "creation_time" tag in the video file
+                if (videoDate?.year == 1904) videoDate = null
+                // Try adjust date according to timezone derived from longitude, although it's not always correct, especially for countries observe only one timezone adjustment, like China
+                if (videoDate != null && latLong[1] != Photo.NO_GPS_DATA) videoDate = videoDate?.plusHours((latLong[1]/15).toLong())
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+        // Eventually user can always use changing name function to manually adjust media's creation date information
+/*
+        // If metadata tells a funky date, reset it. extractMetadata(MediaMetadataRetriever.METADATA_KEY_DATE) return 1904/01/01 as default if it can't find "creation_time" tag in the video file
         // Could not get creation date from metadata, try guessing from file name
-        if (videoDate.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseFileName(fileName)?.run { LocalDateTime.parse(this, DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN)) } ?: LocalDateTime.now()
+        if (videoDate?.year == 1904 || videoDate == LocalDateTime.MIN) videoDate = parseDateFromFileName(fileName)
+*/
 
-        return videoDate
+        return Pair(videoDate, latLong)
     }
 
-    fun getImageFileDate(exifInterface: ExifInterface, fileName: String): String? {
-        var timeString: String?
+    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
+        try {
+            exif.dateTimeOriginal?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL) ?: "Z"))
+            } ?: run {
+                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED) ?: "Z")) }
+            }
+        } catch (e: Exception) { null }
 
-        timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
-        if (isUnknown(timeString)) timeString = exifInterface.getAttribute(ExifInterface.TAG_DATETIME_DIGITIZED)
-        //if (isUnknown(timeString)) timeString = exif.getAttribute(ExifInterface.TAG_DATETIME)
-
-        // Could not get creation date from exif, try guessing from file name
-        if (isUnknown(timeString)) timeString = parseFileName(fileName)
-
-        return timeString
-    }
-
-
-    // matching Wechat export file name, the 13 digits suffix is the export time in epoch long
-    private const val wechatPattern = "^mmexport([0-9]{10}).*"
-    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])_?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
-    fun parseFileName(fileName: String): String? {
+    // Match Wechat export file name, the 13 digits suffix is the export time in epoch millisecond
+    private const val wechatPattern = "^mmexport([0-9]{13}).*"
+    // Match file name of yyyyMMddHHmmss or yyyyMMdd_HHmmss or yyyyMMdd-HHmmss
+    private const val timeStampPattern = ".*([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[_-]?([01][0-9]|2[0-3])([0-5][0-9])([0-5][0-9]).*"
+    fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
-            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-            if (matcher.matches()) LocalDateTime.ofEpochSecond(matcher.group(1).toLong(), 0, OffsetDateTime.now().offset).format(DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN))
+            if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.systemDefault()) }
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
-                if (matcher.matches()) matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }
+                if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
                 else null
             }
         } catch (e: Exception) { null }
     }
 
-    private fun isUnknown(date: String?): Boolean {
-        return (date == null || date.isEmpty() || date == "    :  :     :  :  ")
-    }
-
-    fun dateToLocalDateTime(date: Date): LocalDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+    fun epochToLocalDateTime(epoch: Long): LocalDateTime =
+        try {
+            if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
+        } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
 
-    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter('/') in FORMATS_WITH_EXIF
+    fun hasExif(mimeType: String): Boolean = mimeType.substringAfter("image/", "") in FORMATS_WITH_EXIF
 
     @SuppressLint("DefaultLocale")
     fun humanReadableByteCountSI(size: Long): String {
@@ -371,7 +394,7 @@ object Tools {
                             height = cursor.getInt(heightColumn),
                             mimeType = mimeType,
                             shareId = cursor.getInt(sizeColumn),                  // Saving photo size value in shareId property
-                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property
+                            orientation = cursor.getInt(orientationColumn)        // Saving photo orientation value in shareId property, keep original orientation, CameraRollFragment will handle the rotation
                         )
                     )
                 }
@@ -541,15 +564,7 @@ object Tools {
     fun getSelectedMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_selected_24)
     fun getPlayMarkDrawable(context: Activity, scale: Float): Drawable = getScaledDrawable(context, scale, R.drawable.ic_baseline_play_mark_24)
     private fun getScaledDrawable(context: Activity, scale: Float, resId: Int): Drawable {
-        val size: Int = (
-            scale * (if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                DisplayMetrics().run {
-                    @Suppress("DEPRECATION")
-                    context.windowManager.defaultDisplay.getRealMetrics(this)
-                    this.widthPixels
-                }
-            } else context.windowManager.currentWindowMetrics.bounds.width())
-        ).toInt()
+        val size: Int = (scale * getDisplayDimension(context).first).toInt()
 
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         ContextCompat.getDrawable(context, resId)?.apply {
@@ -627,31 +642,26 @@ object Tools {
                     indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
                 }, 0)
             } catch (e: Exception) {}
-            animationMode = Snackbar.ANIMATION_MODE_FADE
-            setBackgroundTint(ContextCompat.getColor(ctx, R.color.color_primary))
-            setTextColor(ContextCompat.getColor(ctx, R.color.color_text_light))
-            cancelAction?.let {
-                setAction(android.R.string.cancel, it)
-                setActionTextColor(ContextCompat.getColor(anchorView.context, R.color.color_error))
-            }
+            cancelAction?.let { setAction(android.R.string.cancel, it) }
         }
     }
 
-    fun getDisplayWidth(wm: WindowManager): Int {
+    fun getDisplayDimension(context: Activity): Pair<Int, Int> = getDisplayDimension(context.windowManager)
+    fun getDisplayDimension(wm: WindowManager): Pair<Int, Int> {
         return DisplayMetrics().run {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                 @Suppress("DEPRECATION")
                 wm.defaultDisplay.getRealMetrics(this)
-                widthPixels
+                Pair(widthPixels, heightPixels)
             } else {
-                wm.currentWindowMetrics.bounds.width()
+                wm.currentWindowMetrics.bounds.let { return Pair(it.width(), it.height()) }
             }
         }
     }
 
     fun isRemoteAlbum(album: Album): Boolean = (album.shareId and Album.REMOTE_ALBUM) == Album.REMOTE_ALBUM
     fun isExcludedAlbum(album: Album): Boolean = (album.shareId and Album.EXCLUDED_ALBUM) == Album.EXCLUDED_ALBUM
-    fun isWideListAlbum(album: Album): Boolean = album.sortOrder in 100..200
+    fun isWideListAlbum(sortOrder: Int): Boolean = sortOrder in Album.BY_DATE_TAKEN_ASC_WIDE..200
 
     private const val PI = 3.1415926535897932384626
     private const val EE = 0.00669342162296594323
@@ -704,18 +714,22 @@ object Tools {
             1
         }
 
+        var mDate: LocalDateTime
         val photos = lespasJson.getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
+                mDate = try { epochToLocalDateTime(getLong("stime")) } catch (e: DateTimeException) { LocalDateTime.now() }
                 when {
                     // TODO make sure later version json file downward compatible
                     version >= 2 -> {
                         try {
+                            // Version checking, trigger exception
                             getInt("orientation")
+
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                         // Version 2 additions
                                         orientation = getInt("orientation"), caption = getString("caption"), latitude = getDouble("latitude"), longitude = getDouble("longitude"), altitude = getDouble("altitude"), bearing = getDouble("bearing"),
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
@@ -728,7 +742,7 @@ object Tools {
                                 result.add(
                                     NCShareViewModel.RemotePhoto(
                                         Photo(
-                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                            id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                             // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                             eTag = Photo.ETAG_FAKE
                                         ), sharePath
@@ -743,7 +757,7 @@ object Tools {
                             result.add(
                                 NCShareViewModel.RemotePhoto(
                                     Photo(
-                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = LocalDateTime.ofEpochSecond(getLong("stime"), 0, OffsetDateTime.now().offset),
+                                        id = getString("id"), name = getString("name"), mimeType = getString("mime"), width = getInt("width"), height = getInt("height"), lastModified = LocalDateTime.MIN, dateTaken = mDate,
                                         // Should set eTag to value not as Photo.ETAG_NOT_YET_UPLOADED
                                         eTag = Photo.ETAG_FAKE
                                     ), sharePath
@@ -754,11 +768,11 @@ object Tools {
                 }
             }
         }
-        when (sortOrder) {
-            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.photo.dateTaken })
-            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.photo.dateTaken })
-            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
-            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
+        when (sortOrder % 100) {
+            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.photo.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.photo.dateTaken })
+            Album.BY_NAME_ASC -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
+            Album.BY_NAME_DESC -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.photo.name })
         }
 
         return result
@@ -769,7 +783,7 @@ object Tools {
 
         photos.forEach { photo ->
             with(photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -782,7 +796,7 @@ object Tools {
         remotePhotos.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.toEpochSecond(OffsetDateTime.now().offset), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing)
             }
         }
 
@@ -793,8 +807,8 @@ object Tools {
         var content = SyncAdapter.PHOTO_META_HEADER
 
         photoMeta.forEach {
-            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.toEpochSecond(OffsetDateTime.now().offset), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
+            //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption, it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"
@@ -804,9 +818,9 @@ object Tools {
         val result = mutableListOf<Photo>()
 
         mutableListOf<Photo>().run {
-            val photos = (if (albumSortOrder == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
+            val photos = (if (albumSortOrder % 100 == Album.BY_DATE_TAKEN_ASC) list else list.sortedWith(compareBy { it.dateTaken })).filter { !isMediaPlayable(it.mimeType) }
 
-            photos.forEach { if (it.latitude != Photo.NO_GPS_DATA) add(it) }
+            photos.forEach { if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) add(it) }
 
             if (autoConvergent) {
                 add(0, Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN))
@@ -860,11 +874,11 @@ object Tools {
             } else result.addAll(this)
         }
 
-        when(albumSortOrder) {
-            Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE -> result.sortWith(compareBy { it.dateTaken })
-            Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE -> result.sortWith(compareByDescending { it.dateTaken })
-            Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+        when(albumSortOrder % 100) {
+            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            Album.BY_NAME_DESC -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
         }
 
         return result
@@ -891,5 +905,16 @@ object Tools {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             context.setTheme(trueBlackThemeId)
         } else context.setTheme(normalThemeId)
+    }
+
+    fun getBearing(exif: ExifInterface): Double {
+        var bearing = Photo.NO_GPS_DATA
+        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
+        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+        return bearing
+    }
+
+    fun keepScreenOn(window: Window, on: Boolean) {
+        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 }

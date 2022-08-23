@@ -1,3 +1,19 @@
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
 <resources>
     <string name="app_name">Les Pas</string>
     <string name="gallery_app_name">Gallery</string>
@@ -5,6 +21,7 @@
     <!-- MainActivity -->
     <string name="need_to_restart">Storage transfer has finished. You need to restart Les Pas now.</string>
     <string name="sd_card_not_ready">SD card is either not mounted or is read-only.</string>
+    <string name="msg_login_first">Please login to your server first.</string>
 
     <!-- Authenticator -->
     <string name="error_only_one_account">Only one account allowed</string>
@@ -38,6 +55,7 @@
 
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
+    <string name="should_allow_launching_other_app">Please allow Les Pas launching other apps in your security settings.</string>
     <string name="menu_item_qr_scanner_title">Scan QR code</string>
 
     <!-- Various Nextcloud access endpoints and naming -->
@@ -49,6 +67,7 @@
     <string name="unlock_please">Unlock hidden albums</string>
     <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
     <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
+    <string name="msg_low_storage_space">"Your internal storage space is less than 10% free, this will stop Les Pas from syncing with server."</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>
@@ -73,6 +92,7 @@
     <string name="msg_error_preparing_share_out_files">Fail to prepare media files.</string>
     <string name="msg_check_network">Check your server connection.</string>
     <string name="msg_server_operation">Photos will appear in target album after synchronizing with server.</string>
+    <string name="option_menu_search">Search for name</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>
@@ -207,12 +227,13 @@
     <string name="to_new_album">To New Album:</string>
     <string name="checkbox_text_set_remote">Remote album, media files stored in server only.</string>
 
-    <!-- Album Rename DialogFragment -->
+    <!-- Rename DialogFragment -->
     <string name="invalid_character_found">"Path separator '\\' '/' not allowed in file names"</string> <!-- @#$%^&amp;*+=[]{}&lt;&gt;|\\/?;:\"</string> -->
     <string name="invalid_name_found">Name not allowed</string>
     <string name="name_too_long">Name too long</string>
     <string name="name_existed">Name already exists</string>
     <string name="leading_dots_found">Prefix \'.\' not allowed</string>
+    <string name="hint_timestamp_pattern">"Photo\'s creation date can be changed by including pattern yyyyMMdd_hhmmss in name."</string>
 
     <!-- Acquiring DialogFragment -->
     <string name="preparing_files">Preparing photo</string>
@@ -223,7 +244,7 @@
     <string name="error_preparing_files">Error preparing files</string>
     <string name="access_right_violation">The sharing app does not follow Android Storage Access Guideline, therefore Les Pas can not receive these files. Please update the sharing app or use a different one.</string>
     <string name="no_media_file_found">No image or video files found among shared data.</string>
-    <string name="same_file_found">Same media file alreday exists.</string>
+    <string name="same_file_found">Same media file already exists.</string>
 
     <!-- Info DialogFragment -->
     <string name="file_name">Name:</string>
@@ -277,12 +298,14 @@
     <!-- Camera Roll Fragment -->
     <string name="tooltips_show_cameraroll">Show camera roll</string>
     <string name="tooltips_fetch_backup">Show backups on server</string>
+    <string name="tooltips_date_picker">Pick a date</string>
     <string name="msg_empty_server_backup">No backups on server. Have you enabled camera roll auto backup in setting?</string>
     <string name="msg_joint_album_not_updated_locally">Changes made to Joint Album will be shown after album owner confirms them.</string>
 
     <!-- Search Fragment -->
     <string name="tooltips_search_album">Search in albums</string>
     <string name="tooltips_search_cameraroll">Search in Camera Roll</string>
+    <string name="tooltips_search_archive">Search in Camera Backups</string>
     <string name="condition_to_perform_search">There must be at least one existing album OR storage access permission in order to search.</string>
     <string name="button_text_leave">Leave</string>
     <string name="need_albums">Please create an album first.</string>
@@ -290,6 +313,7 @@
     <!-- Search Result Fragment -->
     <string name="title_in_album">%1$s in albums</string>
     <string name="title_in_cameraroll">%1$s in Camera Roll</string>
+    <string name="title_in_archive">%1$s in Camera Backups</string>
 
     <!-- Publication List Fragment -->
     <string name="publication_list_fragment_title">"Friend's publications"</string>

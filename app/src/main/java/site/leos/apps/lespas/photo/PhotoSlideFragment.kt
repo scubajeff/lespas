@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.photo
 
 import android.annotation.SuppressLint
@@ -106,11 +122,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
         serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
-        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()))[VideoPlayerViewModel::class.java]
+        playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { photo->
                 with(photo) {
@@ -192,7 +208,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Listener for our UI controls to show/hide with System UI
         this.window = requireActivity().window
-        playerViewModel.setWindow(this.window)
         @Suppress("DEPRECATION")
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility -> followSystemBar(visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) }
 /*
@@ -326,11 +341,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
-                    actionModel.updateCover(album.id, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
+                    actionModel.updateCover(album.id, album.name, Cover(currentMedia.id, Album.SPECIAL_COVER_BASELINE, currentMedia.width, currentMedia.height, currentMedia.name, currentMedia.mimeType, currentMedia.orientation))
                     showCoverAppliedStatus(true)
                 } else {
                     exitTransition = Fade().apply { duration = 80 }
-                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.id, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    parentFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.container_overlay, CoverSettingFragment.newInstance(album.name, currentMedia), CoverSettingFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
             }
         }
@@ -408,7 +423,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-            pAdapter.setPhotos(photos, album.sortOrder)
+            pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
             slider.setCurrentItem(currentPhotoModel.getCurrentPosition() - 1, false)
         }
 
@@ -443,6 +458,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onDestroyView() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+        slider.adapter = null
 
         super.onDestroyView()
     }
@@ -547,10 +563,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private fun showCoverAppliedStatus(appliedStatus: Boolean) {
         Snackbar.make(window.decorView.rootView, getString(if (appliedStatus) R.string.toast_cover_applied else R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT)
-            .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-            //.setAnchorView(window.decorView.rootView)
-            .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-            .setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
 /*
             .addCallback(object: Snackbar.Callback() {
                 override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
@@ -569,7 +581,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
                 // For remote album and synced photo
-                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType))) {
+                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType), photo)) {
                     // TODO notify user
                     return null
                 }
@@ -645,11 +657,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun getItemMimeType(position: Int): String = getItem(position).mimeType
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
-            val photos = when(sortOrder) {
-                Album.BY_DATE_TAKEN_ASC, Album.BY_DATE_TAKEN_ASC_WIDE-> collection.sortedWith(compareBy { it.dateTaken })
-                Album.BY_DATE_TAKEN_DESC, Album.BY_DATE_TAKEN_DESC_WIDE-> collection.sortedWith(compareByDescending { it.dateTaken })
-                Album.BY_NAME_ASC, Album.BY_NAME_ASC_WIDE-> collection.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                Album.BY_NAME_DESC, Album.BY_NAME_DESC_WIDE-> collection.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            val photos = when(sortOrder % 100) {
+                Album.BY_DATE_TAKEN_ASC -> collection.sortedWith(compareBy { it.dateTaken })
+                Album.BY_DATE_TAKEN_DESC -> collection.sortedWith(compareByDescending { it.dateTaken })
+                Album.BY_NAME_ASC -> collection.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                Album.BY_NAME_DESC -> collection.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
                 else-> collection
             }
 
@@ -677,6 +689,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private val coverAppliedStatus = SingleLiveEvent<Boolean>()
         fun coverApplied(applied: Boolean) { coverAppliedStatus.value = applied}
         fun getCoverAppliedStatus(): SingleLiveEvent<Boolean> = coverAppliedStatus
+
+        private var currentQuery = ""
+        fun setCurrentQuery(query: String) { currentQuery = query }
+        fun getCurrentQuery(): String = currentQuery
     }
 
     companion object {

@@ -1,9 +1,24 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.photo
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
-import android.os.Build
 import android.os.Bundle
 import android.transition.AutoTransition
 import android.transition.TransitionManager
@@ -22,11 +37,12 @@ import androidx.transition.Transition
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Cover
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
 
 class CoverSettingFragment : Fragment() {
-    private lateinit var albumId: String
+    private lateinit var albumName: String
     private lateinit var currentPhoto: Photo
 
     private lateinit var root: ConstraintLayout
@@ -48,7 +64,7 @@ class CoverSettingFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        albumId = requireArguments().getString(KEY_ALBUM_ID)!!
+        albumName = requireArguments().getString(KEY_ALBUM_NAME)!!
         currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
     }
 
@@ -71,16 +87,9 @@ class CoverSettingFragment : Fragment() {
 
         DisplayMetrics().run {
             val screenWidth: Float
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                @Suppress("DEPRECATION")
-                requireActivity().windowManager.defaultDisplay.getRealMetrics(this)
-                screenWidth = widthPixels.toFloat()
-                screenHeight = heightPixels.toFloat()
-            } else {
-                with(requireActivity().windowManager.currentWindowMetrics.bounds) {
-                    screenWidth = width().toFloat()
-                    screenHeight = height().toFloat()
-                }
+            Tools.getDisplayDimension(requireActivity()).let {
+                screenWidth = it.first.toFloat()
+                screenHeight = it.second.toFloat()
             }
 
             val drawableWidth: Float
@@ -114,7 +123,7 @@ class CoverSettingFragment : Fragment() {
         }
         constraintSet.applyTo(root)
 
-        cropFrameGestureDetector = GestureDetectorCompat(activity, object : GestureDetector.SimpleOnGestureListener() {
+        cropFrameGestureDetector = GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
                 //Handler(requireContext().mainLooper).post { Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT).show() }
                 currentPhotoModel.coverApplied(false)
@@ -171,7 +180,7 @@ class CoverSettingFragment : Fragment() {
             currentPhoto.run {
                 var baseLine = ((height / drawableHeight) * (((screenHeight - frameHeight) * newBias) - upperGap)).roundToInt()
                 if (baseLine < 0) baseLine = 0
-                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(albumId, Cover(id, baseLine, width, height, name, mimeType, orientation))
+                ViewModelProvider(requireActivity())[ActionViewModel::class.java].updateCover(this.albumId, albumName, Cover(id, baseLine, width, height, name, mimeType, orientation))
             }
             currentPhotoModel.coverApplied(true)
 
@@ -291,13 +300,13 @@ class CoverSettingFragment : Fragment() {
         private const val FH = "FH"
         private const val DH = "DH"
 
-        private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
+        private const val KEY_ALBUM_NAME = "KEY_ALBUM_NAME"
         private const val KEY_PHOTO = "KEY_PHOTO"
 
         @JvmStatic
-        fun newInstance(albumId: String, photo: Photo) = CoverSettingFragment().apply {
+        fun newInstance(albumName: String, photo: Photo) = CoverSettingFragment().apply {
             arguments = Bundle().apply{
-                putString(KEY_ALBUM_ID, albumId)
+                putString(KEY_ALBUM_NAME, albumName)
                 putParcelable(KEY_PHOTO, photo)
             }
         }

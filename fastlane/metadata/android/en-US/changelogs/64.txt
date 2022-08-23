@@ -1,0 +1,5 @@
+* Correctly read photo creation timestamp which has timezone offset from EXIF
+* Persist album list sorting order
+* Fixed crash when playing video in Gallery app while Les Pas app is still running in the background
+* Longer timeout to facilitate syncing on lousy connection
+* Other improvements and bugs fixes

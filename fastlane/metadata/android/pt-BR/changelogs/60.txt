@@ -1,0 +1,4 @@
+* Pre-fetch image from server when playing slideshow on map
+* Barra de rolagem para lista de álbuns e lista de rolagem de câmeras
+* Lista de rolos de câmera mais fácil de usar UI e UX
+* Outras melhorias e correções de bugs

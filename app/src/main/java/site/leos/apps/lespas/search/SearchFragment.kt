@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.search
 
 import android.annotation.SuppressLint
@@ -42,7 +58,7 @@ class SearchFragment : Fragment() {
 
         categoryAdapter = CategoryAdapter { category ->
             if (destinationToggleGroup?.checkedButtonId == R.id.search_album && noAlbum) {
-                Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).setAnimationMode(Snackbar.ANIMATION_MODE_FADE).setBackgroundTint(resources.getColor(R.color.color_primary, null)).setTextColor(resources.getColor(R.color.color_text_light, null)).show()
+                Snackbar.make(categoryView, getString(R.string.need_albums), Snackbar.LENGTH_SHORT).show()
                 return@CategoryAdapter
             }
             if (destinationToggleGroup?.checkedButtonId == R.id.search_cameraroll) {
@@ -94,7 +110,7 @@ class SearchFragment : Fragment() {
             in 1..4 -> {
                 exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                 reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId == R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
+                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchResultFragment.newInstance(category.type, category.id, category.label, destinationToggleGroup?.checkedButtonId ?: R.id.search_album), SearchResultFragment::class.java.canonicalName).addToBackStack(null).commit()
             }
             5 -> {
 /*
@@ -168,6 +184,11 @@ class SearchFragment : Fragment() {
         destinationToggleGroup?.let { outState.putInt(LAST_SELECTION, it.checkedButtonId) }
     }
 
+    override fun onDestroyView() {
+        categoryView.adapter = null
+        super.onDestroyView()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_menu, menu)
@@ -180,7 +201,7 @@ class SearchFragment : Fragment() {
     }
 
     private fun launchLocationSearch() {
-        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId == R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
+        parentFragmentManager.beginTransaction().replace(R.id.container_root, LocationSearchHostFragment.newInstance(destinationToggleGroup?.checkedButtonId ?: R.id.search_album), LocationSearchHostFragment::class.java.canonicalName).addToBackStack(null).commit()
     }
 
     class CategoryAdapter(private val clickListener: (SearchCategory) -> Unit): ListAdapter<SearchCategory, CategoryAdapter.ViewHolder>(CategoryDiffCallback()) {

@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.album
 
 import android.os.Parcelable
@@ -72,6 +88,8 @@ data class Album(
         const val SYNC_COMPLETED = 1.0f
 
         const val SPECIAL_COVER_BASELINE = -100 // Speical cover baseline value when setting animated GIF/WEBP and general GIF as cover
+
+        const val JOINT_ALBUM_ID = "joint"
     }
 }
 
@@ -181,9 +199,9 @@ abstract class AlbumDao: BaseDao<Album>() {
     @Query("SELECT id, name, shareId FROM ${Album.TABLE_NAME} WHERE name NOT LIKE '.%'")
     abstract fun getAllAlbumAttribute(): List<IDandAttribute>
 
-    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder + 100 WHERE id = :albumId")
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder + ${Album.BY_DATE_TAKEN_ASC_WIDE} WHERE id = :albumId")
     abstract fun enableWideList(albumId: String)
-    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - 100 WHERE id = :albumId")
+    @Query("UPDATE  ${Album.TABLE_NAME} SET sortOrder = sortOrder - ${Album.BY_DATE_TAKEN_ASC_WIDE} WHERE id = :albumId")
     abstract fun disableWideList(albumId: String)
 
     @Query("UPDATE  ${Album.TABLE_NAME} SET coverFileName = :newCoverFileName WHERE id = :albumId")

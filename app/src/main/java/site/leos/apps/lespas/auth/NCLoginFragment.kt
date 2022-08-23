@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.auth
 
 //import androidx.swiperefreshlayout.widget.CircularProgressDrawable
@@ -42,6 +58,7 @@ import okio.ByteString.Companion.encode
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import java.net.SocketException
@@ -223,7 +240,12 @@ class NCLoginFragment: Fragment() {
                 if (scannerAvailable) {
                     inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
                     inputArea.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_qr_code_scanner_24)
-                    inputArea.setEndIconOnClickListener { scanRequestLauncher?.launch(scanIntent) }
+                    inputArea.setEndIconOnClickListener {
+                        try { scanRequestLauncher?.launch(scanIntent) }
+                        catch (e: SecurityException) {
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
+                    }
                 } else {
                     inputArea.endIconMode = TextInputLayout.END_ICON_NONE
                     hostEditText.error = null
@@ -409,5 +431,7 @@ class NCLoginFragment: Fragment() {
         private const val ICON_MODE_ERROR = 3
 
         private const val KEY_ERROR_SHOWN = "KEY_ERROR_SHOWN"
+
+        private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
     }
 }

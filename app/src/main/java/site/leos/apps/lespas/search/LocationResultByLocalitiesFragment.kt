@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.search
 
 import android.os.Bundle
@@ -7,6 +23,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -18,28 +35,36 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.transition.MaterialElevationScale
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.LesPasEmptyView
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.text.Collator
 
 class LocationResultByLocalitiesFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, true) }
+    private val searchViewModel: LocationSearchHostFragment.LocationSearchViewModel by viewModels({requireParentFragment()}) { LocationSearchHostFragment.LocationSearchViewModelFactory(requireActivity().application, requireArguments().getInt(KEY_SEARCH_TARGET), imageLoaderModel) }
 
     private lateinit var resultAdapter: LocationSearchResultAdapter
     private lateinit var resultView: RecyclerView
-    private lateinit var emptyView: ImageView
+
+    private var searchTarget = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
+
         resultAdapter = LocationSearchResultAdapter(
             { result, view ->
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                reenterTransition = MaterialElevationScale(true).apply {
+                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                    excludeTarget(view, true)
+                    excludeChildren(view, true)
+                }
+                //exitTransition = MaterialElevationScale(false).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                 parentFragmentManager.beginTransaction()
                     .setReorderingAllowed(true)
                     .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
+                    .replace(R.id.container_child_fragment, LocationResultSingleLocalityFragment.newInstance(result.locality, result.country, searchTarget), LocationResultSingleLocalityFragment::class.java.canonicalName).addToBackStack(null).commit()
             },
             { remotePhoto, imageView -> imageLoaderModel.setImagePhoto(remotePhoto, imageView, NCShareViewModel.TYPE_GRID) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -52,36 +77,16 @@ class LocationResultByLocalitiesFragment: Fragment() {
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        emptyView = view.findViewById(R.id.emptyview)
-        if (requireArguments().getBoolean(SEARCH_COLLECTION)) emptyView.setImageResource(R.drawable.ic_baseline_footprint_24)
-
         resultView = view.findViewById<RecyclerView>(R.id.locality_list).apply {
             adapter = resultAdapter
-        }
-
-        resultAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            init {
-                if (resultAdapter.itemCount == 0) {
-                    resultView.visibility = View.GONE
-                    emptyView.visibility = View.VISIBLE
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context,
+                when(searchTarget) {
+                    R.id.search_album -> R.drawable.ic_baseline_footprint_24
+                    R.id.search_archive -> R.drawable.ic_baseline_archive_24
+                    else -> R.drawable.ic_baseline_camera_roll_24
                 }
-            }
-
-            private fun hideEmptyView() {
-                resultView.visibility = View.VISIBLE
-                emptyView.visibility = View.GONE
-            }
-
-            override fun onChanged() {
-                super.onChanged()
-                hideEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                hideEmptyView()
-            }
-        })
+            )!!))
+        }
 
         searchViewModel.getResult().observe(viewLifecycleOwner) {
             val result = mutableListOf<LocationSearchHostFragment.LocationSearchResult>().apply { addAll(it) }
@@ -103,10 +108,22 @@ class LocationResultByLocalitiesFragment: Fragment() {
     override fun onResume() {
         super.onResume()
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            title = getString(if (requireArguments().getBoolean(SEARCH_COLLECTION)) R.string.title_in_album else R.string.title_in_cameraroll, getString(R.string.item_location_search))
+            title = getString(
+                when(searchTarget) {
+                    R.id.search_album -> R.string.title_in_album
+                    R.id.search_cameraroll -> R.string.title_in_cameraroll
+                    else -> R.string.title_in_archive
+                },
+                getString(R.string.item_location_search)
+            )
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowTitleEnabled(true)
         }
+    }
+
+    override fun onDestroyView() {
+        resultView.adapter = null
+        super.onDestroyView()
     }
 
     class LocationSearchResultAdapter(private val clickListener: (LocationSearchHostFragment.LocationSearchResult, View) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit
@@ -135,7 +152,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             fun bind(item: LocationSearchHostFragment.LocationSearchResult) {
                 tvLocality.text = item.locality
                 tvCountry.text = item.country
-                tvCount.text = if (item.total > 4) item.total.toString() else ""
+                tvCount.text = if (item.total >= 4) item.total.toString() else ""
 
                 photoAdapter.submitList(item.photos)
 
@@ -146,11 +163,15 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_location_search, parent, false))
         override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(getItem(position)) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<RecyclerView>(R.id.photos)?.adapter = null }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
     }
 
     class LocationSearchResultDiffCallback: DiffUtil.ItemCallback<LocationSearchHostFragment.LocationSearchResult>() {
         override fun areItemsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.country == newItem.country && oldItem.locality == newItem.locality
-        override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.last().photo.id == newItem.photos.last().photo.id
+        override fun areContentsTheSame(oldItem: LocationSearchHostFragment.LocationSearchResult, newItem: LocationSearchHostFragment.LocationSearchResult): Boolean = oldItem.photos.first().photo.id == newItem.photos.first().photo.id
     }
 
     class PhotoAdapter(private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoader: (View) -> Unit): ListAdapter<NCShareViewModel.RemotePhoto, PhotoAdapter.ViewHolder>(PhotoDiffCallback()) {
@@ -178,9 +199,9 @@ class LocationResultByLocalitiesFragment: Fragment() {
     }
 
     companion object {
-        private const val SEARCH_COLLECTION = "SEARCH_COLLECTION"
+        private const val KEY_SEARCH_TARGET = "KEY_SEARCH_TARGET"
 
         @JvmStatic
-        fun newInstance(searchCollection: Boolean) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putBoolean(SEARCH_COLLECTION, searchCollection) } }
+        fun newInstance(target: Int) = LocationResultByLocalitiesFragment().apply { arguments = Bundle().apply { putInt(KEY_SEARCH_TARGET, target) } }
     }
 }

@@ -1,0 +1,4 @@
+* Pre-fetch image from server when playing slideshow on map
+* Scroll bar for album list and camera roll list
+* More user friendly camera roll list UI and UX
+* Other improvements and bugs fixes

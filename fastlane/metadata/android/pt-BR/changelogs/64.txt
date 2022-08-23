@@ -1,0 +1,5 @@
+* Leia corretamente o carimbo de tempo de criação da foto que tem offset de fuso horário do EXIF
+* Ordem de classificação persistente da lista de álbuns
+* Corrigida a falha ao reproduzir o vídeo no aplicativo Gallery enquanto o aplicativo Les Pas ainda está rodando em segundo plano.
+* Maior tempo de espera para facilitar a sincronização em conexão péssima
+* Outras melhorias e correções de bugs

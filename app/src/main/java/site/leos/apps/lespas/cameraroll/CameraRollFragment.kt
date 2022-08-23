@@ -1,6 +1,25 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.cameraroll
 
 import android.accounts.AccountManager
+import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
@@ -10,10 +29,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.StateListDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.*
@@ -21,6 +42,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.TypedValue
 import android.view.*
+import android.view.animation.BounceInterpolator
 import android.webkit.MimeTypeMap
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -52,33 +74,40 @@ import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.RecyclerView.*
+import androidx.transition.Fade
 import androidx.transition.Transition
+import androidx.transition.TransitionManager
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.publication.PublicationDetailFragment
 import site.leos.apps.lespas.search.SearchResultFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import kotlin.collections.contains
 import kotlin.math.atan2
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -89,9 +118,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var quickScrollAdapter: QuickScrollAdapter
     private var quickScrollGridSpanCount = 0
 
-    private lateinit var mediaPagerEmptyView: ImageView
-    private lateinit var quickScrollEmptyView: ImageView
-    private lateinit var divider: View
     private lateinit var dateTextView: TextView
     private lateinit var sizeTextView: TextView
     private lateinit var buttonGroup: ConstraintLayout
@@ -104,6 +130,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var sourceToggleGroup: MaterialButtonToggleGroup
     private lateinit var toggleCameraRollButton: MaterialButton
     private lateinit var toggleBackupsButton: MaterialButton
+    private lateinit var datePickerButton: ImageButton
+    private lateinit var yearIndicator: TextView
+
     private lateinit var cBadge: BadgeDrawable
     private lateinit var aBadge: BadgeDrawable
 
@@ -121,8 +150,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, arguments?.getString(KEY_URI)) }
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, imageLoaderModel.getCallFactory()) }
+    private val camerarollModel: CameraRollViewModel by viewModels { CameraRollViewModelFactory(requireActivity().application, requireArguments().getString(KEY_URI), requireArguments().getBoolean(KEY_IN_ARCHIVE)) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()) }
     private val actionModel: ActionViewModel by viewModels()
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
@@ -132,6 +161,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var gestureDetector: GestureDetectorCompat
 
     private var shareOutJob: Job? = null
+
+    private val sx = PropertyValuesHolder.ofFloat("scaleX", 1.0f, 0.8f, 1.0f)
+    private val sy = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 0.8f, 1.0f)
+    private val tx = PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,12 +180,23 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 showListFirst = false
                 allowToggleContent = false
             }
+
+            if (getBoolean(getString(R.string.cameraroll_backup_pref_key), false)) {
+                // Kick start server backup
+                AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                    if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                        putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                        //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                        putInt(SyncAdapter.ACTION, SyncAdapter.BACKUP_CAMERA_ROLL)
+                    })
+                }
+            }
         }
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
             imageLoaderModel.getResourceRoot(),
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { state->
                 // When in "Show media list at startup" mode, ignore the first hide bottom sheet call which fired by video auto play
@@ -164,17 +208,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 else imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView!!, type) {
                     startPostponedEnterTransition()
                     if (photo.width == 0 && photo.mimeType.startsWith("image")) {
-                        // Patching photo's meta after it has been downloaded
+                        // Patching photo's meta after it has been fetched
                         Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
                     }
                 }},
             { view-> imageLoaderModel.cancelSetImagePhoto(view) }
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+        ).apply { stateRestorationPolicy = Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
                 //mediaPagerAdapter.findMediaPosition(photo).let { pos ->
-                camerarollModel.findPhotoPosition(photo).let { pos ->
+                camerarollModel.findPhotoPosition(photo.id).let { pos ->
                     if (pos != -1) {
                         mediaPager.scrollToPosition(pos)
                         camerarollModel.setCurrentPosition(pos)
@@ -183,9 +227,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
-            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type)},
-            { view -> imageLoaderModel.cancelSetImagePhoto(view) }
-        ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type) },
+            { view -> imageLoaderModel.cancelSetImagePhoto(view) },
+            { view -> flashPhoto(view) },
+            { view -> flashDate(view) }
+        ).apply { stateRestorationPolicy = Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         savedInstanceState?.let {
             (requireActivity() as AppCompatActivity).supportActionBar?.hide()
@@ -236,18 +282,18 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
-                if (toggleCameraRollButton.isChecked) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, lastSelection)).setFillInIntent(null).build())
-                    else camerarollModel.removeMedias(lastSelection)
-                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) deleteMediaLauncher.launch(IntentSenderRequest.Builder(MediaStore.createDeleteRequest(requireContext().contentResolver, lastSelection)).setFillInIntent(null).build())
+                else camerarollModel.removeMedias(lastSelection)
             }
 
             // Immediately sync with server after adding photo to local album
-            ContentResolver.requestSync(AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
-                putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-                putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-            })
+            AccountManager.get(requireContext()).getAccountsByType(getString(R.string.account_type_nc)).let { accounts ->
+                if (accounts.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+                    //putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
+                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+                })
+            }
         }
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -324,8 +370,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         quickScrollAdapter.setPlayMarkDrawable(Tools.getPlayMarkDrawable(requireActivity(), (0.32f / quickScrollGridSpanCount)))
         quickScrollAdapter.setSelectedMarkDrawable(Tools.getSelectedMarkDrawable(requireActivity(), 0.25f / quickScrollGridSpanCount))
 
-        playerViewModel.setWindow(requireActivity().window)
-
         // Save current system bar color
         (requireActivity() as AppCompatActivity).window?.run {
             savedStatusBarColor = statusBarColor
@@ -358,9 +402,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         if (!showListFirst) postponeEnterTransition()
 
-        mediaPagerEmptyView = view.findViewById(R.id.emptyview)
-        quickScrollEmptyView = view.findViewById(R.id.quick_scroll_emptyview)
-        divider = view.findViewById(R.id.divider)
         dateTextView = view.findViewById(R.id.date)
         sizeTextView = view.findViewById(R.id.size)
         infoButton = view.findViewById(R.id.info_button)
@@ -373,20 +414,41 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         sourceToggleGroup = view.findViewById(R.id.source_toggle_group)
         toggleCameraRollButton = view.findViewById(R.id.source_device)
         toggleBackupsButton = view.findViewById(R.id.source_backups)
+        datePickerButton = view.findViewById(R.id.date_picker_button)
+        yearIndicator = view.findViewById<TextView>(R.id.year_indicator).apply {
+            doOnLayout {
+                background = MaterialShapeDrawable().apply {
+                    fillColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.color_error))
+                    shapeAppearanceModel = ShapeAppearanceModel.builder().setTopLeftCorner(CornerFamily.CUT, yearIndicator.height.toFloat()).build()
+                }
+            }
+        }
 
         toggleCameraRollButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(cBadge, toggleCameraRollButton) }
         toggleBackupsButton.doOnPreDraw { BadgeUtils.attachBadgeDrawable(aBadge, toggleBackupsButton) }
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
             adapter = quickScrollAdapter
+/*
+
+            layoutManager = object : GridLayoutManager(this.context, resources.getInteger(R.integer.cameraroll_grid_span_count)) {
+                override fun scrollVerticallyBy(dy: Int, recycler: Recycler?, state: State?): Int {
+                    super.scrollVerticallyBy(dy, recycler, state).run {
+                        if (dy - this < 150) {
+                            // Overscroll at the top, hide bottom sheet
+                            bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                        }
+                        return this
+                    }
+                }
+            }
+*/
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
                     return if (quickScrollAdapter.getItemViewType(position) == QuickScrollAdapter.DATE_TYPE) quickScrollGridSpanCount else 1
                 }
             }
-
-            isNestedScrollingEnabled = true
 
             selectionTracker = SelectionTracker.Builder(
                 "camerarollSelection",
@@ -415,7 +477,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             setSourceGroupState(false)
 
                             bottomSheet.isDraggable = false
-                            isNestedScrollingEnabled = false
                         } else {
                             removeButton.isEnabled = false
                             shareButton.isEnabled = false
@@ -428,7 +489,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             setSourceGroupState(true)
 
                             bottomSheet.isDraggable = true
-                            isNestedScrollingEnabled = true
                         }
                     }
                 })
@@ -472,8 +532,44 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             })
 */
+            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                private val hideHandler = Handler(Looper.getMainLooper())
+                private val hideDateIndicator = Runnable {
+                    TransitionManager.beginDelayedTransition(quickScroll.parent as ViewGroup, Fade().apply { duration = 800 })
+                    yearIndicator.visibility = View.GONE
+                }
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    if (dx == 0 && dy == 0) {
+                        // First entry or fragment resume false call, by layout re-calculation, hide dataIndicator
+                        yearIndicator.isVisible = false
+                    } else {
+                        (recyclerView.layoutManager as GridLayoutManager).run {
+                            // Hints the date (or 1st character of the name if sorting order is by name) of last photo shown in the list
+                            if ((findLastCompletelyVisibleItemPosition() < quickScrollAdapter.itemCount - 1) || (findFirstCompletelyVisibleItemPosition() > 0)) {
+                                hideHandler.removeCallbacksAndMessages(null)
+                                yearIndicator.let {
+                                    it.text = quickScrollAdapter.currentList[findLastVisibleItemPosition()].dateTaken.format(DateTimeFormatter.ofPattern("MMM uuuu"))
+                                    it.isVisible = true
+                                }
+                                hideHandler.postDelayed(hideDateIndicator, 1500)
+                            }
+                        }
+                    }
+                }
+            })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_camera_roll_24)!!))
         }
         quickScrollAdapter.setSelectionTracker(selectionTracker)
+        LesPasFastScroller(
+            quickScroll,
+            ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
+            ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_thumb) as StateListDrawable, ContextCompat.getDrawable(quickScroll.context, R.drawable.fast_scroll_track)!!,
+            resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
+        )
 
         mediaPager = view.findViewById<RecyclerView>(R.id.media_pager).apply {
             adapter = mediaPagerAdapter
@@ -482,22 +578,22 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             PagerSnapHelper().attachToRecyclerView(this)
 
             // Detect swipe up gesture and show BottomSheet
-            addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
+            addOnItemTouchListener(object: SimpleOnItemTouchListener() {
                 override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean = gestureDetector.onTouchEvent(e)
             })
 
-            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            addOnScrollListener(object: OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
 
                     when(newState) {
-                        RecyclerView.SCROLL_STATE_DRAGGING-> {
+                        SCROLL_STATE_DRAGGING -> {
                             // Dismiss BottomSheet when user starts scrolling
                             bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                         }
-                        RecyclerView.SCROLL_STATE_IDLE-> {
+                        SCROLL_STATE_IDLE -> {
                             // Save current position in VM
-                            (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().let { pos -> camerarollModel.setCurrentPosition(if (pos == RecyclerView.NO_POSITION) 0 else pos) }
+                            (mediaPager.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition().let { pos -> camerarollModel.setCurrentPosition(if (pos == NO_POSITION) 0 else pos) }
 
                             // Update meta display textview after scrolled
                             updateMetaDisplay()
@@ -505,6 +601,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                 }
             })
+
+            addItemDecoration(LesPasEmptyView(ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_camera_roll_24)!!))
         }
 
         // Since we are not in immersive mode, set correct photo display width so that right edge can be detected
@@ -526,64 +624,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 observeCameraRoll()
             }
         }
-
-        mediaPagerAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                (mediaPagerAdapter.itemCount == 0).let { isEmpty ->
-                    mediaPager.isVisible = !isEmpty
-                    mediaPagerEmptyView.isVisible = isEmpty
-                }
-            }
-        })
-        mediaPagerEmptyView.setOnClickListener { bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED }
-        mediaPagerEmptyView.setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
-
-        quickScrollEmptyView.setOnTouchListener { _, _ -> false }
-        quickScrollAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-            override fun onChanged() {
-                super.onChanged()
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
-                super.onItemRangeRemoved(positionStart, itemCount)
-                toggleEmptyView()
-            }
-
-            private fun toggleEmptyView() {
-                if (quickScrollAdapter.itemCount == 0) {
-                    if (quickScroll.isVisible) {
-                        quickScroll.isVisible = false
-                        quickScrollEmptyView.isVisible = true
-                    }
-                } else {
-                    if (quickScrollEmptyView.isVisible) {
-                        quickScroll.isVisible = true
-                        quickScrollEmptyView.isVisible = false
-                    }
-                }
-            }
-        })
 
         // TODO dirty hack to reduce mediaPager's scroll sensitivity to get smoother zoom experience
         (RecyclerView::class.java.getDeclaredField("mTouchSlop")).apply {
@@ -620,6 +660,20 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
  */
                             updateExpandedDisplay()
+
+                            // Flash photo to indicate it's position
+                            camerarollModel.getCurrentPhoto()?.id?.let { photoId ->
+                                quickScrollAdapter.getPhotoPosition(photoId).let { pos ->
+                                    quickScroll.findViewHolderForAdapterPosition(pos)?.itemView?.findViewById<ImageView>(R.id.photo)?.let {
+                                        // Flash current photo in list if it's within current range
+                                        view -> flashPhoto(view)
+                                    } ?: run {
+                                        // Scroll to the current photo and flash it after it's view ready
+                                        quickScroll.scrollToPosition(pos)
+                                        quickScrollAdapter.setFlashPhoto(photoId)
+                                    }
+                                }
+                            }
                         }
                         BottomSheetBehavior.STATE_HIDDEN -> {
                             selectionTracker.clearSelection()
@@ -658,18 +712,20 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (slideOffset >= 0) {
                         buttonGroup.isVisible = true
                         sourceToggleGroup.isVisible = allowToggleContent
+                        datePickerButton.isVisible = allowToggleContent
 
-                        val alpha = 255 - (255 * slideOffset).toInt()
-                        val buttonGroupAlpha = 256 - (128 * slideOffset)
+                        var alpha = 1.0f - min(0.25f, slideOffset) * 4
 
-                        buttonGroup.alpha = if (allowToggleContent) alpha / 255.0f else buttonGroupAlpha / 255.0f
-                        with(ColorUtils.setAlphaComponent(primaryColor, alpha)) {
+                        buttonGroup.alpha = if (allowToggleContent) alpha else slideOffset / 2
+                        with(ColorUtils.setAlphaComponent(primaryColor, (alpha * 255).toInt())) {
                             dateTextView.setTextColor(this)
                             sizeTextView.setTextColor(this)
                         }
 
-                        quickScroll.foreground = ColorDrawable(ColorUtils.setAlphaComponent(backgroundColor, alpha))
-                        sourceToggleGroup.alpha = (255 - alpha) / 255.0f
+                        quickScroll.foreground = ColorDrawable(ColorUtils.setAlphaComponent(backgroundColor, (alpha * 255).toInt()))
+                        alpha = (max(slideOffset, 0.75f) - 0.75f) * 4
+                        sourceToggleGroup.alpha = alpha
+                        datePickerButton.alpha = alpha
                     }
                 }
             })
@@ -744,7 +800,36 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         toggleBackupsButton.setOnClickListener {
             if (camerarollModel.getVMState().value == CameraRollViewModel.STATE_SHOWING_DEVICE) {
                 camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+                datePickerButton.isEnabled = false
                 camerarollModel.fetchPhotoFromServerBackup()
+            }
+        }
+        datePickerButton.setOnClickListener {
+            quickScrollAdapter.dateRange()?.let { dateRange ->
+                MaterialDatePicker.Builder.datePicker()
+                    .setCalendarConstraints(CalendarConstraints.Builder().setValidator(object: CalendarConstraints.DateValidator {
+                        override fun describeContents(): Int = 0
+                        override fun writeToParcel(dest: Parcel?, flags: Int) {}
+                        override fun isValid(date: Long): Boolean = quickScrollAdapter.hasDate(date)
+                    }).setStart(dateRange.first).setEnd(dateRange.second).setOpenAt(quickScrollAdapter.getDateByPosition((quickScroll.layoutManager as GridLayoutManager).findFirstVisibleItemPosition())).build())
+                    .setTheme(R.style.ThemeOverlay_LesPas_DatePicker)
+                    .build()
+                    .apply {
+                        addOnPositiveButtonClickListener { picked ->
+                            val currentBottom = (quickScroll.layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()
+                            quickScrollAdapter.getPositionByDate(picked).let { newPosition ->
+                                quickScroll.findViewHolderForAdapterPosition(newPosition)?.itemView?.findViewById<TextView>(R.id.date)?.let { view ->
+                                    // new position is visible on screen now
+                                    if (newPosition == currentBottom) quickScroll.scrollToPosition(newPosition + 1)
+                                    flashDate(view)
+                                } ?: run {
+                                    // flash the date after it has revealed
+                                    quickScrollAdapter.setFlashDate(picked)
+                                    quickScroll.scrollToPosition(if (newPosition < currentBottom) newPosition else min(quickScrollAdapter.currentList.size - 1, newPosition + quickScrollGridSpanCount))
+                                }
+                            }
+                        }
+                    }.show(parentFragmentManager, null)
             }
         }
         closeButton.setOnClickListener { if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN }
@@ -755,7 +840,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
                     val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = if (targetAlbum.id != PublicationDetailFragment.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val removeList = mutableListOf<String>()
 
                     when (targetAlbum.id) {
@@ -763,18 +848,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
                             actions.add(0, Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
                         }
-                        PublicationDetailFragment.JOINT_ALBUM_ID -> {
-                            Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).apply {
-                                animationMode = Snackbar.ANIMATION_MODE_FADE
-                                setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-                                setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
-                            }.show()
-                        }
+                        Album.JOINT_ALBUM_ID -> Snackbar.make(mediaPager, getString(R.string.msg_joint_album_not_updated_locally), Snackbar.LENGTH_LONG).show()
                     }
 
                     destinationModel.getRemotePhotos().forEach { remotePhoto ->
                         remotePhoto.photo.let { photo ->
-                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
+                            actions.add(Action(null, actionId, remotePhoto.remotePath, targetFolder, "", "${photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}", System.currentTimeMillis(), 1))
                             removeList.add(photo.id)
                         }
                     }
@@ -822,11 +901,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     setSourceGroupState(false)
                     setButtonGroupState(true)
                     allowToggleContent = false
-                    Snackbar.make(mediaPager, getString(R.string.msg_empty_server_backup), Snackbar.LENGTH_LONG).apply {
-                        animationMode = Snackbar.ANIMATION_MODE_FADE
-                        setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.color_primary))
-                        setTextColor(ContextCompat.getColor(requireContext(), R.color.color_text_light))
-                    }.show()
+                    Snackbar.make(mediaPager, getString(R.string.msg_empty_server_backup), Snackbar.LENGTH_LONG).show()
                 }
             }
         })
@@ -929,6 +1004,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onDestroyView() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
+        mediaPager.adapter = null
+        quickScroll.adapter = null
 
         super.onDestroyView()
     }
@@ -985,8 +1062,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
             if (bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) updateMetaDisplay()
 
+            datePickerButton.isEnabled = false
             (quickScroll.adapter as QuickScrollAdapter).submitList(it) {
                 camerarollModel.getQuickScrollState()?.let { savedState -> quickScroll.layoutManager?.onRestoreInstanceState(savedState) }
+                datePickerButton.isEnabled = true
             }
 
             if (toggleBackupsButton.isChecked) {
@@ -1006,14 +1085,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             //with(mediaPagerAdapter.getMediaAtPosition(getCurrentVisibleItemPosition())) {
             camerarollModel.getCurrentPhoto()?.run {
                 dateTextView.text = "${dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
-                sizeTextView.text = Tools.humanReadableByteCountSI(shareId.toLong())
+                dateTextView.isVisible = true
 
+                shareId.toLong().let { size ->
+                    sizeTextView.text = Tools.humanReadableByteCountSI(size)
+                    sizeTextView.isVisible = size > 0
+                }
             }
         } catch (e: IndexOutOfBoundsException) {}
 
         val primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
-        dateTextView.isVisible = true
-        sizeTextView.isVisible = true
         dateTextView.setTextColor(primaryTextColor)
         sizeTextView.setTextColor(primaryTextColor)
     }
@@ -1051,6 +1132,28 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             isVisible = mState
             isEnabled = mState
             alpha = if (mState) 1f else 0f
+        }
+        datePickerButton.run {
+            isVisible = mState
+            isEnabled = mState
+            alpha = if (mState) 1f else 0f
+        }
+    }
+
+    fun flashPhoto(view: View) {
+        ObjectAnimator.ofPropertyValuesHolder(view, sx, sy).run {
+            duration = 800
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = BounceInterpolator()
+            start()
+        }
+    }
+    private fun flashDate(view: View) {
+        ObjectAnimator.ofPropertyValuesHolder(view, tx).run {
+            duration = 800
+            repeatMode = ValueAnimator.REVERSE
+            interpolator = BounceInterpolator()
+            start()
         }
     }
 
@@ -1172,20 +1275,30 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     @Suppress("UNCHECKED_CAST")
-    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?): ViewModelProvider.NewInstanceFactory() {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri) as T
+    class CameraRollViewModelFactory(private val application: Application, private val fileUri: String?, private val inArchive: Boolean): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = CameraRollViewModel(application, fileUri, inArchive) as T
     }
 
-    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?): ViewModel() {
+    class CameraRollViewModel(private val ctx: Application, private val fileUri: String?, inArchive: Boolean): ViewModel() {
         private val mediaList = MutableLiveData<MutableList<Photo>>()
         private var cameraRoll = mutableListOf<Photo>()
         private var backups = mutableListOf<Photo>()
         private val cr = ctx.contentResolver
         private val vmState = MutableLiveData<Int>()
+        private val position = arrayListOf(0, 0)
+        private var shouldDisableRemove = false
+        private var shouldDisableShare = false
+        private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
+        private val snapshotRemovedList = mutableListOf<String>()
 
         init {
-            vmState.postValue(STATE_SHOWING_DEVICE)
-            fetchCameraRoll()
+            if (inArchive) {
+                vmState.postValue(STATE_FETCHING_BACKUP)
+                fetchPhotoFromServerBackup()
+            } else {
+                vmState.postValue(STATE_SHOWING_DEVICE)
+                fetchCameraRoll()
+            }
         }
 
         fun getVMState(): LiveData<Int> = vmState
@@ -1194,6 +1307,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             viewModelScope.launch(Dispatchers.IO) {
                 if (backups.isEmpty()) {
                     var snapshot = mutableListOf<Photo>()
+                    val backupList = mutableListOf<Photo>()
                     try {
                         // Fetch backups from server if needed
                         vmState.postValue(STATE_FETCHING_BACKUP)
@@ -1215,28 +1329,35 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                         webDav.listWithExtraMeta(dcimRoot, OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                             if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
-                                backups.add(
+                                backupList.add(
                                     Photo(
                                         id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
                                         dateTaken = dav.dateTaken, lastModified = dav.modified,
                                         width = dav.width, height = dav.height, orientation = dav.orientation,
                                         // Store file size in property shareId
                                         shareId = dav.size.toInt(),
+                                        latitude = dav.latitude, longitude = dav.longitude, altitude = dav.altitude, bearing = dav.bearing,
                                     )
                                 )
                             }
                         }
-                    } catch (e: Exception) {}
+                    } catch (e: Exception) { e.printStackTrace() }
 
-                    if (backups.isNotEmpty()) {
-                        backups.sortByDescending { it.dateTaken }
+                    if (backupList.isNotEmpty()) {
+                        backupList.sortByDescending { it.dateTaken }
 
                         // If we have snapshot, make sure recyclerview's current position won't drift after data updated
                         if (snapshot.isNotEmpty()) (getCurrentPhoto()?.name.let { current -> backups.indexOfFirst { it.name == current } }).let { newPosition -> setCurrentPosition(if (newPosition == -1) 0 else newPosition) }
                     } else {
                         // If fail fetching backups from server, use snapshot
-                        if (snapshot.isNotEmpty()) backups.addAll(snapshot)
+                        if (snapshot.isNotEmpty()) backupList.addAll(snapshot)
                     }
+
+                    // Remove those removed in snapshot before archive synced
+                    for (photoId in snapshotRemovedList) { backupList.indexOfFirst { it.id == photoId }.let { index -> if (index != -1) backupList.removeAt(index) }}
+
+                    setBackup(backupList)
+                    snapshotRemovedList.clear()
                 }
 
                 if (backups.isNotEmpty()) {
@@ -1250,98 +1371,56 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             viewModelScope.launch(Dispatchers.IO) {
                 if (cameraRoll.isEmpty()) {
                     fileUri?.apply {
+                        // Launched as picture viewer
                         Tools.getFolderFromUri(this, cr)?.let { uri ->
+                            // If we can access the folder
                             //Log.e(">>>>>", "${uri.first}   ${uri.second}")
                             cameraRoll.addAll(Tools.listMediaContent(uri.first, cr, imageOnly = false, strict = true))
                             setCurrentPosition(cameraRoll.indexOfFirst { it.id.substringAfterLast('/') == uri.second })
                         } ?: run {
+                            // Single file, need to do housework here
+
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) shouldDisableRemove = true
 
                             val uri = Uri.parse(this)
-                            //val photo = Photo(this, FROM_CAMERA_ROLL, "", "0", LocalDateTime.now(), LocalDateTime.MIN, 0, 0, "", 0)
-                            val photo = Photo(
-                                id = this,      // fileUri shared in as photo's id in Camera Roll album
-                                albumId = FROM_CAMERA_ROLL,
-                                shareId = 0,     // Temporarily use shareId for saving file's size TODO maximum 4GB
-                                dateTaken = LocalDateTime.now(),
-                                lastModified = LocalDateTime.MIN,
-                            )
-
-                            photo.mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
+                            val mimeType = cr.getType(uri)?.let { Intent.normalizeMimeType(it) } ?: run {
                                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(fileUri).lowercase()) ?: Photo.DEFAULT_MIMETYPE
                             }
+                            var filename = ""
+                            var size = 0
                             when (uri.scheme) {
                                 "content" -> {
-                                    cr.query(uri, null, null, null, null)?.use { cursor ->
-                                        cursor.moveToFirst()
-                                        try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { photo.name = it } } catch (e: IllegalArgumentException) {}
-                                        // Store file size in property shareId
-                                        try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { photo.shareId = it.toInt() } } catch (e: Exception) {}
-                                    }
+                                    try {
+                                        cr.query(uri, null, null, null, null)?.use { cursor ->
+                                            cursor.moveToFirst()
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { filename = it } } catch (e: IllegalArgumentException) { }
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { size = it.toInt() }} catch (e: Exception) {
+                                            }
+                                        }
+                                    } catch (e: Exception) {}
                                 }
                                 "file" -> {
-                                    uri.path?.let { photo.name = it.substringAfterLast('/') }
+                                    uri.path?.let { filename = it.substringAfterLast('/') }
                                     shouldDisableShare = true
                                 }
                             }
 
-                            if (photo.mimeType.startsWith("video/")) {
-                                MediaMetadataRetriever().run {
-                                    setDataSource(ctx, uri)
-                                    photo.dateTaken = Tools.getVideoFileDate(this, photo.name)
-                                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.let { photo.width = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
-                                    extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.let { photo.height = try { it.toInt() } catch (e: NumberFormatException) { 0 }}
-                                    release()
-                                }
-                            } else {
-                                when (photo.mimeType.substringAfter("image/", "")) {
-                                    in Tools.FORMATS_WITH_EXIF -> {
-                                        val exif = ExifInterface(cr.openInputStream(uri)!!)
-
-                                        // Get date
-                                        photo.dateTaken = Tools.getImageFileDate(exif, photo.name)?.let {
-                                            try {
-                                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern(Tools.DATE_FORMAT_PATTERN))
-                                            } catch (e: Exception) {
-                                                e.printStackTrace()
-                                                LocalDateTime.now()
-                                            }
-                                        } ?: LocalDateTime.now()
-
-                                        photo.orientation = exif.rotationDegrees
-                                        exif.latLong?.let {
-                                            photo.latitude = it[0]
-                                            photo.longitude = it[1]
-                                        }
-                                        photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
-                                        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let {
-                                            photo.bearing = try {
-                                                it.toDouble()
-                                            } catch (e: NumberFormatException) {
-                                                Photo.NO_GPS_DATA
-                                            }
-                                        }
-                                        if (photo.bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let {
-                                            photo.bearing = try {
-                                                it.toDouble()
-                                            } catch (e: NumberFormatException) {
-                                                Photo.NO_GPS_DATA
-                                            }
-                                        }
-                                    }
-                                }
-
-                                BitmapFactory.Options().run {
-                                    inJustDecodeBounds = true
-                                    BitmapFactory.decodeStream(cr.openInputStream(uri), null, this)
-                                    photo.width = outWidth
-                                    photo.height = outHeight
-                                }
-                            }
+                            var metadataRetriever: MediaMetadataRetriever? = null
+                            var exifInterface: ExifInterface? = null
+                            if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null } catch (e: RuntimeException) { null }
+                            else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.let { ExifInterface(it) }} catch (e: Exception) {}
+                            val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
+                                albumId = FROM_CAMERA_ROLL,
+                                name = filename,
+                                id = this,                  // fileUri shared in as photo's id in Camera Roll album
+                                shareId = size,             // Temporarily use shareId for saving file's size TODO maximum 4GB
+                            )
+                            metadataRetriever?.release()
 
                             cameraRoll.add(photo)
                         }
                     } ?: run {
+                        // Launched as camera roll manager
                         cameraRoll.addAll(Tools.getCameraRoll(cr, false))
                     }
                 }
@@ -1353,8 +1432,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
 
-        fun getPhotoById(photoId: String): Photo? = if (vmState.value == STATE_SHOWING_BACKUP) backups.find { it.id == photoId } else cameraRoll.find { it.id == photoId }
-        fun findPhotoPosition(photo: Photo): Int = if (vmState.value == STATE_SHOWING_BACKUP) backups.indexOf(photo) else cameraRoll.indexOf(photo)
+        fun getPhotoById(photoId: String): Photo? = mediaList.value?.let { list -> list.find { it.id == photoId }}
+        fun findPhotoPosition(photoId: String): Int = mediaList.value?.let { list -> list.indexOfFirst { it.id == photoId }} ?: -1
         fun removeMedias(removeList: List<Uri>) {
             // Remove from system if running on Android 10 or lower
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) removeList.forEach { media-> cr.delete(media, null, null) }
@@ -1370,30 +1449,35 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         fun removeBackup(removeList: List<String>) {
             // Remove from our list
-            backups.toMutableList().run {
-                removeAll { removeList.contains(it.id) }
+            mediaList.value?.toMutableList()?.let { pList ->
+                for (id in removeList) { pList.indexOfFirst { it.id == id }.let { index -> if (index != -1) pList.removeAt(index) }}
 
-                if (size == 0) {
+                if (pList.size == 0) {
+                    // All element removed
                     vmState.postValue(STATE_BACKUP_NOT_AVAILABLE)
                     mediaList.postValue(cameraRoll)
-                }
-                else {
-                    if (position[1] >= size) position[1] = max(size - 1, 0)
-                    mediaList.postValue(this)
-                    backups = this
+                } else {
+                    // If last element removed
+                    if (position[1] >= pList.size) position[1] = max(pList.size - 1, 0)
+
+                    mediaList.postValue(pList)
+
+                    if (backups.isNotEmpty()) setBackup(pList)
+                    else {
+                        // Removing in snapshot, maintain a removed list in order to show correct list after archive synced
+                        // TODO partial removal
+                        snapshotRemovedList.addAll(removeList)
+                    }
                 }
             }
         }
 
-        //private var currentPosition = 0
-        private val position = arrayListOf(0, 0)
+        @Synchronized private fun setBackup(newList: MutableList<Photo>) { backups = newList }
         private fun getCurrentSource() = vmState.value?.let { if (it > 0) 1 else 0 } ?: 0
         fun setCurrentPosition(newPosition: Int) { position[getCurrentSource()] = newPosition }
         fun getCurrentPosition(): Int = position[getCurrentSource()]
         fun getCurrentPhoto(): Photo? = mediaList.value?.let { if (it.size == 0) null else it[position[getCurrentSource()]] }
 
-        private var shouldDisableRemove = false
-        private var shouldDisableShare = false
         fun shouldDisableRemove(): Boolean = this.shouldDisableRemove
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
 
@@ -1419,7 +1503,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             return result
         }
 
-        private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
         fun saveQuickScrollState(state: Parcelable?) { quickScrollState[getCurrentSource()] = state }
         fun getQuickScrollState(): Parcelable? = quickScrollState[getCurrentSource()]
 
@@ -1429,7 +1512,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             const val STATE_FETCHING_BACKUP = 2
             const val STATE_BACKUP_NOT_AVAILABLE = 3
 
-            private const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
+            const val SNAPSHOT_FILENAME = "camera_backup_snapshot.json"
         }
     }
 
@@ -1448,23 +1531,28 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 photo.width = exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
                 photo.height = exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
                 // TODO changing dateTaken property will change photo position in list
-                exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).let { timeString -> }
+                //exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL).let { timeString -> }
                 exif.latLong?.let { latLong ->
                     photo.latitude = latLong[0]
                     photo.longitude = latLong[1]
+                    photo.altitude = exif.getAltitude(Photo.NO_GPS_DATA)
+                    photo.bearing = Tools.getBearing(exif)
                 }
             }
         }
     }
 
-    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
-    ): ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback()) {
+    class QuickScrollAdapter(private val clickListener: (Photo) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit, private val flashPhoto: (View) -> Unit, private val flashDate: (View) -> Unit
+    ): ListAdapter<Photo, ViewHolder>(PhotoDiffCallback()) {
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
         private var playMark: Drawable? = null
         private var selectedMark: Drawable? = null
+        private var flashPhotoId = ""
+        private var flashDateId = LocalDate.MIN
+        private val defaultOffset = OffsetDateTime.now().offset     //ZoneId.ofOffset("UTC", ZoneOffset.UTC)
 
-        inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class MediaViewHolder(itemView: View): ViewHolder(itemView) {
             private var currentId = ""
             private val ivPhoto = itemView.findViewById<ImageView>(R.id.photo).apply { foregroundGravity = Gravity.CENTER }
 
@@ -1489,6 +1577,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         else clearColorFilter()
 
                         setOnClickListener { if (!selectionTracker.hasSelection()) clickListener(item) }
+
+                        if (flashPhotoId == item.id) {
+                            flashPhotoId = ""
+                            flashPhoto(ivPhoto)
+                        }
                     }
                 }
             }
@@ -1510,7 +1603,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 */
 
-        inner class HorizontalDateViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
+        inner class HorizontalDateViewHolder(itemView: View): ViewHolder(itemView) {
             private val tvDate = itemView.findViewById<TextView>(R.id.date)
 
             @SuppressLint("SetTextI18n")
@@ -1530,10 +1623,15 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     }
                     true
                 }
+
+                if (item.dateTaken.toLocalDate().isEqual(flashDateId)) {
+                    flashDateId = LocalDate.MIN
+                    flashDate(tvDate)
+                }
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder =
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
 /*
             if (viewType == MEDIA_TYPE) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll, parent, false))
             else DateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date, parent, false))
@@ -1541,15 +1639,22 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             if (viewType == MEDIA_TYPE) MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
             else HorizontalDateViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_cameraroll_date_horizontal, parent, false))
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             if (holder is MediaViewHolder) holder.bind(currentList[position])
             //else if (holder is DateViewHolder) holder.bind(currentList[position])
             else if (holder is HorizontalDateViewHolder) holder.bind(currentList[position])
         }
 
+/*
+        override fun onViewDetachedFromWindow(holder: ViewHolder) {
+            if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.photo).let { cancelLoader(it) }
+            super.onViewDetachedFromWindow(holder)
+        }
+*/
+
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> if (holder is MediaViewHolder) holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
             }
             super.onDetachedFromRecyclerView(recyclerView)
         }
@@ -1562,13 +1667,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 for (media in list) {
                     if (media.dateTaken.toLocalDate() != currentDate) {
                         currentDate = media.dateTaken.toLocalDate()
-                        // Add a fake photo item by taking default value for nearly all properties, denotes a date seperator
+                        // Add a fake photo item by taking default value for nearly all properties, denotes a date separator
                         listGroupedByDate.add(Photo(albumId = FROM_CAMERA_ROLL, dateTaken = media.dateTaken, lastModified = media.dateTaken, mimeType = ""))
                         //listGroupedByDate.add(Photo("", FROM_CAMERA_ROLL, "", "", media.dateTaken, media.dateTaken, 0, 0, "", 0))
                     }
                     listGroupedByDate.add(media)
                 }
-
 /*
                 // Get total for each date
                 var sectionCount = 0
@@ -1593,6 +1697,19 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
+
+        fun hasDate(date: Long): Boolean {
+            val theDate = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate()
+            return (currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.toLocalDate().isEqual(theDate) }) != NO_POSITION
+        }
+        fun dateRange(): Pair<Long, Long>? {
+            return if (currentList.isNotEmpty()) Pair(currentList.last().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli(), currentList.first().dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()) else null
+        }
+        fun getPositionByDate(date: Long): Int = currentList.indexOfFirst { it.mimeType.isEmpty() && it.dateTaken.atZone(defaultOffset).toInstant().toEpochMilli() - date < 86400000 }
+        fun getDateByPosition(position: Int): Long = currentList[position].dateTaken.atZone(defaultOffset).toInstant().toEpochMilli()
+        fun setFlashPhoto(photoId: String) { flashPhotoId = photoId }
+        fun setFlashDate(date: Long) { flashDateId = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), ZoneId.systemDefault()).toLocalDate() }
+
         class PhotoKeyProvider(private val adapter: QuickScrollAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getPhotoId(position)
             override fun getPosition(key: String): Int = adapter.getPhotoPosition(key)
@@ -1615,7 +1732,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     class PhotoDiffCallback : DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = if (oldItem.id.isEmpty() || newItem.id.isEmpty()) false else oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = true
     }
 
     companion object {
@@ -1624,6 +1741,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         const val EMPTY_ROLL_COVER_ID = "0"
 
         private const val KEY_SCROLL_TO = "KEY_SCROLL_TO"
+        private const val KEY_IN_ARCHIVE = "KEY_IN_ARCHIVE"
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
         private const val KEY_BOTTOMSHEET_STATE = "KEY_BOTTOMSHEET_STATE"
@@ -1637,7 +1755,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val STRIP_REQUEST_KEY = "CAMERA_ROLL_STRIP_REQUEST_KEY"
 
         @JvmStatic
-        fun newInstance(scrollTo: String = "") = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_SCROLL_TO, scrollTo) }}
+        fun newInstance(scrollTo: String = "", inArchive: Boolean = false) = CameraRollFragment().apply {
+            arguments = Bundle().apply {
+                putString(KEY_SCROLL_TO, scrollTo)
+                putBoolean(KEY_IN_ARCHIVE, inArchive)
+            }
+        }
 
         @JvmStatic
         fun newInstance(uri: Uri) = CameraRollFragment().apply { arguments = Bundle().apply { putString(KEY_URI, uri.toString()) }}

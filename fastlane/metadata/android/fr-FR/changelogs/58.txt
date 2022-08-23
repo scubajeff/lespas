@@ -1,0 +1,5 @@
+* Nouveau : filtre de nom pour les albums avec l'option "Show Name" activée
+* Nouveau : Détection d'objets par IA et recherche d'emplacement pour les sauvegardes de rouleau de caméra sur le serveur.
+* Nouveau : Sélecteur de date dans la liste des photos
+* Correction de la connexion utilisant un certificat auto-signé
+* Autres améliorations et corrections de bogues

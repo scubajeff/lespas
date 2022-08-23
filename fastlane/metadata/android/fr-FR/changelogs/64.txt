@@ -1,0 +1,5 @@
+* Lire correctement l'horodatage de création de la photo qui a un décalage de fuseau horaire à partir de l'EXIF.
+* Persistance de l'ordre de tri de la liste des albums
+* Correction d'un crash lors de la lecture d'une vidéo dans l'application Gallery alors que l'application Les Pas est toujours en cours d'exécution en arrière-plan.
+* Délai d'attente plus long pour faciliter la synchronisation sur une mauvaise connexion.
+* Autres améliorations et corrections de bugs

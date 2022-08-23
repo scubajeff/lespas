@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.sync
 
 import android.accounts.AccountManager
@@ -8,9 +24,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
@@ -24,6 +42,12 @@ class ShareReceiverActivity: AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Tools.applyTheme(this, R.style.Theme_LesPas_Transparent, R.style.Theme_LesPas_Transparent_TrueBlack)
         super.onCreate(savedInstanceState)
+
+        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) {
+            Toast.makeText(this, getString(R.string.msg_login_first), Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
 
         // Make sure photo's folder created
         lifecycleScope.launch(Dispatchers.IO) {
@@ -72,7 +96,7 @@ class ShareReceiverActivity: AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        if (!intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
+        if (AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isNotEmpty() && !intent.hasExtra(KEY_SHOW_REMOVE_OPTION)) {
             // Request sync immediately if called from other apps
             ContentResolver.requestSync(AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))[0], getString(R.string.sync_authority), Bundle().apply {
                 putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)

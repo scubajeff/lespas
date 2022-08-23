@@ -1,3 +1,19 @@
+/*
+ *   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ */
+
 package site.leos.apps.lespas.publication
 
 import android.annotation.SuppressLint
@@ -35,11 +51,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
-import java.time.OffsetDateTime
+import java.time.ZoneId
 import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -51,7 +68,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
-    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity().application, shareModel.getCallFactory()) }
+    private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), shareModel.getCallFactory(), shareModel.getPlayerCache()) }
 
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
@@ -69,7 +86,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
-            Tools.getDisplayWidth(requireActivity().windowManager),
+            Tools.getDisplayDimension(requireActivity()).first,
             shareModel.getResourceRoot(),
             playerViewModel,
             { state-> toggleSystemUI(state) },
@@ -131,7 +148,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         this.window = requireActivity().window
-        playerViewModel.setWindow(this.window)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -234,8 +250,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             it?.let { targetAlbum ->
                 destinationModel.getRemotePhotos()[0].let { remotePhoto ->
                     ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(mutableListOf<Action>().apply {
-                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.toEpochSecond(OffsetDateTime.now().offset)}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
-                        if (targetAlbum.id == PublicationDetailFragment.JOINT_ALBUM_ID) {
+                        val metaString = remotePhoto.photo.let { photo -> "${targetAlbum.eTag}|${photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()}|${photo.mimeType}|${photo.width}|${photo.height}|${photo.orientation}|${photo.caption}|${photo.latitude}|${photo.longitude}|${photo.altitude}|${photo.bearing}" }
+                        if (targetAlbum.id == Album.JOINT_ALBUM_ID) {
                             targetAlbum.coverFileName.substringBeforeLast('/').let { targetFolder ->
                                 add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
                                     targetFolder,
@@ -263,6 +279,11 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
+    }
+
+    override fun onDestroyView() {
+        slider.adapter = null
+        super.onDestroyView()
     }
 
     @Suppress("DEPRECATION")
@@ -356,13 +377,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private fun saveMedia() {
         pAdapter.currentList[currentPositionModel.getCurrentPositionValue()].apply {
             shareModel.savePhoto(requireContext(), this)
-            hideHandler.postDelayed({
-                Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG)
-                    .setAnimationMode(Snackbar.ANIMATION_MODE_FADE)
-                    .setBackgroundTint(resources.getColor(R.color.color_primary, null))
-                    .setTextColor(resources.getColor(R.color.color_text_light, null))
-                    .show()
-            }, 400L)
+            hideHandler.postDelayed({ Snackbar.make(window.decorView.rootView, getString(R.string.downloading_message, this.remotePath.substringAfterLast('/')), Snackbar.LENGTH_LONG).show() }, 400L)
         }
     }
 
