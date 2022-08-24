@@ -41,12 +41,14 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -143,8 +145,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setHasOptionsMenu(true)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
         album = requireArguments().getParcelable(KEY_ALBUM)!!
@@ -551,6 +551,118 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 STRIP_REQUEST_KEY-> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, true))
             }
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.album_detail_menu, menu)
+                mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+                searchOptionMenu = menu.findItem(R.id.option_menu_search)
+
+                run map@{
+                    mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
+                        if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) {
+                            mapOptionMenu?.isVisible = true
+
+                            return@map
+                        }
+                    }
+                }
+
+                updateSearchMenu()
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
+                when(album.sortOrder % 100) {
+                    Album.BY_DATE_TAKEN_ASC -> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+                    Album.BY_DATE_TAKEN_DESC -> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+                    Album.BY_NAME_ASC -> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+                    Album.BY_NAME_DESC -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+                }
+
+                menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album.sortOrder)
+
+                // Disable publish function when this is a newly created album which does not exist on server yet
+                if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
+            }
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                return when(item.itemId) {
+                    R.id.option_menu_add_photo-> {
+                        addFileLauncher.launch("*/*")
+                        true
+                    }
+                    R.id.option_menu_rename-> {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            albumModel.getAllAlbumName().also {
+                                val names = mutableListOf<String>()
+                                // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
+                                // name check should include hidden ones
+                                it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
+                                if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
+                            }
+                        }
+                        true
+                    }
+                    R.id.option_menu_settings-> {
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
+                        true
+                    }
+                    R.id.option_menu_sortbydateasc-> {
+                        updateSortOrder(Album.BY_DATE_TAKEN_ASC)
+                        true
+                    }
+                    R.id.option_menu_sortbydatedesc-> {
+                        updateSortOrder(Album.BY_DATE_TAKEN_DESC)
+                        true
+                    }
+                    R.id.option_menu_sortbynameasc-> {
+                        updateSortOrder(Album.BY_NAME_ASC)
+                        true
+                    }
+                    R.id.option_menu_sortbynamedesc-> {
+                        updateSortOrder(Album.BY_NAME_DESC)
+                        true
+                    }
+                    R.id.option_menu_publish-> {
+                        // Get meaningful label for each recipient
+                        publishModel.sharees.value.let { sharees->
+                            sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
+                        }
+
+                        if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).show(parentFragmentManager, PUBLISH_DIALOG)
+
+                        true
+                    }
+                    R.id.option_menu_in_map-> {
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        ViewCompat.setTransitionName(recyclerView, null)
+                        parentFragmentManager.beginTransaction().replace(
+                            R.id.container_root,
+                            PhotosInMapFragment.newInstance(album, Tools.getPhotosWithCoordinate(mAdapter.currentList, sp.getBoolean(getString(R.string.nearby_convergence_pref_key), true), album.sortOrder)),
+                            PhotosInMapFragment::class.java.canonicalName
+                        ).addToBackStack(null).commit()
+                        true
+                    }
+                    R.id.option_menu_bgm-> {
+                        if (parentFragmentManager.findFragmentByTag(BGM_DIALOG) == null) BGMDialogFragment.newInstance(album).show(parentFragmentManager, BGM_DIALOG)
+                        true
+                    }
+                    R.id.option_menu_wide_list-> {
+                        albumModel.setWideList(album.id, !Tools.isWideListAlbum(album.sortOrder))
+                        saveSortOrderChanged = true
+                        true
+                    }
+                    else-> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -594,25 +706,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onDestroy()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.album_detail_menu, menu)
-        mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
-        searchOptionMenu = menu.findItem(R.id.option_menu_search)
-
-        run map@{
-            mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
-                if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) {
-                    mapOptionMenu?.isVisible = true
-
-                    return@map
-                }
-            }
-        }
-
-        updateSearchMenu()
-    }
-
     private fun updateSearchMenu() {
         searchOptionMenu?.let {
             if (Tools.isWideListAlbum(album.sortOrder)) {
@@ -642,100 +735,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 it.collapseActionView()
                 currentQuery = ""
             }
-        }
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
-        when(album.sortOrder % 100) {
-            Album.BY_DATE_TAKEN_ASC -> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
-            Album.BY_DATE_TAKEN_DESC -> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
-            Album.BY_NAME_ASC -> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
-            Album.BY_NAME_DESC -> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
-        }
-
-        menu.findItem(R.id.option_menu_wide_list).isChecked = Tools.isWideListAlbum(album.sortOrder)
-
-        // Disable publish function when this is a newly created album which does not exist on server yet
-        if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
-
-        super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
-            R.id.option_menu_add_photo-> {
-                addFileLauncher.launch("*/*")
-                true
-            }
-            R.id.option_menu_rename-> {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    albumModel.getAllAlbumName().also {
-                        val names = mutableListOf<String>()
-                        // albumModel.getAllAlbumName return all album names including hidden ones, in case of name collision when user change name to an hidden one and later hide this album, existing
-                        // name check should include hidden ones
-                        it.forEach { name -> names.add(if (name.startsWith('.')) name.substring(1) else name) }
-                        if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null) RenameDialogFragment.newInstance(album.name, names, RenameDialogFragment.REQUEST_TYPE_ALBUM).show(parentFragmentManager, RENAME_DIALOG)
-                    }
-                }
-                true
-            }
-            R.id.option_menu_settings-> {
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment()).addToBackStack(null).commit()
-                true
-            }
-            R.id.option_menu_sortbydateasc-> {
-                updateSortOrder(Album.BY_DATE_TAKEN_ASC)
-                true
-            }
-            R.id.option_menu_sortbydatedesc-> {
-                updateSortOrder(Album.BY_DATE_TAKEN_DESC)
-                true
-            }
-            R.id.option_menu_sortbynameasc-> {
-                updateSortOrder(Album.BY_NAME_ASC)
-                true
-            }
-            R.id.option_menu_sortbynamedesc-> {
-                updateSortOrder(Album.BY_NAME_DESC)
-                true
-            }
-            R.id.option_menu_publish-> {
-                // Get meaningful label for each recipient
-                publishModel.sharees.value.let { sharees->
-                    sharedByMe.with.forEach { recipient-> sharees.find { it.name == recipient.sharee.name && it.type == recipient.sharee.type}?.let { recipient.sharee.label = it.label }}
-                }
-
-                if (parentFragmentManager.findFragmentByTag(PUBLISH_DIALOG) == null) AlbumPublishDialogFragment.newInstance(sharedByMe).show(parentFragmentManager, PUBLISH_DIALOG)
-
-                true
-            }
-            R.id.option_menu_in_map-> {
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                ViewCompat.setTransitionName(recyclerView, null)
-                parentFragmentManager.beginTransaction().replace(
-                    R.id.container_root,
-                    PhotosInMapFragment.newInstance(album, Tools.getPhotosWithCoordinate(mAdapter.currentList, sp.getBoolean(getString(R.string.nearby_convergence_pref_key), true), album.sortOrder)),
-                    PhotosInMapFragment::class.java.canonicalName
-                ).addToBackStack(null).commit()
-                true
-            }
-            R.id.option_menu_bgm-> {
-                if (parentFragmentManager.findFragmentByTag(BGM_DIALOG) == null) BGMDialogFragment.newInstance(album).show(parentFragmentManager, BGM_DIALOG)
-                true
-            }
-            R.id.option_menu_wide_list-> {
-                albumModel.setWideList(album.id, !Tools.isWideListAlbum(album.sortOrder))
-                saveSortOrderChanged = true
-                true
-            }
-            else-> false
         }
     }
 

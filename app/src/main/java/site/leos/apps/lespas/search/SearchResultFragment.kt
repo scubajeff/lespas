@@ -26,6 +26,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
@@ -71,7 +72,6 @@ class SearchResultFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
 
         searchTarget = requireArguments().getInt(KEY_SEARCH_TARGET)
 
@@ -149,6 +149,23 @@ class SearchResultFragment : Fragment() {
         })
 
         if (searchResultAdapter.itemCount !=0 ) postponeEnterTransition()
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.search_result_menu, menu)
+                loadingIndicator = menu.findItem(R.id.option_menu_search_progress).also {
+                    loadingProgressBar = it.actionView.findViewById(R.id.search_progress)
+                    adhocSearchViewModel.getProgress().value?.also { progress->
+                        if (progress == 100) {
+                            it.isVisible = false
+                            it.isEnabled = false
+                        }
+                    }
+                }
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -171,20 +188,6 @@ class SearchResultFragment : Fragment() {
     override fun onDestroyView() {
         searchResultRecyclerView.adapter = null
         super.onDestroyView()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.search_result_menu, menu)
-        loadingIndicator = menu.findItem(R.id.option_menu_search_progress).also {
-            loadingProgressBar = it.actionView.findViewById(R.id.search_progress)
-            adhocSearchViewModel.getProgress().value?.also { progress->
-                if (progress == 100) {
-                    it.isVisible = false
-                    it.isEnabled = false
-                }
-            }
-        }
     }
 
     @Suppress("UNCHECKED_CAST")

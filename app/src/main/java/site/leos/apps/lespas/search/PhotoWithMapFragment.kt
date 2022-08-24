@@ -92,6 +92,7 @@ class PhotoWithMapFragment: Fragment() {
                 else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
+        @Suppress("DEPRECATION")
         setHasOptionsMenu(true)
 
         stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
@@ -146,6 +147,7 @@ class PhotoWithMapFragment: Fragment() {
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
 
+                    @Suppress("DEPRECATION")
                     when (targetAlbum.id) {
                         "" -> {
                             // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
@@ -194,6 +196,8 @@ class PhotoWithMapFragment: Fragment() {
         super.onDestroy()
     }
 
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.photo_with_map_menu, menu)
@@ -207,6 +211,7 @@ class PhotoWithMapFragment: Fragment() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
