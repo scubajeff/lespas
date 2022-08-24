@@ -102,7 +102,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move on to next action
                     //actionRepository.discardCurrentWorkingAction()
-                    workingAction?.let { actionRepository.delete(it) }
+                    workingAction?.let { actionRepository.delete(it) } ?: run { syncResult.stats.numIoExceptions++ }
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
