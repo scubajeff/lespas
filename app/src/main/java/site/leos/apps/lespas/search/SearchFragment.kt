@@ -192,7 +192,7 @@ class SearchFragment : Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.search_menu, menu)
-        destinationToggleGroup = menu.findItem(R.id.option_menu_search_destination).actionView.findViewById(R.id.search_destination_toogle_group)
+        destinationToggleGroup = menu.findItem(R.id.option_menu_search_destination).actionView?.findViewById(R.id.search_destination_toogle_group)
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
