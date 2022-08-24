@@ -124,14 +124,14 @@ class CoverSettingFragment : Fragment() {
         constraintSet.applyTo(root)
 
         cropFrameGestureDetector = GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
-            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 //Handler(requireContext().mainLooper).post { Snackbar.make(requireActivity().window.decorView, getString(R.string.toast_cover_set_canceled), Snackbar.LENGTH_SHORT).show() }
                 currentPhotoModel.coverApplied(false)
                 parentFragmentManager.popBackStack()
                 return true
             }
 
-            override fun onScroll(e1: MotionEvent?, e2: MotionEvent?, distanceX: Float, distanceY: Float): Boolean {
+            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 newBias -= distanceY / screenHeight
                 if (newBias < scrollTop) newBias = scrollTop
                 if (newBias > scrollBottom) newBias = scrollBottom
@@ -154,7 +154,7 @@ class CoverSettingFragment : Fragment() {
                     applyButton.run {
                         alpha = 0f
                         animate().alpha(1f).setDuration(300).setListener(object: AnimatorListenerAdapter() {
-                            override fun onAnimationEnd(animation: Animator?) {
+                            override fun onAnimationEnd(animation: Animator) {
                                 super.onAnimationEnd(animation)
                                 applyButton.visibility = View.VISIBLE
                             }
@@ -165,7 +165,7 @@ class CoverSettingFragment : Fragment() {
                     applyButton.run {
                         alpha = 1f
                         animate().alpha(0f).setDuration(150).setListener(object: AnimatorListenerAdapter() {
-                            override fun onAnimationEnd(animation: Animator?) {
+                            override fun onAnimationEnd(animation: Animator) {
                                 super.onAnimationEnd(animation)
                                 applyButton.visibility = View.GONE
                             }

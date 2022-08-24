@@ -146,7 +146,7 @@ class NCAuthenticationFragment: Fragment() {
                             authWebpage.apply {
                                 alpha = 0f
                                 animate().alpha(1f).setDuration(resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()).setListener(object: AnimatorListenerAdapter() {
-                                    override fun onAnimationEnd(animation: Animator?) {
+                                    override fun onAnimationEnd(animation: Animator) {
                                         authWebpage.alpha = 1f
                                         requestFocus()
                                         super.onAnimationEnd(animation)

@@ -345,19 +345,17 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Detect swipe up gesture and show BottomSheet
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 != null && e2 != null) {
-                    when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                        in 55.0..125.0-> {
-                            //bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
-                            bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
+                    in 55.0..125.0-> {
+                        //bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
+                        bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
+                        return true
+                    }
+                    in -125.0..-55.0-> {
+                        if (bottomSheet.state == BottomSheetBehavior.STATE_EXPANDED || bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
+                            bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                             return true
-                        }
-                        in -125.0..-55.0-> {
-                            if (bottomSheet.state == BottomSheetBehavior.STATE_EXPANDED || bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
-                                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
-                                return true
-                            }
                         }
                     }
                 }
@@ -809,7 +807,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 MaterialDatePicker.Builder.datePicker()
                     .setCalendarConstraints(CalendarConstraints.Builder().setValidator(object: CalendarConstraints.DateValidator {
                         override fun describeContents(): Int = 0
-                        override fun writeToParcel(dest: Parcel?, flags: Int) {}
+                        override fun writeToParcel(dest: Parcel, flags: Int) {}
                         override fun isValid(date: Long): Boolean = quickScrollAdapter.hasDate(date)
                     }).setStart(dateRange.first).setEnd(dateRange.second).setOpenAt(quickScrollAdapter.getDateByPosition((quickScroll.layoutManager as GridLayoutManager).findFirstVisibleItemPosition())).build())
                     .setTheme(R.style.ThemeOverlay_LesPas_DatePicker)
