@@ -48,6 +48,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
@@ -91,6 +92,7 @@ import java.util.concurrent.Executors
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+@androidx.annotation.OptIn(UnstableApi::class)
 class NCShareViewModel(application: Application): AndroidViewModel(application) {
     private val _shareByMe = MutableStateFlow<List<ShareByMe>>(arrayListOf())
     private val _shareWithMe = MutableStateFlow<List<ShareWithMe>>(arrayListOf())
