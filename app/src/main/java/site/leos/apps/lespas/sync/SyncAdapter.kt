@@ -445,6 +445,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // TODO: Error retry strategy, directory etag update, etc.
             actionRepository.delete(action)
         }
+
+        workingAction = null
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
@@ -1136,6 +1138,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (e: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
+                    // Save current uploading filename for displaying in Setting menu backup menu summary
+                    sp.edit().apply {
+                        putString(SettingsFragment.CURRENT_WORKING_ON, fileName)
+                        commit()
+                    }
+
                     relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                     mimeType = cursor.getString(typeColumn)
                     //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")

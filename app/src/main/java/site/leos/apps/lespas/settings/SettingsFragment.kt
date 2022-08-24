@@ -518,6 +518,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
     private fun showBackupSummary() {
         lifecycleScope.launch(Dispatchers.IO) {
+            val sp = PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)
             var items = 0
             @Suppress("DEPRECATION")
             val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -525,14 +526,14 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 MediaStore.Files.getContentUri("external"),
                 null,
                 "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
+                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
                 null,
                 null
             )?.use { items = it.count }
 
             withContext(Dispatchers.Main) {
                 findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel()) + "\n" +
-                    if (items > 0) String.format(getString(R.string.backup_waiting), items) else getString(R.string.backup_done)
+                    if (items > 0) String.format(getString(R.string.backup_waiting), items, sp.getString(CURRENT_WORKING_ON, "")) else getString(R.string.backup_done)
             }
         }
     }
@@ -593,6 +594,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
+        const val CURRENT_WORKING_ON = "CURRENT_WORKING_ON"
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"

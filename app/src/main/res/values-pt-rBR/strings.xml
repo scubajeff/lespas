@@ -136,7 +136,7 @@
     <string name="cameraroll_backup_title">Backup da pasta de Câmera</string>
     <string name="cameraroll_backup_summary">Novas fotos e vídeos serão copiados automaticamente para o servidor na pasta \'DCIM/%1$s\'.</string>
     <string name="backup_done">Todos os ítens da câmera já foram copiados.</string>
-    <string name="backup_waiting">%1$,d ítens na câmera aguardando backup.</string>
+    <string name="backup_waiting">%1$,d ítens na câmera aguardando backup, carregando %2s agora.</string>
     <string name="background_sync_title">Sincronizar periodicamente</string>
     <string name="background_sync_summary">Verificar mudanças no servidor a cada 6 horas</string>
     <string name="wifionly_title">Sincronizar somente no WiFi</string>
