@@ -227,17 +227,15 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Detect swipe up gesture and show bottom controls
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 != null && e2 != null) {
-                    when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                        in 55.0..125.0-> {
-                            hideHandler.post(showSystemUI)
-                            return true
-                        }
-                        in -125.0..-55.0-> {
-                            hideHandler.post(hideSystemUI)
-                            return true
-                        }
+            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
+                    in 55.0..125.0-> {
+                        hideHandler.post(showSystemUI)
+                        return true
+                    }
+                    in -125.0..-55.0-> {
+                        hideHandler.post(hideSystemUI)
+                        return true
                     }
                 }
 
