@@ -20,6 +20,7 @@ import android.accounts.Account
 import android.accounts.AccountManager
 import android.accounts.AuthenticatorException
 import android.accounts.NetworkErrorException
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.*
 import android.graphics.BitmapFactory
@@ -1065,6 +1066,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
+    @SuppressLint("ApplySharedPref")
     private fun backupCameraRoll() {
         // Backup camera roll if setting turn on
         if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) {
@@ -1075,7 +1077,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             dcimRoot += "/${Tools.getDeviceModel()}"
             if (!webDav.isExisted(dcimRoot)) webDav.createFolder(dcimRoot)
 
-            var lastTime = sp.getLong(SettingsFragment.LAST_BACKUP, 0L)
             val contentUri = MediaStore.Files.getContentUri("external")
             val mediaMetadataRetriever = MediaMetadataRetriever()
             val cr = application.contentResolver
@@ -1098,7 +1099,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 MediaStore.Files.FileColumns.HEIGHT,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${lastTime})"
+                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, 0L)})"
 
             cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
             )?.use { cursor->
@@ -1122,6 +1123,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var longitude: Double
                 var altitude: Double
                 var bearing: Double
+                var mDate: Long
 
                 while(cursor.moveToNext()) {
                     //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
@@ -1144,7 +1146,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, cursor.getLong(sizeColumn), application)
                             break
                         } catch (e: OkHttpWebDavException) {
-                            Log.e(">>>>>OkHttpWebDavException: ", e.stackTraceString)
                             when (e.statusCode) {
                                 404 -> {
                                     // create file in non-existed folder, should create subfolder first
@@ -1202,9 +1203,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     // Patch photo's DAV properties to accelerate future operations on camera roll archive
+                    mDate = cursor.getLong(dateTakenColumn)
+                    if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
                     try {
-                        var mDate = cursor.getLong(dateTakenColumn)
-                        if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
                         webDav.patch(
                             "${dcimRoot}/${relativePath}/${fileName}",
                             "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
@@ -1220,17 +1221,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         )
                     } catch (e: Exception) {}
 
-                    // New timestamp when success
-                    lastTime = cursor.getLong(dateColumn) + 1
+                    // Save latest timestamp after successful upload
+                    sp.edit().apply {
+                        putLong(SettingsFragment.LAST_BACKUP, cursor.getLong(dateColumn) + 1)
+                        commit()
+                    }
                 }
 
                 mediaMetadataRetriever.release()
-            }
-
-            // Save latest timestamp
-            sp.edit().apply {
-                putLong(SettingsFragment.LAST_BACKUP, lastTime)
-                apply()
             }
         }
     }
