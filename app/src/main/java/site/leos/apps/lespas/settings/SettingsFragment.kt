@@ -88,6 +88,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var installSnapseedLauncher: ActivityResultLauncher<Intent>
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
@@ -110,8 +111,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
 
-            // Explicitly request ACCESS_MEDIA_LOCATION permission
-            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Explicitly request ACCESS_MEDIA_LOCATION permission
+                accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                installSnapseedIfNeeded()
+            }
         }
         showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -124,27 +128,30 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = isGranted
+
             if (isGranted) {
-                findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
-                    isChecked = true
-                    // Check and disable periodic sync setting if user enable camera roll backup
-                    findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                        it.isChecked = true
-                        it.isEnabled = false
-                    }
-                    // Note down the current timestamp, photos taken later on will be backup
-                    with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
-                        if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
-                            putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
-                            apply()
-                        }
-                    }
-                    toggleAutoSync(true)
+                // Check and disable periodic sync setting if user enable camera roll backup
+                findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                    it.isChecked = true
+                    it.isEnabled = false
                 }
+                // Note down the current timestamp, photos taken later on will be backup
+                PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).let { sp ->
+                    if (sp.getLong(LAST_BACKUP, 0L) == 0L) sp.edit().apply {
+                        putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
+                        apply()
+                    }
+                }
+                toggleAutoSync(true)
 
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
             }
+        }
+        installSnapseedLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
+            if (!isSnapseedNotInstalled) findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = true
         }
 
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
@@ -237,9 +244,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     }
                     INSTALL_SNAPSEED_DIALOG ->
                         try {
-                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${SNAPSEED_PACKAGE_NAME}")))
                         } catch (e: ActivityNotFoundException) {
-                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}")))
+                            installSnapseedLauncher.launch(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=${SNAPSEED_PACKAGE_NAME}")))
                         }
                     CLEAR_CACHE_CONFIRM_DIALOG -> {
                         File("${Tools.getLocalRoot(requireContext())}/cache").deleteRecursively()
@@ -353,11 +360,20 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.snapseed_pref_key) -> {
-                if (preference.sharedPreferences.getBoolean(preference.key, false) && isSnapseedNotInstalled) {
-                    // Prompt user to install Snapseed
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                        ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), getString(android.R.string.ok), true, INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
-                }
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    // Set Snapseed integration to False if we don't have storage access permission
+                    (preference as SwitchPreferenceCompat).isChecked = false
+
+                    if (shouldShowRequestPermissionRationale(storagePermission)) {
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
+                    } else {
+                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
+                        snapseedPermissionRequestLauncher.launch(storagePermission)
+                    }
+                } else installSnapseedIfNeeded()
                 true
             }
             getString(R.string.clear_cache_pref_key) -> {
@@ -367,6 +383,56 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
             getString(R.string.cache_size_pref_key) -> {
                 if (parentFragmentManager.findFragmentByTag(CACHE_SIZE_DIALOG) == null) CacheSizeSettingDialog().show(parentFragmentManager, CACHE_SIZE_DIALOG)
+                true
+            }
+            getString(R.string.cameraroll_as_album_perf_key) -> {
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
+                    showCameraRollPermissionRequestLauncher.launch(storagePermission)
+
+                    (preference as SwitchPreferenceCompat).isChecked = false
+                }
+                true
+            }
+            getString(R.string.cameraroll_backup_pref_key) -> {
+                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
+                    backupCameraRollPermissionRequestLauncher.launch(storagePermission)
+
+                    (preference as SwitchPreferenceCompat).isChecked = false
+                    //toggleAutoSync(false)
+                }
+                else {
+                    // Preference check state is about to be toggled, but not toggled yet
+                    if ((preference as SwitchPreferenceCompat).isChecked) {
+                        // Check and disable periodic sync setting if user enable camera roll backup
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                            it.isChecked = true
+                            it.isEnabled = false
+                        }
+                        // Note down the current timestamp, photos taken later on will be backup
+                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                                putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
+                                apply()
+                            }
+                        }
+                    } else {
+                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                            it.isChecked = false
+                            it.isEnabled = true
+                        }
+                    }
+                    toggleAutoSync(!(preference.isChecked))
+                    showBackupSummary()
+                }
+                true
+            }
+            getString(R.string.true_black_pref_key) -> {
+                //if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) requireActivity().recreate()
+                requireActivity().recreate()
                 true
             }
             else -> super.onPreferenceTreeClick(preference)
@@ -387,70 +453,18 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     AppCompatDelegate.setDefaultNightMode(newValue.toInt())
                 }
             }
-            getString(R.string.true_black_pref_key) -> if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) requireActivity().recreate()
-            getString(R.string.cameraroll_as_album_perf_key) -> {
-                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-
-                    showCameraRollPermissionRequestLauncher.launch(storagePermission)
-                }
-            }
-            getString(R.string.snapseed_pref_key) -> {
-                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-                    if (shouldShowRequestPermissionRationale(storagePermission)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
-                        }
-                    } else {
-                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-
-                        snapseedPermissionRequestLauncher.launch(storagePermission)
-                    }
-
-                    // Set Snapseed integration to False if we don't have WRITE_EXTERNAL_STORAGE permission
-                    findPreference<SwitchPreferenceCompat>(key)?.isChecked = false
-                }
-            }
-            getString(R.string.cameraroll_backup_pref_key) -> {
-                findPreference<SwitchPreferenceCompat>(key)?.let { perf ->
-                    if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
-                        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-
-                        backupCameraRollPermissionRequestLauncher.launch(storagePermission)
-
-                        perf.isChecked = false
-                        //toggleAutoSync(false)
-                    }
-                    else {
-                    // Preference check state is about to be toggled, but not toggled yet
-                        if (perf.isChecked) {
-                            // Check and disable periodic sync setting if user enable camera roll backup
-                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                                it.isChecked = true
-                                it.isEnabled = false
-                            }
-                            // Note down the current timestamp, photos taken later on will be backup
-                            with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
-                                if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
-                                    putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
-                                    apply()
-                                }
-                            }
-                        } else {
-                            findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                                it.isChecked = false
-                                it.isEnabled = true
-                            }
-                        }
-                        toggleAutoSync(!(perf.isChecked))
-                        showBackupSummary()
-                    }
-                }
-            }
             LAST_BACKUP -> showBackupSummary()
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
             getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
             else -> {}
+        }
+    }
+
+    private fun installSnapseedIfNeeded() {
+        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
+            // Prompt user to install Snapseed
+            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
+                ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), getString(android.R.string.ok), true, INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
         }
     }
 
@@ -518,6 +532,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
     private fun showBackupSummary() {
         lifecycleScope.launch(Dispatchers.IO) {
+            val sp = PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)
             var items = 0
             @Suppress("DEPRECATION")
             val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
@@ -525,14 +540,14 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 MediaStore.Files.getContentUri("external"),
                 null,
                 "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
+                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
                 null,
                 null
             )?.use { items = it.count }
 
             withContext(Dispatchers.Main) {
                 findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel()) + "\n" +
-                    if (items > 0) String.format(getString(R.string.backup_waiting), items) else getString(R.string.backup_done)
+                    if (items > 0) String.format(getString(R.string.backup_waiting), items, sp.getString(CURRENT_WORKING_ON, "")) else getString(R.string.backup_done)
             }
         }
     }
@@ -593,6 +608,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
+        const val CURRENT_WORKING_ON = "CURRENT_WORKING_ON"
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"

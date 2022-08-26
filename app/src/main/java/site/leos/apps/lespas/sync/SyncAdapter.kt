@@ -102,7 +102,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move on to next action
                     //actionRepository.discardCurrentWorkingAction()
-                    workingAction?.let { actionRepository.delete(it) }
+                    workingAction?.let { actionRepository.delete(it) } ?: run { syncResult.stats.numIoExceptions++ }
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
@@ -445,6 +445,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // TODO: Error retry strategy, directory etag update, etc.
             actionRepository.delete(action)
         }
+
+        workingAction = null
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
@@ -1136,6 +1138,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (e: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
+                    // Save current uploading filename for displaying in Setting menu backup menu summary
+                    sp.edit().apply {
+                        putString(SettingsFragment.CURRENT_WORKING_ON, fileName)
+                        commit()
+                    }
+
                     relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                     mimeType = cursor.getString(typeColumn)
                     //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
