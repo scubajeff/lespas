@@ -111,9 +111,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
 
-            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (isGranted) {
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
-                accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+
                 installSnapseedIfNeeded()
             }
         }
