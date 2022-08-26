@@ -430,6 +430,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 }
                 true
             }
+            getString(R.string.true_black_pref_key) -> {
+                //if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) requireActivity().recreate()
+                requireActivity().recreate()
+                true
+            }
             else -> super.onPreferenceTreeClick(preference)
         }
 
@@ -448,7 +453,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     AppCompatDelegate.setDefaultNightMode(newValue.toInt())
                 }
             }
-            getString(R.string.true_black_pref_key) -> if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)) requireActivity().recreate()
             LAST_BACKUP -> showBackupSummary()
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
             getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
