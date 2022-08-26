@@ -48,6 +48,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
     private lateinit var replaceBGMLauncher: ActivityResultLauncher<String>
     private var mimeType = ""
 
+    private var readAudioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_AUDIO else android.Manifest.permission.READ_EXTERNAL_STORAGE
     private lateinit var readAudioPermissionRequestLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +90,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
 
         view.apply {
             findViewById<ImageButton>(R.id.replace_bgm).setOnClickListener {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) readAudioPermissionRequestLauncher.launch(android.Manifest.permission.READ_MEDIA_AUDIO)
+                if (ContextCompat.checkSelfPermission(context, readAudioPermission) != PackageManager.PERMISSION_GRANTED) readAudioPermissionRequestLauncher.launch(readAudioPermission)
                 else replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)
             }
             playButton = findViewById(R.id.exo_play)
