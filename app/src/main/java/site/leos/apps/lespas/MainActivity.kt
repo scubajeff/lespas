@@ -22,7 +22,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -33,7 +32,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -110,8 +108,8 @@ class MainActivity : AppCompatActivity() {
                         }.start()
                     } ?: run {
                         lifecycleScope.launch {
-                            // If WRITE_EXTERNAL_STORAGE permission not granted, disable Snapseed integration and camera roll backup
-                            if (ContextCompat.checkSelfPermission(applicationContext, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                            // If storage permission is granted, request ACCESS_MEDIA_LOCATION if running on Android Q and above, else disable Snapseed integration, camera roll backup and camera roll as album feature
+                            if (Tools.shouldRequestStoragePermission(this@MainActivity))
                                 sp.edit {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
@@ -119,6 +117,7 @@ class MainActivity : AppCompatActivity() {
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                 }
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission(), {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
+
                             // If Snapseed is not installed, disable Snapseed integration
                             packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) ?: run { sp.edit { putBoolean(getString(R.string.snapseed_pref_key), false) }}
 

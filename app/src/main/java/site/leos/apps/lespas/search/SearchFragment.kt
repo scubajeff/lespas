@@ -38,6 +38,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.helper.Tools
 
 class SearchFragment : Fragment() {
     private lateinit var categoryAdapter: CategoryAdapter
@@ -48,7 +49,7 @@ class SearchFragment : Fragment() {
     // Flag indicating if we have existing albums or not
     private var noAlbum = true
 
-    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     //private lateinit var exifPermissionRequestLauncher: ActivityResultLauncher<String>
 
@@ -62,11 +63,10 @@ class SearchFragment : Fragment() {
                 return@CategoryAdapter
             }
             if (destinationToggleGroup?.checkedButtonId == R.id.search_cameraroll) {
-                val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+                if (Tools.shouldRequestStoragePermission(requireContext())) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
-                    storagePermissionRequestLauncher.launch(permission)
+                    storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
                     return@CategoryAdapter
                 }
             }
@@ -85,9 +85,11 @@ class SearchFragment : Fragment() {
         noAlbum = arguments?.getBoolean(NO_ALBUM) == true
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            var isGranted = true
+            for(result in results) isGranted = isGranted && result.value
             if (isGranted) {
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)

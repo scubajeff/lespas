@@ -28,7 +28,6 @@ import android.content.ContentResolver
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.*
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -156,7 +155,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
     private lateinit var deleteMediaLauncher: ActivityResultLauncher<IntentSenderRequest>
-    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var gestureDetector: GestureDetectorCompat
 
@@ -297,8 +296,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+            var isGranted = true
+            for(result in results) isGranted = isGranted && result.value
             when {
                 isGranted -> {
                     // Explicitly request ACCESS_MEDIA_LOCATION permission
@@ -610,10 +612,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         savedInstanceState?.let {
             observeCameraRoll()
         } ?: run {
-            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-            if (ContextCompat.checkSelfPermission(requireContext(), permission) != PackageManager.PERMISSION_GRANTED) {
+            if (Tools.shouldRequestStoragePermission(requireContext())) {
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                storagePermissionRequestLauncher.launch(permission)
+                storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
             }
             else {
                 // Explicitly request ACCESS_MEDIA_LOCATION permission
