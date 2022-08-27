@@ -45,8 +45,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
@@ -82,7 +84,6 @@ class NCAuthenticationFragment: Fragment() {
         })
 
         if (reLogin) {
-            setHasOptionsMenu(true)
             scanRequestLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == Activity.RESULT_OK) {
                     result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
@@ -232,6 +233,36 @@ class NCAuthenticationFragment: Fragment() {
                 }
             }
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                if (reLogin) inflater.inflate(R.menu.authentication_menu, menu)
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                if (reLogin) {
+                    (scanIntent.resolveActivity(requireContext().packageManager) != null).let { scannerAvailable ->
+                        menu.findItem(R.id.option_menu_qr_scanner)?.run {
+                            isEnabled = scannerAvailable
+                            isVisible = scannerAvailable
+                        }
+                    }
+                }
+            }
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                return when(item.itemId) {
+                    R.id.option_menu_qr_scanner -> {
+                        try { scanRequestLauncher?.launch(scanIntent) }
+                        catch (e: SecurityException) {
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -248,37 +279,6 @@ class NCAuthenticationFragment: Fragment() {
     override fun onDestroyView() {
         requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
         super.onDestroyView()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        if (reLogin) inflater.inflate(R.menu.authentication_menu, menu)
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        if (reLogin) {
-            (scanIntent.resolveActivity(requireContext().packageManager) != null).let { scannerAvailable ->
-                menu.findItem(R.id.option_menu_qr_scanner)?.run {
-                    isEnabled = scannerAvailable
-                    isVisible = scannerAvailable
-                }
-            }
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
-            R.id.option_menu_qr_scanner -> {
-                try { scanRequestLauncher?.launch(scanIntent) }
-                catch (e: SecurityException) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
-                }
-                true
-            }
-            else -> false
-        }
     }
 
     private fun prepareCredential(server: String, username: String, token: String) {

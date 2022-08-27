@@ -24,9 +24,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.MenuProvider
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -79,8 +81,6 @@ class PublicationListFragment: Fragment() {
             { view -> shareModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
-        setHasOptionsMenu(true)
-
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
         returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
     }
@@ -128,6 +128,24 @@ class PublicationListFragment: Fragment() {
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
             if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY && bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) viewDetail()
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.publication_list_menu, menu)
+                activateRefresh = menu.findItem(R.id.option_menu_refresh_publication)
+                refreshProgress = menu.findItem(R.id.option_menu_refresh_progress)
+                progressIndicator = refreshProgress?.actionView?.findViewById<CircularProgressIndicator>(R.id.search_progress)?.apply { isIndeterminate = true }
+            }
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean =
+                when (item.itemId) {
+                    R.id.option_menu_refresh_publication-> {
+                        shareModel.getShareWithMe()
+                        true
+                    }
+                    else-> false
+                }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -148,23 +166,6 @@ class PublicationListFragment: Fragment() {
         shareListRecyclerView.adapter = null
         super.onDestroyView()
     }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.publication_list_menu, menu)
-        activateRefresh = menu.findItem(R.id.option_menu_refresh_publication)
-        refreshProgress = menu.findItem(R.id.option_menu_refresh_progress)
-        progressIndicator = refreshProgress?.actionView?.findViewById<CircularProgressIndicator>(R.id.search_progress)?.apply { isIndeterminate = true }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId) {
-            R.id.option_menu_refresh_publication-> {
-                shareModel.getShareWithMe()
-                true
-            }
-            else-> false
-        }
 
     private fun viewDetail() {
         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationDetailFragment.newInstance(shareSelected!!), PublicationDetailFragment::class.java.canonicalName).addToBackStack(null).commit()

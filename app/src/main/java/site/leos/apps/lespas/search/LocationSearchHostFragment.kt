@@ -24,6 +24,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.view.*
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.MenuProvider
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -60,7 +61,6 @@ class LocationSearchHostFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -85,19 +85,22 @@ class LocationSearchHostFragment: Fragment() {
         })
 
         if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_TARGET)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
-    }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.location_search_menu, menu)
-        this.menu = menu
-        menu.findItem(R.id.option_menu_search_progress)?.apply {
-            loadingProgressBar = actionView.findViewById(R.id.search_progress)
-            searchViewModel.getProgress().value?.also { progress-> if (progress == 100) this.disable() }
-        }
-        when(childFragmentManager.backStackEntryCount) {
-            2-> menu.findItem(R.id.option_menu_in_map).enable()
-        }
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.location_search_menu, menu)
+                this@LocationSearchHostFragment.menu = menu
+                menu.findItem(R.id.option_menu_search_progress)?.apply {
+                    loadingProgressBar = actionView.findViewById(R.id.search_progress)
+                    searchViewModel.getProgress().value?.also { progress-> if (progress == 100) this.disable() }
+                }
+                when(childFragmentManager.backStackEntryCount) {
+                    2-> menu.findItem(R.id.option_menu_in_map).enable()
+                }
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean = true
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     //private fun enableMenuItem(itemId: Int): MenuItem? = menu?.findItem(itemId)?.apply { this.enable() }

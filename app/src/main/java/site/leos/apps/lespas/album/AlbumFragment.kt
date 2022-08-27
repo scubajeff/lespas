@@ -44,6 +44,7 @@ import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
@@ -51,6 +52,7 @@ import androidx.core.widget.ContentLoadingProgressBar
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -143,8 +145,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
-
-        setHasOptionsMenu(true)
 
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
             if (it.isNotEmpty()) {
@@ -355,6 +355,104 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.album_menu, menu)
+                receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
+                cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
+                unhideMenu = menu.findItem(R.id.option_menu_unhide)
+                sortByMenu = menu.findItem(R.id.option_menu_sortby)
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
+                publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
+
+                cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
+                cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
+
+                menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
+                menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
+
+                when(currentSortOrder) {
+                    Album.BY_DATE_TAKEN_ASC-> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
+                    Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
+                    Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
+                    Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
+                }
+            }
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                when(item.itemId) {
+                    R.id.option_menu_camera_roll-> {
+                        exitTransition = null
+                        reenterTransition = null
+                        // Set tag to null so that CameraRollFragment will hide the action bar
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
+                        return true
+                    }
+                    R.id.option_menu_settings-> {
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        return true
+                    }
+                    R.id.option_menu_search-> {
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == CameraRollFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        return true
+                    }
+                    R.id.option_menu_received_shares-> {
+                        receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
+
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        return true
+                    }
+                    R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
+                        currentSortOrder = when(item.itemId) {
+                            R.id.option_menu_sortbydateasc-> Album.BY_DATE_TAKEN_ASC
+                            R.id.option_menu_sortbydatedesc-> Album.BY_DATE_TAKEN_DESC
+                            R.id.option_menu_sortbynameasc-> Album.BY_NAME_ASC
+                            R.id.option_menu_sortbynamedesc-> Album.BY_NAME_DESC
+                            else-> -1
+                        }
+
+                        mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
+
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
+
+                        return true
+                    }
+                    R.id.option_menu_unhide-> {
+                        if (BiometricManager.from(requireContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS) {
+                            BiometricPrompt(requireActivity(), ContextCompat.getMainExecutor(requireContext()), object : BiometricPrompt.AuthenticationCallback() {
+                                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                                    super.onAuthenticationSucceeded(result)
+                                    unhide()
+                                }
+                            }).authenticate(BiometricPrompt.PromptInfo.Builder()
+                                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                                .setConfirmationRequired(false)
+                                .setTitle(getString(R.string.unlock_please))
+                                .build()
+                            )
+                        } else unhide()
+
+                        return true
+                    }
+                    else-> {
+                        return false
+                    }
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -405,105 +503,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         PreferenceManager.getDefaultSharedPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(showCameraRollPreferenceListener)
 
         super.onDestroy()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.album_menu, menu)
-        receivedShareMenu = menu.findItem(R.id.option_menu_received_shares)
-        cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
-        unhideMenu = menu.findItem(R.id.option_menu_unhide)
-        sortByMenu = menu.findItem(R.id.option_menu_sortby)
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        albumsModel.allHiddenAlbums.value.let { unhideMenu?.isEnabled = it?.isNotEmpty() ?: false }
-        publishViewModel.shareWithMe.value.let { fixMenuIcon(it) }
-
-        cameraRollAsAlbumMenu?.isEnabled = !showCameraRoll
-        cameraRollAsAlbumMenu?.isVisible = !showCameraRoll
-
-        menu.findItem(R.id.option_menu_sortbydateasc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbynameasc).isChecked = false
-        menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = false
-
-        when(currentSortOrder) {
-            Album.BY_DATE_TAKEN_ASC-> menu.findItem(R.id.option_menu_sortbydateasc).isChecked = true
-            Album.BY_DATE_TAKEN_DESC-> menu.findItem(R.id.option_menu_sortbydatedesc).isChecked = true
-            Album.BY_NAME_ASC-> menu.findItem(R.id.option_menu_sortbynameasc).isChecked = true
-            Album.BY_NAME_DESC-> menu.findItem(R.id.option_menu_sortbynamedesc).isChecked = true
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId) {
-            R.id.option_menu_camera_roll-> {
-                exitTransition = null
-                reenterTransition = null
-                // Set tag to null so that CameraRollFragment will hide the action bar
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, CameraRollFragment.newInstance(), null).addToBackStack(null).commit()
-                return true
-            }
-            R.id.option_menu_settings-> {
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SettingsFragment(), SettingsFragment::class.java.canonicalName).addToBackStack(null).commit()
-                return true
-            }
-            R.id.option_menu_search-> {
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, SearchFragment.newInstance(mAdapter.itemCount == 0 || (mAdapter.itemCount == 1 && mAdapter.currentList[0].id == CameraRollFragment.FROM_CAMERA_ROLL)), SearchFragment::class.java.canonicalName).addToBackStack(null).commit()
-                return true
-            }
-            R.id.option_menu_received_shares-> {
-                receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
-
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
-                return true
-            }
-            R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
-                currentSortOrder = when(item.itemId) {
-                    R.id.option_menu_sortbydateasc-> Album.BY_DATE_TAKEN_ASC
-                    R.id.option_menu_sortbydatedesc-> Album.BY_DATE_TAKEN_DESC
-                    R.id.option_menu_sortbynameasc-> Album.BY_NAME_ASC
-                    R.id.option_menu_sortbynamedesc-> Album.BY_NAME_DESC
-                    else-> -1
-                }
-
-                mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
-
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
-
-                return true
-            }
-            R.id.option_menu_unhide-> {
-                if (BiometricManager.from(requireContext()).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS) {
-                    BiometricPrompt(requireActivity(), ContextCompat.getMainExecutor(requireContext()), object : BiometricPrompt.AuthenticationCallback() {
-                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                            super.onAuthenticationSucceeded(result)
-                            unhide()
-                        }
-                    }).authenticate(BiometricPrompt.PromptInfo.Builder()
-                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
-                        .setConfirmationRequired(false)
-                        .setTitle(getString(R.string.unlock_please))
-                        .build()
-                    )
-                } else unhide()
-
-                return true
-            }
-            else-> {
-                return false
-            }
-        }
     }
 
     override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {

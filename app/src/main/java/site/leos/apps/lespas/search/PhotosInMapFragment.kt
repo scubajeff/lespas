@@ -35,9 +35,11 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -128,9 +130,6 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         album?.run {
-            // Show actions only when not called by LocationResultSingleLocalityFragment
-            setHasOptionsMenu(true)
-
             window = requireActivity().window
             bgmPlayer = ExoPlayer.Builder(requireContext()).build()
             bgmPlayer.run {
@@ -257,6 +256,115 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
+
+        album?.run {
+            // Show actions only when not called by LocationResultSingleLocalityFragment
+            requireActivity().addMenuProvider(object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                    inflater.inflate(R.menu.photo_in_map_menu, menu)
+                    playMenuItem = menu.findItem(R.id.option_menu_map_slideshow)
+                    muteMenuItem = menu.findItem(R.id.option_menu_mute)
+                }
+
+                override fun onPrepareMenu(menu: Menu) {
+                    with(muteMenuItem) {
+                        if (hasBGM) setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
+                        else {
+                            isVisible = false
+                            isEnabled = false
+                        }
+                    }
+                }
+
+                override fun onMenuItemSelected(item: MenuItem): Boolean {
+                    return when(item.itemId) {
+                        R.id.option_menu_map_slideshow -> {
+                            if (isSlideshowPlaying) slideshowJob?.cancel()
+                            else {
+                                Tools.keepScreenOn(window, true)
+                                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+                                isSlideshowPlaying = true
+                                playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
+
+                                slideshowJob?.cancel()
+                                slideshowJob = lifecycleScope.launch {
+                                    // Prepare map and BGM before starting slideshow
+                                    closeAllInfoWindow()
+                                    mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
+
+                                    val allZoomLevel = (mapView.zoomLevelDouble + MAXIMUM_ZOOM) / 2
+                                    val animationController = AnimationMapController(mapView)
+                                    var lastPos = (mapView.overlays[1] as Marker).position
+                                    //var poiCenter: Int
+
+                                    if (hasBGM) {
+                                        bgmPlayer.volume = if (isMuted) 0f else 1f
+                                        bgmPlayer.prepare()
+                                    }
+
+                                    // Loop through all POIs
+                                    try {
+                                        for (i in 1 until mapView.overlays.size) {
+                                            ensureActive()
+                                            (mapView.overlays[i] as Marker).let { stop ->
+                                                // Pan map to reveal full image
+                                                //poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
+
+                                                if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
+                                                    // If next POI is 3km away, use jump animation
+                                                    animationController.setOnAnimationEndListener {
+                                                        animationController.setOnAnimationEndListener {
+                                                            animationController.setOnAnimationEndListener {
+                                                                stop.showInfoWindow()
+                                                            }
+                                                            animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                                        }
+                                                        //mapView.setMapCenterOffset(0, poiCenter)
+                                                        animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
+                                                    }
+                                                    animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
+                                                    ensureActive()
+                                                    if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
+                                                    delay(6400)     // 4000 + 3 * 800
+                                                } else {
+                                                    //mapView.setMapCenterOffset(0, poiCenter)
+                                                    animationController.setOnAnimationEndListener {
+                                                        stop.showInfoWindow()
+                                                    }
+                                                    animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
+                                                    ensureActive()
+                                                    if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
+                                                    delay(4000)
+                                                }
+                                                stop.closeInfoWindow()
+                                                lastPos = stop.position
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        // Race condition might happen when user press back key while slideshow is playing
+                                    }
+                                }.apply { invokeOnCompletion { stopSlideshow() }}
+                            }
+                            true
+                        }
+                        R.id.option_menu_mute -> {
+                            isMuted = !isMuted
+                            muteMenuItem.setIcon(
+                                if (isMuted) {
+                                    fadeOutBGM()
+                                    R.drawable.ic_baseline_volume_off_24
+                                } else {
+                                    fadeInBGM()
+                                    R.drawable.ic_baseline_volume_on_24
+                                }
+                            )
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        }
     }
 
     override fun onResume() {
@@ -288,113 +396,6 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (!hasFocus && isSlideshowPlaying) slideshowJob?.cancel()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.photo_in_map_menu, menu)
-        playMenuItem = menu.findItem(R.id.option_menu_map_slideshow)
-        muteMenuItem = menu.findItem(R.id.option_menu_mute)
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        with(muteMenuItem) {
-            if (hasBGM) setIcon(if (isMuted) R.drawable.ic_baseline_volume_off_24 else R.drawable.ic_baseline_volume_on_24)
-            else {
-                isVisible = false
-                isEnabled = false
-            }
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
-            R.id.option_menu_map_slideshow -> {
-                if (isSlideshowPlaying) slideshowJob?.cancel()
-                else {
-                    Tools.keepScreenOn(window, true)
-                    requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                    isSlideshowPlaying = true
-                    playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
-
-                    slideshowJob?.cancel()
-                    slideshowJob = lifecycleScope.launch {
-                        // Prepare map and BGM before starting slideshow
-                        closeAllInfoWindow()
-                        mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
-
-                        val allZoomLevel = (mapView.zoomLevelDouble + MAXIMUM_ZOOM) / 2
-                        val animationController = AnimationMapController(mapView)
-                        var lastPos = (mapView.overlays[1] as Marker).position
-                        //var poiCenter: Int
-
-                        if (hasBGM) {
-                            bgmPlayer.volume = if (isMuted) 0f else 1f
-                            bgmPlayer.prepare()
-                        }
-
-                        // Loop through all POIs
-                        try {
-                            for (i in 1 until mapView.overlays.size) {
-                                ensureActive()
-                                (mapView.overlays[i] as Marker).let { stop ->
-                                    // Pan map to reveal full image
-                                    //poiCenter = kotlin.math.max((stop.image.intrinsicHeight - spaceHeight), 0)
-
-                                    if (stop.position.distanceToAsDouble(lastPos) > 3000.0) {
-                                        // If next POI is 3km away, use jump animation
-                                        animationController.setOnAnimationEndListener {
-                                            animationController.setOnAnimationEndListener {
-                                                animationController.setOnAnimationEndListener {
-                                                    stop.showInfoWindow()
-                                                }
-                                                animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
-                                            }
-                                            //mapView.setMapCenterOffset(0, poiCenter)
-                                            animationController.animateTo(stop.position, allZoomLevel, ANIMATION_TIME)
-                                        }
-                                        animationController.animateTo(lastPos, allZoomLevel, ANIMATION_TIME)
-                                        ensureActive()
-                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
-                                        delay(6400)     // 4000 + 3 * 800
-                                    } else {
-                                        //mapView.setMapCenterOffset(0, poiCenter)
-                                        animationController.setOnAnimationEndListener {
-                                            stop.showInfoWindow()
-                                        }
-                                        animationController.animateTo(stop.position, MAXIMUM_ZOOM, ANIMATION_TIME)
-                                        ensureActive()
-                                        if (i < mapView.overlays.size - 1) imageLoaderModel.setImagePhoto(remotePhotos?.get(i)!!, (mapView.overlays[i+1] as Marker).infoWindow.view.findViewById(R.id.photo), NCShareViewModel.TYPE_IN_MAP)
-                                        delay(4000)
-                                    }
-                                    stop.closeInfoWindow()
-                                    lastPos = stop.position
-                                }
-                            }
-                        } catch (e: Exception) {
-                            // Race condition might happen when user press back key while slideshow is playing
-                        }
-                    }.apply { invokeOnCompletion { stopSlideshow() }}
-                }
-                true
-            }
-            R.id.option_menu_mute -> {
-                isMuted = !isMuted
-                muteMenuItem.setIcon(
-                    if (isMuted) {
-                        fadeOutBGM()
-                        R.drawable.ic_baseline_volume_off_24
-                    } else {
-                        fadeInBGM()
-                        R.drawable.ic_baseline_volume_on_24
-                    }
-                )
-                true
-            }
-            else -> false
-        }
     }
 
     private lateinit var playerHandler: Handler

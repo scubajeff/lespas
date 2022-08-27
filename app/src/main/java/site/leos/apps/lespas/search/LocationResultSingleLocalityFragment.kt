@@ -61,6 +61,8 @@ class LocationResultSingleLocalityFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        @Suppress("DEPRECATION")
         setHasOptionsMenu(true)
 
         photoAdapter = PhotoAdapter(
@@ -127,6 +129,7 @@ class LocationResultSingleLocalityFragment: Fragment() {
         super.onDestroyView()
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_in_map-> {

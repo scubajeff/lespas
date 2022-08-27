@@ -32,9 +32,11 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
@@ -147,8 +149,6 @@ class PublicationDetailFragment: Fragment() {
             }
         })
 
-        setHasOptionsMenu(true)
-
         addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
@@ -233,6 +233,107 @@ class PublicationDetailFragment: Fragment() {
         }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
+
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.publication_detail_menu, menu)
+
+                loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
+                (loadingIndicator?.actionView?.findViewById(R.id.search_progress) as CircularProgressIndicator).run {
+                    isIndeterminate = true
+                    show()
+                }
+                addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
+                mapMenuItem = menu.findItem(R.id.option_menu_in_map)
+                showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
+                    icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
+                }
+                searchMenuItem = menu.findItem(R.id.option_menu_search)
+                searchMenuItem?.apply {
+                    (actionView as SearchView).run {
+                        if (currentQuery.isNotEmpty()) {
+                            searchMenuItem?.expandActionView()
+                            setQuery(currentQuery, false)
+                        }
+
+                        queryHint = getString(R.string.option_menu_search)
+
+                        setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                            override fun onQueryTextSubmit(query: String?): Boolean = false
+                            override fun onQueryTextChange(newText: String?): Boolean {
+                                (newText ?: "").let { query ->
+                                    photoListAdapter.filter(query)
+                                    currentQuery = query
+                                }
+                                return false
+                            }
+                        })
+                    }
+                }
+
+                if (photoListAdapter.currentList.isNotEmpty()) {
+                    loadingIndicator?.isEnabled = false
+                    loadingIndicator?.isVisible = false
+
+                    if (showName) {
+                        searchMenuItem?.isVisible = true
+                        searchMenuItem?.isEnabled = true
+                    } else {
+                        showMetaMenuItem?.isEnabled = true
+                        showMetaMenuItem?.isVisible = true
+                    }
+
+                    if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
+                        addPhotoMenuItem?.isEnabled = true
+                        addPhotoMenuItem?.isVisible = true
+                    }
+
+                    run map@{
+                        mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
+                            if (it.photo.mimeType.startsWith("image/") && it.photo.latitude != Photo.NO_GPS_DATA) {
+                                mapMenuItem?.isEnabled = true
+                                mapMenuItem?.isVisible = true
+
+                                return@map
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean =
+                when(item.itemId) {
+                    R.id.option_menu_show_meta-> {
+                        photoListAdapter.toggleMetaDisplay()
+                        item.icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
+                        true
+                    }
+                    R.id.option_menu_add_photo-> {
+                        addFileLauncher.launch("*/*")
+                        true
+                    }
+                    R.id.option_menu_in_map-> {
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(
+                            Album(
+                                id = share.albumId,
+                                name = share.albumName,
+                                eTag = Photo.ETAG_FAKE,
+                                shareId = Album.REMOTE_ALBUM,
+                                lastModified = LocalDateTime.MIN
+                            ),
+                            Tools.getPhotosWithCoordinate(
+                                mutableListOf<Photo>().apply { photoListAdapter.currentList.forEach { add(it.photo) }},
+                                PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.nearby_convergence_pref_key), true),
+                                share.sortOrder
+                            )
+                        ), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        true
+                    }
+                    else-> false
+                }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     @SuppressLint("InflateParams")
@@ -278,106 +379,6 @@ class PublicationDetailFragment: Fragment() {
 
         super.onDestroy()
     }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.publication_detail_menu, menu)
-
-        loadingIndicator = menu.findItem(R.id.option_menu_search_progress)
-        (loadingIndicator?.actionView?.findViewById(R.id.search_progress) as CircularProgressIndicator).run {
-            isIndeterminate = true
-            show()
-        }
-        addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
-        mapMenuItem = menu.findItem(R.id.option_menu_in_map)
-        showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
-            icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
-        }
-        searchMenuItem = menu.findItem(R.id.option_menu_search)
-        searchMenuItem?.apply {
-            (actionView as SearchView).run {
-                if (currentQuery.isNotEmpty()) {
-                    searchMenuItem?.expandActionView()
-                    setQuery(currentQuery, false)
-                }
-
-                queryHint = getString(R.string.option_menu_search)
-
-                setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                    override fun onQueryTextSubmit(query: String?): Boolean = false
-                    override fun onQueryTextChange(newText: String?): Boolean {
-                        (newText ?: "").let { query ->
-                            photoListAdapter.filter(query)
-                            currentQuery = query
-                        }
-                        return false
-                    }
-                })
-            }
-        }
-
-        if (photoListAdapter.currentList.isNotEmpty()) {
-            loadingIndicator?.isEnabled = false
-            loadingIndicator?.isVisible = false
-
-            if (showName) {
-                searchMenuItem?.isVisible = true
-                searchMenuItem?.isEnabled = true
-            } else {
-                showMetaMenuItem?.isEnabled = true
-                showMetaMenuItem?.isVisible = true
-            }
-
-            if (share.permission == NCShareViewModel.PERMISSION_JOINT) {
-                addPhotoMenuItem?.isEnabled = true
-                addPhotoMenuItem?.isVisible = true
-            }
-
-            run map@{
-                mutableListOf<NCShareViewModel.RemotePhoto>().apply { addAll(photoListAdapter.currentList) }.forEach {
-                    if (it.photo.mimeType.startsWith("image/") && it.photo.latitude != Photo.NO_GPS_DATA) {
-                        mapMenuItem?.isEnabled = true
-                        mapMenuItem?.isVisible = true
-
-                        return@map
-                    }
-                }
-            }
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        when(item.itemId) {
-            R.id.option_menu_show_meta-> {
-                photoListAdapter.toggleMetaDisplay()
-                item.icon = ContextCompat.getDrawable(requireContext(), if (photoListAdapter.isMetaDisplayed()) R.drawable.ic_baseline_meta_on_24 else R.drawable.ic_baseline_meta_off_24)
-                true
-            }
-            R.id.option_menu_add_photo-> {
-                addFileLauncher.launch("*/*")
-                true
-            }
-            R.id.option_menu_in_map-> {
-                reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
-                parentFragmentManager.beginTransaction().replace(R.id.container_root, PhotosInMapFragment.newInstance(
-                    Album(
-                        id = share.albumId,
-                        name = share.albumName,
-                        eTag = Photo.ETAG_FAKE,
-                        shareId = Album.REMOTE_ALBUM,
-                        lastModified = LocalDateTime.MIN
-                    ),
-                    Tools.getPhotosWithCoordinate(
-                        mutableListOf<Photo>().apply { photoListAdapter.currentList.forEach { add(it.photo) }},
-                        PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.nearby_convergence_pref_key), true),
-                        share.sortOrder
-                    )
-                ), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
-                true
-            }
-            else-> false
-        }
 
     class PhotoListAdapter(private val clickListener: (ImageView, List<NCShareViewModel.RemotePhoto>, Int) -> Unit, private val imageLoader: (NCShareViewModel.RemotePhoto, ImageView) -> Unit, private val cancelLoading: (View) -> Unit
     ): ListAdapter<NCShareViewModel.RemotePhoto, PhotoListAdapter.ViewHolder>(PhotoDiffCallback()) {
