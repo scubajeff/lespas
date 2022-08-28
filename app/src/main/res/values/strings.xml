@@ -182,7 +182,7 @@
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
     <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder \'DCIM/%1$s\'.</string>
     <string name="backup_done">All items in camera roll have been backup.</string>
-    <string name="backup_waiting">%1$,d items in camera roll waiting for backup, uploading %2s now.</string>
+    <string name="backup_waiting">%1$,d items in camera roll waiting for backup, uploading %2$s now.</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check for server changes every 6 hours</string>

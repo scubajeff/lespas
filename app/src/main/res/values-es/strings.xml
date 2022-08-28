@@ -201,7 +201,7 @@
     <string name="option_menu_mute">Activar el silencio</string>
     <string name="skip_late_night_update">Omitir la actualización nocturna</string>
     <string name="backup_done">Todos los elementos del rollo de la cámara han sido respaldados.</string>
-    <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad, cargando %2s ahora.</string>
+    <string name="backup_waiting">%1$,d elementos en el rollo de la cámara a la espera de una copia de seguridad, cargando %2$s ahora.</string>
     <string name="not_hiding">Los siguientes nombres ya existían en la lista de álbumes ocultos: %1$s</string>
     <string name="default_sort_order_title">Ordenación de las fotos por defecto para el nuevo álbum</string>
     <string name="msg_set_as_remote">Al establecer el álbum como \'Remoto\' se eliminarán todos sus archivos multimedia de este dispositivo. ¿Cómo proceder?</string>

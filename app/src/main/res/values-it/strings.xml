@@ -143,7 +143,7 @@
     <string name="cameraroll_backup_title">Backup del rullino foto</string>
     <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \"DCIM/%1$s\".</string>
     <string name="backup_done">Tutti gli elementi del rullino foto sono stati copiati.</string>
-    <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d, caricamento %2s ora.</string>
+    <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d, caricamento %2$s ora.</string>
     <string name="background_sync_title">Sincronizza periodicamente</string>
     <string name="background_sync_summary">Controlla modifiche al server ogni 6 ore</string>
     <string name="wifionly_title">Sincronizza solo tramite Wi-Fi</string>

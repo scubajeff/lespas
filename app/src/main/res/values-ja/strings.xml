@@ -201,7 +201,7 @@
     <string name="option_menu_mute">トグルミュート</string>
     <string name="skip_late_night_update">深夜に更新をスキップ</string>
     <string name="backup_done">カメラロールの項目はすべてバックアップされました。</string>
-    <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります，現在 %2s をアップロード中です。</string>
+    <string name="backup_waiting">バックアップ待ちのカメラロールに %1$,d 個のアイテムがあります，現在 %2$s をアップロード中です。</string>
     <string name="not_hiding">以下の名前はすでに隠しアルバムリストに存在しています： %1$s</string>
     <string name="default_sort_order_title">新規アルバムでの写真のデフォルトの並び順</string>
     <string name="msg_set_as_remote">アルバムを「リモート」に設定すると、このデバイスからすべてのメディアファイルが削除されます。続行しますか？</string>

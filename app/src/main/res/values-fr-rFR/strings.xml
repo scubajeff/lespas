@@ -132,7 +132,7 @@
     <string name="cameraroll_backup_title">Sauvegarde de la galerie</string>
     <string name="cameraroll_backup_summary">Les nouvelles photos et vidéos seront automatiquement sauvegardées sur le serveur dans le dossier \'DCIM/%1$s\'.</string>
     <string name="backup_done">Tous les éléments de la galerie ont été sauvegardés.</string>
-    <string name="backup_waiting">%1$,d élément(s) dans la galerie en attente de sauvegarde, téléchargement de %2s maintenant.</string>
+    <string name="backup_waiting">%1$,d élément(s) dans la galerie en attente de sauvegarde, téléchargement de %2$s maintenant.</string>
     <string name="background_sync_title">Synchroniser périodiquement</string>
     <string name="background_sync_summary">Vérifier les changements sur le serveur toutes les 6 heures</string>
     <string name="wifionly_title">Synchroniser uniquement en WiFi</string>

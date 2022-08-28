@@ -201,7 +201,7 @@
     <string name="option_menu_mute">切換靜音</string>
     <string name="skip_late_night_update">不在深夜更新</string>
     <string name="backup_done">相機相冊備份已完成。</string>
-    <string name="backup_waiting">相機相冊中仲有%1$,d個檔案等待備份，正在上傳%2s。</string>
+    <string name="backup_waiting">相機相冊中仲有%1$,d個檔案等待備份，正在上傳%2$s。</string>
     <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
     <string name="default_sort_order_title">新建相冊相片排序規則</string>
     <string name="msg_set_as_remote">相冊設置為「遠端相冊」後，該相冊之媒體檔案將從本機存儲中刪除，繼續操作嗎？</string>
