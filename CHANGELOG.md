@@ -1,3 +1,10 @@
+## Version 2.5.18
+* Fixed bug preventing backup of a large camera roll
+* Show name of current file being backup in Setting
+* Fixed ANR when requesting storage access permission in Setting
+* Stop playing slideshow when app is moved to the background
+* Android 13 compatible, adapted to granular media permission, monochrome launcher icon, per-app language and predictive back gesture
+
 ## Version 2.5.17
 * Correctly read photo creation timestamp which has timezone offset from EXIF
 * Persist album list sorting order

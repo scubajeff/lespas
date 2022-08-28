@@ -1,0 +1,6 @@
+* Correction d'un bogue empêchant la sauvegarde d'une grande liste de photos.
+* Affichage du nom du fichier en cours de sauvegarde dans Setting
+* Correction de l'ANR lors de la demande d'autorisation d'accès au stockage dans Setting
+* Arrêt de la lecture du diaporama lorsque l'application est déplacée en arrière-plan.
+* Compatible avec Android 13, adapté à la permission granulaire des médias, à l'icône monochrome du lanceur, à la langue par application et au geste de retour prédictif.
+* Autres améliorations et corrections de bugs

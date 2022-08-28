@@ -1,0 +1,6 @@
+* Bugs corrigidos impedindo o backup de um grande rolo de câmera
+* Mostrar o nome do arquivo atual como backup na configuração
+* ANR fixo ao solicitar permissão de acesso ao armazenamento na Configuração
+* Pare de tocar slideshow quando o aplicativo é movido para o fundo
+* compatível com Android 13, adaptado à permissão de mídia granular, ícone de lançador monocromático, linguagem per-app e gesto preditivo de retorno
+* Outras melhorias e correções de bugs
