@@ -56,7 +56,7 @@
         <item name="android:textColorPrimary">@color/color_on_primary</item>
         <item name="android:textColorPrimaryInverse">@color/color_on_primary_invert</item>
 
-        <item name="colorButtonText">?colorPrimary</item>
+        <item name="colorButtonText">@color/borderless_button_text</item>
         <item name="colorBottomSheetBackground">?backgroundColor</item>
         <item name="colorAnimatedPlaceHolder">?colorPrimary</item>
         <item name="colorToggleButtonOnToolbar">?colorPrimaryVariant</item>
@@ -88,7 +88,7 @@
         <item name="android:textColorSecondary">#707070</item>
         <item name="android:textColorSecondaryInverse">#707070</item>
 
-        <item name="colorButtonText">?primaryTextWhite</item>
+        <item name="colorButtonText">@color/borderless_button_text_bw</item>
         <item name="colorBottomSheetBackground">#202020</item>
         <item name="colorAnimatedPlaceHolder">?primaryTextWhite</item>
         <item name="colorToggleButtonOnToolbar">#4B4D4C</item>
