@@ -60,6 +60,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
+import site.leos.apps.lespas.helper.Tools
 import java.net.SocketException
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
@@ -75,11 +76,11 @@ class NCLoginFragment: Fragment() {
 
     private var doAnimation = true
 
-    private var storagePermissionRequestLauncher: ActivityResultLauncher<String>? = null
+    private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
 
     private var scannerAvailable = false
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
-    private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
+    private lateinit var scanRequestLauncher: ActivityResultLauncher<Intent>
 
     private val authenticateModel: AuthenticateViewModel by activityViewModels()
 
@@ -88,7 +89,7 @@ class NCLoginFragment: Fragment() {
 
         scannerAvailable = scanIntent.resolveActivity(requireContext().packageManager) != null
 
-        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        storagePermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             Handler(Looper.getMainLooper()).post {
                 // Restart activity
@@ -195,7 +196,7 @@ class NCLoginFragment: Fragment() {
             if (result == AuthenticateViewModel.RESULT_SUCCESS) {
                 // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-                storagePermissionRequestLauncher?.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
             } else showError(999)
         }
 
@@ -239,7 +240,7 @@ class NCLoginFragment: Fragment() {
                     inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
                     inputArea.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_qr_code_scanner_24)
                     inputArea.setEndIconOnClickListener {
-                        try { scanRequestLauncher?.launch(scanIntent) }
+                        try { scanRequestLauncher.launch(scanIntent) }
                         catch (e: SecurityException) {
                             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
                         }

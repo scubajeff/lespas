@@ -22,7 +22,6 @@ import android.app.ActivityManager
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -39,7 +38,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -83,10 +81,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private var syncWhenClosing = false
 
     // For Android 11 and above, use MediaStore trash request pending intent to prompt for user's deletion confirmation, so we don't need WRITE_EXTERNAL_STORAGE
-    private val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) android.Manifest.permission.READ_EXTERNAL_STORAGE else android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-    private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<String>
-    private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
-    private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<String>
+    private val storagePermission = Tools.getStoragePermissionsArray()
+    private lateinit var snapseedPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var showCameraRollPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
+    private lateinit var backupCameraRollPermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var installSnapseedLauncher: ActivityResultLauncher<Intent>
 
@@ -106,9 +104,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         accessMediaLocationPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-        snapseedPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+        snapseedPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            var isGranted = true
+            for(result in results) isGranted = isGranted && result.value
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = isGranted
 
             if (isGranted) {
@@ -118,17 +118,21 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 installSnapseedIfNeeded()
             }
         }
-        showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+        showCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            var isGranted = true
+            for(result in results) isGranted = isGranted && result.value
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = isGranted
 
             // Explicitly request ACCESS_MEDIA_LOCATION permission
             if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
         }
-        backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted->
+        backupCameraRollPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 
+            var isGranted = true
+            for(result in results) isGranted = isGranted && result.value
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = isGranted
 
             if (isGranted) {
@@ -211,8 +215,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
         }
 
-        // Toggle some switches off when Storage Access permission is missing
-        if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+        // Toggle some switches off when Storage Access permission is not granted
+        if (Tools.shouldRequestStoragePermission(requireContext())) {
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_as_album_perf_key))?.isChecked = false
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = false
             findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
@@ -361,11 +365,11 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.snapseed_pref_key) -> {
-                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                if (Tools.shouldRequestStoragePermission(requireContext())) {
                     // Set Snapseed integration to False if we don't have storage access permission
                     (preference as SwitchPreferenceCompat).isChecked = false
 
-                    if (shouldShowRequestPermissionRationale(storagePermission)) {
+                    if (shouldShowRequestPermissionRationale(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_IMAGES else android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
                             ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
@@ -387,7 +391,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.cameraroll_as_album_perf_key) -> {
-                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                if (Tools.shouldRequestStoragePermission(requireContext())) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                     showCameraRollPermissionRequestLauncher.launch(storagePermission)
@@ -397,7 +401,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.cameraroll_backup_pref_key) -> {
-                if (ContextCompat.checkSelfPermission(requireContext(), storagePermission) != PackageManager.PERMISSION_GRANTED) {
+                if (Tools.shouldRequestStoragePermission(requireContext())) {
                     requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
 
                     backupCameraRollPermissionRequestLauncher.launch(storagePermission)

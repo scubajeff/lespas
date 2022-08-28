@@ -21,6 +21,7 @@ import android.app.Activity
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.*
@@ -916,5 +917,17 @@ object Tools {
 
     fun keepScreenOn(window: Window, on: Boolean) {
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
+    fun getStoragePermissionsArray(): Array<String> = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO)
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+        else -> arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    }
+
+    fun shouldRequestStoragePermission(context: Context): Boolean = when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        else -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
     }
 }

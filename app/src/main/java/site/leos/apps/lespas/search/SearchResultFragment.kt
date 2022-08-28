@@ -154,7 +154,7 @@ class SearchResultFragment : Fragment() {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.search_result_menu, menu)
                 loadingIndicator = menu.findItem(R.id.option_menu_search_progress).also {
-                    loadingProgressBar = it.actionView.findViewById(R.id.search_progress)
+                    loadingProgressBar = it.actionView?.findViewById(R.id.search_progress)
                     adhocSearchViewModel.getProgress().value?.also { progress->
                         if (progress == 100) {
                             it.isVisible = false

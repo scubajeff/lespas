@@ -16,11 +16,14 @@
 
 package site.leos.apps.lespas.album
 
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -45,6 +48,9 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
     private lateinit var replaceBGMLauncher: ActivityResultLauncher<String>
     private var mimeType = ""
 
+    private var readAudioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_AUDIO else android.Manifest.permission.READ_EXTERNAL_STORAGE
+    private lateinit var readAudioPermissionRequestLauncher: ActivityResultLauncher<String>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -64,6 +70,10 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                 bgmPlayer.play()
             }
         }
+
+        readAudioPermissionRequestLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)
+        }
     }
 
     override fun onDestroy() {
@@ -79,7 +89,10 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
         super.onViewCreated(view, savedInstanceState)
 
         view.apply {
-            findViewById<ImageButton>(R.id.replace_bgm).setOnClickListener { replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)}
+            findViewById<ImageButton>(R.id.replace_bgm).setOnClickListener {
+                if (ContextCompat.checkSelfPermission(context, readAudioPermission) != PackageManager.PERMISSION_GRANTED) readAudioPermissionRequestLauncher.launch(readAudioPermission)
+                else replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)
+            }
             playButton = findViewById(R.id.exo_play)
             removeButton = findViewById<ImageButton>(R.id.remove_bgm).apply {
                 setOnClickListener {
