@@ -1,0 +1,6 @@
+* Se ha corregido un error que impedía hacer una copia de seguridad de un rollo de cámara grande.
+* Mostrar el nombre del archivo actual que se está respaldando en la configuración
+* Arreglado el ANR cuando se solicita el permiso de acceso al almacenamiento en Configuración
+* Detener la reproducción de la presentación de diapositivas cuando la aplicación se mueve al fondo
+* Compatible con Android 13, adaptado a los permisos de medios granulares, al icono monocromo del lanzador, al idioma por aplicación y al gesto predictivo de retroceso
+* Otras mejoras y correcciones de errores

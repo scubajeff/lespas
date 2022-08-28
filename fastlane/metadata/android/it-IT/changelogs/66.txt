@@ -1,0 +1,6 @@
+* Correzione del bug che impedisce il backup di un rullino fotografico di grandi dimensioni.
+* Mostra il nome del file corrente di cui si sta eseguendo il backup nelle impostazioni.
+* ANR fisso quando si richiede l'autorizzazione all'accesso allo spazio di archiviazione in Impostazioni
+* Interruzione della riproduzione della presentazione quando l'applicazione viene spostata in background
+* Compatibile con Android 13, adattato ai permessi multimediali granulari, all'icona monocromatica del launcher, alla lingua per app e al gesto di ritorno predittivo.
+* Altri miglioramenti e correzioni di bug

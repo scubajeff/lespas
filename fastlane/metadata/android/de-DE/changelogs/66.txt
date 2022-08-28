@@ -1,0 +1,6 @@
+* Fehler behoben, der die Sicherung einer großen Kamerarolle verhinderte
+* Anzeige des Namens der aktuell gesicherten Datei in den Einstellungen
+* Behoben: ANR beim Anfordern von Speicherzugriffsrechten in den Einstellungen
+* Stoppt die Wiedergabe der Diashow, wenn die App in den Hintergrund verschoben wird
+* Android 13 kompatibel, angepasst an granulare Medienberechtigung, monochromes Launcher-Symbol, Sprache pro App und vorausschauende Zurück-Geste
+* Weitere Verbesserungen und Fehlerkorrekturen
