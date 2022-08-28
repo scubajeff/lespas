@@ -869,9 +869,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                                 }
                                             }
                                             else -> {
-                                                // Large photo, allocationByteCount could exceed 100,000,000 bytes if fully decoded
                                                 val option = BitmapFactory.Options().apply {
-                                                    inSampleSize = if (imagePhoto.photo.width * imagePhoto.photo.height > 33333334) 2 else 1
+                                                    // Shrink large photo, allocationByteCount could not exceed 100,000,000 bytes
+                                                    inSampleSize = ((imagePhoto.photo.width * imagePhoto.photo.height) / 25000000).let { size -> if (size > 0) size * 2 else 1 }
                                                     //if (type == TYPE_QUARTER) inSampleSize *= 2
                                                     // TODO Cautious when meta is not available yet, prevent crash when viewing large photo shot by other devices, such as some Huawei
                                                     if (imagePhoto.photo.width == 0) inSampleSize = 2
