@@ -243,7 +243,7 @@ object Tools {
         return latLong
     }
 
-    private fun getVideoDateAndLocation(extractor: MediaMetadataRetriever, fileName: String): Pair<LocalDateTime?, DoubleArray> {
+    fun getVideoDateAndLocation(extractor: MediaMetadataRetriever, fileName: String): Pair<LocalDateTime?, DoubleArray> {
         val latLong = getVideoLocation(extractor)
 
         // For video file produced by phone camera, MediaMetadataRetriever.METADATA_KEY_DATE always return date value in UTC since there is no safe way to determine the timezone

@@ -51,6 +51,7 @@ import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
@@ -114,6 +115,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
                     view.findViewById<TextView>(R.id.info_artist).text = photoMeta.artist
                 }
+                photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)) }
 
                 try {
                     if (latitude != Photo.NO_GPS_DATA) {
@@ -212,12 +214,14 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                 try {
                     if (rPhoto.remotePath.isEmpty()) {
                         if (rPhoto.photo.albumId != CameraRollFragment.FROM_CAMERA_ROLL) {
+                            // Media in album
                             val fPath = Tools.getLocalRoot(context)
                             with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {
                                 pm.size = File(this).length()
                                 if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (e: Exception) { null }
                             }
                         } else {
+                            // Media from camera roll
                             pm.size = rPhoto.photo.shareId.toLong()
                             val pUri = Uri.parse(rPhoto.photo.id)
                             if (Tools.hasExif(rPhoto.photo.mimeType)) {
@@ -233,9 +237,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                     MediaMetadataRetriever().run {
                                         try {
                                             setDataSource(context, pUri)
-                                            Tools.getVideoLocation(this).let {
-                                                pm.photo.latitude = it[0]
-                                                pm.photo.longitude = it[1]
+                                            Tools.getVideoDateAndLocation(this, rPhoto.photo.name).let {
+                                                pm.date = it.first
+                                                pm.photo.latitude = it.second[0]
+                                                pm.photo.longitude = it.second[1]
                                             }
                                         } catch (e: SecurityException) {}
                                         release()
@@ -266,6 +271,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             pm.photo.latitude = it[0]
                             pm.photo.longitude = it[1]
                         }
+                        pm.date = Tools.getImageTakenDate(this)
                     }
 
                     photoMeta.postValue(pm)
@@ -277,13 +283,14 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         fun getPhotoMeta(): LiveData<PhotoMeta> = photoMeta
     }
 
-    data class PhotoMeta(
+    private data class PhotoMeta(
         val photo: Photo,
         var size: Long = 0L,
         var mfg: String = "",
         var model: String = "",
         var params: String = "",
         var artist: String = "",
+        var date: LocalDateTime? = null,
     )
 
     companion object {
