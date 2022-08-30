@@ -56,6 +56,7 @@ import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.*
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
@@ -1108,7 +1109,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
                 val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
-                val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
+                val dateAddedColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
                 val typeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
                 val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
                 val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
@@ -1174,11 +1175,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     }
 
-                    // Try to get GPS data
+                    // Try to get GPS data and photo taken date with correct timezone offset
                     latitude = Photo.GPS_DATA_UNKNOWN
                     longitude = Photo.GPS_DATA_UNKNOWN
                     altitude = Photo.GPS_DATA_UNKNOWN
                     bearing = Photo.GPS_DATA_UNKNOWN
+                    mDate = 0L
                     if (Tools.hasExif(mimeType)) {
                         try {
                             cr.openInputStream(photoUri)?.use { stream ->
@@ -1195,24 +1197,28 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                         altitude = Photo.NO_GPS_DATA
                                         bearing = Photo.NO_GPS_DATA
                                     }
+
+                                    mDate = Tools.getImageTakenDate(exif)?.atZone(ZoneId.of("Z"))?.toInstant()?.toEpochMilli() ?: 0L
                                 }
                             }
                         } catch (e: Exception) {}
                     } else if (mimeType.startsWith("video/")) {
                         try {
                             mediaMetadataRetriever.setDataSource(application, photoUri)
-                            Tools.getVideoLocation(mediaMetadataRetriever).let {
-                                latitude = it[0]
-                                longitude = it[1]
+                            Tools.getVideoDateAndLocation(mediaMetadataRetriever, fileName).let {
+                                latitude = it.second[0]
+                                longitude = it.second[1]
                                 altitude = Photo.NO_GPS_DATA
                                 bearing = Photo.NO_GPS_DATA
+
+                                mDate = it.first?.atZone(ZoneId.of("Z"))?.toInstant()?.toEpochMilli() ?: 0L
                             }
                         } catch (e: SecurityException) {}
                     }
 
                     // Patch photo's DAV properties to accelerate future operations on camera roll archive
-                    mDate = cursor.getLong(dateTakenColumn)
-                    if (mDate == 0L) mDate = cursor.getLong(dateColumn) * 1000
+                    if (mDate == 0L) mDate = cursor.getLong(dateTakenColumn)
+                    if (mDate == 0L) mDate = cursor.getLong(dateAddedColumn) * 1000
                     try {
                         webDav.patch(
                             "${dcimRoot}/${relativePath}/${fileName}",
@@ -1231,7 +1237,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Save latest timestamp after successful upload
                     sp.edit().apply {
-                        putLong(SettingsFragment.LAST_BACKUP, cursor.getLong(dateColumn) + 1)
+                        putLong(SettingsFragment.LAST_BACKUP, cursor.getLong(dateAddedColumn) + 1)
                         commit()
                     }
                 }
