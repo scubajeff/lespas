@@ -55,7 +55,9 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             app:fabSize="mini"
-            android:src="@drawable/ic_baseline_content_cut_24" />
+            app:tint="?android:attr/textColorPrimaryInverse"
+            android:src="@drawable/ic_baseline_content_cut_24"
+            android:contentDescription="@string/button_text_set_cover" />
     </FrameLayout>
     <View
         android:id="@+id/lower"

@@ -81,10 +81,11 @@
             android:id="@+id/host"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:imeOptions="actionGo"
             android:inputType="textUri"
             android:maxLines="1"
             android:singleLine="true"
-            android:imeOptions="actionGo"/>
+            tools:ignore="SpeakableTextPresentCheck" />
 
     </com.google.android.material.textfield.TextInputLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

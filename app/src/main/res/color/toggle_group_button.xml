@@ -16,6 +16,6 @@
   -->
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="?colorSecondaryVariant" android:state_checked="true" />
-    <item android:color="@color/color_gray_out" />
+    <item android:color="#00695C" android:state_checked="true" />
+    <item android:color="#616161" />
 </selector>

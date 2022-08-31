@@ -53,7 +53,8 @@
                 app:rippleColor="?colorSecondaryVariantFade"
                 android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_copy_24"
-                android:drawableTint="@color/toggle_group_button_icon" />
+                android:drawableTint="@color/toggle_group_button_icon"
+                tools:ignore="RtlHardcoded" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/move"
                 android:layout_width="0dp"
@@ -66,18 +67,21 @@
                 app:rippleColor="?colorSecondaryVariantFade"
                 android:textColor="@color/toggle_group_button"
                 android:drawableLeft="@drawable/ic_baseline_file_move_24"
-                android:drawableTint="@color/toggle_group_button_icon" />
+                android:drawableTint="@color/toggle_group_button_icon"
+                tools:ignore="RtlHardcoded" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/clipdata_recyclerview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/move_or_copy"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:orientation="horizontal"
             android:scrollbars="none"
-            tools:listitem="@layout/recyclerview_item_clipdata"/>
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintTop_toBottomOf="@id/move_or_copy"
+            tools:ignore="SpeakableTextPresentCheck"
+            tools:layout_editor_absoluteX="16dp"
+            tools:listitem="@layout/recyclerview_item_clipdata" />
 
         <View
             android:id="@+id/divider"

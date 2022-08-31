@@ -48,20 +48,16 @@
             android:layout_height="wrap_content"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/message_textview"
-            android:layout_marginTop="@dimen/big_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:textColor="?attr/colorButtonText"
+            style="@style/Theme.LesPas.TextButton"
             android:text="@android:string/ok"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancel_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/message_textview"
+            app:layout_constraintBottom_toBottomOf="@id/ok_button"
             app:layout_constraintRight_toLeftOf="@id/ok_button"
-            android:layout_marginTop="@dimen/big_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:textColor="?attr/colorButtonText"
+            style="@style/Theme.LesPas.TextButton"
             android:text="@android:string/cancel"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

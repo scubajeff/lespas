@@ -38,4 +38,9 @@
     <style name="LightEdgeEffectColor">
         <item name="android:colorEdgeEffect">@color/lespas_white</item>
     </style>
+
+    <style name="Theme.LesPas.TextButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:layout_marginTop">@dimen/big_padding</item>
+        <item name="android:textColor">?colorButtonText</item>
+    </style>
 </resources>

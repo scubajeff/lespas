@@ -32,31 +32,33 @@
         android:id="@+id/photo"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:scaleType="centerCrop"
         app:layout_constraintDimensionRatio="H,1:1"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:scaleType="centerCrop"
-        tools:src="@drawable/login_background_gradient_2"/>
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="ContentDescription,ImageContrastCheck"
+        tools:src="@drawable/login_background_gradient_2" />
 
     <TextView
         android:id="@+id/label"
+        style="@style/TextAppearance.MaterialComponents.Caption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@id/photo"
-        app:layout_constraintRight_toRightOf="parent"
-        android:paddingVertical="@dimen/tiny_padding"
-        android:paddingHorizontal="@dimen/small_padding"
         android:elevation="2dp"
         android:ellipsize="middle"
-        android:singleLine="true"
-        style="@style/TextAppearance.MaterialComponents.Caption"
-        android:textColor="?primaryTextWhite"
+        android:paddingHorizontal="@dimen/small_padding"
+        android:paddingVertical="@dimen/tiny_padding"
+        android:shadowColor="@color/dark_gray_overlay_background"
         android:shadowDx="1"
         android:shadowDy="1"
         android:shadowRadius="1"
-        android:shadowColor="@color/dark_gray_overlay_background"
+        android:singleLine="true"
         android:textAlignment="textEnd"
-        tools:text="album"/>
+        android:textColor="?primaryTextWhite"
+        app:layout_constraintBottom_toBottomOf="@id/photo"
+        app:layout_constraintRight_toRightOf="parent"
+        tools:ignore="TextContrastCheck"
+        tools:text="album" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

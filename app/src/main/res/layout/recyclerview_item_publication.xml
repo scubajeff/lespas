@@ -37,10 +37,11 @@
             android:id="@+id/coverart"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="H,21:9"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            android:scaleType="centerCrop"
+            tools:ignore="ImageContrastCheck"
             tools:src="@drawable/login_background_gradient_1" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -74,7 +75,7 @@
                 app:layout_constraintRight_toRightOf="parent"
                 android:layout_marginRight="@dimen/small_padding"
                 android:src="@drawable/ic_baseline_joint_album_24"
-                android:tint="@color/color_primary"
+                android:tint="?colorButtonText"
                 tools:ignore="RtlHardcoded" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
