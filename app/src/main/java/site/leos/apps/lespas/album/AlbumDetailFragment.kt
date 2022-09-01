@@ -773,7 +773,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no)).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 }
                 else shareOut(stripExif == getString(R.string.strip_on_value))

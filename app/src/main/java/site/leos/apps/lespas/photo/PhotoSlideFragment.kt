@@ -354,7 +354,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     hideHandler.post(hideSystemUI)
 
                     if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) YesNoDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), STRIP_REQUEST_KEY).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no)).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 }
                 else shareOut(stripExif == getString(R.string.strip_on_value))
