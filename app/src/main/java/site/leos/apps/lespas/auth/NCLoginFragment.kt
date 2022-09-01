@@ -242,7 +242,7 @@ class NCLoginFragment: Fragment() {
                     inputArea.setEndIconOnClickListener {
                         try { scanRequestLauncher.launch(scanIntent) }
                         catch (e: SecurityException) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app)).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     }
                 } else {

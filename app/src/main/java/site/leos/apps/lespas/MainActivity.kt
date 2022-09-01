@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
             if (savedInstanceState == null) {
                 if (!sp.getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true) && (getSystemService(Context.STORAGE_SERVICE) as StorageManager).storageVolumes[1].state != Environment.MEDIA_MOUNTED) {
                     // We need external SD mounted writable
-                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), null, false, CONFIRM_REQUIRE_SD_DIALOG)
+                    if (supportFragmentManager.findFragmentByTag(CONFIRM_REQUIRE_SD_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.sd_card_not_ready), cancelable = false, requestKey = CONFIRM_REQUIRE_SD_DIALOG)
                         .show(supportFragmentManager, CONFIRM_REQUIRE_SD_DIALOG)
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 workInfos?.get(0)?.apply {
                     if (state.isFinished) {
-                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), null, false, CONFIRM_RESTART_DIALOG)
+                        if (supportFragmentManager.findFragmentByTag(CONFIRM_RESTART_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.need_to_restart), cancelable = false, requestKey = CONFIRM_RESTART_DIALOG)
                             .show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
                     }
                 }

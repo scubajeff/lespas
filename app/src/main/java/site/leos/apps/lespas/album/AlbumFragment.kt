@@ -137,7 +137,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             cameraRollAsAlbumMenu?.isVisible = !this
 
             // Selection based on bindingAdapterPosition, must be cleared
-            try { selectionTracker.clearSelection() } catch (e: UninitializedPropertyAccessException) {}
+            try { selectionTracker.clearSelection() } catch (_: UninitializedPropertyAccessException) {}
         }
     }
 
@@ -480,7 +480,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         lifecycleScope.launch(Dispatchers.IO) {
             StatFs(Environment.getDataDirectory().path).let {
                 if (it.availableBlocksLong < it.blockCountLong / 10) withContext(Dispatchers.Main) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), null, false).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
                 }
             }
         }
@@ -568,7 +568,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 */
             R.id.toggle_remote -> {
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), null, requestKey = CONFIRM_TOGGLE_REMOTE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(if (item.title == getString(R.string.action_set_remote)) R.string.msg_set_as_remote else R.string.msg_set_as_local), requestKey = CONFIRM_TOGGLE_REMOTE_REQUEST).show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
             R.id.select_all -> {

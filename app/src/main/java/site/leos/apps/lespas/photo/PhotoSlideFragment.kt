@@ -416,7 +416,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 hideHandler.post(hideSystemUI)
 
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), getString(R.string.yes_delete), true, DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
             }
         }
 

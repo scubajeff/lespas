@@ -330,7 +330,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.logout_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_logout_dialog, accounts[0].name), getString(R.string.yes_logout), true, LOGOUT_CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_logout_dialog, accounts[0].name), positiveButtonText = getString(R.string.yes_logout), requestKey = LOGOUT_CONFIRM_DIALOG)
                     .show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
@@ -340,7 +340,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
             getString(R.string.transfer_pref_key) -> {
                 if (ContentResolver.isSyncActive(accounts[0], getString(R.string.sync_authority))) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), null, false)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.is_syncing_message), cancelable = false)
                         .show(parentFragmentManager, CONFIRM_DIALOG)
                 }
                 else
@@ -371,7 +371,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
                     if (shouldShowRequestPermissionRationale(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) android.Manifest.permission.READ_MEDIA_IMAGES else android.Manifest.permission.READ_EXTERNAL_STORAGE)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) {
-                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), getString(R.string.proceed_request), true, SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                            ConfirmDialogFragment.newInstance(getString(R.string.storage_access_permission_rationale), positiveButtonText = getString(R.string.proceed_request), requestKey = SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                     } else {
                         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
@@ -382,7 +382,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.clear_cache_pref_key) -> {
-                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_clear_cache), null, true, CLEAR_CACHE_CONFIRM_DIALOG)
+                if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_clear_cache), requestKey = CLEAR_CACHE_CONFIRM_DIALOG)
                     .show(parentFragmentManager, CONFIRM_DIALOG)
                 true
             }
@@ -469,7 +469,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
             // Prompt user to install Snapseed
             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), getString(android.R.string.ok), true, INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), requestKey = INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
         }
     }
 

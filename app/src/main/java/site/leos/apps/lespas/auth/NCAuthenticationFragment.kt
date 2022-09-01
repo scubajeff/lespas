@@ -255,7 +255,7 @@ class NCAuthenticationFragment: Fragment() {
                     R.id.option_menu_qr_scanner -> {
                         try { scanRequestLauncher?.launch(scanIntent) }
                         catch (e: SecurityException) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app), null, true, "").show(parentFragmentManager, CONFIRM_DIALOG)
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.should_allow_launching_other_app)).show(parentFragmentManager, CONFIRM_DIALOG)
                         }
                         true
                     }
@@ -293,7 +293,7 @@ class NCAuthenticationFragment: Fragment() {
             if (username != currentUsername) {
                 // Re-login to a new account
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
-                    ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), getString(R.string.yes_logout), true, CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                    ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), positiveButtonText = getString(R.string.yes_logout), requestKey = CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
             } else {
                 saveCredential()
                 parentFragmentManager.popBackStack()

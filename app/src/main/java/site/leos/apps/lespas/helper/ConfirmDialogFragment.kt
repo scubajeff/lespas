@@ -51,6 +51,7 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
             isCancelable.let {
                 if (it) {
+                    text = requireArguments().getString(NEGATIVE_BUTTON) ?: getString(android.R.string.cancel)
                     setOnClickListener(buttonClickListener)
                 }
                 else {
@@ -63,18 +64,18 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
 
     companion object {
         const val CONFIRM_DIALOG_REQUEST_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
-
+        const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
         private const val MESSAGE = "MESSAGE"
         private const val POSITIVE_BUTTON = "POSITIVE_BUTTON"
+        private const val NEGATIVE_BUTTON = "NEGATIVE_BUTTON"
         private const val CANCELABLE = "CANCELABLE"
-        const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
 
         @JvmStatic
-        @JvmOverloads
-        fun newInstance(message: String, positiveButtonText: String?, cancelable: Boolean = true, requestKey: String = "") = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String? = null, negativeButtonText: String? = null, cancelable: Boolean = true, requestKey: String = "") = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
                 putString(POSITIVE_BUTTON, positiveButtonText)
+                putString(NEGATIVE_BUTTON, negativeButtonText)
                 putBoolean(CANCELABLE, cancelable)
                 putString(INDIVIDUAL_REQUEST_KEY, requestKey)
             }

@@ -63,7 +63,7 @@ class PublicationListFragment: Fragment() {
             { share ->
                 shareSelected = share
                 if ((requireContext().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), getString(R.string.yes_i_do)).show(parentFragmentManager, CONFIRM_DIALOG)
+                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.confirm_download_publication), positiveButtonText = getString(R.string.yes_i_do)).show(parentFragmentManager, CONFIRM_DIALOG)
                 } else viewDetail()
             },
             { share: NCShareViewModel.ShareWithMe, view: AppCompatImageView ->
