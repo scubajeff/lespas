@@ -43,7 +43,7 @@
     <string name="auto_rotate_title">依照長寬比旋轉顯示照片</string>
     <string name="sync_header">同步</string>
     <string name="background_sync_title">定時同步</string>
-    <string name="wifionly_title">只使用WiFi網路同步</string>
+    <string name="wifionly_title">只使用WiFi網路進行同步和備份</string>
     <string name="wifionly_summary_on">已開啟。應用將不消耗行動網路流量。</string>
     <string name="wifionly_summary_off">已關閉。應用將消耗行動網路流量。如果照片數量多，請謹慎選擇使用。</string>
     <string name="account_header">帳戶</string>
@@ -101,7 +101,7 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修圖 - 替換</string>
     <string name="item_camera_roll">相機相冊</string>
     <string name="cameraroll_backup_title">備份本地相機相冊</string>
-    <string name="cameraroll_backup_summary">新拍攝的照片和影片將被自動備份到伺服器的DCIM/%1$s目錄下。</string>
+    <string name="cameraroll_backup_summary">新拍攝的照片和影片將被自動備份到伺服器的DCIM/%s目錄下。</string>
     <string name="empty_camera_roll">相機相冊空空如也。</string>
     <string name="gallery_launcher_title">「相冊」啟動圖標</string>
     <string name="gallery_app_name">相機相冊</string>
@@ -200,8 +200,6 @@
     <string name="item_bgm">背景音樂</string>
     <string name="option_menu_mute">切換靜音</string>
     <string name="skip_late_night_update">不在深夜刷新</string>
-    <string name="backup_done">相機相冊備份已完成。</string>
-    <string name="backup_waiting">相機相冊中還有%1$,d個檔案等待備份，正在上傳%2$s</string>
     <string name="not_hiding">隱藏相冊表里已有以下相冊：%1$s</string>
     <string name="default_sort_order_title">新建相冊相片排序規則</string>
     <string name="msg_set_as_remote">相冊設置為「遠端相冊」後，該相冊的媒體檔案將從本機存儲中消去，繼續操作嗎？</string>
@@ -245,4 +243,6 @@
     <string name="should_allow_launching_other_app">請設定允許Les Pas關聯啟動。</string>
     <string name="msg_low_storage_space">內部存儲空間剩余不足10%，Les Pas將無法與伺服器同步。</string>
     <string name="msg_login_first">請先登入伺服器。</string>
+    <string name="cameraroll_backup_remaining">還有%d個</string>
+    <string name="cameraroll_backup_last_time">最近一次備份在%s完成。</string>
 </resources>

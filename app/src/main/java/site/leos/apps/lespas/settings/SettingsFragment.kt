@@ -28,7 +28,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
-import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -90,7 +89,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
-    private var syncPreference: Preference? = null
+    private var syncPreference: SwitchPreferenceCompat? = null
     private val actionModel: ActionViewModel by activityViewModels()
 
     private var actionBarHeight = 0
@@ -137,12 +136,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
             if (isGranted) {
                 // Check and disable periodic sync setting if user enable camera roll backup
-                findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                syncPreference?.let {
                     it.isChecked = true
                     it.isEnabled = false
                 }
                 // Note down the current timestamp, photos taken later on will be backup
-                PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext).let { sp ->
+                preferenceManager.sharedPreferences.let { sp ->
                     if (sp.getLong(LAST_BACKUP, 0L) == 0L) sp.edit().apply {
                         putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
                         apply()
@@ -202,12 +201,14 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
         }
 
-        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.apply {
+        findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.run {
+            summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel())
             // Make sure SYNC preference acts accordingly
-            if (isChecked) findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
-                it.isChecked = true
-                showBackupSummary()
-                it.isEnabled = false
+            if (isChecked) {
+                syncPreference?.let {
+                    it.isChecked = true
+                    it.isEnabled = false
+                }
             }
         }
 
@@ -232,6 +233,13 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
+
+        findPreference<BackupStatusPreference>(getString(R.string.cameraroll_backup_status_pref_key))?.run {
+/*
+            backupStatusProgressBar = (view as ViewGroup).findViewById(R.id.camera_backup_progress)
+            currentFile = view.findViewById(R.id.current_file)
+*/
+        }
 
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
@@ -413,25 +421,24 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     // Preference check state is about to be toggled, but not toggled yet
                     if ((preference as SwitchPreferenceCompat).isChecked) {
                         // Check and disable periodic sync setting if user enable camera roll backup
-                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                        syncPreference?.let {
                             it.isChecked = true
                             it.isEnabled = false
                         }
-                        // Note down the current timestamp, photos taken later on will be backup
-                        with(PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)) {
+                        with(preferenceManager.sharedPreferences) {
                             if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
+                                // If this is the first time being enable, note down the current timestamp, photos taken later on will be backup
                                 putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
                                 apply()
                             }
                         }
                     } else {
-                        findPreference<SwitchPreferenceCompat>(getString(R.string.sync_pref_key))?.let {
+                        syncPreference?.let {
                             it.isChecked = false
                             it.isEnabled = true
                         }
                     }
                     toggleAutoSync(!(preference.isChecked))
-                    showBackupSummary()
                 }
                 true
             }
@@ -458,7 +465,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     AppCompatDelegate.setDefaultNightMode(newValue.toInt())
                 }
             }
-            LAST_BACKUP -> showBackupSummary()
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
             getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
             else -> {}
@@ -466,7 +472,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     }
 
     private fun installSnapseedIfNeeded() {
-        if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
+        if (preferenceManager.sharedPreferences.getBoolean(getString(R.string.snapseed_pref_key), false) && isSnapseedNotInstalled) {
             // Prompt user to install Snapseed
             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
                 ConfirmDialogFragment.newInstance(getString(R.string.install_snapseed_dialog_msg), requestKey = INSTALL_SNAPSEED_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -535,28 +541,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             //(if (sp.getBoolean(KEY_STORAGE_LOCATION, true)) requireContext().getExternalFilesDirs(null)[1] else requireContext().filesDir).freeSpace > totalSize
         } catch (e: Exception) { false }
 
-    private fun showBackupSummary() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            val sp = PreferenceManager.getDefaultSharedPreferences(requireContext().applicationContext)
-            var items = 0
-            @Suppress("DEPRECATION")
-            val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-            requireContext().contentResolver.query(
-                MediaStore.Files.getContentUri("external"),
-                null,
-                "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                        "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(LAST_BACKUP, System.currentTimeMillis() / 1000)})",
-                null,
-                null
-            )?.use { items = it.count }
-
-            withContext(Dispatchers.Main) {
-                findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.summaryOn = getString(R.string.cameraroll_backup_summary, Tools.getDeviceModel()) + "\n" +
-                    if (items > 0) String.format(getString(R.string.backup_waiting), items, sp.getString(CURRENT_WORKING_ON, "")) else getString(R.string.backup_done)
-            }
-        }
-    }
-
     class TransferStorageDialog: LesPasDialogFragment(R.layout.fragment_transfer_storage_dialog) {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
@@ -613,7 +597,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
-        const val CURRENT_WORKING_ON = "CURRENT_WORKING_ON"
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"

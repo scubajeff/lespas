@@ -141,12 +141,10 @@
 
     <string name="sync_header">Sincronizzazione</string>
     <string name="cameraroll_backup_title">Backup del rullino foto</string>
-    <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \"DCIM/%1$s\".</string>
-    <string name="backup_done">Tutti gli elementi del rullino foto sono stati copiati.</string>
-    <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d, caricamento %2$s ora.</string>
+    <string name="cameraroll_backup_summary">Trovare il backup sul server nella cartella \"DCIM/%s\".</string>
     <string name="background_sync_title">Sincronizza periodicamente</string>
     <string name="background_sync_summary">Controlla modifiche al server ogni 6 ore</string>
-    <string name="wifionly_title">Sincronizza solo tramite Wi-Fi</string>
+    <string name="wifionly_title">Sincronizza e backup solo tramite WiFi</string>
     <string name="wifionly_summary_on">Non utilizza dati mobili.</string>
     <string name="wifionly_summary_off">Utilizza dati mobili – fai attenzione se hai una grande quantità di foto.</string>
 
@@ -310,4 +308,6 @@
     <string name="should_allow_launching_other_app">Consentire l\'avvio di Les Pas ad altre applicazioni nelle impostazioni di sicurezza.</string>
     <string name="msg_low_storage_space">Lo spazio di archiviazione interno è inferiore al 10%, il che impedisce a Les Pas di sincronizzarsi con il server.</string>
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>
+    <string name="cameraroll_backup_remaining">% rimasti</string>
+    <string name="cameraroll_backup_last_time">L\'ultimo backup è terminato %s.</string>
 </resources>

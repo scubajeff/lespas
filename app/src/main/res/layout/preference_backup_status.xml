@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="76dp"
+    android:paddingEnd="28dp">
+
+    <ProgressBar
+        android:id="@+id/camera_backup_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        android:paddingTop="@dimen/small_padding"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:visibility="gone"/>
+    <TextView
+        android:id="@+id/current_file"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/camera_backup_progress"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/remaining"
+        android:layout_marginBottom="@dimen/small_padding"
+        android:layout_marginHorizontal="@dimen/tiny_padding"
+        android:lines="1"
+        android:ellipsize="middle"
+        tools:text="DSC_0801-01.jpg (4.5M)" />
+    <TextView
+        android:id="@+id/remaining"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/camera_backup_progress"
+        app:layout_constraintLeft_toRightOf="@id/current_file"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginBottom="@dimen/small_padding"
+        android:layout_marginHorizontal="@dimen/tiny_padding"
+        android:lines="1"
+        android:ellipsize="middle"
+        android:visibility="gone"
+        tools:text="1 left" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

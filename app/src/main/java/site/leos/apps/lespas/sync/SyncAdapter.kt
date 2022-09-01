@@ -1101,7 +1101,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 MediaStore.Files.FileColumns.HEIGHT,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, 0L)})"
+                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, System.currentTimeMillis() / 1000)})"
 
             cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
             )?.use { cursor->
@@ -1118,6 +1118,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 var relativePath: String
                 var fileName: String
+                var size: Long
                 var mimeType: String
                 var id: Long
                 var photoUri: Uri
@@ -1138,9 +1139,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (e: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
+                    size = cursor.getLong(sizeColumn)
                     // Save current uploading filename for displaying in Setting menu backup menu summary
                     sp.edit().apply {
-                        putString(SettingsFragment.CURRENT_WORKING_ON, fileName)
+                        putString(application.getString(R.string.cameraroll_backup_status_pref_key), String.format("%s (%s)", fileName, Tools.humanReadableByteCountSI(size)))
                         commit()
                     }
 
@@ -1151,7 +1153,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, cursor.getLong(sizeColumn), application)
+                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, size, application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             when (e.statusCode) {
@@ -1237,6 +1239,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 mediaMetadataRetriever.release()
+
+                // Signaling Backup Status preference
+                sp.edit().apply {
+                    putString(application.getString(R.string.cameraroll_backup_status_pref_key), "")
+                    commit()
+                }
             }
         }
     }

@@ -124,6 +124,11 @@
             app:singleLineTitle="false"
             app:defaultValue="false" />
 
+        <site.leos.apps.lespas.settings.BackupStatusPreference
+            app:key="@string/cameraroll_backup_status_pref_key"
+            app:dependency="@string/cameraroll_backup_pref_key"
+            app:selectable="false" />
+
         <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
             app:title="@string/background_sync_title"
@@ -195,8 +200,9 @@
     </PreferenceCategory>
 
     <PreferenceCategory>
-        <site.leos.apps.lespas.settings.AboutPreference
+        <Preference
             app:allowDividerBelow="false"
-            app:selectable="false"/>
+            app:selectable="false"
+            app:layout="@layout/preference_about" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -180,14 +180,15 @@
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
-    <string name="cameraroll_backup_summary">New photos and videos will be backed up automatically to the server under the folder \'DCIM/%1$s\'.</string>
-    <string name="backup_done">All items in camera roll have been backup.</string>
-    <string name="backup_waiting">%1$,d items in camera roll waiting for backup, uploading %2$s now.</string>
+    <string name="cameraroll_backup_summary">Find your backup on server in the folder \'DCIM/%s\'.</string>
+    <string name="cameraroll_backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
+    <string name="cameraroll_backup_last_time">Last backup finished %s.</string>
+    <string name="cameraroll_backup_remaining">%d left</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Check for server changes every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
-    <string name="wifionly_title">Sync only on WiFi</string>
+    <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
     <string name="sync_summary_finished">All albums synced.</string>

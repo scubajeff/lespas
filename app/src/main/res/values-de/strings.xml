@@ -115,10 +115,10 @@
     
     <string name="sync_header">Synchronisierung</string>
     <string name="cameraroll_backup_title">Filmrolle synchronsisieren</string>
-    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner \'DCIM/%1$s\' gesichert.</string>
+    <string name="cameraroll_backup_summary">Suchen Sie Ihre Sicherung auf dem Server im Ordner \'DCIM/%s\'.</string>
     <string name="background_sync_title">Regelmäßig synchronisieren</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
-    <string name="wifionly_title">Nur über WLAN synchronisieren</string>
+    <string name="wifionly_title">Synchronisierung und Sicherung nur über WiFi</string>
     <string name="wifionly_summary_on">Nur WLAN nutzen, verbraucht keine mobilen Daten.</string>
     <string name="wifionly_summary_off">Auch Mobile Daten nutzen - Vorsicht, falls Sie eine große Fotosammlung haben.</string>
 
@@ -252,8 +252,6 @@
     <string name="item_bgm">BGM verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
     <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
-    <string name="backup_done">Alle Elemente in der Kamerarolle wurden gesichert.</string>
-    <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung， lade jetzt %2$s hoch.</string>
     <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
     <string name="default_sort_order_title">Standardsortierung von Fotos für neue Alben</string>
     <string name="msg_set_as_remote">Wenn Sie das Album als \"Remote\" einstellen, werden alle Mediendateien von diesem Gerät entfernt. Fortfahren?</string>
@@ -297,4 +295,6 @@
     <string name="should_allow_launching_other_app">Bitte erlauben Sie Les Pas das Starten anderer Anwendungen in Ihren Sicherheitseinstellungen.</string>
     <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
+    <string name="cameraroll_backup_remaining">%d übrig</string>
+    <string name="cameraroll_backup_last_time">Die letzte Sicherung wurde %s beendet.</string>
 </resources>

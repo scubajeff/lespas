@@ -134,12 +134,10 @@
 
     <string name="sync_header">Sincronização</string>
     <string name="cameraroll_backup_title">Backup da pasta de Câmera</string>
-    <string name="cameraroll_backup_summary">Novas fotos e vídeos serão copiados automaticamente para o servidor na pasta \'DCIM/%1$s\'.</string>
-    <string name="backup_done">Todos os ítens da câmera já foram copiados.</string>
-    <string name="backup_waiting">%1$,d ítens na câmera aguardando backup, carregando %2$s agora.</string>
+    <string name="cameraroll_backup_summary">Encontre seu backup no servidor na pasta \"DCIM/%s\".</string>
     <string name="background_sync_title">Sincronizar periodicamente</string>
     <string name="background_sync_summary">Verificar mudanças no servidor a cada 6 horas</string>
-    <string name="wifionly_title">Sincronizar somente no WiFi</string>
+    <string name="wifionly_title">Sincronizar e fazer backup somente em WiFi</string>
     <string name="wifionly_summary_on">Sim, evitar consumo de dados móveis.</string>
     <string name="wifionly_summary_off">Não, usar os dados móveis - tome cuidado se a sua coleção for grande.</string>
 
@@ -307,4 +305,6 @@
     <string name="should_allow_launching_other_app">Por favor, permita que o Les Pas lance outros aplicativos em suas configurações de segurança.</string>
     <string name="msg_low_storage_space">Seu espaço interno de armazenamento é menos de 10% livre, isto impedirá a Les Pas de sincronizar-se com o servidor.</string>
     <string name="msg_login_first">Por favor, faça primeiro o login em seu servidor.</string>
+    <string name="cameraroll_backup_remaining">%d restante</string>
+    <string name="cameraroll_backup_last_time">O último backup terminou %s.</string>
 </resources>
