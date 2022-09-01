@@ -270,12 +270,13 @@ object Tools {
         return Pair(videoDate, latLong)
     }
 
-    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
+    @SuppressLint("RestrictedApi")
+    fun getImageTakenDate(exif: ExifInterface, applyTZOffset: Boolean = false): LocalDateTime? =
         try {
             exif.dateTimeOriginal?.let {
-                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL) ?: "Z"))
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.systemDefault() else ZoneId.systemDefault())
             } ?: run {
-                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED) ?: "Z")) }
+                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.systemDefault() else ZoneId.systemDefault()) }
             }
         } catch (e: Exception) { null }
 
