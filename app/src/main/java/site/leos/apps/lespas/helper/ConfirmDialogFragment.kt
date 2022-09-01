@@ -24,6 +24,16 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 
 class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dialog) {
+    private val buttonClickListener: View.OnClickListener = View.OnClickListener { v ->
+        v?.id.let { viewId ->
+            val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
+            parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
+                putBoolean(CONFIRM_DIALOG_REQUEST_KEY, viewId == R.id.ok_button)
+                putString(INDIVIDUAL_REQUEST_KEY, requestKey)
+            })
+            dismiss()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,25 +45,13 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
 
         view.findViewById<TextView>(R.id.message_textview).text = requireArguments().getString(MESSAGE)
         view.findViewById<MaterialButton>(R.id.ok_button).apply {
-            text = requireArguments().getString(OK_TEXT) ?: getString(android.R.string.ok)
-            setOnClickListener {
-                val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
-                parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
-                    putBoolean(CONFIRM_DIALOG_REQUEST_KEY, true)
-                    putString(INDIVIDUAL_REQUEST_KEY, requestKey)
-                })
-                dismiss()
-            }
+            text = requireArguments().getString(POSITIVE_BUTTON) ?: getString(android.R.string.ok)
+            setOnClickListener(buttonClickListener)
         }
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
             isCancelable.let {
-                if (it) setOnClickListener {
-                    val requestKey = requireArguments().getString(INDIVIDUAL_REQUEST_KEY) ?: ""
-                    parentFragmentManager.setFragmentResult(if (requestKey == MainActivity.CONFIRM_REQUIRE_SD_DIALOG || requestKey == MainActivity.CONFIRM_RESTART_DIALOG) MainActivity.ACTIVITY_DIALOG_REQUEST_KEY else CONFIRM_DIALOG_REQUEST_KEY, Bundle().apply {
-                        putBoolean(CONFIRM_DIALOG_REQUEST_KEY, false)
-                        putString(INDIVIDUAL_REQUEST_KEY, requestKey)
-                    })
-                    dismiss()
+                if (it) {
+                    setOnClickListener(buttonClickListener)
                 }
                 else {
                     isEnabled = false
@@ -67,16 +65,16 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
         const val CONFIRM_DIALOG_REQUEST_KEY = "CONFIRM_DIALOG_REQUEST_KEY"
 
         private const val MESSAGE = "MESSAGE"
-        private const val OK_TEXT = "OK_TEXT"
+        private const val POSITIVE_BUTTON = "POSITIVE_BUTTON"
         private const val CANCELABLE = "CANCELABLE"
         const val INDIVIDUAL_REQUEST_KEY = "INDIVIDUAL_REQUEST_KEY"
 
         @JvmStatic
         @JvmOverloads
-        fun newInstance(message: String, okButtonText: String?, cancelable: Boolean = true, requestKey: String = "") = ConfirmDialogFragment().apply {
+        fun newInstance(message: String, positiveButtonText: String?, cancelable: Boolean = true, requestKey: String = "") = ConfirmDialogFragment().apply {
             arguments = Bundle().apply {
                 putString(MESSAGE, message)
-                putString(OK_TEXT, okButtonText)
+                putString(POSITIVE_BUTTON, positiveButtonText)
                 putBoolean(CANCELABLE, cancelable)
                 putString(INDIVIDUAL_REQUEST_KEY, requestKey)
             }
