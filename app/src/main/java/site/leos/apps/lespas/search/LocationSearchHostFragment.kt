@@ -50,6 +50,7 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionRepository
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.*
 
@@ -191,7 +192,7 @@ class LocationSearchHostFragment: Fragment() {
                                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + exif.rotationDegrees + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + exif.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +
-                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: (photo.dateTaken.toInstant(ZoneOffset.UTC).toEpochMilli())) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
+                                                    "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + (exif.dateTimeOriginal ?: exif.dateTimeDigitized ?: try { (photo.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) } catch (e: Exception) { System.currentTimeMillis() }) + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>",
                                             photo.name, System.currentTimeMillis(), 1)
                                         )
 

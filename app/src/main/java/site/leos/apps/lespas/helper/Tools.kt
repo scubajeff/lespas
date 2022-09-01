@@ -298,6 +298,7 @@ object Tools {
 
     fun epochToLocalDateTime(epoch: Long): LocalDateTime =
         try {
+            // Always display time in current timezone
             if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
         } catch (e: DateTimeException) { LocalDateTime.now() }
 

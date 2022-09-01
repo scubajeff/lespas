@@ -1216,7 +1216,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try {
                         webDav.patch(
                             "${dcimRoot}/${relativePath}/${fileName}",
-                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +
+                            "<oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" + mDate + "</oc:${OkHttpWebDav.LESPAS_DATE_TAKEN}>" +      // timestamp from Android MediaStore is in UTC timezone
                                     "<oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" + cursor.getInt(orientationColumn) + "</oc:${OkHttpWebDav.LESPAS_ORIENTATION}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_WIDTH}>" + cursor.getInt(widthColumn) + "</oc:${OkHttpWebDav.LESPAS_WIDTH}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_HEIGHT}>" + cursor.getInt(heightColumn) + "</oc:${OkHttpWebDav.LESPAS_HEIGHT}>" +

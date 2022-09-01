@@ -22,6 +22,13 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 class Converter {
+    // Using LocalDateTime in database is a BAD BAD idea base on a wrong interpretation of "without a time-zone"
+    // In order to copy timestamp correctly, must make sure using the same ZoneId when converting from source then to target
+    // Cases of copying timestamp
+    //      from EXIF to database when acquiring media
+    //      from database to writing content meta json file
+    //      from database to patching server's WebDAV property
+    //      from Android MediaStore column to Photo POJO
     @TypeConverter
     fun fromLong(value: Long): LocalDateTime {
         return try {
@@ -31,6 +38,7 @@ class Converter {
 
     @TypeConverter
     fun toLong(date: LocalDateTime): Long {
+        //
         return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 }

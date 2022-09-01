@@ -1549,7 +1549,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private var selectedMark: Drawable? = null
         private var flashPhotoId = ""
         private var flashDateId = LocalDate.MIN
-        private val defaultOffset = OffsetDateTime.now().offset     //ZoneId.ofOffset("UTC", ZoneOffset.UTC)
+        private val defaultOffset = OffsetDateTime.now().offset
 
         inner class MediaViewHolder(itemView: View): ViewHolder(itemView) {
             private var currentId = ""
