@@ -270,8 +270,7 @@ object Tools {
         return Pair(videoDate, latLong)
     }
 
-    @SuppressLint("RestrictedApi")
-    fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
+    private fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
         try {
             exif.dateTimeOriginal?.let {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.of(exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL) ?: "Z"))
@@ -296,9 +295,9 @@ object Tools {
         } catch (e: Exception) { null }
     }
 
-    fun epochToLocalDateTime(epoch: Long, zoneId: ZoneId = ZoneId.systemDefault()): LocalDateTime =
+    fun epochToLocalDateTime(epoch: Long): LocalDateTime =
         try {
-            if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(zoneId).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(zoneId).toLocalDateTime()
+            if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
         } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
