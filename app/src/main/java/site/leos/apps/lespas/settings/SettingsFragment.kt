@@ -206,8 +206,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
         }
 
-        findPreference<Preference>(getString(R.string.sync_status_pref_key))?.isEnabled = syncPreference?.isChecked ?: false
-
         findPreference<Preference>(getString(R.string.cache_size_pref_key))?.run {
             summary = getString(R.string.cache_size_summary, sharedPreferences.getInt(CACHE_SIZE, 800))
         }
@@ -453,7 +451,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             }
             CACHE_SIZE -> sharedPreferences?.let { findPreference<Preference>(getString(R.string.cache_size_pref_key))?.summary = getString(R.string.cache_size_summary, it.getInt(CACHE_SIZE, 800))}
             getString(R.string.wifionly_pref_key) -> syncWhenClosing = true
-            getString(R.string.sync_pref_key) -> findPreference<Preference>(getString(R.string.sync_status_pref_key))?.isEnabled = syncPreference?.isChecked ?: false
             else -> {}
         }
     }
