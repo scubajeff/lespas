@@ -31,30 +31,30 @@
         android:paddingBottom="@dimen/small_padding">
 
         <TextView
-            android:id="@+id/current_action"
+            android:id="@+id/current_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
             android:ellipsize="middle"
-            android:lines="3"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-            tools:text="@string/sync_status_result_finished" />
+            tools:text="@string/sync_status_stage_sync_local" />
 
         <TextView
-            android:id="@+id/guideline"
+            android:id="@+id/current_local_action"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            android:lines="1"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-            android:text=""
-            android:visibility="invisible" />
+            app:layout_constraintTop_toBottomOf="@id/current_status"
+            android:layout_marginStart="@dimen/small_padding"
+            android:lines="3"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+            android:visibility="gone"
+            tools:text="@string/sync_status_action_patch_property"/>
 
         <TextView
             android:id="@+id/current_file"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/guideline"
+            app:layout_constraintTop_toBottomOf="@id/current_status"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/remaining"
             android:layout_marginTop="@dimen/small_padding"
@@ -87,12 +87,22 @@
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:visibility="gone"/>
 
+        <TextView
+            android:id="@+id/guideline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            android:lines="3"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+            android:text=""
+            android:visibility="invisible" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/resync_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/guideline"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/current_action"
             android:layout_marginTop="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
             android:textColor="?attr/colorButtonText"
@@ -102,7 +112,7 @@
             android:id="@+id/help_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/current_action"
+            app:layout_constraintTop_toBottomOf="@id/guideline"
             app:layout_constraintRight_toLeftOf="@id/resync_button"
             android:layout_marginTop="@dimen/big_padding"
             style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"

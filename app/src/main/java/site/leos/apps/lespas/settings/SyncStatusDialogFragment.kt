@@ -42,9 +42,11 @@ import java.util.*
 class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_status_dialog), SharedPreferences.OnSharedPreferenceChangeListener {
     private lateinit var sp: SharedPreferences
     private lateinit var keySyncStatus: String
+    private lateinit var keySyncStatusLocalAction: String
     private lateinit var keyBackupStatus: String
 
-    private lateinit var currentActionTextView: TextView
+    private lateinit var currentStageTextView: TextView
+    private lateinit var currentLocalActionTextView: TextView
     private lateinit var currentFileTextView: TextView
     private lateinit var remainingTextView: TextView
     private lateinit var backupProgressBar: ProgressBar
@@ -61,10 +63,14 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
         super.onViewCreated(view, savedInstanceState)
 
         keySyncStatus = getString(R.string.sync_status_pref_key)
+        keySyncStatusLocalAction = getString(R.string.sync_status_local_action_pref_key)
         keyBackupStatus = getString(R.string.cameraroll_backup_status_pref_key)
 
-        currentActionTextView = view.findViewById(R.id.current_action)
-        currentActionTextView.doOnPreDraw { currentActionTextView.text = getCurrentActionSummary() }
+        currentStageTextView = view.findViewById(R.id.current_status)
+        currentStageTextView.doOnPreDraw { currentStageTextView.text = getCurrentStage() }
+
+        currentLocalActionTextView = view.findViewById(R.id.current_local_action)
+        currentLocalActionTextView.doOnPreDraw { currentLocalActionTextView.text = getCurrentActionSummary() }
 
         backupProgressBar = view.findViewById(R.id.camera_backup_progress)
         currentFileTextView = view.findViewById(R.id.current_file)
@@ -122,7 +128,8 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         when(key) {
-            keySyncStatus -> currentActionTextView.text = getCurrentActionSummary()
+            keySyncStatus -> currentStageTextView.text = getCurrentStage()
+            keySyncStatusLocalAction -> currentLocalActionTextView.text = getCurrentActionSummary()
             keyBackupStatus -> if (pendingBackupList.size > 0) {
                 sp.getString(keyBackupStatus, "")?.let { fileName ->
                     backupProgressBar.setProgress(pendingBackupList.indexOf(fileName.substringBeforeLast(" (")).let { index ->
@@ -161,15 +168,10 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
 
     private fun getCurrentActionSummary(): String {
         return try {
-            sp.getString(keySyncStatus, "")?.split("``")?.let { action ->
-                // action is String array of: actionId|folderId|folderName|fileId|fileName|date
+            sp.getString(keySyncStatusLocalAction, "")?.split("``")?.let { action ->
+                // action is String array of: actionId``folderId``folderName``fileId``fileName``date
                 if (action.isNotEmpty()) {
-                    val actionId = action[0].toInt()
-
-                    // Disable re-sync when syncing
-                    reSyncButton.isEnabled = actionId >= Action.SYNC_RESULT_FINISHED
-
-                    when(actionId) {
+                    when(action[0].toInt()) {
                         // Various actions
                         Action.ACTION_DELETE_FILES_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_media), action[4], action[2])
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_album), action[2])
@@ -197,18 +199,38 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                                 if (action[1].substringBefore('/') == "DCIM") getString(R.string.item_camera_roll) else action[1].substringAfterLast('/'),
                                 action[2].substringAfterLast('/')
                             )
-                        Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4])
+                        Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))
                         Action.ACTION_PATCH_PROPERTIES -> String.format(getString(R.string.sync_status_action_patch_property), action[4])
+                        else -> ""
+                    }
+                } else ""
+            } ?: ""
+        } catch (_: Exception) { "" }
+    }
 
+    private fun getCurrentStage(): String {
+        return try {
+            sp.getString(keySyncStatus, "")?.split("``")?.let { action ->
+                // stage is String array of: actionId``timestamp
+                if (action.isNotEmpty()) {
+                    val stageId = action[0].toInt()
+
+                    // Disable re-sync when syncing
+                    reSyncButton.isEnabled = stageId >= Action.SYNC_RESULT_FINISHED
+                    // Hide local action status when in other stages
+                    currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_RESULT_ERROR_GENERAL
+
+                    when(stageId) {
                         // Various stages
                         Action.SYNC_STAGE_STARTED -> getString(R.string.sync_status_stage_started)
+                        Action.SYNC_STAGE_LOCAL -> getString(R.string.sync_status_stage_sync_local)
                         Action.SYNC_STAGE_REMOTE -> getString(R.string.sync_status_stage_sync_remote)
                         Action.SYNC_STAGE_BACKUP -> getString(R.string.sync_status_stage_backup)
 
                         // Various results
-                        Action.SYNC_RESULT_FINISHED -> String.format(getString(R.string.sync_status_result_finished), getLastDateString(action[5].toLong()))
-                        Action.SYNC_RESULT_NO_WIFI -> String.format(getString(R.string.sync_status_result_no_wifi), getLastDateString(action[5].toLong()))
-                        Action.SYNC_RESULT_ERROR_GENERAL -> String.format(getString(R.string.sync_status_result_general_error), getLastDateString(action[5].toLong()))
+                        Action.SYNC_RESULT_FINISHED -> String.format(getString(R.string.sync_status_result_finished), getLastDateString(action[1].toLong()))
+                        Action.SYNC_RESULT_NO_WIFI -> String.format(getString(R.string.sync_status_result_no_wifi), getLastDateString(action[1].toLong()))
+                        Action.SYNC_RESULT_ERROR_GENERAL -> String.format(getString(R.string.sync_status_result_general_error), getLastDateString(action[1].toLong()))
 
                         else -> ""
                     }

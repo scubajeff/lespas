@@ -323,4 +323,5 @@
     <string name="sync_status_stage_backup">Rückfahrkamera...</string>
     <string name="sync_status_title">Status der Synchronisierung</string>
     <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen %s!</string>
+    <string name="sync_status_stage_sync_local">Synchronisierung lokaler Änderungen...</string>
 </resources>

@@ -262,7 +262,7 @@
     <string name="sync_status_action_move">正在将%1$s从相册《%2$s》移动到《%3$s》。</string>
     <string name="sync_status_action_delete_media_from_backup">正在删除相机备份中的%s。</string>
     <string name="sync_status_action_patch_property">正在更新相机备份中%s的WebDAV属性数据。</string>
-    <string name="sync_status_stage_sync_remote">正在同步服务器上的更新。</string>
+    <string name="sync_status_stage_sync_remote">正在同步远程更新……</string>
     <string name="sync_status_result_finished">最近一次同步在%s完成。</string>
     <string name="sync_status_result_no_wifi">因为没有可用WiFi，最近一次同步在%s停止了。</string>
     <string name="sync_status_stage_started">正在启动同步……</string>
@@ -271,4 +271,5 @@
     <string name="sync_status_stage_backup">正在备份相机相册……</string>
     <string name="sync_status_title">同步状态</string>
     <string name="sync_status_result_general_error">%s的最后一次同步出错！</string>
+    <string name="sync_status_stage_sync_local">正在同步本地更新……</string>
 </resources>

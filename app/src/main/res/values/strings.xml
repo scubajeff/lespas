@@ -183,9 +183,9 @@
     <string name="cameraroll_backup_summary">Find your backup on server in the folder \'DCIM/%s\'.</string>
     <string name="cameraroll_backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
     <string name="cameraroll_backup_last_time">Last backup finished %s.</string>
-    <string name="cameraroll_backup_remaining">%d left</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
+    <string name="sync_status_local_action_pref_key" translatable="false">SYNC_CURRENT_ACTION</string>
     <string name="sync_status_title">Synchronization status</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Synchronize every 6 hours</string>
@@ -218,6 +218,40 @@
     <string name="need_access_media_location_permission">, Les Pas needs Access Media Location permission.</string>
     <string name="proceed_request">Proceed</string>
     <string name="install_snapseed_dialog_msg">Install Snapseed now?</string>
+
+    <!-- Sync Status Dialog Fragment -->
+    <string name="button_text_resync">Re-Sync</string>
+    <string name="button_text_help">Help!</string>
+    <string name="cameraroll_backup_remaining">%d left</string>
+
+    <string name="sync_status_action_delete_media">Removing %1$s in album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Removing album \'%s\'.</string>
+    <string name="sync_status_action_add_media">Adding %1$s to album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Adding album \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Renaming album \'%1$s\ to \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Hiding album \'%s\'.</string>
+    <string name="sync_status_action_unhide_album">Un-hiding album \'%s\'.</string>
+    <string name="sync_status_action_update_file">Updating %1$s in album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Updating cover of album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Adding %1$s to joint album \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Updating meta data of joint album \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Updating meta data of album \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Updating content meta data of album \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Updating BGM of album \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">Removing BGM of album \'%s\'.</string>
+    <string name="sync_status_action_copy">Copying %1$s from album \'%2$s\' to \'%3$s\'.</string>
+    <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Removing %s from camera archive.</string>
+    <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
+
+    <string name="sync_status_result_finished">Last synchronization finished %s.</string>
+    <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
+    <string name="sync_status_result_general_error">Last synchronization failed %s!</string>
+
+    <string name="sync_status_stage_started">Starting synchronization…</string>
+    <string name="sync_status_stage_sync_local">Synchronizing local changes…</string>
+    <string name="sync_status_stage_sync_remote">Synchronizing remote changes…</string>
+    <string name="sync_status_stage_backup">Backing up camera roll…</string>
 
     <!-- Destination DialogFragment -->
     <string name="copy_files">Copy</string>
@@ -336,39 +370,6 @@
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
     <string name="option_menu_mute">Toggle mute</string>
-
-    <!-- Sync Status Preference -->
-    <string name="sync_status_action_delete_media">Removing %1$s in album \'%2$s\'.</string>
-    <string name="sync_status_action_delete_album">Removing album \'%s\'.</string>
-    <string name="sync_status_action_add_media">Adding %1$s to album \'%2$s\'.</string>
-    <string name="sync_status_action_add_album">Adding album \'%s\'.</string>
-    <string name="sync_status_action_rename_album">Renaming album \'%1$s\ to \'%2$s\'.</string>
-    <string name="sync_status_action_hide_album">Hiding album \'%s\'.</string>
-    <string name="sync_status_action_unhide_album">Un-hiding album \'%s\'.</string>
-    <string name="sync_status_action_update_file">Updating %1$s in album \'%2$s\'.</string>
-    <string name="sync_status_action_update_album_cover">Updating cover of album \'%s\'.</string>
-    <string name="sync_status_action_add_media_to_joint_album">Adding %1$s to joint album \'%2$s\'.</string>
-    <string name="sync_status_action_update_joint_album_meta">Updating meta data of joint album \'%s\'.</string>
-    <string name="sync_status_action_update_album_meta">Updating meta data of album \'%s\'.</string>
-    <string name="sync_status_action_update_album_content_meta">Updating content meta data of album \'%s\'.</string>
-    <string name="sync_status_action_update_album_bgm">Updating BGM of album \'%s\'.</string>
-    <string name="sync_status_action_delete_album_bgm">Removing BGM of album \'%s\'.</string>
-    <string name="sync_status_action_copy">Copying %1$s from album \'%2$s\' to \'%3$s\'.</string>
-    <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'.</string>
-    <string name="sync_status_action_delete_media_from_backup">Removing %s in camera archive.</string>
-    <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
-
-    <string name="sync_status_result_finished">Last synchronization finished %s.</string>
-    <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
-    <string name="sync_status_result_general_error">Last synchronization failed %s!</string>
-
-    <string name="sync_status_stage_started">Starting synchronization…</string>
-    <string name="sync_status_stage_sync_remote">Synchronizing changes from server.</string>
-    <string name="sync_status_stage_backup">Backing up camera roll…</string>
-
-    <!-- Sync Status Dialog Fragment -->
-    <string name="button_text_resync">Re-Sync</string>
-    <string name="button_text_help">Help!</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

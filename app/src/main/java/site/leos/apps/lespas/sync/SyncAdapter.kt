@@ -53,6 +53,7 @@ import java.io.FileNotFoundException
 import java.io.FileWriter
 import java.io.InterruptedIOException
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -80,6 +81,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private var workingAction: Action? = null
 
     private val keySyncStatus = application.getString(R.string.sync_status_pref_key)
+    private val keySyncStatusLocalAction = application.getString(R.string.sync_status_local_action_pref_key)
     private val keyBackupStatus = application.getString(R.string.cameraroll_backup_status_pref_key)
 
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
@@ -99,7 +101,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Clear status counters
             syncResult.stats.clear()
 
-            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_FINISHED, " ", " ", " ", " ", System.currentTimeMillis()))
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_FINISHED, System.currentTimeMillis()))
         } catch (e: OkHttpWebDavException) {
             Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString)
             when (e.statusCode) {
@@ -138,6 +140,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e: InterruptedIOException) {
             syncResult.stats.numIoExceptions++
             Log.e(">>>>InterruptedIOException: ", e.stackTraceToString())
+        } catch (e: UnknownHostException) {
+            syncResult.stats.numIoExceptions++
+            Log.e(">>>>UnknownHostException: ", e.stackTraceToString())
         } catch (e: SSLHandshakeException) {
             syncResult.stats.numIoExceptions++
             syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
@@ -166,12 +171,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
 
             if (syncResult.stats.numIoExceptions > 0 || syncResult.stats.numAuthExceptions > 0)
-                reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_ERROR_GENERAL, " ", " ", " ", " ", System.currentTimeMillis()))
+                reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_ERROR_GENERAL, System.currentTimeMillis()))
         }
     }
 
     private fun prepare(account: Account) {
-        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_STARTED, " ", " ", " ", " ", System.currentTimeMillis()))
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_STARTED, System.currentTimeMillis()))
 
         // Check network type
         checkConnection()
@@ -206,6 +211,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun syncLocalChanges(pendingActions: List<Action>) {
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_LOCAL, System.currentTimeMillis()))
+
         // Sync local changes, e.g., processing pending actions
         pendingActions.forEach { action ->
             // Save current action for deletion when some ignorable exceptions happen
@@ -458,6 +465,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         workingAction = null
+
+        // Clear action reporting preference
+        reportStatus(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_FINISHED, " ", " ", " ", " ", System.currentTimeMillis()))
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
@@ -502,7 +512,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var localAlbum: List<Album>
         var hidden: Boolean
 
-        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_REMOTE, " ", " ", " ", " ", System.currentTimeMillis()))
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_REMOTE, System.currentTimeMillis()))
 
         // Create a changed album list, including all albums modified or created on server except newly created hidden ones
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
@@ -1085,7 +1095,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun backupCameraRoll() {
         // Backup camera roll if setting turn on
         if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) {
-            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_BACKUP, " ", " ", " ", " ", System.currentTimeMillis()))
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_BACKUP, System.currentTimeMillis()))
 
             // Make sure DCIM base directory is there
             if (!webDav.isExisted(dcimRoot)) webDav.createFolder(dcimRoot)
@@ -1334,7 +1344,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     private fun checkConnection() {
         if (sp.getBoolean(wifionlyKey, true) && (application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_NO_WIFI, " ", " ", " ", " ", System.currentTimeMillis()))
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_NO_WIFI, System.currentTimeMillis()))
             throw NetworkErrorException()
         }
     }
@@ -1366,6 +1376,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
 
-        private const val SYNC_STATUS_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
+        private const val SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
+        private const val SYNC_STATUS_MESSAGE_FORMAT = "%d``%d"
     }
 }

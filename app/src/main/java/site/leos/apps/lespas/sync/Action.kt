@@ -38,6 +38,7 @@ data class Action (
        const val TABLE_NAME = "actions"
 
        // Sync action codes
+       const val ACTION_FINISHED = 0
        const val ACTION_DELETE_FILES_ON_SERVER = 1
        const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
        const val ACTION_ADD_FILES_ON_SERVER = 3

@@ -297,7 +297,7 @@
     <string name="sync_status_action_move">Déplacement de %1$s de l\'album \'%2$s\' vers \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Suppression de %s dans les archives de la caméra.</string>
     <string name="sync_status_action_patch_property">Mise à jour des propriétés WebDAV de %s dans l\'archive de la caméra.</string>
-    <string name="sync_status_stage_sync_remote">Synchronisation des changements à partir du serveur.</string>
+    <string name="sync_status_stage_sync_remote">Synchroniser des modifications à distance...</string>
     <string name="sync_status_result_finished">La dernière synchronisation s\'est terminée %s.</string>
     <string name="sync_status_result_no_wifi">La dernière synchronisation s\'est arrêtée %s car il n\'y a pas de WiFi.</string>
     <string name="sync_status_stage_started">Démarrer la synchronisation...</string>
@@ -306,4 +306,5 @@
     <string name="sync_status_stage_backup">Sauvegarde de la caméra...</string>
     <string name="sync_status_title">État de la synchronisation</string>
     <string name="sync_status_result_general_error">La dernière synchronisation a échoué %s !</string>
+    <string name="sync_status_stage_sync_local">Synchronisation des modifications locales...</string>
 </resources>
