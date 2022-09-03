@@ -131,6 +131,11 @@
             app:singleLineTitle="false"
             app:defaultValue="false"/>
 
+        <Preference
+            app:key="@string/sync_status_pref_key"
+            app:title="@string/sync_status_title"
+            app:singleLineTitle="false" />
+
         <SwitchPreferenceCompat
             app:key="@string/wifionly_pref_key"
             app:summaryOff="@string/wifionly_summary_off"
@@ -138,11 +143,6 @@
             app:title="@string/wifionly_title"
             app:singleLineTitle="false"
             app:defaultValue="true" />
-
-        <Preference
-            app:key="@string/sync_status_pref_key"
-            app:title="@string/sync_status_title"
-            app:singleLineTitle="false" />
 
     </PreferenceCategory>
 
