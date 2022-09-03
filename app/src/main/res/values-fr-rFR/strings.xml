@@ -305,4 +305,5 @@
     <string name="button_text_resync">Re-Sync</string>
     <string name="sync_status_stage_backup">Sauvegarde de la caméra...</string>
     <string name="sync_status_title">État de la synchronisation</string>
+    <string name="sync_status_result_general_error">La dernière synchronisation a échoué %s !</string>
 </resources>

@@ -70,6 +70,7 @@ data class Action (
        // Syncing result codes
        const val SYNC_RESULT_FINISHED = 10000
        const val SYNC_RESULT_NO_WIFI = 10001
+       const val SYNC_RESULT_ERROR_GENERAL = 10002
    }
 }
 

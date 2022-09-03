@@ -332,4 +332,5 @@
     <string name="button_text_resync">Re-Sync</string>
     <string name="sync_status_stage_backup">Câmera de backup...</string>
     <string name="sync_status_title">Status de sincronização</string>
+    <string name="sync_status_result_general_error">Última sincronização falhou %s!</string>
 </resources>

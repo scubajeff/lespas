@@ -360,6 +360,7 @@
 
     <string name="sync_status_result_finished">Last synchronization finished %s.</string>
     <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
+    <string name="sync_status_result_general_error">Last synchronization failed %s!</string>
 
     <string name="sync_status_stage_started">Starting synchronization…</string>
     <string name="sync_status_stage_sync_remote">Synchronizing changes from server.</string>

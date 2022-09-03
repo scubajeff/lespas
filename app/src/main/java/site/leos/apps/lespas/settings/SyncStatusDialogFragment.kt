@@ -208,6 +208,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                         // Various results
                         Action.SYNC_RESULT_FINISHED -> String.format(getString(R.string.sync_status_result_finished), getLastDateString(action[5].toLong()))
                         Action.SYNC_RESULT_NO_WIFI -> String.format(getString(R.string.sync_status_result_no_wifi), getLastDateString(action[5].toLong()))
+                        Action.SYNC_RESULT_ERROR_GENERAL -> String.format(getString(R.string.sync_status_result_general_error), getLastDateString(action[5].toLong()))
 
                         else -> ""
                     }

@@ -270,4 +270,5 @@
     <string name="button_text_resync">再次同步</string>
     <string name="sync_status_stage_backup">正在备份相机相册……</string>
     <string name="sync_status_title">同步状态</string>
+    <string name="sync_status_result_general_error">%s的最后一次同步出错！</string>
 </resources>

@@ -322,4 +322,5 @@
     <string name="button_text_resync">Re-Sync</string>
     <string name="sync_status_stage_backup">Rückfahrkamera...</string>
     <string name="sync_status_title">Status der Synchronisierung</string>
+    <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen %s!</string>
 </resources>

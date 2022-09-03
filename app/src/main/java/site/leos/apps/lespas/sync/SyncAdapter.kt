@@ -164,6 +164,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Make sure meta get updated by adding them to action database
             metaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", it, "", "", 0, 0)) }
             contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
+
+            if (syncResult.stats.numIoExceptions > 0 || syncResult.stats.numAuthExceptions > 0)
+                reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_ERROR_GENERAL, " ", " ", " ", " ", System.currentTimeMillis()))
         }
     }
 

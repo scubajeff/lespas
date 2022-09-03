@@ -335,4 +335,5 @@
     <string name="button_text_resync">Ri-sinc</string>
     <string name="sync_status_stage_backup">Backup della telecamera...</string>
     <string name="sync_status_title">Stato della sincronizzazione</string>
+    <string name="sync_status_result_general_error">L\'ultima sincronizzazione non è riuscita %s!</string>
 </resources>
