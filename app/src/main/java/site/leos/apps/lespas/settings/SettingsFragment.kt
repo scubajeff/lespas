@@ -63,16 +63,11 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
-import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
-    private var summaryString: String? = null
+    private var storageStatisticSummaryString: String? = null
     private var totalSize = -1L
     private lateinit var volume: MutableList<StorageVolume>
     private lateinit var accounts: Array<Account>
@@ -90,7 +85,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
     private var syncPreference: SwitchPreferenceCompat? = null
-    private val actionModel: ActionViewModel by activityViewModels()
 
     private var actionBarHeight = 0
 
@@ -98,7 +92,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         super.onCreate(savedInstanceState)
 
         savedInstanceState?.let {
-            summaryString = it.getString(STATISTIC_SUMMARY_STRING)
+            storageStatisticSummaryString = it.getString(STATISTIC_SUMMARY_STRING)
             totalSize = it.getLong(STATISTIC_TOTAL_SIZE)
         }
 
@@ -271,13 +265,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 }
             }
         }
-
-        actionModel.allPendingActions.observe(viewLifecycleOwner) { actions ->
-            syncPreference?.summary =
-                if (actions.isEmpty()) getString(R.string.sync_summary_finished)
-                else getString(R.string.sync__summary_waiting, actions.size, Instant.ofEpochMilli(actions[0].date).atZone(ZoneId.systemDefault()).toLocalDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
-                //else getString(R.string.sync__summary_waiting, actions.size, Instant.ofEpochMilli(actions[0].date))
-        }
     }
 
     override fun onResume() {
@@ -293,7 +280,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         }
 
         // Set statistic summary if available
-        summaryString?.let { findPreference<Preference>(getString(R.string.storage_statistic_pref_key))?.summary = it }
+        storageStatisticSummaryString?.let { findPreference<Preference>(getString(R.string.storage_statistic_pref_key))?.summary = it }
 
         // Disable Snapseed integration setting if the app is not installed
         isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
@@ -309,7 +296,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        summaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
+        storageStatisticSummaryString?.let { outState.putString(STATISTIC_SUMMARY_STRING, it) }
         outState.putLong(STATISTIC_TOTAL_SIZE, totalSize)
         outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
@@ -356,7 +343,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 true
             }
             getString(R.string.storage_statistic_pref_key) -> {
-                summaryString ?: run { showStatistic(preference) }
+                storageStatisticSummaryString ?: run { showStatistic(preference) }
                 true
             }
             getString(R.string.relogin_pref_key) -> {
@@ -515,22 +502,22 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private fun showStatistic(preference: Preference) {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             // Database statistic
-            summaryString = getString(R.string.statistic_db_message, PhotoRepository(requireActivity().application).getPhotoTotal(), AlbumRepository(requireActivity().application).getAlbumTotal())
-            withContext(Dispatchers.Main) { preference.summary = summaryString }
+            storageStatisticSummaryString = getString(R.string.statistic_db_message, PhotoRepository(requireActivity().application).getPhotoTotal(), AlbumRepository(requireActivity().application).getAlbumTotal())
+            withContext(Dispatchers.Main) { preference.summary = storageStatisticSummaryString }
 
             // Storage space statistic
-            summaryString = summaryString + "\n" +
+            storageStatisticSummaryString = storageStatisticSummaryString + "\n" +
                     getString(R.string.statistic_storage_message,
                         Tools.humanReadableByteCountSI(if (totalSize == -1L) Tools.getStorageSize(requireContext()) else totalSize),
                         getString(if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(KEY_STORAGE_LOCATION, true)) R.string.internal_storage else R.string.external_storage)
                     )
-            withContext(Dispatchers.Main) { preference.summary = summaryString }
-            summaryString = summaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().filesDir.freeSpace), getString(R.string.internal_storage))
+            withContext(Dispatchers.Main) { preference.summary = storageStatisticSummaryString }
+            storageStatisticSummaryString = storageStatisticSummaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().filesDir.freeSpace), getString(R.string.internal_storage))
 
             if (volume.size > 1 && volume[1].state == Environment.MEDIA_MOUNTED )
-                summaryString = summaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().getExternalFilesDirs(null)[1].freeSpace), getString(R.string.external_storage))
+                storageStatisticSummaryString = storageStatisticSummaryString + "\n" + getString(R.string.statistic_free_space_message, Tools.humanReadableByteCountSI(requireContext().getExternalFilesDirs(null)[1].freeSpace), getString(R.string.external_storage))
 
-            withContext(Dispatchers.Main) { preference.summary = summaryString }
+            withContext(Dispatchers.Main) { preference.summary = storageStatisticSummaryString }
         }
     }
 

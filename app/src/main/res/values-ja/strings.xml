@@ -178,7 +178,7 @@
     <string name="strip_off_entry">いや、それは置いておいて。</string>
     <string name="strip_on_entry">はい、必ず削除してください。</string>
     <string name="strip_exif_yes">はい。</string>
-    <string name="action_reuse">アルバムに...</string>
+    <string name="action_reuse">アルバムに……</string>
     <string name="preparing_shares">共有ファイルの準備……</string>
     <string name="striping_exif">EXIFデータのストライピング……</string>
     <string name="show_list_first">カメラロール起動時のメディアリスト表示</string>
@@ -229,8 +229,6 @@
     <string name="nearby_convergence_title">近くの写真を自動収束</string>
     <string name="nearby_convergence_summary">地図上でスライドショーを再生すると、GPS座標を持つ近くの写真に収束します。</string>
     <string name="true_black_title">トゥルーブラックダークテーマ</string>
-    <string name="sync_summary_finished">すべてのアルバムが同期されました。</string>
-    <string name="sync__summary_waiting">同期パイプラインで待機中の %1$,d 個のアイテム、日付は %2$s までさかのぼります。</string>
     <string name="tooltips_fetch_backup">サーバー上のバックアップを表示</string>
     <string name="tooltips_show_cameraroll">カメラロールを表示する</string>
     <string name="msg_empty_server_backup">サーバーにバックアップがない。設定でカメラロールの自動バックアップを有効にしましたか？</string>
@@ -244,5 +242,28 @@
     <string name="cameraroll_backup_remaining">残量 %d</string>
     <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
     <string name="msg_login_first">まず、サーバーにログインしてください。</string>
-    <string name="cameraroll_backup_last_time">最終バックアップは%sに終了しました。</string>
+    <string name="cameraroll_backup_last_time">最後のバックアップは%sで完了しました。</string>
+    <string name="sync_status_action_delete_media">アルバム『%2$s』内の写真%1$sを削除しています。</string>
+    <string name="sync_status_action_delete_album">アルバム『%s』は削除されています。</string>
+    <string name="sync_status_action_add_media">アルバム『%2$s』に%1$sを追加しました。</string>
+    <string name="sync_status_action_add_album">アルバム『%s』を追加しています。</string>
+    <string name="sync_status_action_rename_album">アルバム『%1$s』は『%2$s』に名前が変更されました。</string>
+    <string name="sync_status_action_hide_album">アルバム『%s』は非表示になっています。</string>
+    <string name="sync_status_action_unhide_album">非表示のアルバム『%s』が非表示にされています。</string>
+    <string name="sync_status_action_update_file">アルバム『%2$s』の %1$s を更新しています。</string>
+    <string name="sync_status_action_update_album_cover">アルバム『%s』の表紙を更新しています。</string>
+    <string name="sync_status_action_add_media_to_joint_album">コラボアルバム『%2$s』に%1$sを追加しました。</string>
+    <string name="sync_status_action_update_joint_album_meta">ジョイント・アルバム『%s』のメタ・データを更新しています。</string>
+    <string name="sync_status_action_update_album_meta">アルバム『%s』のメタデータを更新しています。</string>
+    <string name="sync_status_action_update_album_content_meta">アルバム『%s』のコンテンツ・メタ・データを更新しています。</string>
+    <string name="sync_status_action_update_album_bgm">アルバム『%s』のBGMを更新中です。</string>
+    <string name="sync_status_action_delete_album_bgm">アルバム『%s』のサウンドトラックが削除されています。</string>
+    <string name="sync_status_action_copy">アルバム『%2$s』から『%3$s』への %1$s のコピーが進行中です。</string>
+    <string name="sync_status_action_move">アルバム『%2$s』から『%3$s』への %1$s に移動しています。</string>
+    <string name="sync_status_action_delete_media_from_backup">カメラバックアップの %s が削除されています。</string>
+    <string name="sync_status_action_patch_property">カメラバックアップの%sのWebDAV属性データは更新中です。</string>
+    <string name="sync_status_action_sync_remote">サーバーで更新が同期されています。</string>
+    <string name="sync_status_result_finished">最後のシンクは%sで完了しました。</string>
+    <string name="sync_status_result_no_wifi">利用可能なWiFiがないため、最後の同期が%sで停止しました。</string>
+    <string name="sync_status_sync_starting">同期開始中</string>
 </resources>

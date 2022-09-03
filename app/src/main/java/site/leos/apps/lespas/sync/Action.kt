@@ -27,15 +27,17 @@ import site.leos.apps.lespas.BaseDao
 data class Action (
     @PrimaryKey(autoGenerate = true) val id: Long?,
     val action: Int,
-    val folderId: String,
-    val folderName: String,
-    val fileId: String,
-    val fileName: String,
+    val folderId: String = "",
+    val folderName: String = "",
+    val fileId: String = "",
+    val fileName: String ="",
     val date: Long,
-    val retry: Int) {
+    val retry: Int = 1,
+){
    companion object {
        const val TABLE_NAME = "actions"
 
+       const val ACTION_REMOTE_SYNC = 0
        const val ACTION_DELETE_FILES_ON_SERVER = 1
        const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
        const val ACTION_ADD_FILES_ON_SERVER = 3
@@ -44,7 +46,7 @@ data class Action (
        const val ACTION_RENAME_DIRECTORY = 6
        const val ACTION_RENAME_FILE = 7
        const val ACTION_UPDATE_FILE = 8
-       const val ACTION_UPDATE_ALBUM_META = 9
+       const val ACTION_UPDATE_ALBUM_COVER = 9
        const val ACTION_UPDATE_PHOTO_META = 10
        const val ACTION_ADD_FILES_TO_JOINT_ALBUM = 11
        const val ACTION_UPDATE_JOINT_ALBUM_PHOTO_META = 12
@@ -58,6 +60,10 @@ data class Action (
        //const val ACTION_BATCH_DELETE_FILE_ON_SERVER = 20
        const val ACTION_DELETE_CAMERA_BACKUP_FILE = 21
        const val ACTION_PATCH_PROPERTIES = 22
+
+       const val ACTION_SYNC_STARTED = 10000
+       const val ACTION_RESULT_FINISHED = 10001
+       const val ACTION_RESULT_NO_WIFI = 10002
    }
 }
 

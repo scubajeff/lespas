@@ -136,8 +136,6 @@
     <string name="wifionly_title">Synchronisation et sauvegarde uniquement en WiFi</string>
     <string name="wifionly_summary_on">Oui, pas de consommation des données mobiles.</string>
     <string name="wifionly_summary_off">Non, consommation des données mobiles - prudence lorsque vous avez une grande collection de photos.</string>
-    <string name="sync_summary_finished">Tous les albums sont synchronisés.</string>
-    <string name="sync__summary_waiting">%1$,d élément(s) en attente de synchronisation, depuis %2$s.</string>
     <string name="map_header">Carte</string>
     <string name="chinese_map_title">Utiliser une application de carte chinoise</string>
     <string name="chinese_map_summary">Toutes les applications cartographiques de la Chine utilisent un système de coordonnées unique.</string>
@@ -280,4 +278,27 @@
     <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
     <string name="cameraroll_backup_remaining">%d restant</string>
     <string name="cameraroll_backup_last_time">La dernière sauvegarde s\'est terminée %s.</string>
+    <string name="sync_status_action_delete_media">Suppression de %1$s dans l\'album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Suppression de l\'album \'%s\'.</string>
+    <string name="sync_status_action_add_media">Ajout de %1$s à l\'album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Ajout de l\'album \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Renommer l\'album \'%1$s en \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Cache l\'album \'%s\'.</string>
+    <string name="sync_status_action_unhide_album">Dé-cacher l\'album \'%s\'.</string>
+    <string name="sync_status_action_update_file">Mise à jour de %1$s dans l\'album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Mise à jour de la couverture de l\'album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Ajout de %1$s à l\'album commun \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Mise à jour des métadonnées de l\'album commun \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Mise à jour des métadonnées de l\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Mise à jour des métadonnées du contenu de l\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Mise à jour de la BGM de l\'album \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">Suppression de la BGM de l\'album \'%s\'.</string>
+    <string name="sync_status_action_copy">Copie de %1$s de l\'album \'%2$s\' vers \'%3$s\'.</string>
+    <string name="sync_status_action_move">Déplacement de %1$s de l\'album \'%2$s\' vers \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Suppression de %s dans les archives de la caméra.</string>
+    <string name="sync_status_action_patch_property">Mise à jour des propriétés WebDAV de %s dans l\'archive de la caméra.</string>
+    <string name="sync_status_action_sync_remote">Synchronisation des changements à partir du serveur.</string>
+    <string name="sync_status_result_finished">La dernière synchronisation s\'est terminée %s.</string>
+    <string name="sync_status_result_no_wifi">La dernière synchronisation s\'est arrêtée %s car il n\'y a pas de WiFi.</string>
+    <string name="sync_status_sync_starting">Démarrer la synchronisation...</string>
 </resources>

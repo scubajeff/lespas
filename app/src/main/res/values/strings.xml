@@ -185,14 +185,13 @@
     <string name="cameraroll_backup_last_time">Last backup finished %s.</string>
     <string name="cameraroll_backup_remaining">%d left</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
+    <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
     <string name="background_sync_title">Sync periodically</string>
-    <string name="background_sync_summary">Check for server changes every 6 hours</string>
+    <string name="background_sync_summary">Synchronize every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
     <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
-    <string name="sync_summary_finished">All albums synced.</string>
-    <string name="sync__summary_waiting">%1$,d items waiting in sync pipeline, date back as early as %2$s.</string>
 
     <string name="map_header">Map</string>
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
@@ -336,6 +335,31 @@
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
     <string name="option_menu_mute">Toggle mute</string>
+
+    <!-- Sync Status Preference -->
+    <string name="sync_status_action_delete_media">Removing %1$s in album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Removing album \'%s\'.</string>
+    <string name="sync_status_action_add_media">Adding %1$s to album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Adding album \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Renaming album \'%1$s\ to \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Hiding album \'%s\'.</string>
+    <string name="sync_status_action_unhide_album">Un-hiding album \'%s\'.</string>
+    <string name="sync_status_action_update_file">Updating %1$s in album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Updating cover of album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Adding %1$s to joint album \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Updating meta data of joint album \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Updating meta data of album \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Updating content meta data of album \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Updating BGM of album \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">Removing BGM of album \'%s\'.</string>
+    <string name="sync_status_action_copy">Copying %1$s from album \'%2$s\' to \'%3$s\'.</string>
+    <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Removing %s in camera archive.</string>
+    <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
+    <string name="sync_status_action_sync_remote">Synchronizing changes from server.</string>
+    <string name="sync_status_result_finished">Last synchronization finished %s.</string>
+    <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
+    <string name="sync_status_sync_starting">Starting synchronization…</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

@@ -281,8 +281,6 @@
     <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>
     <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
     <string name="true_black_title">Echtes schwarzes dunkles Thema</string>
-    <string name="sync_summary_finished">Alle Alben sind synchronisiert.</string>
-    <string name="sync__summary_waiting">%1$,d Elemente warten in der Synchronisierungspipeline, Datum zurück bis %2$s.</string>
     <string name="tooltips_fetch_backup">Backups auf dem Server anzeigen</string>
     <string name="tooltips_show_cameraroll">Kamerarolle anzeigen</string>
     <string name="msg_empty_server_backup">Keine Backups auf dem Server. Haben Sie die automatische Sicherung der Kamerarolle in den Einstellungen aktiviert?</string>
@@ -297,4 +295,27 @@
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
     <string name="cameraroll_backup_remaining">%d übrig</string>
     <string name="cameraroll_backup_last_time">Die letzte Sicherung wurde %s beendet.</string>
+    <string name="sync_status_action_delete_media">Entfernen von %1$s in Album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Album \'%s\' wird entfernt.</string>
+    <string name="sync_status_action_add_media">Hinzufügen von %1$s zum Album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Hinzufügen des Albums \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Umbenennung des Albums \'%1$s\' in \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Album \'%s\' wird versteckt.</string>
+    <string name="sync_status_action_unhide_album">Ausblenden des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_file">Aktualisierung von %1$s im Album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Aktualisierung des Covers von Album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Hinzufügen von %1$s zum gemeinsamen Album \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Aktualisierung der Metadaten des gemeinsamen Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Aktualisierung der Metadaten des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Aktualisierung der Inhalts-Metadaten des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Aktualisierung der BGM des Albums \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">BGM des Albums \'%s\' wird entfernt.</string>
+    <string name="sync_status_action_copy">Kopieren von %1$s aus Album \'%2$s\' nach \'%3$s\'.</string>
+    <string name="sync_status_action_move">Verschieben von %1$s von Album \'%2$s\' nach \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Entfernen von %s im Kameraarchiv.</string>
+    <string name="sync_status_action_patch_property">Aktualisieren der WebDAV-Eigenschaften von %s im Kameraarchiv.</string>
+    <string name="sync_status_action_sync_remote">Synchronisierung von Änderungen vom Server.</string>
+    <string name="sync_status_result_finished">Die letzte Synchronisierung wurde %s.</string>
+    <string name="sync_status_result_no_wifi">Die letzte Synchronisierung wurde %s abgebrochen, da kein WiFi vorhanden ist.</string>
+    <string name="sync_status_sync_starting">Start der Synchronisation...</string>
 </resources>

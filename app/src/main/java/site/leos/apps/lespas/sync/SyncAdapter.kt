@@ -79,11 +79,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
     private var workingAction: Action? = null
 
+    private val keySyncStatus = application.getString(R.string.sync_status_pref_key)
+    private val keyBackupStatus = application.getString(R.string.cameraroll_backup_status_pref_key)
+
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
         try {
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
-
             prepare(account)
             while (true) {
                 val actions = actionRepository.getAllPendingActions()
@@ -164,6 +166,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun prepare(account: Account) {
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_SYNC_STARTED, " ", " ", " ", " ", System.currentTimeMillis()))
+
         // Check network type
         checkConnection()
 
@@ -201,6 +205,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         pendingActions.forEach { action ->
             // Save current action for deletion when some ignorable exceptions happen
             workingAction = action
+
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, action.id, action.fileId, action.fileName, action.fileId, action.fileName, action.date))
 
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
@@ -321,7 +327,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Sync from server syncRemoteChanges() will detect the change and update content meta later
                 }
 
-                Action.ACTION_UPDATE_ALBUM_META -> {
+                Action.ACTION_UPDATE_ALBUM_COVER -> {
                     // Property folderId holds id of the album needed meta update
                     // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
                     albumRepository.getThisAlbum(action.folderId).apply {
@@ -490,6 +496,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Merge changed and/or new album from server
         var localAlbum: List<Album>
         var hidden: Boolean
+
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_REMOTE_SYNC, " ", " ", " ", " ", System.currentTimeMillis()))
 
         // Create a changed album list, including all albums modified or created on server except newly created hidden ones
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
@@ -1066,6 +1074,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             metadataRetriever.release()
         }
+
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_RESULT_FINISHED, " ", " ", " ", " ", System.currentTimeMillis()))
     }
 
     @SuppressLint("ApplySharedPref")
@@ -1140,11 +1150,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     fileName = cursor.getString(nameColumn)
                     size = cursor.getLong(sizeColumn)
-                    // Save current uploading filename for displaying in Setting menu backup menu summary
-                    sp.edit().apply {
-                        putString(application.getString(R.string.cameraroll_backup_status_pref_key), String.format("%s (%s)", fileName, Tools.humanReadableByteCountSI(size)))
-                        commit()
-                    }
+
+                    reportStatus(keyBackupStatus, String.format("%s (%s)", fileName, Tools.humanReadableByteCountSI(size)))
 
                     relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                     mimeType = cursor.getString(typeColumn)
@@ -1240,11 +1247,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 mediaMetadataRetriever.release()
 
-                // Signaling Backup Status preference
-                sp.edit().apply {
-                    putString(application.getString(R.string.cameraroll_backup_status_pref_key), "")
-                    commit()
-                }
+                reportStatus(keyBackupStatus, "")
             }
         }
     }
@@ -1325,8 +1328,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun checkConnection() {
-        if (sp.getBoolean(wifionlyKey, true)) {
-            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
+        if (sp.getBoolean(wifionlyKey, true) && (application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_RESULT_NO_WIFI, " ", " ", " ", " ", System.currentTimeMillis()))
+            throw NetworkErrorException()
+        }
+    }
+
+    private fun reportStatus(key: String, message: String) {
+        sp.edit().run {
+            putString(key, message)
+            commit()
         }
     }
 
@@ -1349,5 +1360,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
 
         private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
+
+        private const val SYNC_STATUS_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
     }
 }

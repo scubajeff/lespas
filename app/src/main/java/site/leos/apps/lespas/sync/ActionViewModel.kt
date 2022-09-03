@@ -158,7 +158,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.setCover(albumId, cover)
             // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-            if (!cover.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, albumId, albumName, "", "", System.currentTimeMillis(), 1))
+            if (!cover.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_COVER, albumId, albumName, "", "", System.currentTimeMillis(), 1))
 
             // If album has not been uploaded yet, update pending action ACTION_ADD_DIRECTORY_ON_SERVER's cover id action table too
             actionRepository.updateCoverInPendingActions(albumId, cover.cover)
@@ -168,7 +168,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun updateAlbumSortOrderInMeta(album: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             // Don't update meta if cover does not have a a proper fileID, in that case, meta file will be maintained in SyncAdapter when the fileId is ready
-            if (!album.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+            if (!album.cover.contains('.')) actionRepository.addAction(Action(null, Action.ACTION_UPDATE_ALBUM_COVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
         }
     }
 

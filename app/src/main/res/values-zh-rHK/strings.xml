@@ -229,8 +229,6 @@
     <string name="nearby_convergence_title">自動歸集附近相片</string>
     <string name="nearby_convergence_summary">在地圖上播放旅程時，自動將照片歸集到附近的有GPS坐標的相片上。</string>
     <string name="true_black_title">採用极黑深色主题</string>
-    <string name="sync_summary_finished">所有相冊已同步。</string>
-    <string name="sync__summary_waiting">從%2$s開始，還有%1$,d個相冊操作未與伺服器同步。</string>
     <string name="tooltips_fetch_backup">列示伺服器上的備份</string>
     <string name="tooltips_show_cameraroll">顯示本機相機相冊</string>
     <string name="msg_empty_server_backup">伺服器上沒有備份。相機相冊自動備份設定開啟咗未？</string>
@@ -245,4 +243,27 @@
     <string name="msg_login_first">請先登入伺服器。</string>
     <string name="cameraroll_backup_remaining">還有%d個</string>
     <string name="cameraroll_backup_last_time">最近一次備份在%s完成。</string>
+    <string name="sync_status_action_delete_media">正在刪除相冊《%2$s》中的照片%1$s。</string>
+    <string name="sync_status_action_delete_album">正在刪除相冊《%s》。</string>
+    <string name="sync_status_action_add_media">正在添加%1$s到相冊《%2$s》中。</string>
+    <string name="sync_status_action_add_album">正在創建相冊《%s》。</string>
+    <string name="sync_status_action_rename_album">正在將相冊《%1$s》改名為《%2$s》。</string>
+    <string name="sync_status_action_hide_album">正在隱藏相冊《%s》。</string>
+    <string name="sync_status_action_unhide_album">正在解除隱藏相冊《%s》。</string>
+    <string name="sync_status_action_update_file">正在更新相冊《%2$s》中的%1$s。</string>
+    <string name="sync_status_action_update_album_cover">正在更新相冊《%s》的封面。</string>
+    <string name="sync_status_action_add_media_to_joint_album">正在將 %1$s 添加到合作相冊《%2$s》中。</string>
+    <string name="sync_status_action_update_joint_album_meta">正在更新合作相冊《%s》的元數據。</string>
+    <string name="sync_status_action_update_album_meta">正在更新相冊《%s》的元數據。</string>
+    <string name="sync_status_action_update_album_content_meta">正在更新相冊《%s》內容的元數據。</string>
+    <string name="sync_status_action_update_album_bgm">正在更新相冊《%s》的背景音樂。</string>
+    <string name="sync_status_action_delete_album_bgm">正在刪除相冊《%s》的背景音樂。</string>
+    <string name="sync_status_action_copy">正在將%1$s從相冊《%2$s》複製到《%3$s》。</string>
+    <string name="sync_status_action_move">正在將%1$s從相冊《%2$s》移動到《%3$s》。</string>
+    <string name="sync_status_action_delete_media_from_backup">正在刪除相機備份中的%s。</string>
+    <string name="sync_status_action_patch_property">正在更新相機備份中%s的WebDAV屬性數據。</string>
+    <string name="sync_status_action_sync_remote">正在同步伺服器上的更新。</string>
+    <string name="sync_status_result_finished">最近一次同步在%s完成。</string>
+    <string name="sync_status_result_no_wifi">因為沒有可用WiFi，最近一次同步在%s停止了。</string>
+    <string name="sync_status_sync_starting">正在啓動同步……</string>
 </resources>
