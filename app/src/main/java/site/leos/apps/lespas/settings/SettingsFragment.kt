@@ -228,13 +228,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         postponeEnterTransition()
         view.doOnPreDraw { startPostponedEnterTransition() }
 
-        findPreference<BackupStatusPreference>(getString(R.string.cameraroll_backup_status_pref_key))?.run {
-/*
-            backupStatusProgressBar = (view as ViewGroup).findViewById(R.id.camera_backup_progress)
-            currentFile = view.findViewById(R.id.current_file)
-*/
-        }
-
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
@@ -434,6 +427,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 requireActivity().recreate()
                 true
             }
+            getString(R.string.sync_status_pref_key) -> {
+                if (parentFragmentManager.findFragmentByTag(SYNC_STATUS_DIALOG) == null) SyncStatusDialogFragment().show(parentFragmentManager, SYNC_STATUS_DIALOG)
+                true
+            }
             else -> super.onPreferenceTreeClick(preference)
         }
 
@@ -579,6 +576,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val CACHE_SIZE_DIALOG = "CACHE_SIZE_DIALOG"
         private const val SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG = "SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG"
         private const val INSTALL_SNAPSEED_DIALOG = "INSTALL_SNAPSEED_DIALOG"
+        private const val SYNC_STATUS_DIALOG = "SYNC_STATUS_DIALOG"
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"

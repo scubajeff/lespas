@@ -314,8 +314,12 @@
     <string name="sync_status_action_move">Verschieben von %1$s von Album \'%2$s\' nach \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Entfernen von %s im Kameraarchiv.</string>
     <string name="sync_status_action_patch_property">Aktualisieren der WebDAV-Eigenschaften von %s im Kameraarchiv.</string>
-    <string name="sync_status_action_sync_remote">Synchronisierung von Änderungen vom Server.</string>
+    <string name="sync_status_stage_sync_remote">Synchronisierung von Änderungen vom Server.</string>
     <string name="sync_status_result_finished">Die letzte Synchronisierung wurde %s.</string>
     <string name="sync_status_result_no_wifi">Die letzte Synchronisierung wurde %s abgebrochen, da kein WiFi vorhanden ist.</string>
-    <string name="sync_status_sync_starting">Start der Synchronisation...</string>
+    <string name="sync_status_stage_started">Start der Synchronisation...</string>
+    <string name="button_text_help">Hilfe!</string>
+    <string name="button_text_resync">Re-Sync</string>
+    <string name="sync_status_stage_backup">Rückfahrkamera...</string>
+    <string name="sync_status_title">Status der Synchronisierung</string>
 </resources>

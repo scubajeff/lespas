@@ -98,6 +98,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Clear status counters
             syncResult.stats.clear()
+
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_FINISHED, " ", " ", " ", " ", System.currentTimeMillis()))
         } catch (e: OkHttpWebDavException) {
             Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString)
             when (e.statusCode) {
@@ -166,7 +168,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun prepare(account: Account) {
-        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_SYNC_STARTED, " ", " ", " ", " ", System.currentTimeMillis()))
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_STARTED, " ", " ", " ", " ", System.currentTimeMillis()))
 
         // Check network type
         checkConnection()
@@ -497,7 +499,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var localAlbum: List<Album>
         var hidden: Boolean
 
-        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_REMOTE_SYNC, " ", " ", " ", " ", System.currentTimeMillis()))
+        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_REMOTE, " ", " ", " ", " ", System.currentTimeMillis()))
 
         // Create a changed album list, including all albums modified or created on server except newly created hidden ones
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
@@ -1074,14 +1076,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             metadataRetriever.release()
         }
-
-        reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_RESULT_FINISHED, " ", " ", " ", " ", System.currentTimeMillis()))
     }
 
     @SuppressLint("ApplySharedPref")
     private fun backupCameraRoll() {
         // Backup camera roll if setting turn on
         if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) {
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_BACKUP, " ", " ", " ", " ", System.currentTimeMillis()))
+
             // Make sure DCIM base directory is there
             if (!webDav.isExisted(dcimRoot)) webDav.createFolder(dcimRoot)
 
@@ -1329,7 +1331,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     private fun checkConnection() {
         if (sp.getBoolean(wifionlyKey, true) && (application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
-            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.ACTION_RESULT_NO_WIFI, " ", " ", " ", " ", System.currentTimeMillis()))
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_RESULT_NO_WIFI, " ", " ", " ", " ", System.currentTimeMillis()))
             throw NetworkErrorException()
         }
     }

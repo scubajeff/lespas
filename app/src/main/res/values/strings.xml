@@ -186,6 +186,7 @@
     <string name="cameraroll_backup_remaining">%d left</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
+    <string name="sync_status_title">Synchronization status</string>
     <string name="background_sync_title">Sync periodically</string>
     <string name="background_sync_summary">Synchronize every 6 hours</string>
     <string name="wifionly_pref_key" translatable="false">WIFI_ONLY</string>
@@ -356,10 +357,17 @@
     <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Removing %s in camera archive.</string>
     <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
-    <string name="sync_status_action_sync_remote">Synchronizing changes from server.</string>
+
     <string name="sync_status_result_finished">Last synchronization finished %s.</string>
     <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
-    <string name="sync_status_sync_starting">Starting synchronization…</string>
+
+    <string name="sync_status_stage_started">Starting synchronization…</string>
+    <string name="sync_status_stage_sync_remote">Synchronizing changes from server.</string>
+    <string name="sync_status_stage_backup">Backing up camera roll…</string>
+
+    <!-- Sync Status Dialog Fragment -->
+    <string name="button_text_resync">Re-Sync</string>
+    <string name="button_text_help">Help!</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

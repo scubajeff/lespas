@@ -124,21 +124,12 @@
             app:singleLineTitle="false"
             app:defaultValue="false" />
 
-        <site.leos.apps.lespas.settings.BackupStatusPreference
-            app:key="@string/cameraroll_backup_status_pref_key"
-            app:dependency="@string/cameraroll_backup_pref_key"
-            app:selectable="false" />
-
         <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
             app:title="@string/background_sync_title"
             app:summary="@string/background_sync_summary"
             app:singleLineTitle="false"
             app:defaultValue="false"/>
-
-        <site.leos.apps.lespas.settings.SyncStatusPreference
-            app:key="@string/sync_status_pref_key"
-            app:selectable="false" />
 
         <SwitchPreferenceCompat
             app:key="@string/wifionly_pref_key"
@@ -147,6 +138,11 @@
             app:title="@string/wifionly_title"
             app:singleLineTitle="false"
             app:defaultValue="true" />
+
+        <Preference
+            app:key="@string/sync_status_pref_key"
+            app:title="@string/sync_status_title"
+            app:singleLineTitle="false" />
 
     </PreferenceCategory>
 

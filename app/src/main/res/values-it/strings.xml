@@ -327,8 +327,12 @@
     <string name="sync_status_action_move">Spostamento di %1$s dall\'album \'%2$s\' a \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Rimozione di %s nell\'archivio della fotocamera.</string>
     <string name="sync_status_action_patch_property">Aggiornamento delle proprietà WebDAV di %s nell\'archivio della fotocamera.</string>
-    <string name="sync_status_action_sync_remote">Sincronizzazione delle modifiche dal server.</string>
+    <string name="sync_status_stage_sync_remote">Sincronizzazione delle modifiche dal server.</string>
     <string name="sync_status_result_finished">L\'ultima sincronizzazione è terminata %s.</string>
     <string name="sync_status_result_no_wifi">L\'ultima sincronizzazione si è interrotta %s perché non c\'è WiFi.</string>
-    <string name="sync_status_sync_starting">Avvio della sincronizzazione...</string>
+    <string name="sync_status_stage_started">Avvio della sincronizzazione...</string>
+    <string name="button_text_help">Aiuto!</string>
+    <string name="button_text_resync">Ri-sinc</string>
+    <string name="sync_status_stage_backup">Backup della telecamera...</string>
+    <string name="sync_status_title">Stato della sincronizzazione</string>
 </resources>

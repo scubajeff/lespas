@@ -262,8 +262,12 @@
     <string name="sync_status_action_move">Moviendo %1$s del álbum \'%2$s\' a \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Eliminando %s en el archivo de la cámara.</string>
     <string name="sync_status_action_patch_property">Actualizando las propiedades de WebDAV para %s en el archivo de la cámara.</string>
-    <string name="sync_status_action_sync_remote">Sincronización de los cambios desde el servidor.</string>
+    <string name="sync_status_stage_sync_remote">Sincronización de los cambios desde el servidor.</string>
     <string name="sync_status_result_finished">La última sincronización terminó %s.</string>
     <string name="sync_status_result_no_wifi">La última sincronización se detuvo %s porque no hay WiFi.</string>
-    <string name="sync_status_sync_starting">Iniciando la sincronización...</string>
+    <string name="sync_status_stage_started">Iniciando la sincronización...</string>
+    <string name="button_text_help">¡Ayuda!</string>
+    <string name="button_text_resync">Re-Sync</string>
+    <string name="sync_status_stage_backup">Cámara de respaldo...</string>
+    <string name="sync_status_title">Estado de la sincronización</string>
 </resources>
