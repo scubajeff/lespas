@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.format.DateUtils
+import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -165,6 +166,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                 // action is String array of: actionId|folderId|folderName|fileId|fileName|date
                 if (action.isNotEmpty()) {
                     val actionId = action[0].toInt()
+                    Log.e(">>>>>>>>", "getCurrentActionSummary: $action")
 
                     // Disable re-sync when syncing
                     reSyncButton.isEnabled = actionId >= Action.SYNC_RESULT_FINISHED

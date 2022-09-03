@@ -211,7 +211,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Save current action for deletion when some ignorable exceptions happen
             workingAction = action
 
-            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, action.id, action.fileId, action.fileName, action.fileId, action.fileName, action.date))
+            reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, action.action, action.fileId, action.fileName, action.fileId, action.fileName, action.date))
 
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
