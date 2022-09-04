@@ -19,20 +19,15 @@ package site.leos.apps.lespas.settings
 import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.text.format.DateUtils
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.sync.Action
@@ -51,8 +46,6 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
     private lateinit var remainingTextView: TextView
     private lateinit var backupProgressBar: ProgressBar
     private lateinit var reSyncButton: MaterialButton
-
-    private val pendingBackupList = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,32 +81,6 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
         view.findViewById<MaterialButton>(R.id.help_button).run {
             setOnClickListener {  }
         }
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            pendingBackupList.clear()
-            if (sp.getBoolean(getString(R.string.cameraroll_backup_pref_key), false)) {
-                // If camera roll backup setting is On, prepare a list of pending backups, with same sorting order which sync adapter backup procedure uses
-                try {
-                    @Suppress("DEPRECATION")
-                    val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
-                    requireContext().contentResolver.query(
-                        MediaStore.Files.getContentUri("external"),
-                        arrayOf(MediaStore.Files.FileColumns.DISPLAY_NAME),
-                        "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                                "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, System.currentTimeMillis() / 1000)})",
-                        null,
-                        "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
-                    )?.use { cursor ->
-                        while (cursor.moveToNext()) {
-                            pendingBackupList.add(cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)))
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
-
-            backupProgressBar.max = pendingBackupList.size
-            //if (pendingBackupList.size > 0) showBackupStatusViews()
-        }
     }
 
     override fun onResume() {
@@ -140,40 +107,43 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
         remainingTextView.isVisible = false
     }
 
-    private fun showBackupStatusViews() {
+    private fun unhideBackupStatusViews() {
         backupProgressBar.isVisible = true
         currentFileTextView.isVisible = true
         remainingTextView.isVisible = true
+        showBackupStatus()
     }
 
     private fun showBackupStatus() {
-        if (pendingBackupList.size > 0) {
-            sp.getString(keyBackupStatus, "")?.let { fileName ->
-                backupProgressBar.setProgress(pendingBackupList.indexOf(fileName.substringBeforeLast(" (")).let { index ->
-                    if (index == -1) {
-                        if (fileName.isEmpty()) {
-                            //hideBackupStatusViews()
-                            //currentFileTextView.text = getLastDateString(getString(R.string.cameraroll_backup_last_time), System.currentTimeMillis())
-                            pendingBackupList.clear()
-                        }
-                        0
-                    } else {
-                        currentFileTextView.text = fileName
-                        (pendingBackupList.size - index - 1).let { left ->
-                            if (left > 0) remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
-                            else remainingTextView.isVisible = false
-                        }
-                        index
+        sp.getString(keyBackupStatus, " | |0|0|0")?.split('|')?.let { message ->
+            if (message.isNotEmpty()) {
+                // backup message is String array of: filename|file size in human readable format|current index in set|set total|timestamp in millisecond
+                val total = message[3].toInt()
+                val current = message[2].toInt()
+                if (total > 0) {
+                    backupProgressBar.run {
+                        isVisible = true
+                        max = total
+                        setProgress(current, true)
                     }
-                }, true)
+                    currentFileTextView.text = String.format("%s (%s)", message[0], message[1])
+                    (total - current).let { left ->
+                        remainingTextView.isVisible = left > 0
+                        remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
+                    }
+                } else {
+                    backupProgressBar.isVisible = false
+                    currentFileTextView.text = ""
+                    remainingTextView.text = ""
+                }
             }
-        } else hideBackupStatusViews()
+        }
     }
 
     private fun getCurrentActionSummary(): String {
         return try {
             sp.getString(keySyncStatusLocalAction, "")?.split("``")?.let { action ->
-                // action is String array of: actionId``folderId``folderName``fileId``fileName``date
+                // action is String array of: actionId``folderId``folderName``fileId``fileName``timestamp in millisecond
                 if (action.isNotEmpty()) {
                     when(action[0].toInt()) {
                         // Local actions
@@ -210,6 +180,9 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                         Action.ACTION_COLLECT_REMOTE_CHANGES -> getString(R.string.sync_status_action_collect_remote_changes)
                         Action.ACTION_CREATE_ALBUM_FROM_SERVER -> String.format(getString(R.string.sync_status_action_create_album_from_server), action[1])
                         Action.ACTION_UPDATE_ALBUM_FROM_SERVER -> String.format(getString(R.string.sync_status_action_update_album_from_server), action[1])
+
+                        // Backup actions
+                        Action.ACTION_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_backup_file), action[1])
                         else -> ""
                     }
                 } else ""
@@ -219,8 +192,8 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
 
     private fun getCurrentStage(): String {
         return try {
-            sp.getString(keySyncStatus, "")?.split("``")?.let { action ->
-                // stage is String array of: actionId``timestamp
+            sp.getString(keySyncStatus, "")?.split('|')?.let { action ->
+                // stage is String array of: actionId``timestamp in millisecond
                 if (action.isNotEmpty()) {
                     val stageId = action[0].toInt()
 
@@ -229,7 +202,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                     // Show local action status view when in these stages
                     currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_STAGE_REMOTE || stageId == Action.SYNC_RESULT_ERROR_GENERAL
                     // Update backup status view visibility
-                    if (stageId == Action.SYNC_STAGE_BACKUP && pendingBackupList.size > 0) showBackupStatusViews() else hideBackupStatusViews()
+                    if (stageId == Action.SYNC_STAGE_BACKUP) unhideBackupStatusViews() else hideBackupStatusViews()
 
                     when(stageId) {
                         // Various stages

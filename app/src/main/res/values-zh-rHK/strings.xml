@@ -275,4 +275,5 @@
     <string name="sync_status_action_collect_remote_changes">檢測服務器上的更新……</string>
     <string name="sync_status_action_create_album_from_server">正在創建相冊\'%s\'。</string>
     <string name="sync_status_action_update_album_from_server">正在更新相冊\'%s\'。</string>
+    <string name="sync_status_action_backup_file">正在備份照片%s。</string>
 </resources>

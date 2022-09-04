@@ -243,6 +243,7 @@
     <string name="sync_status_action_move">Moving %1$s from album \'%2$s\' to \'%3$s\'.</string>
     <string name="sync_status_action_delete_media_from_backup">Removing %s from camera archive.</string>
     <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
+    <string name="sync_status_action_backup_file">Backing up photo %s.</string>
 
     <string name="sync_status_action_collect_remote_changes">Collecting changes from server…</string>
     <string name="sync_status_action_create_album_from_server">Creating album \'%s\'.</string>

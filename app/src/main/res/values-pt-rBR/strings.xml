@@ -337,4 +337,5 @@
     <string name="sync_status_action_collect_remote_changes">Coleta de mudanças do servidor...</string>
     <string name="sync_status_action_create_album_from_server">Criação do álbum \'%s\'.</string>
     <string name="sync_status_action_update_album_from_server">Atualização do álbum \'%s\'.</string>
+    <string name="sync_status_action_backup_file">Foto de apoio %s.</string>
 </resources>
