@@ -337,4 +337,7 @@
     <string name="sync_status_title">Stato della sincronizzazione</string>
     <string name="sync_status_result_general_error">L\'ultima sincronizzazione non è riuscita %s!</string>
     <string name="sync_status_stage_sync_local">Sincronizzare le modifiche locali...</string>
+    <string name="sync_status_action_collect_remote_changes">Raccolta delle modifiche dal server...</string>
+    <string name="sync_status_action_create_album_from_server">Creazione dell\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_from_server">Aggiornamento dell\'album \'%s\'.</string>
 </resources>

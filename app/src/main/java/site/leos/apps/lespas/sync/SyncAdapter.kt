@@ -515,6 +515,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         reportStatus(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, Action.SYNC_STAGE_REMOTE, System.currentTimeMillis()))
 
         // Create a changed album list, including all albums modified or created on server except newly created hidden ones
+        reportStatus(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_COLLECT_REMOTE_CHANGES, " ", " ", " ", " ", System.currentTimeMillis()))
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
             if (remoteAlbum.isFolder) {
                 // Collecting remote album ids, including hidden albums, for deletion syncing
@@ -717,7 +718,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Recreate metadata file on server if there are missing
+                // Recreate metadata files on server if they are missing
                 remotePhotoList.find { it.name == "${changedAlbum.id}.json" } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
                 remotePhotoList.find { it.name == "${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
 
@@ -727,6 +728,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (changedAlbum.cover == Album.NO_COVER) {
                     //Log.e(">>>>>>>>", "create cover for new album ${changedAlbum.name}")
                     // New album created on server, cover not yet available
+                    reportStatus(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_CREATE_ALBUM_FROM_SERVER, changedAlbum.name, " ", " ", " ", System.currentTimeMillis()))
 
                     // Safety check, if this new album is empty, process next album
                     if (changedPhotos.size <= 0) continue
@@ -760,6 +762,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         metaUpdatedNeeded.add(changedAlbum.name)
                     }
                 } else {
+                    reportStatus(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_UPDATE_ALBUM_FROM_SERVER, changedAlbum.name, " ", " ", " ", System.currentTimeMillis()))
+
                     // Try to sync meta changes from other devices if this album exists on local device
                     val metaFileName = "${changedAlbum.id}.json"
                     remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->

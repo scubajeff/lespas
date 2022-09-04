@@ -262,14 +262,17 @@
     <string name="sync_status_action_move">アルバム『%2$s』から『%3$s』への %1$s に移動しています。</string>
     <string name="sync_status_action_delete_media_from_backup">カメラバックアップの %s が削除されています。</string>
     <string name="sync_status_action_patch_property">カメラバックアップの%sのWebDAV属性データは更新中です。</string>
-    <string name="sync_status_stage_sync_remote">リモートの変更を同期させる...</string>
+    <string name="sync_status_stage_sync_remote">リモートの変更を同期させる</string>
     <string name="sync_status_result_finished">最後のシンクは%sで完了しました。</string>
     <string name="sync_status_result_no_wifi">利用可能なWiFiがないため、最後の同期が%sで停止しました。</string>
     <string name="sync_status_stage_started">同期開始中</string>
     <string name="button_text_help">助けて</string>
     <string name="button_text_resync">再同期</string>
-    <string name="sync_status_stage_backup">カメラのバックアップ...</string>
+    <string name="sync_status_stage_backup">カメラのバックアップ</string>
     <string name="sync_status_title">シンクロの状態</string>
     <string name="sync_status_result_general_error">" %s最後の同期に失敗しました!"</string>
-    <string name="sync_status_stage_sync_local">ローカルの変更を同期させる...</string>
+    <string name="sync_status_stage_sync_local">ローカルの変更を同期させる</string>
+    <string name="sync_status_action_collect_remote_changes">サーバーから変更を収集する。</string>
+    <string name="sync_status_action_create_album_from_server">アルバム \'%s\' が作成されています。</string>
+    <string name="sync_status_action_update_album_from_server">アルバム \'%s\' を更新しています。</string>
 </resources>

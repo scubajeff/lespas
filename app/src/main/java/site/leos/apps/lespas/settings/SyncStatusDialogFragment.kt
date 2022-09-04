@@ -112,7 +112,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
             }
 
             backupProgressBar.max = pendingBackupList.size
-            if (pendingBackupList.size > 0) showBackupStatusViews()
+            //if (pendingBackupList.size > 0) showBackupStatusViews()
         }
     }
 
@@ -130,27 +130,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
         when(key) {
             keySyncStatus -> currentStageTextView.text = getCurrentStage()
             keySyncStatusLocalAction -> currentLocalActionTextView.text = getCurrentActionSummary()
-            keyBackupStatus -> if (pendingBackupList.size > 0) {
-                sp.getString(keyBackupStatus, "")?.let { fileName ->
-                    backupProgressBar.setProgress(pendingBackupList.indexOf(fileName.substringBeforeLast(" (")).let { index ->
-                        if (index == -1) {
-                            if (fileName.isEmpty()) {
-                                hideBackupStatusViews()
-                                //currentFileTextView.text = getLastDateString(getString(R.string.cameraroll_backup_last_time), System.currentTimeMillis())
-                                pendingBackupList.clear()
-                            }
-                            0
-                        } else {
-                            currentFileTextView.text = fileName
-                            (pendingBackupList.size - index - 1).let { left ->
-                                if (left > 0) remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
-                                else remainingTextView.isVisible = false
-                            }
-                            index
-                        }
-                    }, true)
-                }
-            } else hideBackupStatusViews()
+            keyBackupStatus -> showBackupStatus()
         }
     }
 
@@ -166,13 +146,37 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
         remainingTextView.isVisible = true
     }
 
+    private fun showBackupStatus() {
+        if (pendingBackupList.size > 0) {
+            sp.getString(keyBackupStatus, "")?.let { fileName ->
+                backupProgressBar.setProgress(pendingBackupList.indexOf(fileName.substringBeforeLast(" (")).let { index ->
+                    if (index == -1) {
+                        if (fileName.isEmpty()) {
+                            //hideBackupStatusViews()
+                            //currentFileTextView.text = getLastDateString(getString(R.string.cameraroll_backup_last_time), System.currentTimeMillis())
+                            pendingBackupList.clear()
+                        }
+                        0
+                    } else {
+                        currentFileTextView.text = fileName
+                        (pendingBackupList.size - index - 1).let { left ->
+                            if (left > 0) remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
+                            else remainingTextView.isVisible = false
+                        }
+                        index
+                    }
+                }, true)
+            }
+        } else hideBackupStatusViews()
+    }
+
     private fun getCurrentActionSummary(): String {
         return try {
             sp.getString(keySyncStatusLocalAction, "")?.split("``")?.let { action ->
                 // action is String array of: actionId``folderId``folderName``fileId``fileName``date
                 if (action.isNotEmpty()) {
                     when(action[0].toInt()) {
-                        // Various actions
+                        // Local actions
                         Action.ACTION_DELETE_FILES_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_media), action[4], action[2])
                         Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> String.format(getString(R.string.sync_status_action_delete_album), action[2])
                         Action.ACTION_ADD_FILES_ON_SERVER -> String.format(getString(R.string.sync_status_action_add_media), action[4], action[2])
@@ -201,6 +205,11 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                             )
                         Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))
                         Action.ACTION_PATCH_PROPERTIES -> String.format(getString(R.string.sync_status_action_patch_property), action[4])
+
+                        // Remote actions
+                        Action.ACTION_COLLECT_REMOTE_CHANGES -> getString(R.string.sync_status_action_collect_remote_changes)
+                        Action.ACTION_CREATE_ALBUM_FROM_SERVER -> String.format(getString(R.string.sync_status_action_create_album_from_server), action[1])
+                        Action.ACTION_UPDATE_ALBUM_FROM_SERVER -> String.format(getString(R.string.sync_status_action_update_album_from_server), action[1])
                         else -> ""
                     }
                 } else ""
@@ -217,8 +226,10 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
 
                     // Disable re-sync when syncing
                     reSyncButton.isEnabled = stageId >= Action.SYNC_RESULT_FINISHED
-                    // Hide local action status when in other stages
-                    currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_RESULT_ERROR_GENERAL
+                    // Show local action status view when in these stages
+                    currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_STAGE_REMOTE || stageId == Action.SYNC_RESULT_ERROR_GENERAL
+                    // Update backup status view visibility
+                    if (stageId == Action.SYNC_STAGE_BACKUP && pendingBackupList.size > 0) showBackupStatusViews() else hideBackupStatusViews()
 
                     when(stageId) {
                         // Various stages

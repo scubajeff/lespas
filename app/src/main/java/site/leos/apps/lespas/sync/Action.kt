@@ -62,6 +62,10 @@ data class Action (
        const val ACTION_DELETE_CAMERA_BACKUP_FILE = 21
        const val ACTION_PATCH_PROPERTIES = 22
 
+       const val ACTION_COLLECT_REMOTE_CHANGES = 1001
+       const val ACTION_CREATE_ALBUM_FROM_SERVER = 1002
+       const val ACTION_UPDATE_ALBUM_FROM_SERVER = 1003
+
        // Syncing stage codes
        const val SYNC_STAGE_STARTED = 9000
        const val SYNC_STAGE_LOCAL = 9001

@@ -272,4 +272,7 @@
     <string name="sync_status_title">同步状态</string>
     <string name="sync_status_result_general_error">%s的最后一次同步出错！</string>
     <string name="sync_status_stage_sync_local">正在同步本地更新……</string>
+    <string name="sync_status_action_collect_remote_changes">检测服务器上的更新……</string>
+    <string name="sync_status_action_create_album_from_server">正在创建相册\'%s\'。</string>
+    <string name="sync_status_action_update_album_from_server">正在更新相册\'%s\'。</string>
 </resources>

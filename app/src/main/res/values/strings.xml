@@ -244,6 +244,10 @@
     <string name="sync_status_action_delete_media_from_backup">Removing %s from camera archive.</string>
     <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
 
+    <string name="sync_status_action_collect_remote_changes">Collecting changes from server…</string>
+    <string name="sync_status_action_create_album_from_server">Creating album \'%s\'.</string>
+    <string name="sync_status_action_update_album_from_server">Updating album \'%s\'.</string>
+
     <string name="sync_status_result_finished">Last synchronization finished %s.</string>
     <string name="sync_status_result_no_wifi">Last synchronization stopped %s because there is no WiFi.</string>
     <string name="sync_status_result_general_error">Last synchronization failed %s!</string>
