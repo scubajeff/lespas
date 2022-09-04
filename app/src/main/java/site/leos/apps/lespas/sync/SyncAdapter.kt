@@ -161,7 +161,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             syncResult.hasSoftError()
             Log.e(">>>>IllegalStateException: ", e.stackTraceToString())
         } catch (e: NetworkErrorException) {
-            syncResult.hasSoftError()
+            syncResult.stats.numIoExceptions++
             Log.e(">>>>NetworkErrorException: ", e.stackTraceToString())
         } catch (e:Exception) {
             Log.e(">>>>Exception: ", e.stackTraceToString())
