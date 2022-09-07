@@ -245,7 +245,7 @@
     <string name="no_media_file_found">No image or video files found among shared data.</string>
     <string name="same_file_found">Same media file already exists.</string>
 
-    <!-- Info DialogFragment -->
+    <!-- Meta Info DialogFragment -->
     <string name="file_name">Name:</string>
     <string name="shot_at">Created:</string>
     <string name="size">Size:</string>
@@ -254,6 +254,7 @@
     <string name="parameter">Param.:</string>
     <string name="artist">Artist:</string>
     <string name="button_text_map">Map App</string>
+    <string name="msg_downloading_exif">Fetching meta data from server…</string>
 
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publish to:</string>

@@ -310,4 +310,5 @@
     <string name="should_allow_launching_other_app">Consentire l\'avvio di Les Pas ad altre applicazioni nelle impostazioni di sicurezza.</string>
     <string name="msg_low_storage_space">Lo spazio di archiviazione interno è inferiore al 10%, il che impedisce a Les Pas di sincronizzarsi con il server.</string>
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>
+    <string name="msg_downloading_exif">Abruf von Metadaten vom Server...</string>
 </resources>

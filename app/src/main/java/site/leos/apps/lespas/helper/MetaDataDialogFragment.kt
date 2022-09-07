@@ -25,9 +25,13 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
+import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TableRow
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -37,8 +41,10 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.*
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -62,6 +68,8 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     private lateinit var mapButton: MaterialButton
     private lateinit var photo: NCShareViewModel.RemotePhoto
     private lateinit var exifModel: ExifModel
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var waitingMsg: Snackbar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +93,9 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         view.findViewById<TextView>(R.id.info_shotat).text = photo.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
 
         exifModel.getPhotoMeta().observe(viewLifecycleOwner, Observer { photoMeta ->
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
+
             with(photoMeta.photo) {
                 // Size row
                 val pWidth: Int
@@ -183,9 +194,18 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             }
                         }
                     }
-                } catch (e: Exception) {}
+                } catch (_: Exception) {}
             }
         })
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+        waitingMsg = Snackbar.make(requireActivity().window.decorView, getString(R.string.msg_downloading_exif), Snackbar.LENGTH_INDEFINITE)
+        handler.removeCallbacksAndMessages(null)
+        handler.postDelayed({ waitingMsg.show() }, 500)
+
+        return super.onCreateView(inflater, container, savedInstanceState)
     }
 
     override fun onResume() {
@@ -196,6 +216,12 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
     override fun onPause() {
         mapView.onPause()
         super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        handler.removeCallbacksAndMessages(null)
+        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
     }
 
     @Suppress("UNCHECKED_CAST")

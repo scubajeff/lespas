@@ -297,4 +297,5 @@
     <string name="should_allow_launching_other_app">Bitte erlauben Sie Les Pas das Starten anderer Anwendungen in Ihren Sicherheitseinstellungen.</string>
     <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
+    <string name="msg_downloading_exif">Abruf von Metadaten vom Server...</string>
 </resources>

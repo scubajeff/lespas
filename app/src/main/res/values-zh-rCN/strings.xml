@@ -245,4 +245,5 @@
     <string name="should_allow_launching_other_app">请设置允许Les Pas关联启动。</string>
     <string name="msg_low_storage_space">内部存储空间剩余不足10%，Les Pas将无法与服务器同步。</string>
     <string name="msg_login_first">请先登录服务器。</string>
+    <string name="msg_downloading_exif">正从服务器上获取照片元数据……</string>
 </resources>

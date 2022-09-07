@@ -280,4 +280,5 @@
     <string name="exclude_albums">Exclure les photos de :</string>
     <string name="prefer_latest">Récent</string>
     <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
+    <string name="msg_downloading_exif">Récupérer les méta-données du serveur...</string>
 </resources>
