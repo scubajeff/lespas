@@ -335,11 +335,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionSize) }
+                            actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
                         } else if (!(selectionTracker.hasSelection()) && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionSize)
+                        } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
                     }
 
                     override fun onItemStateChanged(key: String, selected: Boolean) {

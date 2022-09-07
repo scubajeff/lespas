@@ -71,7 +71,9 @@
     <string name="item_rename">相册改名</string>
     <string name="action_share">分享</string>
     <string name="action_remove">删除</string>
-    <string name="selected_count">已选择%1$d项</string>
+    <plurals name="selected_count">
+        <item quantity="other">已选择%1$d项</item>
+    </plurals>
     <string name="error_only_one_account">同一服务器只允许设置一个帐号</string>
     <string name="auto_theme_title">应用主题样式</string>
     <string name="theme_light_entries">选用浅色主题</string>

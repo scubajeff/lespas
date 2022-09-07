@@ -282,14 +282,15 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
                     override fun onSelectionChanged() {
                         super.onSelectionChanged()
+                        val selectionSize = selectionTracker.selection.size()
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumFragment)
-                            actionMode?.let { it.title = getString(R.string.selected_count, selectionTracker.selection.size())}
+                            actionMode?.let { it.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize) }
                         } else if (!selectionTracker.hasSelection() && actionMode != null) {
                             actionMode?.finish()
                             actionMode = null
-                        } else actionMode?.title = getString(R.string.selected_count, selectionTracker.selection.size())
+                        } else actionMode?.title = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
                     }
 
                     override fun onItemStateChanged(key: String, selected: Boolean) {

@@ -241,7 +241,10 @@
     <string name="action_reuse">Nell\'album…</string>
     <string name="action_rename_media">Rinomina</string>
     <string name="action_select_all">Seleziona tutto</string>
-    <string name="selected_count">Elementi selezionati: %1$d</string>
+    <plurals name="selected_count">
+        <item quantity="one">%1$d selezionato</item>
+        <item quantity="other">%1$d selezionati</item>
+    </plurals>
 
     <!-- Camera Roll Activity -->
     <string name="empty_camera_roll">Non è stato trovato alcun file nel rullino foto.</string>

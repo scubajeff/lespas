@@ -14,7 +14,7 @@
   ~   See the License for the specific language governing permissions and
   ~   limitations under the License.
   -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
     <string name="gallery_app_name">Galerie</string>
     <!-- MainActivity -->
@@ -226,7 +226,10 @@
     <string name="action_reuse">Vers l\'album …</string>
     <string name="action_rename_media">Renommer</string>
     <string name="action_select_all">Tout sélectionner</string>
-    <string name="selected_count">%1$d sélectionné(s)</string>
+    <plurals name="selected_count" tools:ignore="MissingQuantity">
+        <item quantity="one">%1$d sélectionné</item>
+        <item quantity="other">%1$d sélectionnés</item>
+    </plurals>
     <!-- Camera Roll Activity -->
     <string name="empty_camera_roll">Aucun média n\'a été trouvé dans la galerie</string>
     <!-- Camera Roll Fragment -->

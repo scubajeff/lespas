@@ -466,11 +466,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                         super.onSelectionChanged()
 
                         if (selectionTracker.hasSelection()) {
+                            val selectionSize = selectionTracker.selection.size()
+
                             if (!camerarollModel.shouldDisableRemove()) removeButton.isEnabled = true
                             shareButton.isEnabled = true
                             lespasButton.isEnabled = true
                             closeButton.setImageResource(R.drawable.ic_baseline_close_24)
-                            selectionText.text = getString(R.string.selected_count, selection.size())
+                            selectionText.text = resources.getQuantityString(R.plurals.selected_count, selectionSize, selectionSize)
                             selectionText.isVisible = true
 
                             setButtonGroupState(true)

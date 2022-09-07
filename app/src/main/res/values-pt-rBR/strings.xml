@@ -226,7 +226,10 @@
     <string name="action_set_local">Configurar como Local</string>
     <string name="action_reuse">Para álbum…</string>
     <string name="action_select_all">Selecionar tudo</string>
-    <string name="selected_count">%1$d selecionados</string>
+    <plurals name="selected_count">
+        <item quantity="one">%1$d selecionado</item>
+        <item quantity="other">%1$d selecionados</item>
+    </plurals>
 
     <!-- Camera Roll Activity -->
     <string name="empty_camera_roll">Nenhuma mídia encontrada na pasta Câmera.</string>

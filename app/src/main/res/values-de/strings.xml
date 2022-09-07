@@ -15,7 +15,7 @@
   ~   limitations under the License.
   -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Les Pas</string>
     <string name="gallery_app_name">Galerie</string>
 
@@ -188,8 +188,10 @@
     <string name="action_remove">Löschen</string>
     <string name="action_reuse">Zum Album…</string>
     <string name="action_select_all">Alle auswählen</string>
-    <string name="selected_count">%1$d ausgewählt</string>
-    
+    <plurals name="selected_count" tools:ignore="MissingQuantity">
+        <item quantity="other">%1$d ausgewählt</item>
+    </plurals>
+
     <!-- Camera Roll Activity -->
     <string name="empty_camera_roll">Keine Medien in der Filmrolle gefunden</string>
 

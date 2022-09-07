@@ -97,7 +97,10 @@
     <string name="action_share">Comparte</string>
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
-    <string name="selected_count">%1$d seleccionado</string>
+    <plurals name="selected_count">
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="other">%1$d seleccionados</item>
+    </plurals>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
