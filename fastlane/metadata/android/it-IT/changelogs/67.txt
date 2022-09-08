@@ -1,0 +1,6 @@
+* Supporto dell'autenticazione LDAP e di altri SSO
+* Nuova funzione per visualizzare lo stato della sincronizzazione/backup in background, nuovo pulsante di risincronizzazione manuale.
+* Offrire la possibilità di eseguire il backup delle foto esistenti nel rullino fotografico per le nuove installazioni.
+* Arresto anomalo corretto quando si visualizzano immagini ad alta risoluzione
+* Mostra l'ora di scatto della foto nell'ora locale del luogo in cui è stata scattata.
+* Altri miglioramenti e correzioni di bug

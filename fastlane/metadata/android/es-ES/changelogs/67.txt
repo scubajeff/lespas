@@ -1,0 +1,6 @@
+* Soporta LDAP y otras autenticaciones SSO
+* Nueva función para ver el estado de la sincronización/copia de seguridad en segundo plano, nuevo botón de resincronización manual
+* Ofrecer la opción de hacer una copia de seguridad de las fotos existentes en el rollo de la cámara para las nuevas instalaciones
+* Corregido el fallo al ver fotos de alta resolución
+* Mostrar la hora de la foto en la hora local del lugar donde se tomó
+* Otras mejoras y correcciones de errores

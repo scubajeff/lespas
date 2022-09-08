@@ -1,0 +1,6 @@
+* Apoiar a autenticação LDAP e outros SSO
+* Nova função para visualizar o status de sincronização/backup de fundo, novo botão de sincronização manual
+* Oferecer a opção de fazer backup da foto existente em rolo de câmera para novas instalações
+* Corrigido o crash ao visualizar imagens de alta resolução
+* Mostrar o tempo de realização da foto na hora local
+* Outras melhorias e correções de bugs

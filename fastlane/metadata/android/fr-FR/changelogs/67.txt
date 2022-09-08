@@ -1,0 +1,6 @@
+* Support de l'authentification LDAP et autres SSO.
+* Nouvelle fonction permettant de visualiser l'état de la synchronisation/sauvegarde en arrière-plan, nouveau bouton de resynchronisation manuelle.
+* Possibilité de sauvegarder les photos existantes dans le rouleau de l'appareil photo pour les nouvelles installations.
+* Correction d'une erreur lors de l'affichage de photos en haute résolution
+* Affichage de l'heure de prise de vue en heure locale du lieu de prise de vue.
+* Autres améliorations et corrections de bugs

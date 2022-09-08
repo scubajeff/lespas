@@ -1,3 +1,10 @@
+## Version 2.5.20
+* Support LDAP and other SSO authentication
+* New function to view status of background sync/backup, new manual re-sync button
+* Offer choice to backup existing photo in camera roll for new installs
+* Fixed crash when viewing high resolution pictures
+* Show picture taken time in taken place's local time
+
 ## Version 2.5.19
 * Fixed bug preventing backup of a large camera roll
 * Show name of current file being backup in Setting

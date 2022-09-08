@@ -1,0 +1,6 @@
+* Support LDAP and other SSO authentication
+* New function to view status of background sync/backup, new manual re-sync button
+* Offer choice to backup existing photo in camera roll for new installs
+* Fixed crash when viewing high resolution pictures
+* Show picture taken time in taken place's local time
+* Other improvements and bugs fixes

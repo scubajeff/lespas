@@ -1,0 +1,6 @@
+* Unterstützung von LDAP und anderen SSO-Authentifizierungen
+* Neue Funktion zur Anzeige des Status der Hintergrundsynchronisierung/-sicherung, neue Schaltfläche zur manuellen Neusynchronisierung
+* Bietet bei Neuinstallationen die Möglichkeit, vorhandene Fotos in der Kamerarolle zu sichern
+* Behebung eines Absturzes bei der Anzeige von hochauflösenden Bildern
+* Anzeige der Aufnahmezeit des Bildes in der Ortszeit des Aufnahmeortes
+* Weitere Verbesserungen und Fehlerkorrekturen
