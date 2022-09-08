@@ -27,15 +27,18 @@ import site.leos.apps.lespas.BaseDao
 data class Action (
     @PrimaryKey(autoGenerate = true) val id: Long?,
     val action: Int,
-    val folderId: String,
-    val folderName: String,
-    val fileId: String,
-    val fileName: String,
+    val folderId: String = "",
+    val folderName: String = "",
+    val fileId: String = "",
+    val fileName: String ="",
     val date: Long,
-    val retry: Int) {
+    val retry: Int = 1,
+){
    companion object {
        const val TABLE_NAME = "actions"
 
+       // Sync action codes
+       const val ACTION_FINISHED = 0
        const val ACTION_DELETE_FILES_ON_SERVER = 1
        const val ACTION_DELETE_DIRECTORY_ON_SERVER = 2
        const val ACTION_ADD_FILES_ON_SERVER = 3
@@ -44,7 +47,7 @@ data class Action (
        const val ACTION_RENAME_DIRECTORY = 6
        const val ACTION_RENAME_FILE = 7
        const val ACTION_UPDATE_FILE = 8
-       const val ACTION_UPDATE_ALBUM_META = 9
+       const val ACTION_UPDATE_ALBUM_COVER = 9
        const val ACTION_UPDATE_PHOTO_META = 10
        const val ACTION_ADD_FILES_TO_JOINT_ALBUM = 11
        const val ACTION_UPDATE_JOINT_ALBUM_PHOTO_META = 12
@@ -58,6 +61,22 @@ data class Action (
        //const val ACTION_BATCH_DELETE_FILE_ON_SERVER = 20
        const val ACTION_DELETE_CAMERA_BACKUP_FILE = 21
        const val ACTION_PATCH_PROPERTIES = 22
+       const val ACTION_BACKUP_FILE = 23
+
+       const val ACTION_COLLECT_REMOTE_CHANGES = 1001
+       const val ACTION_CREATE_ALBUM_FROM_SERVER = 1002
+       const val ACTION_UPDATE_ALBUM_FROM_SERVER = 1003
+
+       // Syncing stage codes
+       const val SYNC_STAGE_STARTED = 9000
+       const val SYNC_STAGE_LOCAL = 9001
+       const val SYNC_STAGE_REMOTE = 9002
+       const val SYNC_STAGE_BACKUP = 9003
+
+       // Syncing result codes
+       const val SYNC_RESULT_FINISHED = 10000
+       const val SYNC_RESULT_NO_WIFI = 10001
+       const val SYNC_RESULT_ERROR_GENERAL = 10002
    }
 }
 

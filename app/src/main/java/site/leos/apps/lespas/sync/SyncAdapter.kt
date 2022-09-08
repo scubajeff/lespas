@@ -52,7 +52,9 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileWriter
 import java.io.InterruptedIOException
+import java.net.ConnectException
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -79,11 +81,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
     private var workingAction: Action? = null
 
+    private val keySyncStatus = application.getString(R.string.sync_status_pref_key)
+    private val keySyncStatusLocalAction = application.getString(R.string.sync_status_local_action_pref_key)
+    private val keyBackupStatus = application.getString(R.string.cameraroll_backup_status_pref_key)
+
     override fun onPerformSync(account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult) {
 
         try {
             //val order = extras.getInt(ACTION)   // Return 0 when no mapping of ACTION found
-
             prepare(account)
             while (true) {
                 val actions = actionRepository.getAllPendingActions()
@@ -96,8 +101,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Clear status counters
             syncResult.stats.clear()
+
+            reportStage(Action.SYNC_RESULT_FINISHED)
         } catch (e: OkHttpWebDavException) {
-            Log.e(">>>>OkHttpWebDavException: ", e.stackTraceString)
+            Log.e(TAG, e.stackTraceString)
             when (e.statusCode) {
                 400, 404, 405, 406, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move on to next action
@@ -127,50 +134,63 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
         } catch (e: IOException) {
             syncResult.stats.numIoExceptions++
-            Log.e(">>>>IOException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: SocketTimeoutException) {
             syncResult.stats.numIoExceptions++
-            Log.e(">>>>SocketTimeoutException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: InterruptedIOException) {
             syncResult.stats.numIoExceptions++
-            Log.e(">>>>InterruptedIOException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
+        } catch (e: UnknownHostException) {
+            syncResult.stats.numIoExceptions++
+            Log.e(TAG, e.stackTraceToString())
+        } catch (e: ConnectException) {
+            syncResult.stats.numIoExceptions++
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: SSLHandshakeException) {
             syncResult.stats.numIoExceptions++
             syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
-            Log.e(">>>>SSLHandshakeException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: SSLPeerUnverifiedException) {
             syncResult.stats.numIoExceptions++
             syncResult.delayUntil = (System.currentTimeMillis() / 1000) + 10 * 60       // retry 10 minutes later
-            Log.e(">>>>SSLPeerUnverifiedException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: AuthenticatorException) {
             syncResult.stats.numAuthExceptions++
-            Log.e(">>>>AuthenticatorException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: IllegalArgumentException) {
             syncResult.hasSoftError()
-            Log.e(">>>>IllegalArgumentException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: IllegalStateException) {
             syncResult.hasSoftError()
-            Log.e(">>>>IllegalStateException: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } catch (e: NetworkErrorException) {
-            syncResult.hasSoftError()
-            Log.e(">>>>NetworkErrorException: ", e.stackTraceToString())
+            syncResult.stats.numIoExceptions++
+            Log.e(TAG, e.stackTraceToString())
+        } catch (e: ConnectException) {
+            syncResult.stats.numIoExceptions++
+            Log.e(TAG, e.stackTraceToString())
         } catch (e:Exception) {
-            Log.e(">>>>Exception: ", e.stackTraceToString())
+            Log.e(TAG, e.stackTraceToString())
         } finally {
             // Make sure meta get updated by adding them to action database
             metaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", it, "", "", 0, 0)) }
             contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
+
+            if (syncResult.stats.numIoExceptions > 0 || syncResult.stats.numAuthExceptions > 0) reportStage(Action.SYNC_RESULT_ERROR_GENERAL)
         }
     }
 
     private fun prepare(account: Account) {
+        reportStage(Action.SYNC_STAGE_STARTED)
+
         // Check network type
         checkConnection()
 
         // If we don't have any album, clean up the local root folder, this is useful when upgrading to version 2.5.0 when local media files have to be deleted
         if (albumRepository.getAlbumTotal() == 0) {
-            try { File(localRootFolder).deleteRecursively() } catch(e: Exception) {}
-            try { File(localRootFolder).mkdir() } catch(e: Exception) {}
+            try { File(localRootFolder).deleteRecursively() } catch(_: Exception) {}
+            try { File(localRootFolder).mkdir() } catch(_: Exception) {}
         }
 
         AccountManager.get(application).run {
@@ -197,10 +217,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun syncLocalChanges(pendingActions: List<Action>) {
+        reportStage(Action.SYNC_STAGE_LOCAL)
+
         // Sync local changes, e.g., processing pending actions
         pendingActions.forEach { action ->
             // Save current action for deletion when some ignorable exceptions happen
             workingAction = action
+
+            reportActionStatus(action.action, action.folderId, action.folderName, action.fileId, action.fileName, action.date)
 
             // Check network type on every loop, so that user is able to stop sync right in the middle
             checkConnection()
@@ -321,7 +345,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Sync from server syncRemoteChanges() will detect the change and update content meta later
                 }
 
-                Action.ACTION_UPDATE_ALBUM_META -> {
+                Action.ACTION_UPDATE_ALBUM_COVER -> {
                     // Property folderId holds id of the album needed meta update
                     // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
                     albumRepository.getThisAlbum(action.folderId).apply {
@@ -405,7 +429,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         webDav.upload(Tools.remotePhotosToMetaJSONString(photos), contentMetaUrl, MIME_TYPE_JSON)
 
-                        try { updateLogFile.delete() } catch (e: Exception) {}
+                        try { updateLogFile.delete() } catch (_: Exception) {}
                     }
                     catch(e: FileNotFoundException) {
                         // If somehow update log file is missing, like when all photos added already existed in Joint Album, abandon this action
@@ -437,7 +461,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property folderName holds target folder name, relative to user's home folder
                     // Property fileName holds target file name
                     // Property fileId holds patch payload
-                    //Log.e(">>>>>>>>>>", "patching ${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName} ${action.fileId}")
+                    //Log.e(TAG, "patching ${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName} ${action.fileId}")
                     webDav.patch("${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName}", action.fileId)
                 }
             }
@@ -447,6 +471,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         workingAction = null
+
+        // Clear action reporting preference
+        reportActionStatus(Action.ACTION_FINISHED, " ", " ", " ", " ", System.currentTimeMillis())
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
@@ -483,7 +510,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun syncRemoteChanges() {
-        //Log.e(">>>>>>>>**", "sync remote changes")
+        //Log.e(TAG, "sync remote changes")
+        reportStage(Action.SYNC_STAGE_REMOTE)
+
         val changedAlbums = mutableListOf<Album>()
         val remoteAlbumIds = arrayListOf<String>()
 
@@ -492,6 +521,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var hidden: Boolean
 
         // Create a changed album list, including all albums modified or created on server except newly created hidden ones
+        reportActionStatus(Action.ACTION_COLLECT_REMOTE_CHANGES, " ", " ", " ", " ", System.currentTimeMillis())
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
             if (remoteAlbum.isFolder) {
                 // Collecting remote album ids, including hidden albums, for deletion syncing
@@ -570,7 +600,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             shareId = Album.DEFAULT_FLAGS or Album.EXCLUDED_ALBUM,
                             sortOrder = sp.getString(application.getString(R.string.default_sort_order_pref_key), Album.BY_DATE_TAKEN_ASC.toString())?.toInt() ?: Album.BY_DATE_TAKEN_ASC)
                     )
-                    //Log.e(">>>>>>>>", "no hit, creating changedAlbum ${remoteAlbum.name}")
+                    //Log.e(TAG, "no hit, creating changedAlbum ${remoteAlbum.name}")
                 }
             }
         }
@@ -587,7 +617,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try { File(localRootFolder, it.name).delete() } catch(e: Exception) { e.printStackTrace() }
                 }
                 try { File(localRootFolder, "${local.id}.json").delete() } catch (e: Exception) { e.printStackTrace() }
-                //Log.e(">>>>", "Deleted album: ${local.id}")
+                //Log.e(TAG, "Deleted album: ${local.id}")
             }
         }
 
@@ -597,7 +627,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val changedPhotos = mutableListOf<Photo>()
             val remotePhotoIds = mutableListOf<String>()
             val metadataRetriever = MediaMetadataRetriever()
-            var exifInterface: androidx.exifinterface.media.ExifInterface?
+            var exifInterface: ExifInterface?
 
             for (changedAlbum in changedAlbums) {
                 // Check network type on every loop, so that user is able to stop sync right in the middle
@@ -613,7 +643,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var contentModifiedTime = LocalDateTime.MIN
 
                 // Create changePhotos list
-                //Log.e(">>>>>>>>>>", "syncing remote album ${changedAlbum.name}")
+                //Log.e(TAG, "syncing remote album ${changedAlbum.name}")
                 val remotePhotoList = webDav.list("${resourceRoot}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
                     when {
@@ -632,13 +662,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     //Log.e("<><><>", "coming back now ${remotePhoto.name}")
 
                                     // Remove old media file at local
-                                    try { File(localRootFolder, remotePhotoId).delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                    try { File(localRootFolder, remotePhotoId).delete() } catch (e: Exception) { Log.e(TAG, e.stackTraceToString()) }
                                     // Rename image file name to fileid
-                                    try { File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId)) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                    try { File(localRootFolder, remotePhoto.name).renameTo(File(localRootFolder, remotePhotoId)) } catch (e: Exception) { Log.e(TAG, e.stackTraceToString()) }
                                     // Handle video thumbnail file too
                                     if (remotePhoto.contentType.startsWith("video")) {
-                                        try { File(localRootFolder, "${remotePhotoId}.thumbnail").delete() } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
-                                        try { File(localRootFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localRootFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { Log.e(">>>>Exception: ", e.stackTraceToString()) }
+                                        try { File(localRootFolder, "${remotePhotoId}.thumbnail").delete() } catch (e: Exception) { Log.e(TAG, e.stackTraceToString()) }
+                                        try { File(localRootFolder, "${remotePhoto.name}.thumbnail").renameTo(File(localRootFolder, "${remotePhotoId}.thumbnail")) } catch (e: Exception) { Log.e(TAG, e.stackTraceToString()) }
                                     }
 
                                     localPhotoNamesReverse[remotePhoto.name]?.apply {
@@ -658,7 +688,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local, or on first sync with server
                                     changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified))
                                     //changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
-                                    //Log.e(">>>>>>>>>>", "creating changePhoto ${remotePhoto.name}")
+                                    //Log.e(TAG, "creating changePhoto ${remotePhoto.name}")
                                 }
                             } else if (localPhotoNames[remotePhotoId] != remotePhoto.name) {
                                 // Rename operation on server would not change item's own eTag, have to sync name changes here. The positive side is avoiding fetching the actual file again from server
@@ -694,7 +724,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Recreate metadata file on server if there are missing
+                // Recreate metadata files on server if they are missing
                 remotePhotoList.find { it.name == "${changedAlbum.id}.json" } ?: run { metaUpdatedNeeded.add(changedAlbum.name) }
                 remotePhotoList.find { it.name == "${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}" } ?: run { contentMetaUpdatedNeeded.add(changedAlbum.name) }
 
@@ -702,8 +732,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Syncing album meta, deal with album cover, sort order
                 // *****************************************************
                 if (changedAlbum.cover == Album.NO_COVER) {
-                    //Log.e(">>>>>>>>", "create cover for new album ${changedAlbum.name}")
+                    //Log.e(TAG, "create cover for new album ${changedAlbum.name}")
                     // New album created on server, cover not yet available
+                    reportActionStatus(Action.ACTION_CREATE_ALBUM_FROM_SERVER, changedAlbum.name, " ", " ", " ", System.currentTimeMillis())
 
                     // Safety check, if this new album is empty, process next album
                     if (changedPhotos.size <= 0) continue
@@ -733,22 +764,24 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     } ?: run {
                         // If there has no meta, neither v1 nor v2, on server, create it at the end of syncing
-                        //Log.e(">>>>>>>>>>>", "could not download meta file ${changedAlbum.id}.json of album  ${changedAlbum.name} from server")
+                        //Log.e(TAG, "could not download meta file ${changedAlbum.id}.json of album  ${changedAlbum.name} from server")
                         metaUpdatedNeeded.add(changedAlbum.name)
                     }
                 } else {
+                    reportActionStatus(Action.ACTION_UPDATE_ALBUM_FROM_SERVER, changedAlbum.name, " ", " ", " ", System.currentTimeMillis())
+
                     // Try to sync meta changes from other devices if this album exists on local device
                     val metaFileName = "${changedAlbum.id}.json"
                     remotePhotoList.find { it.name == metaFileName }?.let { remoteMeta->
-                        //Log.e(">>>>>", "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
-                        //Log.e(">>>>>", "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
+                        //Log.e(TAG, "remote ${metaFileName} timestamp: ${remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli()}")
+                        //Log.e(TAG, "local ${metaFileName} timestamp: ${File("$localRootFolder/${metaFileName}").lastModified()}")
                         if (remoteMeta.modified.toInstant(OffsetDateTime.now().offset).toEpochMilli() - File("$localRootFolder/${metaFileName}").lastModified() > 180000) {
                             // If the delta of last modified timestamp of local and remote meta file is larger than 3 minutes, assume that it's a updated version from other devices, otherwise this is the same
                             // version of local. If more than one client update the cover during the same short period of less than 3 minutes, the last update will be the final, but all the other clients won't
                             // get updated cover setting, and if this album gets modified later, the cover setting will change!!
                             // TODO more proper way to handle conflict
                             downloadAlbumMeta(changedAlbum)?.apply {
-                                //Log.e(">>>>>>>>>>>>>>>","downloaded ${changedAlbum.name}'s latest album meta json from server")
+                                //Log.e(TAG,"downloaded ${changedAlbum.name}'s latest album meta json from server")
                                 if (changedAlbum.coverMimeType.isNotEmpty()) {
                                     // Only sync with newer version of meta json
                                     changedAlbum.cover = cover
@@ -774,10 +807,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Quick sync for "Remote" albums
                 //*******************************
                 if (isRemoteAlbum && !Tools.isExcludedAlbum(changedAlbum) && changedPhotos.isNotEmpty()) {
-                    //Log.e(">>>>>>>>>>", "album ${changedAlbum.name} is Remote and exists at local")
+                    //Log.e(TAG, "album ${changedAlbum.name} is Remote and exists at local")
                     // If album is "Remote" and it's not a newly created album on server (denoted by cover equals to Album.NO_COVER), try syncing content meta instead of downloading, processing media file
                     if (changedAlbum.lastModified <= contentModifiedTime) {
-                        //Log.e(">>>>>>>>>>", "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
+                        //Log.e(TAG, "content meta is latest, start quick syncing meta for album ${changedAlbum.name}")
                         // If content meta file modified time is not earlier than album folder modified time, there is no modification to this album done on server, safe to use content meta
                         val photoMeta = mutableListOf<Photo>()
                         var pId: String
@@ -805,7 +838,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                     } catch (e: JSONException) {
                                                         // Some client with version lower than 2.5.0 updated the content meta json file via function like adding photos to Joint Album
                                                         // We should quit quick sync, fall back to normal sync to that additoinal meta data can be retrieved
-                                                        //Log.e(">>>>>>>>>>", "client lower than 2.5.0 updated content meta, quit quick sync")
+                                                        //Log.e(TAG, "client lower than 2.5.0 updated content meta, quit quick sync")
                                                         contentMetaUpdatedNeeded.add(changedAlbum.name)
                                                         return@use
                                                     }
@@ -827,7 +860,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         )
                                                     )
 
-                                                    //Log.e(">>>>>>>>>>>>>>>>>>>>>>", "quick syncing new photo ${getString("name")} from server")
+                                                    //Log.e(TAG, "quick syncing new photo ${getString("name")} from server")
 
                                                     // Maintain album start and end date
                                                     with(photoMeta.last().dateTaken) {
@@ -875,26 +908,27 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     checkConnection()
 
                     if (isRemoteAlbum) {
-                        //Log.e(">>>>>>>>>>>>>>>>", "extracting meta remotely for photo ${changedPhoto.name}")
+                        //Log.e(TAG, "extracting meta remotely for photo ${changedPhoto.name}")
                         // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
                         if (changedPhoto.mimeType.startsWith("video", true)) {
-                            try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (e: Exception) {}
+                            try { metadataRetriever.setDataSource("${resourceRoot}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (_: Exception) {}
                             exifInterface = null
                         } else {
                             webDav.getStream("$resourceRoot/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
-                                exifInterface = try { androidx.exifinterface.media.ExifInterface(it) } catch (e: Exception) { null }
+                                exifInterface = try { ExifInterface(it) } catch (e: Exception) { null }
                             }
                         }
                     } else {
                         // If it's a Local album, download image file from server and extract meta locally
                         webDav.download("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localRootFolder/${changedPhoto.id}", null)
-                        //Log.e(">>>>", "Downloaded ${changedPhoto.name}")
+                        //Log.e(TAG, "Downloaded ${changedPhoto.name}")
 
                         if (changedPhoto.mimeType.startsWith("video")) {
-                            try { metadataRetriever.setDataSource("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) {}
+                            try { metadataRetriever.setDataSource("$localRootFolder/${changedPhoto.id}")} catch (_: Exception) {}
                             exifInterface = null
                         }
-                        else exifInterface = try { androidx.exifinterface.media.ExifInterface("$localRootFolder/${changedPhoto.id}")} catch (e: Exception) { null }
+                        else exifInterface = try { ExifInterface("$localRootFolder/${changedPhoto.id}")
+                        } catch (e: Exception) { null }
                     }
 
                     with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (isRemoteAlbum) "" else "$localRootFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = isRemoteAlbum)) {
@@ -917,7 +951,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (isRemoteAlbum) {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
                             // Find out if it's animated GIF or WEBP
-                            //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to find out if it's animated")
+                            //Log.e(TAG, "need to download ${changedPhoto.name} to find out if it's animated")
                             webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
                                 val d = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
                                 changedPhoto.width = d.intrinsicWidth
@@ -927,7 +961,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         } else {
                             if (changedPhoto.width == 0 && changedPhoto.mimeType.startsWith("image")) {
                                 // If image resolution fetched from EXIF failed (for example, picture format don't support EXIF), we need to download the file from server
-                                //Log.e(">>>>>>>>>>>>>", "need to download ${changedPhoto.name} to get resolution data")
+                                //Log.e(TAG, "need to download ${changedPhoto.name} to get resolution data")
                                 webDav.getStream("$resourceRoot/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
                                     BitmapFactory.Options().apply {
                                         inJustDecodeBounds = true
@@ -952,7 +986,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // If it's a new album without meta file, create default cover because width and height information are ready now
                         with(changedAlbum) {
                             if (cover == Album.NO_COVER) {
-                                //Log.e(">>>>>>>>>>>>", "setting 1st photo in the list ${changedPhoto.name} to be the cover for new album ${changedAlbum.name}")
+                                //Log.e(TAG, "setting 1st photo in the list ${changedPhoto.name} to be the cover for new album ${changedAlbum.name}")
                                 cover = changedPhoto.id
                                 coverBaseline = (changedPhoto.height - (changedPhoto.width * 9 / 21)) / 2
                                 coverWidth = changedPhoto.width
@@ -1008,7 +1042,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
-                //Log.e(">>>>>>>>>>>>>>>>>", "finish syncing album ${changedAlbum.name}")
+                //Log.e(TAG, "finish syncing album ${changedAlbum.name}")
                 albumRepository.upsert(changedAlbum)
 
                 //*********************************************************************************************************************************************************************
@@ -1020,8 +1054,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (localPhoto.value.isNotEmpty() && !remotePhotoIds.contains(localPhoto.key)) {
                         deletion = true
                         photoRepository.deleteById(localPhoto.key)
-                        try { File(localRootFolder, localPhoto.key).delete() } catch (e: Exception) {}
-                        try { File(localRootFolder, "${localPhoto.key}.thumbnail").delete() } catch (e: Exception) {}
+                        try { File(localRootFolder, localPhoto.key).delete() } catch (_: Exception) {}
+                        try { File(localRootFolder, "${localPhoto.key}.thumbnail").delete() } catch (_: Exception) {}
                     }
                 }
 
@@ -1072,6 +1106,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun backupCameraRoll() {
         // Backup camera roll if setting turn on
         if (sp.getBoolean(application.getString(R.string.cameraroll_backup_pref_key), false)) {
+            reportStage(Action.SYNC_STAGE_BACKUP)
+
             // Make sure DCIM base directory is there
             if (!webDav.isExisted(dcimRoot)) webDav.createFolder(dcimRoot)
 
@@ -1101,7 +1137,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 MediaStore.Files.FileColumns.HEIGHT,
             )
             val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})" + " AND " +
-                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, 0L)})"
+                    "($pathSelection LIKE '%DCIM%')" + " AND " + "(${MediaStore.Files.FileColumns.DATE_ADDED} > ${sp.getLong(SettingsFragment.LAST_BACKUP, System.currentTimeMillis() / 1000)})"
 
             cr.query(contentUri, projection, selection, null, "${MediaStore.Files.FileColumns.DATE_ADDED} ASC"
             )?.use { cursor->
@@ -1118,6 +1154,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 var relativePath: String
                 var fileName: String
+                var size: Long
                 var mimeType: String
                 var id: Long
                 var photoUri: Uri
@@ -1128,30 +1165,28 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var mDate: Long
 
                 while(cursor.moveToNext()) {
-                    //Log.e(">>>>>>>>", "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
+                    //Log.e(TAG, "${cursor.getString(nameColumn)} ${cursor.getString(dateColumn)}  ${cursor.getString(pathColumn)} needs uploading")
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
 
                     // Get uri, in Android Q or above, try getting original uri for meta data extracting
                     id = cursor.getLong(idColumn)
                     photoUri = ContentUris.withAppendedId(contentUri, id)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (e: Exception) {}
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
-                    // Save current uploading filename for displaying in Setting menu backup menu summary
-                    sp.edit().apply {
-                        putString(SettingsFragment.CURRENT_WORKING_ON, fileName)
-                        commit()
-                    }
+                    size = cursor.getLong(sizeColumn)
+
+                    reportBackupStatus(fileName, size, cursor.position, cursor.count)
 
                     relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
                     mimeType = cursor.getString(typeColumn)
-                    //Log.e(">>>>>", "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
+                    //Log.e(TAG, "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
 
                     // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, cursor.getLong(sizeColumn), application)
+                            webDav.upload(photoUri, "${dcimRoot}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, size, application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             when (e.statusCode) {
@@ -1197,7 +1232,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     }
                                 }
                             }
-                        } catch (e: Exception) {}
+                        } catch (_: Exception) {}
                     } else if (mimeType.startsWith("video/")) {
                         try {
                             mediaMetadataRetriever.setDataSource(application, photoUri)
@@ -1207,7 +1242,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 altitude = Photo.NO_GPS_DATA
                                 bearing = Photo.NO_GPS_DATA
                             }
-                        } catch (e: SecurityException) {}
+                        } catch (_: SecurityException) {}
                     }
 
                     // Patch photo's DAV properties to accelerate future operations on camera roll archive
@@ -1227,7 +1262,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     "<oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" + altitude + "</oc:${OkHttpWebDav.LESPAS_ALTITUDE}>" +
                                     "<oc:${OkHttpWebDav.LESPAS_BEARING}>" + bearing + "</oc:${OkHttpWebDav.LESPAS_BEARING}>"
                         )
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
 
                     // Save latest timestamp after successful upload
                     sp.edit().apply {
@@ -1237,6 +1272,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 mediaMetadataRetriever.release()
+
+                // Report finished status
+                reportBackupStatus(" ", 0L, 0, 0)
             }
         }
     }
@@ -1303,22 +1341,47 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             else -> Meta(meta.getInt("sort"), getString("id"), getInt("baseline"), getInt("width"), getInt("height"), getString("filename"), "", 0)
                         }
                     }
-                    //Log.e(">>>>", "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
+                    //Log.e(TAG, "Downloaded meta file ${remoteAlbum.name}/${metaFileName}")
                 }
             }
         }
         // Catch exception here so that sync can go on if anything bad happen in this function, album meta file will be recreated if the current one is broken or missing
-        catch (e: OkHttpWebDavException) { Log.e(">>>>OkHttpWebDavException: ${e.statusCode}", e.stackTraceString) }
-        catch (e: FileNotFoundException) { Log.e(">>>>FileNotFoundException: meta file not exist", e.stackTraceToString())}
-        catch (e: JSONException) { Log.e(">>>>JSONException: error parsing meta information", e.stackTraceToString())}
+        catch (e: OkHttpWebDavException) { Log.e("$TAG OkHttpWebDavException: ${e.statusCode}", e.stackTraceString) }
+        catch (e: FileNotFoundException) { Log.e("$TAG FileNotFoundException: meta file not exist", e.stackTraceToString())}
+        catch (e: JSONException) { Log.e("$TAG JSONException: error parsing meta information", e.stackTraceToString())}
         catch (e: Exception) { e.printStackTrace() }
 
         return result
     }
 
     private fun checkConnection() {
-        if (sp.getBoolean(wifionlyKey, true)) {
-            if ((application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) throw NetworkErrorException()
+        if (sp.getBoolean(wifionlyKey, true) && (application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered) {
+            reportStage(Action.SYNC_RESULT_NO_WIFI)
+            throw NetworkErrorException()
+        }
+    }
+
+    private fun reportStage(stageId: Int) {
+        sp.edit().run {
+            putString(keySyncStatus, String.format(Locale.ROOT, SYNC_STATUS_MESSAGE_FORMAT, stageId, System.currentTimeMillis()))
+            commit()
+        }
+    }
+
+    private fun reportActionStatus(id: Int, s1: String, s2: String, s3: String, s4: String, timestamp: Long) {
+        sp.edit().run {
+            putString(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, id, s1, s2, s3, s4, timestamp))
+            commit()
+        }
+    }
+
+    private fun reportBackupStatus(name: String, size: Long, position: Int, total: Int) {
+        sp.edit().run {
+            System.currentTimeMillis().let { timestamp ->
+                putString(keyBackupStatus, String.format(Locale.ROOT, SYNC_STATUS_BACKUP_MESSAGE_FORMAT, name, Tools.humanReadableByteCountSI(size), position + 1, total, timestamp))
+                putString(keySyncStatusLocalAction, String.format(Locale.ROOT, SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT, Action.ACTION_BACKUP_FILE, name, " ", " ", " ", timestamp))
+            }
+            commit()
         }
     }
 
@@ -1341,5 +1404,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val PHOTO_META_HEADER = "{\"lespas\":{\"version\":2,\"photos\":["
 
         private const val CHANGE_LOG_FILENAME_SUFFIX = "-changelog"
+
+        private const val SYNC_STATUS_MESSAGE_FORMAT = "%d|%d"
+        private const val SYNC_STATUS_LOCAL_ACTION_MESSAGE_FORMAT = "%d``%s``%s``%s``%s``%d"
+        private const val SYNC_STATUS_BACKUP_MESSAGE_FORMAT = "%s|%s|%d|%d|%d"
+
+        private const val TAG = "SyncAdapter: "
     }
 }

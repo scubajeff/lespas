@@ -127,8 +127,14 @@
         <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
             app:title="@string/background_sync_title"
+            app:summary="@string/background_sync_summary"
             app:singleLineTitle="false"
             app:defaultValue="false"/>
+
+        <Preference
+            app:key="@string/sync_status_pref_key"
+            app:title="@string/sync_status_title"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             app:key="@string/wifionly_pref_key"
@@ -195,8 +201,9 @@
     </PreferenceCategory>
 
     <PreferenceCategory>
-        <site.leos.apps.lespas.settings.AboutPreference
+        <Preference
             app:allowDividerBelow="false"
-            app:selectable="false"/>
+            app:selectable="false"
+            app:layout="@layout/preference_about" />
     </PreferenceCategory>
 </PreferenceScreen>

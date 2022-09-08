@@ -115,10 +115,10 @@
     
     <string name="sync_header">Synchronisierung</string>
     <string name="cameraroll_backup_title">Filmrolle synchronsisieren</string>
-    <string name="cameraroll_backup_summary">Neue Fotos und Videos werden automatisch auf dem Server im Ordner \'DCIM/%1$s\' gesichert.</string>
+    <string name="cameraroll_backup_summary">Suchen Sie Ihre Sicherung auf dem Server im Ordner \'DCIM/%s\'.</string>
     <string name="background_sync_title">Regelmäßig synchronisieren</string>
     <string name="background_sync_summary">Alle 6 Stunden auf Server-Update prüfen</string>
-    <string name="wifionly_title">Nur über WLAN synchronisieren</string>
+    <string name="wifionly_title">Synchronisierung und Sicherung nur über WiFi</string>
     <string name="wifionly_summary_on">Nur WLAN nutzen, verbraucht keine mobilen Daten.</string>
     <string name="wifionly_summary_off">Auch Mobile Daten nutzen - Vorsicht, falls Sie eine große Fotosammlung haben.</string>
 
@@ -254,8 +254,6 @@
     <string name="item_bgm">BGM verwalten</string>
     <string name="option_menu_mute">Stummschaltung umschalten</string>
     <string name="skip_late_night_update">Späte Nachtaktualisierung überspringen</string>
-    <string name="backup_done">Alle Elemente in der Kamerarolle wurden gesichert.</string>
-    <string name="backup_waiting">%1$,d Elemente in Kamerarolle warten auf Sicherung， lade jetzt %2$s hoch.</string>
     <string name="not_hiding">Die folgenden Namen existierten bereits in der Liste der versteckten Alben: %1$s</string>
     <string name="default_sort_order_title">Standardsortierung von Fotos für neue Alben</string>
     <string name="msg_set_as_remote">Wenn Sie das Album als \"Remote\" einstellen, werden alle Mediendateien von diesem Gerät entfernt. Fortfahren?</string>
@@ -285,8 +283,6 @@
     <string name="nearby_convergence_title">Fotos in der Nähe automatisch konvergieren</string>
     <string name="nearby_convergence_summary">Beim Abspielen der Diashow auf der Karte werden die Fotos auf das nächstgelegene Foto mit GPS-Koordinaten konvergiert.</string>
     <string name="true_black_title">Echtes schwarzes dunkles Thema</string>
-    <string name="sync_summary_finished">Alle Alben sind synchronisiert.</string>
-    <string name="sync__summary_waiting">%1$,d Elemente warten in der Synchronisierungspipeline, Datum zurück bis %2$s.</string>
     <string name="tooltips_fetch_backup">Backups auf dem Server anzeigen</string>
     <string name="tooltips_show_cameraroll">Kamerarolle anzeigen</string>
     <string name="msg_empty_server_backup">Keine Backups auf dem Server. Haben Sie die automatische Sicherung der Kamerarolle in den Einstellungen aktiviert?</string>
@@ -300,4 +296,39 @@
     <string name="msg_low_storage_space">Ihr interner Speicherplatz ist weniger als 10 % frei, dann kann Les Pas nicht mehr mit dem Server synchronisiert werden.</string>
     <string name="msg_login_first">Veuillez d\'abord vous connecter à votre serveur.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server...</string>
+    <string name="cameraroll_backup_remaining">%d übrig</string>
+    <string name="cameraroll_backup_last_time">Die letzte Sicherung wurde %s beendet.</string>
+    <string name="sync_status_action_delete_media">Entfernen von %1$s in Album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Album \'%s\' wird entfernt.</string>
+    <string name="sync_status_action_add_media">Hinzufügen von %1$s zum Album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Hinzufügen des Albums \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Umbenennung des Albums \'%1$s\' in \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Album \'%s\' wird versteckt.</string>
+    <string name="sync_status_action_unhide_album">Ausblenden des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_file">Aktualisierung von %1$s im Album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Aktualisierung des Covers von Album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Hinzufügen von %1$s zum gemeinsamen Album \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Aktualisierung der Metadaten des gemeinsamen Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Aktualisierung der Metadaten des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Aktualisierung der Inhalts-Metadaten des Albums \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Aktualisierung der BGM des Albums \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">BGM des Albums \'%s\' wird entfernt.</string>
+    <string name="sync_status_action_copy">Kopieren von %1$s aus Album \'%2$s\' nach \'%3$s\'.</string>
+    <string name="sync_status_action_move">Verschieben von %1$s von Album \'%2$s\' nach \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Entfernen von %s im Kameraarchiv.</string>
+    <string name="sync_status_action_patch_property">Aktualisieren der WebDAV-Eigenschaften von %s im Kameraarchiv.</string>
+    <string name="sync_status_stage_sync_remote">Synchronisierung von Änderungen vom Server.</string>
+    <string name="sync_status_result_finished">Die letzte Synchronisierung wurde %s.</string>
+    <string name="sync_status_result_no_wifi">Die letzte Synchronisierung wurde %s abgebrochen, da kein WiFi vorhanden ist.</string>
+    <string name="sync_status_stage_started">Start der Synchronisation...</string>
+    <string name="button_text_help">Hilfe!</string>
+    <string name="button_text_resync">Re-Sync</string>
+    <string name="sync_status_stage_backup">Rückfahrkamera...</string>
+    <string name="sync_status_title">Status der Synchronisierung</string>
+    <string name="sync_status_result_general_error">Letzte Synchronisierung fehlgeschlagen %s!</string>
+    <string name="sync_status_stage_sync_local">Synchronisierung lokaler Änderungen...</string>
+    <string name="sync_status_action_collect_remote_changes">Sammeln von Änderungen vom Server...</string>
+    <string name="sync_status_action_create_album_from_server">Album \'%s\' erstellen.</string>
+    <string name="sync_status_action_update_album_from_server">Aktualisierung des Albums \'%s\'.</string>
+    <string name="sync_status_action_backup_file">Sichern des Fotos %s.</string>
 </resources>

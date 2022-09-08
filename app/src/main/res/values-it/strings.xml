@@ -141,12 +141,10 @@
 
     <string name="sync_header">Sincronizzazione</string>
     <string name="cameraroll_backup_title">Backup del rullino foto</string>
-    <string name="cameraroll_backup_summary">Le nuove foto e i nuovi video saranno copiati automaticamente sul server nella cartella \"DCIM/%1$s\".</string>
-    <string name="backup_done">Tutti gli elementi del rullino foto sono stati copiati.</string>
-    <string name="backup_waiting">Elementi del rullino foto in attesa di backup: %1$,d, caricamento %2$s ora.</string>
+    <string name="cameraroll_backup_summary">Trovare il backup sul server nella cartella \"DCIM/%s\".</string>
     <string name="background_sync_title">Sincronizza periodicamente</string>
     <string name="background_sync_summary">Controlla modifiche al server ogni 6 ore</string>
-    <string name="wifionly_title">Sincronizza solo tramite Wi-Fi</string>
+    <string name="wifionly_title">Sincronizza e backup solo tramite WiFi</string>
     <string name="wifionly_summary_on">Non utilizza dati mobili.</string>
     <string name="wifionly_summary_off">Utilizza dati mobili – fai attenzione se hai una grande quantità di foto.</string>
 
@@ -303,8 +301,6 @@
     <string name="msg_empty_server_backup">Nessun backup sul server. Hai attivato il backup automatico del rullino fotografico nelle impostazioni?</string>
     <string name="msg_joint_album_not_updated_locally">Le modifiche apportate all\'album comune saranno visualizzate dopo la conferma del proprietario dell\'album.</string>
     <string name="option_menu_search">Ricerca per nome</string>
-    <string name="sync__summary_waiting">%1$,d elementi in attesa nella pipeline di sincronizzazione, la cui data risale a %2$s.</string>
-    <string name="sync_summary_finished">Tutti gli album sono sincronizzati.</string>
     <string name="title_in_archive">%1$s nei backup della fotocamera</string>
     <string name="tooltips_date_picker">Scegliere una data</string>
     <string name="tooltips_fetch_backup">Mostra i backup sul server</string>
@@ -314,4 +310,39 @@
     <string name="msg_low_storage_space">Lo spazio di archiviazione interno è inferiore al 10%, il che impedisce a Les Pas di sincronizzarsi con il server.</string>
     <string name="msg_login_first">Effettuare prima il login al proprio server.</string>
     <string name="msg_downloading_exif">Abruf von Metadaten vom Server...</string>
+    <string name="cameraroll_backup_remaining">% rimasti</string>
+    <string name="cameraroll_backup_last_time">L\'ultimo backup è terminato %s.</string>
+    <string name="sync_status_action_delete_media">Rimozione di %1$s nell\'album \'%2$s\'.</string>
+    <string name="sync_status_action_delete_album">Rimozione dell\'album \'%s\'.</string>
+    <string name="sync_status_action_add_media">Aggiunta di %1$s all\'album \'%2$s\'.</string>
+    <string name="sync_status_action_add_album">Aggiunta dell\'album \'%s\'.</string>
+    <string name="sync_status_action_rename_album">Rinominare l\'album \'%1$s in \'%2$s\'.</string>
+    <string name="sync_status_action_hide_album">Nascosto l\'album \'%s\'.</string>
+    <string name="sync_status_action_unhide_album">Nascondere l\'album \'%s\'.</string>
+    <string name="sync_status_action_update_file">Aggiornamento di %1$s nell\'album \'%2$s\'.</string>
+    <string name="sync_status_action_update_album_cover">Aggiornamento della copertina dell\'album \'%s\'.</string>
+    <string name="sync_status_action_add_media_to_joint_album">Aggiunta di %1$s all\'album comune \'%2$s\'.</string>
+    <string name="sync_status_action_update_joint_album_meta">Aggiornamento dei metadati dell\'album comune \'%s\'.</string>
+    <string name="sync_status_action_update_album_meta">Aggiornamento dei metadati dell\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_content_meta">Aggiornamento dei metadati del contenuto dell\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_bgm">Aggiornamento del BGM dell\'album \'%s\'.</string>
+    <string name="sync_status_action_delete_album_bgm">Rimozione del BGM dell\'album \'%s\'.</string>
+    <string name="sync_status_action_copy">Copia di %1$s dall\'album \'%2$s\' a \'%3$s\'.</string>
+    <string name="sync_status_action_move">Spostamento di %1$s dall\'album \'%2$s\' a \'%3$s\'.</string>
+    <string name="sync_status_action_delete_media_from_backup">Rimozione di %s nell\'archivio della fotocamera.</string>
+    <string name="sync_status_action_patch_property">Aggiornamento delle proprietà WebDAV di %s nell\'archivio della fotocamera.</string>
+    <string name="sync_status_stage_sync_remote">Sincronizzazione delle modifiche remote...</string>
+    <string name="sync_status_result_finished">L\'ultima sincronizzazione è terminata %s.</string>
+    <string name="sync_status_result_no_wifi">L\'ultima sincronizzazione si è interrotta %s perché non c\'è WiFi.</string>
+    <string name="sync_status_stage_started">Avvio della sincronizzazione...</string>
+    <string name="button_text_help">Aiuto!</string>
+    <string name="button_text_resync">Ri-sinc</string>
+    <string name="sync_status_stage_backup">Backup della telecamera...</string>
+    <string name="sync_status_title">Stato della sincronizzazione</string>
+    <string name="sync_status_result_general_error">L\'ultima sincronizzazione non è riuscita %s!</string>
+    <string name="sync_status_stage_sync_local">Sincronizzare le modifiche locali...</string>
+    <string name="sync_status_action_collect_remote_changes">Raccolta delle modifiche dal server...</string>
+    <string name="sync_status_action_create_album_from_server">Creazione dell\'album \'%s\'.</string>
+    <string name="sync_status_action_update_album_from_server">Aggiornamento dell\'album \'%s\'.</string>
+    <string name="sync_status_action_backup_file">Backup della foto %s.</string>
 </resources>

@@ -138,7 +138,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         // First rename file to new filename on server, then in next ACTION_ADD_FILES_ON_SERVER action, overwrite it with new edition. This way, file's fileId on server will not change
                         add(Action(null, Action.ACTION_RENAME_FILE, album.id, album.name, originalPhoto.name, newPhoto.name, System.currentTimeMillis(), 1))
                         add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, newPhoto.mimeType, album.name, newPhoto.id, newPhoto.name, System.currentTimeMillis(), album.shareId))
-                        if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_META, album.id, album.name, "", "", System.currentTimeMillis(), 1))
+                        if (album.cover == newPhoto.id) add(Action(null, Action.ACTION_UPDATE_ALBUM_COVER, album.id, album.name, "", "", System.currentTimeMillis(), 1))
 /*
                         // Replace the old file with new version, remove then add will force fileId changed, so that OkHttp cache for image preview will not stall
                         add(Action(null, Action.ACTION_DELETE_FILES_ON_SERVER, album.id, album.name, originalPhoto.id, originalPhoto.name, System.currentTimeMillis(), 1))

@@ -20,7 +20,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="@dimen/big_padding"
+    android:paddingBottom="@dimen/big_padding"
     app:layoutDescription="@xml/preference_about_scene">
 
     <ImageView
