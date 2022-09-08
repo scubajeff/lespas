@@ -390,7 +390,14 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         snapseedButton.run {
             // Snapseed edit replace/add preference can't be changed in this screen, safe to fix the action icon
-            setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) R.drawable.ic_baseline_snapseed_24 else R.drawable.ic_baseline_snapseed_add_24), null, null)
+            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(getString(R.string.snapseed_replace_pref_key), false)) {
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(),  R.drawable.ic_baseline_snapseed_24), null, null)
+                text = getString(R.string.button_text_edit_in_snapseed_replace)
+            }
+            else {
+                setCompoundDrawablesWithIntrinsicBounds(null, ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_snapseed_add_24), null, null)
+                text = getString(R.string.button_text_edit_in_snapseed_add)
+            }
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener { view->
                 prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
