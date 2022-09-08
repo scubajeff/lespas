@@ -60,13 +60,16 @@ class NCAuthenticator(private val mContext: Context): AbstractAccountAuthenticat
         // If there is a authtoken, return it
         return if (authToken.isNotEmpty()) {
             Bundle().apply {
-                val userName = mContext.getString(R.string.nc_userdata_username)
-                val secretKey = mContext.getString(R.string.nc_userdata_secret)
                 putString(AccountManager.KEY_ACCOUNT_NAME, account?.name)
                 putString(AccountManager.KEY_ACCOUNT_TYPE, account?.type)
                 putString(AccountManager.KEY_AUTHTOKEN, authToken)
                 //putString(AccountManager.KEY_AUTHENTICATOR_TYPES, server)
+
+                val userName = mContext.getString(R.string.nc_userdata_username)
+                val loginName = mContext.getString(R.string.nc_userdata_loginname)
+                val secretKey = mContext.getString(R.string.nc_userdata_secret)
                 putString(userName, am.getUserData(account, userName))
+                putString(loginName, am.getUserData(account, loginName))
                 putString(secretKey, am.getUserData(account, secretKey))
             }
         } else {

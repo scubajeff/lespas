@@ -1325,7 +1325,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             val userName = getUserData(account, ctx.getString(R.string.nc_userdata_username))
                             val baseUrl = getUserData(account, ctx.getString(R.string.nc_userdata_server))
                             dcimRoot = "$baseUrl${ctx.getString(R.string.dav_files_endpoint)}$userName/DCIM"
-                            webDav = OkHttpWebDav(userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, ctx.getString(R.string.nc_userdata_selfsigned)).toBoolean(), null, "LesPas_${ctx.getString(R.string.lespas_version)}", 0)
+                            webDav = OkHttpWebDav(userName, getUserData(account, ctx.getString(R.string.nc_userdata_secret)), baseUrl, getUserData(account, ctx.getString(R.string.nc_userdata_selfsigned)).toBoolean(), null, "LesPas_${ctx.getString(R.string.lespas_version)}", 0)
                         }
 
                         webDav.listWithExtraMeta(dcimRoot, OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->

@@ -54,6 +54,7 @@ import kotlinx.parcelize.Parcelize
 import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.ByteString.Companion.encode
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -63,6 +64,7 @@ import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import java.net.SocketException
 import java.net.UnknownHostException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.net.ssl.SSLHandshakeException
@@ -192,8 +194,8 @@ class NCLoginFragment: Fragment() {
             }
         }
 
-        authenticateModel.getAuthResult().observe(viewLifecycleOwner) { result ->
-            if (result == AuthenticateViewModel.RESULT_SUCCESS) {
+        authenticateModel.getAuthResult().observe(viewLifecycleOwner) { success ->
+            if (success) {
                 // Ask for storage access permission so that Camera Roll can be shown at first run, fragment quits after return from permission granting dialog closed
                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 storagePermissionRequestLauncher.launch(Tools.getStoragePermissionsArray())
@@ -283,12 +285,21 @@ class NCLoginFragment: Fragment() {
 
     class AuthenticateViewModel : ViewModel() {
         private val credential = NCCredential()
-        private var theming = NCThemimg()
+        private var theming = NCTheming()
         private var pingJob: Job? = null
         private var httpCall: Call? = null
 
-        // Use nextcloud server capabilities OCS endpoint to validate host
+
+        private val pingResult = SingleLiveEvent<Int>()
+        fun isPinging() = pingJob?.isActive ?: false
+        fun stopPinging() { pingJob?.let {
+            if (it.isActive) {
+                httpCall?.cancel()
+            }
+        }}
+        fun getPingResult() = pingResult
         fun pingServer(serverUrl: String?, acceptSelfSign: Boolean) {
+            // Use nextcloud server capabilities OCS endpoint to validate host
             serverUrl?.let { credential.serverUrl = it }
             credential.selfSigned = acceptSelfSign
 
@@ -343,51 +354,75 @@ class NCLoginFragment: Fragment() {
             }
         }
 
-        private val pingResult = SingleLiveEvent<Int>()
-        fun getPingResult() = pingResult
+        private val fetchUserIdResult = SingleLiveEvent<Boolean>()
+        fun fetchUserIdResult() = fetchUserIdResult
+        fun fetchUserId(server: String, username: String, token: String, willFetch: Boolean) {
+            // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
+            // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
+            val host = if (server.startsWith("http")) server else "https://${server}"
 
-        fun toggleUseHttps() { credential.https = !credential.https }
-        fun setToken(username: String, token: String, serverUrl: String? = null) {
-            credential.username = username
-            credential.token = token
-            serverUrl?.let { credential.serverUrl = it }
+            setToken(username, token, host)
+
+            if (willFetch) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        httpCall = OkHttpClient.Builder().apply {
+                            if (credential.selfSigned) hostnameVerifier { _, _ -> true }
+                            readTimeout(20, TimeUnit.SECONDS)
+                            writeTimeout(20, TimeUnit.SECONDS)
+                            addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic ${"${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64()}").build()) }
+                        }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_USER_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
+
+                        httpCall?.execute()?.use { response ->
+                            if (response.isSuccessful) {
+                                response.body?.string()?.let { json ->
+                                    credential.userName = JSONObject(json).getJSONObject("ocs").getJSONObject("data").getString("id")
+                                    fetchUserIdResult.postValue(true)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        fetchUserIdResult.postValue(false)
+                    }
+                }
+            } else fetchUserIdResult.postValue(true)
         }
+
+        fun setToken(username: String, token: String, serverUrl: String = "", userId: String = "") {
+            credential.loginName = username
+            credential.token = token
+            credential.serverUrl = serverUrl
+            credential.userName = userId
+        }
+        fun toggleUseHttps() { credential.https = !credential.https }
         fun setSelfSigned(selfSigned: Boolean) { credential.selfSigned = selfSigned }
         fun getCredential() = credential
-
-        fun isPinging() = pingJob?.isActive ?: false
-        fun stopPinging() { pingJob?.let {
-            if (it.isActive) {
-                httpCall?.cancel()
-            }
-        }}
-
         fun getTheming() = theming
 
-        private val authResult = SingleLiveEvent<Int>()
+        private val authResult = SingleLiveEvent<Boolean>()
         fun getAuthResult() = authResult
-        fun setAuthResult(result: Int) { this.authResult.postValue(result) }
+        fun setAuthResult(result: Boolean) { this.authResult.postValue(result) }
 
         data class NCCredential(
             var serverUrl: String = "",
-            var username: String = "",
+            var loginName: String = "",
             var token: String = "",
             var selfSigned: Boolean = false,
             var https: Boolean = true,
+            var userName: String = "",
         )
 
         @Parcelize
-        data class NCThemimg(
+        data class NCTheming(
             var slogan: String = "",
             var color: Int = Color.TRANSPARENT,
             var textColor: Int = Color.WHITE,
         ): Parcelable
 
         companion object {
-            const val RESULT_SUCCESS = 0
-            const val RESULT_FAIL = 1
-
             private const val NEXTCLOUD_CAPABILITIES_ENDPOINT = "/ocs/v2.php/cloud/capabilities?format=json"
+            private const val NEXTCLOUD_USER_ENDPOINT = "/ocs/v1.php/cloud/user?format=json"
         }
     }
 

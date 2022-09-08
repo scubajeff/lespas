@@ -185,7 +185,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localRootFolder = Tools.getLocalRoot(application)
 
             webDav = OkHttpWebDav(
-                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
+                userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
                 null,
                 "LesPas_${application.getString(R.string.lespas_version)}",
                 0,

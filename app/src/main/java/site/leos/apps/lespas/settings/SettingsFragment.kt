@@ -355,7 +355,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 // Retrieve current account information from AccountManager's vault
                 AccountManager.get(requireContext()).run {
                     val account = getAccountsByType(getString(R.string.account_type_nc))[0]
-                    authenticateModel.setToken(getUserData(account, getString(R.string.nc_userdata_username)), "", getUserData(account, getString(R.string.nc_userdata_server)))
+                    val loginName = getUserData(account, getString(R.string.nc_userdata_loginname)) ?: getUserData(account, getString(R.string.nc_userdata_username))
+                    authenticateModel.setToken(loginName, "", getUserData(account, getString(R.string.nc_userdata_server)))
                     authenticateModel.setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
                 }
 

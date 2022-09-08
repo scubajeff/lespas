@@ -49,12 +49,18 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import okio.ByteString.Companion.encode
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.publication.NCShareViewModel
 import java.net.URL
+import java.nio.charset.StandardCharsets
 
 class NCAuthenticationFragment: Fragment() {
     private lateinit var authWebpage: WebView
@@ -62,7 +68,7 @@ class NCAuthenticationFragment: Fragment() {
     private var sloganView: TextView? = null
 
     private var reLogin: Boolean = false
-    private lateinit var theming: NCLoginFragment.AuthenticateViewModel.NCThemimg
+    private lateinit var theming: NCLoginFragment.AuthenticateViewModel.NCTheming
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
@@ -70,12 +76,13 @@ class NCAuthenticationFragment: Fragment() {
     private var scanRequestLauncher: ActivityResultLauncher<Intent>? = null
 
     private var actionBarHeight = 0
+    private var currentLoginName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
-        theming = requireArguments().getParcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCThemimg()
+        theming = requireArguments().getParcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -88,13 +95,16 @@ class NCAuthenticationFragment: Fragment() {
                 if (result.resultCode == Activity.RESULT_OK) {
                     result.data?.getStringExtra("SCAN_RESULT")?.let { scanResult ->
                         ("nc://login/user:(.*)&password:(.*)&server:(.*)").toRegex().matchEntire(scanResult)?.destructured?.let { (username, token, server) ->
-                            prepareCredential(server, username, token)
+                            authenticateModel.fetchUserId(server, username, token, false)
                         }
                     }
                 }
 
                 // TODO Show scan error
             }
+
+            // Get current account loginName
+            currentLoginName = authenticateModel.getCredential().loginName
         }
 
         actionBarHeight = savedInstanceState?.getInt(KEY_ACTION_BAR_HEIGHT) ?: (requireActivity() as AppCompatActivity).supportActionBar?.height ?: 0
@@ -115,13 +125,10 @@ class NCAuthenticationFragment: Fragment() {
                         if (this.scheme.equals(resources.getString(R.string.nextcloud_credential_scheme))) {
                             // Detected Nextcloud server authentication return special uri scheme: "nc://login/server:<server>&user:<loginname>&password:<password>"
                             ("/server:(.*)&user:(.*)&password:(.*)").toRegex().matchEntire(this.path.toString())?.destructured?.let { (server, username, token) ->
-                                prepareCredential(server, username, token)
+                                authenticateModel.fetchUserId(server, username, token, !reLogin)
                             } ?: run {
                                 // Can't parse Nextcloud server's return
-                                if (reLogin) {
-                                    // TODO prompt user of failure
-                                } else authenticateModel.setAuthResult(NCLoginFragment.AuthenticateViewModel.RESULT_FAIL)
-
+                                authenticateModel.setAuthResult(false)
                                 parentFragmentManager.popBackStack()
                             }
 
@@ -214,8 +221,8 @@ class NCAuthenticationFragment: Fragment() {
             }
 
             authenticateModel.getCredential().run {
-                if (username.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
-                else prepareCredential(serverUrl, username, token)
+                if (loginName.isEmpty() || reLogin) authWebpage.loadUrl("${serverUrl}${LOGIN_FLOW_ENDPOINT}", HashMap<String, String>().apply { put(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true") })
+                else authenticateModel.fetchUserId(serverUrl, loginName, token, true)
             }
         }
 
@@ -233,6 +240,16 @@ class NCAuthenticationFragment: Fragment() {
                 }
             }
         }
+
+        authenticateModel.fetchUserIdResult().observe(viewLifecycleOwner) { success ->
+            if (success) prepareCredentialAndQuit()
+            else {
+                // Can't get userId
+                authenticateModel.setAuthResult(false)
+                parentFragmentManager.popBackStack()
+            }
+        }
+
 
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
@@ -281,52 +298,53 @@ class NCAuthenticationFragment: Fragment() {
         super.onDestroyView()
     }
 
-    private fun prepareCredential(server: String, username: String, token: String) {
-        // As stated in <a href="https://docs.nextcloud.com/server/stable/developer_manual/client_apis/LoginFlow/index.html#obtaining-the-login-credentials">Nextcloud document</a>:
-        // The server may specify a protocol (http or https). If no protocol is specified the client will assume https.
-        val host = if (server.startsWith("http")) server else "https://${server}"
-        val currentUsername = authenticateModel.getCredential().username
-
-        authenticateModel.setToken(username, token, host)
-
+    private fun prepareCredentialAndQuit() {
         if (reLogin) {
-            if (username != currentUsername) {
+            if (authenticateModel.getCredential().loginName != currentLoginName) {
                 // Re-login to a new account
                 if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null)
                     ConfirmDialogFragment.newInstance(getString(R.string.login_to_new_account), positiveButtonText = getString(R.string.yes_logout), requestKey = CONFIRM_NEW_ACCOUNT_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
             } else {
-                saveCredential()
+                saveAccount()
                 parentFragmentManager.popBackStack()
             }
         } else {
-            saveCredential()
-            authenticateModel.setAuthResult(NCLoginFragment.AuthenticateViewModel.RESULT_SUCCESS)
+            saveAccount()
+            authenticateModel.setAuthResult(true)
             parentFragmentManager.popBackStack()
         }
     }
 
-    private fun saveCredential() {
+    private fun saveAccount() {
         val credential = authenticateModel.getCredential()
         val url = URL(credential.serverUrl)
         val account: Account
 
         AccountManager.get(requireContext()).run {
-            if (!reLogin) {
-                account = Account("${credential.username}@${url.host}", getString(R.string.account_type_nc))
-                addAccountExplicitly(account, "", null)
+            if (reLogin) {
+                getAccountsByType(getString(R.string.account_type_nc)).run {
+                    if (this.isNotEmpty()) {
+                        account = this[0]
+                        setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
+                        setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
+                        ViewModelProvider(requireActivity())[NCShareViewModel::class.java].updateWebDavAccessToken(requireContext())
+                    } else return
+                }
             } else {
-                account = getAccountsByType(getString(R.string.account_type_nc))[0]
+                account = Account("${credential.loginName}@${url.host}", getString(R.string.account_type_nc))
+                addAccountExplicitly(account, "", null)
+                setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
+                setUserData(account, getString(R.string.nc_userdata_server), credential.serverUrl)
+                setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
+                setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
+                setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
+                setUserData(account, getString(R.string.nc_userdata_loginname), credential.loginName)
+                setUserData(account, getString(R.string.nc_userdata_username), credential.userName)
+                setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
+                setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
             }
 
-            setAuthToken(account, credential.serverUrl, credential.token)    // authTokenType set to server address
-            setUserData(account, getString(R.string.nc_userdata_server), credential.serverUrl)
-            setUserData(account, getString(R.string.nc_userdata_server_protocol), url.protocol)
-            setUserData(account, getString(R.string.nc_userdata_server_host), url.host)
-            setUserData(account, getString(R.string.nc_userdata_server_port), url.port.toString())
-            setUserData(account, getString(R.string.nc_userdata_username), credential.username)
-            setUserData(account, getString(R.string.nc_userdata_secret), Base64.encodeToString("${credential.username}:${credential.token}".encodeToByteArray(), Base64.NO_WRAP))
-            setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
-            notifyAccountAuthenticated(account)
+            lifecycleScope.launch { notifyAccountAuthenticated(account) }
         }
     }
 
@@ -366,7 +384,7 @@ class NCAuthenticationFragment: Fragment() {
         private const val KEY_RELOGIN = "KEY_RELOGIN"
         private const val KEY_THEMING = "KEY_THEMING"
         @JvmStatic
-        fun newInstance(reLogin: Boolean, theming: NCLoginFragment.AuthenticateViewModel.NCThemimg = NCLoginFragment.AuthenticateViewModel.NCThemimg()) = NCAuthenticationFragment().apply {
+        fun newInstance(reLogin: Boolean, theming: NCLoginFragment.AuthenticateViewModel.NCTheming = NCLoginFragment.AuthenticateViewModel.NCTheming()) = NCAuthenticationFragment().apply {
             arguments = Bundle().apply {
                 putBoolean(KEY_RELOGIN, reLogin)
                 putParcelable(KEY_THEMING, theming)

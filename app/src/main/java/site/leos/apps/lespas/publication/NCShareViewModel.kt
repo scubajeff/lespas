@@ -108,8 +108,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private var webDav: OkHttpWebDav
 
     private val baseUrl: String
-    private val userName: String
-    private val token: String
+    private var token: String
     private val resourceRoot: String
     private val lespasBase = application.getString(R.string.lespas_base_folder_name)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
@@ -129,16 +128,28 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     init {
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
-            userName = getUserData(account, application.getString(R.string.nc_userdata_username))
+            val userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(
-                userName, peekAuthToken(account, baseUrl), baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
+                userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
 
             videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
+        }
+    }
+
+    fun updateWebDavAccessToken(context: Context) {
+        AccountManager.get(context).run {
+            val account = getAccountsByType(context.getString(R.string.account_type_nc))[0]
+            val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
+            token = getUserData(account, context.getString(R.string.nc_userdata_secret))
+            webDav = OkHttpWebDav(
+                userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${context.getString(R.string.lespas_version)}",
+                PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
+            )
         }
     }
 
