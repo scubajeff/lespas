@@ -127,25 +127,9 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
             var isGranted = true
             for(result in results) isGranted = isGranted && result.value
             findPreference<SwitchPreferenceCompat>(getString(R.string.cameraroll_backup_pref_key))?.isChecked = isGranted
-
-            if (isGranted) {
-                // Check and disable periodic sync setting if user enable camera roll backup
-                syncPreference?.let {
-                    it.isChecked = true
-                    it.isEnabled = false
-                }
-                // Note down the current timestamp, photos taken later on will be backup
-                preferenceManager.sharedPreferences.let { sp ->
-                    if (sp.getLong(LAST_BACKUP, 0L) == 0L) sp.edit().apply {
-                        putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
-                        apply()
-                    }
-                }
-                toggleAutoSync(true)
-
-                // Explicitly request ACCESS_MEDIA_LOCATION permission
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
-            }
+            toggleCameraBackup(isGranted)
+            // Explicitly request ACCESS_MEDIA_LOCATION permission
+            if (isGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) accessMediaLocationPermissionRequestLauncher.launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
         }
         installSnapseedLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             isSnapseedNotInstalled = requireContext().packageManager.getLaunchIntentForPackage(SNAPSEED_PACKAGE_NAME) == null
@@ -251,10 +235,24 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     CLEAR_CACHE_CONFIRM_DIALOG -> {
                         File("${Tools.getLocalRoot(requireContext())}/cache").deleteRecursively()
                     }
+                    BACKUP_OLD_PICTURES_DIALOG -> {
+                        preferenceManager.sharedPreferences.edit().apply {
+                            // User choose to backup all oldies
+                            putLong(LAST_BACKUP, 1L)
+                            apply()
+                        }
+                    }
                 }
             } else {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY, "")) {
                     INSTALL_SNAPSEED_DIALOG, SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG-> findPreference<SwitchPreferenceCompat>(getString(R.string.snapseed_pref_key))?.isChecked = false
+                    BACKUP_OLD_PICTURES_DIALOG -> {
+                        preferenceManager.sharedPreferences.edit().apply {
+                            // User choose to backup new files only, note down the current timestamp, photos taken later on will be backup
+                            putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
+                            apply()
+                        }
+                    }
                 }
             }
         }
@@ -398,29 +396,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                     (preference as SwitchPreferenceCompat).isChecked = false
                     //toggleAutoSync(false)
                 }
-                else {
-                    // Preference check state is about to be toggled, but not toggled yet
-                    if ((preference as SwitchPreferenceCompat).isChecked) {
-                        // Check and disable periodic sync setting if user enable camera roll backup
-                        syncPreference?.let {
-                            it.isChecked = true
-                            it.isEnabled = false
-                        }
-                        with(preferenceManager.sharedPreferences) {
-                            if (this.getLong(LAST_BACKUP, 0L) == 0L) this.edit().apply {
-                                // If this is the first time being enable, note down the current timestamp, photos taken later on will be backup
-                                putLong(LAST_BACKUP, System.currentTimeMillis() / 1000)
-                                apply()
-                            }
-                        }
-                    } else {
-                        syncPreference?.let {
-                            it.isChecked = false
-                            it.isEnabled = true
-                        }
-                    }
-                    toggleAutoSync(!(preference.isChecked))
-                }
+                else toggleCameraBackup((preference as SwitchPreferenceCompat).isChecked)
                 true
             }
             getString(R.string.true_black_pref_key) -> {
@@ -495,6 +471,39 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         else ContentResolver.removePeriodicSync(accounts[0], getString(R.string.sync_authority), Bundle.EMPTY)
 
         syncWhenClosing = on
+    }
+
+    private fun toggleCameraBackup(isOn: Boolean) {
+        if (isOn) {
+            // Check and disable periodic sync setting if user enable camera roll backup
+            syncPreference?.let {
+                it.isChecked = true
+                it.isEnabled = false
+            }
+            if (preferenceManager.sharedPreferences.getLong(LAST_BACKUP, 0L) == 0L) {
+                // First time toggling, offer choices of backup old pictures or not
+                parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) ?: run {
+                    Tools.getCameraRollStatistic(requireContext().contentResolver).let {
+                        if (it.first > 0)
+                            // If there are existing photos in camera roll, offer choice to backup those too
+                            ConfirmDialogFragment.newInstance(getString(R.string.msg_backup_oldies, it.first, Tools.humanReadableByteCountSI(it.second)),
+                                positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false, requestKey = BACKUP_OLD_PICTURES_DIALOG).show(parentFragmentManager, CONFIRM_DIALOG)
+                        else {
+                            preferenceManager.sharedPreferences.edit().apply {
+                                putLong(LAST_BACKUP, 1L)
+                                apply()
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            syncPreference?.let {
+                it.isChecked = false
+                it.isEnabled = true
+            }
+        }
+        toggleAutoSync(isOn)
     }
 
     private fun showStatistic(preference: Preference) {
@@ -578,6 +587,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
         private const val SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG = "SNAPSEED_PERMISSION_RATIONALE_REQUEST_DIALOG"
         private const val INSTALL_SNAPSEED_DIALOG = "INSTALL_SNAPSEED_DIALOG"
         private const val SYNC_STATUS_DIALOG = "SYNC_STATUS_DIALOG"
+        private const val BACKUP_OLD_PICTURES_DIALOG = "BACKUP_OLD_PICTURES_DIALOG"
 
         private const val STATISTIC_SUMMARY_STRING = "STATISTIC_SUMMARY_STRING"
         private const val STATISTIC_TOTAL_SIZE = "STATISTIC_TOTAL_SIZE"

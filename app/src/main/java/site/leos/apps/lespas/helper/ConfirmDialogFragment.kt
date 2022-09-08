@@ -49,12 +49,16 @@ class ConfirmDialogFragment : LesPasDialogFragment(R.layout.fragment_confirm_dia
             setOnClickListener(buttonClickListener)
         }
         view.findViewById<MaterialButton>(R.id.cancel_button).apply {
-            isCancelable.let {
-                if (it) {
-                    text = requireArguments().getString(NEGATIVE_BUTTON) ?: getString(android.R.string.cancel)
+            if (isCancelable) {
+                text = requireArguments().getString(NEGATIVE_BUTTON) ?: getString(android.R.string.cancel)
+                setOnClickListener(buttonClickListener)
+            }
+            else {
+                requireArguments().getString(NEGATIVE_BUTTON)?.let { buttonText ->
+                    // If not cancelable, but caller still supply negative button text, show it anyway
+                    text = buttonText
                     setOnClickListener(buttonClickListener)
-                }
-                else {
+                } ?: run {
                     isEnabled = false
                     visibility = View.GONE
                 }

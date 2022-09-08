@@ -194,6 +194,7 @@
     <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
+    <string name="msg_backup_oldies">New photos will be backup from now on. You also have %1$,d photos in camera roll right now, with %2$s in size. Do you want to backup all these old photos too?</string>
 
     <string name="map_header">Map</string>
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>

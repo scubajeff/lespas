@@ -479,6 +479,33 @@ object Tools {
         )
     }
 
+    fun getCameraRollStatistic(cr: ContentResolver): Pair<Int, Long> {
+        var itemCount = 0
+        var totalSize = 0L
+
+        @Suppress("DEPRECATION")
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val projection = arrayOf(
+            pathSelection,
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.SIZE,
+        )
+        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+
+        try {
+            cr.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+
+                while(cursor.moveToNext()) totalSize += cursor.getLong(sizeColumn)
+
+                itemCount = cursor.count
+            }
+        } catch (_: Exception) {}
+
+        return Pair(itemCount, totalSize)
+    }
+
     fun getFolderFromUri(uriString: String, contentResolver: ContentResolver): Pair<String, String>? {
         val colon = "%3A"
         val storageUriSignature = "com.android.externalstorage.documents"

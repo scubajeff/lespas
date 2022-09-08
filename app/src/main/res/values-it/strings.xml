@@ -345,4 +345,5 @@
     <string name="sync_status_action_create_album_from_server">Creazione dell\'album \'%s\'.</string>
     <string name="sync_status_action_update_album_from_server">Aggiornamento dell\'album \'%s\'.</string>
     <string name="sync_status_action_backup_file">Backup della foto %s.</string>
+    <string name="msg_backup_oldies">D\'ora in poi le nuove foto saranno di backup. Nel rullino fotografico sono presenti anche %1$,d foto con dimensione %2$s. Si desidera eseguire il backup anche di tutte queste vecchie foto?</string>
 </resources>

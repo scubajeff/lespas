@@ -279,4 +279,5 @@
     <string name="sync_status_action_create_album_from_server">アルバム \'%s\' が作成されています。</string>
     <string name="sync_status_action_update_album_from_server">アルバム \'%s\' を更新しています。</string>
     <string name="sync_status_action_backup_file">写真 %s をバックアップしています。</string>
+    <string name="msg_backup_oldies">新しい写真は今後バックアップされます。また、現在カメラロールに%1$,d枚の写真があり、そのサイズは%2$sです。これらの古い写真もすべてバックアップしますか？</string>
 </resources>
