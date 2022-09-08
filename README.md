@@ -92,7 +92,7 @@ If synchronization doesn't seem to work, especially when you phone is a Chinese 
  
 ### Checklist for enabling sharing on Nextcloud server
 To enable publishing (e.g. sharing album to other users on Nextcloud server), there are several things you need to take care beforehand:
-- Make sure your are using LesPas version 2.4.1+
+- Make sure your are using LesPas version 2.4.1+ (sroll to the bottom of Setting page to find out)
 - Set up groups on Nextcloud server and add users who wish to share LesPas albums to the group. User not belongs to any group can not download sharee list from server, this is a limitation of Nextcloud Sharee API
 - Optionally, but highly recommended for the sake of smooth user experience, setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024, LesPas will use those files to populate shared album list on phone.
 - Optionally, setup a specific "shared_with_me" folder to house all the shares you received, otherwise Nextcloud will dump all the shares you received onto your root folder. This can be done by adding line `'share_folder' => 'shared_with_me'` into Nextcloud's `config.php` file. Refer to nextcloud [documentation](https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/config_sample_php_parameters.html) for details.
