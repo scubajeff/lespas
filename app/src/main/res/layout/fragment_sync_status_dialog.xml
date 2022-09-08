@@ -103,9 +103,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/guideline"
             app:layout_constraintRight_toRightOf="parent"
-            android:layout_marginTop="@dimen/big_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:textColor="?attr/colorButtonText"
+            style="@style/Theme.LesPas.TextButton"
             android:text="@string/button_text_resync"/>
 
         <com.google.android.material.button.MaterialButton
@@ -114,9 +112,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/guideline"
             app:layout_constraintRight_toLeftOf="@id/resync_button"
-            android:layout_marginTop="@dimen/big_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:textColor="?attr/colorButtonText"
+            style="@style/Theme.LesPas.TextButton"
             android:text="@string/button_text_help"
             android:visibility="gone" />
 
