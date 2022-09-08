@@ -41,6 +41,7 @@
             app:layout_constraintDimensionRatio="H,21:9"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="ImageContrastCheck"
             tools:src="@drawable/login_background_gradient_1" />
 
         <androidx.core.widget.ContentLoadingProgressBar

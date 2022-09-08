@@ -28,7 +28,7 @@
             <path
                 android:name="path"
                 android:pathData="M4,12 L20,12 z"
-                android:strokeColor="@color/color_primary"
+                android:strokeColor="@color/color_button_text"
                 android:strokeAlpha="184"
                 android:strokeWidth="0.4" />
         </vector>

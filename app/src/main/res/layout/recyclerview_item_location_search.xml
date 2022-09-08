@@ -42,21 +42,23 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scrollbars="none"
-            tools:listitem="@layout/recyclerview_item_photo"/>
+            tools:ignore="SpeakableTextPresentCheck"
+            tools:listitem="@layout/recyclerview_item_photo" />
 
         <TextView
             android:id="@+id/count"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="@dimen/small_padding"
+            android:alpha="0.75"
+            android:elegantTextHeight="true"
             android:elevation="4dp"
+            android:padding="@dimen/small_padding"
             android:textAlignment="center"
             android:textAppearance="?attr/textAppearanceHeadline2"
             android:textColor="@android:color/darker_gray"
-            android:alpha="0.75"
-            android:elegantTextHeight="true"
             android:textStyle="italic"
-            tools:text="125"/>
+            tools:ignore="TextContrastCheck"
+            tools:text="125" />
 
     </site.leos.apps.lespas.helper.DullConstraintLayout>
 

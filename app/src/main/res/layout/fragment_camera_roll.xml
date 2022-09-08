@@ -279,13 +279,14 @@
                 android:id="@+id/quick_scroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
-                android:paddingHorizontal="@dimen/camera_roll_list_horizontal_margin"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                android:nestedScrollingEnabled="false"
-                app:spanCount="@integer/cameraroll_grid_span_count"
                 android:clipToPadding="true"
+                android:nestedScrollingEnabled="false"
+                android:paddingHorizontal="@dimen/camera_roll_list_horizontal_margin"
                 android:scrollbars="none"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:layout_constraintTop_toTopOf="parent"
+                app:spanCount="@integer/cameraroll_grid_span_count"
+                tools:ignore="SpeakableTextPresentCheck"
                 tools:listitem="@layout/recyclerview_item_photo" />
 
             <TextView

@@ -23,7 +23,6 @@
         <item name="android:actionBarStyle">@style/Theme.LesPas.ActionBar</item>
         <item name="actionModeStyle">@style/Theme.LesPas.ActionModeStyle</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.LesPas.AlertDialog</item>
-
         <item name="android:windowActivityTransitions">true</item>
         <item name="windowActionBarOverlay">true</item>
 
@@ -85,8 +84,8 @@
 
         <item name="android:textColorPrimary">?primaryTextWhite</item>
         <item name="android:textColorPrimaryInverse">?primaryTextBlack</item>
-        <item name="android:textColorSecondary">#707070</item>
-        <item name="android:textColorSecondaryInverse">#707070</item>
+        <item name="android:textColorSecondary">#9E9E9E</item>
+        <item name="android:textColorSecondaryInverse">#9E9E9E</item>
 
         <item name="colorButtonText">@color/borderless_button_text_bw</item>
         <item name="colorBottomSheetBackground">#202020</item>

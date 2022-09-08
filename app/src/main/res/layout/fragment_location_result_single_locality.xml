@@ -15,16 +15,15 @@
   ~   limitations under the License.
   -->
 
-<androidx.recyclerview.widget.RecyclerView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.recyclerview.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/photo_grid"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingTop="?attr/actionBarSize"
     android:paddingLeft="1dp"
+    android:paddingTop="?attr/actionBarSize"
     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
     app:spanCount="@integer/photo_grid_span_count"
-    tools:listitem="@layout/recyclerview_item_photo"
-    tools:ignore="RtlHardcoded,RtlSymmetry"/>
+    tools:ignore="RtlHardcoded,RtlSymmetry,SpeakableTextPresentCheck"
+    tools:listitem="@layout/recyclerview_item_photo" />

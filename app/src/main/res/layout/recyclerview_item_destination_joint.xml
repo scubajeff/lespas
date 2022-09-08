@@ -28,11 +28,11 @@
         android:id="@+id/cover"
         android:layout_width="@dimen/destination_cover_width"
         android:layout_height="@dimen/destination_cover_height"
+        android:padding="@dimen/mini_padding"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:padding="@dimen/mini_padding"
-        tools:src="@drawable/ic_logo"
-        tools:ignore="ContentDescription" />
+        tools:ignore="ContentDescription,ImageContrastCheck"
+        tools:src="@drawable/ic_logo" />
 
     <TextView
         android:id="@+id/name"

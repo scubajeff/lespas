@@ -157,21 +157,17 @@
             android:layout_height="wrap_content"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/locality"
-            android:layout_marginTop="@dimen/small_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-            android:text="@android:string/ok"
-            android:textColor="?attr/colorButtonText" />
+            style="@style/Theme.LesPas.TextButton"
+            android:text="@android:string/ok" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/map_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="@id/ok_button"
+            app:layout_constraintBottom_toBottomOf="@id/ok_button"
             app:layout_constraintRight_toLeftOf="@id/ok_button"
-            android:layout_marginRight="@dimen/small_padding"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+            style="@style/Theme.LesPas.TextButton"
             android:text="@string/button_text_map"
-            android:textColor="?attr/colorButtonText"
             android:visibility="gone"
             tools:ignore="RtlHardcoded" />
 
