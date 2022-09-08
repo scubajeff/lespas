@@ -228,7 +228,7 @@ class PhotoWithMapFragment: Fragment() {
                 else {
                     if (stripExif == getString(R.string.strip_ask_value)) {
                         if (Tools.hasExif(remotePhoto.photo.mimeType)) {
-                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no)).show(parentFragmentManager, CONFIRM_DIALOG)
+                            if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
                         } else shareOut(false)
                     } else shareOut(stripExif == getString(R.string.strip_on_value))
                 }
