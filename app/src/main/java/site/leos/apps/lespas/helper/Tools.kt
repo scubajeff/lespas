@@ -85,7 +85,7 @@ object Tools {
         var latlong: DoubleArray = doubleArrayOf(Photo.NO_GPS_DATA, Photo.NO_GPS_DATA)
         var altitude = Photo.NO_GPS_DATA
         var bearing = Photo.NO_GPS_DATA
-        //var caption = ""
+        var caption = ""
         var orientation = 0
         val isLocalFileExist = localPath.isNotEmpty()
         var dateTaken: LocalDateTime = LocalDateTime.now()
@@ -120,9 +120,8 @@ object Tools {
                     var saveExif = false
 
                     exifInterface?.let { exif->
-                        // TODO Photo caption, subject, tag
-                        //exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
-                        //if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
+                        exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
+                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
 
                         // GPS data
                         exif.latLong?.let { latlong = it }
@@ -164,7 +163,7 @@ object Tools {
                                             recycle()
                                         }
                                     }
-                                } catch (e: Exception) {}
+                                } catch (_: Exception) {}
                             } else {
                                 // Swap width and height value if needed and save it to Room
                                 if (orientation == 90 || orientation == 270) {
@@ -190,7 +189,7 @@ object Tools {
                                 // Set my own image/awebp mimetype for animated WebP
                                 if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/awebp"
                                 else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/awebp" }
-                            } catch (e: Exception) {}
+                            } catch (_: Exception) {}
                         }
                     }
                 }
@@ -200,7 +199,7 @@ object Tools {
                         try {
                             if (isLocalFileExist) if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(File(localPath))) is AnimatedImageDrawable) mMimeType = "image/agif"
                             else uri?.let { if (ImageDecoder.decodeDrawable(ImageDecoder.createSource(cr!!, it)) is AnimatedImageDrawable) mMimeType = "image/agif" }
-                        } catch (e: Exception) {}
+                        } catch (_: Exception) {}
                     }
                 }
                 else-> {}
@@ -215,14 +214,14 @@ object Tools {
                 }
                 width = options.outWidth
                 height = options.outHeight
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
         }
 
         return Photo(
             mimeType = mMimeType,
             dateTaken = dateTaken, lastModified = lastModified,
             width = width, height = height,
-            //caption = caption,
+            caption = caption,
             latitude = latlong[0], longitude = latlong[1], altitude = altitude, bearing = bearing,
             orientation = if (keepOriginalOrientation) orientation else 0
         )
@@ -237,7 +236,7 @@ object Tools {
                 try {
                     latLong[0] = matcher.group(1)?.toDouble() ?: Photo.NO_GPS_DATA
                     latLong[1] = matcher.group(2)?.toDouble() ?: Photo.NO_GPS_DATA
-                } catch (e: Exception) {}
+                } catch (_: Exception) {}
             }
         }
         return latLong
@@ -405,7 +404,7 @@ object Tools {
                 // Resort the list if dateAdded used
                 if (reSort) medias.sortWith(compareByDescending { it.dateTaken })
             }
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
 
         return medias
     }
@@ -469,7 +468,7 @@ object Tools {
                     )
                 }
             }
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
 
         return Album(
             id = CameraRollFragment.FROM_CAMERA_ROLL, name = albumName,
@@ -671,7 +670,7 @@ object Tools {
                     layoutParams = (LinearLayout.LayoutParams(pbHeight, pbHeight)).apply { gravity = Gravity.CENTER_VERTICAL or Gravity.END }
                     indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.color_text_light))
                 }, 0)
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
             cancelAction?.let { setAction(android.R.string.cancel, it) }
         }
     }
@@ -778,7 +777,7 @@ object Tools {
                                         ), sharePath
                                     )
                                 )
-                            } catch (e: JSONException) {}
+                            } catch (_: JSONException) {}
                         }
                     }
                     // Version 1 of content meta json
@@ -793,7 +792,7 @@ object Tools {
                                     ), sharePath
                                 )
                             )
-                        } catch (e: JSONException) {}
+                        } catch (_: JSONException) {}
                     }
                 }
             }
@@ -939,8 +938,8 @@ object Tools {
 
     fun getBearing(exif: ExifInterface): Double {
         var bearing = Photo.NO_GPS_DATA
-        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (e: NumberFormatException) {} }
-        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (e: java.lang.NumberFormatException) {} }
+        exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (_: NumberFormatException) {} }
+        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (_: java.lang.NumberFormatException) {} }
         return bearing
     }
 
