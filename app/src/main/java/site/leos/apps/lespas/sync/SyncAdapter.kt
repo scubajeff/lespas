@@ -941,7 +941,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedPhoto.mimeType = this.mimeType
                         // Photo's original orientation is needed to display remote image in full format
                         changedPhoto.orientation = this.orientation
-                        //changedPhoto.caption = this.caption
+                        changedPhoto.caption = this.caption
                         changedPhoto.latitude = this.latitude
                         changedPhoto.longitude = this.longitude
                         changedPhoto.altitude = this.altitude

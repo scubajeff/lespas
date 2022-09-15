@@ -179,4 +179,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET dateTaken = :dateTaken WHERE id = :photoId")
     abstract fun updateDateTaken(photoId: String, dateTaken: LocalDateTime)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET caption = :newCaption WHERE id = :photoId")
+    abstract fun updateCaption(photoId: String, newCaption: String)
 }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@criptext.com)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/shape_background"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/tiny_padding"
+    tools:context=".photo.CaptionEditDialogFragment">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/extra_padding"
+        android:paddingTop="@dimen/big_padding"
+        android:paddingBottom="@dimen/small_padding">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/caption_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:errorEnabled="false"
+            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+            app:boxStrokeColor="?attr/colorSecondaryVariant">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/caption_edittext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/big_padding"
+                android:gravity="start"
+                android:lines="@integer/caption_editor_max_lines"
+                android:lineSpacingExtra="@dimen/tiny_padding"
+                android:textCursorDrawable="@null"
+                android:selectAllOnFocus="false"
+                android:inputType="textAutoCorrect|textCapSentences|textMultiLine|textLongMessage"
+                tools:text="A quick brown fox jumps over the lazy dog."/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/save_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/caption_layout"
+            style="@style/Theme.LesPas.TextButton"
+            android:text="@string/button_text_save"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="@id/save_button"
+            app:layout_constraintRight_toLeftOf="@id/save_button"
+            style="@style/Theme.LesPas.TextButton"
+            android:text="@android:string/cancel"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

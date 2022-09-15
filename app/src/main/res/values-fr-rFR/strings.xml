@@ -316,4 +316,6 @@
     <string name="sync_status_action_update_album_from_server">Mise à jour de l\'album \'%s\'.</string>
     <string name="sync_status_action_backup_file">Sauvegarde de la photo %s.</string>
     <string name="msg_backup_oldies">Les nouvelles photos seront sauvegardées à partir de maintenant. Vous avez également %1$,d photos dans votre rouleau d\'appareil photo en ce moment, avec %2$s de taille. Voulez-vous également sauvegarder toutes ces anciennes photos ?</string>
+    <string name="button_text_save">Sauvegarder</string>
+    <string name="hint_caption">Ajouter une légende</string>
 </resources>

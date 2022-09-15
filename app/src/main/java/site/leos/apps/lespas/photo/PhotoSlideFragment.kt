@@ -30,12 +30,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.text.method.ScrollingMovementMethod
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
@@ -88,6 +90,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var coverButton: Button
     private lateinit var setAsButton: Button
     private lateinit var snapseedButton: Button
+    private lateinit var captionTextView: TextView
 
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: PhotoSlideAdapter
@@ -292,8 +295,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 // Can't Snapseed video
                                 snapseedButton.isEnabled = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false) && this
                             }
+
+                            // Update caption
+                            captionTextView.text = caption
                         }
-                    } catch (e: IndexOutOfBoundsException) {}
+                    } catch (_: IndexOutOfBoundsException) {}
                 }
             })
 
@@ -331,6 +337,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         coverButton = view.findViewById(R.id.cover_button)
         setAsButton = view.findViewById(R.id.set_as_button)
         snapseedButton = view.findViewById(R.id.snapseed_button)
+        captionTextView = view.findViewById(R.id.caption)
 
         coverButton.run {
             setOnTouchListener(delayHideTouchListener)
@@ -426,6 +433,15 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                     ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
             }
         }
+        captionTextView.run {
+            setOnTouchListener(delayHideTouchListener)
+            setOnClickListener {
+                hideHandler.post(hideSystemUI)
+
+                parentFragmentManager.findFragmentByTag(CAPTION_DIALOG) ?: run { CaptionEditDialogFragment.newInstance(captionTextView.text.toString()).show(parentFragmentManager, CAPTION_DIALOG) }
+            }
+            movementMethod = ScrollingMovementMethod()
+        }
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
             pAdapter.setPhotos(if (currentPhotoModel.getCurrentQuery().isEmpty()) photos else photos.filter { it.name.contains(currentPhotoModel.getCurrentQuery()) }, album.sortOrder)
@@ -442,12 +458,18 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
-        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
-            if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
-                when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                    DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) removePhoto()
-                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
-                }
+        parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
+                DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) removePhoto()
+                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+            }
+        }
+
+        // Caption dialog result handler
+        parentFragmentManager.setFragmentResultListener(CaptionEditDialogFragment.RESULT_KEY_NEW_CAPTION, viewLifecycleOwner) { _, bundle ->
+            bundle.getString(CaptionEditDialogFragment.RESULT_KEY_NEW_CAPTION)?.let { newCaption ->
+                captionTextView.text = newCaption
+                actionModel.updatePhotoCaption(pAdapter.getPhotoAt(slider.currentItem).id, newCaption, album.name)
             }
         }
     }
@@ -701,10 +723,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     companion object {
-        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI. TODO dynamically adjusted to caption length
 
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
+        private const val CAPTION_DIALOG = "CAPTION_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"

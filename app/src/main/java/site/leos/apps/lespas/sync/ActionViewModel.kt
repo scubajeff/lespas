@@ -206,4 +206,11 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         // Remove video thumbnail too
         if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
     }
+
+    fun updatePhotoCaption(photoId: String, newCaption: String, albumName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            photoRepository.updateCaption(photoId, newCaption)
+            actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", albumName, "", "", System.currentTimeMillis(), 1))
+        }
+    }
 }

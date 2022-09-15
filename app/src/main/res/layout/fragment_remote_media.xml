@@ -41,6 +41,27 @@
         android:clipToPadding="false"
         android:visibility="gone">
 
+        <TextView
+            android:id="@+id/caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="@dimen/big_padding"
+            android:paddingTop="@dimen/small_padding"
+            android:maxLines="@integer/caption_max_lines"
+            android:ellipsize="end"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="@color/bottom_control_button"
+            android:scrollbars="vertical"
+            android:visibility="gone" />
+
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_margin="@dimen/small_padding"
+            android:background="#646464"
+            android:visibility="gone" />
+
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

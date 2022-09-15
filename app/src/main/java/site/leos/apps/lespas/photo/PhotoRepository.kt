@@ -63,4 +63,5 @@ class PhotoRepository(application: Application) {
     fun updateAddress(photoId: String, city: String, countryName: String, countryCode: String) { photoDao.updateAddress(photoId, city, countryName, countryCode) }
     fun clearLocality() { photoDao.clearLocality() }
     fun updateDateTaken(photoId: String, dateTaken: LocalDateTime) { photoDao.updateDateTaken(photoId, dateTaken) }
+    fun updateCaption(photoId: String, newCaption: String) { photoDao.updateCaption(photoId, newCaption) }
 }

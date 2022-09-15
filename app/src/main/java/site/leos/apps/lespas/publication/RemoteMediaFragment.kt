@@ -31,6 +31,7 @@ import android.transition.TransitionManager
 import android.view.*
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBar
@@ -64,6 +65,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var controlsContainer: LinearLayoutCompat
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: RemoteMediaAdapter
+    private lateinit var captionTextView: TextView
+    private lateinit var dividerView: View
 
     private val shareModel: NCShareViewModel by activityViewModels()
     private val currentPositionModel: PublicationDetailFragment.CurrentPublicationViewModel by activityViewModels()
@@ -176,6 +179,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
                     currentPositionModel.setCurrentPosition(position)
+                    captionTextView.text = pAdapter.getCaption(position)
                 }
             })
 
@@ -228,6 +232,9 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }
+
+        captionTextView = view.findViewById(R.id.caption)
+        dividerView = view.findViewById(R.id.divider)
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
@@ -343,6 +350,11 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
         }
 
+        captionTextView.text.isNotEmpty().let {
+            captionTextView.isVisible = it
+            dividerView.isVisible = it
+        }
+
         // auto hide
         hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
@@ -384,6 +396,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
+        fun getCaption(position: Int): String = currentList[position].photo.caption
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {

@@ -280,4 +280,6 @@
     <string name="sync_status_action_update_album_from_server">正在更新相册\'%s\'。</string>
     <string name="sync_status_action_backup_file">正在备份照片%s。</string>
     <string name="msg_backup_oldies">相机相册备份已开启。相册中现有%1$d张照片，合共%2$s。先备份这些旧照片吗？</string>
+    <string name="button_text_save">保存修订</string>
+    <string name="hint_caption">添加照片说明</string>
 </resources>

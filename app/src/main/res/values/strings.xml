@@ -101,6 +101,8 @@
     <string name="button_text_info">Info</string>
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Replace</string>
     <string name="button_text_edit_in_snapseed_add">Snapseed - Add</string>
+    <string name="button_text_save">Save</string>
+    <string name="hint_caption">Add caption</string>
 
     <!-- CropCover fragment -->
     <string name="toast_cover_applied">New cover applied.</string>
