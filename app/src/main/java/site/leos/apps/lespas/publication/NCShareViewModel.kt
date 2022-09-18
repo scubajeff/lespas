@@ -17,7 +17,6 @@
 package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
@@ -58,10 +57,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.parcelize.Parcelize
-import okhttp3.CacheControl
-import okhttp3.Call
-import okhttp3.FormBody
-import okhttp3.Response
+import okhttp3.*
 import okhttp3.internal.closeQuietly
 import okhttp3.internal.headersContentLength
 import okio.BufferedSource
@@ -99,11 +95,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _shareWithMeProgress = MutableStateFlow(0)
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
+    private val _blogs = MutableStateFlow<List<Blog>>(arrayListOf())
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
+    val blogs: StateFlow<List<Blog>> = _blogs
 
     private var webDav: OkHttpWebDav
 
@@ -738,6 +736,103 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
 */
 
+
+    // Pico CMS integration
+    fun listBlogs() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val token = getCSRFToken()
+
+                webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}")
+                    .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()).execute().use { response ->
+                    if (response.isSuccessful) _blogs.value = collectResult(response.body?.string())
+                }
+            } catch (_: Exception) {}
+        }
+    }
+    
+    fun createBlog(album: Album) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Site name asserted in Pico's lib/Model/Website.php
+                val validName = album.name.let {
+                    when(it.length) {
+                        in (1..2) -> "${it}  "
+                        in (3..255) -> it
+                        else -> it.substring(0, 254)
+                    }
+                }
+
+                val token = getCSRFToken()
+                
+                webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}")
+                    .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
+                    .post(FormBody.Builder()
+                        .addEncoded("data[name]", validName)
+                        .addEncoded("data[path]", "${lespasBase}/${album.name}/.blog")
+                        .addEncoded("data[site]", album.id)
+                        .addEncoded("data[theme]", "default")
+                        .addEncoded("data[template]", "empty")
+                        .build()
+                    ).build()
+                ).execute().use { response ->
+                    if (response.isSuccessful) {
+                        // If successful, Pico return blog list
+                        _blogs.value = collectResult(response.body?.string())
+                    }
+                    else Log.e(">>>>>>>>", "createBlog: ${response.code}")
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun deleteBlog(blogId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val token = getCSRFToken()
+
+                webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}/${blogId}")
+                    .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()
+                ).execute().use { response ->
+                    if (response.isSuccessful) {
+                        // If successful, Pico return blog list
+                        _blogs.value = collectResult(response.body?.string())
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun collectResult(body: String?): List<Blog> {
+        val blogs = mutableListOf<Blog>()
+        body?.let {
+            val sites = JSONObject(it).getJSONArray("websites")
+            for (i in 0 until sites.length()) {
+                sites.getJSONObject(i).run {
+                    blogs.add(Blog(getString("id"), getString("name"), getString("site"), getString("theme"), getInt("type"), getString("path"), getLong("creation")))
+                }
+            }
+        }
+
+        return blogs
+    }
+
+    private fun getCSRFToken(): Pair<String, String> {
+        var cookies = ""
+        var csrfToken = ""
+        webDav.getCall("${baseUrl}${CSRF_TOKEN_ENDPOINT}", false, null).execute().use { response ->
+            if (response.isSuccessful) {
+                response.headers.values("Set-Cookie").forEach { cookie ->
+                    cookies = "$cookies$cookie; "
+                }
+                cookies = cookies.substringBeforeLast("; ")
+                response.body?.string()?.let { json-> csrfToken = JSONObject(json).getString("token") }
+            }
+        }
+
+        return Pair(csrfToken, cookies)
+    }
+
     private val cr = application.contentResolver
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
     private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator) as AnimatedVectorDrawable
@@ -1341,6 +1436,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         val coverBaseLine: Int = 0,
     ) : Parcelable
 
+    @Parcelize
+    data class Blog(
+        var id: String = "",
+        var name: String = "",
+        var site: String = "",
+        var theme: String = "",
+        var type: Int = BLOG_TYPE_PUBLIC,
+        var path: String = "",
+        var timestamp: Long = 0L,
+    ) : Parcelable
+
     companion object {
         const val TYPE_NULL = ""    // For startPostponedEnterTransition() immediately for video item
         const val TYPE_GRID = "_view"
@@ -1362,6 +1468,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
         private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
 
+        // Pico integration
+        private const val CSRF_TOKEN_ENDPOINT = "/csrftoken"
+        private const val PICO_WEBSITES_ENDPOINT = "/index.php/apps/cms_pico/personal/websites"
+
         const val SHARE_TYPE_USER = 0
         const val SHARE_TYPE_GROUP = 1
         //const val SHARE_TYPE_PUBLIC = 3
@@ -1376,5 +1486,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //private const val PERMISSION_CAN_DELETE = 8
         //private const val PERMISSION_CAN_SHARE = 16
         //private const val PERMISSION_ALL = 31
+
+        const val BLOG_TYPE_PUBLIC = 1
+        const val BLOG_TYPE_PRIVATE = 2
     }
 }
