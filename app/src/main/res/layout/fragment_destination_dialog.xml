@@ -32,42 +32,21 @@
 
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/move_or_copy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            style="@style/Theme.LesPas.Toggle.Group"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
-            android:orientation="horizontal"
-            app:selectionRequired="true"
-            app:singleSelection="true"
             app:checkedButton="@id/copy">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/copy"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
+                style="@style/Theme.LesPas.Toggle.Button"
                 android:text="@string/copy_files"
-                style="?attr/materialButtonOutlinedStyle"
-                app:strokeColor="@color/toggle_group_button"
-                app:backgroundTint="@color/toggle_group_button_background"
-                app:rippleColor="?colorSecondaryVariantFade"
-                android:textColor="@color/toggle_group_button"
-                android:drawableLeft="@drawable/ic_baseline_file_copy_24"
-                android:drawableTint="@color/toggle_group_button_icon"
-                tools:ignore="RtlHardcoded" />
+                app:icon="@drawable/ic_baseline_file_copy_24" />
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/move"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
+                style="@style/Theme.LesPas.Toggle.Button"
                 android:text="@string/move_files"
-                style="?attr/materialButtonOutlinedStyle"
-                app:strokeColor="@color/toggle_group_button"
-                app:backgroundTint="@color/toggle_group_button_background"
-                app:rippleColor="?colorSecondaryVariantFade"
-                android:textColor="@color/toggle_group_button"
-                android:drawableLeft="@drawable/ic_baseline_file_move_24"
-                android:drawableTint="@color/toggle_group_button_icon"
+                app:icon="@drawable/ic_baseline_file_move_24"
                 tools:ignore="RtlHardcoded" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
@@ -75,12 +54,11 @@
             android:id="@+id/clipdata_recyclerview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/move_or_copy"
+            android:layout_marginTop="@dimen/small_padding"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             android:orientation="horizontal"
             android:scrollbars="none"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintTop_toBottomOf="@id/move_or_copy"
-            tools:ignore="SpeakableTextPresentCheck"
-            tools:layout_editor_absoluteX="16dp"
             tools:listitem="@layout/recyclerview_item_clipdata" />
 
         <View
