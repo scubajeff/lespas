@@ -167,21 +167,29 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
 
-                ViewCompat.setTransitionName(recyclerView, null)
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply {
-                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                    excludeTarget(view, true)
-                    excludeTarget(android.R.id.statusBarBackground, true)
-                    excludeTarget(android.R.id.navigationBarBackground, true)
-                }
+                if (mAdapter.getPhotoAt(position).mimeType.startsWith("video")) {
+                    // Transition to surface view might crash some OEM phones, like Xiaomi
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
+                        .addToBackStack(null)
+                        .commit()
+                } else {
+                    ViewCompat.setTransitionName(recyclerView, null)
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                    exitTransition = MaterialElevationScale(false).apply {
+                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                        excludeTarget(view, true)
+                        excludeTarget(android.R.id.statusBarBackground, true)
+                        excludeTarget(android.R.id.navigationBarBackground, true)
+                    }
 
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
-                    .addToBackStack(null)
-                    .commit()
+                    parentFragmentManager.beginTransaction()
+                        .setReorderingAllowed(true)
+                        .addSharedElement(view, view.transitionName)
+                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
+                        .addToBackStack(null)
+                        .commit()
+                }
             },
             { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }},
             { view -> imageLoaderModel.cancelSetImagePhoto(view) }
