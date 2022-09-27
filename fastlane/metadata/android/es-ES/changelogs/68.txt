@@ -1,0 +1,3 @@
+* Corregido el fallo al abrir el vídeo en algunos dispositivos OEM, como Xiaomi por ejemplo
+* Corregido el error en la visualización de la fecha de la foto tomada
+* Otras mejoras y correcciones de errores

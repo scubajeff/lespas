@@ -1,0 +1,3 @@
+* Behoben: Absturz beim Öffnen von Videos auf einigen OEM-Geräten, wie z.B. Xiaomi
+* Falsche Anzeige des Aufnahmedatums für Fotos behoben
+* Weitere Verbesserungen und Fehlerkorrekturen

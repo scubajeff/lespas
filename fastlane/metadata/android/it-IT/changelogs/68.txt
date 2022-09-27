@@ -1,0 +1,3 @@
+* Corretto l'arresto anomalo all'apertura dei video su alcuni dispositivi OEM, come ad esempio Xiaomi.
+* Correzione della visualizzazione errata della data di scatto delle foto
+* Altri miglioramenti e correzioni di bug
