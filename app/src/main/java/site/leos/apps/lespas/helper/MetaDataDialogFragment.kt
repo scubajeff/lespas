@@ -44,7 +44,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -268,7 +267,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                                 pm.photo.latitude = it.second[0]
                                                 pm.photo.longitude = it.second[1]
                                             }
-                                        } catch (e: SecurityException) {}
+                                        } catch (_: SecurityException) {}
                                         release()
                                     }
                                 }
@@ -302,7 +301,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
                     photoMeta.postValue(pm)
 
-                } catch (e: Exception) {}
+                } catch (_: Exception) {}
             }
         }
 

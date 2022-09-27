@@ -1,0 +1,3 @@
+* Fixed crash when opening video on some OEM devices, like Xiaomi for instance
+* Fixed wrong photo taken date display
+* Other improvements and bugs fixes

@@ -13,8 +13,8 @@ android {
         applicationId 'site.leos.apps.lespas'
         minSdk 25
         targetSdk 33
-        versionCode 67
-        versionName '2.5.20'
+        versionCode 68
+        versionName '2.5.21'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         archivesBaseName = "LesPas-v$versionName"
@@ -60,8 +60,8 @@ dependencies {
     // Core
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
     implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.activity:activity-ktx:1.6.0-rc02'
-    implementation 'androidx.fragment:fragment-ktx:1.5.2'
+    implementation 'androidx.activity:activity-ktx:1.6.0'
+    implementation 'androidx.fragment:fragment-ktx:1.5.3'
 
     // Room components
     def roomVersion = "2.4.3"
@@ -119,7 +119,7 @@ dependencies {
     }
 
     // Authentication through system credentials
-    implementation 'androidx.biometric:biometric-ktx:1.2.0-alpha04'
+    implementation 'androidx.biometric:biometric-ktx:1.2.0-alpha05'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'

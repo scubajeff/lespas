@@ -273,9 +273,9 @@ object Tools {
     fun getImageTakenDate(exif: ExifInterface, applyTZOffset: Boolean = false): LocalDateTime? =
         try {
             exif.dateTimeOriginal?.let {
-                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.systemDefault() else ZoneId.systemDefault())
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC") else ZoneId.systemDefault())
             } ?: run {
-                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.systemDefault() else ZoneId.systemDefault()) }
+                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC") else ZoneId.systemDefault()) }
             }
         } catch (e: Exception) { null }
 

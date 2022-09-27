@@ -1,0 +1,3 @@
+* Corrigido o travamento ao abrir o vídeo em alguns dispositivos OEM, como Xiaomi, por exemplo
+* Fixação da data da foto tirada errada
+* Outras melhorias e correções de bugs
