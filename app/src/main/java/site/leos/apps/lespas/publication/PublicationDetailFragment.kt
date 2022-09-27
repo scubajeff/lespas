@@ -111,20 +111,28 @@ class PublicationDetailFragment: Fragment() {
                     }
                 }
 
-                reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                exitTransition = MaterialElevationScale(false).apply {
-                    duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                    excludeTarget(view, true)
-                    excludeTarget(android.R.id.statusBarBackground, true)
-                    excludeTarget(android.R.id.navigationBarBackground, true)
-                }
+                if (photoListAdapter.currentList[position].photo.mimeType.startsWith("video")) {
+                    // Transition to surface view might crash some OEM phones, like Xiaomi
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position, share.albumId), RemoteMediaFragment::class.java.canonicalName)
+                        .addToBackStack(null)
+                        .commit()
+                } else {
+                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                    exitTransition = MaterialElevationScale(false).apply {
+                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                        excludeTarget(view, true)
+                        excludeTarget(android.R.id.statusBarBackground, true)
+                        excludeTarget(android.R.id.navigationBarBackground, true)
+                    }
 
-                parentFragmentManager.beginTransaction()
-                    .setReorderingAllowed(true)
-                    .addSharedElement(view, view.transitionName)
-                    .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position, share.albumId), RemoteMediaFragment::class.java.canonicalName)
-                    .addToBackStack(null)
-                    .commit()
+                    parentFragmentManager.beginTransaction()
+                        .setReorderingAllowed(true)
+                        .addSharedElement(view, view.transitionName)
+                        .replace(R.id.container_root, RemoteMediaFragment.newInstance(mediaList, position, share.albumId), RemoteMediaFragment::class.java.canonicalName)
+                        .addToBackStack(null)
+                        .commit()
+                }
             },
             { photo, view-> shareModel.setImagePhoto(photo, view, NCShareViewModel.TYPE_GRID) { startPostponedEnterTransition() }},
             { view-> shareModel.cancelSetImagePhoto(view) }

@@ -1,0 +1,3 @@
+* Correction d'un crash lors de l'ouverture d'une vidéo sur certains appareils OEM, comme Xiaomi par exemple.
+* Correction de l'affichage erroné de la date de prise de photo
+* Autres améliorations et corrections de bogues

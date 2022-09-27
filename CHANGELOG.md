@@ -1,3 +1,7 @@
+## Version 2.5.21
+* Fixed crash when opening video on some OEM devices, like Xiaomi for instance
+* Fixed wrong photo taken date display
+
 ## Version 2.5.20
 * Support LDAP and other SSO authentication
 * New function to view status of background sync/backup, new manual re-sync button
