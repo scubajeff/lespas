@@ -283,4 +283,20 @@
     <string name="msg_backup_oldies">Las nuevas fotos serán una copia de seguridad a partir de ahora. También tienes %1$,d fotos en el rollo de la cámara ahora mismo, con %2$s de tamaño. ¿Quieres hacer una copia de seguridad de todas estas fotos antiguas también?</string>
     <string name="button_text_save">Guardar</string>
     <string name="hint_caption">Añadir un pie de foto</string>
+    <string name="blog_header">Blog</string>
+    <string name="blog_name_default">Mis álbumes</string>
+    <string name="item_blog">Gestionar el blog</string>
+    <string name="blog_name_title">Nombre del blog</string>
+    <string name="button_text_done">Hecho</string>
+    <string name="button_text_post_blog">Publicar</string>
+    <string name="button_text_remove_blog">Eliminar el blog</string>
+    <string name="button_text_share_blog">Compartir enlace</string>
+    <string name="notice">Por favor, espere un momento para crear las páginas del blog en el servidor.</string>
+    <string name="sync_status_action_create_blog">Creando una entrada de blog para el álbum \'%s\'.</string>
+    <string name="theme_option_cascade">Cascada</string>
+    <string name="theme_option_cascade_tooltips">Se prefiere para subtítulos cortos.</string>
+    <string name="theme_option_magazine_tooltips">Se prefiere para subtítulos largos.</string>
+    <string name="title_theme">Tema del blog:</string>
+    <string name="theme_option_magazine">Revista</string>
+    <string name="blog_exemption_clause">Usted es responsable del uso que haga de la función de blogging y de cualquier contenido que proporcione, incluido el cumplimiento de las leyes aplicables. Por favor, no publiques contenidos a menos que tengas derecho a hacerlo. Todo lo que publiques en el blog PUEDE ser accesible para el público en general.</string>
 </resources>

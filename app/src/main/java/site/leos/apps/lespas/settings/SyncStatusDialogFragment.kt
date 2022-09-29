@@ -175,6 +175,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                             )
                         Action.ACTION_DELETE_CAMERA_BACKUP_FILE -> String.format(getString(R.string.sync_status_action_delete_media_from_backup), action[4].substringAfterLast('/'))
                         Action.ACTION_PATCH_PROPERTIES -> String.format(getString(R.string.sync_status_action_patch_property), action[4])
+                        Action.ACTION_CREATE_BLOG_POST -> String.format(getString(R.string.sync_status_action_create_blog), action[2])
 
                         // Remote actions
                         Action.ACTION_COLLECT_REMOTE_CHANGES -> getString(R.string.sync_status_action_collect_remote_changes)

@@ -282,4 +282,20 @@
     <string name="msg_backup_oldies">相機相簿備份已開啟。相簿中現有%1$d張舊照片，合共%2$s。先備份這些舊照片嗎？</string>
     <string name="button_text_save">保存修訂</string>
     <string name="hint_caption">新增照片說明</string>
+    <string name="blog_exemption_clause">你要對使用網誌功能和你在網誌中提供的所有內容負責，包括遵守適用的法律。除非你有權利這樣做，否則請不要採用他人的文字和素材釋出內容。你在網誌上釋出的任何內容都能被公眾訪問。</string>
+    <string name="blog_header">網誌</string>
+    <string name="blog_name_title">網誌名</string>
+    <string name="button_text_post_blog">釋出網誌</string>
+    <string name="button_text_remove_blog">消去網誌</string>
+    <string name="button_text_share_blog">分享網誌連結</string>
+    <string name="item_blog">網誌管理</string>
+    <string name="title_theme">網誌模板</string>
+    <string name="blog_name_default">我的相簿</string>
+    <string name="button_text_done">結束</string>
+    <string name="notice">建立網誌需要一些時間，請稍後片刻再行訪問。</string>
+    <string name="sync_status_action_create_blog">正在建立相簿《%s》的網誌</string>
+    <string name="theme_option_cascade">瀑布流</string>
+    <string name="theme_option_cascade_tooltips">適合少量文字</string>
+    <string name="theme_option_magazine">雜誌流</string>
+    <string name="theme_option_magazine_tooltips">適合大量文字</string>
 </resources>

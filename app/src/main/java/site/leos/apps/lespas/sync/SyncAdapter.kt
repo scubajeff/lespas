@@ -23,8 +23,7 @@ import android.accounts.NetworkErrorException
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.*
-import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
+import android.graphics.*
 import android.graphics.drawable.AnimatedImageDrawable
 import android.media.MediaMetadataRetriever
 import android.net.ConnectivityManager
@@ -35,6 +34,8 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.exifinterface.media.ExifInterface
 import androidx.preference.PreferenceManager
+import okhttp3.FormBody
+import okhttp3.Request
 import okhttp3.internal.http2.StreamResetException
 import okio.IOException
 import org.json.JSONException
@@ -48,20 +49,22 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileWriter
-import java.io.InterruptedIOException
+import java.io.*
+import java.lang.Integer.max
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
+import java.text.Collator
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
 import javax.net.ssl.SSLPeerUnverifiedException
+import kotlin.math.min
 
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
 ) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
@@ -72,6 +75,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private lateinit var dcimRoot: String
     private lateinit var localRootFolder: String
     private lateinit var token: String
+    private var blogSiteName = ""
+    private var userName = ""
     private val albumRepository = AlbumRepository(application)
     private val photoRepository = PhotoRepository(application)
     private val actionRepository = ActionRepository(application)
@@ -194,9 +199,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         AccountManager.get(application).run {
-            val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
+            userName = getUserData(account, context.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, context.getString(R.string.nc_userdata_server))
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
+            blogSiteName = Tools.getBlogSiteName(getUserData(account, context.getString(R.string.nc_userdata_loginname)))
 
             val davEndPoint = application.getString(R.string.dav_files_endpoint)
             hrefBase = "/${baseUrl.substringAfter("//").substringAfter("/")}${davEndPoint}${userName}"
@@ -206,9 +212,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             webDav = OkHttpWebDav(
                 userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                null,
+                "${localRootFolder}/cache",
                 "LesPas_${application.getString(R.string.lespas_version)}",
-                0,
+                PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),
             )
         }
 
@@ -464,9 +470,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     //Log.e(TAG, "patching ${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName} ${action.fileId}")
                     webDav.patch("${resourceRoot.substringBeforeLast('/')}${action.folderName}${action.fileName}", action.fileId)
                 }
+                Action.ACTION_CREATE_BLOG_POST -> {
+                    // Property folderId holds target folder Id
+                    // Property folderName holds target folder name, for sync status reporting purpose
+                    // Property fileId holds theme id
+                    // Property fileName holds option flags, 1st bit 'includeSocial', 2nd bit 'includeCopyright'
+                    if (createBlogSite()) {
+                        updateBlogIndex()
+                        createBlogPost(albumRepository.getAlbumWithPhotos(action.folderId), action.fileId)
+                    } else {
+                        // TODO
+                    }
+                }
+                Action.ACTION_DELETE_BLOG_POST -> {
+                    // Property folderId holds target folder Id
+                    webDav.delete("$resourceRoot/${BLOG_CONTENT_FOLDER}/${action.folderId}.md")
+                    webDav.delete("$resourceRoot/${BLOG_ASSETS_FOLDER}/${action.folderId}")
+                }
+                Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
             }
 
-            // TODO: Error retry strategy, directory etag update, etc.
             actionRepository.delete(action)
         }
 
@@ -474,6 +497,259 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // Clear action reporting preference
         reportActionStatus(Action.ACTION_FINISHED, " ", " ", " ", " ", System.currentTimeMillis())
+    }
+
+    private fun createBlogSite(): Boolean {
+        var siteCreated = false
+
+        // Find out if blog site already created
+        val blogs = mutableListOf<NCShareViewModel.Blog>()
+
+        var token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
+        webDav.getCallFactory().newCall(
+            Request.Builder().url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()
+        ).execute().use { response ->
+            if (response.isSuccessful) blogs.addAll(Tools.collectBlogResult(response.body?.string()))
+        }
+
+        for (blog in blogs) {
+            if (blog.path.contains("${application.getString(R.string.lespas_base_folder_name)}/${BLOG_FOLDER}")) {
+                siteCreated = true
+                break
+            }
+        }
+
+        //Log.e(">>>>>>>>", "createBlogSite: existing: $blogs")
+        if (!siteCreated) {
+            // Create blog site folder in lespas/
+            webDav.createFolder("${resourceRoot}/${BLOG_FOLDER}")
+
+            // Create pico site
+            token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
+            webDav.getCallFactory().newCall(Request.Builder()
+                .url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}")
+                .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
+                .post(
+                    FormBody.Builder()
+                        .addEncoded("data[name]", "Les Pas")    // Site name asserted in Pico's lib/Model/Website.php, must be longer than 2 characters and not more than 255
+                        .addEncoded("data[path]", "${application.getString(R.string.lespas_base_folder_name)}/${BLOG_FOLDER}")
+                        .addEncoded("data[site]", blogSiteName)       // only allow a-z, 0-9, - and _
+                        .addEncoded("data[theme]", "magazine")  // TODO change to 'journey'
+                        .addEncoded("data[template]", "empty")
+                        .build()
+                ).build()
+            ).execute().use { response ->
+                siteCreated = response.isSuccessful
+
+                if (siteCreated) {
+                    // After site created, Pico return the full list of all sites created by the user
+                    Tools.collectBlogResult(response.body?.string()).forEach { blog ->
+                        if (blog.path.contains(BLOG_FOLDER)) {
+                            //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
+                            webDav.createFolder("${resourceRoot}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
+                            webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
+                            PreferenceManager.getDefaultSharedPreferences(application).edit().run {
+                                // Save blog site id for later use, like removing it
+                                putString(SettingsFragment.PICO_BLOG_ID, blog.id)
+                                putString(SettingsFragment.PICO_BLOG_FOLDER, blog.path)
+                                apply()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return siteCreated
+    }
+
+    private fun createBlogPost(theAlbum: AlbumWithPhotos, themeId: String) {
+        with(theAlbum) {
+            // Create subfolder in assets folder
+            webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}")
+
+            // Sort photos
+            photos = when (album.sortOrder % 100) {
+                Album.BY_DATE_TAKEN_ASC -> photos.sortedWith(compareBy { it.dateTaken })
+                Album.BY_DATE_TAKEN_DESC -> photos.sortedWith(compareByDescending { it.dateTaken })
+                Album.BY_NAME_ASC -> photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                Album.BY_NAME_DESC -> photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                else -> photos
+            }
+
+            // If album's cover is video item, select the first image item as cover
+            val cover: Photo
+            var baseline: Int
+            if (album.coverMimeType.startsWith("video/")) {
+                cover = photos.find { it.mimeType.startsWith("image/") }!!.also { baseline = (if (it.orientation == 90 || it.orientation == 270) it.width else it.height) / 2 }
+            } else {
+                cover = photos.find { it.id == album.cover }!!
+                baseline = album.coverBaseline
+            }
+            // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
+            val coverAsset = "${album.id}/${if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')}"
+
+            // YAML header of blog post
+            var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset) + "\n"
+            when (themeId) {
+                THEME_CASCADE -> {
+                    // Create blog post markdown file
+                    var leftColumn = ""
+                    var rightColumn = ""
+                    var i = -1
+                    var filename: String
+                    var caption: String
+
+                    photos.forEach { photo ->
+                        // Ignore video items
+                        if (photo.mimeType.startsWith("video/")) return@forEach
+
+                        // Prepare image asset. In case failed, skip this one
+                        //if (!updateAsset(photo, album.id, album.name, isRemote)) return@forEach
+
+                        // Add item to web page
+                        i++
+                        //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
+                        filename = "${ASSETS_URL}/${album.id}/${photo.name}"
+                        caption = photo.caption.replace("\n", "<br>")
+                        if (i % 2 == 0) leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                        else rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                    }
+
+                    updateAssets(this, cover, baseline)
+
+                    // Append content
+                    content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
+                }
+                THEME_MAGAZINE -> {
+
+                }
+            }
+
+            // Create {albumId.md} content file
+            webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
+        }
+    }
+
+    private fun updateBlogIndex() {
+        // Get user display name
+        var userDisplayName = ""
+        webDav.ocsGet("$baseUrl${String.format(NCShareViewModel.USER_METADATA_ENDPOINT, userName)}")?.apply { userDisplayName = getJSONObject("data").getString("displayname") }
+
+        // No way to check if display name is changed, so index file is updated every time when a blog post is being updated
+        val indexFile = "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${INDEX_FILE}"
+        webDav.upload(
+            String.format(
+                YAML_HEADER_INDEX.trimIndent(), PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.blog_name_pref_key), application.getString(R.string.blog_name_default)),
+                userDisplayName,
+                baseUrl.substringBefore("//") + "//" + baseUrl.substringAfter("//").substringBefore('/')
+            ),
+            indexFile, MIME_TYPE_MARKDOWN
+        )   //.apply { Log.e(">>>>>>>>", "updateBlogIndex: index.md created: $first $second") }
+    }
+
+    private fun updateAssets(thisAlbum: AlbumWithPhotos, cover: Photo, baseline: Int) {
+        with(thisAlbum) {
+            val addition = mutableListOf<Photo>()
+            val deletion = mutableListOf<OkHttpWebDav.DAVResource>()
+            val isRemote = Tools.isRemoteAlbum(album)
+
+            // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
+            val coverName = if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')
+
+            // Get current asset list for this album, ignore any exceptions, worst case is re-transferring all the assets again
+            val assetFolder = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}"
+            val remoteAssets = try { webDav.list(assetFolder, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1) } catch (_: Exception) { mutableListOf() }
+
+            // Prepare deletion list
+            remoteAssets.forEach { remote -> photos.find { remote.name == it.name || remote.name == coverName } ?: run { deletion.add(remote) } }
+            // Prepare addition list
+            photos.forEach { local -> if (!local.mimeType.startsWith("video/")) remoteAssets.find { local.name == it.name } ?: run { addition.add(local) } }
+
+            //Log.e(">>>>>>>>", "updateAssets: additions: $addition")
+            //Log.e(">>>>>>>>", "updateAssets: deletions: $deletion")
+
+            // Update new cover
+            remoteAssets.find { it.name == coverName } ?: run { updateAsset(cover, thisAlbum.album.id, thisAlbum.album.name, isRemote, isCover = true, coverBaseline = baseline) }
+            // Update new photos, TODO will copy new animated cover for 1 more time
+            addition.forEach { updateAsset(it, thisAlbum.album.id, thisAlbum.album.name, isRemote) }
+
+            // Remove obsolete photos and cover
+            deletion.forEach { webDav.delete("${assetFolder}/${it.name}") }
+        }
+    }
+
+    private fun updateAsset(photo: Photo, albumId: String, albumName: String, isRemote: Boolean, isCover: Boolean = false, coverBaseline: Int = -1, override: Boolean = false): Boolean {
+        // Shrink picture size to around 1000 pixel long
+        val longEdge = max(photo.width, photo.height)
+        var size = 1
+        if (!isCover) while (longEdge / size > 1600) { size *= 2 }
+        val shrinkOption = BitmapFactory.Options().apply { this.inSampleSize = size }
+
+        var sourceStream: InputStream? = null
+
+        try {
+            // No need to override
+            //if (!override && webDav.isExisted(targetFile)) return true
+
+            // For animated GIF and WebP, directly copy this file to blog assets folder
+            if (Tools.isMediaPlayable(photo.mimeType)) {
+                webDav.copy("${resourceRoot}/${albumName}/${photo.name}", "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${photo.name}")
+                return true
+            }
+
+            if (isRemote) {
+                // Get preview from server if it's not for cover, Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
+                if (!isCover) sourceStream = webDav.getStream("${baseUrl}${NCShareViewModel.PREVIEW_ENDPOINT}${photo.id}", true, null)
+
+                // Preview not available, get original instead
+                sourceStream?.let { shrinkOption.inSampleSize = 1 } ?: run { sourceStream = webDav.getStream("$resourceRoot/${albumName}/${photo.name}", true, null) }
+            } else {
+                sourceStream = File("${localRootFolder}/${photo.id}").inputStream()
+            }
+
+            sourceStream?.let { source ->
+                //Log.e(">>>>>>>>", "    updateAsset: image source stream ready ${photo.name}")
+                val tempFile = File(application.cacheDir, photo.name)
+
+                @Suppress("DEPRECATION")
+                var bitmap = if (isCover) {
+                    shrinkOption.inSampleSize = 2
+
+                    val width = photo.width
+                    val height = photo.height
+                    val rect = when (photo.orientation) {
+                        0 -> Rect(0, coverBaseline, width - 1, min(coverBaseline + (width.toFloat() * 9 / 21).toInt(), height - 1))
+                        90 -> Rect(coverBaseline, 0, min(coverBaseline + (width.toFloat() * 9 / 21).toInt(), height - 1), width - 1)
+                        180 -> (height - coverBaseline).let { Rect(0, max(it - (width.toFloat() * 9 / 21).toInt(), 0), width - 1, it) }
+                        else -> (height - coverBaseline).let { Rect(max(it - (width.toFloat() * 9 / 21).toInt(), 0), 0, it, width - 1) }
+                    }
+                    (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(source) else BitmapRegionDecoder.newInstance(source, false))?.decodeRegion(rect, shrinkOption)
+                } else BitmapFactory.decodeStream(source, null, shrinkOption)
+
+                bitmap?.let { bmp ->
+                    //Log.e(">>>>>>>>", "    updateAsset: image bitmap ready ${photo.name}")
+                    if (photo.orientation != 0) bitmap = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
+                    bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, tempFile.outputStream())
+
+                    //val targetFile = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${photo.name.substringBeforeLast('.')}${if (isCover) "" else ".jpg"}"
+                    val targetFile = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${if (isCover) photo.name.substringBeforeLast('.') else photo.name}"
+                    webDav.upload(tempFile, targetFile, Photo.DEFAULT_MIMETYPE, application)    //.apply { Log.e(">>>>>>>>", "    prepareAsset: ${photo.name} asset created.") }
+                }
+
+                tempFile.delete()
+            }
+
+            return true
+        } catch (e: OkHttpWebDavException) {
+            Log.e(">>>>>>>>", "updateAsset: ${e.stackTraceString}")
+            return false
+        }
+        catch (e: Exception) {
+            e.printStackTrace()
+            // TODO better exception handling
+            return false
+        }
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
@@ -524,6 +800,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         reportActionStatus(Action.ACTION_COLLECT_REMOTE_CHANGES, " ", " ", " ", " ", System.currentTimeMillis())
         webDav.list(resourceRoot, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach { remoteAlbum ->     // Drop the first one in the list, which is the parent folder itself
             if (remoteAlbum.isFolder) {
+                // Skip blog folder
+                if (remoteAlbum.name == BLOG_FOLDER || remoteAlbum.name == BLOG_FOLDER.drop(1)) return@forEach
+
                 // Collecting remote album ids, including hidden albums, for deletion syncing
                 remoteAlbumIds.add(remoteAlbum.fileId)
                 hidden = remoteAlbum.name.startsWith('.')
@@ -1410,5 +1689,56 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val SYNC_STATUS_BACKUP_MESSAGE_FORMAT = "%s|%s|%d|%d|%d"
 
         private const val TAG = "SyncAdapter: "
+
+        const val BLOG_FOLDER = ".__picoblog__"
+        const val BLOG_CONTENT_FOLDER = "${BLOG_FOLDER}/content"
+        private const val BLOG_ASSETS_FOLDER = "${BLOG_FOLDER}/assets"
+        const val THEME_CASCADE = "1"
+        const val THEME_MAGAZINE = "2"
+        private const val INDEX_FILE = "index.md"
+        const val MIME_TYPE_MARKDOWN = "text/markdown"
+        private const val ASSETS_URL = "%assets_url%"
+        private const val YAML_HEADER_INDEX =
+            """
+                ---
+                Title: %s
+                Author: %s
+                Host: %s
+                Template : index
+                Robots: noindex, nofollow, noimageindex
+                Purpose: pico_categories_page
+                numPerPage: 12
+                ---
+            """
+        private const val YAML_HEADER_BLOG =
+            """
+                ---
+                Title: %s
+                Template : single
+                Date: %s
+                Thumbnail: %s
+                Featured: %s
+                Robots: noindex, nofollow, noimageindex
+                Purpose: pico_categories_page
+                ---
+            """
+
+        private const val CONTENT_CASCADE =
+            """
+                <div class="fh5co-grid">
+                <div class="fh5co-col-1">
+                %s
+                </div>
+                <div class="fh5co-col-2">
+                %s
+                </div>
+                </div>
+            """
+        private const val ITEM_CASCADE =
+            """
+                <div class="fh5co-item animate-box">
+                <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
+                </div>
+            """
     }
 }

@@ -131,10 +131,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
     private var mediaRenameAction: MenuItem? = null
+    private var blogOptionMenu: MenuItem? = null
+    private var mapOptionMenu: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
 
-    private var mapOptionMenu: MenuItem? = null
 
     private lateinit var lespasPath: String
 
@@ -414,7 +415,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
                         else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
                 }
             })
         }
@@ -462,6 +463,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
             }
+
+            // Disable "Manage Blog" menu if this is a all video album
+            it.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
         }
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
@@ -565,6 +569,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 inflater.inflate(R.menu.album_detail_menu, menu)
                 mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
                 searchOptionMenu = menu.findItem(R.id.option_menu_search)
+                blogOptionMenu = menu.findItem(R.id.option_menu_blog)
 
                 run map@{
                     mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
@@ -665,6 +670,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     R.id.option_menu_wide_list-> {
                         albumModel.setWideList(album.id, !Tools.isWideListAlbum(album.sortOrder))
                         saveSortOrderChanged = true
+                        true
+                    }
+                    R.id.option_menu_blog-> {
+                        if (parentFragmentManager.findFragmentByTag(BLOG_DIALOG) == null) BlogDialogFragment.newInstance(album).show(parentFragmentManager, BLOG_DIALOG)
                         true
                     }
                     else-> false
@@ -1229,6 +1238,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val PUBLISH_DIALOG = "PUBLISH_DIALOG"
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BGM_DIALOG = "BGM_DIALOG"
+        private const val BLOG_DIALOG = "BLOG_DIALOG"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"

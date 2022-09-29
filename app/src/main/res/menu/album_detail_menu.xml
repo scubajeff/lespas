@@ -41,6 +41,11 @@
     <item
         android:id="@+id/option_menu_publish"
         android:title="@string/item_publish"
+        android:orderInCategory="9"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_blog"
+        android:title="@string/item_blog"
         android:orderInCategory="10"
         app:showAsAction="never" />
     <item

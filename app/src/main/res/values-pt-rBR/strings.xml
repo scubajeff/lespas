@@ -345,4 +345,20 @@
     <string name="msg_backup_oldies">Novas fotos serão backups a partir de agora. Você também tem %1$,d fotos em rolo de câmera agora mesmo, com %2$s em tamanho. Você quer fazer backup de todas estas fotos antigas também?</string>
     <string name="button_text_save">Salvar</string>
     <string name="hint_caption">Adicionar legenda</string>
+    <string name="blog_header">Blog</string>
+    <string name="blog_name_default">Meus álbuns</string>
+    <string name="item_blog">Gerenciar Blog</string>
+    <string name="blog_name_title">Nome do Blog</string>
+    <string name="button_text_done">Feito</string>
+    <string name="button_text_post_blog">Postar</string>
+    <string name="button_text_remove_blog">Remover blog</string>
+    <string name="button_text_share_blog">Link para compartilhar</string>
+    <string name="notice">Por favor, reserve um momento para criar páginas de blogs no servidor.</string>
+    <string name="sync_status_action_create_blog">Criando post de blog para o álbum \'%s\'.</string>
+    <string name="theme_option_cascade">Cascata</string>
+    <string name="theme_option_cascade_tooltips">Preferido para legendas curtas.</string>
+    <string name="theme_option_magazine_tooltips">Preferido para legendas longas.</string>
+    <string name="title_theme">Tema do Blog:</string>
+    <string name="theme_option_magazine">Revista</string>
+    <string name="blog_exemption_clause">Você é responsável pelo uso do recurso de blogging e qualquer conteúdo que você forneça, incluindo o cumprimento das leis aplicáveis. Por favor, não publique conteúdo a menos que você tenha o direito de fazê-lo. Qualquer coisa que você postar no blog poderá ser acessado pelo público em geral.</string>
 </resources>

@@ -128,6 +128,23 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
     fun getRangeCall(source: String, rangeStartAt: Long): Call = httpClient.newCall(Request.Builder().url(source).header("Range", "bytes=${rangeStartAt}-").get().build())
 
+    fun getCSRFToken(csrfEndpoint: String): Pair<String, String> {
+        var cookies = ""
+        var csrfToken = ""
+
+        httpClient.newCall(Request.Builder().url(csrfEndpoint).get().build()).execute().use { response ->
+            if (response.isSuccessful) {
+                response.headers.values("Set-Cookie").forEach { cookie ->
+                    cookies = "$cookies$cookie; "
+                }
+                cookies = cookies.substringBeforeLast("; ")
+                response.body?.string()?.let { json-> csrfToken = JSONObject(json).getString("token") }
+            }
+        }
+
+        return Pair(csrfToken, cookies)
+    }
+
     fun getRawResponse(source: String, useCache: Boolean): Response {
         val reqBuilder = Request.Builder().url(source)
         return (if (useCache) cachedHttpClient!!.newCall(reqBuilder.get().build()) else httpClient.newCall(reqBuilder.get().build())).execute()

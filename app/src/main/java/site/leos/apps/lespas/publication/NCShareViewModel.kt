@@ -96,12 +96,15 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     private val _blogs = MutableStateFlow<List<Blog>>(arrayListOf())
+    private val _blogPostExisted = MutableStateFlow<Boolean>(false)
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
     val blogs: StateFlow<List<Blog>> = _blogs
+    val blogPostExisted: StateFlow<Boolean> = _blogPostExisted
+    private val user = User()
 
     private var webDav: OkHttpWebDav
 
@@ -127,6 +130,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         AccountManager.get(application).run {
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
             val userName = getUserData(account, application.getString(R.string.nc_userdata_username))
+            user.id = getUserData(account, application.getString(R.string.nc_userdata_username))
+            user.loginName = getUserData(account, application.getString(R.string.nc_userdata_loginname))
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
@@ -138,6 +143,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             videoPlayerCache = try { SimpleCache(File(application.cacheDir, "video"), LeastRecentlyUsedCacheEvictor(100L * 1024L * 1024L), StandaloneDatabaseProvider(application)) } catch (e: Exception) { null }
         }
     }
+
+    fun getServerBaseUrl(): String = baseUrl
 
     fun updateWebDavAccessToken(context: Context) {
         AccountManager.get(context).run {
@@ -156,6 +163,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             _sharees.value = refreshSharees()
             _shareByMe.value = refreshShareByMe()
             refreshShareWithMe()
+            refreshUser()
         }
     }
 
@@ -738,19 +746,30 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
 
     // Pico CMS integration
-    fun listBlogs() {
+    fun listBlogs(albumId: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
+            _blogPostExisted.value = false
             try {
-                val token = getCSRFToken()
+                val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
 
                 webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}")
                     .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()).execute().use { response ->
-                    if (response.isSuccessful) _blogs.value = collectResult(response.body?.string())
+                    if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
+                }
+
+                for (blog in _blogs.value) {
+                    if (blog.path.contains(SyncAdapter.BLOG_FOLDER)) {
+                        // LesPas blog site has been created, search it's content folder for 'albumId.md' file
+                        webDav.list("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach {
+                            if (!it.isFolder && it.name.substringBefore('.') == albumId) _blogPostExisted.value = true
+                        }
+                    }
                 }
             } catch (_: Exception) {}
         }
     }
     
+/*
     fun createBlog(album: Album) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -763,7 +782,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                 }
 
-                val token = getCSRFToken()
+                val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
                 
                 webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}")
                     .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true")
@@ -778,7 +797,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 ).execute().use { response ->
                     if (response.isSuccessful) {
                         // If successful, Pico return blog list
-                        _blogs.value = collectResult(response.body?.string())
+                        _blogs.value = Tools.collectBlogResult(response.body?.string())
                     }
                     else Log.e(">>>>>>>>", "createBlog: ${response.code}")
                 }
@@ -789,49 +808,31 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun deleteBlog(blogId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val token = getCSRFToken()
+                val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
 
                 webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}/${blogId}")
                     .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").delete().build()
                 ).execute().use { response ->
                     if (response.isSuccessful) {
                         // If successful, Pico return blog list
-                        _blogs.value = collectResult(response.body?.string())
+                        _blogs.value = Tools.collectBlogResult(response.body?.string())
                     }
                 }
             } catch (_: Exception) {}
         }
     }
+*/
 
-    private fun collectResult(body: String?): List<Blog> {
-        val blogs = mutableListOf<Blog>()
-        body?.let {
-            val sites = JSONObject(it).getJSONArray("websites")
-            for (i in 0 until sites.length()) {
-                sites.getJSONObject(i).run {
-                    blogs.add(Blog(getString("id"), getString("name"), getString("site"), getString("theme"), getInt("type"), getString("path"), getLong("creation")))
-                }
+    private fun refreshUser() {
+        try {
+            webDav.ocsGet("$baseUrl${String.format(USER_METADATA_ENDPOINT, user.id)}")?.apply {
+                user.displayName = getJSONObject("data").getString("displayname")
             }
-        }
-
-        return blogs
+        } catch (_: Exception) {}
     }
 
-    private fun getCSRFToken(): Pair<String, String> {
-        var cookies = ""
-        var csrfToken = ""
-        webDav.getCall("${baseUrl}${CSRF_TOKEN_ENDPOINT}", false, null).execute().use { response ->
-            if (response.isSuccessful) {
-                response.headers.values("Set-Cookie").forEach { cookie ->
-                    cookies = "$cookies$cookie; "
-                }
-                cookies = cookies.substringBeforeLast("; ")
-                response.body?.string()?.let { json-> csrfToken = JSONObject(json).getString("token") }
-            }
-        }
-
-        return Pair(csrfToken, cookies)
-    }
+    fun getUserLoginName(): String = user.loginName
+    fun getUserDisplayName(): String = user.displayName
 
     private val cr = application.contentResolver
     private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
@@ -1447,6 +1448,13 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var timestamp: Long = 0L,
     ) : Parcelable
 
+    @Parcelize
+    data class User(
+        var id: String = "",
+        var loginName: String = "",
+        var displayName: String = "",
+    ) : Parcelable
+
     companion object {
         const val TYPE_NULL = ""    // For startPostponedEnterTransition() immediately for video item
         const val TYPE_GRID = "_view"
@@ -1466,11 +1474,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         //private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"
         private const val PUBLISH_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares"
         private const val AVATAR_ENDPOINT = "/index.php/avatar/"
-        private const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
+        const val PREVIEW_ENDPOINT = "/index.php/core/preview?x=1024&y=1024&a=true&fileId="
+        const val USER_METADATA_ENDPOINT = "/ocs/v1.php/cloud/users/%s?format=json"
 
         // Pico integration
-        private const val CSRF_TOKEN_ENDPOINT = "/csrftoken"
-        private const val PICO_WEBSITES_ENDPOINT = "/index.php/apps/cms_pico/personal/websites"
+        const val CSRF_TOKEN_ENDPOINT = "/csrftoken"
+        const val PICO_WEBSITES_ENDPOINT = "/index.php/apps/cms_pico/personal/websites"
 
         const val SHARE_TYPE_USER = 0
         const val SHARE_TYPE_GROUP = 1

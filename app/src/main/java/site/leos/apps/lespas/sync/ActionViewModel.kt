@@ -53,13 +53,13 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                     if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) removeLocalMediaFile(photo)
                     else {
                         if (Tools.isRemoteAlbum(album)) {
-                            if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                            if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (_: Exception) {}
                         } else removeLocalMediaFile(photo)
                     }
                 }
 
                 // Remove local meta file
-                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) {}
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (_: Exception) {}
 
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
             }
@@ -101,7 +101,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
                     if (Tools.isRemoteAlbum(album)){
                         // Remove video thumbnail in cache folder
-                        if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+                        if (photo.mimeType.startsWith("video")) try { File("$localRootFolder/cache", "${photo.id}.thumbnail").delete() } catch (_: Exception) {}
                     }
                     else {
                         // Remove local media file if it's a Local album
@@ -124,7 +124,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, photos[0].albumId, album.name, "", "", timestamp, 1))
 
                 // Remove local meta file
-                try { File(localRootFolder, "${album.id}.json").delete() } catch (e: Exception) {}
+                try { File(localRootFolder, "${album.id}.json").delete() } catch (_: Exception) {}
             }
 
             actionRepository.addActions(actions)
@@ -202,9 +202,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     fun addAction(action: Action) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(action) }}
 
     private fun removeLocalMediaFile(photo: Photo) {
-        try { File(localRootFolder, photo.id).delete() } catch (e: Exception) {}
+        try { File(localRootFolder, photo.id).delete() } catch (_: Exception) {}
         // Remove video thumbnail too
-        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (e: Exception) {}
+        if (photo.mimeType.startsWith("video")) try { File(localRootFolder, "${photo.id}.thumbnail").delete() } catch (_: Exception) {}
     }
 
     fun updatePhotoCaption(photoId: String, newCaption: String, albumName: String) {
@@ -213,4 +213,16 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", albumName, "", "", System.currentTimeMillis(), 1))
         }
     }
+
+/*
+    fun createBlogPost(albumId: String, albumName: String, theme: String, includeSocialLink: Boolean, includeCopyright: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val flag = if (includeSocialLink) 1 else 0 + if (includeCopyright) 2 else 0
+            actionRepository.addAction(Action(null, Action.ACTION_CREATE_BLOG_POST, albumId, albumName, theme, flag.toString(), System.currentTimeMillis(), 1))
+        }
+    }
+*/
+    fun createBlogPost(albumId: String, albumName: String, theme: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_CREATE_BLOG_POST, albumId, albumName, theme, "", System.currentTimeMillis(), 1)) }}
+    fun deleteBlogPost(albumId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_DELETE_BLOG_POST, albumId, "", "", "", System.currentTimeMillis(), 1)) }}
+    fun updateBlogSiteTitle() { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_BLOG_SITE_TITLE, "", "", "", "", System.currentTimeMillis(), 1)) }}
 }

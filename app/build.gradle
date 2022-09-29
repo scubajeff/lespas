@@ -121,6 +121,9 @@ dependencies {
     // Authentication through system credentials
     implementation 'androidx.biometric:biometric-ktx:1.2.0-alpha05'
 
+    // ZXing for blog QR code
+    implementation 'com.google.zxing:zxingorg:3.5.0'
+
     // Testing
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

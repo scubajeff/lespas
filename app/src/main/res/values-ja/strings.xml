@@ -282,4 +282,20 @@
     <string name="msg_backup_oldies">新しい写真は今後バックアップされます。また、現在カメラロールに%1$,d枚の写真があり、そのサイズは%2$sです。これらの古い写真もすべてバックアップしますか？</string>
     <string name="button_text_save">保存</string>
     <string name="hint_caption">写真のキャプションを付ける</string>
+    <string name="blog_header">ブログ</string>
+    <string name="blog_name_default">私のアルバム</string>
+    <string name="item_blog">ブログの管理</string>
+    <string name="blog_name_title">ブログ名</string>
+    <string name="button_text_done">完成</string>
+    <string name="button_text_post_blog">投稿</string>
+    <string name="button_text_remove_blog">ブログの削除</string>
+    <string name="button_text_share_blog">シェアリンク</string>
+    <string name="notice">サーバーにブログページを作成するため、少々お時間をいただきます。</string>
+    <string name="sync_status_action_create_blog">アルバム %s のブログ投稿を作成しています。</string>
+    <string name="theme_option_cascade_tooltips">短いキャプションに好ましい。</string>
+    <string name="theme_option_magazine_tooltips">長いキャプションに好ましい。</string>
+    <string name="theme_option_magazine">マガジンストリーム</string>
+    <string name="theme_option_cascade">ウォーターフォール</string>
+    <string name="title_theme">ブログのテーマです</string>
+    <string name="blog_exemption_clause">お客様は、ブログ機能の使用および提供するコンテンツについて、適用される法律の遵守を含め、責任を負うものとします。投稿する権利をお持ちでない方は、コンテンツを投稿しないでください。お客様がブログに投稿された内容は、一般の方がアクセスすることができます。</string>
 </resources>

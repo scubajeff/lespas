@@ -215,6 +215,12 @@
     <string name="msg_logout_dialog">Log out of account %1$s?</string>
     <string name="yes_logout">Yes, log out</string>
 
+    <string name="blog_header">Blog</string>
+    <string name="blog_name_pref_key" translatable="false">BLOG_NAME</string>
+    <string name="blog_name_title">Blog Name</string>
+    <string name="blog_name_default">My Albums</string>
+    <string name="blog_exemption_clause">You’re responsible for your use of the blogging feature and any content you provide, including compliance with applicable laws. Please don’t post content unless you have the right to do so. Anything you post in the blog CAN be access by the general public.</string>
+
     <string name="storage_access_permission_rationale">Snapseed saves files in it\'s own \"Snapseed\" folder. Grant storage access permission to read those files.</string>
     <string name="backup_exif_location_permission_rationale">To backup GPS data saved in photo</string>
     <string name="search_exif_location_permission_rationale">To search for location information in camera roll</string>
@@ -248,6 +254,7 @@
     <string name="sync_status_action_delete_media_from_backup">Removing %s from camera archive.</string>
     <string name="sync_status_action_patch_property">Updating WebDAV properties of %s in camera archive.</string>
     <string name="sync_status_action_backup_file">Backing up photo %s.</string>
+    <string name="sync_status_action_create_blog">Creating blog post for album \'%s\'.</string>
 
     <string name="sync_status_action_collect_remote_changes">Collecting changes from server…</string>
     <string name="sync_status_action_create_album_from_server">Creating album \'%s\'.</string>
@@ -319,6 +326,7 @@
     <string name="item_unhide">Unhide</string>
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
+    <string name="item_blog">Manage Blog</string>
     <string name="item_bgm">Manage BGM</string>
     <string name="item_sortby">Sort by</string>
     <string name="item_dateasc">Date Ascending</string>
@@ -382,6 +390,25 @@
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Slideshow</string>
     <string name="option_menu_mute">Toggle mute</string>
+
+    <!-- Blog Dialog Fragment -->
+    <string name="button_text_post_blog">Post</string>
+    <string name="button_text_remove_blog">Remove blog</string>
+    <string name="button_text_share_blog">Share link</string>
+    <string name="button_text_done">Done</string>
+    <string name="title_theme">Blog Theme:</string>
+    <string name="theme_option_cascade">Cascade</string>
+    <string name="theme_option_cascade_tooltips">Preferred for short captions.</string>
+    <string name="theme_option_magazine">Magazine</string>
+    <string name="theme_option_magazine_tooltips">Préférable pour les longues légendes.</string>
+<!--
+    <string name="title_content">Include in post:</string>
+    <string name="content_option_social_link">Social Link</string>
+    <string name="content_option_social_link_tooltips">Include social link in blog post.</string>
+    <string name="content_option_copyright">Disclaimer</string>
+    <string name="content_option_copyright_tooltips">Include copyright disclaimer at blog end.</string>
+-->
+    <string name="notice">Please allow a moment to create blog pages on server.</string>
 
     <!-- Image Recognition -->
     <!-- Object label -->

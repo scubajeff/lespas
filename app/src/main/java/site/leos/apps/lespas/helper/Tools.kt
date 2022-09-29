@@ -939,7 +939,7 @@ object Tools {
     fun getBearing(exif: ExifInterface): Double {
         var bearing = Photo.NO_GPS_DATA
         exif.getAttribute(ExifInterface.TAG_GPS_DEST_BEARING)?.let { try { bearing = it.toDouble() } catch (_: NumberFormatException) {} }
-        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (_: java.lang.NumberFormatException) {} }
+        if (bearing == Photo.NO_GPS_DATA) exif.getAttribute(ExifInterface.TAG_GPS_IMG_DIRECTION)?.let { try { bearing = it.toDouble() } catch (_: NumberFormatException) {} }
         return bearing
     }
 
@@ -958,4 +958,21 @@ object Tools {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
         else -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
     }
+
+    fun collectBlogResult(body: String?): List<NCShareViewModel.Blog> {
+        val blogs = mutableListOf<NCShareViewModel.Blog>()
+        body?.let {
+            val sites = JSONObject(it).getJSONArray("websites")
+            for (i in 0 until sites.length()) {
+                sites.getJSONObject(i).run {
+                    blogs.add(NCShareViewModel.Blog(getString("id"), getString("name"), getString("site"), getString("theme"), getInt("type"), getString("path"), getLong("creation")))
+                }
+            }
+        }
+
+        return blogs
+    }
+
+    // Construct blog site name by using user's login name, site name only allow these characters: 'a-z', '0-9', '-', and '_', NC's login name allow '*', '.', uppercase letters and space too
+    fun getBlogSiteName(loginName: String): String = loginName.substringBefore('@').lowercase().replace('.', '_').replace(' ', '_')
 }
