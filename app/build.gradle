@@ -32,7 +32,7 @@ android {
     buildTypes {
         debug {
             shrinkResources false
-            minifyEnabled true
+            minifyEnabled false
             ext.enableCrashlytics = false
         }
         release {
