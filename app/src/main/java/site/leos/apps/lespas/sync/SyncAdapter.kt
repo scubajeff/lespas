@@ -589,11 +589,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
             val coverAsset = "${album.id}/${if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')}"
 
+            // Web page construction
             // YAML header of blog post
             var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset) + "\n"
+
+            // Blog post content
             when (themeId) {
                 THEME_CASCADE -> {
-                    // Create blog post markdown file
                     var leftColumn = ""
                     var rightColumn = ""
                     var leftBottom = 0
@@ -622,8 +624,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     }
 
-                    updateAssets(this, cover, baseline)
-
                     // Append content
                     content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
                 }
@@ -631,6 +631,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 }
             }
+
+            // Create all assets including cover
+            updateAssets(this, cover, baseline)
 
             // Create {albumId.md} content file
             webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
