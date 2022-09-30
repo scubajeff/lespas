@@ -596,7 +596,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Create blog post markdown file
                     var leftColumn = ""
                     var rightColumn = ""
-                    var i = -1
+                    var leftBottom = 0
+                    var rightBottom = 0
                     var filename: String
                     var caption: String
 
@@ -608,12 +609,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         //if (!updateAsset(photo, album.id, album.name, isRemote)) return@forEach
 
                         // Add item to web page
-                        i++
                         //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
                         filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                         caption = photo.caption.replace("\n", "<br>")
-                        if (i % 2 == 0) leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
-                        else rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+
+                        if (leftBottom <= rightBottom) {
+                            leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                            leftBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
+                        } else {
+                            rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                            rightBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
+                        }
                     }
 
                     updateAssets(this, cover, baseline)
