@@ -149,6 +149,7 @@
                 android:src="@drawable/ic_baseline_share_24" />
 
             <TextView
+                android:id="@+id/notice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/share_button"
@@ -156,7 +157,8 @@
                 android:layout_marginHorizontal="@dimen/big_padding"
                 android:text="@string/notice"
                 style="@style/TextAppearance.MaterialComponents.Caption"
-                android:textAlignment="center" />
+                android:textAlignment="center"
+                android:visibility="invisible" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

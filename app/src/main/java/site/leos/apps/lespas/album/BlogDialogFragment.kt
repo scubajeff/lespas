@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.view.View
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -49,6 +50,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
     private lateinit var blogInfo: ConstraintLayout
     private lateinit var shareBlogButton: MaterialButton
     private lateinit var removeBlogButton: MaterialButton
+    private lateinit var holdYourHorsesTextView: TextView
 /*
     private lateinit var includeSocialButton: MaterialButton
     private lateinit var includCopyrightBlogButton: MaterialButton
@@ -86,6 +88,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
                 }, null))
             }
         }
+        holdYourHorsesTextView = view.findViewById(R.id.notice)
 /*
         includeSocialButton = view.findViewById<MaterialButton?>(R.id.option_social_link).apply { isChecked = true }
         includCopyrightBlogButton = view.findViewById<MaterialButton?>(R.id.option_copyright).apply { isChecked = true }
@@ -102,17 +105,9 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
                         },
                         //includeSocialButton.isChecked, includCopyrightBlogButton.isChecked
                     )
+                    holdYourHorsesTextView.isVisible = true
                     showQRCode()
                     this.text = getString(R.string.button_text_done)
-/*
-                    Log.e(">>>>>>>>", "onViewCreated: ${String.format(YAML_HEADER_INDEX.trimIndent(), PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.blog_name_pref_key), getString(R.string.blog_name_default)), shareModel.getUserDisplayName())}")
-                    Log.e(
-                        ">>>>>>>>",
-                        String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), album.cover, album.cover, shareModel.getServerBaseUrl()) +
-                                "\n" +
-                                String.format(CONTENT_CASCADE.trimIndent(), ITEM_CASCADE.trimIndent(), ITEM_CASCADE.trimIndent())
-                    )
-*/
                 } else dismiss()
             }
         }
