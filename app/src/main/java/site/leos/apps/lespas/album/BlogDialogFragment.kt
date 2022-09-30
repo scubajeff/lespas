@@ -97,8 +97,9 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
         view.findViewById<MaterialButton>(R.id.publish_button).apply {
             setOnClickListener {
                 if (this.text != getString(R.string.button_text_done)) {
-                    actionModel.createBlogPost(album.id, album.name,
-                        when(themeChoice.checkedButtonId) {
+                    actionModel.createBlogPost(
+                        album.id, album.name,
+                        when (themeChoice.checkedButtonId) {
                             R.id.theme_cascade -> SyncAdapter.THEME_CASCADE
                             R.id.theme_magazine -> SyncAdapter.THEME_MAGAZINE
                             else -> ""

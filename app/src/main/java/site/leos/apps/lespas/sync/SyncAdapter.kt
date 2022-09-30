@@ -84,6 +84,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val wifionlyKey = application.getString(R.string.wifionly_pref_key)
     private val metaUpdatedNeeded = mutableSetOf<String>()
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
+    private val blogUpdateNeeded = mutableSetOf<String>()
     private var workingAction: Action? = null
 
     private val keySyncStatus = application.getString(R.string.sync_status_pref_key)
@@ -591,7 +592,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // Web page construction
             // YAML header of blog post
-            var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset) + "\n"
+            var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset, themeId) + "\n"
 
             // Blog post content
             when (themeId) {
@@ -1632,6 +1633,26 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Maintain metaUpdatedNeeded set so that if any exception happened, those not updated yet can be saved into action database
             contentMetaUpdatedNeeded.remove(albumName)
         }
+
+        var themeId = ""
+        mutableListOf<String>().apply { addAll(blogUpdateNeeded) }.forEach { albumId ->
+            try {
+                webDav.getStream("${resourceRoot}/${BLOG_CONTENT_FOLDER}/${albumId}.md", false, null).bufferedReader().use { reader ->
+                    var line: String? = ""
+                    while(line != null) {
+                        line = reader.readLine()
+                        line?.let {
+                            if (line.substringBefore(':') == "Theme") {
+                                themeId = line.substringAfter(':').trim()
+                                return@use
+                            }
+                        }
+                    }
+                }
+
+                createBlogPost(albumRepository.getAlbumWithPhotos(albumId), themeId)
+            } catch (_: Exception) {}
+        }
     }
 
     //private fun updateAlbumMeta(albumId: String, albumName: String, cover: Cover, coverFileName: String, sortOrder: Int): Boolean {
@@ -1648,10 +1669,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         // If local meta json file created successfully
         webDav.upload(localFile, "$resourceRoot/${Uri.encode(albumName)}/${metaFileName}", MIME_TYPE_JSON, application)
+
+        blogUpdateNeeded.add(albumId)
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
         webDav.upload(Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(albumId)), "$resourceRoot/${Uri.encode(albumName)}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
+
+        blogUpdateNeeded.add(albumId)
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
@@ -1750,8 +1775,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val BLOG_FOLDER = ".__picoblog__"
         const val BLOG_CONTENT_FOLDER = "${BLOG_FOLDER}/content"
         private const val BLOG_ASSETS_FOLDER = "${BLOG_FOLDER}/assets"
-        const val THEME_CASCADE = "1"
-        const val THEME_MAGAZINE = "2"
+        const val THEME_CASCADE = "cascade"
+        const val THEME_MAGAZINE = "magazine"
         private const val INDEX_FILE = "index.md"
         const val MIME_TYPE_MARKDOWN = "text/markdown"
         private const val ASSETS_URL = "%assets_url%"
@@ -1775,6 +1800,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Date: %s
                 Thumbnail: %s
                 Featured: %s
+                Theme: %s
                 Robots: noindex, nofollow, noimageindex
                 Purpose: pico_categories_page
                 ---
