@@ -627,8 +627,49 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Append content
                     content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
                 }
-                THEME_MAGAZINE -> {
 
+                THEME_MAGAZINE -> {
+                    var index = -1
+                    var filename: String
+                    var caption: String
+                    val grid = mutableListOf<Photo>()
+
+                    do {
+                        index++
+
+                        photos[index].let { photo ->
+                            if (!photo.mimeType.startsWith("video/")) {
+                                // Ignore video items
+
+                                filename = "${ASSETS_URL}/${album.id}/${photo.name}"
+
+                                if (photo.caption.isNotEmpty()) {
+                                    // Append pending grid
+                                    if (grid.isNotEmpty()) {
+                                        content += addMagazineGrid(grid, album.id)
+                                        grid.clear()
+                                    }
+                                    caption = photo.caption.replace("\n", "<br>")
+
+                                    content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), filename, caption) + "\n\n"
+                                } else {
+                                    grid.add(photo)
+
+                                    // Append full grid
+                                    if (grid.size == 3) {
+                                        content += addMagazineGrid(grid, album.id)
+                                        grid.clear()
+                                    }
+                                }
+                            }
+                        }
+                    } while ( index < photos.size - 1)
+
+                    // Append pending grid
+                    if (grid.isNotEmpty()) {
+                        content += addMagazineGrid(grid, album.id)
+                        grid.clear()
+                    }
                 }
             }
 
@@ -638,6 +679,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Create {albumId.md} content file
             webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
         }
+    }
+
+    private fun addMagazineGrid(grid: List<Photo>, albumId: String): String {
+        var result = """<div class="row">""" + "\n"
+        for (item in grid) result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), "${ASSETS_URL}/${albumId}/${item.name}") + "\n"
+
+        return "$result</div>\n\n"
     }
 
     private fun updateBlogIndex() {
@@ -1747,6 +1795,35 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
                 <div class="fh5co-item animate-box">
                 <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
+                </div>
+            """
+
+        private const val ITEM_MAGAZINE_LEFT =
+            """
+                <div class="row rp-b">
+                <div class="col-lg-6 col-md-12 animate-box">
+                <figure><img src="%s" class="img-responsive"></figure>
+                </div>
+                <div class="col-lg-6 col-md-12 cp-l animate-box">
+                %s
+                </div>
+                </div>
+            """
+        private const val ITEM_MAGAZINE_RIGHT =
+            """
+                <div class="row rp-b">
+                <div class="col-lg-6 col-lg-push-6 col-md-12 col-md-push-0 animate-box">
+                <figure><img src="%s" class="img-responsive"></figure>
+                </div>
+                <div class="col-lg-6 col-lg-pull-6 col-md-12 col-md-pull-0 cp-r animate-box">
+                %s
+                </div>
+                </div>
+            """
+        private const val ITEM_MAGAZINE_GRID =
+            """
+                <div class="col-md-4 animate-box">
+                <figure><img src="%s" class="img-responsive"></figure>
                 </div>
             """
     }
