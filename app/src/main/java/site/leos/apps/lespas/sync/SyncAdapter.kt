@@ -351,7 +351,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Sync from server syncRemoteChanges() will detect the change and update content meta later
                 }
 
-                Action.ACTION_UPDATE_ALBUM_COVER -> {
+                Action.ACTION_UPDATE_ALBUM_META -> {
                     // Property folderId holds id of the album needed meta update
                     // Property folderName has the name of the album, the name when this action fired, if there is a album renaming happen afterward, local database will only has the new name
                     albumRepository.getThisAlbum(action.folderId).apply {
