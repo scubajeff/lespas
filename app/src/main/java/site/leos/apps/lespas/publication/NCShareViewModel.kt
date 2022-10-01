@@ -582,11 +582,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun getPreview(remotePhoto: RemotePhoto): Bitmap? {
-        var bitmap: Bitmap?
-        webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${remotePhoto.photo.id}", true, null).use { bitmap = BitmapFactory.decodeStream(it) }
+        var bitmap: Bitmap? = try {
+            webDav.getStream("${baseUrl}${PREVIEW_ENDPOINT}${remotePhoto.photo.id}", true, null).use { BitmapFactory.decodeStream(it) }
+        } catch (_: Exception) { null }
         bitmap ?: run {
             webDav.getStream("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true, null).use {
-                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 8 })
+                bitmap = BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 8 })
             }
         }
 
