@@ -120,8 +120,8 @@ object Tools {
                     var saveExif = false
 
                     exifInterface?.let { exif->
-                        exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
-                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
+                        exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
+                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
 
                         // GPS data
                         exif.latLong?.let { latlong = it }
