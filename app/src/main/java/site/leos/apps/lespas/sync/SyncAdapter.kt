@@ -759,7 +759,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             if (isRemote) {
                 // Get preview from server if it's not for cover, Nextcloud will not provide preview for webp, heic/heif, if preview is available, then it's rotated by Nextcloud to upright position
-                if (!isCover) sourceStream = webDav.getStream("${baseUrl}${NCShareViewModel.PREVIEW_ENDPOINT}${photo.id}", true, null)
+                if (!isCover) sourceStream = try {
+                    webDav.getStream("${baseUrl}${NCShareViewModel.PREVIEW_ENDPOINT}${photo.id}", true, null)
+                } catch (e: OkHttpWebDavException) {
+                    if (e.statusCode == 404) null else throw e
+                }
 
                 // Preview not available, get original instead
                 sourceStream?.let { shrinkOption.inSampleSize = 1 } ?: run { sourceStream = webDav.getStream("$resourceRoot/${albumName}/${photo.name}", true, null) }
