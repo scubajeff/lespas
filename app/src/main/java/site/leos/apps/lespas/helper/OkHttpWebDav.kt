@@ -84,7 +84,11 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun delete(targetName: String) {
         httpClient.newCall(Request.Builder().url(targetName).delete().build()).execute().use { response->
-            if (!response.isSuccessful) throw OkHttpWebDavException(response)
+            when {
+                response.isSuccessful -> return
+                response.code == 404 -> return
+                else -> throw OkHttpWebDavException(response)
+            }
         }
     }
 /*
