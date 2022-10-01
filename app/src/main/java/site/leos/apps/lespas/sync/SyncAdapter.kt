@@ -558,12 +558,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             )
 */
                             localAlbum[0].copy(
-                                name = remoteAlbum.name,                // Use remote version, since it might be changed on server or hidden state toggled
+                                // Use remote version, since it might be changed on server or hidden state toggled
+                                name = remoteAlbum.name,
                                 lastModified = remoteAlbum.modified,
-                                eTag = remoteAlbum.eTag,                // Use remote eTag for unhidden albums
-                                shareId =                               // shareId's 1st bit denotes album shared status TODO should we enforce SHARED_ALBUM bit? it's actually determined by Share_With_Me now.
-                                    if (remoteAlbum.isShared) localAlbum[0].shareId or Album.SHARED_ALBUM else localAlbum[0].shareId and Album.SHARED_ALBUM.inv(),
-                                syncProgress = Album.SYNC_COMPLETED     // Make sure sync process set to finish for now
+                                // Use remote eTag for unhidden albums
+                                eTag = remoteAlbum.eTag,
+                                // shareId's 1st bit denotes album shared status TODO should we enforce SHARED_ALBUM bit? it's actually determined by Share_With_Me now
+                                shareId = if (remoteAlbum.isShared) localAlbum[0].shareId or Album.SHARED_ALBUM else localAlbum[0].shareId and Album.SHARED_ALBUM.inv(),
+                                // Make sure sync process set to finish for now
+                                syncProgress = Album.SYNC_COMPLETED,
                             )
                         )
                     } else {
@@ -903,6 +906,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 //*****************************************************************
                 // Fetch changed photo files, extract EXIF info, update Photo table
                 //*****************************************************************
+                val photoExtras = photoRepository.getPhotoExtras(changedAlbum.id)
                 changedPhotos.forEachIndexed { i, changedPhoto->
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
@@ -941,7 +945,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedPhoto.mimeType = this.mimeType
                         // Photo's original orientation is needed to display remote image in full format
                         changedPhoto.orientation = this.orientation
-                        changedPhoto.caption = this.caption
+                        // Preserve original caption, TODO other extras like address and classification id??
+                        changedPhoto.caption = photoExtras.find { it.id == changedPhoto.id }?.caption ?: this.caption
                         changedPhoto.latitude = this.latitude
                         changedPhoto.longitude = this.longitude
                         changedPhoto.altitude = this.altitude

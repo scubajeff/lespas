@@ -64,4 +64,5 @@ class PhotoRepository(application: Application) {
     fun clearLocality() { photoDao.clearLocality() }
     fun updateDateTaken(photoId: String, dateTaken: LocalDateTime) { photoDao.updateDateTaken(photoId, dateTaken) }
     fun updateCaption(photoId: String, newCaption: String) { photoDao.updateCaption(photoId, newCaption) }
+    fun getPhotoExtras(albumId: String): List<PhotoExtras> = photoDao.getPhotoExtras(albumId)
 }
