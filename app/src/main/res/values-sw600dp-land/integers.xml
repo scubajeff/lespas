@@ -17,6 +17,6 @@
 
 <resources>
     <integer name="dialog_width_ratio">55</integer>
-    <integer name="caption_max_lines">6</integer>
-    <integer name="caption_editor_max_lines">6</integer>
+    <integer name="caption_max_lines">8</integer>
+    <integer name="caption_editor_max_lines">8</integer>
 </resources>
