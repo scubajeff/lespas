@@ -341,6 +341,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_RENAME_DIRECTORY -> {
                     // Action's folderName property is the old name, fileName property is the new name
+                    // By changing folder name on the server side, the following remote sync procedure will either create(unhide) or delete(hide) the album
                     webDav.move("$resourceRoot/${Uri.encode(action.folderName)}", "$resourceRoot/${Uri.encode(action.fileName)}")
                     //albumRepository.changeName(action.folderId, action.fileName)
                 }

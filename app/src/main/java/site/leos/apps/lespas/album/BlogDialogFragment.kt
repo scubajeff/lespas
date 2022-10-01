@@ -114,7 +114,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
         }
         removeBlogButton = view.findViewById<MaterialButton>(R.id.remove_button).apply {
             setOnClickListener {
-                actionModel.deleteBlogPost(album.id)
+                actionModel.deleteBlogPosts(listOf(album))
                 dismiss()
             }
         }

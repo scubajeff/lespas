@@ -552,6 +552,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     if (albums.isNotEmpty()) {
                         actionModel.hideAlbums(albums)
                         publishViewModel.unPublish(albums)
+                        actionModel.deleteBlogPosts(albums)
                     }
                     if (refused.isNotEmpty()) {
                         Snackbar.make(recyclerView, getString(R.string.not_hiding, refused.joinToString()), Snackbar.LENGTH_LONG).setAnchorView(fab).show()

@@ -66,6 +66,9 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
             actionRepository.addActions(actions)
         }
+
+        // Remove blog post of albums
+        deleteBlogPosts(albums)
     }
 
     fun deletePhotos(photos: List<Photo>, album: Album)  {
@@ -223,6 +226,10 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
     }
 */
     fun createBlogPost(albumId: String, albumName: String, theme: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_CREATE_BLOG_POST, albumId, albumName, theme, "", System.currentTimeMillis(), 1)) }}
-    fun deleteBlogPost(albumId: String) { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_DELETE_BLOG_POST, albumId, "", "", "", System.currentTimeMillis(), 1)) }}
+    fun deleteBlogPosts(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (album in albums) actionRepository.addAction(Action(null, Action.ACTION_DELETE_BLOG_POST, album.id, "", "", "", System.currentTimeMillis(), 1))
+        }
+    }
     fun updateBlogSiteTitle() { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_BLOG_SITE_TITLE, "", "", "", "", System.currentTimeMillis(), 1)) }}
 }
