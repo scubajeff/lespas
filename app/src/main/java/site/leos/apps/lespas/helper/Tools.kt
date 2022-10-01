@@ -73,12 +73,16 @@ import java.util.regex.Pattern
 import kotlin.math.*
 
 object Tools {
-    val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
+    private val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
 
     @SuppressLint("RestrictedApi")
-    @JvmOverloads
-    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false, uri: Uri? = null, cr: ContentResolver? = null): Photo {
+    fun getPhotoParams(
+        metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?,
+        localPath: String, mimeType: String, fileName: String,
+        updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false,
+        uri: Uri? = null, cr: ContentResolver? = null,
+    ): Photo {
         var mMimeType = mimeType
         var width = 0
         var height = 0
@@ -120,8 +124,8 @@ object Tools {
                     var saveExif = false
 
                     exifInterface?.let { exif->
-                        exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
-                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
+                        exif.getAttribute(ExifInterface.TAG_USER_COMMENT)?.let { caption = it }
+                        if (caption.isBlank()) exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION)?.let { caption = it }
 
                         // GPS data
                         exif.latLong?.let { latlong = it }

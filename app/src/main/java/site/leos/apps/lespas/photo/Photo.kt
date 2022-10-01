@@ -74,6 +74,8 @@ data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
 data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int, val orientation: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double)
 data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int, val orientation: Int, val eTag: String)
+// Photo extras which don't go with the physical image file like EXIF
+data class PhotoExtras(val id: String, val caption: String, val locality: String, val country: String, val countryCode: String, val classificationId: String)
 @Parcelize
 data class PhotoWithCoordinate(
     val photo: Photo,
@@ -168,6 +170,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT dateTaken FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumDuration(albumId: String): List<LocalDateTime>
 
+    // Clear photo's eTag (e.g. eTag miss-match with server) will trigger file download for photo in local album
     @Query("UPDATE ${Photo.TABLE_NAME} SET eTag = '${Photo.ETAG_NOT_YET_UPLOADED}' WHERE albumId IN (:albumIds)")
     abstract fun setAsLocal(albumIds: List<String>)
 
@@ -182,4 +185,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("UPDATE ${Photo.TABLE_NAME} SET caption = :newCaption WHERE id = :photoId")
     abstract fun updateCaption(photoId: String, newCaption: String)
+
+    @Query("SELECT id, caption, locality, country, countryCode, classificationId FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    abstract fun getPhotoExtras(albumId: String): List<PhotoExtras>
 }

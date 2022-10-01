@@ -119,6 +119,9 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = Photo.ETAG_NOT_YET_UPLOADED, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                         id = originalPhoto.id, albumId = album.id, name = imageName, shareId = originalPhoto.shareId or Photo.NOT_YET_UPLOADED
                     )
+                    // Preserve original caption
+                    if (originalPhoto.caption.isNotEmpty()) newPhoto.caption = originalPhoto.caption
+
                     photoDao.update(newPhoto)
                     if (album.cover == newPhoto.id) albumDao.fixCoverName(album.id, newPhoto.name)
                     // Invalid image cache to show new image and change CurrentPhotoModel's filename
@@ -130,7 +133,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 */
 
                     // When the photo being replaced has not being uploaded yet, remove file named after old photo name if any, e.g. only send the latest version
-                    try { File(appRootFolder, originalPhoto.name).delete() } catch (e: Exception) {}
+                    try { File(appRootFolder, originalPhoto.name).delete() } catch (_: Exception) {}
 
 
                     // Update server
@@ -169,7 +172,12 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
                     // Create new photo in local database
                     @Suppress("BlockingMethodInNonBlockingContext")
                     exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (e: Exception) { null }
-                    photoDao.insert(Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName).copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
+                    photoDao.insert(
+                        Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName)
+                            .copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED)
+                            // Preserve original caption
+                            .apply { if (originalPhoto.caption.isNotEmpty()) this.caption = originalPhoto.caption }
+                    )
 
                     with(mutableListOf<Action>()) {
                         // Upload changes to server, mimetype passed in folderId property, fileId is the same as fileName, reflecting what it's in local Room table
