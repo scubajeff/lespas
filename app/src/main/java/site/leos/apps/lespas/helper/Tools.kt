@@ -73,12 +73,16 @@ import java.util.regex.Pattern
 import kotlin.math.*
 
 object Tools {
-    val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
     val SUPPORTED_PICTURE_FORMATS = arrayOf("jpeg", "png", "gif", "webp", "bmp", "heif", "heic")
+    private val FORMATS_WITH_EXIF = arrayOf("jpeg", "png", "webp", "heif", "heic")
 
     @SuppressLint("RestrictedApi")
-    @JvmOverloads
-    fun getPhotoParams(metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?, localPath: String, mimeType: String, fileName: String, updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false, uri: Uri? = null, cr: ContentResolver? = null): Photo {
+    fun getPhotoParams(
+        metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?,
+        localPath: String, mimeType: String, fileName: String,
+        updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false,
+        uri: Uri? = null, cr: ContentResolver? = null,
+    ): Photo {
         var mMimeType = mimeType
         var width = 0
         var height = 0
