@@ -401,6 +401,7 @@
     <string name="theme_option_cascade_tooltips">Preferred for short captions.</string>
     <string name="theme_option_magazine">Magazine</string>
     <string name="theme_option_magazine_tooltips">Préférable pour les longues légendes.</string>
+    <string name="checkbox_text_photo_list">Photos included in this blog post</string>
 <!--
     <string name="title_content">Include in post:</string>
     <string name="content_option_social_link">Social Link</string>

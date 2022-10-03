@@ -31,7 +31,6 @@
         android:paddingLeft="1dp"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         tools:ignore="RtlHardcoded,RtlSymmetry,SpeakableTextPresentCheck"
-        tools:layout_editor_absoluteY="56dp"
         tools:listitem="@layout/recyclerview_item_photo" />
 
     <TextView

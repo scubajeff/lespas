@@ -65,4 +65,7 @@ class PhotoRepository(application: Application) {
     fun updateDateTaken(photoId: String, dateTaken: LocalDateTime) { photoDao.updateDateTaken(photoId, dateTaken) }
     fun updateCaption(photoId: String, newCaption: String) { photoDao.updateCaption(photoId, newCaption) }
     fun getPhotoExtras(albumId: String): List<PhotoExtras> = photoDao.getPhotoExtras(albumId)
+    fun setExcludeFromBlog(photoIds: List<String>, exclude: Boolean) { if (exclude) photoDao.setExcludeFromBlog(photoIds) else photoDao.setIncludeInBlog(photoIds) }
+    fun getThisPhoto(photoId: String): Photo = photoDao.getThisPhoto(photoId)
+    fun getPhotosForBlog(albumId: String): List<Photo> = photoDao.getPhotosForBlog(albumId)
 }

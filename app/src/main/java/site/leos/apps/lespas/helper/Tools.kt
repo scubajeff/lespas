@@ -979,4 +979,17 @@ object Tools {
 
     // Construct blog site name by using user's login name, site name only allow these characters: 'a-z', '0-9', '-', and '_', NC's login name allow '*', '.', uppercase letters and space too
     fun getBlogSiteName(loginName: String): String = loginName.substringBefore('@').lowercase().replace('.', '_').replace(' ', '_')
+
+    fun clearBit(number: Int, bit: Int): Int = number and bit.inv()
+    fun setBit(number: Int, bit: Int): Int = number or bit
+    fun isBitSet(number: Int, bit: Int): Boolean = number and bit != 0
+
+    fun sortPhotos(photos: List<Photo>, order: Int): List<Photo> =
+        when (order % 100) {
+            Album.BY_DATE_TAKEN_ASC -> photos.sortedWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> photos.sortedWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC -> photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            Album.BY_NAME_DESC -> photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            else -> photos
+        }
 }

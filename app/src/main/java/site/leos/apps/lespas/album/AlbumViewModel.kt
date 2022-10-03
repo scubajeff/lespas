@@ -63,4 +63,10 @@ class AlbumViewModel(application: Application) : AndroidViewModel(application){
     }
 
     fun setWideList(albumId: String, wideList: Boolean) { viewModelScope.launch(Dispatchers.IO) { albumRepository.setWideList(albumId, wideList) }}
+    fun setExcludeFromBlog(inclusion: List<String>, exclusion: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            photoRepository.setExcludeFromBlog(inclusion, false)
+            photoRepository.setExcludeFromBlog(exclusion, true)
+        }
+    }
 }

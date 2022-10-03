@@ -15,7 +15,7 @@
   ~   limitations under the License.
   -->
 
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -24,144 +24,186 @@
     android:layout_height="wrap_content"
     android:padding="@dimen/tiny_padding">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <ScrollView
         android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        android:scrollbars="none"
         android:paddingHorizontal="@dimen/extra_padding"
         android:paddingTop="@dimen/big_padding"
-        android:paddingBottom="@dimen/small_padding"
-        android:clipChildren="true" >
-
-        <TextView
-            android:id="@+id/title_blog_theme"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
-            android:text="@string/title_theme" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/theme_options"
-            style="@style/Theme.LesPas.Toggle.Group"
-            app:layout_constraintTop_toBottomOf="@id/title_blog_theme"
-            android:layout_marginTop="@dimen/small_padding"
-            android:layout_marginHorizontal="@dimen/small_padding"
-            app:checkedButton="@id/theme_cascade"
-            tools:ignore="MissingConstraints">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/theme_cascade"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_theme_cascade_24"
-                android:text="@string/theme_option_cascade"
-                android:tooltipText="@string/theme_option_cascade_tooltips"
-                tools:ignore="UnusedAttribute" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/theme_magazine"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_theme_magazine_24"
-                android:text="@string/theme_option_magazine"
-                android:tooltipText="@string/theme_option_magazine_tooltips"
-                tools:ignore="UnusedAttribute" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-<!--
-        <TextView
-            android:id="@+id/title_content_option"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/theme_options"
-            android:layout_marginTop="@dimen/big_padding"
-            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
-            android:text="@string/title_content" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/content_options"
-            style="@style/Theme.LesPas.Toggle.Group"
-            app:layout_constraintTop_toBottomOf="@id/title_content_option"
-            android:layout_marginTop="@dimen/small_padding"
-            android:layout_marginHorizontal="@dimen/small_padding"
-            app:singleSelection="false"
-            app:selectionRequired="false"
-            tools:ignore="MissingConstraints">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/option_social_link"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_insert_link_24"
-                app:iconGravity="top"
-                android:text="@string/content_option_social_link"
-                android:tooltipText="@string/content_option_social_link_tooltips"
-                tools:ignore="UnusedAttribute" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/option_copyright"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_copyright_24"
-                app:iconGravity="top"
-                android:text="@string/content_option_copyright"
-                android:tooltipText="@string/content_option_copyright_tooltips"
-                tools:ignore="UnusedAttribute" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
--->
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/publish_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/theme_options"
-            android:layout_marginRight="@dimen/small_padding"
-            style="@style/Theme.LesPas.TextButton"
-            android:text="@string/button_text_post_blog"
-            tools:ignore="RtlHardcoded" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/remove_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="@id/publish_button"
-            app:layout_constraintRight_toLeftOf="@id/publish_button"
-            style="@style/Theme.LesPas.TextButton"
-            android:visibility="gone"
-            android:text="@string/button_text_remove_blog"/>
+        android:paddingBottom="@dimen/small_padding">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/blog_info"
+            android:id="@+id/container"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/publish_button"
-            android:visibility="gone">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/share_button"
-                android:layout_width="180dp"
-                android:layout_height="236dp"
-                android:layout_marginTop="@dimen/big_padding"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:backgroundTint="?colorSurface"
-                app:iconGravity="top"
-                app:icon="@drawable/ic_baseline_qr_code_scanner_24"
-                app:iconSize="180dp"
-                app:iconTint="?colorOnSurface"
-                android:text="@string/button_text_share_blog"
-                android:textColor="?colorOnSurface"
-                android:src="@drawable/ic_baseline_share_24" />
+            android:layout_height="wrap_content">
 
             <TextView
-                android:id="@+id/notice"
+                android:id="@+id/title_blog_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/share_button"
+                app:layout_constraintTop_toTopOf="parent"
+                style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+                android:text="@string/title_theme" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/theme_options"
+                style="@style/Theme.LesPas.Toggle.Group"
+                app:layout_constraintTop_toBottomOf="@id/title_blog_theme"
                 android:layout_marginTop="@dimen/small_padding"
-                android:layout_marginHorizontal="@dimen/big_padding"
-                android:text="@string/notice"
-                style="@style/TextAppearance.MaterialComponents.Caption"
-                android:textAlignment="center"
-                android:visibility="invisible" />
+                android:layout_marginHorizontal="@dimen/small_padding"
+                app:checkedButton="@id/theme_cascade"
+                tools:ignore="MissingConstraints">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/theme_cascade"
+                    style="@style/Theme.LesPas.Toggle.Button"
+                    app:icon="@drawable/ic_baseline_theme_cascade_24"
+                    android:text="@string/theme_option_cascade"
+                    android:tooltipText="@string/theme_option_cascade_tooltips"
+                    tools:ignore="UnusedAttribute" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/theme_magazine"
+                    style="@style/Theme.LesPas.Toggle.Button"
+                    app:icon="@drawable/ic_baseline_theme_magazine_24"
+                    android:text="@string/theme_option_magazine"
+                    android:tooltipText="@string/theme_option_magazine_tooltips"
+                    tools:ignore="UnusedAttribute" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!--
+                    <TextView
+                        android:id="@+id/title_content_option"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintTop_toBottomOf="@id/theme_options"
+                        android:layout_marginTop="@dimen/big_padding"
+                        style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+                        android:text="@string/title_content" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/content_options"
+                        style="@style/Theme.LesPas.Toggle.Group"
+                        app:layout_constraintTop_toBottomOf="@id/title_content_option"
+                        android:layout_marginTop="@dimen/small_padding"
+                        android:layout_marginHorizontal="@dimen/small_padding"
+                        app:singleSelection="false"
+                        app:selectionRequired="false"
+                        tools:ignore="MissingConstraints">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/option_social_link"
+                            style="@style/Theme.LesPas.Toggle.Button"
+                            app:icon="@drawable/ic_baseline_insert_link_24"
+                            app:iconGravity="top"
+                            android:text="@string/content_option_social_link"
+                            android:tooltipText="@string/content_option_social_link_tooltips"
+                            tools:ignore="UnusedAttribute" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/option_copyright"
+                            style="@style/Theme.LesPas.Toggle.Button"
+                            app:icon="@drawable/ic_baseline_copyright_24"
+                            app:iconGravity="top"
+                            android:text="@string/content_option_copyright"
+                            android:tooltipText="@string/content_option_copyright_tooltips"
+                            tools:ignore="UnusedAttribute" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+            -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/inclusion_selection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/theme_options"
+                android:layout_marginTop="@dimen/small_padding">
+
+                <CheckBox
+                    android:id="@+id/include_all"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:checked="true"
+                    style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
+                    android:button="@drawable/checkbox_as_collape_expand"
+                    android:buttonTint="?android:textColorPrimary"
+                    android:text="@string/checkbox_text_photo_list" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/photo_grid"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    app:layout_constraintHeight="wrap_content_constrained"
+                    app:layout_constraintTop_toBottomOf="@id/include_all"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:layout_marginTop="@dimen/small_padding"
+                    android:layout_marginHorizontal="@dimen/small_padding"
+                    android:paddingLeft="1dp"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    app:spanCount="@integer/cameraroll_grid_span_count"
+                    tools:listitem="@layout/recyclerview_item_photo"
+                    android:visibility="gone"
+                    tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/publish_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/inclusion_selection"
+                android:layout_marginRight="@dimen/small_padding"
+                style="@style/Theme.LesPas.TextButton"
+                android:text="@string/button_text_post_blog"
+                tools:ignore="RtlHardcoded" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/remove_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintBottom_toBottomOf="@id/publish_button"
+                app:layout_constraintRight_toLeftOf="@id/publish_button"
+                style="@style/Theme.LesPas.TextButton"
+                android:visibility="gone"
+                android:text="@string/button_text_remove_blog"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/blog_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/big_padding"
+                app:layout_constraintTop_toBottomOf="@id/publish_button"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/share_button"
+                    android:layout_width="180dp"
+                    android:layout_height="228dp"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:backgroundTint="?colorSurface"
+                    app:iconGravity="top"
+                    app:icon="@drawable/ic_baseline_qr_code_scanner_24"
+                    app:iconSize="180dp"
+                    app:iconTint="?colorOnSurface"
+                    android:text="@string/button_text_share_blog"
+                    android:textColor="?colorOnSurface"
+                    android:src="@drawable/ic_baseline_share_24" />
+
+                <TextView
+                    android:id="@+id/notice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toBottomOf="@id/share_button"
+                    android:layout_marginTop="@dimen/small_padding"
+                    android:layout_marginHorizontal="@dimen/big_padding"
+                    android:text="@string/notice"
+                    style="@style/TextAppearance.MaterialComponents.Caption"
+                    android:textAlignment="center"
+                    android:visibility="invisible" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

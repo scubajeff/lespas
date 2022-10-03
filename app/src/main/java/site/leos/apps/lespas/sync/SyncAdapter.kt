@@ -479,7 +479,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property fileName holds option flags, 1st bit 'includeSocial', 2nd bit 'includeCopyright'
                     if (createBlogSite()) {
                         updateBlogIndex()
-                        createBlogPost(albumRepository.getAlbumWithPhotos(action.folderId), action.fileId)
+                        createBlogPost(albumRepository.getThisAlbum(action.folderId), photoRepository.getPhotosForBlog(action.folderId).filter { photo -> !photo.mimeType.startsWith("video") }, action.fileId)
                     } else {
                         // TODO
                     }
@@ -565,122 +565,113 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         return siteCreated
     }
 
-    private fun createBlogPost(theAlbum: AlbumWithPhotos, themeId: String) {
-        with(theAlbum) {
-            // Create subfolder in assets folder
-            webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}")
+    private fun createBlogPost(album: Album, blogPhotos: List<Photo>, themeId: String) {
+        // Create subfolder in assets folder
+        webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}")
 
-            // Sort photos
-            photos = when (album.sortOrder % 100) {
-                Album.BY_DATE_TAKEN_ASC -> photos.sortedWith(compareBy { it.dateTaken })
-                Album.BY_DATE_TAKEN_DESC -> photos.sortedWith(compareByDescending { it.dateTaken })
-                Album.BY_NAME_ASC -> photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                Album.BY_NAME_DESC -> photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                else -> photos
-            }
+        // Sort photos
+        val photos = when (album.sortOrder % 100) {
+            Album.BY_DATE_TAKEN_ASC -> blogPhotos.sortedWith(compareBy { it.dateTaken })
+            Album.BY_DATE_TAKEN_DESC -> blogPhotos.sortedWith(compareByDescending { it.dateTaken })
+            Album.BY_NAME_ASC -> blogPhotos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            Album.BY_NAME_DESC -> blogPhotos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            else -> blogPhotos
+        }
 
-            // If album's cover is video item, select the first image item as cover
-            val cover: Photo
-            var baseline: Int
-            if (album.coverMimeType.startsWith("video/")) {
-                cover = photos.find { it.mimeType.startsWith("image/") }!!.also { baseline = (if (it.orientation == 90 || it.orientation == 270) it.width else it.height) / 2 }
-            } else {
-                cover = photos.find { it.id == album.cover }!!
-                baseline = album.coverBaseline
-            }
-            // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
-            val coverAsset = "${album.id}/${if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')}"
+        // If album's cover is video item, select the first image item as cover
+        val cover: Photo
+        var baseline: Int
+        if (album.coverMimeType.startsWith("video/")) {
+            cover = photos.find { it.mimeType.startsWith("image/") }!!.also { baseline = (if (it.orientation == 90 || it.orientation == 270) it.width else it.height) / 2 }
+        } else {
+            cover = photos.find { it.id == album.cover } ?: photoRepository.getThisPhoto(album.cover)
+            baseline = album.coverBaseline
+        }
+        // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
+        val coverAsset = "${album.id}/${if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')}"
 
-            // Web page construction
-            // YAML header of blog post
-            var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset, themeId) + "\n"
+        // Web page construction
+        // YAML header of blog post
+        var content = String.format(YAML_HEADER_BLOG.trimIndent(), album.name, album.endDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)), coverAsset, coverAsset, themeId) + "\n"
 
-            // Blog post content
-            when (themeId) {
-                THEME_CASCADE -> {
-                    var leftColumn = ""
-                    var rightColumn = ""
-                    var leftBottom = 0
-                    var rightBottom = 0
-                    var filename: String
-                    var caption: String
+        // Blog post content
+        when (themeId) {
+            THEME_CASCADE -> {
+                var leftColumn = ""
+                var rightColumn = ""
+                var leftBottom = 0
+                var rightBottom = 0
+                var filename: String
+                var caption: String
 
-                    photos.forEach { photo ->
-                        // Ignore video items
-                        if (photo.mimeType.startsWith("video/")) return@forEach
+                photos.forEach { photo ->
+                    // Prepare image asset. In case failed, skip this one
+                    //if (!updateAsset(photo, album.id, album.name, isRemote)) return@forEach
 
-                        // Prepare image asset. In case failed, skip this one
-                        //if (!updateAsset(photo, album.id, album.name, isRemote)) return@forEach
+                    // Add item to web page
+                    //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
+                    filename = "${ASSETS_URL}/${album.id}/${photo.name}"
+                    caption = photo.caption.replace("\n", "<br>")
 
-                        // Add item to web page
-                        //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
-                        filename = "${ASSETS_URL}/${album.id}/${photo.name}"
-                        caption = photo.caption.replace("\n", "<br>")
-
-                        if (leftBottom <= rightBottom) {
-                            leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
-                            leftBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
-                        } else {
-                            rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
-                            rightBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
-                        }
+                    if (leftBottom <= rightBottom) {
+                        leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                        leftBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
+                    } else {
+                        rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
+                        rightBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
                     }
-
-                    // Append content
-                    content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
                 }
 
-                THEME_MAGAZINE -> {
-                    var index = -1
-                    var filename: String
-                    var caption: String
-                    val grid = mutableListOf<Photo>()
+                // Append content
+                content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
+            }
 
-                    do {
-                        index++
+            THEME_MAGAZINE -> {
+                var index = -1
+                var filename: String
+                var caption: String
+                val grid = mutableListOf<Photo>()
 
-                        photos[index].let { photo ->
-                            if (!photo.mimeType.startsWith("video/")) {
-                                // Ignore video items
+                do {
+                    index++
 
-                                filename = "${ASSETS_URL}/${album.id}/${photo.name}"
+                    photos[index].let { photo ->
+                        filename = "${ASSETS_URL}/${album.id}/${photo.name}"
 
-                                if (photo.caption.isNotEmpty()) {
-                                    // Append pending grid
-                                    if (grid.isNotEmpty()) {
-                                        content += addMagazineGrid(grid, album.id)
-                                        grid.clear()
-                                    }
-                                    caption = photo.caption.replace("\n", "<br>")
+                        if (photo.caption.isNotEmpty()) {
+                            // Append pending grid
+                            if (grid.isNotEmpty()) {
+                                content += addMagazineGrid(grid, album.id)
+                                grid.clear()
+                            }
+                            caption = photo.caption.replace("\n", "<br>")
 
-                                    content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), filename, caption) + "\n\n"
-                                } else {
-                                    grid.add(photo)
+                            content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), filename, caption) + "\n\n"
+                        } else {
+                            grid.add(photo)
 
-                                    // Append full grid
-                                    if (grid.size == 3) {
-                                        content += addMagazineGrid(grid, album.id)
-                                        grid.clear()
-                                    }
-                                }
+                            // Append full grid
+                            if (grid.size == 3) {
+                                content += addMagazineGrid(grid, album.id)
+                                grid.clear()
                             }
                         }
-                    } while ( index < photos.size - 1)
-
-                    // Append pending grid
-                    if (grid.isNotEmpty()) {
-                        content += addMagazineGrid(grid, album.id)
-                        grid.clear()
                     }
+                } while ( index < photos.size - 1)
+
+                // Append pending grid
+                if (grid.isNotEmpty()) {
+                    content += addMagazineGrid(grid, album.id)
+                    grid.clear()
                 }
             }
-
-            // Create all assets including cover
-            updateAssets(this, cover, baseline)
-
-            // Create {albumId.md} content file
-            webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
         }
+
+        // Create all assets including cover
+        updateAssets(album, photos, cover, baseline)
+
+        // Create {albumId.md} content file
+        webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
     }
 
     private fun addMagazineGrid(grid: List<Photo>, albumId: String): String {
@@ -707,35 +698,33 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         )   //.apply { Log.e(">>>>>>>>", "updateBlogIndex: index.md created: $first $second") }
     }
 
-    private fun updateAssets(thisAlbum: AlbumWithPhotos, cover: Photo, baseline: Int) {
-        with(thisAlbum) {
-            val addition = mutableListOf<Photo>()
-            val deletion = mutableListOf<OkHttpWebDav.DAVResource>()
-            val isRemote = Tools.isRemoteAlbum(album)
+    private fun updateAssets(album: Album, photos: List<Photo>, cover: Photo, baseline: Int) {
+        val addition = mutableListOf<Photo>()
+        val deletion = mutableListOf<OkHttpWebDav.DAVResource>()
+        val isRemote = Tools.isRemoteAlbum(album)
 
-            // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
-            val coverName = if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')
+        // If cover file is not animated, it will be cropped to 21:9 ratio, remove suffix in cover asset file name, avoid conflict to cover's own item's asset file
+        val coverName = if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')
 
-            // Get current asset list for this album, ignore any exceptions, worst case is re-transferring all the assets again
-            val assetFolder = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}"
-            val remoteAssets = try { webDav.list(assetFolder, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1) } catch (_: Exception) { mutableListOf() }
+        // Get current asset list for this album, ignore any exceptions, worst case is re-transferring all the assets again
+        val assetFolder = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}"
+        val remoteAssets = try { webDav.list(assetFolder, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1) } catch (_: Exception) { mutableListOf() }
 
-            // Prepare deletion list
-            remoteAssets.forEach { remote -> photos.find { remote.name == it.name || remote.name == coverName } ?: run { deletion.add(remote) } }
-            // Prepare addition list
-            photos.forEach { local -> if (!local.mimeType.startsWith("video/")) remoteAssets.find { local.name == it.name } ?: run { addition.add(local) } }
+        // Prepare deletion list
+        remoteAssets.forEach { remote -> photos.find { remote.name == it.name || remote.name == coverName } ?: run { deletion.add(remote) } }
+        // Prepare addition list
+        photos.forEach { local -> if (!local.mimeType.startsWith("video/")) remoteAssets.find { local.name == it.name } ?: run { addition.add(local) } }
 
-            //Log.e(">>>>>>>>", "updateAssets: additions: $addition")
-            //Log.e(">>>>>>>>", "updateAssets: deletions: $deletion")
+        //Log.e(">>>>>>>>", "updateAssets: additions: $addition")
+        //Log.e(">>>>>>>>", "updateAssets: deletions: $deletion")
 
-            // Update new cover
-            remoteAssets.find { it.name == coverName } ?: run { updateAsset(cover, thisAlbum.album.id, thisAlbum.album.name, isRemote, isCover = true, coverBaseline = baseline) }
-            // Update new photos, TODO will copy new animated cover for 1 more time
-            addition.forEach { updateAsset(it, thisAlbum.album.id, thisAlbum.album.name, isRemote) }
+        // Update new cover
+        remoteAssets.find { it.name == coverName } ?: run { updateAsset(cover, album.id, album.name, isRemote, isCover = true, coverBaseline = baseline) }
+        // Update new photos, TODO will copy new animated cover for 1 more time
+        addition.forEach { updateAsset(it, album.id, album.name, isRemote) }
 
-            // Remove obsolete photos and cover
-            deletion.forEach { webDav.delete("${assetFolder}/${it.name}") }
-        }
+        // Remove obsolete photos and cover
+        deletion.forEach { webDav.delete("${assetFolder}/${it.name}") }
     }
 
     private fun updateAsset(photo: Photo, albumId: String, albumName: String, isRemote: Boolean, isCover: Boolean = false, coverBaseline: Int = -1, override: Boolean = false): Boolean {
@@ -795,7 +784,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (photo.orientation != 0) bitmap = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
                     bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, tempFile.outputStream())
 
-                    //val targetFile = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${photo.name.substringBeforeLast('.')}${if (isCover) "" else ".jpg"}"
                     val targetFile = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${if (isCover) photo.name.substringBeforeLast('.') else photo.name}"
                     webDav.upload(tempFile, targetFile, Photo.DEFAULT_MIMETYPE, application)    //.apply { Log.e(">>>>>>>>", "    prepareAsset: ${photo.name} asset created.") }
                 }
@@ -1660,7 +1648,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                createBlogPost(albumRepository.getAlbumWithPhotos(albumId), themeId)
+                createBlogPost(albumRepository.getThisAlbum(albumId), photoRepository.getPhotosForBlog(albumId).filter { photo -> !photo.mimeType.startsWith("video") }, themeId)
             } catch (_: Exception) {}
         }
     }

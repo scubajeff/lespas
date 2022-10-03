@@ -57,9 +57,11 @@ data class Photo(
         const val ETAG_NOT_YET_UPLOADED = ""
         const val ETAG_FAKE = "1"
 
+        // shareId property bits
         const val DEFAULT_PHOTO_FLAG = 0
         const val NOT_YET_UPLOADED = 1 shl 0    // New photo created at local device, not yet sync, means there is no copy or wrong version on server and other devices
         const val NEED_REFRESH = 1 shl 1        // Need to refresh photo's preview from server
+        const val EXCLUDE_FROM_BLOG = 1 shl 2   // Exclude from blog post
 
         const val NO_GPS_DATA = -1000.0         // Photo does not contain GPS data
         const val GPS_DATA_UNKNOWN = -10000.0   // Use in processing camera roll server archive, GPS data not yet available, need extracting from EXIF
@@ -188,4 +190,16 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT id, caption, locality, country, countryCode, classificationId FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
     abstract fun getPhotoExtras(albumId: String): List<PhotoExtras>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET shareId = shareId | ${Photo.EXCLUDE_FROM_BLOG} WHERE id IN (:photoIds)")
+    abstract fun setExcludeFromBlog(photoIds: List<String>)
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET shareId = shareId & ~${Photo.EXCLUDE_FROM_BLOG} WHERE id IN (:photoIds)")
+    abstract fun setIncludeInBlog(photoIds: List<String>)
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
+    abstract fun getThisPhoto(photoId: String): Photo
+
+    @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND (shareId & ${Photo.EXCLUDE_FROM_BLOG} = 0)")
+    abstract fun getPhotosForBlog(albumId: String): List<Photo>
 }
