@@ -1121,6 +1121,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         private val mediaUrl: String
         private var mediaSize: Long = 0
         private val header = ByteArray(HEADER_SIZE)
+        private var headerSize: Int = 0
         private var tail: ByteArray? = null
         private var tailStart: Long = 0
 
@@ -1142,9 +1143,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         execute().also { response ->
                             mediaSize = response.headersContentLength()
                             tailStart = mediaSize - (mediaSize / 20)
+                            //Log.e(">>>>>>>>", "VideoMetaDataMediaSource: $mediaSize $tailStart")
                             response.body!!.byteStream().source().buffer().use {
                                 var byteRead = 0
-                                while(byteRead < HEADER_SIZE) {
+                                headerSize = if (mediaSize < HEADER_SIZE.toLong()) mediaSize.toInt() else HEADER_SIZE
+                                while(byteRead < headerSize) {
                                     byteRead += it.read(header, byteRead, HEADER_SIZE - byteRead)
                                 }
                             }
@@ -1204,7 +1207,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             try {
                 when {
                     position >= mediaSize -> byteRead = -1
-                    position + size < HEADER_SIZE -> {
+                    position + size < headerSize -> {
                         //Log.e(">>>>>>>>>>>>>", "reading in head buffer $position $size")
                         position.toInt().let { startIndex -> header.copyInto(buffer, offset, startIndex, startIndex + size) }
                         byteRead = size
