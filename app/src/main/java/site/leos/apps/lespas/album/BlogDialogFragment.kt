@@ -211,8 +211,12 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
             }
         }
 
-        shareModel.blogPostExisted.asLiveData().observe(viewLifecycleOwner) {
-            if (it) {
+        shareModel.blogPostThemeId.asLiveData().observe(viewLifecycleOwner) { themeId ->
+            if (themeId.isNotEmpty()) {
+                when(themeId) {
+                    SyncAdapter.THEME_CASCADE -> themeChoice.check(R.id.theme_cascade)
+                    SyncAdapter.THEME_MAGAZINE -> themeChoice.check(R.id.theme_magazine)
+                }
                 showQRCode()
                 removeBlogButton.isVisible = true
             }

@@ -96,14 +96,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     private val _blogs = MutableStateFlow<List<Blog>>(arrayListOf())
-    private val _blogPostExisted = MutableStateFlow<Boolean>(false)
+    private val _blogPostThemeId = MutableStateFlow("")
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
-    val blogs: StateFlow<List<Blog>> = _blogs
-    val blogPostExisted: StateFlow<Boolean> = _blogPostExisted
+    //val blogs: StateFlow<List<Blog>> = _blogs
+    val blogPostThemeId: StateFlow<String> = _blogPostThemeId
     private val user = User()
 
     private var webDav: OkHttpWebDav
@@ -749,7 +749,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     // Pico CMS integration
     fun listBlogs(albumId: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
-            _blogPostExisted.value = false
+            _blogPostThemeId.value = ""
             try {
                 val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
 
@@ -758,15 +758,29 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
                 }
 
-                if (albumId.isNotEmpty()) for (blog in _blogs.value) {
-                    if (blog.path.contains(SyncAdapter.BLOG_FOLDER)) {
-                        // LesPas blog site has been created, search it's content folder for 'albumId.md' file
-                        webDav.list("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach {
-                            if (!it.isFolder && it.name.substringBefore('.') == albumId) _blogPostExisted.value = true
+                Log.e(">>>>>>>>", "listBlogs: ${_blogs.value}")
+                
+                if (_blogs.value.isNotEmpty() && albumId.isNotEmpty()) {
+                    // LesPas blog site has been created, search it's content folder for 'albumId.md' file
+/*
+                    webDav.list("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach {
+                        if (!it.isFolder && it.name.substringBefore('.') == albumId) _blogPostExisted.value = true
+                    }
+*/
+                    webDav.getStream("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}/${albumId}.md", false, null).bufferedReader().use { reader ->
+                        var line: String? = ""
+                        while(line != null) {
+                            line = reader.readLine()
+                            line?.let {
+                                if (line.substringBefore(':') == "Theme") {
+                                    _blogPostThemeId.value = line.substringAfter(':').trim()
+                                    return@use
+                                }
+                            }
                         }
                     }
                 }
-            } catch (_: Exception) {}
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
     
