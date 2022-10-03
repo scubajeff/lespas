@@ -1149,7 +1149,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 isWideList = Tools.isWideListAlbum(this.album.sortOrder)
 
                 mutableListOf<Photo>().let { photos ->
-                    // Add album cover at the top of photo list, clear latitude property so that it would be included in map related function
+                    // Add album cover at the top of photo list, clear latitude property so that it won't be included in map related function
                     // set id to album's id to avoid duplication with the photo itself and to facilitate scroll to top after sort
                     // set albumId to album's name, so that album name changes can be updated
                     album.album.run { photos.add(coverPhoto.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
@@ -1162,6 +1162,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         else -> album.photos
                     }
                     photos.addAll(this.photos)
+
+                    // set cover's caption to the size of album, so that photo count can be updated
+                    photos[0].caption = photos.size.toString()
 
                     if (query.isNotEmpty()) filter(query)
                     else submitList(photos)
@@ -1220,7 +1223,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     class PhotoDiffCallback(private val albumId: String): DiffUtil.ItemCallback<Photo>() {
         override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
         override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean =
-            if (oldItem.id == albumId) oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing && oldItem.albumId == newItem.albumId
+            if (oldItem.id == albumId) oldItem.name == newItem.name && oldItem.eTag == newItem.eTag && oldItem.bearing == newItem.bearing && oldItem.albumId == newItem.albumId && oldItem.caption == newItem.caption
             else oldItem.name == newItem.name && oldItem.eTag == newItem.eTag
     }
 
