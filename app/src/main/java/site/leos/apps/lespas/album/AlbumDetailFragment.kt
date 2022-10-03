@@ -147,7 +147,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        album = requireArguments().getParcelable(KEY_ALBUM)!!
+        @Suppress("DEPRECATION")
+        album = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_ALBUM, Album::class.java) else requireArguments().getParcelable(KEY_ALBUM))!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
         lespasPath = getString(R.string.lespas_base_folder_name)
 
@@ -212,7 +213,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                @Suppress("DEPRECATION")
+                if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
@@ -414,7 +416,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         if (rect.bottom <= 0) titleBar?.setDisplayShowTitleEnabled(true)
                         else if (rect.bottom - rect.top > titleTextSizeInPixel) titleBar?.setDisplayShowTitleEnabled(false)
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
                 }
             })
         }
@@ -1002,7 +1004,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     class PhotoGridAdapter(albumId: String, private val clickListener: (View, Int) -> Unit, private val imageLoader: (Photo, ImageView, String) -> Unit, private val cancelLoader: (View) -> Unit
     ) : ListAdapter<Photo, RecyclerView.ViewHolder>(PhotoDiffCallback(albumId)) {
         private lateinit var album: Album
-        protected lateinit var photos: List<Photo>
+        private lateinit var photos: List<Photo>
         private var isWideList = false
         private lateinit var selectionTracker: SelectionTracker<String>
         private val selectedFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0.0f) })
@@ -1192,7 +1194,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun getPhotoId(position: Int): String = currentList[position].id
         internal fun getPhotoPosition(photoId: String): Int = currentList.indexOfLast { it.id == photoId }
         internal fun filter(query: String) {
-            if (query.isEmpty()) try { setAlbum(AlbumWithPhotos(this.album, this.photos)) } catch (e: UninitializedPropertyAccessException) {}
+            if (query.isEmpty()) try { setAlbum(AlbumWithPhotos(this.album, this.photos)) } catch (_: UninitializedPropertyAccessException) {}
             else {
                 this.photos.filter { it.name.contains(query) }.let { filtered ->
                     submitList(filtered)
