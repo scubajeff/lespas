@@ -965,14 +965,19 @@ object Tools {
 
     fun collectBlogResult(body: String?): List<NCShareViewModel.Blog> {
         val blogs = mutableListOf<NCShareViewModel.Blog>()
-        body?.let {
-            val sites = JSONObject(it).getJSONArray("websites")
-            for (i in 0 until sites.length()) {
-                sites.getJSONObject(i).run {
-                    blogs.add(NCShareViewModel.Blog(getString("id"), getString("name"), getString("site"), getString("theme"), getInt("type"), getString("path"), getLong("creation")))
+
+        try {
+            body?.let {
+                val sites = JSONObject(it).getJSONArray("websites")
+                for (i in 0 until sites.length()) {
+                    sites.getJSONObject(i).run {
+                        getString("path").let { pathName ->
+                            if (pathName.contains(SyncAdapter.BLOG_FOLDER)) blogs.add(NCShareViewModel.Blog(getString("id"), getString("name"), getString("site"), getString("theme"), getInt("type"), pathName, getLong("creation")))
+                        }
+                    }
                 }
             }
-        }
+        } catch (_: Exception) {}
 
         return blogs
     }

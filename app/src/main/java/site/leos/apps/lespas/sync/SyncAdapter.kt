@@ -505,20 +505,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var siteCreated = false
 
         // Find out if blog site already created
-        val blogs = mutableListOf<NCShareViewModel.Blog>()
-
         var token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
         webDav.getCallFactory().newCall(
             Request.Builder().url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()
         ).execute().use { response ->
-            if (response.isSuccessful) blogs.addAll(Tools.collectBlogResult(response.body?.string()))
-        }
-
-        for (blog in blogs) {
-            if (blog.path.contains("${application.getString(R.string.lespas_base_folder_name)}/${BLOG_FOLDER}")) {
-                siteCreated = true
-                break
-            }
+            if (response.isSuccessful && Tools.collectBlogResult(response.body?.string()).isNotEmpty()) siteCreated = true
         }
 
         //Log.e(">>>>>>>>", "createBlogSite: existing: $blogs")
@@ -546,16 +537,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (siteCreated) {
                     // After site created, Pico return the full list of all sites created by the user
                     Tools.collectBlogResult(response.body?.string()).forEach { blog ->
-                        if (blog.path.contains(BLOG_FOLDER)) {
-                            //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
-                            webDav.createFolder("${resourceRoot}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
-                            webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
-                            PreferenceManager.getDefaultSharedPreferences(application).edit().run {
-                                // Save blog site id for later use, like removing it
-                                putString(SettingsFragment.PICO_BLOG_ID, blog.id)
-                                putString(SettingsFragment.PICO_BLOG_FOLDER, blog.path)
-                                apply()
-                            }
+                        //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
+                        webDav.createFolder("${resourceRoot}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
+                        webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
+                        PreferenceManager.getDefaultSharedPreferences(application).edit().run {
+                            // Save blog site id for later use, like removing it
+                            putString(SettingsFragment.PICO_BLOG_ID, blog.id)
+                            putString(SettingsFragment.PICO_BLOG_FOLDER, blog.path)
+                            apply()
                         }
                     }
                 }

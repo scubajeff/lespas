@@ -758,7 +758,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
                 }
 
-                for (blog in _blogs.value) {
+                if (albumId.isNotEmpty()) for (blog in _blogs.value) {
                     if (blog.path.contains(SyncAdapter.BLOG_FOLDER)) {
                         // LesPas blog site has been created, search it's content folder for 'albumId.md' file
                         webDav.list("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach {
