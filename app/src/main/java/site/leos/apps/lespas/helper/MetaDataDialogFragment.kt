@@ -61,7 +61,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
-class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog) {
+class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog, 0.8f) {
     private var mapIntent = Intent(Intent.ACTION_VIEW)
     private lateinit var mapView: MapView
     private lateinit var mapButton: MaterialButton
