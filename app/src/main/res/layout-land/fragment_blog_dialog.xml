@@ -180,7 +180,9 @@
                 app:iconTint="?colorOnSurface"
                 android:text="@string/button_text_share_blog"
                 android:textColor="?colorOnSurface"
-                android:src="@drawable/ic_baseline_share_24" />
+                android:src="@drawable/ic_baseline_share_24"
+                android:tooltipText="@string/button_text_share_blog"
+                tools:ignore="UnusedAttribute" />
 
             <TextView
                 android:id="@+id/notice"
@@ -206,7 +208,8 @@
             android:layout_marginRight="@dimen/small_padding"
             style="@style/Theme.LesPas.TextButton"
             android:text="@string/button_text_post_blog"
-            tools:ignore="RtlHardcoded" />
+            android:tooltipText="@string/button_text_post_blog"
+            tools:ignore="RtlHardcoded,UnusedAttribute" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/remove_button"
@@ -216,7 +219,9 @@
             app:layout_constraintRight_toLeftOf="@id/publish_button"
             style="@style/Theme.LesPas.TextButton"
             android:visibility="invisible"
-            android:text="@string/button_text_remove_blog" />
+            android:text="@string/button_text_remove_blog"
+            android:tooltipText="@string/button_text_remove_blog"
+            tools:ignore="UnusedAttribute" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
