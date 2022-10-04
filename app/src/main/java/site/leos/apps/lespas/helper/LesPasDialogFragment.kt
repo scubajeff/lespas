@@ -39,30 +39,22 @@ import site.leos.apps.lespas.R
 import kotlin.math.roundToInt
 
 open class LesPasDialogFragment(private val layoutId: Int, private val maxHeightLandscape: Float = 0.0f): DialogFragment() {
+    private lateinit var rootLayout: ViewGroup
+    private lateinit var themeBackground: ViewGroup
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(layoutId, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val rootLayout = view.findViewById<ViewGroup>(R.id.shape_background)
-        val themeBackground = view.findViewById<ViewGroup>(R.id.background)
+        rootLayout = view.findViewById(R.id.shape_background)
+        themeBackground = view.findViewById(R.id.background)
 
         // Limit
-        if (maxHeightLandscape > 0.0f && rootLayout is ConstraintLayout) {
-            rootLayout.doOnNextLayout {
-                ConstraintSet().run {
-                    // It's always 95% of screen height in landscape mode
-                    val height = with(resources.displayMetrics) { (heightPixels.toFloat() * (if (heightPixels > widthPixels) maxHeightLandscape else 0.95f) - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 88f, this)).roundToInt() }
-                    clone(rootLayout)
-                    constrainHeight(R.id.background, ConstraintSet.MATCH_CONSTRAINT)
-                    constrainMaxHeight(R.id.background, height)
-                    applyTo(rootLayout)
-                }
-            }
-        }
+        if (maxHeightLandscape > 0.0f && rootLayout is ConstraintLayout) setMaxHeight((resources.displayMetrics.heightPixels * maxHeightLandscape).toInt())
 
         rootLayout.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        themeBackground?.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        themeBackground.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
     }
 
     override fun onStart() {
@@ -80,6 +72,19 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
 
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setWindowAnimations(R.style.Theme_LesPas_Dialog_Animation)
+        }
+    }
+
+    fun setMaxHeight(height: Int) {
+        rootLayout.doOnNextLayout {
+            ConstraintSet().run {
+                // It's always 95% of screen height in landscape mode
+                val maxHeight = with(resources.displayMetrics) { (if (heightPixels > widthPixels) height.toFloat() else (heightPixels * 0.95f).toInt() - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, EXTRA_SPACE_SIZE, this)).toInt() }
+                clone(rootLayout as ConstraintLayout)
+                constrainHeight(R.id.background, ConstraintSet.MATCH_CONSTRAINT)
+                constrainMaxHeight(R.id.background, maxHeight)
+                applyTo(rootLayout as ConstraintLayout)
+            }
         }
     }
 
@@ -112,5 +117,9 @@ open class LesPasDialogFragment(private val layoutId: Int, private val maxHeight
                 if (strokeColor != NO_STROKE) { setStroke(4.0f, strokeColor) }
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_SPACE_SIZE = 88f
     }
 }

@@ -758,8 +758,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
                 }
 
-                Log.e(">>>>>>>>", "listBlogs: ${_blogs.value}")
-                
                 if (_blogs.value.isNotEmpty() && albumId.isNotEmpty()) {
                     // LesPas blog site has been created, search it's content folder for 'albumId.md' file
 /*

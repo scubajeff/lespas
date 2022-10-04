@@ -30,6 +30,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         android:scrollbars="none"
+        android:overScrollMode="never"
         android:paddingHorizontal="@dimen/extra_padding"
         android:paddingTop="@dimen/big_padding"
         android:paddingBottom="@dimen/small_padding">
@@ -162,7 +163,7 @@
                 app:layout_constraintBottom_toBottomOf="@id/publish_button"
                 app:layout_constraintRight_toLeftOf="@id/publish_button"
                 style="@style/Theme.LesPas.TextButton"
-                android:visibility="gone"
+                android:visibility="invisible"
                 android:text="@string/button_text_remove_blog"/>
 
             <androidx.constraintlayout.widget.ConstraintLayout

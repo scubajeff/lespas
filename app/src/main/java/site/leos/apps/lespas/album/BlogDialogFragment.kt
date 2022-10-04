@@ -33,6 +33,7 @@ import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -60,10 +61,11 @@ import site.leos.apps.lespas.sync.SyncAdapter
 import kotlin.math.roundToInt
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
+class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MAX_DIALOG_WINDOW_HEIGHT) {
     private lateinit var album: Album
     private lateinit var lespasPath: String
 
+    private lateinit var themeBackground: ViewGroup
     private lateinit var themeChoice: MaterialButtonToggleGroup
     private lateinit var container: ConstraintLayout
     private lateinit var blogInfo: ConstraintLayout
@@ -108,23 +110,11 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Set the dialog maximum height to 88% of screen/window height
-        view.findViewById<ConstraintLayout>(R.id.shape_background)?.let { rootLayout ->
-            rootLayout.doOnNextLayout {
-                ConstraintSet().run {
-                    val height = with(resources.displayMetrics) { (heightPixels.toFloat() * 0.88 - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 88f, this)).roundToInt() }
-                    clone(rootLayout)
-                    constrainHeight(R.id.background, ConstraintSet.MATCH_CONSTRAINT)
-                    constrainMaxHeight(R.id.background, height)
-                    applyTo(rootLayout)
-                }
-            }
-        }
-        // Set the photo list height just enough to push blog qr code image out of dialog area
+        // Set the photo list height to fit in the maximum dialog window height we set, this is mostly used when blog post is not created yet therefore shareBlogButton is invisible
         view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
             rootLayout.doOnNextLayout {
                 ConstraintSet().run {
-                    val height = with(resources.displayMetrics) { (heightPixels.toFloat() * 0.88 - themeChoice.measuredHeight - showPhotoListCheckBox.measuredHeight * 2 - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 180f, this)).roundToInt() }
+                    val height = with(resources.displayMetrics) { (heightPixels * MAX_DIALOG_WINDOW_HEIGHT - themeChoice.measuredHeight - showPhotoListCheckBox.measuredHeight * 2 - removeBlogButton.measuredHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, EXTRA_SPACE_SIZE, this)).roundToInt() }
                     clone(rootLayout)
                     constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
                     constrainMaxHeight(R.id.photo_grid, height)
@@ -133,6 +123,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
             }
         }
 
+        themeBackground = view.findViewById(R.id.background)
         themeChoice = view.findViewById(R.id.theme_options)
         container = view.findViewById(R.id.container)
         blogInfo = view.findViewById(R.id.blog_info)
@@ -143,6 +134,20 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, blogLink)
                 }, null))
+            }
+
+            doOnLayout {
+                // If post link QR code displayed, recalculate the maximum height of the dialog window to the size just enough to reveal the shareBlogButton
+                this@BlogDialogFragment.setMaxHeight(themeBackground.measuredHeight)
+                // Set the photo list height just enough to push shareBlogButton out of sight, avoid dialog window size changes when expanding/collapsing the photo list
+                view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
+                    ConstraintSet().run {
+                        clone(rootLayout)
+                        constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
+                        constrainMaxHeight(R.id.photo_grid, (shareBlogButton.measuredHeight + holdYourHorsesTextView.measuredHeight))
+                        applyTo(rootLayout)
+                    }
+                }
             }
         }
         holdYourHorsesTextView = view.findViewById(R.id.notice)
@@ -168,8 +173,15 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
                         },
                         //includeSocialButton.isChecked, includCopyrightBlogButton.isChecked
                     )
+
+                    // Collapse photo list
+                    showPhotoListCheckBox.isChecked = true
+
+                    // Reveal QR code for link sharing
                     holdYourHorsesTextView.isVisible = true
                     showQRCode()
+
+                    // Mark job done
                     this.text = getString(R.string.button_text_done)
                 } else dismiss()
             }
@@ -217,8 +229,9 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
                     SyncAdapter.THEME_CASCADE -> themeChoice.check(R.id.theme_cascade)
                     SyncAdapter.THEME_MAGAZINE -> themeChoice.check(R.id.theme_magazine)
                 }
-                showQRCode()
+
                 removeBlogButton.isVisible = true
+                showQRCode()
             }
         }
 
@@ -303,6 +316,13 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
         }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder = PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) { holder.bind(currentList[position]) }
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            for (i in 0 until currentList.size) {
+                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.photo)?.let { cancelLoader(it) }}
+            }
+            super.onDetachedFromRecyclerView(recyclerView)
+        }
+
 
         // Foreground drawable for selected state and playable media
         fun setPlayMarkDrawable(newDrawable: Drawable) { playMark = newDrawable }
@@ -331,6 +351,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog) {
     }
 
     companion object {
+        private const val MAX_DIALOG_WINDOW_HEIGHT = 0.88f  // Best fit for 16:9 screen, also suitable for taller ones
         private const val KEY_ALBUM = "KEY_ALBUM"
 
         @JvmStatic
