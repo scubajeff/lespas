@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.album
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -65,6 +66,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
     private lateinit var album: Album
     private lateinit var lespasPath: String
 
+    private var inPortraitMode = true
     private lateinit var themeBackground: ViewGroup
     private lateinit var themeChoice: MaterialButtonToggleGroup
     private lateinit var container: ConstraintLayout
@@ -105,20 +107,30 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
         shareModel.listBlogs(album.id)
+
+        inPortraitMode = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        if (inPortraitMode) {
         // Set the photo list height to fit in the maximum dialog window height we set, this is mostly used when blog post is not created yet therefore shareBlogButton is invisible
-        view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
-            rootLayout.doOnNextLayout {
-                ConstraintSet().run {
-                    val height = with(resources.displayMetrics) { (heightPixels * MAX_DIALOG_WINDOW_HEIGHT - themeChoice.measuredHeight - showPhotoListCheckBox.measuredHeight * 2 - removeBlogButton.measuredHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, EXTRA_SPACE_SIZE, this)).roundToInt() }
-                    clone(rootLayout)
-                    constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
-                    constrainMaxHeight(R.id.photo_grid, height)
-                    applyTo(rootLayout)
+            view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
+                rootLayout.doOnNextLayout {
+                    ConstraintSet().run {
+                        val height = with(resources.displayMetrics) {
+                            (heightPixels * MAX_DIALOG_WINDOW_HEIGHT - themeChoice.measuredHeight - showPhotoListCheckBox.measuredHeight * 2 - removeBlogButton.measuredHeight - TypedValue.applyDimension(
+                                TypedValue.COMPLEX_UNIT_DIP,
+                                EXTRA_SPACE_SIZE,
+                                this
+                            )).roundToInt()
+                        }
+                        clone(rootLayout)
+                        constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
+                        constrainMaxHeight(R.id.photo_grid, height)
+                        applyTo(rootLayout)
+                    }
                 }
             }
         }
@@ -136,16 +148,18 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                 }, null))
             }
 
-            doOnLayout {
-                // If post link QR code displayed, recalculate the maximum height of the dialog window to the size just enough to reveal the shareBlogButton
-                this@BlogDialogFragment.setMaxHeight(themeBackground.measuredHeight)
-                // Set the photo list height just enough to push shareBlogButton out of sight, avoid dialog window size changes when expanding/collapsing the photo list
-                view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
-                    ConstraintSet().run {
-                        clone(rootLayout)
-                        constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
-                        constrainMaxHeight(R.id.photo_grid, (shareBlogButton.measuredHeight + holdYourHorsesTextView.measuredHeight))
-                        applyTo(rootLayout)
+            if (inPortraitMode) {
+                doOnLayout {
+                    // If post link QR code displayed, recalculate the maximum height of the dialog window to the size just enough to reveal the shareBlogButton
+                    this@BlogDialogFragment.setMaxHeight(themeBackground.measuredHeight)
+                    // Set the photo list height just enough to push shareBlogButton out of sight, avoid dialog window size changes when expanding/collapsing the photo list
+                    view.findViewById<ConstraintLayout>(R.id.inclusion_selection)?.let { rootLayout ->
+                        ConstraintSet().run {
+                            clone(rootLayout)
+                            constrainHeight(R.id.photo_grid, ConstraintSet.MATCH_CONSTRAINT)
+                            constrainMaxHeight(R.id.photo_grid, (shareBlogButton.measuredHeight + holdYourHorsesTextView.measuredHeight))
+                            applyTo(rootLayout)
+                        }
                     }
                 }
             }
@@ -175,7 +189,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                     )
 
                     // Collapse photo list
-                    showPhotoListCheckBox.isChecked = true
+                    if (inPortraitMode) showPhotoListCheckBox.isChecked = true
 
                     // Reveal QR code for link sharing
                     holdYourHorsesTextView.isVisible = true
