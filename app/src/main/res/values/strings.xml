@@ -53,6 +53,8 @@
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>
 
+    <string name="button_text_set_as_home">Set Home</string>
+
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
     <string name="should_allow_launching_other_app">Please allow Les Pas launching other apps in your security settings.</string>

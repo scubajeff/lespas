@@ -280,4 +280,5 @@
     <string name="sync_status_action_update_album_from_server">正在更新相簿\'%s\'。</string>
     <string name="sync_status_action_backup_file">正在備份照片%s。</string>
     <string name="msg_backup_oldies">相機相簿備份已開啟。相簿中現有%1$d張舊照片，合共%2$s。先備份這些舊照片嗎？</string>
+    <string name="button_text_set_as_home">設為主資料夾</string>
 </resources>

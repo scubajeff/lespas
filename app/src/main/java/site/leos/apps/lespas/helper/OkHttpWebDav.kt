@@ -174,10 +174,10 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         return result
     }
 
-    fun list(targetName: String, depth: String): List<DAVResource> {
+    fun list(targetName: String, depth: String, forceNetwork: Boolean = true): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(targetName).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
             if (response.isSuccessful) {
                 try {
                     val parser = XmlPullParserFactory.newInstance().newPullParser()

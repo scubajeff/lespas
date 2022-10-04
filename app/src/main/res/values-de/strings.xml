@@ -332,4 +332,5 @@
     <string name="sync_status_action_update_album_from_server">Aktualisierung des Albums \'%s\'.</string>
     <string name="sync_status_action_backup_file">Sichern des Fotos %s.</string>
     <string name="msg_backup_oldies">Neue Fotos werden von nun an gesichert. Sie haben auch %1$,d Fotos mit einer Größe von %2$s in der Kamerarolle. Möchten Sie alle diese alten Fotos auch sichern?</string>
+    <string name="button_text_set_as_home">Ordner \"Home</string>
 </resources>

@@ -281,4 +281,5 @@
     <string name="sync_status_action_update_album_from_server">Actualizando el álbum \'%s\'.</string>
     <string name="sync_status_action_backup_file">Haciendo una copia de seguridad de la foto %s.</string>
     <string name="msg_backup_oldies">Las nuevas fotos serán una copia de seguridad a partir de ahora. También tienes %1$,d fotos en el rollo de la cámara ahora mismo, con %2$s de tamaño. ¿Quieres hacer una copia de seguridad de todas estas fotos antiguas también?</string>
+    <string name="button_text_set_as_home">Carpeta de inicio</string>
 </resources>
