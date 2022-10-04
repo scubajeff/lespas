@@ -80,7 +80,7 @@ object Tools {
     fun getPhotoParams(
         metadataRetriever: MediaMetadataRetriever?, exifInterface: ExifInterface?,
         localPath: String, mimeType: String, fileName: String,
-        updateCreationDate: Boolean = false, keepOriginalOrientation: Boolean = false,
+        keepOriginalOrientation: Boolean = false,
         uri: Uri? = null, cr: ContentResolver? = null,
     ): Photo {
         var mMimeType = mimeType
@@ -134,10 +134,12 @@ object Tools {
 
                         // Taken date
                         getImageTakenDate(exif)?.let { dateTaken = it }
+/*
                         if (updateCreationDate) {
                             exif.setDateTime(dateTaken.toInstant(OffsetTime.now().offset).toEpochMilli())
                             saveExif = true
                         }
+*/
 
                         width = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
                         height = exifInterface.getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)

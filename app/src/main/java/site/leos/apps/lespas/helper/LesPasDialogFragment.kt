@@ -21,10 +21,14 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.view.doOnNextLayout
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.CornerTreatment
@@ -34,14 +38,31 @@ import com.google.android.material.shape.ShapePath
 import site.leos.apps.lespas.R
 import kotlin.math.roundToInt
 
-open class LesPasDialogFragment(private val layoutId: Int): DialogFragment() {
+open class LesPasDialogFragment(private val layoutId: Int, private val maxHeightLandscape: Float = 0.0f): DialogFragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(layoutId, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<ViewGroup>(R.id.shape_background)?.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
-        view.findViewById<ViewGroup>(R.id.background)?.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
+        val rootLayout = view.findViewById<ViewGroup>(R.id.shape_background)
+        val themeBackground = view.findViewById<ViewGroup>(R.id.background)
+
+        // Limit
+        if (maxHeightLandscape > 0.0f && rootLayout is ConstraintLayout) {
+            rootLayout.doOnNextLayout {
+                ConstraintSet().run {
+                    // It's always 95% of screen height in landscape mode
+                    val height = with(resources.displayMetrics) { (heightPixels.toFloat() * (if (heightPixels > widthPixels) maxHeightLandscape else 0.95f) - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 88f, this)).roundToInt() }
+                    clone(rootLayout)
+                    constrainHeight(R.id.background, ConstraintSet.MATCH_CONSTRAINT)
+                    constrainMaxHeight(R.id.background, height)
+                    applyTo(rootLayout)
+                }
+            }
+        }
+
+        rootLayout.background = DialogShapeDrawable.newInstance(requireContext(), DialogShapeDrawable.NO_STROKE)
+        themeBackground?.background = DialogShapeDrawable.newInstance(requireContext(), MaterialColors.getColor(view, R.attr.colorPrimaryVariant))
     }
 
     override fun onStart() {

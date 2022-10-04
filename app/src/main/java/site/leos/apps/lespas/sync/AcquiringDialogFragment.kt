@@ -241,7 +241,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                             // Get media's metadata
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
-                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId, false)
+                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
 
@@ -256,7 +256,7 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                         } else {
                             try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
                             exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
-                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId, true)
+                            val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
                             newPhotos.add(meta.copy(id = fileId, albumId = album.id, name = fileId, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED))
