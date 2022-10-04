@@ -69,7 +69,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
     private var inPortraitMode = true
     private lateinit var themeBackground: ViewGroup
     private lateinit var themeChoice: MaterialButtonToggleGroup
-    private lateinit var container: ConstraintLayout
+    private lateinit var container: ViewGroup
     private lateinit var blogInfo: ConstraintLayout
     private lateinit var shareBlogButton: MaterialButton
     private lateinit var removeBlogButton: MaterialButton

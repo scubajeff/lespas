@@ -21,27 +21,35 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/shape_background"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:padding="@dimen/tiny_padding">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <ScrollView
         android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"
+        android:scrollbars="none"
+        android:overScrollMode="never"
         android:paddingHorizontal="@dimen/extra_padding"
         android:paddingTop="@dimen/small_padding"
         android:paddingBottom="@dimen/small_padding">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/container"
             android:layout_width="0dp"
             android:layout_height="0dp"
+            app:layout_constraintHeight="wrap_content_constrained"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/publish_button"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/blog_info"
             app:layout_constraintHorizontal_weight="0.65"
+            android:orientation="vertical"
             android:layout_marginRight="@dimen/small_padding"
             tools:ignore="RtlHardcoded">
 
@@ -49,14 +57,12 @@
                 android:id="@+id/title_blog_theme"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
                 style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
                 android:text="@string/title_theme" />
 
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/theme_options"
                 style="@style/Theme.LesPas.Toggle.Group"
-                app:layout_constraintTop_toBottomOf="@id/title_blog_theme"
                 android:layout_marginTop="@dimen/small_padding"
                 android:layout_marginHorizontal="@dimen/small_padding"
                 app:checkedButton="@id/theme_cascade"
@@ -118,13 +124,12 @@
                 android:id="@+id/inclusion_selection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/theme_options"
                 android:layout_marginTop="@dimen/small_padding">
 
                 <CheckBox
                     android:id="@+id/include_all"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     app:layout_constraintTop_toTopOf="parent"
                     android:checked="true"
                     style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
@@ -139,7 +144,6 @@
                     app:layout_constraintHeight="wrap_content_constrained"
                     app:layout_constraintTop_toBottomOf="@id/include_all"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    android:layout_marginTop="@dimen/small_padding"
                     android:layout_marginHorizontal="@dimen/small_padding"
                     android:paddingLeft="1dp"
                     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
@@ -149,7 +153,7 @@
                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/blog_info"
@@ -214,6 +218,7 @@
             android:visibility="invisible"
             android:text="@string/button_text_remove_blog" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
