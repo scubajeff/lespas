@@ -164,6 +164,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintLeft_toRightOf="@id/container"
             app:layout_constraintHorizontal_weight="0.35"
+            android:scrollbars="none"
             android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
@@ -180,7 +181,6 @@
                 app:iconTint="?colorOnSurface"
                 android:text="@string/button_text_share_blog"
                 android:textColor="?colorOnSurface"
-                android:src="@drawable/ic_baseline_share_24"
                 android:tooltipText="@string/button_text_share_blog"
                 tools:ignore="UnusedAttribute" />
 
