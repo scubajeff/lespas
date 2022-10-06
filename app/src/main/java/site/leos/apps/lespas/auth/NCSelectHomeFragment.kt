@@ -123,6 +123,7 @@ class NCSelectHomeFragment: Fragment() {
             text = selectedFolder
             setTextColor(serverTheme.textColor)
         }
+        view.findViewById<TextView>(R.id.title).run { setTextColor(serverTheme.textColor) }
         selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply { setOnClickListener { returnResult() }}
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
             adapter = folderAdapter

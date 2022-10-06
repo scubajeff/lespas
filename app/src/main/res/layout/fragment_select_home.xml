@@ -24,10 +24,23 @@
     android:padding="@dimen/extra_padding">
 
     <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        android:textAlignment="center"
+        style="@style/TextAppearance.MaterialComponents.Headline5"
+        android:paddingTop="@dimen/small_padding"
+        android:paddingBottom="@dimen/extra_padding"
+        android:autoSizeTextType="uniform"
+        android:text="@string/pick_home"
+        tools:ignore="UnusedAttribute" />
+
+    <TextView
         android:id="@+id/home_folder_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@id/ok_button"
         style="@style/TextAppearance.MaterialComponents.Headline6"
@@ -44,7 +57,7 @@
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="@dimen/big_padding"
         style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
-        android:text="@string/button_text_set_as_home"
+        android:text="@android:string/ok"
         android:tooltipText="@string/button_text_set_as_home"
         tools:ignore="UnusedAttribute" />
 

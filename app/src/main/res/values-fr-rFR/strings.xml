@@ -317,4 +317,5 @@
     <string name="sync_status_action_backup_file">Sauvegarde de la photo %s.</string>
     <string name="msg_backup_oldies">Les nouvelles photos seront sauvegardées à partir de maintenant. Vous avez également %1$,d photos dans votre rouleau d\'appareil photo en ce moment, avec %2$s de taille. Voulez-vous également sauvegarder toutes ces anciennes photos ?</string>
     <string name="button_text_set_as_home">Dossier d\'accueil</string>
+    <string name="pick_home">Définir votre dossier d\'accueil</string>
 </resources>
