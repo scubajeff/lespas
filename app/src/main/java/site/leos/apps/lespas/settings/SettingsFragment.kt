@@ -594,6 +594,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
 
         const val LAST_BACKUP = "LAST_BACKUP_TIMESTAMP"
         const val KEY_STORAGE_LOCATION = "KEY_STORAGE_LOCATION"
+        const val SERVER_HOME_FOLDER = "SERVER_HOME_FOLDER"
 
         const val SNAPSEED_PACKAGE_NAME = "com.niksoftware.snapseed"
         const val SNAPSEED_MAIN_ACTIVITY_CLASS_NAME = "com.google.android.apps.snapseed.MainActivity"

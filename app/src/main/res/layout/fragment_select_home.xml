@@ -21,8 +21,7 @@
     android:id="@+id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="@dimen/extra_padding"
-    android:layout_marginTop="?attr/actionBarSize">
+    android:padding="@dimen/extra_padding">
 
     <TextView
         android:id="@+id/home_folder_label"
@@ -31,7 +30,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@id/ok_button"
-        style="@style/TextAppearance.MaterialComponents.Subtitle1"
+        style="@style/TextAppearance.MaterialComponents.Headline6"
         android:lines="1"
         android:ellipsize="middle"
         tools:text="/Pictures" />
@@ -58,6 +57,16 @@
         android:layout_marginTop="@dimen/big_padding"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
         app:spanCount="2"
+        android:elevation="2dp"
+        android:visibility="gone"
         tools:listitem="@layout/recyclerview_item_folder" />
+
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/home_folder_label"
+        android:indeterminateTint="@android:color/darker_gray"
+        android:layout_marginTop="@dimen/big_padding"
+        android:indeterminate="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

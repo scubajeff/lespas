@@ -20,8 +20,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/small_padding"
-    android:backgroundTint="?backgroundColor">
+    android:layout_margin="@dimen/small_padding">
 
     <TextView
         android:id="@+id/name"
@@ -29,11 +28,12 @@
         android:layout_height="wrap_content"
         android:padding="@dimen/small_padding"
         style="@style/TextAppearance.MaterialComponents.Body2"
+        android:background="?android:colorBackground"
         android:textSize="13sp"
         android:lines="1"
         android:ellipsize="end"
-        app:drawableLeftCompat="@drawable/ic_baseline_folder_24"
-        android:drawableTint="?android:textColorPrimary"
+        app:drawableStartCompat="@drawable/ic_baseline_folder_24"
+        app:drawableTint="?android:textColorPrimary"
         android:drawablePadding="@dimen/small_padding"
         tools:text="Picture" />
 

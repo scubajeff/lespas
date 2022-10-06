@@ -17,15 +17,18 @@
 package site.leos.apps.lespas.auth
 
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.transition.Fade
+import android.transition.TransitionManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -44,7 +47,8 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import java.text.Collator
 
 class NCSelectHomeFragment: Fragment() {
-    private lateinit var currentFolder: String
+    private lateinit var container: ViewGroup
+    private lateinit var selectedFolder: String
     private lateinit var folderTextView: TextView
     private lateinit var selectButton: MaterialButton
 
@@ -55,15 +59,21 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var baseUrl: String
     private lateinit var resourceRoot: String
 
-    private var bgColor = 0
+    private lateinit var lespas: String
+    private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
     private var fetchJob: Job? = null
     private var currentList = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        bgColor = ColorUtils.setAlphaComponent(requireArguments().getInt(KEY_BACKGROUND_COLOR, ContextCompat.getColor(requireContext(), R.color.color_background)), 0xFF)
-        currentFolder = savedInstanceState?.run { getString(KEY_CURRENT_FOLDER) ?: "" } ?: ""
+        @Suppress("DEPRECATION")
+        serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME))
+            ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
+                color = ContextCompat.getColor(requireContext(), R.color.color_background)
+                textColor = ContextCompat.getColor(requireContext(), R.color.lespas_black)
+            }
+        selectedFolder = savedInstanceState?.run { getString(KEY_CURRENT_FOLDER) ?: "" } ?: ""
 
         AccountManager.get(requireContext()).run {
             val account = getAccountsByType(getString(R.string.account_type_nc))[0]
@@ -79,8 +89,8 @@ class NCSelectHomeFragment: Fragment() {
         folderAdapter = FolderAdapter { name ->
             if (selectButton.isEnabled) {
                 var newFolder = ""
-                if (name != PARENT_FOLDER) newFolder = "${currentFolder}/${name}"
-                else if (currentFolder.isNotEmpty()) newFolder = currentFolder.substringBeforeLast("/")
+                if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
+                else if (selectedFolder.isNotEmpty()) newFolder = selectedFolder.substringBeforeLast("/")
 
                 fetchFolder(newFolder)
             }
@@ -91,14 +101,16 @@ class NCSelectHomeFragment: Fragment() {
                 if (fetchJob?.isActive == true) {
                     fetchJob?.cancel()
                     selectButton.isEnabled = true
-                    folderTextView.text = currentFolder.ifEmpty { "/" }
-                    folderAdapter.submitList(currentList)
+                    folderTextView.text = selectedFolder.ifEmpty { "/" }
+                    folderAdapter.submitList(currentList) { folderList.isVisible = true }
                 }
-                else if (currentFolder.isNotEmpty()) {
-                    fetchFolder(currentFolder.substringBeforeLast("/"))
+                else if (selectedFolder.isNotEmpty()) {
+                    fetchFolder(selectedFolder.substringBeforeLast("/"))
                 } else returnResult()
             }
         })
+
+        lespas = getString(R.string.lespas_base_folder_name).drop(1)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_select_home, container, false)
@@ -106,23 +118,29 @@ class NCSelectHomeFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        folderTextView = view.findViewById<TextView?>(R.id.home_folder_label).apply { text = currentFolder }
-        selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply { setOnClickListener { returnResult() }}
-        folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply { adapter = folderAdapter }
-
-        fetchFolder(currentFolder)
-
-        // Setting theme background and change text color accordingly
-        view.findViewById<ViewGroup>(R.id.background).setBackgroundColor(bgColor)
-        ContextCompat.getColor(requireContext(), R.color.lespas_white).apply {
-            folderTextView.setTextColor(if (ColorUtils.calculateContrast(this, bgColor) > 1.5f) this else ContextCompat.getColor(requireContext(), R.color.lespas_black))
+        container = view.findViewById<ViewGroup>(R.id.background).apply { setBackgroundColor(serverTheme.color) }
+        folderTextView = view.findViewById<TextView?>(R.id.home_folder_label).apply {
+            text = selectedFolder
+            setTextColor(serverTheme.textColor)
         }
+        selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply { setOnClickListener { returnResult() }}
+        folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
+            adapter = folderAdapter
+            setBackgroundColor(serverTheme.color)
+        }
+
+        fetchFolder(selectedFolder)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().window.statusBarColor = serverTheme.color
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        outState.putString(KEY_CURRENT_FOLDER, currentFolder)
+        outState.putString(KEY_CURRENT_FOLDER, selectedFolder)
     }
 
     private fun fetchFolder(target: String) {
@@ -130,21 +148,23 @@ class NCSelectHomeFragment: Fragment() {
         folderTextView.text = target.ifEmpty { "/" }
 
         currentList = folderAdapter.currentList
-        folderAdapter.submitList(emptyList())
+        TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
+        folderList.isVisible = false
 
         fetchJob = lifecycleScope.launch(Dispatchers.IO) {
             val nameList = mutableListOf<String>()
             try {
                 webDav.list("${resourceRoot}/${target}", OkHttpWebDav.FOLDER_CONTENT_DEPTH, forceNetwork = false).drop(1).forEach {
-                    if (it.isFolder) nameList.add(it.name)
+                    if (it.isFolder && it.name != lespas) nameList.add(it.name)
                 }
                 nameList.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.TERTIARY }) { it })
                 if (target.isNotEmpty()) nameList.add(0, PARENT_FOLDER)
             } catch (_: Exception) {}
 
             withContext(Dispatchers.Main) {
-                folderAdapter.submitList(nameList)
-                currentFolder = target
+                folderAdapter.clearList()
+                folderAdapter.submitList(nameList) { folderList.isVisible = true }
+                selectedFolder = target
                 selectButton.isEnabled = true
             }
         }
@@ -152,19 +172,29 @@ class NCSelectHomeFragment: Fragment() {
 
     private fun returnResult() {
         parentFragmentManager.run {
-            setFragmentResult(RESULT_KEY_HOME_FOLDER, Bundle().apply { putString(RESULT_KEY_HOME_FOLDER, currentFolder) })
+            setFragmentResult(RESULT_KEY_HOME_FOLDER, Bundle().apply { putString(RESULT_KEY_HOME_FOLDER, selectedFolder) })
             popBackStack()
         }
     }
 
     class FolderAdapter(private val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
+            private val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
+
+            fun bind(name: String) {
+                with(tvName) {
+                    text = name
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { tooltipText = name }
+                }
+            }
         }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_folder, parent, false))
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.tvName.text = currentList[position]
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { holder.tvName.tooltipText = currentList[position] }
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) { holder.bind(currentList[position]) }
+
+        @SuppressLint("NotifyDataSetChanged")
+        fun clearList() {
+            submitList(emptyList())
+            notifyDataSetChanged()
         }
     }
 
@@ -179,8 +209,8 @@ class NCSelectHomeFragment: Fragment() {
         private const val PARENT_FOLDER = ".."
         private const val KEY_CURRENT_FOLDER = "KEY_CURRENT_FOLDER"
 
-        private const val KEY_BACKGROUND_COLOR = "KEY_BACKGROUND_COLOR"
+        private const val KEY_SERVER_THEME = "KEY_SERVER_THEME"
         @JvmStatic
-        fun newInstance(backgroundColor: Int?) = NCSelectHomeFragment().apply { arguments = Bundle().apply { backgroundColor?.let { putInt(KEY_BACKGROUND_COLOR, it) }}}
+        fun newInstance(theme: NCLoginFragment.AuthenticateViewModel.NCTheming) = NCSelectHomeFragment().apply { arguments = Bundle().apply { putParcelable(KEY_SERVER_THEME, theme) }}
     }
 }
