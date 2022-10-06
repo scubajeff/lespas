@@ -29,7 +29,7 @@
     <string name="button_text_scan">Scanner le mot de passe</string>
     <string name="host_textinput_label">Adresse du serveur</string>
     <string name="url_helper_text">Par exemple : https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
+    <string name="http_toggle_helper_text">\\u2B11Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
     <string name="verify_ssl_certificate_title">Certificat SSL incorrect</string>
     <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
     <string name="accept_certificate">Lui faire confiance !</string>

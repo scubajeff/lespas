@@ -32,7 +32,7 @@
     <string name="button_text_scan">Scan App Password</string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Touch prefix to toggle unsecure HTTP</string>
+    <string name="http_toggle_helper_text">\u2B11Touch prefix to toggle unsecure HTTP</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
