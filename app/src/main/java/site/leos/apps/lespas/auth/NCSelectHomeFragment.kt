@@ -24,6 +24,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -53,12 +55,14 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var baseUrl: String
     private lateinit var resourceRoot: String
 
+    private var bgColor = 0
     private var fetchJob: Job? = null
     private var currentList = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        bgColor = ColorUtils.setAlphaComponent(requireArguments().getInt(KEY_BACKGROUND_COLOR, ContextCompat.getColor(requireContext(), R.color.color_background)), 0xFF)
         currentFolder = savedInstanceState?.run { getString(KEY_CURRENT_FOLDER) ?: "" } ?: ""
 
         AccountManager.get(requireContext()).run {
@@ -107,6 +111,12 @@ class NCSelectHomeFragment: Fragment() {
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply { adapter = folderAdapter }
 
         fetchFolder(currentFolder)
+
+        // Setting theme background and change text color accordingly
+        view.findViewById<ViewGroup>(R.id.background).setBackgroundColor(bgColor)
+        ContextCompat.getColor(requireContext(), R.color.lespas_white).apply {
+            folderTextView.setTextColor(if (ColorUtils.calculateContrast(this, bgColor) > 1.5f) this else ContextCompat.getColor(requireContext(), R.color.lespas_black))
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -168,5 +178,9 @@ class NCSelectHomeFragment: Fragment() {
 
         private const val PARENT_FOLDER = ".."
         private const val KEY_CURRENT_FOLDER = "KEY_CURRENT_FOLDER"
+
+        private const val KEY_BACKGROUND_COLOR = "KEY_BACKGROUND_COLOR"
+        @JvmStatic
+        fun newInstance(backgroundColor: Int?) = NCSelectHomeFragment().apply { arguments = Bundle().apply { backgroundColor?.let { putInt(KEY_BACKGROUND_COLOR, it) }}}
     }
 }
