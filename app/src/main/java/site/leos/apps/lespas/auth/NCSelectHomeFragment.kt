@@ -18,8 +18,13 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.transition.Fade
 import android.transition.TransitionManager
 import android.view.LayoutInflater
@@ -67,6 +72,8 @@ class NCSelectHomeFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        lespas = getString(R.string.lespas_base_folder_name).drop(1)
+
         @Suppress("DEPRECATION")
         serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME))
             ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
@@ -86,7 +93,10 @@ class NCSelectHomeFragment: Fragment() {
             )
         }
 
-        folderAdapter = FolderAdapter { name ->
+        folderAdapter = FolderAdapter(
+            lespas,
+            Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary),
+        ) { name ->
             if (selectButton.isEnabled) {
                 var newFolder = ""
                 if (name != PARENT_FOLDER) newFolder = "${selectedFolder}/${name}"
@@ -101,7 +111,7 @@ class NCSelectHomeFragment: Fragment() {
                 if (fetchJob?.isActive == true) {
                     fetchJob?.cancel()
                     selectButton.isEnabled = true
-                    folderTextView.text = selectedFolder.ifEmpty { "/" }
+                    showSelectedFolder(selectedFolder)
                     folderAdapter.submitList(currentList) { folderList.isVisible = true }
                 }
                 else if (selectedFolder.isNotEmpty()) {
@@ -109,8 +119,6 @@ class NCSelectHomeFragment: Fragment() {
                 } else returnResult()
             }
         })
-
-        lespas = getString(R.string.lespas_base_folder_name).drop(1)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_select_home, container, false)
@@ -119,17 +127,15 @@ class NCSelectHomeFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         container = view.findViewById<ViewGroup>(R.id.background).apply { setBackgroundColor(serverTheme.color) }
-        folderTextView = view.findViewById<TextView?>(R.id.home_folder_label).apply {
-            text = selectedFolder
-            setTextColor(serverTheme.textColor)
-        }
+        folderTextView = view.findViewById<TextView>(R.id.home_folder_label).apply { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.title).run { setTextColor(serverTheme.textColor) }
+        view.findViewById<TextView>(R.id.note).run { setTextColor(serverTheme.textColor) }
         selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply { setOnClickListener { returnResult() }}
+
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
             adapter = folderAdapter
             setBackgroundColor(serverTheme.color)
         }
-
         fetchFolder(selectedFolder)
     }
 
@@ -144,19 +150,25 @@ class NCSelectHomeFragment: Fragment() {
         outState.putString(KEY_CURRENT_FOLDER, selectedFolder)
     }
 
+    private fun showSelectedFolder(name: String) {
+        folderTextView.text = SpannableString("$name/$lespas").apply { setSpan(ForegroundColorSpan(Color.GRAY), this.lastIndexOf('/') + 1, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE) }
+    }
+
     private fun fetchFolder(target: String) {
         selectButton.isEnabled = false
-        folderTextView.text = target.ifEmpty { "/" }
+        showSelectedFolder(target)
 
         currentList = folderAdapter.currentList
-        TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
-        folderList.isVisible = false
+        if (folderList.isVisible) {
+            TransitionManager.beginDelayedTransition(container, Fade().apply { duration = 300 })
+            folderList.isVisible = false
+        }
 
         fetchJob = lifecycleScope.launch(Dispatchers.IO) {
             val nameList = mutableListOf<String>()
             try {
                 webDav.list("${resourceRoot}/${target}", OkHttpWebDav.FOLDER_CONTENT_DEPTH, forceNetwork = false).drop(1).forEach {
-                    if (it.isFolder && it.name != lespas) nameList.add(it.name)
+                    if (it.isFolder) nameList.add(it.name)
                 }
                 nameList.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.TERTIARY }) { it })
                 if (target.isNotEmpty()) nameList.add(0, PARENT_FOLDER)
@@ -178,7 +190,7 @@ class NCSelectHomeFragment: Fragment() {
         }
     }
 
-    class FolderAdapter(private val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
+    class FolderAdapter(private val lespas: String, private val textColor: Int, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             private val tvName: TextView = itemView.findViewById<TextView>(R.id.name).apply { setOnClickListener { clickListener(this.text.toString()) }}
 
@@ -186,6 +198,16 @@ class NCSelectHomeFragment: Fragment() {
                 with(tvName) {
                     text = name
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { tooltipText = name }
+
+                    if (name == lespas) {
+                        setTextColor(Color.LTGRAY)
+                        compoundDrawableTintList = ColorStateList.valueOf(Color.LTGRAY)
+                        isClickable = false
+                    } else {
+                        setTextColor(textColor)
+                        compoundDrawableTintList = ColorStateList.valueOf(textColor)
+                        isClickable = true
+                    }
                 }
             }
         }

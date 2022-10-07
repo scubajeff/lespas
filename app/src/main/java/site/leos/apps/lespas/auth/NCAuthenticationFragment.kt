@@ -298,7 +298,7 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        requireActivity().window.statusBarColor = serverTheme.color
+        if (!reLogin) requireActivity().window.statusBarColor = serverTheme.color
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

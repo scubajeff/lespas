@@ -280,6 +280,7 @@
     <string name="sync_status_action_update_album_from_server">正在更新相簿\'%s\'。</string>
     <string name="sync_status_action_backup_file">正在備份照片%s。</string>
     <string name="msg_backup_oldies">相機相簿備份已開啟。相簿中現有%1$d張舊照片，合共%2$s。先備份這些舊照片嗎？</string>
-    <string name="button_text_set_as_home">設為主資料夾</string>
+    <string name="button_text_set_as_home">選定</string>
     <string name="pick_home">設定主資料夾</string>
+    <string name="pick_home_note">Les Pas將在伺服器上的這個資料夾裡儲存相簿和備份檔案。</string>
 </resources>

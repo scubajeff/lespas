@@ -54,7 +54,8 @@
     <string name="certificate_error">Site certificate error.</string>
 
     <string name="pick_home">Set your home folder</string>
-    <string name="button_text_set_as_home">Set Home</string>
+    <string name="pick_home_note">Les Pas saves your albums and backups in this folder on your server.</string>
+    <string name="button_text_set_as_home">Set</string>
 
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>
