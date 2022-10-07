@@ -31,7 +31,7 @@
     <string name="button_text_scan">Digitalizar Código QR</string>
     <string name="host_textinput_label">Endereço do Servidor</string>
     <string name="url_helper_text">Ex. https://exemplo.com.br/nextcloud</string>
-    <string name="http_toggle_helper_text">\\u2B11Toque no prefixo para usar HTTP inseguro</string>
+    <string name="http_toggle_helper_text">\u2B11Toque no prefixo para usar HTTP inseguro</string>
     <string name="verify_ssl_certificate_title">Certificado SSL Inválido</string>
     <string name="verify_ssl_certificate_message">O certificado do servidor %1$s NÃO PODE ser verificado, você quer confiar neste servidor e continuar assim mesmo?</string>
     <string name="accept_certificate">Confiar nele!</string>

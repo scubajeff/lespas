@@ -31,7 +31,7 @@
     <string name="welcome_message">Um zu beginnen, gewähren Sie bitte Zugriff auf Ihren Nextcloud-Server.</string>
     <string name="host_textinput_label">Server-Adresse</string>
     <string name="url_helper_text">z.B. https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">\\u2B11Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
+    <string name="http_toggle_helper_text">\u2B11Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
     <string name="verify_ssl_certificate_title">Ungültiges SSL-Zertifikat</string>
     <string name="verify_ssl_certificate_message">Das Zertifikat von Server %1$s kann NICHT verifiziert werden. Wollen Sie diesem Server vertrauen und fortfahren?</string>
     <string name="accept_certificate">Zertifikat trotzdem akzeptieren!</string>

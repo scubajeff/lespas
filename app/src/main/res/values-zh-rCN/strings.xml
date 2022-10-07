@@ -162,7 +162,7 @@
     <string name="prefer_day_in_history">那时今日</string>
     <string name="prefer_random">任意（以上各项无果时亦采用此项）</string>
     <string name="prefer_latest">近期</string>
-    <string name="http_toggle_helper_text">\\u2B11点击前缀切换非安全HTTP连接</string>
+    <string name="http_toggle_helper_text">\u2B11点击前缀切换非安全HTTP连接</string>
     <string name="cameraroll_as_album_title">在相册列表中显示相机相册</string>
     <string name="relogin_title">重新登录</string>
     <string name="relogin_summary">假如你在服务器端意外撤销了Les Pas的应用授权。</string>
