@@ -241,7 +241,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             "image/awebp" -> "image/webp"
                             else -> action.folderId
                         }
-                        with (webDav.upload(localFile, "$lespasBase/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
+                        with (webDav.upload(localFile, "$lespasBase/${action.folderName}/${action.fileName}", normalMimeType, application)) {
                             // Nextcloud WebDAV PUT, MOVE, COPY return fileId and eTag
                             if (this.first.isNotEmpty() && this.second.isNotEmpty()) {
                                 val newId = this.first.substring(0, 8).toInt().toString()   // remove leading 0s
@@ -286,12 +286,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 Action.ACTION_DELETE_FILES_ON_SERVER -> {
-                    webDav.delete("$lespasBase/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+                    webDav.delete("$lespasBase/${action.folderName}/${action.fileName}")
                     contentMetaUpdatedNeeded.add(action.folderName)
                 }
 
                 Action.ACTION_DELETE_DIRECTORY_ON_SERVER -> {
-                    webDav.delete("$lespasBase/${Uri.encode(action.folderName)}")
+                    webDav.delete("$lespasBase/${action.folderName}")
                 }
 
 /*
@@ -307,7 +307,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 Action.ACTION_ADD_DIRECTORY_ON_SERVER -> {
-                    webDav.createFolder("$lespasBase/${Uri.encode(action.folderName)}").apply {
+                    webDav.createFolder("$lespasBase/${action.folderName}").apply {
                         // Recreating the existing folder will return empty string
                         if (this.isNotEmpty()) this.substring(0, 8).toInt().toString().also { fileId ->
                             // fix album id for new album and photos create on local, put back the cover id in album row so that it will show up in album list
@@ -328,13 +328,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 Action.ACTION_RENAME_DIRECTORY -> {
                     // Action's folderName property is the old name, fileName property is the new name
-                    webDav.move("$lespasBase/${Uri.encode(action.folderName)}", "$lespasBase/${Uri.encode(action.fileName)}")
+                    webDav.move("${lespasBase}/${action.folderName}", "${lespasBase}/${action.fileName}")
                     //albumRepository.changeName(action.folderId, action.fileName)
                 }
 
                 Action.ACTION_RENAME_FILE -> {
                     // Action's fileId property is the old name, fileName property is the new name
-                    webDav.move("$lespasBase/${Uri.encode(action.folderName)}/${Uri.encode(action.fileId)}", "$lespasBase/${Uri.encode(action.folderName)}/${Uri.encode(action.fileName)}")
+                    webDav.move("${lespasBase}/${action.folderName}/${action.fileId}", "${lespasBase}/${action.folderName}/${action.fileName}")
 
                     // Sync from server syncRemoteChanges() will detect the change and update content meta later
                 }
@@ -366,7 +366,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             else -> action.folderId
                         }
                         try {
-                            with(webDav.upload(localFile, "${userBase}/${Uri.encode(action.folderName, "/")}/${Uri.encode(action.fileName)}", normalMimeType, application)) {
+                            with(webDav.upload(localFile, "${userBase}/${action.folderName}/${action.fileName}", normalMimeType, application)) {
                                 logChangeToFile(action.fileId, this.first.substring(0, 8).toInt().toString(), action.fileName)
 
                                 // No need to keep the media file, other user owns the album after all
@@ -393,7 +393,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                     try {
                         // webdav copy/move target file path will be sent in http call's header, need to be encoded here
-                        webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${Uri.encode(action.folderName, "/")}/${Uri.encode(fileName.substringAfterLast("/"))}").run {
+                        webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}").run {
                             if (targetIsJointAlbum && action.fileId.isNotEmpty()) logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
                         }
                     } catch (e: OkHttpWebDavException) {
@@ -445,11 +445,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Do nothing, this action is for launching remote sync
                 }
                 Action.ACTION_UPDATE_ALBUM_BGM-> {
+                    // Property folderName holds album's folder name
                     val localFile = File(localBaseFolder, action.fileName)
-                    if (localFile.exists()) webDav.upload(localFile, "$lespasBase/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}", action.folderId, application)
+                    if (localFile.exists()) webDav.upload(localFile, "$lespasBase/${action.folderName}/${BGM_FILENAME_ON_SERVER}", action.folderId, application)
                 }
                 Action.ACTION_DELETE_ALBUM_BGM-> {
-                    webDav.delete("$lespasBase/${Uri.encode(action.folderName)}/${BGM_FILENAME_ON_SERVER}")
+                    // Property folderName holds album's folder name
+                    webDav.delete("$lespasBase/${action.folderName}/${BGM_FILENAME_ON_SERVER}")
                 }
                 Action.ACTION_PATCH_PROPERTIES -> {
                     // Property folderName holds target folder name, relative to user's home folder
@@ -639,7 +641,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 // Create changePhotos list
                 //Log.e(TAG, "syncing remote album ${changedAlbum.name}")
-                val remotePhotoList = webDav.list("${lespasBase}/${Uri.encode(changedAlbum.name)}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
+                val remotePhotoList = webDav.list("${lespasBase}/${changedAlbum.name}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1)
                 remotePhotoList.forEach { remotePhoto ->
                     when {
                         // Media files with supported format which are not hidden
@@ -712,7 +714,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         (remotePhoto.contentType.startsWith("audio/") || remotePhoto.contentType == "application/octet-stream") && remotePhoto.name == BGM_FILENAME_ON_SERVER -> {
                             // Download album BGM file if file size is different to local's, since we don't cache this file's id, eTag at local, size is the most reliable way.
                             if (File("${localBaseFolder}/${bgmFileName}").length() != remotePhoto.size) {
-                                webDav.download("${lespasBase}/${Uri.encode(changedAlbum.name)}/${BGM_FILENAME_ON_SERVER}", "$localBaseFolder/${bgmFileName}", null)
+                                webDav.download("${lespasBase}/${changedAlbum.name}/${BGM_FILENAME_ON_SERVER}", "$localBaseFolder/${bgmFileName}", null)
                                 albumRepository.fixBGM(changedAlbum.id, remotePhoto.fileId, remotePhoto.eTag)
                             }
                         }
@@ -811,7 +813,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         var pId: String
 
                         try {
-                            webDav.getStream("$lespasBase/${Uri.encode(changedAlbum.name)}/${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
+                            webDav.getStream("$lespasBase/${changedAlbum.name}/${changedAlbum.id}${CONTENT_META_FILE_SUFFIX}", false, null).use { stream ->
                                 val lespasJson = JSONObject(stream.bufferedReader().readText()).getJSONObject("lespas")
                                 val version = try {
                                     lespasJson.getInt("version")
@@ -906,7 +908,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         //Log.e(TAG, "extracting meta remotely for photo ${changedPhoto.name}")
                         // If it's a Remote album, extract EXIF remotely, since EXIF locates before actual JPEG image stream, this might save some network bandwidth and time
                         if (changedPhoto.mimeType.startsWith("video", true)) {
-                            try { metadataRetriever.setDataSource("${lespasBase}/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (_: Exception) {}
+                            try { metadataRetriever.setDataSource("${lespasBase}/${changedAlbum.name}/${changedPhoto.name}", HashMap<String, String>().apply { this["Authorization"] = "Basic $token" })} catch (_: Exception) {}
                             exifInterface = null
                         } else {
                             webDav.getStream("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
@@ -915,7 +917,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         }
                     } else {
                         // If it's a Local album, download image file from server and extract meta locally
-                        webDav.download("$lespasBase/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", "$localBaseFolder/${changedPhoto.id}", null)
+                        webDav.download("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", "$localBaseFolder/${changedPhoto.id}", null)
                         //Log.e(TAG, "Downloaded ${changedPhoto.name}")
 
                         if (changedPhoto.mimeType.startsWith("video")) {
@@ -947,7 +949,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && changedPhoto.mimeType.lowercase(Locale.getDefault()).run { this == "image/gif" || this == "image/webp" }) {
                             // Find out if it's animated GIF or WEBP
                             //Log.e(TAG, "need to download ${changedPhoto.name} to find out if it's animated")
-                            webDav.getStream("$lespasBase/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
+                            webDav.getStream("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
                                 val d = ImageDecoder.decodeDrawable(ImageDecoder.createSource(ByteBuffer.wrap(it.readBytes())))
                                 changedPhoto.width = d.intrinsicWidth
                                 changedPhoto.height = d.intrinsicHeight
@@ -957,7 +959,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             if (changedPhoto.width == 0 && changedPhoto.mimeType.startsWith("image")) {
                                 // If image resolution fetched from EXIF failed (for example, picture format don't support EXIF), we need to download the file from server
                                 //Log.e(TAG, "need to download ${changedPhoto.name} to get resolution data")
-                                webDav.getStream("$lespasBase/${Uri.encode(changedAlbum.name)}/${Uri.encode(changedPhoto.name)}", false, null).use {
+                                webDav.getStream("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
                                     BitmapFactory.Options().apply {
                                         inJustDecodeBounds = true
                                         BitmapFactory.decodeStream(it, null, this)
@@ -1181,7 +1183,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
                     while(true) {
                         try {
-                            webDav.upload(photoUri, "${dcimBase}/${Uri.encode(relativePath, "/")}/${Uri.encode(fileName)}", mimeType, cr, size, application)
+                            webDav.upload(photoUri, "${dcimBase}/${relativePath}/${fileName}", mimeType, cr, size, application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             when (e.statusCode) {
@@ -1306,11 +1308,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         // If local meta json file created successfully
-        webDav.upload(localFile, "$lespasBase/${Uri.encode(albumName)}/${metaFileName}", MIME_TYPE_JSON, application)
+        webDav.upload(localFile, "$lespasBase/${albumName}/${metaFileName}", MIME_TYPE_JSON, application)
     }
 
     private fun updateContentMeta(albumId: String, albumName: String) {
-        webDav.upload(Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(albumId)), "$lespasBase/${Uri.encode(albumName)}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
+        webDav.upload(Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(albumId)), "$lespasBase/${albumName}/${albumId}${CONTENT_META_FILE_SUFFIX}", MIME_TYPE_JSON)
     }
 
     private fun downloadAlbumMeta(album: Album): Meta? {
@@ -1320,7 +1322,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             val metaFileName = "${album.id}.json"
 
             // Download the updated meta file
-            webDav.getStream("$lespasBase/${Uri.encode(album.name)}/${Uri.encode(metaFileName)}", false,null).reader().use { input->
+            webDav.getStream("$lespasBase/${album.name}/${metaFileName}", false,null).reader().use { input->
                 File(localBaseFolder, metaFileName).writer().use { output ->
                     val content = input.readText()
                     output.write(content)

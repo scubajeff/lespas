@@ -110,6 +110,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private var token: String
     private val resourceRoot: String
     private val lespasBase = Tools.getRemoteHome(application)
+    private val archiveBase = Tools.getCameraArchiveHome(application)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
 
@@ -185,7 +186,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            webDav.ocsGet("${baseUrl}${String.format(SHARED_BY_ME_ENDPOINT, Uri.encode(lespasBase))}")?.apply {
+            webDav.ocsGet("${baseUrl}${String.format(SHARED_BY_ME_ENDPOINT, lespasBase)}")?.apply {
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -433,7 +434,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(album.fileId))
-                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${album.folderName}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -450,7 +451,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun renameShare(album: ShareByMe, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.move("$resourceRoot$lespasBase/${Uri.encode(album.folderName)}", "$resourceRoot$lespasBase/${Uri.encode(newName)}")
+                webDav.move("$resourceRoot$lespasBase/${album.folderName}", "$resourceRoot$lespasBase/${newName}")
                 deleteShares(album.with)
                 album.folderName = newName
                 createShares(listOf(album))
@@ -469,7 +470,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()
         try {
-            webDav.listWithExtraMeta("$resourceRoot/DCIM", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+            webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                 if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                     result.add(Photo(
                         id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
@@ -487,7 +488,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
                 it.write(Tools.photosToMetaJSONString(result))
             }
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
 
         return result
     }
@@ -542,7 +543,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         // Set default avatar first
                         if (isActive) ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.let { drawAvatar(it, view) }
 
-                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
+                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${user.name}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
                         bitmap?.let { bmp -> imageCache.put(key, bmp) }
                     }
                 }
