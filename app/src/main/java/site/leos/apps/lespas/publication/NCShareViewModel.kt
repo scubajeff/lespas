@@ -341,7 +341,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val users = data.getJSONArray("users")
                     for (i in 0 until users.length()) {
                         users.getJSONObject(i).apply {
-                            result.add(Sharee(getString("shareWithDisplayNameUnique"), getString("label"), SHARE_TYPE_USER))
+                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_USER))
                         }
                     }
                     val groups = data.getJSONArray("groups")
