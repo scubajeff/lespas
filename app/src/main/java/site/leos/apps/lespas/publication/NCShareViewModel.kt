@@ -109,7 +109,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val baseUrl: String
     private var token: String
     private val resourceRoot: String
-    private val lespasBase = application.getString(R.string.lespas_base_folder_name)
+    private val lespasBase = Tools.getRemoteHome(application)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
 
@@ -185,7 +185,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            webDav.ocsGet("$baseUrl$SHARED_BY_ME_ENDPOINT")?.apply {
+            webDav.ocsGet("${baseUrl}${String.format(SHARED_BY_ME_ENDPOINT, Uri.encode(lespasBase))}")?.apply {
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -774,7 +774,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             view.setImageBitmap(it)
                             callBack?.onLoadComplete()
                         }
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
                 } else view.setImageDrawable(null)
             }
         } else view.setImageDrawable(null)
@@ -1357,7 +1357,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
 
-        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=lespas&subfiles=true&reshares=false&format=json"
+        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=%s&subfiles=true&reshares=false&format=json"
         private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         //private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"

@@ -119,7 +119,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Album meta won't change during this fragment lifecycle
         isRemote = Tools.isRemoteAlbum(album)
         rootPath = Tools.getLocalRoot(requireContext())
-        serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
+        serverPath = "${Tools.getRemoteHome(requireContext())}/${album.name}"
         serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
         // Player model should have callFactory setting so that it can play both local and remote video, because even in remote album, there are not yet uploaded local video item too
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache()))[VideoPlayerViewModel::class.java]

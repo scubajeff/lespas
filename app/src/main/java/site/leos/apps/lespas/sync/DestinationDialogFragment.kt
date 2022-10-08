@@ -268,7 +268,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
         albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
             val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
-            val base = getString(R.string.lespas_base_folder_name)
+            val base = Tools.getRemoteHome(requireContext())
             val remoteAlbums = mutableListOf<RemoteAlbum>()
             albums.forEach { album ->
                 if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", ""))

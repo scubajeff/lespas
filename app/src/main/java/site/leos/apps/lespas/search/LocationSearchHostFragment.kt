@@ -51,7 +51,6 @@ import site.leos.apps.lespas.sync.ActionRepository
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.util.*
 
 class LocationSearchHostFragment: Fragment() {
@@ -136,7 +135,7 @@ class LocationSearchHostFragment: Fragment() {
                 R.id.search_cameraroll -> Tools.getCameraRoll(application.contentResolver, true)
                 else -> remoteImageModel.getCameraRollArchive()
             }.run {
-                val lespasBaseFolder = application.getString(R.string.lespas_base_folder_name)
+                val remoteBaseFolder = Tools.getRemoteHome(application)
                 val cr = application.contentResolver
                 val albums = AlbumRepository(application).getAllAlbumAttribute()
                 val total = this.size
@@ -219,7 +218,7 @@ class LocationSearchHostFragment: Fragment() {
                                 if (searchTarget == R.id.search_album) {
                                     val album = albums.find { it.id == photo.albumId }
                                     album?.let {
-                                        rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${lespasBaseFolder}/${album.name}" else "")
+                                        rp = NCShareViewModel.RemotePhoto(photo, if (album.shareId and Album.REMOTE_ALBUM == Album.REMOTE_ALBUM && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) "${remoteBaseFolder}/${album.name}" else "")
                                     } ?: run {
                                         return@forEachIndexed
                                     }
