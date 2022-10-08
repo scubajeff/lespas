@@ -262,6 +262,11 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                                 add(Action(null, Action.ACTION_UPDATE_JOINT_ALBUM_PHOTO_META, targetAlbum.eTag, targetFolder, "", "", System.currentTimeMillis(), 1))
                             }
                         } else {
+                            if (targetAlbum.id.isEmpty()) {
+                                // Create new album first, since this whole operations will be carried out on server, we don't have to worry about cover here, SyncAdapter will handle all the rest during next sync
+                                add(Action(null, Action.ACTION_ADD_DIRECTORY_ON_SERVER, "", targetAlbum.name, "", "", System.currentTimeMillis(), 1))
+                            }
+
                             add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
                                 "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}",
                                 metaString,
