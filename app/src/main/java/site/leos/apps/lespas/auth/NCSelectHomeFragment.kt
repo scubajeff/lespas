@@ -34,6 +34,7 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -130,7 +131,12 @@ class NCSelectHomeFragment: Fragment() {
         folderTextView = view.findViewById<TextView>(R.id.home_folder_label).apply { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.title).run { setTextColor(serverTheme.textColor) }
         view.findViewById<TextView>(R.id.note).run { setTextColor(serverTheme.textColor) }
-        selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply { setOnClickListener { returnResult() }}
+        selectButton = view.findViewById<MaterialButton>(R.id.ok_button).apply {
+            setTextColor(serverTheme.textColor)
+            strokeColor = ColorStateList.valueOf(serverTheme.textColor)
+            backgroundTintList = ColorStateList.valueOf(serverTheme.color)
+            setOnClickListener { returnResult() }
+        }
 
         folderList = view.findViewById<RecyclerView?>(R.id.folder_grid).apply {
             adapter = folderAdapter
@@ -199,14 +205,12 @@ class NCSelectHomeFragment: Fragment() {
                     text = name
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) { tooltipText = name }
 
-                    if (name == lespas) {
-                        setTextColor(Color.LTGRAY)
-                        compoundDrawableTintList = ColorStateList.valueOf(Color.LTGRAY)
-                        isClickable = false
-                    } else {
-                        setTextColor(textColor)
-                        compoundDrawableTintList = ColorStateList.valueOf(textColor)
-                        isClickable = true
+                    (name == lespas).let { isLesPasFolder ->
+                        isClickable = !isLesPasFolder
+                        (if (isLesPasFolder) Color.LTGRAY else textColor).let { color ->
+                            setTextColor(color)
+                            TextViewCompat.setCompoundDrawableTintList(tvName, ColorStateList.valueOf(color))
+                        }
                     }
                 }
             }

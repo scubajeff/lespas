@@ -65,7 +65,8 @@
         app:layout_constraintBaseline_toBaselineOf="@id/home_folder_label"
         app:layout_constraintLeft_toRightOf="@id/home_folder_label"
         app:layout_constraintRight_toRightOf="parent"
-        style="@style/Widget.MaterialComponents.Button.TextButton.Dialog"
+        app:cornerRadius="@dimen/extra_padding"
+        app:strokeWidth="1dp"
         android:text="@string/button_text_set_as_home"
         android:tooltipText="@string/button_text_set_as_home"
         tools:ignore="UnusedAttribute" />
