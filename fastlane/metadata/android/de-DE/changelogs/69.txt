@@ -1,0 +1,7 @@
+* Funktion zum Festlegen des Home-Ordners des Servers während der Anmeldung hinzugefügt
+* Veröffentlichung von Alben und Laden von Avataren behoben, wenn der Benutzer eine E-Mail-Adresse eingestellt hat
+* Behoben, dass kein neues Album erstellt werden kann, wenn Fotos aus der Veröffentlichung eines Freundes übernommen werden
+* Behoben, dass die Albumstatistik nicht aktualisiert wird, wenn Fotos in der Album-Detailansicht hinzugefügt oder gelöscht werden
+* Behobenes Thumbnail für sehr kleine Videos
+* Behobener Overscroll-Effekt für einige Dialoge
+* Weitere Verbesserungen und Fehlerkorrekturen

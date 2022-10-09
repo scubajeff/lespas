@@ -1,0 +1,7 @@
+* Ajout d'une fonction permettant de définir le dossier d'origine du serveur lors de la connexion.
+* Correction de la publication de l'album et du chargement de l'avatar lorsque l'utilisateur a une adresse e-mail définie.
+* Correction de l'impossibilité de créer un nouvel album lors de l'acquisition de photos à partir de la publication d'un ami.
+* Correction des statistiques de l'album qui ne sont pas mises à jour lors de l'ajout ou de la suppression de photos dans la vue détaillée de l'album.
+* Correction de la vignette pour les vidéos de très petite taille
+* Correction de l'effet de défilement pour certaines boîtes de dialogue.
+* Autres améliorations et corrections de bogues

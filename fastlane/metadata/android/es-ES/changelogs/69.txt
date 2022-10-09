@@ -1,0 +1,7 @@
+* Se ha añadido la función de establecer la carpeta de inicio del servidor durante el inicio de sesión
+* Corregida la publicación de álbumes y la carga de avatares cuando el usuario tiene una dirección de correo electrónico establecida
+* Se ha corregido la imposibilidad de crear un nuevo álbum cuando se adquieren fotos de la publicación de un amigo
+* Corregida la estadística del álbum que no se actualiza cuando se añaden o eliminan fotos en la vista detallada del álbum
+* Corregida la miniatura para vídeos de tamaño muy pequeño
+* Arreglado el efecto de sobredesplazamiento en algunos diálogos
+* Otras mejoras y correcciones de errores
