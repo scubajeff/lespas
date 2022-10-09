@@ -37,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.DiffUtil
@@ -70,6 +71,8 @@ class NCSelectHomeFragment: Fragment() {
     private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
     private var fetchJob: Job? = null
     private var currentList = mutableListOf<String>()
+
+    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -160,6 +163,11 @@ class NCSelectHomeFragment: Fragment() {
         outState.putString(KEY_CURRENT_FOLDER, selectedFolder)
     }
 
+    override fun onDestroyView() {
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        super.onDestroyView()
+    }
+
     private fun showSelectedFolder(name: String) {
         folderTextView.text = SpannableString("$name/$lespas").apply { setSpan(ForegroundColorSpan(Color.GRAY), this.lastIndexOf('/') + 1, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE) }
     }
@@ -193,11 +201,18 @@ class NCSelectHomeFragment: Fragment() {
         }
     }
 
+    @SuppressLint("ApplySharedPref")
     private fun returnResult() {
-        parentFragmentManager.run {
-            setFragmentResult(RESULT_KEY_HOME_FOLDER, Bundle().apply { putString(RESULT_KEY_HOME_FOLDER, selectedFolder) })
-            popBackStack()
+        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().apply {
+            putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
+            commit()
         }
+
+        // Before quitting, notify NCLoginFragment that it can request for storage permission now
+        authenticateModel.setAuthResult(true)
+        container.removeAllViews()
+        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+        parentFragmentManager.popBackStack()
     }
 
     class FolderAdapter(private val lespas: String, private val textColor: Int, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {
@@ -235,8 +250,6 @@ class NCSelectHomeFragment: Fragment() {
     }
 
     companion object {
-        const val RESULT_KEY_HOME_FOLDER = "RESULT_KEY_HOME_FOLDER"
-
         private const val PARENT_FOLDER = ".."
         private const val KEY_CURRENT_FOLDER = "KEY_CURRENT_FOLDER"
 

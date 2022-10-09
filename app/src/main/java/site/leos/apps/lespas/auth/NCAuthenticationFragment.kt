@@ -50,7 +50,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import kotlinx.coroutines.launch
 import okio.ByteString.Companion.encode
 import site.leos.apps.lespas.BuildConfig
@@ -59,7 +58,6 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.publication.NCShareViewModel
-import site.leos.apps.lespas.settings.SettingsFragment
 import java.net.URL
 import java.nio.charset.StandardCharsets
 
@@ -118,19 +116,6 @@ class NCAuthenticationFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Set content below action toolbar if launch from Setting
         if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
-        else if (savedInstanceState != null) {
-            // Quit immediately if back from NCSelectHomeFragment
-            parentFragmentManager.setFragmentResultListener(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER, viewLifecycleOwner) {_, bundle ->
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().apply {
-                    putString(SettingsFragment.SERVER_HOME_FOLDER, bundle.getString(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER))
-                    commit()
-                }
-
-                // Before quitting, notify NCLoginFragment that it can request for storage permission now
-                authenticateModel.setAuthResult(true)
-                parentFragmentManager.popBackStack()
-            }
-        }
 
         authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {
@@ -326,7 +311,7 @@ class NCAuthenticationFragment: Fragment() {
             saveAccount()
 
             // Time to set home folder on server
-            parentFragmentManager.beginTransaction().replace(R.id.container_root, NCSelectHomeFragment.newInstance(serverTheme), NCSelectHomeFragment::class.java.canonicalName).addToBackStack(null).commit()
+            parentFragmentManager.beginTransaction().replace(R.id.container_root, NCSelectHomeFragment.newInstance(serverTheme), NCSelectHomeFragment::class.java.canonicalName).commit()
         }
     }
 
