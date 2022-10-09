@@ -32,7 +32,7 @@
     <string name="button_text_scan">Scan App Password</string>
     <string name="host_textinput_label">Server address</string>
     <string name="url_helper_text">e.g. https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Touch prefix to toggle unsecure HTTP</string>
+    <string name="http_toggle_helper_text">\u2B11Touch prefix to toggle unsecure HTTP</string>
     <string name="nextcloud_credential_scheme" translatable="false">nc</string>
     <string name="account_type_nc" translatable="false">site.leos.apps.lespas.nc</string>
     <string name="nc_userdata_server" translatable="false">NC_SERVER</string>
@@ -52,6 +52,10 @@
     <string name="unknown_host">Server not found.</string>
     <string name="network_error">Network error, try again.</string>
     <string name="certificate_error">Site certificate error.</string>
+
+    <string name="pick_home">Set your home folder</string>
+    <string name="pick_home_note">Les Pas saves your albums and backups in this folder on your server.</string>
+    <string name="button_text_set_as_home">Set</string>
 
     <!-- NCAuthentication fragment -->
     <string name="login_to_new_account">You are logging in with a new account. You should logout the current account first, then re-launch Les Pas. Proceed to logout?</string>

@@ -163,7 +163,7 @@
     <string name="prefer">Prefiero:</string>
     <string name="prefer_latest">Recientes</string>
     <string name="prefer_random">Al azar (el recurso de todo lo anterior)</string>
-    <string name="http_toggle_helper_text">Toque el prefijo para activar el HTTP no seguro</string>
+    <string name="http_toggle_helper_text">\u2B11Toque el prefijo para activar el HTTP no seguro</string>
     <string name="cameraroll_as_album_title">Mostrar el rollo de la cámara como un álbum</string>
     <string name="relogin_title">Reinicio de sesión</string>
     <string name="relogin_summary">Si accidentalmente revocó la clave de acceso de Les Pas en el servidor.</string>
@@ -281,4 +281,7 @@
     <string name="sync_status_action_update_album_from_server">Actualizando el álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Haciendo una copia de seguridad de la foto %s</string>
     <string name="msg_backup_oldies">Las nuevas fotos serán una copia de seguridad a partir de ahora. También tienes %1$,d fotos en el rollo de la cámara ahora mismo, con %2$s de tamaño. ¿Quieres hacer una copia de seguridad de todas estas fotos antiguas también?</string>
+    <string name="button_text_set_as_home">Set</string>
+    <string name="pick_home">Establece tu carpeta de inicio</string>
+    <string name="pick_home_note">Les Pas guarda sus álbumes y copias de seguridad en esta carpeta de su servidor.</string>
 </resources>

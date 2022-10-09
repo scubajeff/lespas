@@ -74,8 +74,12 @@ class PhotoWithMapFragment: Fragment() {
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
+    private lateinit var remoteBase: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        remoteBase = Tools.getRemoteHome(requireContext())
 
         remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
         target = requireArguments().getInt(KEY_TARGET)
@@ -159,7 +163,7 @@ class PhotoWithMapFragment: Fragment() {
                         null,
                         if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER,
                         remotePhoto.remotePath,
-                        if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
+                        if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${remoteBase}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/'),
                         "",
                         "${remotePhoto.photo.name}|${targetAlbum.id == Album.JOINT_ALBUM_ID}",
                         System.currentTimeMillis(), 1
@@ -268,7 +272,7 @@ class PhotoWithMapFragment: Fragment() {
                     if (sourceFile.exists()) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, true, photo)) return null
+                        if (!imageLoaderModel.downloadFile("${remoteBase}/${albumName}/${photo.name}", destFile, true, photo)) return null
                     }
                 }
 
@@ -279,7 +283,7 @@ class PhotoWithMapFragment: Fragment() {
                     if (sourceFile.exists()) sourceFile.copyTo(destFile, true, 4096)
                     else {
                         val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${getString(R.string.lespas_base_folder_name)}/${albumName}/${photo.name}", destFile, false, photo)) return null
+                        if (!imageLoaderModel.downloadFile("${remoteBase}/${albumName}/${photo.name}", destFile, false, photo)) return null
                     }
 
                     FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)

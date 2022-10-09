@@ -31,7 +31,7 @@
     <string name="welcome_message">Um zu beginnen, gewähren Sie bitte Zugriff auf Ihren Nextcloud-Server.</string>
     <string name="host_textinput_label">Server-Adresse</string>
     <string name="url_helper_text">z.B. https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
+    <string name="http_toggle_helper_text">\u2B11Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
     <string name="verify_ssl_certificate_title">Ungültiges SSL-Zertifikat</string>
     <string name="verify_ssl_certificate_message">Das Zertifikat von Server %1$s kann NICHT verifiziert werden. Wollen Sie diesem Server vertrauen und fortfahren?</string>
     <string name="accept_certificate">Zertifikat trotzdem akzeptieren!</string>
@@ -332,4 +332,7 @@
     <string name="sync_status_action_update_album_from_server">Aktualisierung des Albums \'%s\'</string>
     <string name="sync_status_action_backup_file">Sichern des Fotos %s</string>
     <string name="msg_backup_oldies">Neue Fotos werden von nun an gesichert. Sie haben auch %1$,d Fotos mit einer Größe von %2$s in der Kamerarolle. Möchten Sie alle diese alten Fotos auch sichern?</string>
+    <string name="button_text_set_as_home">Satz</string>
+    <string name="pick_home">Festlegen des Home-Ordners</string>
+    <string name="pick_home_note">Les Pas speichert Ihre Alben und Backups in diesem Ordner auf Ihrem Server.</string>
 </resources>

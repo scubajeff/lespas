@@ -31,7 +31,7 @@
     <string name="button_text_scan">Scannerizza password</string>
     <string name="host_textinput_label">Indirizzo del server</string>
     <string name="url_helper_text">per esempio: https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Per attivare l\'HTTP non sicuro, tocca il prefisso</string>
+    <string name="http_toggle_helper_text">\u2B11Per attivare l\'HTTP non sicuro, tocca il prefisso</string>
     <string name="verify_ssl_certificate_title">Certificato SSL non valido</string>
     <string name="verify_ssl_certificate_message">Il certificato del server %1$s NON PUÒ essere verificato, vuoi fidarti del server e continuare\?</string>
     <string name="accept_certificate">Mi fido!</string>
@@ -346,4 +346,7 @@
     <string name="sync_status_action_update_album_from_server">Aggiornamento dell\'album \'%s\'</string>
     <string name="sync_status_action_backup_file">Backup della foto %s</string>
     <string name="msg_backup_oldies">D\'ora in poi le nuove foto saranno di backup. Nel rullino fotografico sono presenti anche %1$,d foto con dimensione %2$s. Si desidera eseguire il backup anche di tutte queste vecchie foto?</string>
+    <string name="button_text_set_as_home">Set</string>
+    <string name="pick_home">Impostare la cartella iniziale</string>
+    <string name="pick_home_note">Les Pas salva gli album e i backup in questa cartella sul server.</string>
 </resources>

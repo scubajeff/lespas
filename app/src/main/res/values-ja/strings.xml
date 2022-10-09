@@ -162,7 +162,7 @@
     <string name="prefer">好み</string>
     <string name="prefer_latest">最近の</string>
     <string name="prefer_random">ランダム (フォールバック)</string>
-    <string name="http_toggle_helper_text">プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
+    <string name="http_toggle_helper_text">\u2B11プレフィックスをタッチすると、安全ではないHTTPが切り替わります。</string>
     <string name="cameraroll_as_album_title">カメラロールをアルバムとして表示</string>
     <string name="relogin_title">再ログイン</string>
     <string name="relogin_summary">誤ってサーバー上のLes Pasのアクセスキーを失効させてしまった場合。</string>
@@ -280,4 +280,7 @@
     <string name="sync_status_action_update_album_from_server">アルバム \'%s\' を更新しています</string>
     <string name="sync_status_action_backup_file">写真 %s をバックアップしています</string>
     <string name="msg_backup_oldies">新しい写真は今後バックアップされます。また、現在カメラロールに%1$,d枚の写真があり、そのサイズは%2$sです。これらの古い写真もすべてバックアップしますか？</string>
+    <string name="button_text_set_as_home">設定</string>
+    <string name="pick_home">ホームフォルダの設定</string>
+    <string name="pick_home_note">Les Pasは、アルバムとバックアップをサーバーのこのフォルダに保存します。</string>
 </resources>

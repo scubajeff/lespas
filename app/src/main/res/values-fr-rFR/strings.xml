@@ -29,7 +29,7 @@
     <string name="button_text_scan">Scanner le mot de passe</string>
     <string name="host_textinput_label">Adresse du serveur</string>
     <string name="url_helper_text">Par exemple : https://example.com/nextcloud</string>
-    <string name="http_toggle_helper_text">Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
+    <string name="http_toggle_helper_text">\u2B11Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
     <string name="verify_ssl_certificate_title">Certificat SSL incorrect</string>
     <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
     <string name="accept_certificate">Lui faire confiance !</string>
@@ -316,4 +316,7 @@
     <string name="sync_status_action_update_album_from_server">Mise à jour de l\'album \'%s\'</string>
     <string name="sync_status_action_backup_file">Sauvegarde de la photo %s</string>
     <string name="msg_backup_oldies">Les nouvelles photos seront sauvegardées à partir de maintenant. Vous avez également %1$,d photos dans votre rouleau d\'appareil photo en ce moment, avec %2$s de taille. Voulez-vous également sauvegarder toutes ces anciennes photos ?</string>
+    <string name="button_text_set_as_home">Définir</string>
+    <string name="pick_home">Définir votre dossier d\'accueil</string>
+    <string name="pick_home_note">Les Pas enregistre vos albums et vos sauvegardes dans ce dossier sur votre serveur.</string>
 </resources>

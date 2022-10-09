@@ -169,7 +169,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     val userName = getUserData(accounts[0], application.getString(R.string.nc_userdata_username))
                                     val serverRoot = getUserData(accounts[0], application.getString(R.string.nc_userdata_server))
 
-                                    resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${application.getString(R.string.lespas_base_folder_name)}"
+                                    resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${Tools.getRemoteHome(application)}"
                                     webDav = OkHttpWebDav(
                                         userName,
                                         getUserData(accounts[0], application.getString(R.string.nc_userdata_secret)),

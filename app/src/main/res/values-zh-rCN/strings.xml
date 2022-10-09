@@ -162,7 +162,7 @@
     <string name="prefer_day_in_history">那时今日</string>
     <string name="prefer_random">任意（以上各项无果时亦采用此项）</string>
     <string name="prefer_latest">近期</string>
-    <string name="http_toggle_helper_text">点击前缀切换非安全HTTP连接</string>
+    <string name="http_toggle_helper_text">\u2B11点击前缀切换非安全HTTP连接</string>
     <string name="cameraroll_as_album_title">在相册列表中显示相机相册</string>
     <string name="relogin_title">重新登录</string>
     <string name="relogin_summary">假如你在服务器端意外撤销了Les Pas的应用授权。</string>
@@ -280,4 +280,7 @@
     <string name="sync_status_action_update_album_from_server">正在更新相册\'%s\'</string>
     <string name="sync_status_action_backup_file">正在备份照片%s</string>
     <string name="msg_backup_oldies">相机相册备份已开启。相册中现有%1$d张照片，合共%2$s。先备份这些旧照片吗？</string>
+    <string name="button_text_set_as_home">选定</string>
+    <string name="pick_home">设置主文件夹</string>
+    <string name="pick_home_note">Les Pas将在服务器上的这个文件夹里保存相册和备份文件。</string>
 </resources>

@@ -31,7 +31,7 @@
     <string name="button_text_scan">Digitalizar Código QR</string>
     <string name="host_textinput_label">Endereço do Servidor</string>
     <string name="url_helper_text">Ex. https://exemplo.com.br/nextcloud</string>
-    <string name="http_toggle_helper_text">Toque no prefixo para usar HTTP inseguro</string>
+    <string name="http_toggle_helper_text">\u2B11Toque no prefixo para usar HTTP inseguro</string>
     <string name="verify_ssl_certificate_title">Certificado SSL Inválido</string>
     <string name="verify_ssl_certificate_message">O certificado do servidor %1$s NÃO PODE ser verificado, você quer confiar neste servidor e continuar assim mesmo?</string>
     <string name="accept_certificate">Confiar nele!</string>
@@ -343,4 +343,7 @@
     <string name="sync_status_action_update_album_from_server">Atualização do álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Foto de apoio %s</string>
     <string name="msg_backup_oldies">Novas fotos serão backups a partir de agora. Você também tem %1$,d fotos em rolo de câmera agora mesmo, com %2$s em tamanho. Você quer fazer backup de todas estas fotos antigas também?</string>
+    <string name="button_text_set_as_home">Conjunto</string>
+    <string name="pick_home">Configure sua pasta de casa</string>
+    <string name="pick_home_note">Les Pas salva seus álbuns e backups nesta pasta em seu servidor.</string>
 </resources>

@@ -109,7 +109,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val baseUrl: String
     private var token: String
     private val resourceRoot: String
-    private val lespasBase = application.getString(R.string.lespas_base_folder_name)
+    private val lespasBase = Tools.getRemoteHome(application)
+    private val archiveBase = Tools.getCameraArchiveHome(application)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
 
@@ -185,7 +186,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var sharee: Recipient
 
         try {
-            webDav.ocsGet("$baseUrl$SHARED_BY_ME_ENDPOINT")?.apply {
+            webDav.ocsGet("${baseUrl}${String.format(SHARED_BY_ME_ENDPOINT, lespasBase)}")?.apply {
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
@@ -433,7 +434,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(album.fileId))
-                        webDav.upload(content, "${resourceRoot}${lespasBase}/${Uri.encode(album.folderName)}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
+                        webDav.upload(content, "${resourceRoot}${lespasBase}/${album.folderName}/${album.fileId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", SyncAdapter.MIME_TYPE_JSON)
                     }
 
                     createShares(listOf(album))
@@ -450,7 +451,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun renameShare(album: ShareByMe, newName: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                webDav.move("$resourceRoot$lespasBase/${Uri.encode(album.folderName)}", "$resourceRoot$lespasBase/${Uri.encode(newName)}")
+                webDav.move("$resourceRoot$lespasBase/${album.folderName}", "$resourceRoot$lespasBase/${newName}")
                 deleteShares(album.with)
                 album.folderName = newName
                 createShares(listOf(album))
@@ -469,7 +470,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getCameraRollArchive(): List<Photo> {
         val result = mutableListOf<Photo>()
         try {
-            webDav.listWithExtraMeta("$resourceRoot/DCIM", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
+            webDav.listWithExtraMeta("${resourceRoot}${archiveBase}", OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->
                 if (dav.contentType.startsWith("image/") || dav.contentType.startsWith("video/")) {
                     result.add(Photo(
                         id = dav.fileId, albumId = dav.albumId, name = dav.name, eTag = dav.eTag, mimeType = dav.contentType,
@@ -487,7 +488,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             File(localFileFolder, CameraRollFragment.CameraRollViewModel.SNAPSHOT_FILENAME).writer().use {
                 it.write(Tools.photosToMetaJSONString(result))
             }
-        } catch (e: Exception) {}
+        } catch (_: Exception) {}
 
         return result
     }
@@ -542,7 +543,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         // Set default avatar first
                         if (isActive) ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.let { drawAvatar(it, view) }
 
-                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${Uri.encode(user.name)}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
+                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${user.name}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
                         bitmap?.let { bmp -> imageCache.put(key, bmp) }
                     }
                 }
@@ -774,7 +775,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             view.setImageBitmap(it)
                             callBack?.onLoadComplete()
                         }
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
                 } else view.setImageDrawable(null)
             }
         } else view.setImageDrawable(null)
@@ -1357,7 +1358,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         private const val MEMORY_CACHE_SIZE = 8     // one eighth of heap size
 
-        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=lespas&subfiles=true&reshares=false&format=json"
+        private const val SHARED_BY_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?path=%s&subfiles=true&reshares=false&format=json"
         private const val SHARED_WITH_ME_ENDPOINT = "/ocs/v2.php/apps/files_sharing/api/v1/shares?shared_with_me=true&format=json"
         private const val SHAREE_LISTING_ENDPOINT = "/ocs/v1.php/apps/files_sharing/api/v1/sharees?itemType=file&format=json"
         //private const val CAPABILITIES_ENDPOINT = "/ocs/v1.php/cloud/capabilities?format=json"

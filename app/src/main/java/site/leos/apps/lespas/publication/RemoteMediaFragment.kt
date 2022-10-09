@@ -268,7 +268,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
 
                             add(Action(null, Action.ACTION_COPY_ON_SERVER, remotePhoto.remotePath,
-                                "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}",
+                                "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}",
                                 metaString,
                                 "${remotePhoto.photo.name}|false",
                                 System.currentTimeMillis(), 1
