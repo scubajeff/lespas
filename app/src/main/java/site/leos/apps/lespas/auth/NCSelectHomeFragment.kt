@@ -32,6 +32,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
@@ -120,6 +121,9 @@ class NCSelectHomeFragment: Fragment() {
                 } else returnResult()
             }
         })
+
+        // Hide actionbar after screen rotated, because account is saved by now and MainActivity will load Theme.LesPas
+        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_select_home, container, false)

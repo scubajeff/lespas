@@ -118,6 +118,19 @@ class NCAuthenticationFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Set content below action toolbar if launch from Setting
         if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
+        else if (savedInstanceState != null) {
+            // Quit immediately if back from NCSelectHomeFragment
+            parentFragmentManager.setFragmentResultListener(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER, viewLifecycleOwner) {_, bundle ->
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().apply {
+                    putString(SettingsFragment.SERVER_HOME_FOLDER, bundle.getString(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER))
+                    commit()
+                }
+
+                // Before quitting, notify NCLoginFragment that it can request for storage permission now
+                authenticateModel.setAuthResult(true)
+                parentFragmentManager.popBackStack()
+            }
+        }
 
         authWebpageBG = view.findViewById(R.id.webview_background)
         authWebpage = view.findViewById<WebView>(R.id.webview).apply {
@@ -280,20 +293,6 @@ class NCAuthenticationFragment: Fragment() {
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
-
-
-        if (!reLogin) {
-            parentFragmentManager.setFragmentResultListener(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER, viewLifecycleOwner) {_, bundle ->
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().apply {
-                    putString(SettingsFragment.SERVER_HOME_FOLDER, bundle.getString(NCSelectHomeFragment.RESULT_KEY_HOME_FOLDER))
-                    commit()
-                }
-
-                // Before quitting, notify NCLoginFragment that it can request for storage permission now
-                authenticateModel.setAuthResult(true)
-                parentFragmentManager.popBackStack()
-            }
-        }
     }
 
     override fun onResume() {
@@ -303,7 +302,8 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        authWebpage.saveState(outState)
+        // UninitializedPropertyAccessException will throw when screen rotates in NCSelectHomeFragment
+        try { authWebpage.saveState(outState) } catch(_: UninitializedPropertyAccessException) {}
         outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
