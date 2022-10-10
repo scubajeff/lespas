@@ -1,3 +1,11 @@
+## Version 2.5.22
+* Added function to set server home folder during login
+* Fixed album publishing and avatar loading when user has email address set
+* Fixed not able to create new album when acquiring photos from friend's publication
+* Fixed album statistic not updated when adding or deleting photos in album detail view
+* Fixed thumbnail for very small size video
+* Fixed overscroll effect for some dialogs
+
 ## Version 2.5.21
 * Fixed crash when opening video on some OEM devices, like Xiaomi for instance
 * Fixed wrong photo taken date display

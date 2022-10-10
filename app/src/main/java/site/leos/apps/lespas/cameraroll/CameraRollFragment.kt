@@ -165,8 +165,12 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private val sy = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 0.8f, 1.0f)
     private val tx = PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)
 
+    private lateinit var remoteArchiveBaseFolder: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        remoteArchiveBaseFolder = Tools.getCameraArchiveHome(requireContext())
 
         allowToggleContent = tag != SearchResultFragment::class.java.canonicalName
         PreferenceManager.getDefaultSharedPreferences(requireContext()).apply {
@@ -194,7 +198,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
-            imageLoaderModel.getResourceRoot(),
+            "${imageLoaderModel.getResourceRoot()}${remoteArchiveBaseFolder}",
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { state->
@@ -204,11 +208,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             },
             { photo, imageView, type->
                 if (type == NCShareViewModel.TYPE_NULL) startPostponedEnterTransition()
-                else imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView!!, type) {
+                else imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder), imageView!!, type) {
                     startPostponedEnterTransition()
                     if (photo.width == 0 && photo.mimeType.startsWith("image")) {
                         // Patching photo's meta after it has been fetched
-                        Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
+                        Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
                     }
                 }},
             { view-> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -226,7 +230,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
-            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, "/DCIM"), imageView, type) },
+            { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder), imageView, type) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
             { view -> flashPhoto(view) },
             { view -> flashDate(view) }
@@ -735,7 +739,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         infoButton.setOnClickListener {
             bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
             if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) camerarollModel.getCurrentPhoto()?.let { photo ->
-                (if (photo.albumId == FROM_CAMERA_ROLL) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, "/DCIM"))).show(parentFragmentManager, INFO_DIALOG)
+                (if (photo.albumId == FROM_CAMERA_ROLL) MetaDataDialogFragment.newInstance(photo) else MetaDataDialogFragment.newInstance(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))).show(parentFragmentManager, INFO_DIALOG)
             }
         }
         shareButton.setOnClickListener {
@@ -753,11 +757,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 val targets = mutableListOf<NCShareViewModel.RemotePhoto>()
                 if (selectionTracker.hasSelection()) {
                     // Multiple photos
-                    selectionTracker.selection.forEach { camerarollModel.getPhotoById(it)?.let { photo -> targets.add(NCShareViewModel.RemotePhoto(photo, "/DCIM")) }}
+                    selectionTracker.selection.forEach { camerarollModel.getPhotoById(it)?.let { photo -> targets.add(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder)) }}
                     selectionTracker.clearSelection()
                 } else {
                     // Current displayed photo
-                    camerarollModel.getCurrentPhoto()?.let { targets.add(NCShareViewModel.RemotePhoto(it, "/DCIM")) }
+                    camerarollModel.getCurrentPhoto()?.let { targets.add(NCShareViewModel.RemotePhoto(it, remoteArchiveBaseFolder)) }
                     // Dismiss BottomSheet when it's in collapsed mode
                     bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                 }
@@ -772,9 +776,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             } else {
                 val pList = arrayListOf<NCShareViewModel.RemotePhoto>()
                 if (selectionTracker.hasSelection()) {
-                    selectionTracker.selection.forEach { photoId -> camerarollModel.getPhotoById(photoId)?.let { pList.add(NCShareViewModel.RemotePhoto(it, "DCIM")) }}
+                    selectionTracker.selection.forEach { photoId -> camerarollModel.getPhotoById(photoId)?.let { pList.add(NCShareViewModel.RemotePhoto(it, remoteArchiveBaseFolder)) }}
                     selectionTracker.clearSelection()
-                } else camerarollModel.getCurrentPhoto()?.let { pList.add(NCShareViewModel.RemotePhoto(it, "DCIM")) }
+                } else camerarollModel.getCurrentPhoto()?.let { pList.add(NCShareViewModel.RemotePhoto(it, remoteArchiveBaseFolder)) }
 
                 if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(pList, "", true).show(parentFragmentManager, if (tag == TAG_FROM_CAMERAROLL_ACTIVITY) TAG_FROM_CAMERAROLL_ACTIVITY else TAG_DESTINATION_DIALOG)
             }
@@ -841,7 +845,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
                     val actionId = if (destinationModel.shouldRemoveOriginal()) Action.ACTION_MOVE_ON_SERVER else Action.ACTION_COPY_ON_SERVER
-                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${getString(R.string.lespas_base_folder_name)}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
+                    val targetFolder = if (targetAlbum.id != Album.JOINT_ALBUM_ID) "${Tools.getRemoteHome(requireContext())}/${targetAlbum.name}" else targetAlbum.coverFileName.substringBeforeLast('/')
                     val removeList = mutableListOf<String>()
 
                     when (targetAlbum.id) {
@@ -929,16 +933,16 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                                 // Multiple photos
                                 selectionTracker.selection.forEach { photoId ->
                                     camerarollModel.getPhotoById(photoId)?.let { photo ->
-                                        //removeFiles.add("/DCIM${photo.name}")
-                                        actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "DCIM", photo.id, photo.name, System.currentTimeMillis(), 1))
+                                        //removeFiles.add("${remoteArchiveBaseFolder}/${photo.name}")
+                                        actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "", photo.id, photo.name, System.currentTimeMillis(), 1))
                                         removeList.add(photo.id)
                                     }
                                 }
                             } else {
                                 // Current displayed photo
                                 camerarollModel.getCurrentPhoto()?.let { photo ->
-                                    //removeFiles.add("/DCIM${photo.name}")
-                                    actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "DCIM", photo.id, photo.name, System.currentTimeMillis(), 1))
+                                    //removeFiles.add("${remoteArchiveBaseFolder}/${photo.name}")
+                                    actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "", photo.id, photo.name, System.currentTimeMillis(), 1))
                                     removeList.add(photo.id)
                                 }
                                 // Dismiss BottomSheet when it's in collapsed mode, which means it's working on the current item
@@ -1324,7 +1328,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             val account = getAccountsByType(ctx.getString(R.string.account_type_nc))[0]
                             val userName = getUserData(account, ctx.getString(R.string.nc_userdata_username))
                             val baseUrl = getUserData(account, ctx.getString(R.string.nc_userdata_server))
-                            dcimRoot = "$baseUrl${ctx.getString(R.string.dav_files_endpoint)}$userName/DCIM"
+                            dcimRoot = "$baseUrl${ctx.getString(R.string.dav_files_endpoint)}$userName${Tools.getCameraArchiveHome(ctx)}"
                             webDav = OkHttpWebDav(userName, getUserData(account, ctx.getString(R.string.nc_userdata_secret)), baseUrl, getUserData(account, ctx.getString(R.string.nc_userdata_selfsigned)).toBoolean(), null, "LesPas_${ctx.getString(R.string.lespas_version)}", 0)
                         }
 
@@ -1521,7 +1525,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             if (albumId == FROM_CAMERA_ROLL) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
-            else VideoItem(Uri.parse("${basePath}/DCIM${name}"), mimeType, width, height, id)
+            else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)
         }
         override fun getItemTransitionName(position: Int): String = (getItem(position) as Photo).id
         override fun getItemMimeType(position: Int): String = (getItem(position) as Photo).mimeType

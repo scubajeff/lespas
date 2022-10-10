@@ -1,0 +1,7 @@
+* Aggiunta la funzione per impostare la cartella home del server durante il login.
+* Corretta la pubblicazione dell'album e il caricamento dell'avatar quando l'utente ha impostato l'indirizzo e-mail
+* Corretta l'impossibilità di creare un nuovo album quando si acquisiscono foto dalla pubblicazione di un amico
+* Corretta la statistica dell'album che non viene aggiornata quando si aggiungono o si eliminano foto nella vista dei dettagli dell'album
+* Corretta la miniatura per i video di dimensioni molto piccole
+* Corretto l'effetto overscroll per alcune finestre di dialogo
+* Altri miglioramenti e correzioni di bug

@@ -569,6 +569,14 @@ object Tools {
         return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
     }
 
+    fun getRemoteHome(context: Context): String {
+        return "${(PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "")}${context.getString(R.string.lespas_base_folder_name)}"
+    }
+
+    fun getCameraArchiveHome(context: Context): String {
+        return "${(PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "")}/DCIM"
+    }
+
     fun getStorageSize(context: Context): Long {
         var totalBytes = 0L
         val path = getLocalRoot(context)

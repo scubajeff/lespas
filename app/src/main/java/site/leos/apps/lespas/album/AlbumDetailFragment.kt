@@ -151,7 +151,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         @Suppress("DEPRECATION")
         album = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_ALBUM, Album::class.java) else requireArguments().getParcelable(KEY_ALBUM))!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
-        lespasPath = getString(R.string.lespas_base_folder_name)
+        lespasPath = Tools.getRemoteHome(requireContext())
 
         // Must be restore here
         savedInstanceState?.let {
@@ -861,7 +861,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         var sourceFile: File
         var destFile: File
         val isRemote = Tools.isRemoteAlbum(album)
-        val serverPath = "${getString(R.string.lespas_base_folder_name)}/${album.name}"
+        val serverPath = "${lespasPath}/${album.name}"
 
         for (photoId in sharedSelection) {
             // Quit asap when job cancelled

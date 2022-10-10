@@ -208,7 +208,7 @@ class SearchResultFragment : Fragment() {
                 val albums = AlbumRepository(app).getAllAlbumAttribute()
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = Tools.getLocalRoot(app)
-                val lespasBasePath = app.getString(R.string.lespas_base_folder_name)
+                val lespasBasePath = Tools.getRemoteHome(app)
                 var length: Int
                 var size: Int
                 val option = BitmapFactory.Options()

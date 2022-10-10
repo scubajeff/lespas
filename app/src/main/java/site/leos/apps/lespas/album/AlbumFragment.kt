@@ -124,6 +124,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private var doSync = true
 
+    private lateinit var remoteBasePath: String
+
     private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
             // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
@@ -143,6 +145,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        remoteBasePath = Tools.getRemoteHome(requireContext())
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
 
@@ -203,7 +207,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN,
                         // TODO dirty hack, can't fetch cover photo's eTag here, hence by comparing it's id to name, for not yet uploaded file these two should be the same, otherwise use a fake one as long as it's not empty
                         eTag = if (cover == coverFileName) Photo.ETAG_NOT_YET_UPLOADED else Photo.ETAG_FAKE,
-                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${getString(R.string.lespas_base_folder_name)}/${name}" else "", coverBaseline), imageView, if (cover == CameraRollFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
+                    ), if (Tools.isRemoteAlbum(album) && cover != coverFileName) "${remoteBasePath}/${name}" else "", coverBaseline), imageView, if (cover == CameraRollFragment.EMPTY_ROLL_COVER_ID) NCShareViewModel.TYPE_EMPTY_ROLL_COVER else NCShareViewModel.TYPE_COVER)
                 }
             },
             { view -> publishViewModel.cancelSetImagePhoto(view) },
