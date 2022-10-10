@@ -106,6 +106,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         }
     }
 
+/*
     fun download(source: String, dest: File, cacheControl: CacheControl?) {
         val reqBuilder = Request.Builder().url(source)
         cacheControl?.let { reqBuilder.cacheControl(cacheControl) }
@@ -114,6 +115,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             else throw OkHttpWebDavException(response)
         }
     }
+*/
 
     fun getCallFactory() = httpClient
 
@@ -162,7 +164,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun isExisted(targetName: String): Boolean {
-        var result: Boolean
+        var result = false
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
             result = when {
                 response.isSuccessful -> true
@@ -174,10 +176,10 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         return result
     }
 
-    fun list(targetName: String, depth: String): List<DAVResource> {
+    fun list(targetName: String, depth: String, forceNetwork: Boolean = true): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(targetName).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
             if (response.isSuccessful) {
                 try {
                     val parser = XmlPullParserFactory.newInstance().newPullParser()
@@ -361,7 +363,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     private fun chunksUpload(inputStream: InputStream, source: String, dest: String, mimeType: String, size: Long, ctx: Context): Pair<String, String> {
-        val chunkFolder = "${chunkUploadBase}/${Uri.encode(source)}"
+        val chunkFolder = "${chunkUploadBase}/${source}"
         var result = Pair("", "")
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
         val wifionlyKey = ctx.getString(R.string.wifionly_pref_key)
@@ -417,10 +419,9 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                 index += chunkSize
             }
 
-            //Log.e(">>>>>>>", "start assemblying")
             try {
                 // Tell server to assembly chunks, server might take sometime to finish stitching, so longer than usual timeout is needed
-                uploadHttpClient.newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T").build()).build()).execute().use { response ->
+                uploadHttpClient.newCall(Request.Builder().url("${chunkFolder}/.file").method("MOVE", null).headers(Headers.Builder().add("DESTINATION", Uri.encode(dest, "/:")).add("OVERWRITE", "T").build()).build()).execute().use { response ->
                     if (response.isSuccessful) result = Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                     else {
                         // Upload interrupted, delete uploaded chunks
@@ -440,7 +441,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun copyOrMove(copy: Boolean, source: String, dest: String): Pair<String, String> {
         val copyHttpClient = httpClient.newBuilder().readTimeout(5, TimeUnit.MINUTES).writeTimeout(5, TimeUnit.MINUTES).build()
-        val hb = Headers.Builder().add("DESTINATION", dest).add("OVERWRITE", "T")
+        val hb = Headers.Builder().add("DESTINATION", Uri.encode(dest, "/:")).add("OVERWRITE", "T")
         copyHttpClient.newCall(Request.Builder().url(source).method(if (copy) "COPY" else "MOVE", null).headers(hb.build()).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
             else throw OkHttpWebDavException(response)

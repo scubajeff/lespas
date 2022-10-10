@@ -1,0 +1,7 @@
+* Função adicionada para definir a pasta principal do servidor durante o login
+* Edição fixa de álbuns e carregamento de avatares quando o usuário tem endereço de e-mail definido
+* Corrigido não ser capaz de criar novo álbum ao adquirir fotos da publicação do amigo
+* Estatísticas fixas do álbum não atualizadas ao adicionar ou excluir fotos na visualização de detalhes do álbum
+* Miniatura fixa para vídeo em tamanho muito pequeno
+* Efeito de overscroll fixo para alguns diálogos
+* Outras melhorias e correções de bugs

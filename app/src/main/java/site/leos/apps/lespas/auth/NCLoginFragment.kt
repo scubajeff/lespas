@@ -16,15 +16,18 @@
 
 package site.leos.apps.lespas.auth
 
-//import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
-import android.os.*
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Parcelable
 import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -38,10 +41,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 import com.google.android.material.progressindicator.IndeterminateDrawable
@@ -283,12 +287,14 @@ class NCLoginFragment: Fragment() {
         } else hostEditText.error = getString(R.string.host_address_validation_error)
     }
 
-    class AuthenticateViewModel : ViewModel() {
+    class AuthenticateViewModel(private val context: Application) : AndroidViewModel(context) {
         private val credential = NCCredential()
-        private var theming = NCTheming()
+        private var serverTheme = NCTheming().apply {
+            color = ContextCompat.getColor(context, R.color.color_background)
+            textColor = ContextCompat.getColor(context, R.color.lespas_black)
+        }
         private var pingJob: Job? = null
         private var httpCall: Call? = null
-
 
         private val pingResult = SingleLiveEvent<Int>()
         fun isPinging() = pingJob?.isActive ?: false
@@ -317,9 +323,10 @@ class NCLoginFragment: Fragment() {
                                 try {
                                     response.body?.string()?.let { json ->
                                         JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
-                                            try { theming.color = Color.parseColor(getString("color")) } catch (e: Exception) {}
-                                            try { theming.textColor = Color.parseColor(getString("color-text")) } catch (e: Exception) {}
-                                            try { theming.slogan = getString("slogan") } catch (e: Exception) {}
+                                            try { serverTheme.color = Color.parseColor(getString("color")) } catch (_: Exception) {}
+                                            //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
+                                            serverTheme.textColor = ContextCompat.getColor(context, R.color.lespas_white).let { if (ColorUtils.calculateContrast(it, serverTheme.color) > 1.5f) it else ContextCompat.getColor(context, R.color.lespas_black)}
+                                            try { serverTheme.slogan = getString("slogan") } catch (_: Exception) {}
 /*
                                             OkHttpClient.Builder().apply {
                                                 if (acceptSelfSign) hostnameVerifier { _, _ -> true }
@@ -331,7 +338,7 @@ class NCLoginFragment: Fragment() {
 */
                                         }
                                     }
-                                } catch (e: JSONException) {}
+                                } catch (_: JSONException) {}
                             }
                             response.code
                         } ?: 999
@@ -398,7 +405,7 @@ class NCLoginFragment: Fragment() {
         fun toggleUseHttps() { credential.https = !credential.https }
         fun setSelfSigned(selfSigned: Boolean) { credential.selfSigned = selfSigned }
         fun getCredential() = credential
-        fun getTheming() = theming
+        fun getTheming() = serverTheme
 
         private val authResult = SingleLiveEvent<Boolean>()
         fun getAuthResult() = authResult

@@ -30,12 +30,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.http.SslError
+import android.os.Build
 import android.os.Bundle
-import android.util.Base64
 import android.view.*
 import android.webkit.*
 import android.widget.FrameLayout
@@ -68,7 +67,7 @@ class NCAuthenticationFragment: Fragment() {
     private var sloganView: TextView? = null
 
     private var reLogin: Boolean = false
-    private lateinit var theming: NCLoginFragment.AuthenticateViewModel.NCTheming
+    private lateinit var serverTheme: NCLoginFragment.AuthenticateViewModel.NCTheming
 
     private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
 
@@ -82,7 +81,8 @@ class NCAuthenticationFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
-        theming = requireArguments().getParcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
+        @Suppress("DEPRECATION")
+        serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_THEMING, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_THEMING)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -112,7 +112,7 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_nc_authentication, container, false)
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ApplySharedPref")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // Set content below action toolbar if launch from Setting
         if (reLogin) view.setPadding(view.paddingLeft, actionBarHeight, view.paddingRight, 0)
@@ -195,11 +195,11 @@ class NCAuthenticationFragment: Fragment() {
             // Show a loading sign first
             authWebpage.alpha = 0f
 
-            if (theming.color != Color.TRANSPARENT) view.findViewById<FrameLayout>(R.id.theme_background).setBackgroundColor(theming.color)
-            if (theming.slogan.isNotEmpty()) {
+            view.findViewById<FrameLayout>(R.id.theme_background).setBackgroundColor(serverTheme.color)
+            if (serverTheme.slogan.isNotEmpty()) {
                 sloganView = view.findViewById<TextView>(R.id.slogan).apply {
-                    text = theming.slogan
-                    setTextColor(theming.textColor)
+                    text = serverTheme.slogan
+                    setTextColor(serverTheme.textColor)
 
                     alpha = 0.2f
                     ObjectAnimator.ofFloat(this, "alpha", 1f).run {
@@ -212,10 +212,8 @@ class NCAuthenticationFragment: Fragment() {
                 }
             } else {
                 authWebpageBG.background = (ContextCompat.getDrawable(authWebpageBG.context, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable).apply {
-                    if (theming.color != Color.TRANSPARENT) {
-                        setTintList(ColorStateList.valueOf(theming.color))
-                        setTintMode(PorterDuff.Mode.ADD)
-                    }
+                    setTintList(ColorStateList.valueOf(serverTheme.color))
+                    setTintMode(PorterDuff.Mode.ADD)
                     start()
                 }
             }
@@ -284,12 +282,13 @@ class NCAuthenticationFragment: Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (theming.color != Color.TRANSPARENT) requireActivity().window.statusBarColor = theming.color
+        if (!reLogin) requireActivity().window.statusBarColor = serverTheme.color
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        authWebpage.saveState(outState)
+        // UninitializedPropertyAccessException will throw when screen rotates in NCSelectHomeFragment
+        try { authWebpage.saveState(outState) } catch(_: UninitializedPropertyAccessException) {}
         outState.putInt(KEY_ACTION_BAR_HEIGHT, actionBarHeight)
     }
 
@@ -310,8 +309,9 @@ class NCAuthenticationFragment: Fragment() {
             }
         } else {
             saveAccount()
-            authenticateModel.setAuthResult(true)
-            parentFragmentManager.popBackStack()
+
+            // Time to set home folder on server
+            parentFragmentManager.beginTransaction().replace(R.id.container_root, NCSelectHomeFragment.newInstance(serverTheme), NCSelectHomeFragment::class.java.canonicalName).commit()
         }
     }
 

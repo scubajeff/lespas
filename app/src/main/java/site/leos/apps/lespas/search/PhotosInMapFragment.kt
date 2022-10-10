@@ -84,7 +84,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var remotePhotos: MutableList<NCShareViewModel.RemotePhoto>? = null
     private var poiBoundingBox: BoundingBox? = null
 
-    private lateinit var rootPath: String
+    private lateinit var localPath: String
 
     private lateinit var mapView: MapView
     private val markerClickListener = MarkerClickListener()
@@ -101,14 +101,14 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var bgmPlayer: ExoPlayer
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
-    private lateinit var lespasPath: String
+    private lateinit var remotePath: String
     private var isLocalAlbum = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lespasPath = getString(R.string.lespas_base_folder_name)
-        rootPath = Tools.getLocalRoot(requireContext())
+        remotePath = Tools.getRemoteHome(requireContext())
+        localPath = Tools.getLocalRoot(requireContext())
 
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
@@ -136,7 +136,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 repeatMode = ExoPlayer.REPEAT_MODE_ONE
                 playWhenReady = true
 
-                var bgmFile = "$rootPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
+                var bgmFile = "$localPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                 if (File(bgmFile).exists()) setBGM(bgmFile)
                 else {
                     // BGM for publication downloaded in cache folder
@@ -151,7 +151,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
-            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$lespasPath/${album!!.name}")) }
+            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
         }
     }
 
@@ -463,7 +463,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                     if (photo.orientation != 0) bmp?.let { bmp = Bitmap.createBitmap(bmp!!, 0, 0, it.width, it.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true) }
                     bmp
                 }
-                else BitmapFactory.decodeFile("$rootPath/${photo.id}", option)
+                else BitmapFactory.decodeFile("$localPath/${photo.id}", option)
             )
         }
     }
