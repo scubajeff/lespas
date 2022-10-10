@@ -164,7 +164,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     }
 
     fun isExisted(targetName: String): Boolean {
-        var result: Boolean
+        var result = false
         httpClient.newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", null).header("Depth", JUST_FOLDER_DEPTH).build()).execute().use { response ->
             result = when {
                 response.isSuccessful -> true
