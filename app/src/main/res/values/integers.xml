@@ -24,4 +24,5 @@
     <integer name="publication_detail_grid_span_count">2</integer>
     <integer name="dialog_width_ratio">84</integer>
     <integer name="bottom_bar_button_text_line">2</integer>
+    <integer name="folder_grid_span_count">2</integer>
 </resources>
