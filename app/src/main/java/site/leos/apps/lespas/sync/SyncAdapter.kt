@@ -1836,5 +1836,39 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 <figure><img src="%s" class="img-responsive"></figure>
                 </div>
             """
+/*
+
+        private const val SOCIAL_LINKS =
+            """
+                <ul class="fh5co-social">
+                %s
+                </ul>
+            """
+
+        private const val TWITTER_SOCIAL_LINK =
+            """
+                <li><a href="https://twitter.com/intent/tweet?url={{ pages["index"].meta.host }}{{ current_page.url }}&text={{ meta.title }}" target="_blank"><i class="icon-twitter"></i></a></li>
+            """
+
+        private const val FACEBOOK_SOCIAL_LINK =
+            """
+                <li><a href="https://www.facebook.com/sharer/sharer.php?u={{ pages["index"].meta.host }}{{ current_page.url }}&t={{ meta.title }}" target="_blank"><i class="icon-facebook2"></i></a></li>
+            """
+
+        private const val SINA_WEIBO_SOCIAL_LINK =
+            """
+                <li><a href="https://service.weibo.com/share/share.php?url={{ pages["index"].meta.host }}{{ current_page.url }}&title={{ meta.title }}&pic={{ meta.featured|link }}&content=utf-8" target="_blank"><i class="icon-sina-weibo"></i></a></li>
+            """
+
+        private const val QZONE_SOCIAL_LINK =
+            """
+                <li><a href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url={{ pages["index"].meta.host }}{{ current_page.url }}&title={{ meta.title }}&pics={{ meta.featured|link }}&summary={{ meta.description|striptags }}" target="_blank"><i class="icon-qzone"></i></a></li>
+            """
+
+        private const val DOUBAN_SOCIAL_LINK =
+            """
+                <li><a href="https://www.douban.com/recommend/?url={{ pages["index"].meta.host }}{{ current_page.url }}&title={{ meta.title }}" target="_blank"><i class="icon-douban"></i></a></li>
+            """
+*/
     }
 }
