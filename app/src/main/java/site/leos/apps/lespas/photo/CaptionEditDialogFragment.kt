@@ -49,8 +49,8 @@ class CaptionEditDialogFragment: LesPasDialogFragment(R.layout.fragment_caption_
     }
 
     private fun returnCaption(newCaption: String?) {
-        // Won't allow character '|' and '"' in caption text. TODO should be resort to TextWatcher
-        parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_CAPTION, Bundle().apply { putString(RESULT_KEY_NEW_CAPTION, newCaption?.replace("|", "")?.replace("\"", "\\\"")) })
+        // Won't allow character '|'
+        parentFragmentManager.setFragmentResult(RESULT_KEY_NEW_CAPTION, Bundle().apply { putString(RESULT_KEY_NEW_CAPTION, newCaption?.replace("|", "")) })
         dismiss()
     }
 
