@@ -69,6 +69,7 @@ import kotlin.math.min
 class SyncAdapter @JvmOverloads constructor(private val application: Application, autoInitialize: Boolean, allowParallelSyncs: Boolean = false
 ) : AbstractThreadedSyncAdapter(application.baseContext, autoInitialize, allowParallelSyncs){
     private lateinit var webDav: OkHttpWebDav
+    private lateinit var baseUrl: String
     private lateinit var userBase: String
     private lateinit var lespasBase: String
     private lateinit var dcimBase: String
@@ -200,7 +201,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         AccountManager.get(application).run {
             val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
-            val baseUrl = getUserData(account, context.getString(R.string.nc_userdata_server))
+            baseUrl = getUserData(account, context.getString(R.string.nc_userdata_server))
 
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             userBase = "${baseUrl}${application.getString(R.string.dav_files_endpoint)}${userName}"
@@ -482,8 +483,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
                 Action.ACTION_DELETE_BLOG_POST -> {
                     // Property folderId holds target folder Id
-                    webDav.delete("$resourceRoot/${BLOG_CONTENT_FOLDER}/${action.folderId}.md")
-                    webDav.delete("$resourceRoot/${BLOG_ASSETS_FOLDER}/${action.folderId}")
+                    webDav.delete("${lespasBase}/${BLOG_CONTENT_FOLDER}/${action.folderId}.md")
+                    webDav.delete("${lespasBase}/${BLOG_ASSETS_FOLDER}/${action.folderId}")
                 }
                 Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
             }
@@ -511,7 +512,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         //Log.e(">>>>>>>>", "createBlogSite: existing: $blogs")
         if (!siteCreated) {
             // Create blog site folder in lespas/
-            webDav.createFolder("${resourceRoot}/${BLOG_FOLDER}")
+            webDav.createFolder("${lespasBase}/${BLOG_FOLDER}")
 
             // Create pico site
             token = webDav.getCSRFToken("${baseUrl}${NCShareViewModel.CSRF_TOKEN_ENDPOINT}")
@@ -534,8 +535,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // After site created, Pico return the full list of all sites created by the user
                     Tools.collectBlogResult(response.body?.string()).forEach { blog ->
                         //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
-                        webDav.createFolder("${resourceRoot}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
-                        webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
+                        webDav.createFolder("${lespasBase}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
+                        webDav.createFolder("${lespasBase}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }
                         PreferenceManager.getDefaultSharedPreferences(application).edit().run {
                             // Save blog site id for later use, like removing it
                             putString(SettingsFragment.PICO_BLOG_ID, blog.id)
@@ -552,7 +553,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     private fun createBlogPost(album: Album, blogPhotos: List<Photo>, themeId: String) {
         // Create subfolder in assets folder
-        webDav.createFolder("${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}")
+        webDav.createFolder("${lespasBase}/${BLOG_ASSETS_FOLDER}/${album.id}")
 
         // Sort photos
         val photos = when (album.sortOrder % 100) {
@@ -656,7 +657,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         updateAssets(album, photos, cover, baseline)
 
         // Create {albumId.md} content file
-        webDav.upload(content, "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
+        webDav.upload(content, "${lespasBase}/${BLOG_CONTENT_FOLDER}/${album.id}.md", MIME_TYPE_MARKDOWN) //.apply { Log.e(">>>>>>>>", "createBlogPost: blog post created: $first $second") }
     }
 
     private fun addMagazineGrid(grid: List<Photo>, albumId: String): String {
@@ -672,7 +673,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         webDav.ocsGet("$baseUrl${String.format(NCShareViewModel.USER_METADATA_ENDPOINT, userName)}")?.apply { userDisplayName = getJSONObject("data").getString("displayname") }
 
         // No way to check if display name is changed, so index file is updated every time when a blog post is being updated
-        val indexFile = "${resourceRoot}/${BLOG_CONTENT_FOLDER}/${INDEX_FILE}"
+        val indexFile = "${lespasBase}/${BLOG_CONTENT_FOLDER}/${INDEX_FILE}"
         webDav.upload(
             String.format(
                 YAML_HEADER_INDEX.trimIndent(), PreferenceManager.getDefaultSharedPreferences(application).getString(application.getString(R.string.blog_name_pref_key), application.getString(R.string.blog_name_default)),
@@ -692,7 +693,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         val coverName = if (Tools.isMediaPlayable(cover.mimeType)) cover.name else cover.name.substringBeforeLast('.')
 
         // Get current asset list for this album, ignore any exceptions, worst case is re-transferring all the assets again
-        val assetFolder = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${album.id}"
+        val assetFolder = "${lespasBase}/${BLOG_ASSETS_FOLDER}/${album.id}"
         val remoteAssets = try { webDav.list(assetFolder, OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1) } catch (_: Exception) { mutableListOf() }
 
         // Prepare deletion list
@@ -727,7 +728,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             // For animated GIF and WebP, directly copy this file to blog assets folder
             if (Tools.isMediaPlayable(photo.mimeType)) {
-                webDav.copy("${resourceRoot}/${albumName}/${photo.name}", "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${photo.name}")
+                webDav.copy("${lespasBase}/${albumName}/${photo.name}", "${lespasBase}/${BLOG_ASSETS_FOLDER}/${albumId}/${photo.name}")
                 return true
             }
 
@@ -740,9 +741,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
 
                 // Preview not available, get original instead
-                sourceStream?.let { shrinkOption.inSampleSize = 1 } ?: run { sourceStream = webDav.getStream("$resourceRoot/${albumName}/${photo.name}", true, null) }
+                sourceStream?.let { shrinkOption.inSampleSize = 1 } ?: run { sourceStream = webDav.getStream("${lespasBase}/${albumName}/${photo.name}", true, null) }
             } else {
-                sourceStream = File("${localRootFolder}/${photo.id}").inputStream()
+                sourceStream = File("${localBaseFolder}/${photo.id}").inputStream()
             }
 
             sourceStream?.let { source ->
@@ -769,7 +770,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (photo.orientation != 0) bitmap = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { preRotate((photo.orientation).toFloat()) }, true)
                     bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, tempFile.outputStream())
 
-                    val targetFile = "${resourceRoot}/${BLOG_ASSETS_FOLDER}/${albumId}/${if (isCover) photo.name.substringBeforeLast('.') else photo.name}"
+                    val targetFile = "${lespasBase}/${BLOG_ASSETS_FOLDER}/${albumId}/${if (isCover) photo.name.substringBeforeLast('.') else photo.name}"
                     webDav.upload(tempFile, targetFile, Photo.DEFAULT_MIMETYPE, application)    //.apply { Log.e(">>>>>>>>", "    prepareAsset: ${photo.name} asset created.") }
                 }
 
@@ -1620,7 +1621,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var themeId = ""
         mutableListOf<String>().apply { addAll(blogUpdateNeeded) }.forEach { albumId ->
             try {
-                webDav.getStream("${resourceRoot}/${BLOG_CONTENT_FOLDER}/${albumId}.md", false, null).bufferedReader().use { reader ->
+                webDav.getStream("${lespasBase}/${BLOG_CONTENT_FOLDER}/${albumId}.md", false, null).bufferedReader().use { reader ->
                     var line: String? = ""
                     while(line != null) {
                         line = reader.readLine()
