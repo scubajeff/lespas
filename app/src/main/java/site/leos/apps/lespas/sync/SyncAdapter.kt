@@ -200,7 +200,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
 
         AccountManager.get(application).run {
-            val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
+            userName = getUserData(account, context.getString(R.string.nc_userdata_username))
             baseUrl = getUserData(account, context.getString(R.string.nc_userdata_server))
 
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
@@ -210,7 +210,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, context.getString(R.string.nc_userdata_loginname)))
 
-            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), null,"LesPas_${application.getString(R.string.lespas_version)}",0,)
+            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${Tools.getLocalRoot(application)}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -522,7 +522,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 .post(
                     FormBody.Builder()
                         .addEncoded("data[name]", "Les Pas")    // Site name asserted in Pico's lib/Model/Website.php, must be longer than 2 characters and not more than 255
-                        .addEncoded("data[path]", "${application.getString(R.string.lespas_base_folder_name)}/${BLOG_FOLDER}")
+                        .addEncoded("data[path]", "${Tools.getRemoteHome(application)}/${BLOG_FOLDER}")
                         .addEncoded("data[site]", blogSiteName)       // only allow a-z, 0-9, - and _
                         .addEncoded("data[theme]", "magazine")  // TODO change to 'journey'
                         .addEncoded("data[template]", "empty")
@@ -1770,7 +1770,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 Title: %s
                 Author: %s
                 Host: %s
-                Template : index
+                Template: index
                 Robots: noindex, nofollow, noimageindex
                 Purpose: pico_categories_page
                 numPerPage: 12
@@ -1780,7 +1780,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
                 ---
                 Title: %s
-                Template : single
+                Template: single
                 Date: %s
                 Thumbnail: %s
                 Featured: %s
@@ -1804,9 +1804,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val ITEM_CASCADE =
             """
                 <div class="fh5co-item animate-box">
+                <figure><img src="%s" class="img-responsive"><figcaption-epic>%s</figcaption-epic></figure>
+                </div>
+            """
+/*
+            """
+                <div class="fh5co-item animate-box">
                 <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
                 </div>
             """
+*/
 
         private const val ITEM_MAGAZINE_LEFT =
             """
