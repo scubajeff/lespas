@@ -75,7 +75,14 @@ If you set the album as Local Album, Les Pas store photos in it's app private st
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
 **For privacy sake, stop using "/Pictures" folder in your phone's internal/external storage.**<br><br>
 Since release 2.5.0, Les Pas support managing albums remotely. With Remote Album, all photo's and video's media file are stored in Nextcloud server, this will dramatically reduces app's storage footprint on mobile device.<br>
-Nextcloud has a reputation of sluggish image processing, to make Remote Album work, you need to setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024. Here is an [excellent document](https://rayagainstthemachine.net/linux%20administration/nextcloud-photos/) on how to do it. 
+
+### It's very slow loading photos from server, the waiting seems forever.
+Nextcloud has a reputation of sluggish image processing, to make Remote Album work, you need to setup Nextcloud [Preview Generator](https://apps.nextcloud.com/apps/previewgenerator) app to automatically generate aspect ratio preview files of size 1024x1024. Here is an [excellent document](https://rayagainstthemachine.net/linux%20administration/nextcloud-photos/) on how to do it. You should make sure Les Pas's specific size is taken into action, by:
+```
+sudo -u www-data php /var/www/nextcloud/occ config:app:set --value="256 384 1024" previewgenerator widthSizes
+sudo -u www-data php /var/www/nextcloud/occ config:app:set --value="256 1024" previewgenerator heightSizes
+
+```
 
 ### About server using self-signed certificate
 You need to install your certificates in your phone first. A quick search on instructions points to <a href=https://aboutssl.org/how-to-create-and-import-self-signed-certificate-to-android-device/>here</a> and <a href=https://proxyman.io/blog/2020/09/Install-And-Trust-Self-Signed-Certificate-On-Android-11.html>here</a>.
