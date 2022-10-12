@@ -589,6 +589,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var rightBottom = 0
                 var filename: String
                 var caption: String
+                var item: String
+                var itemHeight: Int
 
                 photos.forEach { photo ->
                     // Prepare image asset. In case failed, skip this one
@@ -598,13 +600,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
                     filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                     caption = photo.caption.replace("\n", "<br>")
+                    item = String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_WITHOUT_CAPTION.trimIndent(), filename) else String.format(ITEM_CASCADE_WITH_CAPTION.trimIndent(), filename, caption)) + "\n"
+                    itemHeight = if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
 
                     if (leftBottom <= rightBottom) {
-                        leftColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
-                        leftBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
+                        leftColumn += item
+                        leftBottom += itemHeight
                     } else {
-                        rightColumn += String.format(ITEM_CASCADE.trimIndent(), filename, filename, caption) + "\n"
-                        rightBottom += if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
+                        rightColumn += item
+                        rightBottom += itemHeight
                     }
                 }
 
@@ -1808,17 +1812,27 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val ITEM_CASCADE =
             """
                 <div class="fh5co-item animate-box">
-                <figure><img src="%s" class="img-responsive"><figcaption-epic>%s</figcaption-epic></figure>
+                %s
                 </div>
+            """
+        private const val ITEM_CASCADE_WITHOUT_CAPTION =
+            """
+                <div class="polaroid"><img src="%s" class="img-responsive"></div>
+            """
+        private const val ITEM_CASCADE_WITH_CAPTION =
+            """
+                <div class="polaroid"><img src="%s" class="img-responsive"><div class="polaroid-caption">%s</div></div>
             """
 /*
+            usual responsive image
             """
-                <div class="fh5co-item animate-box">
+                <figure><img src="%s" class="img-responsive"><figcaption-epic>%s</figcaption-epic></figure>
+            """
+            responsive image with zoom
+            """
                 <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
-                </div>
             """
 */
-
         private const val ITEM_MAGAZINE_LEFT =
             """
                 <div class="row rp-b">
