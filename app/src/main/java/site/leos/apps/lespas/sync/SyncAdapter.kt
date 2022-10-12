@@ -714,6 +714,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun updateAsset(photo: Photo, albumId: String, albumName: String, isRemote: Boolean, isCover: Boolean = false, coverBaseline: Int = -1, override: Boolean = false): Boolean {
+        var result = false
         // Shrink picture size to around 1000 pixel long
         val longEdge = max(photo.width, photo.height)
         var size = 1
@@ -746,7 +747,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 sourceStream = File("${localBaseFolder}/${photo.id}").inputStream()
             }
 
-            sourceStream?.let { source ->
+            sourceStream?.use { source ->
                 //Log.e(">>>>>>>>", "    updateAsset: image source stream ready ${photo.name}")
                 val tempFile = File(application.cacheDir, photo.name)
 
@@ -777,16 +778,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 tempFile.delete()
             }
 
-            return true
+            result = true
         } catch (e: OkHttpWebDavException) {
             Log.e(">>>>>>>>", "updateAsset: ${e.stackTraceString}")
-            return false
         }
         catch (e: Exception) {
-            e.printStackTrace()
             // TODO better exception handling
-            return false
+            e.printStackTrace()
         }
+        finally {
+            sourceStream?.close()
+        }
+
+        return result
     }
 
     private fun logChangeToFile(meta: String, newFileId: String, fileName: String,) {
