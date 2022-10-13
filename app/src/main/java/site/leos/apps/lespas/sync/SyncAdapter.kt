@@ -476,7 +476,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     // Property fileName holds option flags, 1st bit 'includeSocial', 2nd bit 'includeCopyright'
                     if (createBlogSite()) {
                         updateBlogIndex()
-                        createBlogPost(albumRepository.getThisAlbum(action.folderId), photoRepository.getPhotosForBlog(action.folderId).filter { photo -> !photo.mimeType.startsWith("video") }, action.fileId)
+                        createBlogPost(albumRepository.getThisAlbum(action.folderId), photoRepository.getPhotosForBlog(action.folderId), action.fileId)
                     } else {
                         // TODO
                     }
@@ -600,7 +600,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
                     filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                     caption = photo.caption.replace("\n", "<br>")
-                    item = String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_WITHOUT_CAPTION.trimIndent(), filename) else String.format(ITEM_CASCADE_WITH_CAPTION.trimIndent(), filename, caption)) + "\n"
+                    item =
+                        if (photo.mimeType.startsWith("image"))
+                            String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_WITHOUT_CAPTION.trimIndent(), filename) else String.format(ITEM_CASCADE_WITH_CAPTION.trimIndent(), filename, caption)) + "\n"
+                        else
+                            String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_VIDEO_WITHOUT_CAPTION, filename, photo.mimeType) else String.format(ITEM_CASCADE_VIDEO_WITH_CAPTION.trimIndent(), filename, photo.mimeType, caption)) + "\n"
                     itemHeight = if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
 
                     if (leftBottom <= rightBottom) {
@@ -636,7 +640,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             caption = photo.caption.replace("\n", "<br>")
 
-                            content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), filename, caption) + "\n\n"
+                            content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), if (photo.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, filename) else String.format(ITEM_MAGAZINE_VIDEO, filename, photo.mimeType), caption) + "\n\n"
                         } else {
                             grid.add(photo)
 
@@ -666,7 +670,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
     private fun addMagazineGrid(grid: List<Photo>, albumId: String): String {
         var result = """<div class="row">""" + "\n"
-        for (item in grid) result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), "${ASSETS_URL}/${albumId}/${item.name}") + "\n"
+        var fileName: String
+        for (item in grid) {
+            fileName = "${ASSETS_URL}/${albumId}/${item.name}"
+            result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), if (item.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, fileName) else String.format(ITEM_MAGAZINE_VIDEO, fileName, item.mimeType)) + "\n"
+        }
 
         return "$result</div>\n\n"
     }
@@ -703,7 +711,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Prepare deletion list
         remoteAssets.forEach { remote -> photos.find { remote.name == it.name || remote.name == coverName } ?: run { deletion.add(remote) } }
         // Prepare addition list
-        photos.forEach { local -> if (!local.mimeType.startsWith("video/")) remoteAssets.find { local.name == it.name } ?: run { addition.add(local) } }
+        photos.forEach { local -> remoteAssets.find { local.name == it.name } ?: run { addition.add(local) } }
 
         //Log.e(">>>>>>>>", "updateAssets: additions: $addition")
         //Log.e(">>>>>>>>", "updateAssets: deletions: $deletion")
@@ -1642,7 +1650,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                createBlogPost(albumRepository.getThisAlbum(albumId), photoRepository.getPhotosForBlog(albumId).filter { photo -> !photo.mimeType.startsWith("video") }, themeId)
+                createBlogPost(albumRepository.getThisAlbum(albumId), photoRepository.getPhotosForBlog(albumId), themeId)
             } catch (_: Exception) {}
         }
     }
@@ -1798,6 +1806,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 ---
             """
 
+        // Cascade theme
         private const val CONTENT_CASCADE =
             """
                 <div class="fh5co-grid">
@@ -1823,21 +1832,31 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
                 <div class="polaroid"><img src="%s" class="img-responsive"><div class="polaroid-caption">%s</div></div>
             """
-/*
-            usual responsive image
+        /*
+                    usual responsive image
+                    """
+                        <figure><img src="%s" class="img-responsive"><figcaption-epic>%s</figcaption-epic></figure>
+                    """
+                    responsive image with zoom
+                    """
+                        <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
+                    """
+        */
+        private const val ITEM_CASCADE_VIDEO_WITHOUT_CAPTION =
             """
-                <figure><img src="%s" class="img-responsive"><figcaption-epic>%s</figcaption-epic></figure>
+                <div class="polaroid"><video controls class="img-responsive"><source src="%s" type="%s"></div>
             """
-            responsive image with zoom
+        private const val ITEM_CASCADE_VIDEO_WITH_CAPTION =
             """
-                <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
+                <div class="polaroid"><video controls class="img-responsive"><source src="%s" type="%s"></video><div class="polaroid-caption">%s</div></div>
             """
-*/
+
+        // Magazine theme
         private const val ITEM_MAGAZINE_LEFT =
             """
                 <div class="row rp-b">
                 <div class="col-lg-6 col-md-12 animate-box">
-                <figure><img src="%s" class="img-responsive"></figure>
+                %s
                 </div>
                 <div class="col-lg-6 col-md-12 cp-l animate-box">
                 %s
@@ -1848,7 +1867,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
                 <div class="row rp-b">
                 <div class="col-lg-6 col-lg-push-6 col-md-12 col-md-push-0 animate-box">
-                <figure><img src="%s" class="img-responsive"></figure>
+                %s
                 </div>
                 <div class="col-lg-6 col-lg-pull-6 col-md-12 col-md-pull-0 cp-r animate-box">
                 %s
@@ -1858,8 +1877,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val ITEM_MAGAZINE_GRID =
             """
                 <div class="col-md-4 animate-box">
-                <figure><img src="%s" class="img-responsive"></figure>
+                %s
                 </div>
+            """
+        private const val ITEM_MAGAZINE_PHOTO =
+            """
+                <figure><img src="%s" class="img-responsive"></figure>
+            """
+        private const val ITEM_MAGAZINE_VIDEO =
+            """
+                <figure><video controls class="img-responsive"><source src="%s" type="%s"></video></figure>
             """
 /*
 

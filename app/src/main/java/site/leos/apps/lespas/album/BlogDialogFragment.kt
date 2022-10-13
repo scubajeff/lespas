@@ -250,7 +250,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         }
 
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
-            photoAdapter.submitList(Tools.sortPhotos(it.photos, it.album.sortOrder).filter { photo -> !photo.mimeType.startsWith("video/") })
+            photoAdapter.submitList(Tools.sortPhotos(it.photos, it.album.sortOrder))
 
             photoAdapter.currentList.forEach { photo ->
                 if (!Tools.isBitSet(photo.shareId, Photo.EXCLUDE_FROM_BLOG)) selectionTracker.select(photo.id)
