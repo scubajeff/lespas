@@ -56,6 +56,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.text.Collator
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -658,6 +659,49 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     content += addMagazineGrid(grid, album.id)
                     grid.clear()
                 }
+            }
+
+            THEME_TIMELINE -> {
+                var index = 0
+                var filename: String
+                var caption: String
+                var items = ""
+                val minimumYear = LocalDate.MIN.year
+                var currentYear = minimumYear
+
+                do {
+                    photos[index].let { photo ->
+                        photo.dateTaken.year.let { year ->
+                            if (year != currentYear) {
+                                if (currentYear != minimumYear) {
+                                    // Ending for each year section
+                                    content += String.format(ITEM_TIMELINE_SECTION_END.trimIndent(), items)
+                                    items = ""
+                                }
+
+                                // New year section started
+                                currentYear = year
+                                content += String.format(ITEM_TIMELINE_SECTION_START.trimIndent(), currentYear)
+
+                                // Move first item in year's section to the right if the last item in last section is on the left
+                                if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID
+                            }
+                        }
+                        filename = "${ASSETS_URL}/${album.id}/${photo.name}"
+                        caption = photo.caption.replace("\n", "<br>")
+
+                        items += String.format(
+                            ITEM_TIMELINE_CONTAINER.trimIndent(),
+                            if (photo.mimeType.startsWith("image")) String.format(ITEM_TIMELINE_PHOTO.trimIndent(), filename) else String.format(ITEM_TIMELINE_VIDEO.trimIndent(), filename, photo.mimeType),
+                            caption, photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                        )
+                    }
+                    index++
+                } while ( index < photos.size)
+
+                // Add final section ending
+                content += String.format(ITEM_TIMELINE_SECTION_END.trimIndent(), items)
+                //content += String.format(CONTENT_TIMELINE.trimIndent(), timeline)
             }
         }
 
@@ -1777,6 +1821,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val BLOG_ASSETS_FOLDER = "${BLOG_FOLDER}/assets"
         const val THEME_CASCADE = "cascade"
         const val THEME_MAGAZINE = "magazine"
+        const val THEME_TIMELINE = "timeline"
         private const val INDEX_FILE = "index.md"
         const val MIME_TYPE_MARKDOWN = "text/markdown"
         private const val ASSETS_URL = "%assets_url%"
@@ -1888,8 +1933,46 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
                 <figure><video controls class="img-responsive"><source src="%s" type="%s"></video></figure>
             """
-/*
 
+        // Timeline theme
+        private const val ITEM_TIMELINE_SECTION_START =
+            """
+                <div class="cd-timeline-block"><div class="cd-year">%d</div></div>
+                <div class="cd-timeline">
+                
+            """
+        private const val ITEM_TIMELINE_SECTION_END =
+            """
+                %s
+                </div>
+                
+            """
+        private const val ITEM_TIMELINE_CONTAINER =
+            """
+                <div class="cd-timeline-block">
+			    <div class="cd-timeline-img"></div>
+    			<div class="cd-timeline-content">
+                <div>%s</div>
+                <p>%s</p>
+                <span class="cd-date">%s</span>
+                </div>
+                </div>
+                
+            """
+        private const val ITEM_TIMELINE_PHOTO =
+            """
+                <img class="img-responsive" src="%s" />
+            """
+        private const val ITEM_TIMELINE_VIDEO =
+            """
+                <video controls class="img-responsive"><source src="%s" type="%s"></video>
+            """
+        private const val ITEM_TIMELINE_BLOCK_VOID =
+            """
+                <div class="cd-timeline-block" />
+                
+            """
+/*
         private const val SOCIAL_LINKS =
             """
                 <ul class="fh5co-social">

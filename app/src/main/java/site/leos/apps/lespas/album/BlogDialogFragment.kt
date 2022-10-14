@@ -183,6 +183,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                         when (themeChoice.checkedButtonId) {
                             R.id.theme_cascade -> SyncAdapter.THEME_CASCADE
                             R.id.theme_magazine -> SyncAdapter.THEME_MAGAZINE
+                            R.id.theme_timeline -> SyncAdapter.THEME_TIMELINE
                             else -> ""
                         },
                         //includeSocialButton.isChecked, includCopyrightBlogButton.isChecked
@@ -242,6 +243,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                 when(themeId) {
                     SyncAdapter.THEME_CASCADE -> themeChoice.check(R.id.theme_cascade)
                     SyncAdapter.THEME_MAGAZINE -> themeChoice.check(R.id.theme_magazine)
+                    SyncAdapter.THEME_TIMELINE -> themeChoice.check(R.id.theme_timeline)
                 }
 
                 removeBlogButton.isVisible = true

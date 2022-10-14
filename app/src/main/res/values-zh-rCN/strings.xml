@@ -301,4 +301,7 @@
     <string name="title_theme">博客模板</string>
     <string name="blog_name_title">博客名</string>
     <string name="blog_exemption_clause">你要对使用博客功能和你在博文中提供的所有内容负责，包括遵守适用的法律。除非你有权利这样做，否则请不要采用他人的文字和素材发布内容。你在博客上发布的任何内容都能被公众访问。</string>
+    <string name="theme_option_timeline">时间线</string>
+    <string name="theme_option_timeline_tooltips">关注时间的流逝。</string>
+    <string name="checkbox_text_photo_list">选择要展示在博文中的图片</string>
 </resources>

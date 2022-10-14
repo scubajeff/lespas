@@ -301,4 +301,7 @@
     <string name="theme_option_cascade">ウォーターフォール</string>
     <string name="title_theme">ブログのテーマです</string>
     <string name="blog_exemption_clause">お客様は、ブログ機能の使用および提供するコンテンツについて、適用される法律の遵守を含め、責任を負うものとします。投稿する権利をお持ちでない方は、コンテンツを投稿しないでください。お客様がブログに投稿された内容は、一般の方がアクセスすることができます。</string>
+    <string name="theme_option_timeline">タイムライン</string>
+    <string name="theme_option_timeline_tooltips">時間の経過に注目する。</string>
+    <string name="checkbox_text_photo_list">このブログに含まれる写真</string>
 </resources>

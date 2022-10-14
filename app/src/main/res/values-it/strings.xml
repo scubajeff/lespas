@@ -367,4 +367,7 @@
     <string name="title_theme">Tema del blog:</string>
     <string name="theme_option_magazine">Rivista</string>
     <string name="blog_exemption_clause">L\'utente è responsabile dell\'uso della funzione di blogging e di qualsiasi contenuto fornito, compresa la conformità alle leggi vigenti. Non pubblicate contenuti se non avete il diritto di farlo. Tutto ciò che si pubblica nel blog PUÒ essere accessibile al pubblico in generale.</string>
+    <string name="theme_option_timeline">Linea del tempo</string>
+    <string name="theme_option_timeline_tooltips">Attenzione allo scorrere del tempo.</string>
+    <string name="checkbox_text_photo_list">Foto incluse in questo post</string>
 </resources>

@@ -301,4 +301,7 @@
     <string name="theme_option_magazine">雜誌流</string>
     <string name="theme_option_magazine_tooltips">適合大量文字</string>
     <string name="title_theme">博客模板</string>
+    <string name="theme_option_timeline">時間線</string>
+    <string name="theme_option_timeline_tooltips">關注時間的流逝。</string>
+    <string name="checkbox_text_photo_list">選擇要展示在博文中的圖片</string>
 </resources>

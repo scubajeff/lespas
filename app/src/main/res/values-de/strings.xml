@@ -353,4 +353,7 @@
     <string name="title_theme">Blog-Thema:</string>
     <string name="theme_option_magazine">Zeitschrift</string>
     <string name="blog_exemption_clause">Sie sind für die Nutzung der Blogging-Funktion und die von Ihnen bereitgestellten Inhalte verantwortlich, einschließlich der Einhaltung der geltenden Gesetze. Bitte veröffentlichen Sie keine Inhalte, wenn Sie nicht das Recht dazu haben. Alles, was Sie im Blog veröffentlichen, KANN für die Allgemeinheit zugänglich sein.</string>
+    <string name="theme_option_timeline">Zeitleiste</string>
+    <string name="theme_option_timeline_tooltips">Aufmerksamkeit für den Lauf der Zeit.</string>
+    <string name="checkbox_text_photo_list">Fotos in diesem Blogbeitrag</string>
 </resources>
