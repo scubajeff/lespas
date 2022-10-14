@@ -594,18 +594,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 var itemHeight: Int
 
                 photos.forEach { photo ->
-                    // Prepare image asset. In case failed, skip this one
-                    //if (!updateAsset(photo, album.id, album.name, isRemote)) return@forEach
-
-                    // Add item to web page
-                    //filename = "${ASSETS_URL}/${album.id}/${if (Tools.isMediaPlayable(photo.mimeType)) photo.name else photo.name.substringBeforeLast('.') + ".jpg"}"
                     filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                     caption = photo.caption.replace("\n", "<br>")
-                    item =
-                        if (photo.mimeType.startsWith("image"))
-                            String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_WITHOUT_CAPTION.trimIndent(), filename) else String.format(ITEM_CASCADE_WITH_CAPTION.trimIndent(), filename, caption)) + "\n"
-                        else
-                            String.format(ITEM_CASCADE.trimIndent(), if (caption.isEmpty()) String.format(ITEM_CASCADE_VIDEO_WITHOUT_CAPTION, filename, photo.mimeType) else String.format(ITEM_CASCADE_VIDEO_WITH_CAPTION.trimIndent(), filename, photo.mimeType, caption)) + "\n"
+
+                    item = String.format(
+                        ITEM_CASCADE.trimIndent(),
+                        if (photo.mimeType.startsWith("image")) String.format(ITEM_GENERAL_PHOTO.trimIndent(), filename) else String.format(ITEM_GENERAL_VIDEO.trimIndent(), filename, photo.mimeType),
+                        if (photo.caption.isEmpty()) "" else String.format(ITEM_CASCADE_CAPTION.trimIndent(), caption)
+                    )
                     itemHeight = if (photo.orientation == 90 || photo.orientation == 270) photo.width else photo.height
 
                     if (leftBottom <= rightBottom) {
@@ -622,14 +618,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             }
 
             THEME_MAGAZINE -> {
-                var index = -1
+                var index = 0
                 var filename: String
                 var caption: String
                 val grid = mutableListOf<Photo>()
 
                 do {
-                    index++
-
                     photos[index].let { photo ->
                         filename = "${ASSETS_URL}/${album.id}/${photo.name}"
 
@@ -641,7 +635,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                             caption = photo.caption.replace("\n", "<br>")
 
-                            content += String.format((if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(), if (photo.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, filename) else String.format(ITEM_MAGAZINE_VIDEO, filename, photo.mimeType), caption) + "\n\n"
+                            content += String.format(
+                                (if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(),
+                                if (photo.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, filename) else String.format(ITEM_MAGAZINE_VIDEO, filename, photo.mimeType), caption
+                            )
                         } else {
                             grid.add(photo)
 
@@ -652,7 +649,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         }
                     }
-                } while ( index < photos.size - 1)
+                    index++
+                } while ( index < photos.size)
 
                 // Append pending grid
                 if (grid.isNotEmpty()) {
@@ -692,7 +690,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         items += String.format(
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
-                            if (photo.mimeType.startsWith("image")) String.format(ITEM_TIMELINE_PHOTO.trimIndent(), filename) else String.format(ITEM_TIMELINE_VIDEO.trimIndent(), filename, photo.mimeType),
+                            if (photo.mimeType.startsWith("image")) String.format(ITEM_GENERAL_PHOTO.trimIndent(), filename) else String.format(ITEM_GENERAL_VIDEO.trimIndent(), filename, photo.mimeType),
                             caption, photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
                         )
                     }
@@ -717,7 +715,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var fileName: String
         for (item in grid) {
             fileName = "${ASSETS_URL}/${albumId}/${item.name}"
-            result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), if (item.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, fileName) else String.format(ITEM_MAGAZINE_VIDEO, fileName, item.mimeType)) + "\n"
+            result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), if (item.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, fileName) else String.format(ITEM_MAGAZINE_VIDEO, fileName, item.mimeType))
         }
 
         return "$result</div>\n\n"
@@ -1866,16 +1864,16 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val ITEM_CASCADE =
             """
                 <div class="fh5co-item animate-box">
+                <div class="polaroid">
+                %s
                 %s
                 </div>
+                </div>
+                
             """
-        private const val ITEM_CASCADE_WITHOUT_CAPTION =
+        private const val ITEM_CASCADE_CAPTION =
             """
-                <div class="polaroid"><img src="%s" class="img-responsive"></div>
-            """
-        private const val ITEM_CASCADE_WITH_CAPTION =
-            """
-                <div class="polaroid"><img src="%s" class="img-responsive"><div class="polaroid-caption">%s</div></div>
+                <div class="polaroid-caption">%s</div>
             """
         /*
                     usual responsive image
@@ -1887,14 +1885,6 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         <figure><a href="%s" class="image-popup"><img src="%s"><div class="fh5co-item-text-wrap"><div class="fh5co-item-text"><h2><i class="icon-zoom-in"></i></h2></div></div></a><figcaption-epic>%s</figcaption-epic></figure>
                     """
         */
-        private const val ITEM_CASCADE_VIDEO_WITHOUT_CAPTION =
-            """
-                <div class="polaroid"><video controls class="img-responsive"><source src="%s" type="%s"></div>
-            """
-        private const val ITEM_CASCADE_VIDEO_WITH_CAPTION =
-            """
-                <div class="polaroid"><video controls class="img-responsive"><source src="%s" type="%s"></video><div class="polaroid-caption">%s</div></div>
-            """
 
         // Magazine theme
         private const val ITEM_MAGAZINE_LEFT =
@@ -1907,6 +1897,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 %s
                 </div>
                 </div>
+                
+                
             """
         private const val ITEM_MAGAZINE_RIGHT =
             """
@@ -1918,12 +1910,15 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 %s
                 </div>
                 </div>
+                
+                
             """
         private const val ITEM_MAGAZINE_GRID =
             """
                 <div class="col-md-4 animate-box">
                 %s
                 </div>
+                
             """
         private const val ITEM_MAGAZINE_PHOTO =
             """
@@ -1959,11 +1954,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 </div>
                 
             """
-        private const val ITEM_TIMELINE_PHOTO =
+        private const val ITEM_GENERAL_PHOTO =
             """
                 <img class="img-responsive" src="%s" />
             """
-        private const val ITEM_TIMELINE_VIDEO =
+        private const val ITEM_GENERAL_VIDEO =
             """
                 <video controls class="img-responsive"><source src="%s" type="%s"></video>
             """
