@@ -56,11 +56,12 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.text.Collator
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.Period
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.*
 import java.util.stream.Collectors
 import javax.net.ssl.SSLHandshakeException
@@ -556,6 +557,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Create subfolder in assets folder
         webDav.createFolder("${lespasBase}/${BLOG_ASSETS_FOLDER}/${album.id}")
 
+        // If user choose Timeline theme but album is not sort by taken time, force sort order to Album.BY_DATE_TAKEN_ASC
+        if (themeId == THEME_TIMELINE && album.sortOrder % 100 > Album.BY_DATE_TAKEN_DESC) album.sortOrder = Album.BY_DATE_TAKEN_ASC
         // Sort photos
         val photos = when (album.sortOrder % 100) {
             Album.BY_DATE_TAKEN_ASC -> blogPhotos.sortedWith(compareBy { it.dateTaken })
@@ -661,44 +664,101 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             THEME_TIMELINE -> {
                 var index = 0
+                var dayCount = 0
                 var filename: String
                 var caption: String
                 var items = ""
-                val minimumYear = LocalDate.MIN.year
-                var currentYear = minimumYear
+
+                val period = Period.between(photos.first().dateTaken.toLocalDate(), photos.last().dateTaken.toLocalDate())
+                val spanType = when {
+                    kotlin.math.abs(period.years) > 0 -> IN_YEARS
+                    kotlin.math.abs(period.months) > 0 -> IN_MONTHS
+                    kotlin.math.abs(period.days) > 0 -> IN_DAYS
+                    else -> {
+                        content += ITEM_TIMELINE_SESSION_DIV_HEADER.trimIndent()
+                        IN_ONE_DAY
+                    }
+                }
+                var current = 0
 
                 do {
                     photos[index].let { photo ->
-                        photo.dateTaken.year.let { year ->
-                            if (year != currentYear) {
-                                if (currentYear != minimumYear) {
-                                    // Ending for each year section
-                                    content += String.format(ITEM_TIMELINE_SECTION_END.trimIndent(), items)
-                                    items = ""
+                        // Section header
+                        when(spanType) {
+                            IN_YEARS -> {
+                                photo.dateTaken.year.let { year ->
+                                    if (year != current) {
+                                        if (current != 0) {
+                                            // Ending for each year section
+                                            content += String.format(ITEM_TIMELINE_SESSION_END.trimIndent(), items)
+                                            items = ""
+                                        }
+
+                                        // New year section started
+                                        current = year
+                                        content += String.format(ITEM_TIMELINE_SESSION_START.trimIndent(), current.toString())
+
+                                        // Move first item in year's section to the right if the last item in last section is on the left
+                                        if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID.trimIndent()
+                                    }
                                 }
-
-                                // New year section started
-                                currentYear = year
-                                content += String.format(ITEM_TIMELINE_SECTION_START.trimIndent(), currentYear)
-
-                                // Move first item in year's section to the right if the last item in last section is on the left
-                                if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID
                             }
+                            IN_MONTHS -> {
+                                photo.dateTaken.monthValue.let { month ->
+                                    if (month != current) {
+                                        if (current != 0) {
+                                            // Ending for each year section
+                                            content += String.format(ITEM_TIMELINE_SESSION_END.trimIndent(), items)
+                                            items = ""
+                                        }
+
+                                        // New year section started
+                                        current = month
+                                        content += String.format(ITEM_TIMELINE_SESSION_START.trimIndent(), photo.dateTaken.month.getDisplayName(TextStyle.FULL, Locale.getDefault()))
+
+                                        // Move first item in year's section to the right if the last item in last section is on the left
+                                        if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID.trimIndent()
+                                    }
+                                }
+                            }
+                            IN_DAYS -> {
+                                photo.dateTaken.dayOfMonth.let { day ->
+                                    if (day != current) {
+                                        if (current != 0) {
+                                            // Ending for each year section
+                                            content += String.format(ITEM_TIMELINE_SESSION_END.trimIndent(), items)
+                                            items = ""
+                                        }
+
+                                        // New year section started
+                                        current = day
+                                        dayCount++
+                                        content += String.format(ITEM_TIMELINE_SESSION_START.trimIndent(), "Day $dayCount")
+
+                                        // Move first item in year's section to the right if the last item in last section is on the left
+                                        if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID.trimIndent()
+                                    }
+                                }
+                            }
+                            IN_ONE_DAY -> {}
                         }
+
+                        // Items
                         filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                         caption = photo.caption.replace("\n", "<br>")
 
                         items += String.format(
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
                             if (photo.mimeType.startsWith("image")) String.format(ITEM_GENERAL_PHOTO.trimIndent(), filename) else String.format(ITEM_GENERAL_VIDEO.trimIndent(), filename, photo.mimeType),
-                            caption, photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                            caption,
+                            if (spanType < IN_DAYS) photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) else photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
                         )
                     }
                     index++
                 } while ( index < photos.size)
 
                 // Add final section ending
-                content += String.format(ITEM_TIMELINE_SECTION_END.trimIndent(), items)
+                content += String.format(ITEM_TIMELINE_SESSION_END.trimIndent(), items)
                 //content += String.format(CONTENT_TIMELINE.trimIndent(), timeline)
             }
         }
@@ -1930,13 +1990,23 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             """
 
         // Timeline theme
-        private const val ITEM_TIMELINE_SECTION_START =
+        private const val IN_YEARS = 1
+        private const val IN_MONTHS = 2
+        private const val IN_DAYS = 3
+        private const val IN_ONE_DAY = 4
+
+        private const val ITEM_TIMELINE_SESSION_DIV_HEADER =
             """
-                <div class="cd-timeline-block"><div class="cd-year">%d</div></div>
                 <div class="cd-timeline">
                 
             """
-        private const val ITEM_TIMELINE_SECTION_END =
+        private const val ITEM_TIMELINE_SESSION_START =
+            """
+                <div class="cd-timeline-block"><div class="cd-year">%s</div></div>
+                <div class="cd-timeline">
+                
+            """
+        private const val ITEM_TIMELINE_SESSION_END =
             """
                 %s
                 </div>
