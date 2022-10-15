@@ -1176,7 +1176,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     reportBackupStatus(fileName, size, cursor.position, cursor.count)
 
-                    relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/')
+                    relativePath = cursor.getString(pathColumn).substringAfter("DCIM/").substringBeforeLast('/', "")
                     mimeType = cursor.getString(typeColumn)
                     //Log.e(TAG, "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
 
