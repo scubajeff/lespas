@@ -598,7 +598,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 photos.forEach { photo ->
                     filename = "${ASSETS_URL}/${album.id}/${photo.name}"
-                    caption = photo.caption.replace("\n", "<br>")
+                    caption = photo.caption.replace("\r\n", "<br>")
 
                     item = String.format(
                         ITEM_CASCADE.trimIndent(),
@@ -616,8 +616,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
                 }
 
-                // Append content
-                content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn, rightColumn)
+                // Constructing final content, delete the last line break of both columns
+                content += String.format(CONTENT_CASCADE.trimIndent(), leftColumn.dropLast(1), rightColumn.dropLast(1))
             }
 
             THEME_MAGAZINE -> {
@@ -636,11 +636,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 content += addMagazineGrid(grid, album.id)
                                 grid.clear()
                             }
-                            caption = photo.caption.replace("\n", "<br>")
+                            caption = photo.caption.replace("\r\n", "<br>")
 
                             content += String.format(
                                 (if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(),
-                                if (photo.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, filename) else String.format(ITEM_MAGAZINE_VIDEO, filename, photo.mimeType), caption
+                                if (photo.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO.trimIndent(), filename) else String.format(ITEM_MAGAZINE_VIDEO.trimIndent(), filename, photo.mimeType), caption
                             )
                         } else {
                             grid.add(photo)
@@ -745,7 +745,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                         // Items
                         filename = "${ASSETS_URL}/${album.id}/${photo.name}"
-                        caption = photo.caption.replace("\n", "<br>")
+                        caption = photo.caption.replace("\r\n", "<br>")
 
                         items += String.format(
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
@@ -775,7 +775,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         var fileName: String
         for (item in grid) {
             fileName = "${ASSETS_URL}/${albumId}/${item.name}"
-            result = result + String.format(ITEM_MAGAZINE_GRID.trimIndent(), if (item.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO, fileName) else String.format(ITEM_MAGAZINE_VIDEO, fileName, item.mimeType))
+            result += String.format(ITEM_MAGAZINE_GRID.trimIndent(), if (item.mimeType.startsWith("image")) String.format(ITEM_MAGAZINE_PHOTO.trimIndent(), fileName) else String.format(ITEM_MAGAZINE_VIDEO.trimIndent(), fileName, item.mimeType))
         }
 
         return "$result</div>\n\n"
@@ -1916,6 +1916,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 <div class="fh5co-col-1">
                 %s
                 </div>
+                
                 <div class="fh5co-col-2">
                 %s
                 </div>
@@ -2015,8 +2016,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         private const val ITEM_TIMELINE_CONTAINER =
             """
                 <div class="cd-timeline-block">
-			    <div class="cd-timeline-img"></div>
-    			<div class="cd-timeline-content">
+                <div class="cd-timeline-img"></div>
+                <div class="cd-timeline-content">
                 <div>%s</div>
                 <p>%s</p>
                 <span class="cd-date">%s</span>
