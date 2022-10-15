@@ -304,4 +304,5 @@
     <string name="theme_option_timeline">タイムライン</string>
     <string name="theme_option_timeline_tooltips">時間の経過に注目する。</string>
     <string name="checkbox_text_photo_list">このブログに含まれる写真</string>
+    <string name="timeline_theme_day_title">%d日目</string>
 </resources>

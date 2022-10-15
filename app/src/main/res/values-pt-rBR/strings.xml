@@ -367,4 +367,5 @@
     <string name="theme_option_timeline">Cronologia</string>
     <string name="theme_option_timeline_tooltips">Atenção à passagem do tempo.</string>
     <string name="checkbox_text_photo_list">Fotos incluídas neste blog</string>
+    <string name="timeline_theme_day_title">Dia %d</string>
 </resources>

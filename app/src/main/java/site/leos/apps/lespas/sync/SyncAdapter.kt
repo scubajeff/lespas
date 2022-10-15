@@ -56,6 +56,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.text.Collator
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.Period
@@ -664,27 +665,42 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             THEME_TIMELINE -> {
                 var index = 0
-                var dayCount = 0
                 var filename: String
                 var caption: String
                 var items = ""
+                val dayTitle = application.getString(R.string.timeline_theme_day_title)
 
                 val period = Period.between(photos.first().dateTaken.toLocalDate(), photos.last().dateTaken.toLocalDate())
-                val spanType = when {
-                    kotlin.math.abs(period.years) > 0 -> IN_YEARS
-                    kotlin.math.abs(period.months) > 0 -> IN_MONTHS
-                    kotlin.math.abs(period.days) > 0 -> IN_DAYS
+                val timeSpan = when {
+                    period.years != 0 -> IN_YEARS
+                    period.months != 0 -> IN_MONTHS
+                    period.days !=0 -> IN_DAYS
                     else -> {
                         content += ITEM_TIMELINE_SESSION_DIV_HEADER.trimIndent()
                         IN_ONE_DAY
                     }
                 }
                 var current = 0
+                val inReverse = album.sortOrder % 100 == Album.BY_DATE_TAKEN_DESC
+                var dayCount = 0
+                if (inReverse) {
+                    // Found out how many days span in this period, so that days can be counted down in the title area. Note that Period.day can not be used here, it counts calendar day difference
+                    var i = LocalDate.MIN
+                    photos.forEach { photo ->
+                        photo.dateTaken.toLocalDate().let { date ->
+                            if (i != date) {
+                                i = date
+                                dayCount++
+                            }
+                        }
+                    }
+                    dayCount++
+                }
 
                 do {
                     photos[index].let { photo ->
                         // Section header
-                        when(spanType) {
+                        when(timeSpan) {
                             IN_YEARS -> {
                                 photo.dateTaken.year.let { year ->
                                     if (year != current) {
@@ -732,8 +748,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                                         // New year section started
                                         current = day
-                                        dayCount++
-                                        content += String.format(ITEM_TIMELINE_SESSION_START.trimIndent(), "Day $dayCount")
+                                        if (inReverse) dayCount-- else dayCount++
+                                        content += String.format(ITEM_TIMELINE_SESSION_START.trimIndent(), String.format(dayTitle, dayCount))
 
                                         // Move first item in year's section to the right if the last item in last section is on the left
                                         if (index % 2 != 0) items += ITEM_TIMELINE_BLOCK_VOID.trimIndent()
@@ -751,7 +767,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
                             if (photo.mimeType.startsWith("image")) String.format(ITEM_GENERAL_PHOTO.trimIndent(), filename) else String.format(ITEM_GENERAL_VIDEO.trimIndent(), filename, photo.mimeType),
                             caption,
-                            if (spanType < IN_DAYS) photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) else photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
+                            photo.dateTaken.format(when(timeSpan) {
+                                IN_ONE_DAY -> DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+                                IN_DAYS -> DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                                else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                            })
                         )
                     }
                     index++

@@ -356,4 +356,5 @@
     <string name="theme_option_timeline">Zeitleiste</string>
     <string name="theme_option_timeline_tooltips">Aufmerksamkeit für den Lauf der Zeit.</string>
     <string name="checkbox_text_photo_list">Fotos in diesem Blogbeitrag</string>
+    <string name="timeline_theme_day_title">Tag %d</string>
 </resources>

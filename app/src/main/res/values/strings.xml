@@ -408,6 +408,7 @@
     <string name="theme_option_timeline">Timeline</string>
     <string name="theme_option_timeline_tooltips">Attention to the passage of time.</string>
     <string name="checkbox_text_photo_list">Photos included in this blog post</string>
+    <string name="timeline_theme_day_title">Day %d</string>
 <!--
     <string name="title_content">Include in post:</string>
     <string name="content_option_social_link">Social Link</string>

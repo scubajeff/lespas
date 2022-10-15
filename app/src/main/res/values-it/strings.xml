@@ -370,4 +370,5 @@
     <string name="theme_option_timeline">Linea del tempo</string>
     <string name="theme_option_timeline_tooltips">Attenzione allo scorrere del tempo.</string>
     <string name="checkbox_text_photo_list">Foto incluse in questo post</string>
+    <string name="timeline_theme_day_title">Giorno %d</string>
 </resources>
