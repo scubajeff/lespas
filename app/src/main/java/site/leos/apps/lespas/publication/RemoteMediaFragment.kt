@@ -26,6 +26,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.method.ScrollingMovementMethod
 import android.transition.Slide
 import android.transition.TransitionManager
 import android.view.*
@@ -148,7 +149,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         postponeEnterTransition()
 
-        captionTextView = view.findViewById(R.id.caption)
+        captionTextView = view.findViewById<TextView>(R.id.caption).apply { movementMethod =  ScrollingMovementMethod() }
         dividerView = view.findViewById(R.id.divider)
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
