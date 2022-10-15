@@ -394,7 +394,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     try {
                         // webdav copy/move target file path will be sent in http call's header, need to be encoded here
                         webDav.copyOrMove(action.action == Action.ACTION_COPY_ON_SERVER, "${userBase}/${action.folderId}/${fileName}", "${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}").run {
-                            if (targetIsJointAlbum && action.fileId.isNotEmpty()) logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
+                            if (action.fileId.isNotEmpty()) {
+                                // If meta sent
+                                if (targetIsJointAlbum)
+                                    // If target is in joint album, try best effort group patching
+                                    logChangeToFile(action.fileId, first.substring(0, 8).toInt().toString(), fileName)
+                                else
+                                    // If target is own album, patch target file directly. Only for 'caption' for now, won't retry on exception
+                                    try {
+                                        webDav.patch("${userBase}/${action.folderName}/${fileName.substringAfterLast("/")}", "<oc:${OkHttpWebDav.LESPAS_CAPTION}>" + action.fileId.split('|')[6] + "</oc:${OkHttpWebDav.LESPAS_CAPTION}>")
+                                    } catch (_: Exception) {}
+                            }
                         }
                     } catch (e: OkHttpWebDavException) {
                         // WebDAV return 403 if file already existed in target folder
@@ -686,7 +696,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                     }
                                 } else {
                                     // A new photo created on server, or an existing photo updated on server, or album attribute changed back to local, or on first sync with server
-                                    changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified))
+                                    changedPhotos.add(Photo(id = remotePhotoId, albumId = changedAlbum.id, name = remotePhoto.name, eTag = remotePhoto.eTag, mimeType = remotePhoto.contentType, dateTaken = LocalDateTime.now(), lastModified = remotePhoto.modified, caption = remotePhoto.caption))
                                     //changedPhotos.add(Photo(remotePhotoId, changedAlbum.id, remotePhoto.name, remotePhoto.eTag, LocalDateTime.now(), remotePhoto.modified, 0, 0, remotePhoto.contentType, 0))
                                     //Log.e(TAG, "creating changePhoto ${remotePhoto.name}")
                                 }
@@ -903,7 +913,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 //*****************************************************************
                 // Fetch changed photo files, extract EXIF info, update Photo table
                 //*****************************************************************
+                // Get current meta saved in DB, for preserving caption when local photo modified like being edited by Snapseed
                 val photoExtras = photoRepository.getPhotoExtras(changedAlbum.id)
+
                 changedPhotos.forEachIndexed { i, changedPhoto->
                     // Check network type on every loop, so that user is able to stop sync right in the middle
                     checkConnection()
@@ -942,8 +954,9 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedPhoto.mimeType = this.mimeType
                         // Photo's original orientation is needed to display remote image in full format
                         changedPhoto.orientation = this.orientation
-                        // Preserve original caption, TODO other extras like address and classification id??
-                        changedPhoto.caption = photoExtras.find { it.id == changedPhoto.id }?.caption ?: this.caption
+                        // Preserve original caption, if it's a new photo copied/moved from another album, the old caption was downloaded from webdav extra property. If it's a local change, caption is in photoExtras. Otherwise, will be taken from EXIF
+                        // TODO other extras like address and classification id??
+                        if (changedPhoto.caption.isEmpty()) changedPhoto.caption = photoExtras.find { it.id == changedPhoto.id }?.caption ?: this.caption
                         changedPhoto.latitude = this.latitude
                         changedPhoto.longitude = this.longitude
                         changedPhoto.altitude = this.altitude

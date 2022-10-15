@@ -179,7 +179,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun list(targetName: String, depth: String, forceNetwork: Boolean = true): List<DAVResource> {
         val result = mutableListOf<DAVResource>()
 
-        httpClient.newCall(Request.Builder().url(targetName).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).build()).execute().use { response->
+        httpClient.newCall(Request.Builder().url(targetName).apply { if (forceNetwork) cacheControl(CacheControl.FORCE_NETWORK) }.method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             if (response.isSuccessful) {
                 try {
                     val parser = XmlPullParserFactory.newInstance().newPullParser()
@@ -214,6 +214,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
+                                    LESPAS_CAPTION -> res.caption = text
                                     RESPONSE_TAG -> {
                                         text = ""
                                         result.add(res)
@@ -238,7 +239,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
         // Build a new client without read timeout, since the archive could be hugh
         httpClient.newBuilder().readTimeout(0, TimeUnit.MILLISECONDS).build()
-            .newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
+            .newCall(Request.Builder().url(targetName).cacheControl(CacheControl.FORCE_NETWORK).method("PROPFIND", PROPFIND_EXTRA_BODY.trimIndent().toRequestBody("text/xml".toMediaType())).header("Depth", depth).header("Brief", "t").build()).execute().use { response->
             @Suppress("UNUSED_VARIABLE") var currentFolderId = ""
             val prefix = targetName.substringAfter("//").substringAfter("/")
 
@@ -475,6 +476,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         var longitude: Double = Photo.GPS_DATA_UNKNOWN,
         var altitude: Double = Photo.GPS_DATA_UNKNOWN,
         var bearing: Double = Photo.GPS_DATA_UNKNOWN,
+        var caption: String = "",
     ): Parcelable
 
     companion object {
@@ -518,10 +520,34 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         const val LESPAS_LONGITUDE = "pictureLongitude"
         const val LESPAS_ALTITUDE = "pictureAltitude"
         const val LESPAS_BEARING = "pictureBearing"
+        const val LESPAS_CAPTION = "pictureCaption"
 
         private const val XML_HEADER = "<?xml version=\"1.0\"?>"
         private const val PROPFIND_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/></d:prop></d:propfind>"
-        private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/><oc:$LESPAS_LATITUDE/><oc:$LESPAS_LONGITUDE/><oc:$LESPAS_ALTITUDE/><oc:$LESPAS_BEARING/></d:prop></d:propfind>"
+        //private const val PROPFIND_EXTRA_BODY = "${XML_HEADER}<d:propfind xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:prop><oc:$OC_UNIQUE_ID/><d:$DAV_GETCONTENTTYPE/><d:$DAV_GETLASTMODIFIED/><d:$DAV_GETETAG/><oc:$OC_SHARETYPE/><d:$DAV_GETCONTENTLENGTH/><oc:$LESPAS_DATE_TAKEN/><oc:$LESPAS_WIDTH/><oc:$LESPAS_HEIGHT/><oc:$LESPAS_ORIENTATION/><oc:$LESPAS_LATITUDE/><oc:$LESPAS_LONGITUDE/><oc:$LESPAS_ALTITUDE/><oc:$LESPAS_BEARING/></d:prop></d:propfind>"
+        private const val PROPFIND_EXTRA_BODY =
+            """
+                $XML_HEADER
+                <d:propfind xmlns:d="$DAV_NS" xmlns:oc="$OC_NS">
+                <d:prop>
+                  <oc:$OC_UNIQUE_ID/>
+                  <d:$DAV_GETCONTENTTYPE/>
+                  <d:$DAV_GETLASTMODIFIED/>
+                  <d:$DAV_GETETAG/>
+                  <oc:$OC_SHARETYPE/>
+                  <d:$DAV_GETCONTENTLENGTH/>
+                  <oc:$LESPAS_DATE_TAKEN/>
+                  <oc:$LESPAS_WIDTH/>
+                  <oc:$LESPAS_HEIGHT/>
+                  <oc:$LESPAS_ORIENTATION/>
+                  <oc:$LESPAS_LATITUDE/>
+                  <oc:$LESPAS_LONGITUDE/>
+                  <oc:$LESPAS_ALTITUDE/>
+                  <oc:$LESPAS_BEARING/>
+                  <oc:$LESPAS_CAPTION/>
+                </d:prop>
+                </d:propfind>
+            """
         private const val PROPPATCH_EXTRA_META_BODY = "${XML_HEADER}<d:propertyupdate xmlns:d=\"$DAV_NS\" xmlns:oc=\"$OC_NS\"><d:set><d:prop>%s</d:prop></d:set></d:propertyupdate>"
 /*
         private const val BATCH_BODY = "${XML_HEADER}<D:%s xmlns:D=\"$DAV_NS\"><D:target>%s</D:target></D:%s>"
