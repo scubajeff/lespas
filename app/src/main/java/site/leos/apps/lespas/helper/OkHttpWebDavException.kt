@@ -19,6 +19,12 @@ package site.leos.apps.lespas.helper
 import okhttp3.Response
 
 class OkHttpWebDavException(response: Response): Exception() {
-    val statusCode = response.code
-    val stackTraceString = "${this.statusCode} ${this.stackTraceToString()}"
+    val statusCode: Int
+    val stackTraceString: String
+    init {
+        statusCode = response.code
+        stackTraceString = "${this.statusCode}} ${this.stackTraceToString()}"
+
+        response.close()
+    }
 }
