@@ -24,6 +24,7 @@
     <integer name="publication_detail_grid_span_count">3</integer>
     <integer name="dialog_width_ratio">70</integer>
     <integer name="bottom_bar_button_text_line">1</integer>
+    <integer name="folder_grid_span_count">4</integer>
     <integer name="caption_max_lines">3</integer>
     <integer name="caption_editor_max_lines">2</integer>
 </resources>
