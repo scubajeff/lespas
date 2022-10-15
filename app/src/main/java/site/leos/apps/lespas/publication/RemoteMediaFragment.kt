@@ -97,14 +97,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             { view-> shareModel.cancelSetImagePhoto(view) }
         ).apply {
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-            @Suppress("UNCHECKED_CAST")
-            (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
-                submitList(toMutableList())
-
-                previousOrientationSetting = requireActivity().requestedOrientation
-                if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false))
-                    requireActivity().requestedOrientation = if (this[0].photo.width > this[0].photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            }
         }
 
         // Adjusting the shared element mapping
@@ -156,12 +148,11 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         postponeEnterTransition()
 
+        captionTextView = view.findViewById(R.id.caption)
+        dividerView = view.findViewById(R.id.divider)
+
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
-            arguments?.getInt(KEY_SCROLL_TO)?.let {
-                setCurrentItem(it, false)
-                currentPositionModel.setCurrentPosition(it)
-            }
 
             // Use reflection to reduce Viewpager2 slide sensitivity, so that PhotoView inside can zoom presently
             val recyclerView = (ViewPager2::class.java.getDeclaredField("mRecyclerView").apply { isAccessible = true }).get(this) as RecyclerView
@@ -233,9 +224,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        captionTextView = view.findViewById(R.id.caption)
-        dividerView = view.findViewById(R.id.divider)
-
         sharedElementEnterTransition = MaterialContainerTransform().apply {
             duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
             scrimColor = Color.TRANSPARENT
@@ -249,6 +237,21 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        @Suppress("UNCHECKED_CAST")
+        (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+            pAdapter.submitList(toMutableList()) {
+                arguments?.getInt(KEY_SCROLL_TO)?.let { jumpTo ->
+                    slider.setCurrentItem(jumpTo, false)
+                    currentPositionModel.setCurrentPosition(jumpTo)
+                    captionTextView.text = pAdapter.getCaption(jumpTo)
+                }
+            }
+
+            previousOrientationSetting = requireActivity().requestedOrientation
+            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false))
+                requireActivity().requestedOrientation = if (this[0].photo.width > this[0].photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
 
         // When DestinationDialog returns
         destinationModel.getDestination().observe(viewLifecycleOwner) {
