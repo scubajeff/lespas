@@ -74,6 +74,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
     private val playerViewModel: VideoPlayerViewModel by viewModels { VideoPlayerViewModelFactory(requireActivity(), shareModel.getCallFactory(), shareModel.getPlayerCache()) }
 
+    private var autoRotate = false
     private var previousOrientationSetting = 0
     //private var previousNavBarColor = 0
 
@@ -142,6 +143,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         this.window = requireActivity().window
+        previousOrientationSetting = requireActivity().requestedOrientation
+        autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -172,6 +175,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                     super.onPageSelected(position)
                     currentPositionModel.setCurrentPosition(position)
                     captionTextView.text = pAdapter.getCaption(position)
+                    if (autoRotate) requireActivity().requestedOrientation = if (pAdapter.isLandscape(position)) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 }
             })
 
@@ -242,16 +246,12 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         @Suppress("UNCHECKED_CAST")
         (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
             pAdapter.submitList(toMutableList()) {
-                arguments?.getInt(KEY_SCROLL_TO)?.let { jumpTo ->
-                    slider.setCurrentItem(jumpTo, false)
+                requireArguments().getInt(KEY_SCROLL_TO).let { jumpTo ->
+                    savedInstanceState ?: run { slider.setCurrentItem(jumpTo, false) }
                     currentPositionModel.setCurrentPosition(jumpTo)
                     captionTextView.text = pAdapter.getCaption(jumpTo)
                 }
             }
-
-            previousOrientationSetting = requireActivity().requestedOrientation
-            if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false))
-                requireActivity().requestedOrientation = if (this[0].photo.width > this[0].photo.height) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
         // When DestinationDialog returns
@@ -405,7 +405,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType
-        fun getCaption(position: Int): String = currentList[position].photo.caption
+        fun getCaption(position: Int): String = try { currentList[position].photo.caption } catch (_: Exception) { "" }
+        fun isLandscape(position: Int): Boolean = try { currentList[position].photo.width >= currentList[position].photo.height } catch (_: Exception) { false }
     }
 
     class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
