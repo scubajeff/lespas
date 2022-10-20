@@ -753,7 +753,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
-        // For full image, show a thumbnail version first
+        // For full image, show a cached thumbnail version first
         if (viewType == TYPE_FULL) {
             imageCache.get("${imagePhoto.photo.id}${TYPE_GRID}")?.let {
                 // Show cached low resolution bitmap first before loading full size bitmap
@@ -794,8 +794,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val forceNetwork = imagePhoto.photo.shareId and Photo.NEED_REFRESH == Photo.NEED_REFRESH
 
             try {
+                // Special treatment for video items
                 var type = if (imagePhoto.photo.mimeType.startsWith("video")) TYPE_VIDEO else viewType
-                //var key = if (imagePhoto.photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) "camera${imagePhoto.photo.id.substringAfterLast("/media/")}" else "${imagePhoto.photo.id}$type"
+
                 var key = "${imagePhoto.photo.id}$type"
                 if ((type == TYPE_COVER) || (type == TYPE_SMALL_COVER)) key = "$key-${imagePhoto.coverBaseLine}"
 
@@ -804,7 +805,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     //Log.e(">>>>>>>>>","got cache hit $key")
                 } ?: run {
                     // Cache missed
-
                     bitmap = when (type) {
                         TYPE_GRID, TYPE_IN_MAP -> {
                             val thumbnailSize = if ((imagePhoto.photo.height < 1440) || (imagePhoto.photo.width < 1440)) 2 else 8
@@ -829,8 +829,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                                 }
                             }
                         }
-                        TYPE_VIDEO -> getVideoThumbnail(coroutineContext.job, imagePhoto)
-                        TYPE_EMPTY_ROLL_COVER -> ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
+                        TYPE_VIDEO ->
+                            // For video items, use thumbnail for TYPE_GRID, TYPE_COVER, TYPE_SMALL_COVER
+                            getVideoThumbnail(coroutineContext.job, imagePhoto)
+                        TYPE_EMPTY_ROLL_COVER ->
+                            // Empty camera roll cover
+                            ContextCompat.getDrawable(view.context, R.drawable.empty_roll)!!.toBitmap()
                         else -> {
                             // For GIF, AGIF, AWEBP cover
                             if (imagePhoto.coverBaseLine == Album.SPECIAL_COVER_BASELINE) type = TYPE_FULL
@@ -986,7 +990,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                         } else httpCallMap.remove(job)
                     }
                     decoderJobMap.remove(jobKey)
-                } catch (e: Exception) {}
+                } catch (_: Exception) {}
             }
         }
 
@@ -1011,17 +1015,25 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
             }
         } else {
-            var bitmap: Bitmap? = null
-            val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
+            var bitmap= try {
+                job.ensureActive()
+                // Try standard preview from server
+                getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null, job).use {
+                    BitmapFactory.decodeStream(it, null, null)
+                }
+            } catch(e: Exception) { null }
 
-            // Load from local cache
-            if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
-
-            // Download from server
+            // Preview not available, due to limited storage space for small size self-hosted server, FFMPEG is not always installed
             bitmap ?: run {
+                val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
+
+                // Load from local cache
+                if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
+
+                // Download from server
                 bitmap = getRemoteVideoThumbnail(imagePhoto, job)
 
-                // Cache thumbnail in local
+                // Cache thumbnail at local
                 bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
             }
 
@@ -1029,6 +1041,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 
+    // This is singleton, means only one MetaDataRetriever working at a time
     @Synchronized private fun getRemoteVideoThumbnail(imagePhoto: RemotePhoto, job: Job): Bitmap? {
         job.ensureActive()
         var bitmap: Bitmap?
