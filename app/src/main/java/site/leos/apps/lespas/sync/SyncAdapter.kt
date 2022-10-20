@@ -535,17 +535,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 .post(
                     FormBody.Builder()
                         .addEncoded("data[name]", "Les Pas")    // Site name asserted in Pico's lib/Model/Website.php, must be longer than 2 characters and not more than 255
-                        .addEncoded("data[path]", "${Tools.getRemoteHome(application)}/${BLOG_FOLDER}")
-                        .addEncoded("data[site]", blogSiteName)       // only allow a-z, 0-9, - and _
-                        .addEncoded("data[theme]", "magazine")  // TODO change to 'journey'
-                        .addEncoded("data[template]", "empty")
+                        .addEncoded("data[path]", "${Tools.getRemoteHome(application)}/${BLOG_FOLDER}")     // Site path is "__picoblog__" under user's lespas home
+                        .addEncoded("data[site]", blogSiteName)     // user's login name is cached and used here
+                        .addEncoded("data[theme]", "pico_lespas")   // The theme name must match what is installed in pico_cms administration screen, since pico_cms won't provide the way to manage this for non-administration account, it might break
+                        .addEncoded("data[template]", "empty")      // We don't provide template
                         .build()
                 ).build()
             ).execute().use { response ->
                 siteCreated = response.isSuccessful
 
                 if (siteCreated) {
-                    // After site created, Pico return the full list of all sites created by the user
+                    // After site created, Pico return the full list of all sites created by the user, collectBlogResult will try to filter webistes not created by Les Pas
                     Tools.collectBlogResult(response.body?.string()).forEach { blog ->
                         //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
                         webDav.createFolder("${lespasBase}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
