@@ -299,10 +299,11 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
 
         inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private var currentPhotoName = ""
-            private val ivPhoto: ImageView = itemView.findViewById<ImageView?>(R.id.photo).apply {
+            private val ivPhoto: ImageView = itemView.findViewById<ImageView>(R.id.photo).apply {
                 foregroundGravity = Gravity.CENTER
                 setOnClickListener { selectionTracker.select(currentList[bindingAdapterPosition].id) }
             }
+            private val captionIcon: ImageView = itemView.findViewById(R.id.has_caption)
 
             fun bind(photo: Photo) {
                 with(ivPhoto) {
@@ -314,6 +315,8 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                         ViewCompat.setTransitionName(this, photo.id)
                         currentPhotoName = photo.name
                     }
+
+                    captionIcon.isVisible = photo.caption.isNotEmpty()
 
                     foreground = when {
                         isSelected -> selectedMark
@@ -330,7 +333,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                 override fun getSelectionKey(): String = getPhotoId(bindingAdapterPosition)
             }
         }
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder = PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo, parent, false))
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder = PhotoViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_photo_blog, parent, false))
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) { holder.bind(currentList[position]) }
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
             for (i in 0 until currentList.size) {
