@@ -62,6 +62,7 @@
                     app:icon="@drawable/ic_baseline_theme_cascade_24"
                     app:iconGravity="top"
                     android:text="@string/theme_option_cascade"
+                    android:textSize="11sp"
                     android:tooltipText="@string/theme_option_cascade_tooltips"
                     tools:ignore="UnusedAttribute" />
                 <com.google.android.material.button.MaterialButton
@@ -70,6 +71,7 @@
                     app:icon="@drawable/ic_baseline_theme_magazine_24"
                     app:iconGravity="top"
                     android:text="@string/theme_option_magazine"
+                    android:textSize="11sp"
                     android:tooltipText="@string/theme_option_magazine_tooltips"
                     tools:ignore="UnusedAttribute" />
                 <com.google.android.material.button.MaterialButton
@@ -78,6 +80,7 @@
                     app:icon="@drawable/ic_baseline_theme_timelin_24"
                     app:iconGravity="top"
                     android:text="@string/theme_option_timeline"
+                    android:textSize="11sp"
                     android:tooltipText="@string/theme_option_timeline_tooltips"
                     tools:ignore="UnusedAttribute" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
