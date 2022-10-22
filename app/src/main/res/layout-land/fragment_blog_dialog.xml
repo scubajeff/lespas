@@ -81,6 +81,13 @@
                     android:text="@string/theme_option_magazine"
                     android:tooltipText="@string/theme_option_magazine_tooltips"
                     tools:ignore="UnusedAttribute" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/theme_timeline"
+                    style="@style/Theme.LesPas.Toggle.Button"
+                    app:icon="@drawable/ic_baseline_theme_timelin_24"
+                    android:text="@string/theme_option_timeline"
+                    android:tooltipText="@string/theme_option_timeline_tooltips"
+                    tools:ignore="UnusedAttribute" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <!--
