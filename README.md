@@ -13,6 +13,7 @@ Features:
 - Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
 - Share albums and album slideshow with other Nextcloud users
 - Joint album, which you and other Nextcloud users can edit together
+- Support photo blogging, refer to this [instruction](https://github.com/scubajeff/pico_lespas)
 - Search for photos by objects with AI
 - Search photos by location, support album slideshow in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
 - Integrate with Snapseed for photo editing on mobile devices
