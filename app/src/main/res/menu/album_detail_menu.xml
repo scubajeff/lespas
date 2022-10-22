@@ -47,7 +47,8 @@
         android:id="@+id/option_menu_blog"
         android:title="@string/item_blog"
         android:orderInCategory="10"
-        app:showAsAction="never" />
+        app:showAsAction="never"
+        android:enabled="false" />
     <item
         android:id="@+id/option_menu_rename"
         android:title="@string/item_rename"

@@ -106,7 +106,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
             { view -> shareModel.cancelSetImagePhoto(view) }
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
-        shareModel.listBlogs(album.id)
+        shareModel.fetchBlogInfo(album.id)
 
         inPortraitMode = resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     }

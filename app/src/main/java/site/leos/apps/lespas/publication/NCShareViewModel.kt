@@ -95,14 +95,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _shareWithMeProgress = MutableStateFlow(0)
     private val _sharees = MutableStateFlow<List<Sharee>>(arrayListOf())
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
-    private val _blogs = MutableStateFlow<List<Blog>>(arrayListOf())
+    private val _blogs = MutableStateFlow<List<Blog>?>(null)
     private val _blogPostThemeId = MutableStateFlow("")
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
     val sharees: StateFlow<List<Sharee>> = _sharees
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
-    //val blogs: StateFlow<List<Blog>> = _blogs
+    val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
     private val user = User()
 
@@ -165,6 +165,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             _shareByMe.value = refreshShareByMe()
             refreshShareWithMe()
             refreshUser()
+            fetchBlog()
         }
     }
 
@@ -746,26 +747,34 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
 */
 
-
     // Pico CMS integration
-    fun listBlogs(albumId: String = "") {
+    private fun refreshBlog() {
+        try {
+            val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
+
+            webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()).execute().use { response ->
+                if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun fetchBlog() {
+        viewModelScope.launch(Dispatchers.IO) { refreshBlog() }
+    }
+
+    fun isPicoAvailable(): Boolean = _blogs.value != null
+
+    fun fetchBlogInfo(albumId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            _blogPostThemeId.value = ""
-            try {
-                val token = webDav.getCSRFToken("${baseUrl}${CSRF_TOKEN_ENDPOINT}")
+            // If blog site seems not existed, refresh it's existence status first, this will happen after user created blog site for the first time and continuing managing blog posts without exiting the app
+            if (_blogs.value?.isEmpty() == true) { refreshBlog() }
 
-                webDav.getCallFactory().newCall(Request.Builder().url("${baseUrl}${PICO_WEBSITES_ENDPOINT}")
-                    .addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()).execute().use { response ->
-                    if (response.isSuccessful) _blogs.value = Tools.collectBlogResult(response.body?.string())
-                }
+            if (_blogs.value?.isNotEmpty() == true) {
+                // Clear value first
+                _blogPostThemeId.value = ""
 
-                if (_blogs.value.isNotEmpty() && albumId.isNotEmpty()) {
-                    // LesPas blog site has been created, search it's content folder for 'albumId.md' file
-/*
-                    webDav.list("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}", OkHttpWebDav.FOLDER_CONTENT_DEPTH).drop(1).forEach {
-                        if (!it.isFolder && it.name.substringBefore('.') == albumId) _blogPostExisted.value = true
-                    }
-*/
+                try {
+                    // LesPas blog site has been created, search it's content folder for 'albumId.md' file, if this file exist, try getting blog post meta data from it's YAML header
                     webDav.getStream("${resourceRoot}${lespasBase}/${SyncAdapter.BLOG_CONTENT_FOLDER}/${albumId}.md", false, null).bufferedReader().use { reader ->
                         var line: String? = ""
                         while(line != null) {
@@ -778,11 +787,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                             }
                         }
                     }
-                }
-            } catch (e: Exception) { e.printStackTrace() }
+                } catch (e: Exception) { e.printStackTrace() }
+            }
         }
     }
-    
+
 /*
     fun createBlog(album: Album) {
         viewModelScope.launch(Dispatchers.IO) {

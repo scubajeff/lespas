@@ -519,7 +519,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         webDav.getCallFactory().newCall(
             Request.Builder().url("${baseUrl}${NCShareViewModel.PICO_WEBSITES_ENDPOINT}").addHeader("requesttoken", token.first).addHeader("cookie", token.second).addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").get().build()
         ).execute().use { response ->
-            if (response.isSuccessful && Tools.collectBlogResult(response.body?.string()).isNotEmpty()) siteCreated = true
+            if (response.isSuccessful && Tools.collectBlogResult(response.body?.string())?.isNotEmpty() == true) siteCreated = true
         }
 
         //Log.e(">>>>>>>>", "createBlogSite: existing: $blogs")
@@ -546,7 +546,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 if (siteCreated) {
                     // After site created, Pico return the full list of all sites created by the user, collectBlogResult will try to filter webistes not created by Les Pas
-                    Tools.collectBlogResult(response.body?.string()).forEach { blog ->
+                    Tools.collectBlogResult(response.body?.string())?.forEach { blog ->
                         //Log.e(">>>>>>>>", "createBlogSite: blog id is ${blog.id}")
                         webDav.createFolder("${lespasBase}/${BLOG_CONTENT_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created content folder: $this") }
                         webDav.createFolder("${lespasBase}/${BLOG_ASSETS_FOLDER}")//.apply { Log.e(">>>>>>>>", "createBlogSite: created assets folder: $this") }

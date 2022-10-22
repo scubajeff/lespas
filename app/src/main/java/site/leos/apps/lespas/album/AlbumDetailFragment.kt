@@ -475,6 +475,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             mAdapter.setRecipient(sharedByMe)
         }
 
+        publishModel.blogs.asLiveData().observe(viewLifecycleOwner) {
+            blogOptionMenu?.isEnabled = it != null
+        }
+
         destinationViewModel.getDestination().observe(viewLifecycleOwner) {
             // Acquire files
             it?.let { targetAlbum ->
@@ -602,6 +606,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                 // Disable publish function when this is a newly created album which does not exist on server yet
                 if (album.eTag == Album.ETAG_NOT_YET_UPLOADED) menu.findItem(R.id.option_menu_publish).isEnabled = false
+
+                // Disable blog menu item if Pico is not available on server
+                blogOptionMenu?.isEnabled = publishModel.isPicoAvailable()
             }
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {

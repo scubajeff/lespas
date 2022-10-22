@@ -973,7 +973,7 @@ object Tools {
         else -> ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
     }
 
-    fun collectBlogResult(body: String?): List<NCShareViewModel.Blog> {
+    fun collectBlogResult(body: String?): List<NCShareViewModel.Blog>? {
         val blogs = mutableListOf<NCShareViewModel.Blog>()
 
         try {
@@ -987,7 +987,7 @@ object Tools {
                     }
                 }
             }
-        } catch (_: Exception) {}
+        } catch (_: Exception) { return null }
 
         return blogs
     }
