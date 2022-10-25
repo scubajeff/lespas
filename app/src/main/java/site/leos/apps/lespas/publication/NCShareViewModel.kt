@@ -132,7 +132,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val account = getAccountsByType(application.getString(R.string.account_type_nc))[0]
             val userName = getUserData(account, application.getString(R.string.nc_userdata_username))
             user.id = getUserData(account, application.getString(R.string.nc_userdata_username))
-            user.loginName = getUserData(account, application.getString(R.string.nc_userdata_loginname))
+            user.loginName = getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName
             token = getUserData(account, application.getString(R.string.nc_userdata_secret))
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
