@@ -610,6 +610,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 photos.forEach { photo ->
                     filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                     caption = photo.caption.replace("\r\n", "<br>")
+                    caption = photo.caption.replace("\n", "<br>")
 
                     item = String.format(
                         ITEM_CASCADE.trimIndent(),
@@ -648,6 +649,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 grid.clear()
                             }
                             caption = photo.caption.replace("\r\n", "<br>")
+                            caption = photo.caption.replace("\n", "<br>")
 
                             content += String.format(
                                 (if (index % 2 == 0) ITEM_MAGAZINE_LEFT else ITEM_MAGAZINE_RIGHT).trimIndent(),
@@ -772,6 +774,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         // Items
                         filename = "${ASSETS_URL}/${album.id}/${photo.name}"
                         caption = photo.caption.replace("\r\n", "<br>")
+                        caption = photo.caption.replace("\n", "<br>")
 
                         items += String.format(
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
