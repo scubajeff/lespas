@@ -1,7 +1,7 @@
 Les Pas， 一款免費、開源、簡潔高效而又不失絢麗的相冊應用。通過Les Pas，將美麗的照片、高效的動圖、精彩的視訊全都按相冊進行整理，方便瀏覽和分享。Les Pas內建Nextcloud伺服器雙向同步功能，您的珍貴回憶將永久、安全地保存在您的私有雲中。
 
 功能：
-- 簡潔、絢麗的照片與視訊瀏覽
+- 簡潔、絢麗的圖片與視訊瀏覽
 - 查看照片詳情
 - 按相冊整理圖片視訊
 - 自動備份手機的相機相冊到Nextcloud伺服器
@@ -9,6 +9,7 @@ Les Pas， 一款免費、開源、簡潔高效而又不失絢麗的相冊應用
 - 支持同時在伺服器和手機中管理相冊、照片
 - 支持Nextcloud用戶之間分享相冊（前置步驟請查閱https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server）
 - 支持與其他Nextcloud用戶一齊編輯「合作相冊」
+- 支持維護圖片博客（具體事項請查閱https://github.com/scubajeff/pico_lespas）
 - 人工智慧輔助搜尋圖片
 - 搜尋、顯示图片地理資訊，在地圖上展示整個相冊（地圖資料來源於OpenStreetMap項目）
 - 與Snapseed修圖軟體聯動

@@ -1,0 +1,3 @@
+* Neue Funktion: Foto-Blogging
+* Behobene Vorschau von Videoelementen zum Herunterladen
+* Weitere Verbesserungen und Fehlerbehebungen

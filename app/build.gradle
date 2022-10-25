@@ -13,8 +13,8 @@ android {
         applicationId 'site.leos.apps.lespas'
         minSdk 25
         targetSdk 33
-        versionCode 69
-        versionName '2.5.22'
+        versionCode 70
+        versionName '2.6.0'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         archivesBaseName = "LesPas-v$versionName"

@@ -1,3 +1,7 @@
+## Version 2.6.0
+* New feature: photo blogging
+* Fixed video item preview download
+
 ## Version 2.5.22
 * Added function to set server home folder during login
 * Fixed album publishing and avatar loading when user has email address set

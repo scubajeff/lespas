@@ -7,6 +7,7 @@ Funzionalità:
 - La sincronizzazione funziona con il server Nextcloud e su molteplici dispositivi, modifica gli album sul server Nextcloud e su tutti i tuoi dispositivi contemporaneamente
 - Condividi album e slideshow con altri utenti Nextcloud (verifica i prerequisiti qui: https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Album collettivi che puoi modificare insieme ad altri utenti Nextcloud
+- Supportare il photo blogging (istruzioni su https://github.com/scubajeff/pico_lespas)
 - Cerca foto tramite oggetti con l'IA
 - Cerca foto tramite localizzazione, visualizza gli album nella mappa (dati della mappa forniti dal progetto OpenStreetMap)
 - Integrazione con Snapseed per modificare le foto su dispositivi mobili

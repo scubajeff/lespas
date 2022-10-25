@@ -7,6 +7,7 @@ Características:
 - La sincronización funciona con el servidor Nextcloud y entre múltiples dispositivos, edita álbumes en el servidor Nextcloud y en todos tus dispositivos móviles simultáneamente
 - Compartir álbumes y presentaciones de álbumes con otros usuarios de Nextcloud (compruebe los requisitos previos en https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Álbumes conjuntos que usted y otros usuarios de Nextcloud pueden editar juntos
+- Apoyar la creación de blogs de fotos (instrucción en https://github.com/scubajeff/pico_lespas)
 - Búsqueda de fotos por objetos con IA
 - Buscar fotos por ubicación, mostrar el álbum en el mapa (datos del mapa proporcionados por el proyecto OpenStreetMap)
 - Integración con Snapseed para la edición de fotos en dispositivos móviles

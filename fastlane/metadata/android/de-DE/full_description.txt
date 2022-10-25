@@ -7,6 +7,7 @@ Funktionen:
 - Synchronisation funktioniert mit Nextcloud-Server und zwischen mehreren Geräten, bearbeiten Sie Alben auf Nextcloud-Server und auf allen Ihren mobilen Geräten gleichzeitig
 - Teilen Sie Alben und Album-Diashows mit anderen Nextcloud-Nutzern (Voraussetzungen prüfen unter https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server)
 - Gemeinsames Album, das Sie und andere Nextcloud-Nutzer gemeinsam bearbeiten können
+- Unterstützung von Foto-Blogging (Anleitung unter https://github.com/scubajeff/pico_lespas)
 - Suche nach Fotos nach Objekten mit AI
 - Fotos nach Ort suchen, Album in Karte anzeigen (Kartendaten vom OpenStreetMap-Projekt)
 - Integration mit Snapseed zur Fotobearbeitung auf mobilen Geräten

@@ -9,6 +9,7 @@ Les Pas， 一款免费、开源、简洁高效而又不失绚丽的相册应用
 - 支持同时在服务器和手机中管理相册、照片
 - 支持在Nextcloud用户之间分享相册（前置步骤请查阅https://github.com/scubajeff/lespas#checklist-for-enabling-sharing-on-nextcloud-server）
 - 支持与其他Nextcloud用户一齐编辑“合作相册”
+- 支持维护照片博客（具体事项请参阅https://github.com/scubajeff/pico_lespas）
 - 人工智能辅助搜索图片
 - 搜索、显示照片地理信息，在地图上展示整个相册（地图数据来源于OpenStreetMap项目）
 - 与Snapseed修图软件联动

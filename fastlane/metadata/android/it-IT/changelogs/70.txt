@@ -1,0 +1,3 @@
+* Nuova funzione: foto blogging
+* Anteprima del download dell'elemento video corretta
+* Altri miglioramenti e correzioni di bug
