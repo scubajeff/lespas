@@ -72,6 +72,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
     private lateinit var container: ViewGroup
     private lateinit var blogInfo: ConstraintLayout
     private lateinit var shareBlogButton: MaterialButton
+    private lateinit var publishBlogButton: MaterialButton
     private lateinit var removeBlogButton: MaterialButton
     private lateinit var holdYourHorsesTextView: TextView
     private lateinit var showPhotoListCheckBox: CheckBox
@@ -136,7 +137,9 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         }
 
         themeBackground = view.findViewById(R.id.background)
-        themeChoice = view.findViewById(R.id.theme_options)
+        themeChoice = view.findViewById<MaterialButtonToggleGroup?>(R.id.theme_options).apply {
+            addOnButtonCheckedListener { _, _, _ -> resumePost() }
+        }
         container = view.findViewById(R.id.container)
         blogInfo = view.findViewById(R.id.blog_info)
         shareBlogButton = view.findViewById<MaterialButton>(R.id.share_button).apply {
@@ -173,7 +176,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         includCopyrightBlogButton = view.findViewById<MaterialButton?>(R.id.option_copyright).apply { isChecked = true }
 */
 
-        view.findViewById<MaterialButton>(R.id.publish_button).apply {
+        publishBlogButton = view.findViewById<MaterialButton>(R.id.publish_button).apply {
             setOnClickListener {
                 saveInclusionState()
 
@@ -227,6 +230,7 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                         super.onItemStateChanged(key, selected)
 
                         photoAdapter.setInclusionState(key, selected)
+                        resumePost()
                     }
                 })
             }
@@ -274,6 +278,10 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         albumModel.setExcludeFromBlog(inclusion, exclusion)
 
         return inclusion
+    }
+
+    private fun resumePost() {
+        publishBlogButton.text = getString(R.string.button_text_post_blog)
     }
 
     private fun showQRCode() {
