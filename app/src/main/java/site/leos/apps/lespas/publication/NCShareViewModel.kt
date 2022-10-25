@@ -1133,34 +1133,40 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 MediaStore.Video.Thumbnails.getThumbnail(cr, photoId, MediaStore.Video.Thumbnails.MINI_KIND, null)
             }
         } else {
-            var bitmap= try {
-                job.ensureActive()
-                // Try standard preview from server
-                getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null, job).use {
-                    BitmapFactory.decodeStream(it, null, null)
-                }
-            } catch(e: Exception) { null }
+            var bitmap: Bitmap? = null
+            val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
 
-            // Preview not available, due to limited storage space for small size self-hosted server, FFMPEG is not always installed
-            bitmap ?: run {
-                val thumbnail = File(if (imagePhoto.remotePath.isEmpty()) localFileFolder else localCacheFolder, "${imagePhoto.photo.id}.thumbnail")
+            // Load from local cache
+            if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
 
-                // Load from local cache
-                if (thumbnail.exists()) bitmap = BitmapFactory.decodeStream(thumbnail.inputStream())
-
-                // Download from server
-                bitmap = getRemoteVideoThumbnail(imagePhoto, job)
-
-                // Cache thumbnail at local
-                bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
+            if (bitmap == null) {
+                // There is NO local cached thumbnail
+                if (imagePhoto.remotePath.isNotEmpty()) bitmap = try {
+                    // If this is a remote album, try fetch preview from server
+                    job.ensureActive()
+                    // Try standard preview from server
+                    getImageStream("${baseUrl}${PREVIEW_ENDPOINT}${imagePhoto.photo.id}", true, null, job).use {
+                        BitmapFactory.decodeStream(it, null, null)
+                    }
+                } catch (e: Exception) { null }
             }
+
+            if (bitmap == null) {
+                // Local cached missing OR
+                // Remote preview not available, due to limited storage space for small size self-hosted server, FFMPEG is not always installed
+                // Resort to extract thumbnail from video, this is a time-consuming procedure
+                bitmap = extractVideoThumbnail(imagePhoto, job)
+            }
+
+            // Cache thumbnail at local
+            bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, thumbnail.outputStream())
 
             bitmap
         }
     }
 
     // This is singleton, means only one MetaDataRetriever working at a time
-    @Synchronized private fun getRemoteVideoThumbnail(imagePhoto: RemotePhoto, job: Job): Bitmap? {
+    @Synchronized private fun extractVideoThumbnail(imagePhoto: RemotePhoto, job: Job): Bitmap? {
         job.ensureActive()
         var bitmap: Bitmap?
         var remoteDataSource: VideoMetaDataMediaSource? = null
