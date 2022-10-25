@@ -1,0 +1,3 @@
+* Nueva función: blogueo de fotos
+* Arreglo de la descarga de la vista previa de los elementos de vídeo
+* Otras mejoras y correcciones de errores

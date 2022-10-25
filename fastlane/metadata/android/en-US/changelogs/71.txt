@@ -1,0 +1,3 @@
+* New feature: photo blogging
+* Fixed video item preview download
+* Other improvements and bugs fixes

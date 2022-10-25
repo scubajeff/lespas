@@ -1,0 +1,3 @@
+* Nouvelle fonction : blogue de photos
+* Correction du téléchargement de l'aperçu des éléments vidéo
+* Autres améliorations et corrections de bogues

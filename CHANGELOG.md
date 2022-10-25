@@ -1,3 +1,7 @@
+## Version 2.6.1
+* New feature: photo blogging
+* Fixed video item preview download
+
 ## Version 2.6.0
 * New feature: photo blogging
 * Fixed video item preview download

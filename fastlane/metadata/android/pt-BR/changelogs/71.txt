@@ -1,0 +1,3 @@
+* Nova característica: fotologging
+* Pré-visualização fixa do item de vídeo download
+* Outras melhorias e correções de bugs
