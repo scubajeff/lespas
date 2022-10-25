@@ -73,7 +73,6 @@ import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
-import java.text.Collator
 import java.util.*
 import kotlin.math.atan2
 
@@ -684,14 +683,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         override fun getItemMimeType(position: Int): String = getItem(position).mimeType
 
         fun setPhotos(collection: List<Photo>, sortOrder: Int) {
-            val photos = when(sortOrder % 100) {
-                Album.BY_DATE_TAKEN_ASC -> collection.sortedWith(compareBy { it.dateTaken })
-                Album.BY_DATE_TAKEN_DESC -> collection.sortedWith(compareByDescending { it.dateTaken })
-                Album.BY_NAME_ASC -> collection.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                Album.BY_NAME_DESC -> collection.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                else-> collection
-            }
-
+            val photos = Tools.sortPhotos(collection, sortOrder)
             submitList(photos.toMutableList())
         }
 

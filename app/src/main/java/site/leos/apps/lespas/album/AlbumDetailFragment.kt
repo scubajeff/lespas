@@ -83,7 +83,6 @@ import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
 import java.io.File
 import java.lang.Runnable
-import java.text.Collator
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -1172,13 +1171,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     // set albumId to album's name, so that album name changes can be updated
                     album.album.run { photos.add(coverPhoto.copy(id = album.album.id, albumId = album.album.name, bearing = album.album.coverBaseline.toDouble(), latitude = Photo.NO_GPS_DATA)) }
 
-                    this.photos = when (album.album.sortOrder % 100) {
-                        Album.BY_DATE_TAKEN_ASC -> album.photos.sortedWith(compareBy { it.dateTaken })
-                        Album.BY_DATE_TAKEN_DESC -> album.photos.sortedWith(compareByDescending { it.dateTaken })
-                        Album.BY_NAME_ASC -> album.photos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                        Album.BY_NAME_DESC -> album.photos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                        else -> album.photos
-                    }
+                    this.photos = Tools.sortPhotos(album.photos, album.album.sortOrder)
                     photos.addAll(this.photos)
 
                     // set cover's caption to the size of album, so that photo count can be updated

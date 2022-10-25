@@ -55,7 +55,6 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
-import java.text.Collator
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -571,13 +570,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // If user choose Timeline theme but album is not sort by taken time, force sort order to Album.BY_DATE_TAKEN_ASC
         if (themeId == THEME_TIMELINE && album.sortOrder % 100 > Album.BY_DATE_TAKEN_DESC) album.sortOrder = Album.BY_DATE_TAKEN_ASC
         // Sort photos
-        val photos = when (album.sortOrder % 100) {
-            Album.BY_DATE_TAKEN_ASC -> blogPhotos.sortedWith(compareBy { it.dateTaken })
-            Album.BY_DATE_TAKEN_DESC -> blogPhotos.sortedWith(compareByDescending { it.dateTaken })
-            Album.BY_NAME_ASC -> blogPhotos.sortedWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            Album.BY_NAME_DESC -> blogPhotos.sortedWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            else -> blogPhotos
-        }
+        val photos = Tools.sortPhotos(blogPhotos, album.sortOrder)
 
         // If album's cover is video item, select the first image item as cover
         val cover: Photo

@@ -917,14 +917,7 @@ object Tools {
             } else result.addAll(this)
         }
 
-        when(albumSortOrder % 100) {
-            Album.BY_DATE_TAKEN_ASC -> result.sortWith(compareBy { it.dateTaken })
-            Album.BY_DATE_TAKEN_DESC -> result.sortWith(compareByDescending { it.dateTaken })
-            Album.BY_NAME_ASC -> result.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-            Album.BY_NAME_DESC -> result.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-        }
-
-        return result
+        return sortPhotos(result, albumSortOrder)
     }
 
     fun getAttributeResourceId(context: Context, attrId: Int): Int {
