@@ -220,6 +220,7 @@
     <string name="yes_logout">Yes, log out</string>
 
     <string name="blog_header">Blog</string>
+    <string name="blog_category_pref_key" translatable="false">BLOG_CATEGORY</string>
     <string name="blog_name_pref_key" translatable="false">BLOG_NAME</string>
     <string name="blog_name_title">Blog Name</string>
     <string name="blog_name_default">My Albums</string>

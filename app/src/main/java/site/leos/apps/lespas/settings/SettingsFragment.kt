@@ -41,10 +41,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
-import androidx.preference.SwitchPreferenceCompat
+import androidx.preference.*
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -64,6 +61,7 @@ import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
@@ -258,6 +256,8 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 }
             }
         }
+
+        findPreference<PreferenceCategory>(getString(R.string.blog_category_pref_key))?.isVisible = ViewModelProvider(requireActivity())[NCShareViewModel::class.java].isBlogSiteAvailable()
     }
 
     override fun onResume() {

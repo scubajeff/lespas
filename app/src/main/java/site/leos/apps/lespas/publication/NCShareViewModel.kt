@@ -763,13 +763,14 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     fun isPicoAvailable(): Boolean = _blogs.value != null
+    fun isBlogSiteAvailable(): Boolean = _blogs.value?.isNotEmpty() == true
 
-    fun fetchBlogInfo(albumId: String) {
+    fun fetchBlogPostInfo(albumId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             // If blog site seems not existed, refresh it's existence status first, this will happen after user created blog site for the first time and continuing managing blog posts without exiting the app
-            if (_blogs.value?.isEmpty() == true) { refreshBlog() }
+            if (!isBlogSiteAvailable()) { refreshBlog() }
 
-            if (_blogs.value?.isNotEmpty() == true) {
+            if (isBlogSiteAvailable()) {
                 // Clear value first
                 _blogPostThemeId.value = ""
 

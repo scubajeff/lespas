@@ -147,11 +147,12 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:key="@string/blog_category_pref_key"
         app:title="@string/blog_header"
         app:icon="@drawable/ic_baseline_blog_24">
         <Preference
-            app:title="@string/blog_exemption_clause"
-            app:singleLineTitle="false" />
+            app:selectable="false"
+            app:summary="@string/blog_exemption_clause" />
         <EditTextPreference
             app:key="@string/blog_name_pref_key"
             app:title="@string/blog_name_title"
