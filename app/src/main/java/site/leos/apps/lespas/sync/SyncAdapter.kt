@@ -55,10 +55,7 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.Period
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -773,7 +770,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             ITEM_TIMELINE_CONTAINER.trimIndent(),
                             if (photo.mimeType.startsWith("image")) String.format(ITEM_GENERAL_PHOTO.trimIndent(), filename) else String.format(ITEM_GENERAL_VIDEO.trimIndent(), filename, photo.mimeType),
                             caption,
-                            photo.dateTaken.format(when(timeSpan) {
+                            // Stupid time offset back and forth!
+                            LocalDateTime.ofInstant(photo.dateTaken.toInstant(OffsetDateTime.now().offset), ZoneId.of("Z")).format(when(timeSpan) {
                                 IN_ONE_DAY -> DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
                                 IN_DAYS -> DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                                 else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)

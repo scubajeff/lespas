@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 class Converter {
-    // Using LocalDateTime in database is a BAD BAD idea base on a wrong interpretation of "without a time-zone"
+    // Using LocalDateTime in database is a BAD BAD idea base on a wrong interpretation of "without a time-zone", although the timestamp in Long is correctly converted and saved
     // In order to copy timestamp correctly, must make sure using the same ZoneId when converting from source then to target
     // Cases of copying timestamp
     //      from EXIF to database when acquiring media
