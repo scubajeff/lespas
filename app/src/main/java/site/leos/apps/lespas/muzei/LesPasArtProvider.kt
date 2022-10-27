@@ -150,6 +150,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
     private fun updateArtwork() {
         Thread {
+            var moreCaption = false
+
             (context?.applicationContext as Application).let { application ->
                 val sp = PreferenceManager.getDefaultSharedPreferences(application)
                 val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
@@ -170,17 +172,19 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 }
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
-                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { hits ->
-                                    when(hits.size) {
+                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { sameDayHits ->
+                                    moreCaption = sameDayHits.isNotEmpty()
+
+                                    when(sameDayHits.size) {
                                         0 -> photoList[random.nextInt(photoList.size)]
-                                        1 -> hits[0]
+                                        1 -> sameDayHits[0]
                                         else -> {
-                                            var index = random.nextInt(hits.size)
+                                            var index = random.nextInt(sameDayHits.size)
                                             lastAddedArtwork?.let {
                                                 // Prevent from choosing the last one again
-                                                while(hits[index].id == it.token) index = random.nextInt(hits.size)
+                                                while(sameDayHits[index].id == it.token) index = random.nextInt(sameDayHits.size)
                                             }
-                                            hits[index]
+                                            sameDayHits[index]
                                         }
                                     }
                                 }
@@ -234,7 +238,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
-                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
+                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" +
+                                if (moreCaption) context!!.resources.getQuantityString(R.plurals.years_ago_today, LocalDate.now().year - photo.dateTaken.year) else "",
                         token = photo.id,
                         metadata = "${photo.albumId},${photo.width},${photo.height}",
                     ))
