@@ -35,7 +35,6 @@ import android.widget.Filter
 import android.widget.Filterable
 import android.widget.TextView
 import androidx.annotation.LayoutRes
-import androidx.annotation.NonNull
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
@@ -46,7 +45,6 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
@@ -191,7 +189,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         autoCompleteTextView.setText("")
     }
 
-    class RecipientAutoCompleteAdapter(@NonNull context: Context, @LayoutRes private val layoutRes: Int, @NonNull private val sharees: List<NCShareViewModel.Sharee>, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
+    class RecipientAutoCompleteAdapter(context: Context, @LayoutRes private val layoutRes: Int, private val sharees: List<NCShareViewModel.Sharee>, private val avatarLoader: (NCShareViewModel.Sharee, View) -> Unit
     ): ArrayAdapter<NCShareViewModel.Sharee>(context, layoutRes, sharees), Filterable {
         private val matchedColor = Tools.getAttributeColor(context, android.R.attr.colorSecondary)
         private var filteredSharees = sharees

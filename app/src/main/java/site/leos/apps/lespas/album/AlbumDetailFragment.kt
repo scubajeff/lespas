@@ -175,7 +175,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         .addToBackStack(null)
                         .commit()
                 } else {
-                    ViewCompat.setTransitionName(recyclerView, null)
+                    //ViewCompat.setTransitionName(recyclerView, null)
                     reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
                     exitTransition = MaterialElevationScale(false).apply {
                         duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
