@@ -200,7 +200,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     data.getJSONObject(i).apply {
                         if (getString("item_type") == "folder") {
                             // Only interested in shares of sub-folders under lespas/
-                            sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname"), getInt("share_type")))
+                            // Circle recipient's label will have description appended by server, usually too long, cut it off here
+                            sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname").substringBefore(" ("), getInt("share_type")))
 
                             @Suppress("SimpleRedundantLet")
                             result.find { share -> share.fileId == getString("item_source") }?.let { item ->
@@ -239,8 +240,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                 val data = getJSONArray("data")
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
-                        if (getString("item_type") == "folder" && getInt("share_type") <= SHARE_TYPE_GROUP) {
-                            // Only process folder share with share type of user(0) or group(1)
+                        if (getString("item_type") == "folder" && getInt("share_type") <= SHARE_TYPE_CIRCLES) {
+                            // Only process folder share with share type of user(0), group(1) or circles(7), TODO when adding public share support
                             folderId = getString("item_source")
                             permission = getInt("permissions")
                             result.find { existed -> existed.albumId == folderId }?.let { existed ->
@@ -357,6 +358,12 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     for (i in 0 until groups.length()) {
                         groups.getJSONObject(i).apply {
                             result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_GROUP))
+                        }
+                    }
+                    val circles = data.getJSONArray("circles")
+                    for (i in 0 until circles.length()) {
+                        circles.getJSONObject(i).apply {
+                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_CIRCLES).apply { Log.e(">>>>>>>>", "refreshSharees: $this") })
                         }
                     }
                 }
@@ -543,17 +550,20 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             var bitmap: Bitmap? = null
             var drawable: Drawable? = null
             try {
-                if (user.type == SHARE_TYPE_GROUP) drawable = ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_group_24)
-                else {
-                    // Only user has avatar
-                    val key = "${user.name}-avatar"
-                    imageCache.get(key)?.let { bitmap = it } ?: run {
-                        // Set default avatar first
-                        if (isActive) ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.let { drawAvatar(it, view) }
+                when(user.type) {
+                    SHARE_TYPE_USER -> {
+                        // Only user has avatar
+                        val key = "${user.name}-avatar"
+                        imageCache.get(key)?.let { bitmap = it } ?: run {
+                            // Set default avatar first
+                            if (isActive) ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_person_24)?.let { drawAvatar(it, view) }
 
-                        webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${user.name}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
-                        bitmap?.let { bmp -> imageCache.put(key, bmp) }
+                            webDav.getStream("${baseUrl}${AVATAR_ENDPOINT}${user.name}/64", true, null).use { s -> bitmap = BitmapFactory.decodeStream(s) }
+                            bitmap?.let { bmp -> imageCache.put(key, bmp) }
+                        }
                     }
+                    SHARE_TYPE_GROUP -> drawable = groupAvatar
+                    SHARE_TYPE_CIRCLES -> drawable = circleAvatar
                 }
             }
             catch (e: Exception) { e.printStackTrace() }
@@ -869,7 +879,9 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     fun getUserDisplayName(): String = user.displayName
 
     private val cr = application.contentResolver
-    private val placeholderBitmap = ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap()
+    private val circleAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_nc_circles_24) as Drawable }
+    private val groupAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_group_24) as Drawable }
+    private val placeholderBitmap: Bitmap by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap() }
     private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator) as AnimatedVectorDrawable
     private val loadingDrawableLV = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable
     private val downloadDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
@@ -1540,9 +1552,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         const val SHARE_TYPE_USER = 0
         const val SHARE_TYPE_GROUP = 1
         //const val SHARE_TYPE_PUBLIC = 3
-        //private const val SHARE_TYPE_USER_STRING = "user"
-        //private const val SHARE_TYPE_GROUP_STRING = "group"
-        //private const val SHARE_TYPE_PUBLIC_STRING = "public"
+        const val SHARE_TYPE_CIRCLES = 7
 
         const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2

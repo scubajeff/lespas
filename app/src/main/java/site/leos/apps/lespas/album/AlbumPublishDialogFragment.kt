@@ -36,7 +36,6 @@ import android.widget.Filterable
 import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
@@ -154,13 +153,14 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
     private fun addRecipientChip(sharee: NCShareViewModel.Sharee?, newName: String?) {
         val recipient = sharee ?: run { NCShareViewModel.Sharee(newName!!, newName, NCShareViewModel.SHARE_TYPE_USER) }
 
-        selectedSharees.indexOfFirst { it.name == recipient.name && it.type == recipient.type }.let { index->
+        // TODO nextcloud share_by_me api return wrong circle id with it's last character missing
+        //selectedSharees.indexOfFirst { it.type == recipient.type && recipient.name == it.name }.let { index->
+        selectedSharees.indexOfFirst { it.type == recipient.type && if (it.type == NCShareViewModel.SHARE_TYPE_CIRCLES) recipient.name.contains(it.name) else recipient.name == it.name }.let { index->
             if (index == -1) {
                 // selected sharee not in selected recipients group yet
                 recipientChipGroup.addView(
                     (LayoutInflater.from(recipientChipGroup.context).inflate(R.layout.chip_recipient, null) as Chip).apply {
                         this.text = recipient.label
-                        if (recipient.type == NCShareViewModel.SHARE_TYPE_GROUP) chipIcon = ContextCompat.getDrawable(this.context, R.drawable.ic_baseline_group_24)
                         publishModel.getAvatar(recipient, this, null)
                         setOnClickListener { chipView ->
                             chipView.startAnimation(
@@ -176,14 +176,18 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
                                             }
                                         }
                                     })
-                                })
+                                }
+                            )
                         }
                     }
                 )
                 selectedSharees.add(recipient)
             } else {
                 // Flash it's chip if sharee is already selected
-                recipientChipGroup.getChildAt(index).startAnimation(AlphaAnimation(1f, 0f).apply { duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong() })
+                recipientChipGroup.getChildAt(index).startAnimation(AlphaAnimation(1f, 0f).apply {
+                    duration = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
+                    repeatCount = 1
+                })
             }
         }
         autoCompleteTextView.setText("")
@@ -197,7 +201,8 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
             ((convertView ?: run { LayoutInflater.from(context).inflate(layoutRes, parent, false) }) as TextView).apply {
-                text = SpannableString("${filteredSharees[position].label}(${filteredSharees[position].name})").apply {
+                val sharee = filteredSharees[position]
+                text = SpannableString("${sharee.label}(${if (sharee.type != NCShareViewModel.SHARE_TYPE_CIRCLES) sharee.name else sharee.label})").apply {
                     val startPos = indexOfLast { it == '(' }
                     //setSpan(StyleSpan(Typeface.ITALIC), startPos, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                     setSpan(ForegroundColorSpan(Color.GRAY), startPos, length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -212,7 +217,7 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
                     compoundDrawablePadding = context.resources.getDimension(R.dimen.small_padding).toInt()
                 }
-                avatarLoader(filteredSharees[position], this)
+                avatarLoader(sharee, this)
             }
 
         @Suppress("UNCHECKED_CAST")
