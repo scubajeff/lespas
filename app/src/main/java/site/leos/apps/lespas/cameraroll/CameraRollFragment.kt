@@ -94,6 +94,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.SearchResultFragment
@@ -240,7 +241,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             (requireActivity() as AppCompatActivity).supportActionBar?.hide()
 
             //startWithThisMedia = it.getString(KEY_SCROLL_TO) ?: ""
-            lastSelection = it.getParcelableArrayList(KEY_LAST_SELECTION) ?: arrayListOf()
+            //lastSelection = it.getParcelableArrayList(KEY_LAST_SELECTION) ?: arrayListOf()
+            lastSelection = it.parcelableArrayList(KEY_LAST_SELECTION) ?: arrayListOf()
 
             // Don't ignore call to hide bottom sheet after activity recreated
             ignoreHide = false

@@ -28,11 +28,12 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import java.io.File
 
 class ShareReceiverActivity: AppCompatActivity() {
@@ -53,17 +54,19 @@ class ShareReceiverActivity: AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 File(Tools.getLocalRoot(applicationContext)).mkdir()
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!! || intent.type?.startsWith("video/")!!)) {
-            files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
+            //files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
+            files.add(intent.parcelable<Parcelable>(Intent.EXTRA_STREAM) as Uri)
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
             // MIME type checking will be done in AcquiringDialogFragment
-            intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
+            //intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
+            intent.parcelableArrayList<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
                 files.add(it as Uri)
             }
         }

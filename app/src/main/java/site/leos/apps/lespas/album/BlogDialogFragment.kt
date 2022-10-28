@@ -23,7 +23,6 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.transition.TransitionManager
 import android.util.TypedValue
@@ -55,6 +54,7 @@ import com.google.zxing.common.BitMatrix
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
@@ -96,8 +96,9 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
         super.onCreate(savedInstanceState)
 
         requireArguments().apply {
-            @Suppress("DEPRECATION")
-            album = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) getParcelable(KEY_ALBUM, Album::class.java)!! else getParcelable(KEY_ALBUM)!!
+            //@Suppress("DEPRECATION")
+            //album = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) getParcelable(KEY_ALBUM, Album::class.java)!! else getParcelable(KEY_ALBUM)!!
+            album = parcelable(KEY_ALBUM)!!
             blogLink = "${shareModel.getServerBaseUrl()}/apps/cms_pico/pico/${Tools.getBlogSiteName(shareModel.getUserLoginName())}/${album.id}"
         }
         lespasPath = getString(R.string.lespas_base_folder_name)

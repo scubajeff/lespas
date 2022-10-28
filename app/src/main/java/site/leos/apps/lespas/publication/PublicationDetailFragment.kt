@@ -54,6 +54,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
@@ -90,7 +91,8 @@ class PublicationDetailFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        share = arguments?.getParcelable(ARGUMENT_SHARE)!!
+        //share = arguments?.getParcelable(ARGUMENT_SHARE)!!
+        share = requireArguments().parcelable(ARGUMENT_SHARE)!!
         showName = Tools.isWideListAlbum(share.sortOrder)
 
         savedInstanceState?.apply {

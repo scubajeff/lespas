@@ -54,6 +54,7 @@ import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.*
@@ -81,7 +82,8 @@ class PhotoWithMapFragment: Fragment() {
 
         remoteBase = Tools.getRemoteHome(requireContext())
 
-        remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        //remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        remotePhoto = requireArguments().parcelable(KEY_PHOTO)!!
         target = requireArguments().getInt(KEY_TARGET)
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
