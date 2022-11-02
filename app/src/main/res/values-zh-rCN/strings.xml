@@ -305,4 +305,5 @@
     <string name="theme_option_timeline_tooltips">关注时间的流逝。</string>
     <string name="checkbox_text_photo_list">选择要展示在博文中的图片</string>
     <string name="timeline_theme_day_title">第%d天</string>
+    <string name="msg_player_skip">5秒</string>
 </resources>

@@ -16,24 +16,26 @@
 
 package site.leos.apps.lespas.helper
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
 import android.os.Handler
-import android.os.Looper
 import android.os.Parcelable
-import android.provider.ContactsContract
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageButton
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.ui.PlayerControlView
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.github.chrisbanes.photoview.PhotoView
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.parcelize.Parcelize
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -41,11 +43,82 @@ import kotlin.math.abs
 
 @androidx.annotation.OptIn(UnstableApi::class)
 abstract class SeamlessMediaSliderAdapter<T>(
+    context: Context,
     private var displayWidth: Int,
     diffCallback: ItemCallback<T>,
     private val playerViewModel: VideoPlayerViewModel,
     private val clickListener: (Boolean?) -> Unit, private val imageLoader: (T, ImageView?, String) -> Unit, private val cancelLoader: (View) -> Unit
 ): ListAdapter<T, RecyclerView.ViewHolder>(diffCallback) {
+    val volumeDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_volume_on_24)
+    val brightnessDrawable = ContextCompat.getDrawable(context, R.drawable.ic_baseline_brightness_24)
+
+    var currentVideoView: PlayerView? = null
+    var knobLayout: FrameLayout? = null
+    var knobIcon: ImageView? = null
+    var knobPosition: CircularProgressIndicator? = null
+    var forwardMessage: TextView? = null
+    var rewindMessage: TextView? = null
+
+    val handler = Handler(context.mainLooper)
+    val hideSettingCallback = Runnable { knobLayout?.isVisible = false }
+    val hideProgressCallback = Runnable { currentVideoView?.hideController() }
+    val hideForwardMessageCallback = Runnable { forwardMessage?.isVisible = false }
+    val hideRewindMessageCallback = Runnable { rewindMessage?.isVisible = false }
+
+    val gestureDetector: GestureDetectorCompat
+    init {
+        gestureDetector = GestureDetectorCompat(context, object: GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (currentVideoView?.isControllerVisible == false) {
+                    currentVideoView?.showController()
+                    clickListener(true)
+                    handler.removeCallbacks(hideProgressCallback)
+                    handler.postDelayed(hideProgressCallback, 3000)
+                    return true
+                }
+                return false
+            }
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                if (e.x < displayWidth / 2) {
+                    playerViewModel.skip( -5)
+                    rewindMessage?.isVisible = true
+                    forwardMessage?.isVisible = false
+                    handler.removeCallbacks(hideRewindMessageCallback)
+                    handler.postDelayed(hideRewindMessageCallback, 1000)
+                } else {
+                    playerViewModel.skip( 5)
+                    forwardMessage?.isVisible = true
+                    rewindMessage?.isVisible = false
+                    handler.removeCallbacks(hideForwardMessageCallback)
+                    handler.postDelayed(hideForwardMessageCallback, 1000)
+                }
+                return true
+            }
+
+            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                if (abs(distanceX) < abs(distanceY)) {
+                    knobLayout?.isVisible = true
+                    // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
+                    if (e1.x > displayWidth / 2) {
+                        knobIcon?.setImageDrawable(volumeDrawable)
+                        playerViewModel.setVolume(distanceY / 200)
+                        knobPosition?.progress = (playerViewModel.getVolume() * 100).toInt()
+                    }
+                    else {
+                        knobIcon?.setImageDrawable(brightnessDrawable)
+                        playerViewModel.setBrightness(distanceY / 200)
+                        knobPosition?.progress = (playerViewModel.getBrightness() * 100).toInt()
+                    }
+
+                    handler.removeCallbacks(hideSettingCallback)
+                    handler.postDelayed(hideSettingCallback, 1000)
+                }
+                return true
+            }
+        })
+    }
 
     abstract fun getVideoItem(position: Int): VideoItem
     abstract fun getItemTransitionName(position: Int): String
@@ -78,15 +151,31 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        // Always fired before last shown view's onViewDetachedFromWindow
         super.onViewAttachedToWindow(holder)
-        if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) playerViewModel.resume(holder.videoView, holder.videoUri)
+        if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
+            playerViewModel.resume(holder.videoView, holder.videoUri)
+            currentVideoView = holder.videoView
+            knobLayout = holder.knobLayout
+            knobIcon = holder.knobIcon
+            knobPosition = holder.knobPosition
+            forwardMessage = holder.forwardMessage
+            rewindMessage = holder.rewindMessage
+
+            handler.removeCallbacksAndMessages(null)
+            clickListener(false)
+        }
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
         // Last view holder's onViewDetachedFromWindow event always fired after new view holder's onViewAttachedToWindow event, so it's safe to resetVideoViewPlayer here
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
             playerViewModel.pause(holder.videoUri)
+            playerViewModel.resetBrightness()
             holder.videoView.player = null
+            holder.knobLayout.isVisible = false
+            holder.forwardMessage.isVisible = false
+            holder.rewindMessage.isVisible = false
         }
         super.onViewDetachedFromWindow(holder)
     }
@@ -188,32 +277,31 @@ abstract class SeamlessMediaSliderAdapter<T>(
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var videoUri: Uri = Uri.EMPTY
         private var videoMimeType = ""
 
-        var videoView: PlayerView
-        private var muteButton: ImageButton
-
+        val videoView: PlayerView
+        val knobLayout: FrameLayout
+        val knobIcon: ImageView
+        val knobPosition: CircularProgressIndicator
+        val forwardMessage: TextView
+        val rewindMessage: TextView
         init {
             videoView = itemView.findViewById<PlayerView>(R.id.media).apply {
-                setControllerVisibilityListener(PlayerControlView.VisibilityListener { visibility -> clickListener(visibility == View.VISIBLE) })
+                setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }
             }
-
-            muteButton = itemView.findViewById<ImageButton>(R.id.exo_mute).apply {
-                setOnClickListener {
-                    playerViewModel.toggleMuteState()
-                    isActivated = isActivated == false
-                }
-            }
+            knobLayout = itemView.findViewById(R.id.knob)
+            knobIcon = itemView.findViewById(R.id.knob_icon)
+            knobPosition = itemView.findViewById(R.id.knob_position)
+            forwardMessage = itemView.findViewById(R.id.fast_forward_msg)
+            rewindMessage = itemView.findViewById(R.id.fast_rewind_msg)
         }
 
         fun <T> bind(item: T, video: VideoItem, imageLoader: (T, ImageView?, String) -> Unit) {
             this.videoUri = video.uri
             videoMimeType = video.mimeType
-
-            // Muted by default during late night hours
-            muteButton.isActivated = !playerViewModel.isMuted()
 
             videoView.apply {
                 // Need to call imageLoader here to start postponed enter transition

@@ -74,7 +74,6 @@ import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.util.*
-import kotlin.math.atan2
 
 class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
@@ -107,7 +106,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var snapseedOutputObserver: ContentObserver
 
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
-    private lateinit var gestureDetector: GestureDetectorCompat
 
     private var isRemote: Boolean = false
     private lateinit var serverPath: String
@@ -128,6 +126,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         //playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity().application, if (isRemote) imageLoaderModel.getCallFactory() else null))[VideoPlayerViewModel::class.java]
 
         pAdapter = PhotoSlideAdapter(
+            requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
             { photo->
@@ -226,25 +225,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 */
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
 
-        // Detect swipe up gesture and show bottom controls
-        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                    in 55.0..125.0-> {
-                        hideHandler.post(showSystemUI)
-                        return true
-                    }
-                    in -125.0..-55.0-> {
-                        hideHandler.post(hideSystemUI)
-                        return true
-                    }
-                }
-
-                return super.onFling(e1, e2, velocityX, velocityY)
-            }
-        })
-
         postponeEnterTransition()
 
         // Wipe ActionBar
@@ -299,14 +279,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             captionTextView.text = caption
                         }
                     } catch (_: IndexOutOfBoundsException) {}
-                }
-            })
-
-            // Detect swipe up gesture and show bottom controls
-            (getChildAt(0) as RecyclerView).addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
-                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                    gestureDetector.onTouchEvent(e)
-                    return super.onInterceptTouchEvent(rv, e)
                 }
             })
         }
@@ -675,9 +647,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album) }
 
     class PhotoSlideAdapter(
+        context: Context,
         displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (Photo) -> VideoItem,
         clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    ): SeamlessMediaSliderAdapter<Photo>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).id
         override fun getItemMimeType(position: Int): String = getItem(position).mimeType

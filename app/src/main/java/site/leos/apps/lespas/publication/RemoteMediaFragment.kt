@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.publication
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -59,7 +60,6 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.ZoneId
-import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var window: Window
@@ -83,14 +83,13 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
-    private lateinit var gestureDetector: GestureDetectorCompat
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
+            requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             shareModel.getResourceRoot(),
             playerViewModel,
@@ -122,25 +121,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 saveMedia()
             }
         }
-
-        // Detect swipe up gesture and show bottom controls
-        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                    in 55.0..125.0-> {
-                        hideHandler.post(showSystemUI)
-                        return true
-                    }
-                    in -125.0..-55.0-> {
-                        hideHandler.post(hideSystemUI)
-                        return true
-                    }
-                }
-
-                return super.onFling(e1, e2, velocityX, velocityY)
-            }
-        })
 
         this.window = requireActivity().window
         previousOrientationSetting = requireActivity().requestedOrientation
@@ -176,14 +156,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                     currentPositionModel.setCurrentPosition(position)
                     captionTextView.text = pAdapter.getCaption(position)
                     if (autoRotate) requireActivity().requestedOrientation = if (pAdapter.isLandscape(position)) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                }
-            })
-
-            // Detect swipe up gesture and show bottom controls
-            (getChildAt(0) as RecyclerView).addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
-                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                    gestureDetector.onTouchEvent(e)
-                    return super.onInterceptTouchEvent(rv, e)
                 }
             })
         }
@@ -400,8 +372,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    class RemoteMediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType

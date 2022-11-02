@@ -419,6 +419,9 @@
 -->
     <string name="notice">Please allow a moment to create blog pages on server.</string>
 
+    <!-- Media3 Player -->
+    <string name="msg_player_skip">5 seconds</string>
+
     <!-- Image Recognition -->
     <!-- Object label -->
     <string name="object_unknown">UNKNOWN</string>

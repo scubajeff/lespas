@@ -19,7 +19,7 @@ package site.leos.apps.lespas.helper
 import android.app.Activity
 import android.content.ContextWrapper
 import android.net.Uri
-import android.util.Log
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -44,6 +44,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
     private var window = activity.window
+    private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
@@ -133,10 +134,31 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         Tools.keepScreenOn(window, false)
     }
 
+    fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
+    fun setVolume(increment: Float) {
+        val volume = videoPlayer.volume + increment
+        when {
+            volume < 0f  -> videoPlayer.volume = 0f
+            volume > 1f  -> videoPlayer.volume = 1f
+            else -> videoPlayer.volume = volume
+        }
+    }
+    fun getVolume(): Float = videoPlayer.volume
+    fun setBrightness(increment: Float) {
+        brightness += increment
+        if (brightness < 0f) brightness = 0f
+        if (brightness > 1f) brightness = 1f
+
+        window.attributes = window.attributes.apply { screenBrightness = brightness }
+    }
+    fun getBrightness(): Float = brightness
+    fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
     fun mute() { videoPlayer.volume = 0f }
+/*
     fun unMute() { videoPlayer.volume = 1f }
     fun toggleMuteState() { if (videoPlayer.volume == 0f) unMute() else mute() }
     fun isMuted(): Boolean = videoPlayer.volume == 0f
+*/
 
     fun resetPlayer() {
         videoMap.clear()
@@ -153,6 +175,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Reset screen auto turn off
         Tools.keepScreenOn(window, false)
+        resetBrightness()
 
         super.onCleared()
     }

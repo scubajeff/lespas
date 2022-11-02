@@ -23,10 +23,7 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
-import android.content.ClipData
-import android.content.ContentResolver
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.graphics.*
@@ -198,6 +195,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Create adapter here so that it won't leak
         mediaPagerAdapter = MediaPagerAdapter(
+            requireContext(),
             "${imageLoaderModel.getResourceRoot()}${remoteArchiveBaseFolder}",
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
@@ -1521,8 +1519,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class MediaPagerAdapter(private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<Photo>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    class MediaPagerAdapter(context: Context, private val basePath: String, displayWidth: Int, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<Photo>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as Photo) {
             if (albumId == FROM_CAMERA_ROLL) VideoItem(Uri.parse(id), mimeType, width, height, id.substringAfterLast('/'))
             else VideoItem(Uri.parse("${basePath}/${name}"), mimeType, width, height, id)

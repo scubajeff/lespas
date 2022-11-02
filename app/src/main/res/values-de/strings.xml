@@ -357,4 +357,5 @@
     <string name="theme_option_timeline_tooltips">Aufmerksamkeit für den Lauf der Zeit.</string>
     <string name="checkbox_text_photo_list">Fotos in diesem Blogbeitrag</string>
     <string name="timeline_theme_day_title">Tag %d</string>
+    <string name="msg_player_skip">5 Sekunden</string>
 </resources>

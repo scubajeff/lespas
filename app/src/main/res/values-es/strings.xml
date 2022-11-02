@@ -306,4 +306,5 @@
     <string name="theme_option_timeline_tooltips">Atención al paso del tiempo.</string>
     <string name="checkbox_text_photo_list">Fotos incluidas en esta entrada del blog</string>
     <string name="timeline_theme_day_title">Día %d</string>
+    <string name="msg_player_skip">5 segundos</string>
 </resources>
