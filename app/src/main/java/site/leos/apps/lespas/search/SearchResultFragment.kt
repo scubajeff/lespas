@@ -209,6 +209,7 @@ class SearchResultFragment : Fragment() {
                 val od = ObjectDetectionModel(app.assets)
                 val rootPath = Tools.getLocalRoot(app)
                 val lespasBasePath = Tools.getRemoteHome(app)
+                val cameraArchivePath = Tools.getCameraArchiveHome(app)
                 var length: Int
                 var size: Int
                 val option = BitmapFactory.Options()
@@ -244,7 +245,7 @@ class SearchResultFragment : Fragment() {
                             }
                             R.id.search_cameraroll -> BitmapFactory.decodeStream(app.contentResolver.openInputStream(Uri.parse(photo.id)), null, option)
                             R.id.search_archive -> {
-                                sharePath = "/DCIM"
+                                sharePath = cameraArchivePath
                                 remoteImageModel.getPreview(NCShareViewModel.RemotePhoto(photo, sharePath))
                             }
                             else -> null
@@ -259,7 +260,7 @@ class SearchResultFragment : Fragment() {
                                 }
                             }
                         }
-                    } catch (e: Exception) {}
+                    } catch (_: Exception) {}
                 }
 
                 od.close()
