@@ -1350,9 +1350,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                     if (backupList.isNotEmpty()) {
                         backupList.sortByDescending { it.dateTaken }
-
-                        // If we have snapshot, make sure recyclerview's current position won't drift after data updated
-                        if (snapshot.isNotEmpty()) (getCurrentPhoto()?.name.let { current -> backups.indexOfFirst { it.name == current } }).let { newPosition -> setCurrentPosition(if (newPosition == -1) 0 else newPosition) }
                     } else {
                         // If fail fetching backups from server, use snapshot
                         if (snapshot.isNotEmpty()) backupList.addAll(snapshot)
@@ -1360,6 +1357,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                     // Remove those removed in snapshot before archive synced
                     for (photoId in snapshotRemovedList) { backupList.indexOfFirst { it.id == photoId }.let { index -> if (index != -1) backupList.removeAt(index) }}
+
+                    // If we have snapshot, make sure recyclerview's current position won't drift after data updated
+                    if (snapshot.isNotEmpty()) (getCurrentPhoto()?.name.let { current -> backupList.indexOfFirst { it.name == current } }).let { newPosition -> setCurrentPosition(if (newPosition == -1) 0 else newPosition) }
 
                     setBackup(backupList)
                     snapshotRemovedList.clear()
