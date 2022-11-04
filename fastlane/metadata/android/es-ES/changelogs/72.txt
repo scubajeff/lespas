@@ -1,0 +1,5 @@
+* Nueva función: alimentar a Muzei con fotos de formato apaisado recortadas con IA.
+* Implementación más robusta de compartir medios con otras aplicaciones.
+* Corregidos varios errores al buscar en el archivo del rollo de la cámara.
+* Corregido: Visualización incorrecta de la hora en la entrada del blog en el tema de la línea de tiempo.
+* Otras mejoras y correcciones de errores

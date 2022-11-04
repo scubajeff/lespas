@@ -1,3 +1,9 @@
+## Version 2.6.2
+* New feature: Feeding Muzei with AI cropped landscape photos
+* More robust implementation of sharing out medias to other apps
+* Fixed several bugs affecting search in camera roll archive
+* Fixed wrong zoned time displayed in Timeline theme blog post
+
 ## Version 2.6.1
 * New feature: photo blogging
 * Fixed video item preview download

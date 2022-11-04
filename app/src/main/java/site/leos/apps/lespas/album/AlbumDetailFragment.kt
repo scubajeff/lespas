@@ -17,7 +17,6 @@
 package site.leos.apps.lespas.album
 
 import android.content.*
-import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.database.ContentObserver
 import android.graphics.*
@@ -40,7 +39,6 @@ import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.MenuProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
@@ -75,13 +73,13 @@ import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
-import java.io.File
 import java.lang.Runnable
 import java.time.Duration
 import java.time.LocalDateTime
@@ -112,10 +110,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private val currentPhotoModel: PhotoSlideFragment.CurrentPhotoViewModel by activityViewModels()
     private val destinationViewModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
 
-    private lateinit var sharedPhoto: Photo
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
     private lateinit var removeOriginalBroadcastReceiver: RemoveOriginalBroadcastReceiver
+    private var sharedPhoto = Photo(dateTaken = LocalDateTime.now(), lastModified = LocalDateTime.now())
+    private var shareOutType = GENERAL_SHARE
+    private var stripOrNot = false
+    private var waitingMsg: Snackbar? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var stripSetting = "2"
 
     private val publishModel: NCShareViewModel by activityViewModels()
     private lateinit var sharedByMe: NCShareViewModel.ShareByMe
@@ -124,8 +127,6 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var saveSortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
-
-    private var stripExif = "2"
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
@@ -147,8 +148,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        @Suppress("DEPRECATION")
-        album = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_ALBUM, Album::class.java) else requireArguments().getParcelable(KEY_ALBUM))!!
+        album = requireArguments().parcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
         lespasPath = Tools.getRemoteHome(requireContext())
 
@@ -156,6 +156,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         savedInstanceState?.let {
             lastSelection = it.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(KEY_SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
+            sharedPhoto = it.getParcelable(KEY_SHAREOUT_PHOTO)!!
         } ?: run { requireArguments().getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
@@ -213,8 +214,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                @Suppress("DEPRECATION")
-                if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
+                //@Suppress("DEPRECATION")
+                //if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
+                if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
@@ -244,8 +246,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 if (uri?.lastPathSegment!! != lastId) {
                     lastId = uri.lastPathSegment!!
 
-                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
-                        workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
+                    snapseedWork = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(
+                        SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), 
+                        SnapseedResultWorker.KEY_SHARED_PHOTO to sharedPhoto.id, 
+                        SnapseedResultWorker.KEY_ALBUM to album.id)
+                    ).build()
+                    
                     with(WorkManager.getInstance(requireContext())) {
                         enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWork)
 
@@ -254,8 +260,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                                 // If replace original is on, remove old bitmaps from cache and take care of cover too
                                 if (sp.getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
                                     imageLoaderModel.invalidPhoto(sharedPhoto.id)
-                                    // Update cover if needed, cover id can be found only in adapter
-                                    mAdapter.updateCover(sharedPhoto)
+                                    // Update cover if needed
+                                    if (sharedPhoto.id == album.cover) mAdapter.updateCover()
                                 }
                             }
                         }
@@ -286,9 +292,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Cancel EXIF stripping job if it's running
-                shareOutJob?.let {
-                    if (it.isActive) {
-                        it.cancel(cause = null)
+                waitingMsg?.let {
+                    if (it.isShownOrQueued) {
+                        publishModel.cancelShareOut()
+                        it.dismiss()
                         return
                     }
                 }
@@ -520,6 +527,65 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            publishModel.shareOutUris.collect { uris ->
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+
+                // Collect share out files preparation result
+                when (shareOutType) {
+                    GENERAL_SHARE -> {
+                        // Call system share chooser
+                        val cr = requireActivity().contentResolver
+                        val clipData = ClipData.newUri(cr, "", uris[0])
+                        for (i in 1 until uris.size) {
+                            if (isActive) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                                else clipData.addItem(ClipData.Item(uris[i]))
+                            }
+                        }
+
+                        if (isActive) startActivity(Intent.createChooser(Intent().apply {
+                            if (uris.size == 1) {
+                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_STREAM, uris[0])
+                            } else {
+                                action = Intent.ACTION_SEND_MULTIPLE
+                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                            }
+                            type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
+                            this.clipData = clipData
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
+                    }
+                    SHARE_TO_SNAPSEED -> {
+                        startActivity(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            data = uris[0]
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                        })
+
+                        // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
+                        requireContext().sendBroadcast(Intent().apply {
+                            action = CHOOSER_SPY_ACTION
+                            putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                        })
+                    }
+                    SHARE_TO_LESPAS -> {
+                        reuseUris = uris
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    }
+                }
+            }
+        }.invokeOnCompletion {
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+        }
+
         // Rename result handler
         parentFragmentManager.setFragmentResultListener(RenameDialogFragment.RESULT_KEY_NEW_NAME, viewLifecycleOwner) { _, bundle->
             bundle.getString(RenameDialogFragment.RESULT_KEY_NEW_NAME)?.let { newName->
@@ -688,13 +754,21 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 }
             }
         }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        savedInstanceState?.let {
+            if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
+                shareOutType = it.getInt(KEY_SHAREOUT_TYPE)
+                stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
+                waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, stripOrNot) { publishModel.cancelShareOut() }.apply { show() }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
         (activity as? AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        stripExif = sp.getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
+        stripSetting = sp.getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
         isSnapseedEnabled = sp.getBoolean(getString(R.string.snapseed_pref_key), false)
     }
 
@@ -702,6 +776,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onSaveInstanceState(outState)
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
         outState.putStringArray(KEY_SHARED_SELECTION, sharedSelection.toTypedArray())
+        outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
+        outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
+        outState.putParcelable(KEY_SHAREOUT_PHOTO, sharedPhoto)
+        outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
     }
 
     override fun onStop() {
@@ -796,12 +874,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 true
             }
             R.id.share -> {
-                if (stripExif == getString(R.string.strip_ask_value)) {
+                if (stripSetting == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 }
-                else shareOut(stripExif == getString(R.string.strip_on_value))
+                else shareOut(stripSetting == getString(R.string.strip_on_value))
 
                 true
             }
@@ -862,145 +940,23 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         return false
     }
 
-    private fun prepareShares(strip: Boolean, job: Job?): ArrayList<Uri> {
-        val uris = arrayListOf<Uri>()
-        var sourceFile: File
-        var destFile: File
-        val isRemote = Tools.isRemoteAlbum(album)
-        val serverPath = "${lespasPath}/${album.name}"
-
-        for (photoId in sharedSelection) {
-            // Quit asap when job cancelled
-            job?.let { if (it.isCancelled) return arrayListOf() }
-
-            if (mAdapter.getPhotoBy(photoId).let { photo ->
-                // Synced file is named after id, not yet synced file is named after file's name
-                destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
-
-                try {
-                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                        imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType), photo)
-                    } else {
-                        //sourceFile = File(Tools.getLocalRoot(requireContext()), if (eTag != Photo.ETAG_NOT_YET_UPLOADED) id else name)
-                        sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
-                        // This TEMP_CACHE_FOLDER is created by MainActivity
-
-                        // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                        if (strip && Tools.hasExif(photo.mimeType)) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                        else sourceFile.copyTo(destFile, true, 4096)
-                        true
-                    }
-                } catch (e: Exception) { false }
-            }) uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
-        }
-
-        return uris
-    }
-
-    private var shareOutJob: Job? = null
     private fun shareOut(strip: Boolean, shareType: Int = GENERAL_SHARE) {
-        val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { shareOutJob?.cancel(cause = null) }
+        stripOrNot = strip
+        shareOutType = shareType
+        waitingMsg = Tools.getPreparingSharesSnackBar(recyclerView, strip) { publishModel.cancelShareOut() }
 
-        shareOutJob = lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Temporarily prevent screen rotation
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+        handler.postDelayed({ waitingMsg?.show() }, 500)
 
-                //sharedPhoto = mAdapter.getPhotoAt(selectionTracker.selection.first().toInt())
-                sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
-                sharedSelection.clear()
-                for (photoId in selectionTracker.selection) sharedSelection.add(photoId)
+        // Collect photos for sharing
+        sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+        sharedSelection.clear()
+        val photos = mutableListOf<Photo>()
+        for (id in selectionTracker.selection) photos.add(mAdapter.getPhotoBy(id))
+        selectionTracker.clearSelection()
 
-                // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-                withContext(Dispatchers.Main) {
-                    handler.removeCallbacksAndMessages(null)
-                    handler.postDelayed(
-                        {
-                            waitingMsg.show()
-                            selectionTracker.clearSelection()
-                        }
-                        , 500
-                    )
-                }
-
-                val uris = prepareShares(strip, shareOutJob!!)
-
-                withContext(Dispatchers.Main) {
-                    if (uris.isNotEmpty()) {
-                        when (shareType) {
-                            GENERAL_SHARE -> {
-                                // Call system share chooser
-                                val cr = requireActivity().contentResolver
-                                val clipData = ClipData.newUri(cr, "", uris[0])
-                                for (i in 1 until uris.size) {
-                                    if (isActive) {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                        else clipData.addItem(ClipData.Item(uris[i]))
-                                    }
-                                }
-
-                                // Dismiss Snackbar before showing system share chooser, avoid unpleasant screen flicker
-                                if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-                                if (isActive) startActivity(Intent.createChooser(Intent().apply {
-                                    if (uris.size == 1) {
-                                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_STREAM, uris[0])
-                                    } else {
-                                        action = Intent.ACTION_SEND_MULTIPLE
-                                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                                    }
-                                    //type = sharedPhoto.mimeType
-                                    type = if (sharedPhoto.mimeType.startsWith("image")) "image/*" else sharedPhoto.mimeType
-                                    this.clipData = clipData
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                                }, null))
-                            }
-                            SHARE_TO_SNAPSEED -> {
-                                startActivity(Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    data = uris[0]
-                                    putExtra(Intent.EXTRA_STREAM, uris[0])
-                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                                    setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                                })
-
-                                // Send broadcast just like system share does when user chooses Snapseed, so that we can catch editing result
-                                requireContext().sendBroadcast(Intent().apply {
-                                    action = CHOOSER_SPY_ACTION
-                                    putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                                })
-                            }
-                            SHARE_TO_LESPAS -> {
-                                reuseUris = uris
-                                if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(reuseUris, true, album.id).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                            }
-                        }
-                    } else {
-                        var msg = getString(R.string.msg_error_preparing_share_out_files)
-                        if (Tools.isRemoteAlbum(album)) msg += " ${getString(R.string.msg_check_network)}"
-                        Snackbar.make(recyclerView, msg, Snackbar.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: CancellationException) {
-                e.printStackTrace()
-            } finally {
-                withContext(NonCancellable) {
-                    withContext(Dispatchers.Main) { selectionTracker.clearSelection() }
-                }
-            }
-        }
-
-        shareOutJob?.invokeOnCompletion {
-            // Make sure we dismiss waiting SnackBar
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
+        // Prepare media files for sharing
+        publishModel.prepareFileForShareOut(photos, strip, Tools.isRemoteAlbum(album), "${lespasPath}/${album.name}")
     }
 
     private fun newLayoutManger(): GridLayoutManager {
@@ -1194,10 +1150,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
         internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
-        internal fun updateCover(sharedPhoto: Photo) {
-            //notifyItemChanged(currentList.indexOfLast { it.id == sharedPhoto.id })
-            if (sharedPhoto.id == currentList[0].id) notifyItemChanged(0)
-        }
+        internal fun updateCover() { notifyItemChanged(0) }
 
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         internal fun getPhotoId(position: Int): String = currentList[position].id
@@ -1247,6 +1200,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"
+        private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
+        private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
+        private const val KEY_SHAREOUT_PHOTO = "KEY_SHAREOUT_PHOTO"
+        private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
         private const val DELETE_REQUEST_KEY = "ALBUMDETAIL_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "ALBUMDETAIL_STRIP_REQUEST_KEY"

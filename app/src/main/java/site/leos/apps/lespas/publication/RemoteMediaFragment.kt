@@ -56,6 +56,7 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelableArray
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
@@ -216,7 +217,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onViewCreated(view, savedInstanceState)
 
         @Suppress("UNCHECKED_CAST")
-        (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+        //(arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+        (requireArguments().parcelableArray<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)!!).run {
             pAdapter.submitList(toMutableList()) {
                 requireArguments().getInt(KEY_SCROLL_TO).let { jumpTo ->
                     savedInstanceState ?: run { slider.setCurrentItem(jumpTo, false) }

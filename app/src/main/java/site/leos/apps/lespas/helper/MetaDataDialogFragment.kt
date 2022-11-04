@@ -53,6 +53,7 @@ import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
@@ -72,8 +73,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requireArguments().getParcelable<Photo>(KEY_MEDIA)?.let { photo = NCShareViewModel.RemotePhoto(it, "") }
-        requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { photo = it }
+        //requireArguments().getParcelable<Photo>(KEY_MEDIA)?.let { photo = NCShareViewModel.RemotePhoto(it, "") }
+        //requireArguments().getParcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { photo = it }
+        requireArguments().parcelable<Photo>(KEY_MEDIA)?.let { photo = NCShareViewModel.RemotePhoto(it, "") }
+        requireArguments().parcelable<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)?.let { photo = it }
         exifModel = ViewModelProvider(this, ExifModelFactory(requireActivity(), photo))[ExifModel::class.java]
     }
 

@@ -57,7 +57,7 @@ class PhotoRepository(application: Application) {
     fun getPhotoTotal(): Int = photoDao.getPhotoTotal()
     //suspend fun getPhotoById(photoId: String): Photo = photoDao.getPhotoById(photoId)
     fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta> = photoDao.getPhotoMetaInAlbum(albumId)
-    fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto> = photoDao.getMuzeiArtwork(exclusion, portraitMode)
+    fun getMuzeiArtwork(exclusion: List<String>): List<MuzeiPhoto> = photoDao.getMuzeiArtwork(exclusion)
     fun getAlbumDuration(albumId: String): Pair<LocalDateTime, LocalDateTime> = with(photoDao.getAlbumDuration(albumId)) { Pair(this.first(), this.last()) }
     fun setAsLocal(albumIds: List<String>) { photoDao.setAsLocal(albumIds) }
     fun updateAddress(photoId: String, city: String, countryName: String, countryCode: String) { photoDao.updateAddress(photoId, city, countryName, countryCode) }

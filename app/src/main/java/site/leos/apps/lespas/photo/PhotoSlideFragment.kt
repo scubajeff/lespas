@@ -20,8 +20,6 @@ import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.ActivityInfo
 import android.database.ContentObserver
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.net.Uri
@@ -38,10 +36,10 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -58,21 +56,21 @@ import androidx.viewpager2.widget.ViewPager2
 import androidx.work.*
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
+import java.lang.Runnable
 import java.util.*
 
 class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
@@ -101,6 +99,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     private var autoRotate = false
     private var stripExif = "2"
+    private var stripOrNot = false
+    private var shareOutType = GENERAL_SHARE
+    private var shareOutMimeType = ""
+    private var waitingMsg: Snackbar? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -115,7 +118,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable(KEY_ALBUM)!!
+        album = requireArguments().parcelable(KEY_ALBUM)!!
         // Album meta won't change during this fragment lifecycle
         isRemote = Tools.isRemoteAlbum(album)
         rootPath = Tools.getLocalRoot(requireContext())
@@ -163,7 +166,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                //if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {
@@ -236,6 +240,22 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 getInt(KEY_DISPLAY_OPTION)
             } ?: displayOptions
         }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Cancel EXIF stripping job if it's running
+                waitingMsg?.let {
+                    if (it.isShownOrQueued) {
+                        imageLoaderModel.cancelShareOut()
+                        it.dismiss()
+                        return
+                    }
+                }
+
+                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photoslide, container, false)
@@ -333,24 +353,16 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                     if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
-                    } else shareOut(false)
+                    } else shareOut(false, GENERAL_SHARE)
                 }
-                else shareOut(stripExif == getString(R.string.strip_on_value))
+                else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
             }
         }
         setAsButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 // TODO should call with strip true??
-                prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_ATTACH_DATA
-                        setDataAndType(it.first, it.second)
-                        putExtra("mimeType", it.second)
-                        //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    }, null))
-                }
+                shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER)
             }
         }
         view.findViewById<Button>(R.id.info_button).run {
@@ -377,23 +389,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 text = getString(R.string.button_text_edit_in_snapseed_add)
             }
             setOnTouchListener(delayHideTouchListener)
-            setOnClickListener { view->
-                prepareShares(pAdapter.getPhotoAt(slider.currentItem), false)?.let {
-                    startActivity(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        setDataAndType(it.first, it.second)
-                        putExtra(Intent.EXTRA_STREAM, it.first)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
-                    })
-
-                    // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
-                    view.context.sendBroadcast(Intent().apply {
-                        action = CHOOSER_SPY_ACTION
-                        putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
-                    })
-                }
-            }
+            setOnClickListener { view-> shareOut(false, SHARE_TO_SNAPSEED) }
         }
         removeButton.run {
             setOnTouchListener(delayHideTouchListener)
@@ -426,13 +422,62 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             exitTransition = null
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.shareOutUris.collect { uris ->
+                // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+
+                // Call system share chooser
+                when (shareOutType) {
+                    GENERAL_SHARE -> {
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = shareOutMimeType
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                            clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                        }, null))
+                    }
+                    SHARE_TO_SNAPSEED -> {
+                        startActivity(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            setDataAndType(uris[0], shareOutMimeType)
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            setClassName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME)
+                        })
+
+                        // Send broadcast just like system share does when user chooses Snapseed, so that PhotoSliderFragment can catch editing result
+                        view.context.sendBroadcast(Intent().apply {
+                            action = CHOOSER_SPY_ACTION
+                            putExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName(SettingsFragment.SNAPSEED_PACKAGE_NAME, SettingsFragment.SNAPSEED_MAIN_ACTIVITY_CLASS_NAME))
+                        })
+                    }
+                    SHARE_TO_WALLPAPER -> {
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_ATTACH_DATA
+                            setDataAndType(uris[0], shareOutMimeType)
+                            putExtra("mimeType", shareOutMimeType)
+                            //clipData = ClipData.newUri(requireActivity().contentResolver, "", it.first)
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }, null))
+                    }
+                }
+            }
+        }.invokeOnCompletion {
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+        }
+
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Remove photo confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
                 DELETE_REQUEST_KEY -> if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) removePhoto()
-                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+                STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), GENERAL_SHARE)
             }
         }
 
@@ -443,11 +488,24 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 actionModel.updatePhotoCaption(pAdapter.getPhotoAt(slider.currentItem).id, newCaption, album.name)
             }
         }
+
+        savedInstanceState?.let {
+            if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
+                shareOutMimeType = it.getString(KEY_SHAREOUT_MIMETYPE, "image/*")!!
+                shareOutType = it.getInt(KEY_SHAREOUT_TYPE)
+                stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
+                waitingMsg = Tools.getPreparingSharesSnackBar(slider, stripOrNot) { imageLoaderModel.cancelShareOut() }.apply { show() }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+        outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
+        outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
+        outState.putInt(KEY_SHAREOUT_TYPE, shareOutType)
+        outState.putString(KEY_SHAREOUT_MIMETYPE, shareOutMimeType)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -457,6 +515,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onDestroyView() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(removeOriginalBroadcastReceiver)
         slider.adapter = null
+
+        if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
         super.onDestroyView()
     }
@@ -572,79 +632,19 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             .show()
     }
 
-    private fun prepareShares(photo: Photo, strip: Boolean): Pair<Uri, String>? {
-        try {
-            val destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
-            val mimeType: String
-
-            if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                // For remote album and synced photo
-                if (!imageLoaderModel.downloadFile("${serverPath}/${photo.name}", destFile, strip && Tools.hasExif(photo.mimeType), photo)) {
-                    // TODO notify user
-                    return null
-                }
-                else mimeType = photo.mimeType
-            } else {
-                // Synced file is named after id, not yet synced file is named after file's name
-                //val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) photo.id else photo.name)
-                val sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
-
-                // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-                if (strip && Tools.hasExif(photo.mimeType)) {
-                    BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    mimeType = "image/jpeg"
-                } else {
-                    sourceFile.copyTo(destFile, true, 4096)
-                    mimeType = photo.mimeType
-                }
-            }
-
-            return Pair(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile), mimeType)
-        } catch (e: Exception) { return null }
-    }
-
-    private fun shareOut(strip: Boolean) {
-        val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip, null)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            // Temporarily prevent screen rotation
-            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
-
-            // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-            withContext(Dispatchers.Main) {
-                handler.removeCallbacksAndMessages(null)
-                handler.postDelayed({ waitingMsg.show() }, 500)
-            }
-
-            with(pAdapter.getPhotoAt(slider.currentItem)) {
-                prepareShares(this, strip)?.let {
-                    withContext(Dispatchers.Main) {
-                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-                        // Call system share chooser
-                        startActivity(Intent.createChooser(Intent().apply {
-                            action = Intent.ACTION_SEND
-                            type = it.second
-                            putExtra(Intent.EXTRA_STREAM, it.first)
-                            clipData = ClipData.newUri(requireContext().contentResolver, "", it.first)
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
-                    }
-                }
-            }
-        }.invokeOnCompletion {
-            // Dismiss waiting SnackBar
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-            if (!autoRotate) requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
-    }
-
     private fun removePhoto() { actionModel.deletePhotos(listOf(pAdapter.getPhotoAt(slider.currentItem)), album) }
+
+    private fun shareOut(strip: Boolean, shareType: Int) {
+        stripOrNot = strip
+        shareOutType = shareType
+        waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip) { imageLoaderModel.cancelShareOut() }
+
+        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+        handler.postDelayed({ waitingMsg?.show() }, 500)
+
+        // Prepare media files for sharing
+        imageLoaderModel.prepareFileForShareOut(listOf(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = mimeType }), strip, Tools.isRemoteAlbum(album), serverPath)
+    }
 
     class PhotoSlideAdapter(
         context: Context,
@@ -697,7 +697,15 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val DELETE_REQUEST_KEY = "PHOTO_SLIDER_DELETE_REQUEST_KEY"
         private const val STRIP_REQUEST_KEY = "PHOTO_SLIDER_STRIP_REQUEST_KEY"
 
+        private const val GENERAL_SHARE = 0
+        private const val SHARE_TO_SNAPSEED = 1
+        private const val SHARE_TO_WALLPAPER = 2
+
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
+        private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
+        private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
+        private const val KEY_SHAREOUT_MIMETYPE = "KEY_SHAREOUT_MIMETYPE"
+        private const val KEY_SHAREOUT_TYPE = "KEY_SHAREOUT_TYPE"
 
         const val CHOOSER_SPY_ACTION = "site.leos.apps.lespas.CHOOSER_PHOTOSLIDER"
         const val KEY_ALBUM = "ALBUM"

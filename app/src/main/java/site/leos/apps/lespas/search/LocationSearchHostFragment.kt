@@ -136,6 +136,7 @@ class LocationSearchHostFragment: Fragment() {
                 else -> remoteImageModel.getCameraRollArchive()
             }.run {
                 val remoteBaseFolder = Tools.getRemoteHome(application)
+                val remoteCameraArchiveFolder = Tools.getCameraArchiveHome(application)
                 val cr = application.contentResolver
                 val albums = AlbumRepository(application).getAllAlbumAttribute()
                 val total = this.size
@@ -168,7 +169,7 @@ class LocationSearchHostFragment: Fragment() {
                             R.id.search_archive -> {
                                 when(photo.latitude) {
                                     Photo.NO_GPS_DATA -> return@forEachIndexed
-                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, "/DCIM"))?.first?.let { exif ->
+                                    Photo.GPS_DATA_UNKNOWN -> remoteImageModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteCameraArchiveFolder))?.first?.let { exif ->
                                         exif.latLong?.run {
                                             latitude = this[0]
                                             longitude = this[1]
@@ -183,6 +184,7 @@ class LocationSearchHostFragment: Fragment() {
 
                                         // Patch WebDAV properties in archive
                                         // exif.dateTimeOriginal, exif.dateTimeDigitized both return timestamp in UTC time zone
+                                        // Property folder name should "/DCIM" here, SyncAdapter will handle user base correctly
                                         patchActions.add(Action(null, Action.ACTION_PATCH_PROPERTIES, "","/DCIM",
                                             "<oc:${OkHttpWebDav.LESPAS_LATITUDE}>" + latitude + "</oc:${OkHttpWebDav.LESPAS_LATITUDE}>" +
                                                     "<oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" + longitude + "</oc:${OkHttpWebDav.LESPAS_LONGITUDE}>" +
@@ -222,7 +224,7 @@ class LocationSearchHostFragment: Fragment() {
                                     } ?: run {
                                         return@forEachIndexed
                                     }
-                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else "/DCIM")
+                                } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else remoteCameraArchiveFolder)
 
                                 resultList.find { result -> result.country == this.first && result.locality == this.second }
                                     ?.let { existed ->

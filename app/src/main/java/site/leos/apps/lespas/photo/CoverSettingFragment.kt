@@ -38,6 +38,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.sync.ActionViewModel
 import kotlin.math.roundToInt
 
@@ -65,7 +66,8 @@ class CoverSettingFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         albumName = requireArguments().getString(KEY_ALBUM_NAME)!!
-        currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        //currentPhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        currentPhoto = requireArguments().parcelable(KEY_PHOTO)!!
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
