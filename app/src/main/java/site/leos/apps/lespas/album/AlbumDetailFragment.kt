@@ -19,7 +19,10 @@ package site.leos.apps.lespas.album
 import android.content.*
 import android.content.res.ColorStateList
 import android.database.ContentObserver
-import android.graphics.*
+import android.graphics.Color
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
@@ -70,7 +73,9 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import com.google.android.material.transition.MaterialElevationScale
 import com.google.android.material.transition.MaterialSharedAxis
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -80,14 +85,12 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.*
-import java.lang.Runnable
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.*
 import kotlin.math.abs
 
 class AlbumDetailFragment : Fragment(), ActionMode.Callback {
@@ -156,7 +159,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         savedInstanceState?.let {
             lastSelection = it.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
             sharedSelection = it.getStringArray(KEY_SHARED_SELECTION)?.toMutableSet() ?: mutableSetOf()
-            sharedPhoto = it.getParcelable(KEY_SHAREOUT_PHOTO)!!
+            sharedPhoto = it.parcelable(KEY_SHAREOUT_PHOTO)!!
         } ?: run { requireArguments().getString(KEY_SCROLL_TO)?.apply { scrollTo = this }}
 
         mAdapter = PhotoGridAdapter(
