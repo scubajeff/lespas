@@ -73,6 +73,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.*
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
@@ -147,8 +148,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         super.onCreate(savedInstanceState)
 
         sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        @Suppress("DEPRECATION")
-        album = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_ALBUM, Album::class.java) else requireArguments().getParcelable(KEY_ALBUM))!!
+        album = requireArguments().parcelable(KEY_ALBUM)!!
         sharedByMe = NCShareViewModel.ShareByMe(album.id, album.name, arrayListOf())
         lespasPath = Tools.getRemoteHome(requireContext())
 
@@ -214,8 +214,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                @Suppress("DEPRECATION")
-                if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
+                //@Suppress("DEPRECATION")
+                //if ((if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT, ComponentName::class.java) else intent!!.getParcelableExtra(Intent.EXTRA_CHOSEN_COMPONENT))?.packageName!!.substringAfterLast('.') == "snapseed") {
+                if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (sp.getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {

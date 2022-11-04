@@ -33,7 +33,6 @@ import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.net.http.SslError
-import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.webkit.*
@@ -57,6 +56,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -81,8 +81,9 @@ class NCAuthenticationFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
-        @Suppress("DEPRECATION")
-        serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_THEMING, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_THEMING)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
+        //@Suppress("DEPRECATION")
+        //serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_THEMING, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_THEMING)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
+        serverTheme = requireArguments().parcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

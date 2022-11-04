@@ -64,6 +64,7 @@ import site.leos.apps.lespas.helper.FileNameValidator
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.time.LocalDateTime
@@ -173,12 +174,14 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         }
         clipDataAdapter.submitList(
-            requireArguments().getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
+            //requireArguments().getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
+            requireArguments().parcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
                 // Mark operation should be carried out on server, if argument KEY_REMOTE_PHOTO is being passed to this fragment
                 destinationModel.setOnServer(true)
 
                 val uris = mutableListOf<Uri>()
-                (requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
+                //(requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
+                (requireArguments().parcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
                     forEach {
                         uris.add(Uri.fromParts("lespas", "//${it.remotePath}", ""))
                     }

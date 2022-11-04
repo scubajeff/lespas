@@ -63,6 +63,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
@@ -119,7 +120,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        album = arguments?.getParcelable(KEY_ALBUM)!!
+        album = requireArguments().parcelable(KEY_ALBUM)!!
         // Album meta won't change during this fragment lifecycle
         isRemote = Tools.isRemoteAlbum(album)
         rootPath = Tools.getLocalRoot(requireContext())
@@ -166,7 +167,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Broadcast receiver listening on share destination
         snapseedCatcher = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                //if (intent!!.getParcelableExtra<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
+                if (intent!!.parcelable<ComponentName>(Intent.EXTRA_CHOSEN_COMPONENT)?.packageName!!.substringAfterLast('.') == "snapseed") {
                     // Register content observer if integration with snapseed setting is on
                     if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(getString(R.string.snapseed_pref_key), false)) {
                         context!!.contentResolver.apply {

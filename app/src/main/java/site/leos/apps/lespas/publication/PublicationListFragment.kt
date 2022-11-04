@@ -39,6 +39,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.Cover
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import java.time.LocalDateTime
 
@@ -57,7 +58,8 @@ class PublicationListFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        savedInstanceState?.apply { shareSelected = getParcelable(SELECTED_SHARE) }
+        //savedInstanceState?.apply { shareSelected = getParcelable(SELECTED_SHARE) }
+        savedInstanceState?.apply { shareSelected = parcelable(SELECTED_SHARE) }
 
         shareListAdapter = ShareListAdapter(
             { share ->

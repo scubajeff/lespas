@@ -46,6 +46,8 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.AlbumPhotoName
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
@@ -59,7 +61,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
     private var total = -1
     private lateinit var album: Album
 
-    private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
+    //private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, arguments?.getParcelableArrayList(KEY_URIS)!!, arguments?.getParcelable(KEY_ALBUM)!!) }
+    private val acquiringModel: AcquiringViewModel by viewModels { AcquiringViewModelFactory(requireActivity().application, requireArguments().parcelableArrayList(KEY_URIS)!!, requireArguments().parcelable(KEY_ALBUM)!!) }
 
     private lateinit var progressLinearLayout: LinearLayoutCompat
     private lateinit var dialogTitleTextView: TextView
@@ -72,8 +75,10 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
-        album = arguments?.getParcelable(KEY_ALBUM)!!
+        //total = arguments?.getParcelableArrayList<Uri>(KEY_URIS)!!.size
+        //album = arguments?.getParcelable(KEY_ALBUM)!!
+        total = requireArguments().parcelableArrayList<Uri>(KEY_URIS)!!.size
+        album = requireArguments().parcelable(KEY_ALBUM)!!
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

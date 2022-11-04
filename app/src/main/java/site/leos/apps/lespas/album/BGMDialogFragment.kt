@@ -33,6 +33,7 @@ import androidx.media3.ui.PlayerControlView
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.sync.ActionViewModel
 import java.io.File
 
@@ -55,7 +56,8 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
         super.onCreate(savedInstanceState)
 
         requireArguments().apply {
-            album = getParcelable(KEY_ALBUM)!!
+            //album = getParcelable(KEY_ALBUM)!!
+            album = parcelable(KEY_ALBUM)!!
             bgmMedia = "${Tools.getLocalRoot(requireContext())}/${album.id}${BGM_FILE_SUFFIX}"
         }
 
