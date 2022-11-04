@@ -23,7 +23,6 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
-import android.content.ClipData
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.IntentFilter
@@ -54,7 +53,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.doOnLayout
@@ -143,6 +141,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var selectionTracker: SelectionTracker<String>
     private var lastSelection = arrayListOf<Uri>()
     private var stripExif = "2"
+    private var stripOrNot = false
+    private var waitingMsg: Snackbar? = null
+    private val handler = Handler(Looper.getMainLooper())
+
     private var showListFirst = false
     private var ignoreHide = true
     private var allowToggleContent = true   // disable content toggle between device and remote if called from SearchResultFragment or started as a image viewer
@@ -321,9 +323,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Cancel EXIF stripping job if it's running
-                shareOutJob?.let {
-                    if (it.isActive) {
-                        it.cancel(cause = null)
+                waitingMsg?.let {
+                    if (it.isShownOrQueued) {
+                        imageLoaderModel.cancelShareOut()
+                        it.dismiss()
                         return
                     }
                 }
@@ -911,6 +914,32 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         })
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.shareOutUris.collect { uris ->
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+
+                startActivity(Intent.createChooser(Intent().apply {
+                    if (uris.size > 1) {
+                        action = Intent.ACTION_SEND_MULTIPLE
+                        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                    } else {
+                        // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_STREAM, uris[0])
+                    }
+                    type = requireContext().contentResolver.getType(uris[0]) ?: "image/*"
+                    if (type!!.startsWith("image")) type = "image/*"
+                    this.clipData = clipData
+                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                }, null))
+            }
+        }.invokeOnCompletion {
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+        }
+
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(removeOriginalBroadcastReceiver, IntentFilter(AcquiringDialogFragment.BROADCAST_REMOVE_ORIGINAL))
 
         // Removing medias confirm result handler
@@ -976,6 +1005,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
+
+        savedInstanceState?.let {
+            if (it.getBoolean(KEY_SHAREOUT_RUNNING)) {
+                stripOrNot = it.getBoolean(KEY_SHAREOUT_STRIP)
+                waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, stripOrNot) { imageLoaderModel.cancelShareOut() }.apply { show() }
+            }
+        }
     }
 
     override fun onResume() {
@@ -1005,6 +1041,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         outState.putParcelableArrayList(KEY_LAST_SELECTION, lastSelection)
         outState.putInt(KEY_BOTTOMSHEET_STATE, bottomSheet.state)
         camerarollModel.saveQuickScrollState(quickScroll.layoutManager?.onSaveInstanceState())
+
+        outState.putBoolean(KEY_SHAREOUT_RUNNING, waitingMsg?.isShownOrQueued == true)
+        outState.putBoolean(KEY_SHAREOUT_STRIP, stripOrNot)
     }
 
     override fun onDestroyView() {
@@ -1185,98 +1224,20 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         return false
     }
 
-    private fun prepareShares(strip: Boolean, job: Job?, cr: ContentResolver): ArrayList<Uri> {
-        val uris = arrayListOf<Uri>()
-        var destFile: File
-
-        for (photoId in lastSelection) {
-            // Quit asap when job cancelled
-            job?.let { if (it.isCancelled) return arrayListOf() }
-
-            //mediaPagerAdapter.getPhotoBy(photoId.toString()).also {  photo->
-            camerarollModel.getPhotoById(photoId.toString())?.let { photo->
-                destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
-
-                // Copy the file from camera roll to cacheDir/name, strip EXIF base on setting
-                if (strip && Tools.hasExif(photo.mimeType)) {
-                    try {
-                        // Strip EXIF, rotate picture if needed
-                        BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)))?.let { bmp->
-                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
-                                .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                            uris.add(FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile))
-                        }
-                    } catch (e: Exception) { e.printStackTrace() }
-                }
-                else uris.add(photoId)
-            }
-        }
-
-        return uris
-    }
-
     private fun shareOut(strip: Boolean) {
-        val cr = requireContext().contentResolver
-        val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip) { shareOutJob?.cancel(cause = null) }
+        stripOrNot = strip
+        waitingMsg = Tools.getPreparingSharesSnackBar(mediaPager, strip) { imageLoaderModel.cancelShareOut() }
 
-        shareOutJob = lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // Temporarily prevent screen rotation
-                requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+        handler.postDelayed({ waitingMsg?.show() }, 500)
 
-                // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-                withContext(Dispatchers.Main) {
-                    handler.removeCallbacksAndMessages(null)
-                    handler.postDelayed({ waitingMsg.show() }, 500)
-                }
+        // Collect photos for sharing
+        val photos = mutableListOf<Photo>()
+        for (id in lastSelection) camerarollModel.getPhotoById(id.toString())?.let { photos.add(it) }
+        selectionTracker.clearSelection()
 
-                val uris = prepareShares(strip, shareOutJob, cr)
-
-                withContext(Dispatchers.Main) {
-                    // Call system share chooser
-                    if (uris.isNotEmpty()) {
-                        val clipData = ClipData.newUri(cr, "", uris[0])
-                        for (i in 1 until uris.size)
-                            if (isActive) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
-                                else clipData.addItem(ClipData.Item(uris[i]))
-                            }
-
-                        // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                        if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-                        if (isActive) startActivity(Intent.createChooser(Intent().apply {
-                            if (uris.size > 1) {
-                                action = Intent.ACTION_SEND_MULTIPLE
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                            } else {
-                                // If sharing only one picture, use ACTION_SEND instead, so that other apps which won't accept ACTION_SEND_MULTIPLE will work
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_STREAM, uris[0])
-                            }
-                            type = cr.getType(uris[0]) ?: "image/*"
-                            if (type!!.startsWith("image")) type = "image/*"
-                            this.clipData = clipData
-                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
-                        }, null))
-                    }
-                }
-            } catch (e: CancellationException) {
-                withContext(NonCancellable) {
-                    withContext(Dispatchers.Main) { lastSelection.clear() }
-                }
-            }
-        }
-
-        shareOutJob?.invokeOnCompletion {
-            // Dismiss waiting SnackBar
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-            requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
+        // Prepare media files for sharing
+        imageLoaderModel.prepareFileForShareOut(photos, strip, false, "")
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -1750,6 +1711,8 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private const val KEY_URI = "KEY_URI"
         private const val KEY_LAST_SELECTION = "KEY_LAST_SELECTION"
         private const val KEY_BOTTOMSHEET_STATE = "KEY_BOTTOMSHEET_STATE"
+        private const val KEY_SHAREOUT_RUNNING = "KEY_SHAREOUT_RUNNING"
+        private const val KEY_SHAREOUT_STRIP = "KEY_SHAREOUT_STRIP"
 
         const val TAG_FROM_CAMERAROLL_ACTIVITY = "TAG_DESTINATION_DIALOG"
         const val TAG_DESTINATION_DIALOG = "CAMERAROLL_DESTINATION_DIALOG"
