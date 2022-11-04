@@ -1,0 +1,5 @@
+* Nova característica: alimentação de Muzei com fotos em formato de paisagem recortada com AI.
+* Implementação mais robusta de mídia compartilhada com outras aplicações
+* Corrigidos vários bugs ao procurar no arquivo de rolos de câmera.
+* Corrigido: Exibição incorreta da hora no post do blog no tópico da linha do tempo.
+* Outras melhorias e correções de bugs
