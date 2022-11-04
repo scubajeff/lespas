@@ -357,4 +357,8 @@
     <string name="theme_option_timeline_tooltips">Aufmerksamkeit für den Lauf der Zeit.</string>
     <string name="checkbox_text_photo_list">Fotos in diesem Blogbeitrag</string>
     <string name="timeline_theme_day_title">Tag %d</string>
+    <plurals name="years_ago_today">
+        <item quantity="one">, heute vor %1$d Jahr</item>
+        <item quantity="other">, heute vor %1$d Jahren</item>
+    </plurals>
 </resources>

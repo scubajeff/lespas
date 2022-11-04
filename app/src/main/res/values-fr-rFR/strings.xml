@@ -341,4 +341,9 @@
     <string name="theme_option_timeline_tooltips">Attention au passage du temps.</string>
     <string name="checkbox_text_photo_list">Photos dans cet article de blog</string>
     <string name="timeline_theme_day_title">Jour %d</string>
+    <plurals name="years_ago_today" tools:ignore="MissingQuantity">
+        <item quantity="one">", Il y a %1$d an aujourd'hui"</item>
+        <item quantity="other">", Il y a %1$d ans aujourd'hui"</item>
+    </plurals>
+
 </resources>

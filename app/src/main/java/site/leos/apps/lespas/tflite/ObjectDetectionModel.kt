@@ -174,7 +174,7 @@ class ObjectDetectionModel(assetManager: AssetManager) {
         private const val NUM_THREADS = 4
 
         // Config values.
-        private const val INPUT_SIZE: Int = 300
+        const val INPUT_SIZE: Int = 300
 
         // Is model quantized or not
         private const val IS_MODEL_QUANTIZED = true

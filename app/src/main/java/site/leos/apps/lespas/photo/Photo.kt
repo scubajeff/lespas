@@ -166,8 +166,12 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT id, name, dateTaken, mimeType, width, height, orientation, caption, latitude, longitude, altitude, bearing FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getPhotoMetaInAlbum(albumId: String): List<PhotoMeta>
 
+/*
     @Query("SELECT id, name, albumId, dateTaken, width, height, orientation, eTag FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto>
+*/
+    @Query("SELECT id, name, albumId, dateTaken, width, height, orientation, eTag FROM ${Photo.TABLE_NAME} WHERE mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
+    abstract fun getMuzeiArtwork(exclusion: List<String>): List<MuzeiPhoto>
 
     @Query("SELECT dateTaken FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
     abstract fun getAlbumDuration(albumId: String): List<LocalDateTime>
