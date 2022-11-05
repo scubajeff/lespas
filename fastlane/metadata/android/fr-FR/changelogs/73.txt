@@ -1,0 +1,5 @@
+* Nouvelle fonctionnalité : alimentation de Muzei avec des photos au format paysage recadrées par l'IA.
+* Implémentation plus robuste du partage de médias avec d'autres applications.
+* Correction de plusieurs bogues lors de la recherche dans les archives du rouleau de l'appareil photo.
+* Correction : Affichage incorrect de l'heure dans le billet de blog dans le sujet de la ligne de temps.
+* Autres améliorations et corrections de bugs

@@ -1,3 +1,6 @@
+## Version 2.6.3
+* Quick fix for crash of new login
+ 
 ## Version 2.6.2
 * New feature: Feeding Muzei with AI cropped landscape photos
 * More robust implementation of sharing out medias to other apps

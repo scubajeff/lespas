@@ -227,13 +227,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
 
             return result
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } catch (e: IllegalStateException) {
-            e.printStackTrace()
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
 
         return arrayListOf()
     }
@@ -292,6 +286,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             e.printStackTrace()
         } catch (e: OkHttpWebDavException) {
             Log.e(">>>>>>>>>>>>", "${e.statusCode} ${e.printStackTrace()}")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
