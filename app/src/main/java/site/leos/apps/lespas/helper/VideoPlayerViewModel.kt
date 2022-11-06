@@ -17,7 +17,9 @@
 package site.leos.apps.lespas.helper
 
 import android.app.Activity
+import android.content.Context
 import android.content.ContextWrapper
+import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
@@ -45,6 +47,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private var addedListener: Player.Listener? = null
     private var window = activity.window
     private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
+    private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    private var currentVolumePercentage = volume.toFloat() / maxVolume
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
@@ -135,6 +141,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
+/*
     fun setVolume(increment: Float) {
         val volume = videoPlayer.volume + increment
         when {
@@ -144,6 +151,17 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
     }
     fun getVolume(): Float = videoPlayer.volume
+*/
+    fun setVolume(increment: Float) {
+        currentVolumePercentage += increment
+        currentVolumePercentage = when {
+            currentVolumePercentage < 0f -> 0f
+            currentVolumePercentage > 1f -> 1f
+            else -> currentVolumePercentage
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,(currentVolumePercentage * maxVolume).toInt(),0)
+    }
+    fun getVolume(): Float = currentVolumePercentage
     fun setBrightness(increment: Float) {
         brightness += increment
         if (brightness < 0f) brightness = 0f
@@ -176,6 +194,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         // Reset screen auto turn off
         Tools.keepScreenOn(window, false)
         resetBrightness()
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
 
         super.onCleared()
     }
