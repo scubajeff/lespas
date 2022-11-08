@@ -129,7 +129,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun pause(uri: Uri?) {
-        // Fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
+        // Fragment onWindowFocusChanged will call this with Uri.EMPTY since fragment has no knowledge of video uri
         if (uri == currentVideo || uri == Uri.EMPTY && videoPlayer.playbackState != Player.STATE_IDLE) {
             // Only pause if current playing video is the same as the argument
             videoPlayer.pause()
