@@ -182,6 +182,10 @@ class PublicationDetailFragment: Fragment() {
             override fun handleOnBackPressed() {
                 // Clear search query if there is any
                 if (showName && currentQuery.isNotEmpty()) {
+                    searchMenuItem?.run {
+                        collapseActionView()
+                        (actionView as SearchView).setQuery("", false)
+                    }
                     currentQuery = ""
                     currentPositionModel.saveCurrentQuery(currentQuery)
                 }
