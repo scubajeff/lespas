@@ -475,7 +475,7 @@ class PublicationDetailFragment: Fragment() {
             submitList(pList.filter { it.photo.name.contains(query) }.toMutableList(), callback)
         }
         fun setShowName(showName: Boolean) { this.showName = showName }
-        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query) }.toMutableList()) }
+        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query, true) }.toMutableList()) }
 
         fun isMetaDisplayed(): Boolean = displayMeta
         fun toggleMetaDisplay() {

@@ -1170,7 +1170,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun filter(query: String) {
             if (query.isEmpty()) try { setAlbum(AlbumWithPhotos(this.album, this.photos)) } catch (_: UninitializedPropertyAccessException) {}
             else {
-                this.photos.filter { it.name.contains(query) }.let { filtered ->
+                this.photos.filter { it.name.contains(query, true) }.let { filtered ->
                     submitList(filtered)
                 }
             }
