@@ -151,7 +151,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
-        // Always fired before last shown view's onViewDetachedFromWindow
         super.onViewAttachedToWindow(holder)
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
             playerViewModel.resume(holder.videoView, holder.videoUri)
@@ -168,7 +167,6 @@ abstract class SeamlessMediaSliderAdapter<T>(
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        // Last view holder's onViewDetachedFromWindow event always fired after new view holder's onViewAttachedToWindow event, so it's safe to resetVideoViewPlayer here
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
             playerViewModel.pause(holder.videoUri)
             playerViewModel.resetBrightness()

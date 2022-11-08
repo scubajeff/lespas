@@ -92,39 +92,44 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         videoPlayer.addListener(listener)
     }
 
-    fun resume(view: PlayerView, uri: Uri) {
+    fun resume(view: PlayerView?, uri: Uri?) {
         // Hide controller view by default
-        view.hideController()
-        if (view.context is Activity) window = (view.context as Activity).window
-        if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
+        view?.hideController()
 
-        // Keep screen on during playing
-        Tools.keepScreenOn(window, true)
+        if (view != null && uri != null) {
+            if (view.context is Activity) window = (view.context as Activity).window
+            if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
-        if (uri == currentVideo) {
-            // Resuming the same video
-            if (videoPlayer.isPlaying) {
-                // Reattach player to playerView after screen rotate
-                view.player = videoPlayer
-                return
+            // Keep screen on during playing
+            Tools.keepScreenOn(window, true)
+
+            if (uri == currentVideo) {
+                // Resuming the same video
+                if (videoPlayer.isPlaying) {
+                    // Reattach player to playerView after screen rotate
+                    view.player = videoPlayer
+                    return
+                }
+            } else {
+                // Pause the current one
+                if (videoPlayer.isPlaying) pause(currentVideo)
+
+                // Switch to new video
+                currentVideo = uri
             }
-        }
-        else {
-            // Pause the current one
-            if (videoPlayer.isPlaying) pause(currentVideo)
 
-            // Switch to new video
-            currentVideo = uri
-        }
+            // Swap to the new playerView
+            view.player = videoPlayer
 
-        // Swap to the new playerView
-        view.player = videoPlayer
-
-        // Play it
-        with(videoPlayer) {
-            setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
-            prepare()
-            play()
+            // Play it
+            with(videoPlayer) {
+                setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
+                prepare()
+                play()
+            }
+        } else {
+            // OnWindowFocusChange called with hasFocus true
+            videoPlayer.play()
         }
     }
 
