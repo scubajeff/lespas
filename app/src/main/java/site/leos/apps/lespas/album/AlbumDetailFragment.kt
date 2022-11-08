@@ -303,6 +303,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
 
+                // Clear search query if there is any
+                if (Tools.isWideListAlbum(album.sortOrder)) {
+                    if (currentQuery.isNotEmpty()) {
+                        currentQuery = ""
+                        currentPhotoModel.setCurrentQuery(currentQuery)
+                        return
+                    }
+                }
+
                 if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
                 else parentFragmentManager.popBackStack()
             }
@@ -1161,7 +1170,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun filter(query: String) {
             if (query.isEmpty()) try { setAlbum(AlbumWithPhotos(this.album, this.photos)) } catch (_: UninitializedPropertyAccessException) {}
             else {
-                this.photos.filter { it.name.contains(query) }.let { filtered ->
+                this.photos.filter { it.name.contains(query, true) }.let { filtered ->
                     submitList(filtered)
                 }
             }

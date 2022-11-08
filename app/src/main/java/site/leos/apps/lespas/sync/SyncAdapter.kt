@@ -808,7 +808,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private fun updateBlogIndex() {
         // Get user display name
         var userDisplayName = ""
-        webDav.ocsGet("$baseUrl${String.format(NCShareViewModel.USER_METADATA_ENDPOINT, userName)}")?.apply { userDisplayName = getJSONObject("data").getString("displayname") }
+        try { webDav.ocsGet("$baseUrl${String.format(NCShareViewModel.USER_METADATA_ENDPOINT, userName)}")?.apply { userDisplayName = getJSONObject("data").getString("displayname") } } catch (_: Exception) {}
 
         // No way to check if display name is changed, so index file is updated every time when a blog post is being updated
         val indexFile = "${lespasBase}/${BLOG_CONTENT_FOLDER}/${INDEX_FILE}"

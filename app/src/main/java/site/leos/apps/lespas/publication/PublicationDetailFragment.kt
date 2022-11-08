@@ -24,6 +24,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -176,6 +177,17 @@ class PublicationDetailFragment: Fragment() {
                 }
             }
         }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Clear search query if there is any
+                if (showName && currentQuery.isNotEmpty()) {
+                    currentQuery = ""
+                    currentPositionModel.saveCurrentQuery(currentQuery)
+                }
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -463,7 +475,7 @@ class PublicationDetailFragment: Fragment() {
             submitList(pList.filter { it.photo.name.contains(query) }.toMutableList(), callback)
         }
         fun setShowName(showName: Boolean) { this.showName = showName }
-        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query) }.toMutableList()) }
+        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query, true) }.toMutableList()) }
 
         fun isMetaDisplayed(): Boolean = displayMeta
         fun toggleMetaDisplay() {
