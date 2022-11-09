@@ -381,6 +381,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         // Save current system bar color
         (requireActivity() as AppCompatActivity).window?.run {
+            // Clear the display cutout area while photo in landscape position
+            //setBackgroundDrawable(ColorDrawable(0))
+
             savedStatusBarColor = statusBarColor
             savedNavigationBarColor = navigationBarColor
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) savedNavigationBarDividerColor = navigationBarDividerColor
@@ -1062,6 +1065,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             with(window) {
                 statusBarColor = savedStatusBarColor
                 navigationBarColor = savedNavigationBarColor
+
+                // Restore display cutout area background
+                //setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), R.attr.backgroundColor)))
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.navigationBarDividerColor = savedNavigationBarDividerColor
         }

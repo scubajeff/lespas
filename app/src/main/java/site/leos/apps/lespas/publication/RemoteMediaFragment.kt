@@ -144,6 +144,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         })
 
         this.window = requireActivity().window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
     }
@@ -340,6 +341,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
             requestedOrientation = previousOrientationSetting
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
 
         super.onDestroy()
     }
