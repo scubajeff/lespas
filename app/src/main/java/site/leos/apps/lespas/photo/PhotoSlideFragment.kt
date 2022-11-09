@@ -232,6 +232,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver { if (it && pAdapter.getPhotoAt(slider.currentItem).id != album.cover) removePhoto() }
 
         // Detect swipe up gesture and show bottom controls
+/*
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
@@ -249,6 +250,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
         })
+*/
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requireActivity().window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         postponeEnterTransition()
