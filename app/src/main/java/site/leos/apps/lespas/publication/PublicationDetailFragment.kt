@@ -24,6 +24,7 @@ import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -54,6 +55,7 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
@@ -90,7 +92,8 @@ class PublicationDetailFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        share = arguments?.getParcelable(ARGUMENT_SHARE)!!
+        //share = arguments?.getParcelable(ARGUMENT_SHARE)!!
+        share = requireArguments().parcelable(ARGUMENT_SHARE)!!
         showName = Tools.isWideListAlbum(share.sortOrder)
 
         savedInstanceState?.apply {
@@ -174,6 +177,21 @@ class PublicationDetailFragment: Fragment() {
                 }
             }
         }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Clear search query if there is any
+                if (showName && currentQuery.isNotEmpty()) {
+                    searchMenuItem?.run {
+                        collapseActionView()
+                        (actionView as SearchView).setQuery("", false)
+                    }
+                    currentQuery = ""
+                    currentPositionModel.saveCurrentQuery(currentQuery)
+                }
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -237,7 +255,7 @@ class PublicationDetailFragment: Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             shareModel.getRemotePhotoList(share, false)
             // TODO download publication's BGM here and remove it in onDestroy everytime, better way??
-            shareModel.downloadFile("${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), stripExif = false, photo = Photo(dateTaken = LocalDateTime.MIN, lastModified = LocalDateTime.MIN), useCache = false)
+            shareModel.downloadFile(source = "${share.sharePath}/${SyncAdapter.BGM_FILENAME_ON_SERVER}", dest = File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}"), useCache = false)
         }
 
         if (currentItem != -1 && photoListAdapter.itemCount > 0) postponeEnterTransition()
@@ -461,7 +479,7 @@ class PublicationDetailFragment: Fragment() {
             submitList(pList.filter { it.photo.name.contains(query) }.toMutableList(), callback)
         }
         fun setShowName(showName: Boolean) { this.showName = showName }
-        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query) }.toMutableList()) }
+        fun filter(query: String) { submitList(pList.filter { it.photo.name.contains(query, true) }.toMutableList()) }
 
         fun isMetaDisplayed(): Boolean = displayMeta
         fun toggleMetaDisplay() {

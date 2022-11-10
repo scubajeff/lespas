@@ -76,6 +76,7 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
@@ -356,7 +357,8 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
         // Unhide dialog result handler
         parentFragmentManager.setFragmentResultListener(UnhideDialogFragment.UNHIDE_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
-            bundle.getParcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
+            //bundle.getParcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
+            bundle.parcelableArrayList<Album>(UnhideDialogFragment.KEY_UNHIDE_THESE)?.apply {
                 if (this.isNotEmpty()) actionModel.unhideAlbums(this)
             }
         }
@@ -829,7 +831,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
-            requireArguments().getParcelableArrayList<Album>(KEY_ALBUMS)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+            //requireArguments().getParcelableArrayList<Album>(KEY_ALBUMS)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+            requireArguments().parcelableArrayList<Album>(KEY_ALBUMS)?.apply { hiddenAdapter.submitList(this.toMutableList()) }
+
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

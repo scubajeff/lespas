@@ -1,0 +1,5 @@
+* Nuova funzione: alimentazione di Muzei con foto in formato orizzontale ritagliate da AI.
+* Implementazione più robusta della condivisione dei media con altre applicazioni.
+* Risoluzione di diversi bug durante la ricerca nell'archivio del rullino fotografico.
+* Corretto: visualizzazione errata dell'ora nel post del blog nell'argomento della timeline.
+* Altri miglioramenti e correzioni di bug

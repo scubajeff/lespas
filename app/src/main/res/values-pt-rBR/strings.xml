@@ -368,4 +368,10 @@
     <string name="theme_option_timeline_tooltips">Atenção à passagem do tempo.</string>
     <string name="checkbox_text_photo_list">Fotos incluídas neste blog</string>
     <string name="timeline_theme_day_title">Dia %d</string>
+    <plurals name="years_ago_today">
+        <item quantity="one">, Faz hoje %1$d ano</item>
+        <item quantity="other">, %1$d anos atrás hoje</item>
+    </plurals>
+
+    <string name="msg_player_skip">5 segundos</string>
 </resources>

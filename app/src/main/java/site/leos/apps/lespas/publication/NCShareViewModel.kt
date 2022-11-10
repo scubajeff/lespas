@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.publication
 
 import android.accounts.AccountManager
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
@@ -43,6 +44,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.AndroidViewModel
@@ -54,16 +56,15 @@ import androidx.media3.datasource.cache.SimpleCache
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.parcelize.Parcelize
 import okhttp3.*
 import okhttp3.internal.closeQuietly
 import okhttp3.internal.headersContentLength
-import okio.BufferedSource
-import okio.IOException
-import okio.buffer
-import okio.source
+import okio.*
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -84,7 +85,9 @@ import java.lang.Thread.sleep
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.time.OffsetDateTime
+import java.util.*
 import java.util.concurrent.Executors
+import kotlin.io.use
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -97,6 +100,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val _publicationContentMeta = MutableStateFlow<List<RemotePhoto>>(arrayListOf())
     private val _blogs = MutableStateFlow<List<Blog>?>(null)
     private val _blogPostThemeId = MutableStateFlow("")
+
     val shareByMe: StateFlow<List<ShareByMe>> = _shareByMe
     val shareWithMe: StateFlow<List<ShareWithMe>> = _shareWithMe
     val shareWithMeProgress: StateFlow<Int> = _shareWithMeProgress
@@ -104,6 +108,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val publicationContentMeta: StateFlow<List<RemotePhoto>> = _publicationContentMeta
     val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
+
+    private val _shareOutUris = MutableSharedFlow<ArrayList<Uri>>()
+    val shareOutUris: SharedFlow<ArrayList<Uri>> = _shareOutUris
+    var shareOutPreparationJob: Job? = null
+
     private val user = User()
 
     private var webDav: OkHttpWebDav
@@ -115,6 +124,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val archiveBase = Tools.getCameraArchiveHome(application)
     private val localCacheFolder = "${Tools.getLocalRoot(application)}/cache"
     private val localFileFolder = Tools.getLocalRoot(application)
+    private val cacheFolder = application.cacheDir
+    private val lespasAuthority = application.getString(R.string.file_authority)
 
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
     private val autoReplayKey = application.getString(R.string.auto_replay_perf_key)
@@ -217,13 +228,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             }
 
             return result
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } catch (e: IllegalStateException) {
-            e.printStackTrace()
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
 
         return arrayListOf()
     }
@@ -282,6 +287,8 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             e.printStackTrace()
         } catch (e: OkHttpWebDavException) {
             Log.e(">>>>>>>>>>>>", "${e.statusCode} ${e.printStackTrace()}")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -616,22 +623,128 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return bitmap
     }
 
-    fun downloadFile(media: String, dest: File, stripExif: Boolean, photo: Photo, useCache: Boolean = true): Boolean {
-        return try {
-            webDav.getStream("${resourceRoot}${media}", useCache, null).use { remote ->
-                if (stripExif) {
-                    BitmapFactory.decodeStream(remote)?.let { bmp->
-                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
-                            .compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+    fun cancelShareOut() { shareOutPreparationJob?.cancel(null) }
+    @SuppressLint("Recycle")
+    fun prepareFileForShareOut(photos: List<Photo>, stripExif: Boolean, isRemote: Boolean, remotePath: String) {
+        shareOutPreparationJob = viewModelScope.launch(Dispatchers.IO) {
+            val uris = arrayListOf<Uri>()
+            val albumRoot = "$resourceRoot/${remotePath}"
+
+            val tempFile = File(cacheFolder, "_temp.temp")
+            val buffer = ByteArray(8192)
+            var readCount: Int
+            var call: Call? = null
+
+            try {
+                for (photo in photos) {
+                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                        // For already uploaded remote photo, download source file to cache/_temp.temp
+                        webDav.getStreamCall("${albumRoot}/${photo.name}", true, null).let {
+                            call = it.second
+                            it.first.source().buffer().use { remote ->
+                                tempFile.outputStream().sink().buffer().use { local ->
+                                    ensureActive()
+                                    readCount = remote.read(buffer, 0, 8192)
+                                    do {
+                                        local.write(buffer, 0, readCount)
+                                        ensureActive()
+                                        readCount = remote.read(buffer, 0, 8192)
+                                    } while (readCount != -1)
+                                }
+                            }
+                        }
+                    }
+
+                    // Prepare destination file in cache folder, strip EXIF if required
+                    when {
+                        isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED -> tempFile.inputStream()
+                        photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL -> cr.openInputStream(Uri.parse(photo.id))
+                        else -> File(localFileFolder, photo.id).inputStream()
+                    }?.use { source ->
+                        File(cacheFolder, if (stripExif) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name).let { destFile ->
+                            destFile.outputStream().use { dest ->
+                                if (stripExif && Tools.hasExif(photo.mimeType)) {
+                                    // Strip EXIF
+                                    ensureActive()
+                                    BitmapFactory.decodeStream(source)?.let { bmp ->
+                                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp).compress(Bitmap.CompressFormat.JPEG, 95, dest)
+                                    }
+                                } else {
+                                    // No need to strip EXIF, just rename the temp file to destination
+                                    source.copyTo(dest, 8192)
+                                }
+                            }
+
+                            // Create uri for sharing out
+                            uris.add(FileProvider.getUriForFile(getApplication(), lespasAuthority, destFile))
+                        }
                     }
                 }
-                else dest.outputStream().use { local -> remote.copyTo(local, 8192) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call?.cancel()
             }
 
+            // Post result
+            if (uris.isNotEmpty()) _shareOutUris.emit(uris)
+
+            // Clean up
+            try { tempFile.delete() } catch (_: Exception) {}
+            call = null
+        }
+    }
+
+/*
+    fun downloadFile(media: String, dest: File, stripExif: Boolean, photo: Photo, useCache: Boolean = true, job: Job? = null): Boolean {
+        var call: Call? = null
+        try {
+            webDav.getStreamCall("${resourceRoot}${media}", useCache, null).let {
+                call = it.second
+                it.first.source().buffer().use { remote ->
+                    val buffer = ByteArray(8192)
+                    var readCount = 0
+                    val tempFile = File(cacheFolder,"_temp.temp")
+                    tempFile.outputStream().sink().buffer().use { local ->
+                        readCount = remote.read(buffer, 0, 8192)
+                        do {
+                            local.write(buffer, 0, readCount)
+                            job?.let { if (job.isCancelled) throw java.lang.Exception() }
+                            readCount = remote.read(buffer, 0, 8192)
+                        } while(readCount != -1)
+                    }
+                    if (stripExif) {
+                        job?.let { if (job.isCancelled) throw java.lang.Exception() }
+                        BitmapFactory.decodeStream(tempFile.inputStream())?.let { bmp ->
+                            (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
+                                .compress(Bitmap.CompressFormat.JPEG, 95, dest.outputStream())
+                        }
+                    } else {
+                        dest.delete()
+                        tempFile.renameTo(dest)
+                    }
+                }
+            }
+
+            return true
+        } catch (e: Exception) {
+            call?.cancel()
+            e.printStackTrace()
+            return false
+        }
+    }
+*/
+
+    fun downloadFile(source: String, dest: File, useCache: Boolean = true): Boolean {
+        var call: Call? = null
+        return try {
+            webDav.getStreamCall("${resourceRoot}${source}", useCache, null).let {
+                call = it.second
+                it.first.use { remote -> dest.outputStream().use { local -> remote.copyTo(local, 8192) }}
+            }
             true
         } catch (e: Exception) {
+            call?.cancel()
             e.printStackTrace()
-
             false
         }
     }

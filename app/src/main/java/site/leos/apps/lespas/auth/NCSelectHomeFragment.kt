@@ -51,6 +51,7 @@ import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.settings.SettingsFragment
 import java.text.Collator
 
@@ -79,12 +80,12 @@ class NCSelectHomeFragment: Fragment() {
 
         lespas = getString(R.string.lespas_base_folder_name).drop(1)
 
-        @Suppress("DEPRECATION")
-        serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME))
-            ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
-                color = ContextCompat.getColor(requireContext(), R.color.color_background)
-                textColor = ContextCompat.getColor(requireContext(), R.color.lespas_black)
-            }
+        //@Suppress("DEPRECATION")
+        //serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_SERVER_THEME, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_SERVER_THEME)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
+        serverTheme = requireArguments().parcelable(KEY_SERVER_THEME) ?: NCLoginFragment.AuthenticateViewModel.NCTheming().apply {
+            color = ContextCompat.getColor(requireContext(), R.color.color_background)
+            textColor = ContextCompat.getColor(requireContext(), R.color.lespas_black)
+        }
         selectedFolder = savedInstanceState?.run { getString(KEY_CURRENT_FOLDER) ?: "" } ?: ""
 
         AccountManager.get(requireContext()).run {

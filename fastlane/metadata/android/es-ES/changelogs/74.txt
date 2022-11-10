@@ -1,0 +1,5 @@
+* Nuevo diseño de la interfaz de usuario para la reproducción de vídeos
+* Corregida la barra lateral en el área de recorte de la pantalla
+* Corrección de la reanudación de la reproducción de vídeo en Android 13 después de girar el dispositivo
+* La búsqueda por el nombre de la foto en el álbum ahora no distingue entre mayúsculas y minúsculas
+* Otras mejoras y correcciones de errores

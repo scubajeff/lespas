@@ -1,0 +1,5 @@
+* Neues UI-Design für die Videowiedergabe
+* Behobene Seitenleiste im Bereich des Displayausschnitts
+* Behoben: Fortsetzen der Videowiedergabe in Android 13 nach Drehung des Geräts
+* Bei der Suche nach Fotonamen im Album wird nun nicht mehr zwischen Groß- und Kleinschreibung unterschieden
+* Weitere Verbesserungen und Fehlerkorrekturen

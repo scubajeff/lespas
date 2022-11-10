@@ -1,3 +1,18 @@
+## Version 2.6.4
+* New UI design for video playing
+* Fixed side bar on display cutout area
+* Fixed resuming video playing in Android 13 after device rotated
+* Search by photo name in album is now case insensitive
+
+## Version 2.6.3
+* Quick fix for crash of new login
+ 
+## Version 2.6.2
+* New feature: Feeding Muzei with AI cropped landscape photos
+* More robust implementation of sharing out medias to other apps
+* Fixed several bugs affecting search in camera roll archive
+* Fixed wrong zoned time displayed in Timeline theme blog post
+
 ## Version 2.6.1
 * New feature: photo blogging
 * Fixed video item preview download

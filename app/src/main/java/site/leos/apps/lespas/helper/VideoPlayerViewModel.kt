@@ -17,9 +17,11 @@
 package site.leos.apps.lespas.helper
 
 import android.app.Activity
+import android.content.Context
 import android.content.ContextWrapper
+import android.media.AudioManager
 import android.net.Uri
-import android.util.Log
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -44,6 +46,11 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
     private var window = activity.window
+    private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
+    private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+    private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    private var currentVolumePercentage = volume.toFloat() / maxVolume
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
@@ -75,6 +82,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
         }
 
+        // Set maximum volume
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume,0)
+        videoPlayer.volume = currentVolumePercentage
+
         // Mute the video sound during late night hours
         with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
@@ -85,44 +96,49 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         videoPlayer.addListener(listener)
     }
 
-    fun resume(view: PlayerView, uri: Uri) {
+    fun resume(view: PlayerView?, uri: Uri?) {
         // Hide controller view by default
-        view.hideController()
-        if (view.context is Activity) window = (view.context as Activity).window
-        if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
+        view?.hideController()
 
-        // Keep screen on during playing
-        Tools.keepScreenOn(window, true)
+        if (view != null && uri != null) {
+            if (view.context is Activity) window = (view.context as Activity).window
+            if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
-        if (uri == currentVideo) {
-            // Resuming the same video
-            if (videoPlayer.isPlaying) {
-                // Reattach player to playerView after screen rotate
-                view.player = videoPlayer
-                return
+            // Keep screen on during playing
+            Tools.keepScreenOn(window, true)
+
+            if (uri == currentVideo) {
+                // Resuming the same video
+                if (videoPlayer.isPlaying) {
+                    // Reattach player to playerView after screen rotate
+                    view.player = videoPlayer
+                    return
+                }
+            } else {
+                // Pause the current one
+                if (videoPlayer.isPlaying) pause(currentVideo)
+
+                // Switch to new video
+                currentVideo = uri
             }
-        }
-        else {
-            // Pause the current one
-            if (videoPlayer.isPlaying) pause(currentVideo)
 
-            // Switch to new video
-            currentVideo = uri
-        }
+            // Swap to the new playerView
+            view.player = videoPlayer
 
-        // Swap to the new playerView
-        view.player = videoPlayer
-
-        // Play it
-        with(videoPlayer) {
-            setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
-            prepare()
-            play()
+            // Play it
+            with(videoPlayer) {
+                setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
+                prepare()
+                play()
+            }
+        } else {
+            // OnWindowFocusChange called with hasFocus true
+            videoPlayer.play()
         }
     }
 
     fun pause(uri: Uri?) {
-        // Fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
+        // Fragment onWindowFocusChanged will call this with Uri.EMPTY since fragment has no knowledge of video uri
         if (uri == currentVideo || uri == Uri.EMPTY && videoPlayer.playbackState != Player.STATE_IDLE) {
             // Only pause if current playing video is the same as the argument
             videoPlayer.pause()
@@ -133,10 +149,43 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         Tools.keepScreenOn(window, false)
     }
 
+    fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
+    fun setVolume(increment: Float) {
+        val volume = videoPlayer.volume + increment
+        when {
+            volume < 0f  -> videoPlayer.volume = 0f
+            volume > 1f  -> videoPlayer.volume = 1f
+            else -> videoPlayer.volume = volume
+        }
+    }
+    fun getVolume(): Float = videoPlayer.volume
+/*
+    fun setVolume(increment: Float) {
+        currentVolumePercentage += increment
+        currentVolumePercentage = when {
+            currentVolumePercentage < 0f -> 0f
+            currentVolumePercentage > 1f -> 1f
+            else -> currentVolumePercentage
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,(currentVolumePercentage * maxVolume).toInt(),0)
+    }
+    fun getVolume(): Float = currentVolumePercentage
+ */
+    fun setBrightness(increment: Float) {
+        brightness += increment
+        if (brightness < 0f) brightness = 0f
+        if (brightness > 1f) brightness = 1f
+
+        window.attributes = window.attributes.apply { screenBrightness = brightness }
+    }
+    fun getBrightness(): Float = brightness
+    fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
     fun mute() { videoPlayer.volume = 0f }
+/*
     fun unMute() { videoPlayer.volume = 1f }
     fun toggleMuteState() { if (videoPlayer.volume == 0f) unMute() else mute() }
     fun isMuted(): Boolean = videoPlayer.volume == 0f
+*/
 
     fun resetPlayer() {
         videoMap.clear()
@@ -153,6 +202,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         // Reset screen auto turn off
         Tools.keepScreenOn(window, false)
+        resetBrightness()
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
 
         super.onCleared()
     }

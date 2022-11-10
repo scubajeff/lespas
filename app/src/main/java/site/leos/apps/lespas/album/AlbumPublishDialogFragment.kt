@@ -48,6 +48,8 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.LesPasDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.publication.NCShareViewModel
 
 class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_publish_dialog) {
@@ -63,7 +65,8 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        currentShare = arguments?.getParcelable(CURRENT_SHARE)!!
+        //currentShare = arguments?.getParcelable(CURRENT_SHARE)!!
+        currentShare = requireArguments().parcelable(CURRENT_SHARE)!!
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -113,7 +116,8 @@ class AlbumPublishDialogFragment: LesPasDialogFragment(R.layout.fragment_album_p
         }
 
         // Get selected recipients from calling argument or saved instance state
-        (savedInstanceState?.getParcelableArrayList(SELECTED_RECIPIENTS)
+        //(savedInstanceState?.getParcelableArrayList(SELECTED_RECIPIENTS)
+        (savedInstanceState?.parcelableArrayList(SELECTED_RECIPIENTS)
             ?: run {
                 if (currentShare.with.isNotEmpty()) publicationTypeToggleGroup.check( if (NCShareViewModel.PERMISSION_JOINT == currentShare.with[0].permission) R.id.joint_album else R.id.solo_album)
                 arrayListOf<NCShareViewModel.Sharee>().apply {

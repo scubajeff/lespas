@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.publication
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -55,11 +56,11 @@ import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.Tools.parcelableArray
 import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.ZoneId
-import kotlin.math.atan2
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var window: Window
@@ -83,7 +84,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
 
-    private lateinit var gestureDetector: GestureDetectorCompat
+    private var onPauseCalled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +92,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         albumId = requireArguments().getString(KEY_ALBUM_ID) ?: ""
 
         pAdapter = RemoteMediaAdapter(
+            requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             shareModel.getResourceRoot(),
             playerViewModel,
@@ -123,26 +125,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
         }
 
-        // Detect swipe up gesture and show bottom controls
-        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
-            // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
-            override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                    in 55.0..125.0-> {
-                        hideHandler.post(showSystemUI)
-                        return true
-                    }
-                    in -125.0..-55.0-> {
-                        hideHandler.post(hideSystemUI)
-                        return true
-                    }
-                }
-
-                return super.onFling(e1, e2, velocityX, velocityY)
-            }
-        })
-
         this.window = requireActivity().window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
     }
@@ -176,14 +160,6 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                     currentPositionModel.setCurrentPosition(position)
                     captionTextView.text = pAdapter.getCaption(position)
                     if (autoRotate) requireActivity().requestedOrientation = if (pAdapter.isLandscape(position)) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                }
-            })
-
-            // Detect swipe up gesture and show bottom controls
-            (getChildAt(0) as RecyclerView).addOnItemTouchListener(object: RecyclerView.SimpleOnItemTouchListener() {
-                override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                    gestureDetector.onTouchEvent(e)
-                    return super.onInterceptTouchEvent(rv, e)
                 }
             })
         }
@@ -244,7 +220,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         super.onViewCreated(view, savedInstanceState)
 
         @Suppress("UNCHECKED_CAST")
-        (arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+        //(arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
+        (requireArguments().parcelableArray<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)!!).run {
             pAdapter.submitList(toMutableList()) {
                 requireArguments().getInt(KEY_SCROLL_TO).let { jumpTo ->
                     savedInstanceState ?: run { slider.setCurrentItem(jumpTo, false) }
@@ -292,7 +269,19 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
-        if (!hasFocus) playerViewModel.pause(Uri.EMPTY)
+        // In Android 13, at lease observed in some ROM, when resuming from device rotation, onWindowFocusChanged will be called once with hasFocus as false, we need to differentiate this from the others by checking if onPause has not been called
+        if (onPauseCalled && pAdapter.currentList[slider.currentItem].photo.mimeType.startsWith("video")) {
+            if (hasFocus) {
+                playerViewModel.resume(null, null)
+                onPauseCalled = false
+            }
+            else playerViewModel.pause(Uri.EMPTY)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        onPauseCalled = true
     }
 
     override fun onDestroyView() {
@@ -338,6 +327,7 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
             requestedOrientation = previousOrientationSetting
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
 
         super.onDestroy()
     }
@@ -400,8 +390,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
     }
 
-    class RemoteMediaAdapter(displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+    class RemoteMediaAdapter(context: Context, displayWidth: Int, private val basePath: String, playerViewModel: VideoPlayerViewModel, val clickListener: (Boolean?) -> Unit, val imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, type: String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = with(getItem(position) as NCShareViewModel.RemotePhoto) { VideoItem(Uri.parse("$basePath$remotePath/${photo.name}"), photo.mimeType, photo.width, photo.height, photo.id) }
         override fun getItemTransitionName(position: Int): String  = (getItem(position) as NCShareViewModel.RemotePhoto).photo.id
         override fun getItemMimeType(position: Int): String = (getItem(position) as NCShareViewModel.RemotePhoto).photo.mimeType

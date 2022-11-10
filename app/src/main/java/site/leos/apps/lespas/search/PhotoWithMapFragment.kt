@@ -17,7 +17,6 @@
 package site.leos.apps.lespas.search
 
 import android.content.ClipData
-import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -27,8 +26,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.*
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -38,10 +37,7 @@ import androidx.preference.PreferenceManager
 import com.github.chrisbanes.photoview.PhotoView
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -50,14 +46,13 @@ import org.osmdroid.views.overlay.Marker
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
-import site.leos.apps.lespas.album.AlbumRepository
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.*
-import java.io.File
 import java.util.*
 
 class PhotoWithMapFragment: Fragment() {
@@ -68,8 +63,12 @@ class PhotoWithMapFragment: Fragment() {
     private lateinit var photoView: PhotoView
 
     private var stripExif = "2"
-    private var shareOutJob: Job? = null
     private var shareOutUri = arrayListOf<Uri>()
+    private var shareOutType = GENERAL_SHARE
+    private var stripOrNot = false
+    private var shareOutMimeType = ""
+    private var waitingMsg: Snackbar? = null
+    private val handler = Handler(Looper.getMainLooper())
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private val destinationModel: DestinationDialogFragment.DestinationViewModel by activityViewModels()
@@ -81,7 +80,8 @@ class PhotoWithMapFragment: Fragment() {
 
         remoteBase = Tools.getRemoteHome(requireContext())
 
-        remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        //remotePhoto = requireArguments().getParcelable(KEY_PHOTO)!!
+        remotePhoto = requireArguments().parcelable(KEY_PHOTO)!!
         target = requireArguments().getInt(KEY_TARGET)
 
         sharedElementEnterTransition = MaterialContainerTransform().apply {
@@ -99,6 +99,23 @@ class PhotoWithMapFragment: Fragment() {
         setHasOptionsMenu(true)
 
         stripExif = PreferenceManager.getDefaultSharedPreferences(requireContext()).getString(getString(R.string.strip_exif_pref_key), getString(R.string.strip_ask_value))!!
+
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Cancel EXIF stripping job if it's running
+                waitingMsg?.let {
+                    if (it.isShownOrQueued) {
+                        imageLoaderModel.cancelShareOut()
+                        it.dismiss()
+                        return
+                    }
+                }
+
+                if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_photo_with_map, container, false)
@@ -141,10 +158,11 @@ class PhotoWithMapFragment: Fragment() {
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { key, bundle ->
             if (key == ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY) {
                 when(bundle.getString(ConfirmDialogFragment.INDIVIDUAL_REQUEST_KEY)) {
-                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false))
+                    STRIP_REQUEST_KEY -> shareOut(bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false), GENERAL_SHARE)
                 }
             }
         }
+
         destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let { targetAlbum ->
                 if (destinationModel.doOnServer()) {
@@ -175,6 +193,36 @@ class PhotoWithMapFragment: Fragment() {
                     if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(shareOutUri, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            imageLoaderModel.shareOutUris.collect { uris ->
+                // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
+                handler.removeCallbacksAndMessages(null)
+                if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
+
+                // Call system share chooser
+                when (shareOutType) {
+                    GENERAL_SHARE -> {
+                        startActivity(Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            type = shareOutMimeType
+                            putExtra(Intent.EXTRA_STREAM, uris[0])
+                            clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            // Allow removing original (e.g. move) is too much. TODO or is it?
+                            putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
+                        }, null))
+                    }
+                    SHARE_TO_LESPAS -> {
+                        // Allow removing original (e.g. move) is too much. TODO or is it?
+                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(uris, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                    }
+                }
+            }
+        }.invokeOnCompletion {
+            handler.removeCallbacksAndMessages(null)
+            if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
         }
     }
 
@@ -218,13 +266,8 @@ class PhotoWithMapFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
             R.id.option_menu_lespas -> {
-                if (target == R.id.search_cameraroll) {
-                    // Allow removing original (e.g. move) is too much. TODO or is it?
-                    prepareShares(remotePhoto.photo, false, requireContext().contentResolver)?.let {
-                        shareOutUri = arrayListOf(it)
-                        if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(shareOutUri, false).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
-                    }
-                } else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
+                if (target == R.id.search_cameraroll) shareOut(false, SHARE_TO_LESPAS)
+                else if (parentFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null) DestinationDialogFragment.newInstance(arrayListOf(remotePhoto), "", true).show(parentFragmentManager, TAG_DESTINATION_DIALOG)
                 true
             }
             R.id.option_menu_share -> {
@@ -233,8 +276,8 @@ class PhotoWithMapFragment: Fragment() {
                     if (stripExif == getString(R.string.strip_ask_value)) {
                         if (Tools.hasExif(remotePhoto.photo.mimeType)) {
                             if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
-                        } else shareOut(false)
-                    } else shareOut(stripExif == getString(R.string.strip_on_value))
+                        } else shareOut(false, GENERAL_SHARE)
+                    } else shareOut(stripExif == getString(R.string.strip_on_value), GENERAL_SHARE)
                 }
                 true
             }
@@ -252,87 +295,25 @@ class PhotoWithMapFragment: Fragment() {
         }
     }
 
-    private fun prepareShares(photo: Photo, strip: Boolean, cr: ContentResolver): Uri? {
-        return try {
-            // Synced file is named after id, not yet synced file is named after file's name
-            //val sourceFile = File(Tools.getLocalRoot(requireContext()), if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) photo.id else photo.name)
-            val sourceFile = File(Tools.getLocalRoot(requireContext()), photo.id)
-            val destFile = File(requireContext().cacheDir, if (strip) "${UUID.randomUUID()}.${photo.name.substringAfterLast('.')}" else photo.name)
+    private fun shareOut(strip: Boolean, shareType: Int) {
+        stripOrNot = strip
+        shareOutType = shareType
+        waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) { imageLoaderModel.cancelShareOut() }
 
-            // Copy the file from fileDir/id to cacheDir/name, strip EXIF base on setting
-            if (strip && Tools.hasExif(photo.mimeType)) {
-                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) {
-                    // Strip EXIF, rotate picture if needed
-                    BitmapFactory.decodeStream(cr.openInputStream(Uri.parse(photo.id)))?.let { bmp->
-                        (if (photo.orientation != 0) Bitmap.createBitmap(bmp, 0, 0, photo.width, photo.height, Matrix().apply { preRotate(photo.orientation.toFloat()) }, true) else bmp)
-                            .compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    }
-                }
-                else {
-                    if (sourceFile.exists()) BitmapFactory.decodeFile(sourceFile.canonicalPath)?.compress(Bitmap.CompressFormat.JPEG, 95, destFile.outputStream())
-                    else {
-                        val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${remoteBase}/${albumName}/${photo.name}", destFile, true, photo)) return null
-                    }
-                }
 
-                FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
-            } else {
-                if (photo.albumId == CameraRollFragment.FROM_CAMERA_ROLL) Uri.parse(photo.id)
-                else {
-                    if (sourceFile.exists()) sourceFile.copyTo(destFile, true, 4096)
-                    else {
-                        val albumName = AlbumRepository(requireActivity().application).getThisAlbum(photo.albumId).name
-                        if (!imageLoaderModel.downloadFile("${remoteBase}/${albumName}/${photo.name}", destFile, false, photo)) return null
-                    }
+        // Show a SnackBar if it takes too long (more than 500ms) preparing shares
+        handler.postDelayed({ waitingMsg?.show() }, 500)
 
-                    FileProvider.getUriForFile(requireContext(), getString(R.string.file_authority), destFile)
-                }
-            }
-        } catch (e: Exception) { null }
-    }
-
-    private fun shareOut(strip: Boolean) {
-        val cr = requireContext().contentResolver
-        val handler = Handler(Looper.getMainLooper())
-        val waitingMsg = Tools.getPreparingSharesSnackBar(mapView, strip) { shareOutJob?.cancel(cause = null) }
-
-        shareOutJob = lifecycleScope.launch(Dispatchers.IO) {
-            // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-            withContext(Dispatchers.Main) {
-                handler.removeCallbacksAndMessages(null)
-                handler.postDelayed({ waitingMsg.show() }, 500)
-            }
-
-            prepareShares(remotePhoto.photo, strip, cr)?.let {
-                withContext(Dispatchers.Main) {
-                    // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                    if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-
-                    // Call system share chooser
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = cr.getType(it) ?: "image/*"
-                        putExtra(Intent.EXTRA_STREAM, it)
-                        clipData = ClipData.newUri(cr, "", it)
-                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        // Allow removing original (e.g. move) is too much. TODO or is it?
-                        putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, false)
-                    }, null))
-                }
-            }
-        }
-
-        shareOutJob?.invokeOnCompletion {
-            // Dismiss waiting SnackBar
-            handler.removeCallbacksAndMessages(null)
-            if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
-        }
+        // Prepare media files for sharing
+        imageLoaderModel.prepareFileForShareOut(listOf(remotePhoto.photo.apply { shareOutMimeType = mimeType }), strip, remotePhoto.remotePath.isNotEmpty(), remotePhoto.remotePath)
     }
 
     companion object {
         private const val KEY_PHOTO = "KEY_PHOTO"
         private const val KEY_TARGET = "KEY_TARGET"
+
+        private const val GENERAL_SHARE = 0
+        private const val SHARE_TO_LESPAS = 2
 
         const val TAG_DESTINATION_DIALOG = "PHOTO_WITH_MAP_DESTINATION_DIALOG"
         const val TAG_ACQUIRING_DIALOG = "PHOTO_WITH_MAP_ACQUIRING_DIALOG"

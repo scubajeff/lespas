@@ -1,0 +1,5 @@
+* Nuovo design dell'interfaccia utente per la riproduzione dei video
+* Barra laterale fissa nell'area di ritaglio del display
+* Ripresa fissa della riproduzione video in Android 13 dopo la rotazione del dispositivo
+* La ricerca per nome della foto nell'album è ora insensibile alle maiuscole e alle minuscole
+* Altri miglioramenti e correzioni di bug

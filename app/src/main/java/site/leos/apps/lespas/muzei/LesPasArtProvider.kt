@@ -34,10 +34,12 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
+import site.leos.apps.lespas.tflite.ObjectDetectionModel
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
+import java.lang.Integer.max
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Period
@@ -58,37 +60,71 @@ class LesPasArtProvider: MuzeiArtProvider() {
     }
 
     override fun openFile(artwork: Artwork): InputStream {
-        var sWidth: Int
-        var sHeight: Int
-        val pWidth: Int
-        val pHeight: Int
+        var sWidth: Float
+        var sHeight: Float
+        val pWidth: Float
+        val pHeight: Float
 
         // Get screen real metrics
         Tools.getDisplayDimension(context!!.getSystemService(Context.WINDOW_SERVICE) as WindowManager).let {
-            sWidth = it.first
-            sHeight = it.second
+            sWidth = it.first.toFloat()
+            sHeight = it.second.toFloat()
         }
 
         // Adapt to original orientation
-        val portrait = context!!.resources.getBoolean(R.bool.portrait_artwork)
-        if ((portrait && sWidth > sHeight) || (!portrait && sWidth < sHeight)) {
+        val screenIsPortrait = context!!.resources.getBoolean(R.bool.portrait_artwork)
+        if ((screenIsPortrait && sWidth > sHeight) || (!screenIsPortrait && sWidth < sHeight)) {
             sWidth -= sHeight
             sHeight += sWidth
             sWidth = sHeight - sWidth
         }
 
         with(artwork.metadata!!.split(',')) {
-            pWidth = this[1].toInt()
-            pHeight = this[2].toInt()
+            pWidth = this[1].toFloat()
+            pHeight = this[2].toFloat()
         }
 
-        // Center crop the picture
-        val rect: Rect = if (sWidth.toFloat()/sHeight < pWidth.toFloat()/pHeight) {
-            val left = ((pWidth - (pHeight.toFloat() * sWidth / sHeight)) / 2).toInt()
-            Rect(left, 0, pWidth-left ,pHeight)
+        // Find out center of interested area
+        var xCenter = 0.5f
+        var yCenter = 0.5f
+        val od = ObjectDetectionModel(context!!.applicationContext.assets)
+        with(od.recognizeImage(BitmapFactory.decodeFile("${context!!.applicationContext.cacheDir}/${artwork.token!!}", BitmapFactory.Options().apply { inSampleSize = 8 }))) {
+            if (this.isNotEmpty()) this[0].location.let { area ->
+                xCenter = (area.left + (area.right - area.left) / 2) / ObjectDetectionModel.INPUT_SIZE
+                yCenter = (area.top + (area.bottom - area.top) / 2) / ObjectDetectionModel.INPUT_SIZE
+
+                if (xCenter == 0.0f) xCenter = 0.5f
+                if (yCenter == 0.0f) yCenter = 0.5f
+            }
+        }
+        od.close()
+
+        // Get the crop rect
+        val rect: Rect
+        if (sWidth / sHeight <= pWidth / pHeight) {
+            // Screen is narrower than artwork
+            val aWidth = pHeight * sWidth / sHeight
+            val center = pWidth * xCenter
+            var left = max((center - aWidth / 2).toInt(), 0)
+            var right = left + aWidth.toInt()
+            if (right > pWidth) {
+                right = pWidth.toInt()
+                left = (pWidth - aWidth).toInt()
+            }
+            rect = Rect(left, 0, right, pHeight.toInt())
+            //Log.e(">>>>>>>>", "openFile: screen is narrower, picture:${pWidth}x${pHeight} xCenter:$xCenter center:$center aW:${aWidth} $rect")
         } else {
-            val top = ((pHeight - (pWidth.toFloat() * sHeight / sWidth)) / 2).toInt()
-            Rect(0, top, pWidth, pHeight-top)
+            // Screen is wider than artwork
+            val aHeight = pWidth * sHeight / sWidth
+            val center = pHeight * yCenter
+            var top = max((center - aHeight / 2).toInt(), 0)
+            var bottom = top + aHeight.toInt()
+            if (bottom > pHeight) {
+                bottom = pHeight.toInt()
+                top = (pHeight - aHeight).toInt()
+            }
+            rect = Rect(0, top, pWidth.toInt(), bottom)
+            //Log.e(">>>>>>>>", "openFile: screen is wider picture:${pWidth}x${pHeight} yCenter:$yCenter center:$center aH:$aHeight $rect")
         }
 
         val out = ByteArrayOutputStream()
@@ -97,8 +133,6 @@ class LesPasArtProvider: MuzeiArtProvider() {
             (if (Build.VERSION.SDK_INT > Build.VERSION_CODES.R) BitmapRegionDecoder.newInstance(this) else BitmapRegionDecoder.newInstance(this, false)).decodeRegion(rect, null).compress(Bitmap.CompressFormat.JPEG, 90, out)
         }
         return ByteArrayInputStream(out.toByteArray())
-
-        //File(Tools.getLocalRoot(context!!), artwork.token!!).inputStream()
     }
 
     override fun getDescription(): String = lastAddedArtwork?.run { "$title" } ?: run { super.getDescription() }
@@ -116,11 +150,13 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
     private fun updateArtwork() {
         Thread {
+            var moreCaption = false
+
             (context?.applicationContext as Application).let { application ->
                 val sp = PreferenceManager.getDefaultSharedPreferences(application)
                 val exclusion = try { sp.getStringSet(LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST, setOf<String>()) } catch (e: ClassCastException) { setOf<String>() }
                 val albumRepository = AlbumRepository(application)
-                PhotoRepository(application).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(albumRepository.getAllHiddenAlbumIds()) }, application.resources.getBoolean(R.bool.portrait_artwork)).let { photoList ->
+                PhotoRepository(application).getMuzeiArtwork(exclusion!!.toMutableList().apply { addAll(albumRepository.getAllHiddenAlbumIds()) }).let { photoList ->
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()
@@ -136,17 +172,19 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                 }
                             }
                             LesPasArtProviderSettingActivity.PREFER_TODAY_IN_HISTORY -> {
-                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { hits ->
-                                    when(hits.size) {
+                                photoList.filter { p -> today.dayOfMonth == p.dateTaken.dayOfMonth && today.month == p.dateTaken.month }.let { sameDayHits ->
+                                    moreCaption = sameDayHits.isNotEmpty()
+
+                                    when(sameDayHits.size) {
                                         0 -> photoList[random.nextInt(photoList.size)]
-                                        1 -> hits[0]
+                                        1 -> sameDayHits[0]
                                         else -> {
-                                            var index = random.nextInt(hits.size)
+                                            var index = random.nextInt(sameDayHits.size)
                                             lastAddedArtwork?.let {
                                                 // Prevent from choosing the last one again
-                                                while(hits[index].id == it.token) index = random.nextInt(hits.size)
+                                                while(sameDayHits[index].id == it.token) index = random.nextInt(sameDayHits.size)
                                             }
-                                            hits[index]
+                                            sameDayHits[index]
                                         }
                                     }
                                 }
@@ -200,7 +238,8 @@ class LesPasArtProvider: MuzeiArtProvider() {
 
                     if (dest.exists()) setArtwork(Artwork(
                         title = album.name,
-                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}",
+                        byline = "${photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())}, ${photo.dateTaken.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))}" +
+                                if (moreCaption) with(LocalDate.now().year - photo.dateTaken.year) { if (this > 0) context!!.resources.getQuantityString(R.plurals.years_ago_today, this, this) else ""} else "",
                         token = photo.id,
                         metadata = "${photo.albumId},${photo.width},${photo.height}",
                     ))

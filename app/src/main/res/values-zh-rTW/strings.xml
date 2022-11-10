@@ -305,4 +305,8 @@
     <string name="theme_option_timeline_tooltips">關注時間的流逝。</string>
     <string name="checkbox_text_photo_list">選擇要展示在部落格中的圖片</string>
     <string name="timeline_theme_day_title">第%d天</string>
+    <plurals name="years_ago_today">
+        <item quantity="other">, %1$d年前的今天</item>
+    </plurals>
+    <string name="msg_player_skip">5秒</string>
 </resources>

@@ -1,0 +1,5 @@
+* Neue Funktion: Fütterung von Muzei mit AI-geschnittenen Fotos im Querformat.
+* Robustere Implementierung der gemeinsamen Nutzung von Medien mit anderen Anwendungen.
+* Mehrere Fehler bei der Suche im Archiv der Kamerarolle behoben.
+* Behoben: Falsche Zeitanzeige in Blogeinträgen im Timeline-Thema.
+* Weitere Verbesserungen und Fehlerbehebungen

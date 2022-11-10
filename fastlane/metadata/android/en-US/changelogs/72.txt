@@ -1,0 +1,5 @@
+* New feature: Feeding Muzei with AI cropped landscape photos
+* More robust implementation of sharing out medias to other apps
+* Fixed several bugs affecting search in camera roll archive
+* Fixed wrong zoned time displayed in Timeline theme blog post
+* Other improvements and bugs fixes

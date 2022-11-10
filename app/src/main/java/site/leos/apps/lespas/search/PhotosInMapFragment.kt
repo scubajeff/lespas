@@ -65,6 +65,8 @@ import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
 import site.leos.apps.lespas.cameraroll.CameraRollFragment
 import site.leos.apps.lespas.helper.Tools
+import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.helper.Tools.parcelableArrayList
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
@@ -114,7 +116,8 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
             albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
-            album = getParcelable(KEY_ALBUM)
+            //album = getParcelable(KEY_ALBUM)
+            album = parcelable(KEY_ALBUM)
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
@@ -151,7 +154,8 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
-            requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
+            //requireArguments().getParcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
+            requireArguments().parcelableArrayList<Photo>(KEY_PHOTOS)?.forEach { remotePhotos?.add(NCShareViewModel.RemotePhoto(it, if(isLocalAlbum) "" else "$remotePath/${album!!.name}")) }
         }
     }
 
