@@ -82,6 +82,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
         }
 
+        // Set maximum volume
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume,0)
+        videoPlayer.volume = currentVolumePercentage
+
         // Mute the video sound during late night hours
         with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
@@ -146,7 +150,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
-/*
     fun setVolume(increment: Float) {
         val volume = videoPlayer.volume + increment
         when {
@@ -156,7 +159,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
     }
     fun getVolume(): Float = videoPlayer.volume
-*/
+/*
     fun setVolume(increment: Float) {
         currentVolumePercentage += increment
         currentVolumePercentage = when {
@@ -167,6 +170,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,(currentVolumePercentage * maxVolume).toInt(),0)
     }
     fun getVolume(): Float = currentVolumePercentage
+ */
     fun setBrightness(increment: Float) {
         brightness += increment
         if (brightness < 0f) brightness = 0f
