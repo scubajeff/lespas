@@ -1,3 +1,9 @@
+## Version 2.6.4
+* New UI design for video playing
+* Fixed side bar on display cutout area
+* Fixed resuming video playing in Android 13 after device rotated
+* Search by photo name in album is now case insensitive
+
 ## Version 2.6.3
 * Quick fix for crash of new login
  

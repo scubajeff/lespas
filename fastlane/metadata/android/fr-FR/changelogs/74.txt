@@ -1,0 +1,5 @@
+* Nouveau design de l'interface utilisateur pour la lecture des vidéos
+* Correction de la barre latérale sur la zone de découpe de l'écran
+* Correction de la reprise de la lecture d'une vidéo sous Android 13 après une rotation de l'appareil.
+* La recherche par nom de photo dans l'album n'est plus sensible à la casse.
+* Autres améliorations et corrections de bogues
