@@ -68,7 +68,7 @@
             android:background="#898989" />
 
         <LinearLayout
-            android:id="@+id/more_controls"
+            android:id="@+id/base_controls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -86,23 +86,15 @@
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
-                android:id="@+id/info_button"
-                android:drawableTop="@drawable/ic_baseline_info_24"
-                android:text="@string/button_text_info"
-                style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/base_controls"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
                 android:id="@+id/share_button"
                 android:drawableTop="@drawable/ic_baseline_share_24"
                 android:text="@string/button_text_share"
+                style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
+
+            <Button
+                android:id="@+id/snapseed_button"
+                android:drawableTop="@drawable/ic_baseline_snapseed_24"
+                android:text="@string/button_text_edit_in_snapseed_replace"
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
@@ -112,11 +104,10 @@
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
 
             <Button
-                android:id="@+id/snapseed_button"
-                android:drawableTop="@drawable/ic_baseline_snapseed_24"
-                android:text="@string/button_text_edit_in_snapseed_replace"
+                android:id="@+id/info_button"
+                android:drawableTop="@drawable/ic_baseline_info_24"
+                android:text="@string/button_text_info"
                 style="@style/Widget.LesPas.ButtonBar.Fullscreen"/>
-
         </LinearLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

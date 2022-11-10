@@ -25,8 +25,8 @@
     <dimen name="dialog_frame_radius_small">4dp</dimen>
     <dimen name="camera_roll_grid_size">96dp</dimen>
     <dimen name="camera_roll_date_grid_size">36dp</dimen>
-    <dimen name="video_player_controls_right_margin">@dimen/extra_padding</dimen>
     <dimen name="chip_label_minimum_height">20dp</dimen>
+    <dimen name="exoplayer_control_layout_maximum_width">420dp</dimen>
     <dimen name="exoplayer_control_layout_horizontal_margin">@dimen/big_padding</dimen>
     <dimen name="exoplayer_control_layout_vertical_margin">56dp</dimen>
     <dimen name="login_screen_logo_size">144dp</dimen>

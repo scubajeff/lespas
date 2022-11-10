@@ -21,6 +21,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:maxWidth="@dimen/exoplayer_control_layout_maximum_width"
+    android:layout_gravity="center_horizontal"
     android:layout_marginHorizontal="@dimen/exoplayer_control_layout_horizontal_margin" >
 
     <androidx.media3.ui.DefaultTimeBar

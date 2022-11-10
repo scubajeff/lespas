@@ -20,7 +20,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:layout_gravity">center</item>
-        <item name="android:lines">@integer/bottom_bar_button_text_line</item>
+        <item name="android:lines">2</item>
         <item name="android:background">@android:color/transparent</item>
         <item name="android:textColor">@color/bottom_control_button</item>
         <item name="android:drawableTint">@color/bottom_control_button</item>
