@@ -72,6 +72,7 @@ import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.io.File
 import java.lang.Runnable
 import java.util.*
+import kotlin.math.min
 
 class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var album: Album
@@ -103,7 +104,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private var shareOutType = GENERAL_SHARE
     private var shareOutMimeType = ""
     private var waitingMsg: Snackbar? = null
-    private val handler = Handler(Looper.getMainLooper())
+    private val handlerShareOutSnackBar = Handler(Looper.getMainLooper())
 
     private lateinit var snapseedCatcher: BroadcastReceiver
     private lateinit var snapseedOutputObserver: ContentObserver
@@ -278,7 +279,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {
                     super.onPageScrollStateChanged(state)
-                    if (state == ViewPager2.SCROLL_STATE_SETTLING) hideHandler.post(hideSystemUI)
+                    if (state == ViewPager2.SCROLL_STATE_SETTLING) handlerBottomControl.post(hideSystemUI)
                 }
 
                 override fun onPageSelected(position: Int) {
@@ -336,7 +337,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         coverButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handlerBottomControl.post(hideSystemUI)
 
                 val currentMedia = pAdapter.getPhotoAt(slider.currentItem)
                 if (Tools.isMediaPlayable(currentMedia.mimeType) || currentMedia.mimeType == "image/gif") {
@@ -352,7 +353,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
                 if (stripExif == getString(R.string.strip_ask_value)) {
-                    hideHandler.post(hideSystemUI)
+                    handlerBottomControl.post(hideSystemUI)
 
                     if (Tools.hasExif(pAdapter.getPhotoAt(slider.currentItem).mimeType)) {
                         if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
@@ -371,7 +372,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         view.findViewById<Button>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handlerBottomControl.post(hideSystemUI)
 
                 if (parentFragmentManager.findFragmentByTag(INFO_DIALOG) == null) with(pAdapter.getPhotoAt(slider.currentItem)) {
                     if (isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED)
@@ -397,7 +398,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         removeButton.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handlerBottomControl.post(hideSystemUI)
 
                 if (parentFragmentManager.findFragmentByTag(REMOVE_DIALOG) == null)
                     ConfirmDialogFragment.newInstance(getString(R.string.confirm_delete), positiveButtonText = getString(R.string.yes_delete), requestKey = DELETE_REQUEST_KEY).show(parentFragmentManager, REMOVE_DIALOG)
@@ -406,11 +407,18 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         captionTextView.run {
             setOnTouchListener(delayHideTouchListener)
             setOnClickListener {
-                hideHandler.post(hideSystemUI)
+                handlerBottomControl.post(hideSystemUI)
 
                 parentFragmentManager.findFragmentByTag(CAPTION_DIALOG) ?: run { CaptionEditDialogFragment.newInstance(captionTextView.text.toString()).show(parentFragmentManager, CAPTION_DIALOG) }
             }
             movementMethod = ScrollingMovementMethod()
+            doOnEachNextLayout {
+                // Hide bottom control with delay adapted to caption's length
+                (it as TextView).let { caption ->
+                    handlerBottomControl.removeCallbacks(hideSystemUI)
+                    handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
+                }
+            }
         }
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
@@ -428,7 +436,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         viewLifecycleOwner.lifecycleScope.launch {
             imageLoaderModel.shareOutUris.collect { uris ->
                 // Dismiss snackbar before showing system share chooser, avoid unpleasant screen flicker
-                handler.removeCallbacksAndMessages(null)
+                handlerShareOutSnackBar.removeCallbacksAndMessages(null)
                 if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
                 // Call system share chooser
@@ -470,7 +478,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 }
             }
         }.invokeOnCompletion {
-            handler.removeCallbacksAndMessages(null)
+            handlerShareOutSnackBar.removeCallbacksAndMessages(null)
             if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
         }
 
@@ -538,7 +546,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
     override fun onDestroy() {
         // BACK TO NORMAL UI
-        hideHandler.removeCallbacksAndMessages(null)
+        handlerBottomControl.removeCallbacksAndMessages(null)
 
         @Suppress("DEPRECATION")
         requireActivity().window.run {
@@ -582,10 +590,10 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     // Toggle visibility of bottom controls and system decoView
-    private val hideHandler = Handler(Looper.getMainLooper())
+    private val handlerBottomControl = Handler(Looper.getMainLooper())
     private fun toggleSystemUI(state: Boolean?) {
-        hideHandler.removeCallbacksAndMessages(null)
-        hideHandler.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
+        handlerBottomControl.removeCallbacksAndMessages(null)
+        handlerBottomControl.post(if (state ?: !controlsContainer.isVisible) showSystemUI else hideSystemUI)
     }
 
     private val hideSystemUI = Runnable { Tools.goImmersive(window) }
@@ -602,15 +610,15 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 
-        // trigger auto hide
-        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // trigger auto hide, now triggered by caption view layout adapting to caption's length
+        //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
     @SuppressLint("ClickableViewAccessibility")
     private val delayHideTouchListener = View.OnTouchListener { _, _ ->
-        hideHandler.removeCallbacks(hideSystemUI)
-        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        handlerBottomControl.removeCallbacks(hideSystemUI)
+        handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
         false
     }
 
@@ -621,8 +629,8 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
-        // auto hide
-        if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // auto hide, now triggered by caption view layout adapting to caption's length
+        //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
 
         // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
         wipeActionBar()
@@ -656,7 +664,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         waitingMsg = Tools.getPreparingSharesSnackBar(slider, strip) { imageLoaderModel.cancelShareOut() }
 
         // Show a SnackBar if it takes too long (more than 500ms) preparing shares
-        handler.postDelayed({ waitingMsg?.show() }, 500)
+        handlerShareOutSnackBar.postDelayed({ waitingMsg?.show() }, 500)
 
         // Prepare media files for sharing
         imageLoaderModel.prepareFileForShareOut(listOf(pAdapter.getPhotoAt(slider.currentItem).apply { shareOutMimeType = mimeType }), strip, Tools.isRemoteAlbum(album), serverPath)
@@ -704,7 +712,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     }
 
     companion object {
-        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI. TODO dynamically adjusted to caption length
+        private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
 
         private const val INFO_DIALOG = "INFO_DIALOG"
         private const val REMOVE_DIALOG = "REMOVE_DIALOG"
