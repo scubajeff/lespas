@@ -364,10 +364,7 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         }
         setAsButton.run {
             setOnTouchListener(delayHideTouchListener)
-            setOnClickListener {
-                // TODO should call with strip true??
-                shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER)
-            }
+            setOnClickListener { shareOut(stripExif == getString(R.string.strip_on_value), SHARE_TO_WALLPAPER) }
         }
         view.findViewById<Button>(R.id.info_button).run {
             setOnTouchListener(delayHideTouchListener)
