@@ -370,7 +370,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     val circles = data.getJSONArray("circles")
                     for (i in 0 until circles.length()) {
                         circles.getJSONObject(i).apply {
-                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_CIRCLES).apply { Log.e(">>>>>>>>", "refreshSharees: $this") })
+                            result.add(Sharee(getJSONObject("value").getString("shareWith"), getString("label"), SHARE_TYPE_CIRCLES))
                         }
                     }
                 }
