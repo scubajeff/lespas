@@ -448,48 +448,50 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         currentQuery = currentPhotoModel.getCurrentQuery()
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
-            // Cover might changed, photo might be deleted, so get updates from latest here
-            val oldListType = this.album.sortOrder
-            this.album = it.album
+            if (it.album != null) {
+                // Cover might changed, photo might be deleted, so get updates from latest here
+                val oldListType = this.album.sortOrder
+                this.album = it.album
 
-            // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
-            if (abs(oldListType - this.album.sortOrder) == 100) {
-                recyclerView.adapter = null
-                recyclerView.layoutManager = newLayoutManger()
-                recyclerView.adapter = mAdapter
+                // If 'Show title' option toggled, must change Recyclerview layout and re-create adapter, and update search menu item visibility
+                if (abs(oldListType - this.album.sortOrder) == 100) {
+                    recyclerView.adapter = null
+                    recyclerView.layoutManager = newLayoutManger()
+                    recyclerView.adapter = mAdapter
 
-                updateSearchMenu()
-            }
+                    updateSearchMenu()
+                }
 
-            mAdapter.setAlbum(it, currentQuery)
-            (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
+                mAdapter.setAlbum(it, currentQuery)
+                (activity as? AppCompatActivity)?.supportActionBar?.title = it.album.name
 
-            // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
-            if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
-                currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
-            }
+                // Scroll to reveal the new position, e.g. the position where PhotoSliderFragment left
+                if (currentPhotoModel.getCurrentPosition() != currentPhotoModel.getLastPosition()) {
+                    (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(currentPhotoModel.getCurrentPosition())
+                    currentPhotoModel.setLastPosition(currentPhotoModel.getCurrentPosition())
+                }
 
-            // Scroll to designated photo at first run
-            if (scrollTo.isNotEmpty()) {
-                (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
-                scrollTo = ""
-            }
+                // Scroll to designated photo at first run
+                if (scrollTo.isNotEmpty()) {
+                    (recyclerView.layoutManager as GridLayoutManager).scrollToPosition(with(mAdapter.getPhotoPosition(scrollTo)) { if (this >= 0) this else 0 })
+                    scrollTo = ""
+                }
 
-            // Restore selection state
-            if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
+                // Restore selection state
+                if (lastSelection.isNotEmpty()) lastSelection.forEach { selected -> selectionTracker.select(selected) }
 
-            lifecycleScope.launch {
-                it.photos.forEach { photo ->
-                    if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
-                        mapOptionMenu?.isVisible = true
-                        return@launch
+                lifecycleScope.launch {
+                    it.photos.forEach { photo ->
+                        if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
+                            mapOptionMenu?.isVisible = true
+                            return@launch
+                        }
                     }
                 }
-            }
 
-            // Disable "Manage Blog" menu if this is a all video album
-            it.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
+                // Disable "Manage Blog" menu if this is a all video album
+                it.photos.find { p -> p.mimeType.startsWith("image") } ?: run { blogOptionMenu?.isVisible = false }
+            }
         }
 
         publishModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { shares ->
