@@ -1,0 +1,3 @@
+* Correction du scintillement de l'écran de connexion sur certaines instances de la NC.
+* Correction de l'affichage du slogan avec des caractères échappés dans l'écran de connexion.
+* Autres améliorations et corrections de bogues

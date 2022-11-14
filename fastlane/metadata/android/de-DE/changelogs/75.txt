@@ -1,0 +1,3 @@
+* Flackern des Anmeldebildschirms auf einigen NC-Instanzen behoben
+* Behebung der Anzeige von Slogans mit Sonderzeichen im Anmeldebildschirm
+* Weitere Verbesserungen und Fehlerkorrekturen

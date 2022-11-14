@@ -1,3 +1,7 @@
+## Version 2.6.5
+* Fixed login screen flickering on some NC instance
+* Fixed displaying slogan with escaped characters in login screen
+
 ## Version 2.6.4
 * New UI design for video playing
 * Fixed side bar on display cutout area

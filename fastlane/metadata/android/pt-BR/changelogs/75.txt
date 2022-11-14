@@ -1,0 +1,3 @@
+* Tela de login fixa cintilando em alguma instância NC
+* Fixo exibindo slogan com caracteres fugidos na tela de login
+* Outras melhorias e correções de bugs

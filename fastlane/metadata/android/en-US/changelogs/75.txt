@@ -1,0 +1,3 @@
+* Fixed login screen flickering on some NC instance
+* Fixed displaying slogan with escaped characters in login screen
+* Other improvements and bugs fixes
