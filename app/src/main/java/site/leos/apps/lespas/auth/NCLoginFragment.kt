@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
+import android.text.Html
 import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -326,7 +327,7 @@ class NCLoginFragment: Fragment() {
                                             try { serverTheme.color = Color.parseColor(getString("color")) } catch (_: Exception) {}
                                             //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
                                             serverTheme.textColor = ContextCompat.getColor(context, R.color.lespas_white).let { if (ColorUtils.calculateContrast(it, serverTheme.color) > 1.5f) it else ContextCompat.getColor(context, R.color.lespas_black)}
-                                            try { serverTheme.slogan = getString("slogan") } catch (_: Exception) {}
+                                            try { serverTheme.slogan = Html.fromHtml(getString("slogan"), Html.FROM_HTML_MODE_LEGACY).toString() } catch (_: Exception) {}
 /*
                                             OkHttpClient.Builder().apply {
                                                 if (acceptSelfSign) hostnameVerifier { _, _ -> true }
