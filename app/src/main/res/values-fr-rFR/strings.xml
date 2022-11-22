@@ -191,7 +191,7 @@
     <!-- Album Publish DialogFragment -->
     <string name="publish_album">Publier vers :</string>
     <string name="publish_button_text">Publier</string>
-    <string name="joint_album">Partagé</string>
+    <string name="joint_album">Commun</string>
     <string name="joint_album_tooltips">Les destinataires peuvent modifier.</string>
     <string name="solo_album">Personnel</string>
     <string name="solo_album_tooltips">Lecture seule pour les destinataires.</string>

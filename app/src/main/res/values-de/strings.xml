@@ -167,7 +167,7 @@
      <!-- Album Publish DialogFragment -->
     <string name="publish_album">Album teilen mit:</string>
     <string name="publish_button_text">Teilen</string>
-    <string name="joint_album">Gemeinsames Album</string>
+    <string name="joint_album">Gemeinsames</string>
     <string name="joint_album_tooltips">Empfänger dürfen bearbeiten.</string>
     <string name="solo_album">Schreibgeschütztes Album</string>
     <string name="solo_album_tooltips">Empfänger dürfen nur betrachten.</string>
