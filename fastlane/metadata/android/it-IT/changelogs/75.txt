@@ -1,0 +1,3 @@
+* Corretto lo sfarfallio della schermata di login su alcune istanze NC
+* Corretta la visualizzazione di slogan con caratteri sfuggiti nella schermata di login
+* Altri miglioramenti e correzioni di bug

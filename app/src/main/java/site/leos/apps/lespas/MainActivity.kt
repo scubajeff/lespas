@@ -95,9 +95,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     lifecycleScope.launch(Dispatchers.IO) {
                         // Make sure photo's folder created
-                        try {
-                            File(Tools.getLocalRoot(applicationContext)).mkdir()
-                        } catch (e: Exception) {}
+                        try { File(Tools.getLocalRoot(applicationContext)).mkdir() } catch (_: Exception) {}
                     }
 
                     intent.getStringExtra(LesPasArtProvider.FROM_MUZEI_ALBUM)?.let {
@@ -157,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             // Response to "up" affordance pressed in fragments
-            android.R.id.home -> onBackPressed()
+            android.R.id.home -> onBackPressedDispatcher.onBackPressed()
             else -> return super.onOptionsItemSelected(item)
         }
 
@@ -184,7 +182,7 @@ class MainActivity : AppCompatActivity() {
                             .show(supportFragmentManager, CONFIRM_RESTART_DIALOG)
                     }
                 }
-            } catch (e: IndexOutOfBoundsException) {}
+            } catch (_: IndexOutOfBoundsException) {}
         }
     }
 

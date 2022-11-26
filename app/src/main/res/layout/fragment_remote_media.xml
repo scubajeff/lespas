@@ -32,14 +32,18 @@
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/bottom_controls_container"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        app:layout_constraintWidth_max="600dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:gravity="bottom"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:gravity="center_horizontal|bottom"
         android:orientation="vertical"
         android:background="#B3404040"
         android:clipToPadding="false"
-        android:visibility="gone">
+        android:visibility="gone"
+        tools:visibility="visible">
 
         <TextView
             android:id="@+id/caption"
@@ -48,11 +52,11 @@
             android:paddingHorizontal="@dimen/big_padding"
             android:paddingTop="@dimen/small_padding"
             android:maxLines="@integer/caption_max_lines"
-            android:ellipsize="end"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/bottom_control_button"
             android:scrollbars="vertical"
-            android:visibility="gone" />
+            android:visibility="invisible"
+            tools:visibility="visible" />
 
         <View
             android:id="@+id/divider"
@@ -60,7 +64,8 @@
             android:layout_height="1dp"
             android:layout_margin="@dimen/small_padding"
             android:background="#646464"
-            android:visibility="gone" />
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="match_parent"

@@ -61,6 +61,7 @@ import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.DestinationDialogFragment
 import java.time.ZoneId
+import kotlin.math.min
 
 class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var window: Window
@@ -136,7 +137,16 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
         postponeEnterTransition()
 
-        captionTextView = view.findViewById<TextView>(R.id.caption).apply { movementMethod =  ScrollingMovementMethod() }
+        captionTextView = view.findViewById<TextView>(R.id.caption).apply {
+            movementMethod =  ScrollingMovementMethod()
+            doOnEachNextLayout {
+                // Hide bottom control with delay adapted to caption's length
+                (it as TextView).let { caption ->
+                    hideHandler.removeCallbacks(hideSystemUI)
+                    hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
+                }
+            }
+        }
         dividerView = view.findViewById(R.id.divider)
 
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
@@ -350,12 +360,13 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         }
 
         captionTextView.text.isNotEmpty().let {
-            captionTextView.isVisible = it
+            // Use View.INVISIBLE so that caption's lines can be count even if it's empty
+            captionTextView.visibility = if (it) View.VISIBLE else View.INVISIBLE
             dividerView.isVisible = it
         }
 
-        // auto hide
-        hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // auto hide, now triggered by caption view layout adapting to caption's length
+        //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -379,8 +390,8 @@ class RemoteMediaFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
-        // auto hide
-        if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // auto hide, now triggered by caption view layout adapting to caption's length
+        //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
     }
 
     private fun saveMedia() {

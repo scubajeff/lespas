@@ -54,7 +54,6 @@
             android:paddingHorizontal="@dimen/big_padding"
             android:paddingTop="@dimen/small_padding"
             android:maxLines="@integer/caption_max_lines"
-            android:ellipsize="end"
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
             android:textColor="@color/bottom_control_button"
             android:hint="@string/hint_caption"

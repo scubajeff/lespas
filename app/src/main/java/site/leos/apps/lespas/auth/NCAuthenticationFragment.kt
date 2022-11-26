@@ -167,7 +167,7 @@ class NCAuthenticationFragment: Fragment() {
                 }
 
                 override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest?, errorResponse: WebResourceResponse?) {
-                    errorResponse?.let { view?.reload() }   // TODO: better error handling
+                    request?.let { if (it.url.toString().contains(LOGIN_FLOW_ENDPOINT)) view?.reload() }   // TODO: better error handling
                     super.onReceivedHttpError(view, request, errorResponse)
                 }
 
