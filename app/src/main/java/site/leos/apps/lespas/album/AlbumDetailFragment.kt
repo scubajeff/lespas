@@ -448,7 +448,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         currentQuery = currentPhotoModel.getCurrentQuery()
         albumModel.getAlbumDetail(album.id).observe(viewLifecycleOwner) {
-            if (it.album != null) {
+            if (it?.album != null) {
                 // Cover might changed, photo might be deleted, so get updates from latest here
                 val oldListType = this.album.sortOrder
                 this.album = it.album
