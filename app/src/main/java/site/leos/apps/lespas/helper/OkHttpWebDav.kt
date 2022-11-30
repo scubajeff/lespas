@@ -59,8 +59,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             if (selfSigned) hostnameVerifier { _, _ -> true }
             addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic $secret").build()) }
             addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
-            readTimeout(20, TimeUnit.SECONDS)
-            writeTimeout(20, TimeUnit.SECONDS)
+            readTimeout(30, TimeUnit.SECONDS)
+            writeTimeout(30, TimeUnit.SECONDS)
         }
         httpClient = builder.build()
         cacheFolder?.let { cachedHttpClient = builder.cache(Cache(File(cacheFolder), cacheSize * 1024L * 1024L)).addNetworkInterceptor { chain -> chain.proceed(chain.request()).newBuilder().removeHeader("Pragma").header("Cache-Control", "public, max-age=${MAX_AGE}").build() }.build() }
