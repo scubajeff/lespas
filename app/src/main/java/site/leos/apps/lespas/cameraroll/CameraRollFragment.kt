@@ -1041,11 +1041,13 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         // In Android 13, at lease observed in some ROM, when resuming from device rotation, onWindowFocusChanged will be called once with hasFocus as false, we need to differentiate this from the others by checking if onPause has not been called
         if (onPauseCalled) {
-            camerarollModel.getCurrentPhoto()?.mimeType?.startsWith("video")?.let {
-                if (hasFocus) {
-                    playerViewModel.resume(null, null)
-                    onPauseCalled = false
-                } else playerViewModel.pause(Uri.EMPTY)
+            camerarollModel.getCurrentPhoto()?.mimeType?.let {
+                if (it.startsWith("video")) {
+                    if (hasFocus) {
+                        playerViewModel.resume(null, null)
+                        onPauseCalled = false
+                    } else playerViewModel.pause(Uri.EMPTY)
+                }
             }
         }
     }
