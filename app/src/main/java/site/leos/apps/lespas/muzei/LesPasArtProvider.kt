@@ -160,7 +160,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                     if (photoList.isEmpty()) null
                     else {
                         val today = LocalDate.now()
-                        val random = Random(System.currentTimeMillis())
+                        val random = Random(System.currentTimeMillis() * LocalDate.now().dayOfMonth / LocalDate.now().dayOfWeek.value)
                         when (sp.getInt(LesPasArtProviderSettingActivity.KEY_PREFER, LesPasArtProviderSettingActivity.PREFER_RANDOM)) {
                             LesPasArtProviderSettingActivity.PREFER_LATEST -> {
                                 photoList.filter { p -> Period.between(p.dateTaken.toLocalDate(), today).toTotalMonths() < 1 }.let { recentList ->
