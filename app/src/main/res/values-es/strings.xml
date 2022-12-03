@@ -146,7 +146,6 @@
     <string name="sd_card_not_ready">La tarjeta SD no está montada o es de sólo lectura.</string>
     <string name="published_to">Publicado en: %1$s</string>
     <string name="item_publish">Publicar álbum</string>
-    <string name="publish_album">Publicar en:</string>
     <string name="publish_button_text">Establecer</string>
     <string name="publication_list_fragment_title">Publicación de los amigos</string>
     <string name="item_show_meta">Mostrar metadatos</string>
@@ -312,4 +311,10 @@
     </plurals>
 
     <string name="msg_player_skip">5 segundos</string>
+    <string name="internal_publish">Interno</string>
+    <string name="external_publish">Público</string>
+    <string name="unpublish_button_text">UnPublish</string>
+    <string name="msg_note_down_your_password">Por favor, anote su contraseña, no hay manera de recuperarla una vez establecida.</string>
+    <string name="hint_leave_it_blank">Déjelo en blanco para no tener contraseña</string>
+    <string name="hint_user_name">Elija los destinatarios</string>
 </resources>

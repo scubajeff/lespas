@@ -109,6 +109,11 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     val blogs: StateFlow<List<Blog>?> = _blogs
     val blogPostThemeId: StateFlow<String> = _blogPostThemeId
 
+    private val _publicShare = MutableSharedFlow<Recipient>()
+    val publicShare: SharedFlow<Recipient> = _publicShare
+    private val _publicShareError = MutableSharedFlow<String>()
+    val publicShareError: SharedFlow<String> = _publicShareError
+
     private val _shareOutUris = MutableSharedFlow<ArrayList<Uri>>()
     val shareOutUris: SharedFlow<ArrayList<Uri>> = _shareOutUris
     var shareOutPreparationJob: Job? = null
@@ -207,12 +212,22 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         try {
             webDav.ocsGet("${baseUrl}${String.format(SHARED_BY_ME_ENDPOINT, lespasBase)}")?.apply {
                 val data = getJSONArray("data")
+                var shareType = 0
                 for (i in 0 until data.length()) {
                     data.getJSONObject(i).apply {
                         if (getString("item_type") == "folder") {
                             // Only interested in shares of sub-folders under lespas/
-                            // Circle recipient's label will have description appended by server, usually too long, cut it off here
-                            sharee = Recipient(getString("id"), getInt("permissions"), getLong("stime"), Sharee(getString("share_with"), getString("share_with_displayname").substringBefore(" ("), getInt("share_type")))
+                            shareType = getInt("share_type")
+                            sharee = Recipient(
+                                getString("id"), getInt("permissions"), getLong("stime"), getString("token"),
+                                Sharee(
+                                    getString("share_with"),
+                                    // Special label for public share
+                                    // Circle recipient's label has description appended by NC server, usually too long, cut it off here
+                                    if (shareType == SHARE_TYPE_PUBLIC) getApplication<Application>().getString(R.string.external_publish) else getString("share_with_displayname").substringBefore(" ("),
+                                    shareType
+                                )
+                            )
 
                             @Suppress("SimpleRedundantLet")
                             result.find { share -> share.fileId == getString("item_source") }?.let { item ->
@@ -416,7 +431,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private fun deleteShares(recipients: List<Recipient>) {
         for (recipient in recipients) {
             try {
-                webDav.ocsDelete("$baseUrl$PUBLISH_ENDPOINT/${recipient.shareId}")
+                if (recipient.shareId.isNotEmpty()) webDav.ocsDelete("$baseUrl$PUBLISH_ENDPOINT/${recipient.shareId}")
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -431,19 +446,29 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         }
     }
 */
-
     fun unPublish(albums: List<Album>) {
         viewModelScope.launch(Dispatchers.IO) {
             val recipients = mutableListOf<Recipient>()
             for (album in albums) {
-                _shareByMe.value.find { it.fileId == album.id }?.apply { recipients.addAll(this.with) }
+                _shareByMe.value.find { it.fileId == album.id }?.apply { recipients.addAll(with) }
             }
             deleteShares(recipients)
             _shareByMe.value = refreshShareByMe()
         }
     }
 
-    fun updatePublish(album: ShareByMe, removeRecipients: List<Recipient>) {
+    fun unPublishInternal(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val recipients = mutableListOf<Recipient>()
+            for (album in albums) {
+                _shareByMe.value.find { it.fileId == album.id }?.apply { with.forEach { if (it.sharee.type != SHARE_TYPE_PUBLIC) recipients.add(it) } }
+            }
+            deleteShares(recipients)
+            _shareByMe.value = refreshShareByMe()
+        }
+    }
+
+    fun updateInternalPublish(album: ShareByMe, removeRecipients: List<Recipient>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Remove sharees
@@ -451,8 +476,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
                 // Add sharees
                 if (album.with.isNotEmpty()) {
-                    // TODO no need to create content meta here since it's always maintained and uploaded on every update, but since client lower than release 2.5.0 will update the meta here, need to keep this
-                    //    here for a while as a counter measure
+                    // TODO no need to create content meta here since it's always maintained and uploaded on every update, but since client lower than release 2.5.0 will update the meta here, need to keep this here for a while as a counter measure
                     if (!isShared(album.fileId)) {
                         // If sharing this album for the 1st time, create content.json on server
                         val content = Tools.metasToJSONString(photoRepository.getPhotoMetaInAlbum(album.fileId))
@@ -467,6 +491,71 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    fun unPublishExternal(externalShare: Recipient) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                deleteShares(listOf(externalShare))
+                _shareByMe.value = refreshShareByMe()
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun publishExternal(album: ShareByMe, password: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val shareId = album.with[0].shareId
+                val permission = album.with[0].permission
+
+                (
+                    if (shareId.isEmpty())
+                        // Create public share link
+                        webDav.ocsPost(
+                            "${baseUrl}${PUBLISH_ENDPOINT}",
+                            FormBody.Builder().apply {
+                                add("path", "$lespasBase/${album.folderName}")
+                                add("label", album.folderName)
+                                add("shareType", SHARE_TYPE_PUBLIC.toString())
+                                add("permissions", permission.toString())
+                                add("publicUpload", (permission > PERMISSION_CAN_READ).toString())
+                                if (password.isNotEmpty()) add("password", password)
+                                //add("expireDate", "YYYY-MM-DD")
+                                //add("note", "")
+                                add("format", "json")
+                            }.build()
+                        )
+                    else
+                        // Update public share link
+                        webDav.ocsPut(
+                            "${baseUrl}${PUBLISH_ENDPOINT}/${shareId}",
+                            FormBody.Builder().apply {
+                                add("permissions", permission.toString())
+                                add("publicUpload", (permission > PERMISSION_CAN_READ).toString())
+                                if (password.isNotEmpty()) add("password", password)
+                                //add("expireDate", "YYYY-MM-DD")
+                                //add("note", "")
+                                add("format", "json")
+                            }.build()
+                        )
+                )?.let {
+                    val meta = it.getJSONObject("meta")
+                    when(meta.getInt("statuscode")) {
+                        100, 200 -> {
+                            it.getJSONObject("data").let { result ->
+                                _publicShare.emit(Recipient(result.getString("id"), result.getInt("permissions"), result.getLong("stime"), result.getString("token"), Sharee("", "", SHARE_TYPE_PUBLIC)))
+                            }
+
+                            // Update _shareByMe hence update UI
+                            _shareByMe.value = refreshShareByMe()
+                        }
+                        else -> meta.getString("message").run { _publicShareError.emit(this) }
+                    }
+                } ?: run {
+                    // TODO inform caller
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -550,7 +639,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun getAvatar(user: Sharee, view: View, callBack: LoadCompleteListener?) {
+    fun getAvatar(user: Sharee, view: View, callBack: NCShareViewModel.LoadCompleteListener?) {
         val jobKey = System.identityHashCode(view)
 
         val job = viewModelScope.launch(downloadDispatcher) {
@@ -571,6 +660,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
                     }
                     SHARE_TYPE_GROUP -> drawable = groupAvatar
                     SHARE_TYPE_CIRCLES -> drawable = circleAvatar
+                    SHARE_TYPE_PUBLIC -> drawable = publicAvatar
                 }
             }
             catch (e: Exception) { e.printStackTrace() }
@@ -994,6 +1084,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val cr = application.contentResolver
     private val circleAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_nc_circles_24) as Drawable }
     private val groupAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_group_24) as Drawable }
+    private val publicAvatar: Drawable by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_public_24) as Drawable }
     private val placeholderBitmap: Bitmap by lazy { ContextCompat.getDrawable(application, R.drawable.ic_baseline_placeholder_24)!!.toBitmap() }
     private val loadingDrawable = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator) as AnimatedVectorDrawable
     private val loadingDrawableLV = ContextCompat.getDrawable(application, R.drawable.animated_loading_indicator_lv) as AnimatedVectorDrawable
@@ -1004,7 +1095,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
     private val mediaMetadataRetriever by lazy { MediaMetadataRetriever() }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: LoadCompleteListener? = null) {
+    fun setImagePhoto(imagePhoto: RemotePhoto, view: ImageView, viewType: String, callBack: NCShareViewModel.LoadCompleteListener? = null) {
         val jobKey = System.identityHashCode(view)
 
         // For full image, show a cached thumbnail version first
@@ -1584,6 +1675,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         var shareId: String,
         var permission: Int,
         var sharedTime: Long,
+        var token: String,
         var sharee: Sharee,
     ) : Parcelable
 
@@ -1664,13 +1756,17 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         const val SHARE_TYPE_USER = 0
         const val SHARE_TYPE_GROUP = 1
-        //const val SHARE_TYPE_PUBLIC = 3
+        const val SHARE_TYPE_PUBLIC = 3
         const val SHARE_TYPE_CIRCLES = 7
 
         const val PERMISSION_CAN_READ = 1
         private const val PERMISSION_CAN_UPDATE = 2
         private const val PERMISSION_CAN_CREATE = 4
-        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ
+        private const val PERMISSION_CAN_DELETE = 8
+        private const val PERMISSION_SHARE = 16
+        const val PERMISSION_JOINT = PERMISSION_CAN_CREATE + PERMISSION_CAN_UPDATE + PERMISSION_CAN_READ    // 7
+        const val PERMISSION_PUBLIC_CAN_READ = PERMISSION_CAN_READ + PERMISSION_SHARE                       // 17
+        const val PERMISSION_PUBLIC_JOINT = PERMISSION_JOINT + PERMISSION_CAN_DELETE + PERMISSION_SHARE     // 31
         //private const val PERMISSION_CAN_DELETE = 8
         //private const val PERMISSION_CAN_SHARE = 16
         //private const val PERMISSION_ALL = 31

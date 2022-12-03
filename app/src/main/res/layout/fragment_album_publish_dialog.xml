@@ -16,98 +16,32 @@
   -->
 
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/shape_background"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:padding="@dimen/tiny_padding">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/background"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/big_padding">
+        android:paddingVertical="@dimen/extra_padding"
+        android:paddingHorizontal="@dimen/big_padding"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/dialog_title_textview"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            android:padding="@dimen/small_padding"
-            style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
-            android:text="@string/publish_album" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/recipient_chips"
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/dialog_title_textview"
-            android:padding="@dimen/small_padding" />
+            android:layout_height="@dimen/publishing_tab_label_height"
+            style="@style/Theme.Lespas.TabLayout"
+            tools:ignore="SpeakableTextPresentCheck" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/recipient_textinputlayout"
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/view_pager"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/recipient_chips"
-            android:padding="@dimen/small_padding"
-            style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
-            app:boxStrokeColor="?attr/colorSecondaryVariant">
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
 
-            <androidx.appcompat.widget.AppCompatAutoCompleteTextView
-                android:id="@+id/recipient_textinputedittext"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:maxLines="1"
-                tools:ignore="SpeakableTextPresentCheck" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/publication_type"
-            style="@style/Theme.LesPas.Toggle.Group"
-            app:layout_constraintTop_toBottomOf="@id/recipient_textinputlayout"
-            android:layout_marginTop="@dimen/big_padding"
-            android:layout_marginHorizontal="@dimen/small_padding"
-            app:checkedButton="@id/solo_album"
-            tools:ignore="MissingConstraints">
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/solo_album"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_solo_album_24"
-                android:text="@string/solo_album"
-                android:tooltipText="@string/solo_album_tooltips"
-                tools:ignore="UnusedAttribute" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/joint_album"
-                style="@style/Theme.LesPas.Toggle.Button"
-                app:icon="@drawable/ic_baseline_joint_album_24"
-                android:text="@string/joint_album"
-                android:tooltipText="@string/joint_album_tooltips"
-                tools:ignore="UnusedAttribute" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/ok_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/publication_type"
-            app:layout_constraintRight_toRightOf="parent"
-            android:layout_marginTop="@dimen/extra_padding"
-            android:layout_marginRight="@dimen/extra_padding"
-            style="@style/Theme.LesPas.TextButton"
-            android:text="@string/publish_button_text"
-            tools:ignore="RtlHardcoded" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/cancel_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="@id/ok_button"
-            app:layout_constraintRight_toLeftOf="@id/ok_button"
-            style="@style/Theme.LesPas.TextButton"
-            android:text="@android:string/cancel" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </FrameLayout>

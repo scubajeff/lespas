@@ -189,7 +189,6 @@
     <string name="artist">Artiste :</string>
     <string name="button_text_map">App. de carte</string>
     <!-- Album Publish DialogFragment -->
-    <string name="publish_album">Publier vers :</string>
     <string name="publish_button_text">Publier</string>
     <string name="joint_album">Commun</string>
     <string name="joint_album_tooltips">Les destinataires peuvent modifier.</string>
@@ -347,4 +346,10 @@
     </plurals>
 
     <string name="msg_player_skip">5 secondes</string>
+    <string name="internal_publish">Interne</string>
+    <string name="external_publish">Public</string>
+    <string name="unpublish_button_text">Dépublier</string>
+    <string name="msg_note_down_your_password">Veuillez noter votre mot de passe, il n\'y a aucun moyen de le récupérer une fois qu\'il a été défini.</string>
+    <string name="hint_leave_it_blank">Laissez-le vide pour ne pas avoir de mot de passe</string>
+    <string name="hint_user_name">Choisir les destinataires</string>
 </resources>

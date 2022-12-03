@@ -720,7 +720,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                                 for (recipient in it.with) chipGroup.addView((LayoutInflater.from(ctx).inflate(R.layout.textview_sharee, null) as TextView).also {
                                     recipient.sharee.run {
                                         if (type != NCShareViewModel.SHARE_TYPE_USER) {
-                                            it.text = label
+                                            if (type != NCShareViewModel.SHARE_TYPE_PUBLIC) it.text = label
                                             it.compoundDrawablePadding = ctx.resources.getDimension(R.dimen.mini_padding).toInt()
                                         }
                                         avatarLoader(this, it)

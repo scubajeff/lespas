@@ -48,6 +48,7 @@
         <!-- Additional UI colors -->
         <item name="colorError">@color/color_error</item>
         <item name="colorSurface">@color/color_surface</item>
+        <item name="colorControlBackground">@color/color_control_background</item>
         <item name="android:colorBackground">@color/color_background</item>
         <item name="backgroundColor">@color/color_background</item>
         <item name="android:colorEdgeEffect">@color/color_on_primary</item>
@@ -76,6 +77,7 @@
 
         <item name="colorError">@color/color_error</item>
         <item name="colorSurface">?attr/colorPrimaryVariant</item>
+        <item name="colorControlBackground">#444542</item>
         <item name="colorOnPrimary">?attr/primaryTextWhite</item>
         <item name="colorOnSurface">?attr/primaryTextWhite</item>
         <item name="android:colorBackground">@android:color/black</item>

@@ -165,7 +165,6 @@
     <string name="artist">Künstler:</string>
 
      <!-- Album Publish DialogFragment -->
-    <string name="publish_album">Album teilen mit:</string>
     <string name="publish_button_text">Teilen</string>
     <string name="joint_album">Gemeinsames</string>
     <string name="joint_album_tooltips">Empfänger dürfen bearbeiten.</string>
@@ -362,4 +361,10 @@
         <item quantity="other">, heute vor %1$d Jahren</item>
     </plurals>
     <string name="msg_player_skip">5 Sekunden</string>
+    <string name="internal_publish">Intern</string>
+    <string name="external_publish">Öffentlich</string>
+    <string name="unpublish_button_text">UnPublish</string>
+    <string name="msg_note_down_your_password">Bitte notieren Sie sich Ihr Passwort, denn es gibt KEINE Möglichkeit, das einmal festgelegte Passwort wiederherzustellen.</string>
+    <string name="hint_leave_it_blank">Lassen Sie das Feld leer für kein Passwort</string>
+    <string name="hint_user_name">Empfänger auswählen</string>
 </resources>

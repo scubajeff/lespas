@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/extra_padding"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:clickable="true">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/password_textinputlayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:padding="@dimen/small_padding"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
+        app:boxStrokeColor="?attr/colorSecondaryVariant"
+        android:hint="@string/hint_leave_it_blank"
+        app:hintTextColor="?android:attr/textColorHint"
+        app:helperText="@string/msg_note_down_your_password"
+        app:errorEnabled="true">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/password_textinputedittext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textAutoCorrect"
+            android:textCursorDrawable="@null"
+            android:maxLines="1"
+            android:selectAllOnFocus="true"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/publication_type"
+        style="@style/Theme.LesPas.Toggle.Group"
+        app:layout_constraintTop_toBottomOf="@id/password_textinputlayout"
+        android:layout_marginTop="@dimen/big_padding"
+        android:layout_marginHorizontal="@dimen/small_padding"
+        app:checkedButton="@id/solo_album"
+        tools:ignore="MissingConstraints">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/solo_album"
+            style="@style/Theme.LesPas.Toggle.Button"
+            app:icon="@drawable/ic_baseline_solo_album_24"
+            android:text="@string/solo_album"
+            android:tooltipText="@string/solo_album_tooltips"
+            tools:ignore="UnusedAttribute" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/joint_album"
+            style="@style/Theme.LesPas.Toggle.Button"
+            app:icon="@drawable/ic_baseline_joint_album_24"
+            android:text="@string/joint_album"
+            android:tooltipText="@string/joint_album_tooltips"
+            tools:ignore="UnusedAttribute" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/share_button"
+        app:layout_constraintTop_toBottomOf="@id/publication_type"
+        app:layout_constraintBottom_toTopOf="@id/share_button"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="@dimen/small_padding"
+        style="@style/Theme.LesPas.QR"
+        android:tooltipText="@string/button_text_share_blog"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:icon="@drawable/ic_baseline_qr_code_scanner_24"
+        tools:ignore="UnusedAttribute" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ok_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/share_button"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_marginTop="@dimen/extra_padding"
+        android:layout_marginRight="@dimen/small_padding"
+        style="@style/Theme.LesPas.TextButton"
+        android:text="@string/publish_button_text"
+        tools:ignore="RtlHardcoded" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/unpublish_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/ok_button"
+        app:layout_constraintRight_toLeftOf="@id/ok_button"
+        style="@style/Theme.LesPas.TextButton"
+        android:text="@string/unpublish_button_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/cancel_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/unpublish_button"
+        app:layout_constraintRight_toLeftOf="@id/unpublish_button"
+        style="@style/Theme.LesPas.TextButton"
+        android:text="@android:string/cancel" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

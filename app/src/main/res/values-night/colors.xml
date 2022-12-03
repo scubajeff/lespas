@@ -27,10 +27,12 @@
     <color name="color_background">#1F3B34</color>
     <color name="color_surface">#26564E</color>
     <color name="color_recipient_chip_text">#B2FFFFFF</color>
-    <color name="color_gray_out">#757575</color>
+    <color name="color_gray_out">#555555</color>
     <color name="color_remote_media_grid_background">#20F9F7E8</color>
     <color name="color_error_date_picker">@color/color_error</color>
     <color name="color_button_text">#F57F17</color>
+    <color name="color_tab_indicator">#A5D6A7</color>
+    <color name="color_control_background">#406A63</color>
 
     <color name="album_item_selected_background">#89937A</color>
 </resources>

@@ -345,12 +345,26 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
 
     fun ocsGet(url: String): JSONObject? =
         httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").build()).execute().use { response ->
-            if (response.isSuccessful) response.body?.string()?.let { json-> JSONObject(json).getJSONObject("ocs") }
+            if (response.isSuccessful) response.body?.string()?.let { json-> try { JSONObject(json).getJSONObject("ocs") } catch (_: Exception) { null }}
             else null
         }
 
-    fun ocsPost(url: String, body: RequestBody) {
-        httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use {}
+    fun ocsPost(url: String, body: RequestBody): JSONObject? {
+        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
+            when(response.code) {
+                100, 200, 400, 403, 404 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
+                else -> null
+            }
+        }
+    }
+
+    fun ocsPut(url: String, body: RequestBody): JSONObject? {
+        return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
+            when(response.code) {
+                100, 200, 400, 403, 404 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
+                else -> null
+            }
+        }
     }
 
     fun patch(url: String, payload: String) {

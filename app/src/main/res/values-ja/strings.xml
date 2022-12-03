@@ -145,7 +145,6 @@
     <string name="object_vehicle">車と船</string>
     <string name="published_to">に公開されています： %1$s</string>
     <string name="item_publish">アルバム公開</string>
-    <string name="publish_album">に公開します</string>
     <string name="publish_button_text">セット</string>
     <string name="publication_list_fragment_title">お友達の分</string>
     <string name="item_show_meta">メタデータの表示</string>
@@ -310,4 +309,10 @@
     </plurals>
 
     <string name="msg_player_skip">5秒</string>
+    <string name="internal_publish">内部</string>
+    <string name="external_publish">公共</string>
+    <string name="unpublish_button_text">アンパブ</string>
+    <string name="msg_note_down_your_password">一度設定したパスワードは復元できませんので、必ず控えておいてください。</string>
+    <string name="hint_leave_it_blank">パスワードがない場合は空欄にします</string>
+    <string name="hint_user_name">受信者の選択</string>
 </resources>

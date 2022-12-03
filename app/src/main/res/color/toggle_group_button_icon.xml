@@ -16,6 +16,7 @@
   -->
 
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/color_gray_out" android:state_enabled="false" />
     <item android:color="@color/color_button_text" android:state_checked="true" />
-    <item android:color="@color/color_gray_out" />
+    <item android:color="#616161" />
 </selector>
