@@ -378,5 +378,5 @@
     <string name="unpublish_button_text">UnPublish</string>
     <string name="msg_note_down_your_password">Por favor, anote sua senha, NÃO há como recuperá-la uma vez definida.</string>
     <string name="hint_leave_it_blank">Deixar em branco para não ter senha</string>
-    <string name="hint_user_name">Escolha os destinatários</string>
+    <string name="hint_user_name">Destinatários</string>
 </resources>

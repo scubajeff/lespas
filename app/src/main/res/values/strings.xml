@@ -323,7 +323,7 @@
     <string name="solo_album_tooltips">Recipients view only.</string>
     <string name="msg_note_down_your_password">Please note down your password, there is NO way to retrieve it once set.</string>
     <string name="hint_leave_it_blank">Leave it blank for no password</string>
-    <string name="hint_user_name">Choose recipients</string>
+    <string name="hint_user_name">Recipients</string>
     <!--
         <string name="permission_to_edit">Allow recipient updating album</string>
     -->

@@ -316,5 +316,5 @@
     <string name="unpublish_button_text">UnPublish</string>
     <string name="msg_note_down_your_password">Por favor, anote su contraseña, no hay manera de recuperarla una vez establecida.</string>
     <string name="hint_leave_it_blank">Déjelo en blanco para no tener contraseña</string>
-    <string name="hint_user_name">Elija los destinatarios</string>
+    <string name="hint_user_name">Destinatarios</string>
 </resources>

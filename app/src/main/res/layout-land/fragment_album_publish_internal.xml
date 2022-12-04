@@ -36,6 +36,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/recipient_textinputlayout"
             app:layout_constraintHeight_max="@dimen/recipients_list_maximum_height"
+            app:layout_constraintWidth_percent="0.6"
             android:scrollbars="none">
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/recipient_chips"

@@ -351,5 +351,5 @@
     <string name="unpublish_button_text">Dépublier</string>
     <string name="msg_note_down_your_password">Veuillez noter votre mot de passe, il n\'y a aucun moyen de le récupérer une fois qu\'il a été défini.</string>
     <string name="hint_leave_it_blank">Laissez-le vide pour ne pas avoir de mot de passe</string>
-    <string name="hint_user_name">Choisir les destinataires</string>
+    <string name="hint_user_name">Destinataires</string>
 </resources>

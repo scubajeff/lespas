@@ -381,5 +381,5 @@
     <string name="unpublish_button_text">Non pubblicare</string>
     <string name="msg_note_down_your_password">Si prega di annotare la password, non c\'è modo di recuperarla una volta impostata.</string>
     <string name="hint_leave_it_blank">Lasciare vuoto per non avere una password</string>
-    <string name="hint_user_name">Scegliere i destinatari</string>
+    <string name="hint_user_name">Destinatari</string>
 </resources>

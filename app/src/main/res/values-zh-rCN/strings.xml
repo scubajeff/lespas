@@ -313,5 +313,5 @@
     <string name="unpublish_button_text">删除发布</string>
     <string name="external_publish">外网</string>
     <string name="internal_publish">内网</string>
-    <string name="hint_user_name">选择接收者</string>
+    <string name="hint_user_name">接收者</string>
 </resources>

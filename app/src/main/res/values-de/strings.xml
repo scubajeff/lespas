@@ -366,5 +366,5 @@
     <string name="unpublish_button_text">UnPublish</string>
     <string name="msg_note_down_your_password">Bitte notieren Sie sich Ihr Passwort, denn es gibt KEINE Möglichkeit, das einmal festgelegte Passwort wiederherzustellen.</string>
     <string name="hint_leave_it_blank">Lassen Sie das Feld leer für kein Passwort</string>
-    <string name="hint_user_name">Empfänger auswählen</string>
+    <string name="hint_user_name">Empfänger</string>
 </resources>

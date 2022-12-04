@@ -313,5 +313,5 @@
     <string name="unpublish_button_text">刪除發佈</string>
     <string name="external_publish">外網</string>
     <string name="internal_publish">內網</string>
-    <string name="hint_user_name">選擇接收者</string>
+    <string name="hint_user_name">接收者</string>
 </resources>
