@@ -154,6 +154,7 @@
                     app:spanCount="@integer/cameraroll_grid_span_count"
                     tools:listitem="@layout/recyclerview_item_photo"
                     android:visibility="gone"
+                    tools:visibility="visible"
                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
@@ -188,23 +189,17 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/big_padding"
                 app:layout_constraintTop_toBottomOf="@id/publish_button"
-                android:visibility="gone">
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/share_button"
-                    android:layout_width="180dp"
-                    android:layout_height="228dp"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    android:backgroundTint="?colorSurface"
-                    app:iconGravity="top"
-                    app:icon="@drawable/ic_baseline_qr_code_scanner_24"
-                    app:iconSize="180dp"
-                    app:iconTint="?colorOnSurface"
-                    android:text="@string/button_text_share_blog"
-                    android:textColor="?colorOnSurface"
+                    style="@style/Theme.LesPas.QR"
                     android:tooltipText="@string/button_text_share_blog"
+                    tools:icon="@drawable/ic_baseline_qr_code_scanner_24"
                     tools:ignore="UnusedAttribute" />
 
                 <TextView
@@ -217,7 +212,8 @@
                     android:text="@string/notice"
                     style="@style/TextAppearance.MaterialComponents.Caption"
                     android:textAlignment="center"
-                    android:visibility="invisible" />
+                    android:visibility="invisible"
+                    tools:visibility="visible"/>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

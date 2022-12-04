@@ -27,4 +27,5 @@
     <attr name="colorHighlightPrimary" format="color" />
     <attr name="colorToggleButtonOnToolbar" format="color" />
     <attr name="colorErrorDatePicker" format="color" />
+    <attr name="colorControlBackground" format="color" />
 </resources>

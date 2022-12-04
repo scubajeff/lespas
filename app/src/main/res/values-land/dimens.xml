@@ -21,4 +21,6 @@
     <dimen name="exoplayer_control_layout_vertical_margin">40dp</dimen>
     <dimen name="destination_dialog_clipdata_grid_size">32dp</dimen>
     <dimen name="login_screen_logo_size">80dp</dimen>
+    <dimen name="publishing_tab_label_height">40dp</dimen>
+    <dimen name="recipients_list_maximum_height">64dp</dimen>
 </resources>

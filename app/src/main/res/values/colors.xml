@@ -41,6 +41,8 @@
     <color name="color_remote_media_grid_background">#201B1D1C</color>
     <color name="color_error_date_picker">@android:color/holo_red_dark</color>
     <color name="color_button_text">#BF360C</color>
+    <color name="color_tab_indicator">#00695C</color>
+    <color name="color_control_background">#C8CCB8</color>
 
     <color name="album_item_selected_background">#89937A</color>   <!-- #97B8A3  EFE8D8-->
 

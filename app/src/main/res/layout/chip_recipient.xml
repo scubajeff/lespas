@@ -25,6 +25,7 @@
     style="@style/Widget.MaterialComponents.Chip.Entry"
     app:chipIcon="@drawable/ic_baseline_person_24"
     app:chipCornerRadius="4dp"
+    app:closeIconTint="@color/color_tab_indicator"
     android:lines="1"
     android:ellipsize="end"
     tools:text="chip" />

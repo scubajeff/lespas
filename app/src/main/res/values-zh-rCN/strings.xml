@@ -145,8 +145,7 @@
     <string name="sd_card_not_ready">外置存储卡未挂载或只读。</string>
     <string name="published_to">已发布给：%1$s</string>
     <string name="item_publish">发布相册</string>
-    <string name="publish_album">发布给：</string>
-    <string name="publish_button_text">设定</string>
+    <string name="publish_button_text">发布</string>
     <string name="publication_list_fragment_title">亲友分享</string>
     <string name="item_show_meta">显示额外信息</string>
     <string name="yes_i_do">没问题</string>
@@ -309,4 +308,10 @@
         <item quantity="other">, %1$d年前的今天</item>
     </plurals>
     <string name="msg_player_skip">5秒</string>
+    <string name="hint_leave_it_blank">留空表示没有密码</string>
+    <string name="msg_note_down_your_password">请记下你的密码，一旦设置法找回。</string>
+    <string name="unpublish_button_text">删除发布</string>
+    <string name="external_publish">外网</string>
+    <string name="internal_publish">内网</string>
+    <string name="hint_user_name">接收者</string>
 </resources>

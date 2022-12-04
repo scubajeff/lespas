@@ -62,7 +62,7 @@
         <item name="iconTint">@color/toggle_group_button_icon</item>
         <item name="iconSize">20dp</item>
         <item name="strokeColor">@color/toggle_group_button</item>
-        <item name="rippleColor">?colorSecondaryVariantFade</item>
+        <item name="rippleColor">?colorControlBackground</item>
         <item name="backgroundTint">@color/toggle_group_button_background</item>
         <item name="android:insetLeft">0dp</item>
         <item name="android:insetRight">0dp</item>
@@ -77,5 +77,34 @@
         <item name="android:textSize">12sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/lespas_white</item>
+    </style>
+    
+    <style name="Theme.Lespas.TabLayout" parent="Widget.MaterialComponents.TabLayout">
+        <item name="tabTextColor">@color/toggle_group_button</item>
+        <item name="tabIndicatorColor">@color/color_tab_indicator</item>
+        <item name="tabTextAppearance">@style/Theme.LesPas.TabLayout.TextAppearance</item>
+    </style>
+
+    <style name="Theme.LesPas.TabLayout.TextAppearance" parent="TextAppearance.MaterialComponents.Button">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAlignment">center</item>
+    </style>
+
+    <style name="Theme.LesPas.QR" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="android:layout_width">180dp</item>
+        <item name="android:layout_height">228dp</item>
+        <item name="android:backgroundTint">?colorControlBackground</item>
+        <item name="iconGravity">top</item>
+        <item name="iconSize">180dp</item>
+        <item name="iconTint">@color/color_tab_indicator</item>
+        <item name="android:text">@string/button_text_share_blog</item>
+        <item name="android:textColor">@color/color_tab_indicator</item>
+    </style>
+
+    <style name="Theme.LesPas.ExposedDropdownMenu" parent="Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu">
+        <item name="boxStrokeColor">?colorSecondaryVariant</item>
+        <item name="endIconTint">?android:attr/textColorHint</item>
+        <item name="hintTextColor">?android:attr/textColorHint</item>
+        <item name="android:textColorHighlight">?colorOnPrimary</item>
     </style>
 </resources>

@@ -206,7 +206,6 @@
     <string name="button_text_map">App di navigazione</string>
 
     <!-- Album Publish DialogFragment -->
-    <string name="publish_album">Pubblica su:</string>
     <string name="publish_button_text">Pubblica</string>
     <string name="joint_album">Comune</string>
     <string name="joint_album_tooltips">I destinatari possono apportare modifiche.</string>
@@ -377,4 +376,10 @@
     </plurals>
 
     <string name="msg_player_skip">5 secondi</string>
+    <string name="internal_publish">Interno</string>
+    <string name="external_publish">Pubblico</string>
+    <string name="unpublish_button_text">Non pubblicare</string>
+    <string name="msg_note_down_your_password">Si prega di annotare la password, non c\'è modo di recuperarla una volta impostata.</string>
+    <string name="hint_leave_it_blank">Lasciare vuoto per non avere una password</string>
+    <string name="hint_user_name">Destinatari</string>
 </resources>

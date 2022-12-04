@@ -41,4 +41,7 @@
 
     <dimen name="list_horizontal_margin">8dp</dimen>
     <dimen name="camera_roll_list_horizontal_margin">12dp</dimen>
+
+    <dimen name="publishing_tab_label_height">44dp</dimen>
+    <dimen name="recipients_list_maximum_height">220dp</dimen>
 </resources>

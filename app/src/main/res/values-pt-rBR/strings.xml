@@ -193,7 +193,6 @@
     <string name="button_text_map">Mapa</string>
 
     <!-- Album Publish DialogFragment -->
-    <string name="publish_album">Publicar para:</string>
     <string name="publish_button_text">Publicar</string>
     <string name="joint_album">Conjunto</string>
     <string name="joint_album_tooltips">Recipientes podem editar.</string>
@@ -374,4 +373,10 @@
     </plurals>
 
     <string name="msg_player_skip">5 segundos</string>
+    <string name="internal_publish">Interno</string>
+    <string name="external_publish">Público</string>
+    <string name="unpublish_button_text">UnPublish</string>
+    <string name="msg_note_down_your_password">Por favor, anote sua senha, NÃO há como recuperá-la uma vez definida.</string>
+    <string name="hint_leave_it_blank">Deixar em branco para não ter senha</string>
+    <string name="hint_user_name">Destinatários</string>
 </resources>
