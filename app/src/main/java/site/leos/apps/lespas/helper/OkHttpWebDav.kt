@@ -416,6 +416,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                     response.code == 405-> {
                         // Try to resume from the last position, assume that all uploaded chunks except the last 1 are intact
                         list(chunkFolder, FOLDER_CONTENT_DEPTH).drop(1).maxByOrNull { it.name }?.run {
+                            if (this.name.substringBefore('.').isEmpty())
+                                this.name = '0' + this.name
                             try { (this.name.substringBefore('.')).toLong() } catch (e: NumberFormatException) { null }?.let {
                                 // If last chunk uploaded is intact, start from the next chunk
                                 index = it + if (this.size == CHUNK_SIZE) CHUNK_SIZE else 0
