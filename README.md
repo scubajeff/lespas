@@ -43,8 +43,13 @@ Features:
   <img alt="Search by Location" src="fastlane/metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
   <img alt="Show Album in Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
   <img alt="Show Photo with Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
+  <img alt="Manage Photo Blog" src="fastlane/metadata/android/en-US/images/phoneScreenshots/12_blog.png" width="200" />
+</p>
+
+<p float="left">
   <img alt="Settings" src="fastlane/metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
 </p>
+
 
 Here is a short video demonstrate how the slideshow on map works:
 
