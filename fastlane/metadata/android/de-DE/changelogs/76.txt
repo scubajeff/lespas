@@ -1,0 +1,4 @@
+* Neue Funktion: Album auf Nextcloud Circle und General Public veröffentlichen
+* Behoben: Video wurde fälschlicherweise weiter abgespielt, nachdem der Fokus des Fensters in der Kamerarolle wiederhergestellt wurde
+* Längere Netzwerk-Lese-/Schreib-Timeout-Einstellung
+* Weitere Verbesserungen und Fehlerbehebungen

@@ -1,3 +1,8 @@
+## Version 2.6.6
+* New feature: publish album to Nextcloud Circle and General Public
+* Fixed video wrongly resumed playing after re-gaining window focus in Camera Roll screen
+* Longer network read/write timeout setting
+
 ## Version 2.6.5
 * Fixed login screen flickering on some NC instance
 * Fixed displaying slogan with escaped characters in login screen

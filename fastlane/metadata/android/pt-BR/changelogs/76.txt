@@ -1,0 +1,4 @@
+* Nova funcionalidade: publicar álbum para o Nextcloud Circle e Público em Geral
+* O vídeo corrigido voltou a ser reproduzido erroneamente após recuperar o foco da janela na tela do rolo de câmera
+* Definição de um tempo limite de leitura/escrita mais longo na rede
+* Outras melhorias e correções de bugs

@@ -1,0 +1,4 @@
+* Nuova funzione: pubblicazione dell'album su Nextcloud Circle e General Public.
+* Risoluzione del problema del video che riprendeva erroneamente la riproduzione dopo aver ripreso il focus della finestra nella schermata del Rullino fotografico.
+* Impostazione di timeout di lettura/scrittura di rete più lunga
+* Altri miglioramenti e correzioni di bug

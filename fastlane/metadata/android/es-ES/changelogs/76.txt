@@ -1,0 +1,4 @@
+* Nueva función: publicar el álbum en Nextcloud Circle y General Public
+* Se ha corregido la reanudación de la reproducción de un vídeo tras volver a enfocar la ventana en la pantalla de Camera Roll
+* Ajuste del tiempo de espera de lectura/escritura en la red más largo
+* Otras mejoras y correcciones de errores
