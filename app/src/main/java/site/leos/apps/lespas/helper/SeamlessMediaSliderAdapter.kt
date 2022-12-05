@@ -103,12 +103,12 @@ abstract class SeamlessMediaSliderAdapter<T>(
                     // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
                     if (e1.x > displayWidth / 2) {
                         knobIcon?.setImageDrawable(volumeDrawable)
-                        playerViewModel.setVolume(distanceY / 200)
+                        playerViewModel.setVolume(distanceY / 300)
                         knobPosition?.progress = (playerViewModel.getVolume() * 100).toInt()
                     }
                     else {
                         knobIcon?.setImageDrawable(brightnessDrawable)
-                        playerViewModel.setBrightness(distanceY / 200)
+                        playerViewModel.setBrightness(distanceY / 300)
                         knobPosition?.progress = (playerViewModel.getBrightness() * 100).toInt()
                     }
 
