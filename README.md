@@ -11,7 +11,7 @@ Features:
 - Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
 - Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
-- Share albums and album slideshow with other Nextcloud users
+- Share albums and album slideshow with other Nextcloud users, group and circle
 - Joint album, which you and other Nextcloud users can edit together
 - Support photo blogging, refer to this [instruction](https://github.com/scubajeff/pico_lespas)
 - Search for photos by objects with AI
