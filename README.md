@@ -26,28 +26,28 @@ Features:
 - Open-source
 
 <p float="left">
-  <img alt="Welcome Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
-  <img alt="Album List" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" /> 
-  <img alt="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/03_album_detail.png" width="200" />
-  <img alt="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/04_photo.png" width="200" />
+  <img alt="Welcome Page" title="Welcome Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
+  <img alt="Albums List" title="List of Albums" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" /> 
+  <img alt="Album Detail" title="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/03_album_detail.png" width="200" />
+  <img alt="Photo Viewer" title="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/04_photo.png" width="200" />
 </p>
 
 <p float="left">
-  <img alt="Adding Photo" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
-  <img alt="Browsing Camera Roll" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
-  <img alt="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
-  <img alt="Search by Objects" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
+  <img alt="Adding Photo" title="Adding Photos" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
+  <img alt="Browsing Camera Roll" title="Manage Camera Roll and Archive" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
+  <img alt="Publishing Album" title="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
+  <img alt="Search by Objects" title="AI Search" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
 </p>
 
 <p float="left">
-  <img alt="Search by Location" src="fastlane/metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
-  <img alt="Show Album in Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
-  <img alt="Show Photo with Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
-  <img alt="Manage Photo Blog" src="fastlane/metadata/android/en-US/images/phoneScreenshots/12_blog.png" width="200" />
+  <img alt="Search by Location" title="Search by Location" src="fastlane/metadata/android/en-US/images/phoneScreenshots/09_by_location.png" width="200" />
+  <img alt="Show Album on Map" title="Show Album on Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/10_in_map.png" width="200" />
+  <img alt="Show Photo with Map" title="Show Photo with Map" src="fastlane/metadata/android/en-US/images/phoneScreenshots/11_with_map.png" width="200" />
+  <img alt="Manage Photo Blog" title="Manage Photo Blog" src="fastlane/metadata/android/en-US/images/phoneScreenshots/12_blog.png" width="200" />
 </p>
 
 <p float="left">
-  <img alt="Settings" src="fastlane/metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
+  <img alt="Settings" title="Settings" src="fastlane/metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
 </p>
 
 
