@@ -36,6 +36,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -129,7 +130,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     // Update album meta only when fragment destroy
     private var saveSortOrderChanged = false
 
-    private lateinit var addFileLauncher: ActivityResultLauncher<String>
+    private lateinit var addFileLauncher: ActivityResultLauncher<PickVisualMediaRequest>
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
@@ -284,7 +285,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             sharedSelection.clear()
         }
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(uris as ArrayList<Uri>, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
@@ -697,7 +698,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onMenuItemSelected(item: MenuItem): Boolean {
                 return when(item.itemId) {
                     R.id.option_menu_add_photo-> {
-                        addFileLauncher.launch("*/*")
+                        addFileLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
                         true
                     }
                     R.id.option_menu_rename-> {
