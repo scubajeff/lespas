@@ -117,25 +117,27 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
     private fun showBackupStatus() {
         sp.getString(keyBackupStatus, " | |0|0|0")?.split('|')?.let { message ->
             if (message.isNotEmpty()) {
-                // backup message is String array of: filename|file size in human readable format|current index in set|set total|timestamp in millisecond
-                val total = message[3].toInt()
-                val current = message[2].toInt()
-                if (total > 0) {
-                    backupProgressBar.run {
-                        isVisible = true
-                        max = total
-                        setProgress(current, true)
+                try {
+                    // backup message is String array of: filename|file size in human readable format|current index in set|set total|timestamp in millisecond
+                    val total = message[3].toInt()
+                    val current = message[2].toInt()
+                    if (total > 0) {
+                        backupProgressBar.run {
+                            isVisible = true
+                            max = total
+                            setProgress(current, true)
+                        }
+                        currentFileTextView.text = String.format("%s (%s)", message[0], message[1])
+                        (total - current).let { left ->
+                            remainingTextView.isVisible = left > 0
+                            remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
+                        }
+                    } else {
+                        backupProgressBar.isVisible = false
+                        currentFileTextView.text = ""
+                        remainingTextView.text = ""
                     }
-                    currentFileTextView.text = String.format("%s (%s)", message[0], message[1])
-                    (total - current).let { left ->
-                        remainingTextView.isVisible = left > 0
-                        remainingTextView.text = String.format(getString(R.string.cameraroll_backup_remaining), left)
-                    }
-                } else {
-                    backupProgressBar.isVisible = false
-                    currentFileTextView.text = ""
-                    remainingTextView.text = ""
-                }
+                } catch (_: Exception) {}
             }
         }
     }
