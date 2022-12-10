@@ -352,4 +352,9 @@
     <string name="msg_note_down_your_password">Veuillez noter votre mot de passe, il n\'y a aucun moyen de le récupérer une fois qu\'il a été défini.</string>
     <string name="hint_leave_it_blank">Laissez-le vide pour ne pas avoir de mot de passe</string>
     <string name="hint_user_name">Destinataires</string>
+    <string name="item_geotag">Géotaguer avec GPX</string>
+    <string name="checkbox_text_overwrite">Écraser les données de localisation existantes</string>
+    <string name="button_text_tag">Géotag</string>
+    <string name="msg_invalid_gpx_file">%1$s est invalide, ou aucun horodatage n\'a été trouvé !</string>
+    <string name="hint_gpx_offset">minutes de différence accordées</string>
 </resources>

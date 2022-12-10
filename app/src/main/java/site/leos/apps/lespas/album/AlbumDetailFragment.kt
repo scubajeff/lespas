@@ -78,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.gpx.GPXImportDialogFragment
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
@@ -131,6 +132,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var saveSortOrderChanged = false
 
     private lateinit var addFileLauncher: ActivityResultLauncher<PickVisualMediaRequest>
+    private lateinit var importGPXLauncher: ActivityResultLauncher<String>
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
@@ -289,6 +291,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(uris as ArrayList<Uri>, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
+            }
+        }
+
+        importGPXLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                // TODO check file extension
+                parentFragmentManager.findFragmentByTag(TAG_IMPORT_GPX_DIALOG) ?: run {
+                    GPXImportDialogFragment.newInstance(it, album, mAdapter.currentList).show(parentFragmentManager, TAG_IMPORT_GPX_DIALOG)
                 }
             }
         }
@@ -769,6 +780,10 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         if (parentFragmentManager.findFragmentByTag(BLOG_DIALOG) == null) BlogDialogFragment.newInstance(album).show(parentFragmentManager, BLOG_DIALOG)
                         true
                     }
+                    R.id.option_menu_import_gpx-> {
+                        importGPXLauncher.launch("application/octet-stream")
+                        true
+                    }
                     else-> false
                 }
             }
@@ -1229,6 +1244,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
+        private const val TAG_IMPORT_GPX_DIALOG = "IMPORT_GPX_DIALOG"
 
         private const val GENERAL_SHARE = 0
         private const val SHARE_TO_SNAPSEED = 1

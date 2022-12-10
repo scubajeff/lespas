@@ -314,4 +314,9 @@
     <string name="external_publish">外網</string>
     <string name="internal_publish">內網</string>
     <string name="hint_user_name">接收者</string>
+    <string name="item_geotag">使用GPX標記地理資訊</string>
+    <string name="checkbox_text_overwrite">覆蓋現有的地理資訊</string>
+    <string name="button_text_tag">標記</string>
+    <string name="msg_invalid_gpx_file">%1$s無效，或其中沒有找到時間戳!</string>
+    <string name="hint_gpx_offset">分鐘時間差</string>
 </resources>

@@ -50,14 +50,19 @@
         app:showAsAction="never"
         android:enabled="false" />
     <item
+        android:id="@+id/option_menu_import_gpx"
+        android:title="@string/item_geotag"
+        android:orderInCategory="11"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/option_menu_rename"
         android:title="@string/item_rename"
-        android:orderInCategory="11"
+        android:orderInCategory="12"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_bgm"
         android:title="@string/item_bgm"
-        android:orderInCategory="12"
+        android:orderInCategory="13"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_sortby"

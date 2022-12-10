@@ -382,4 +382,9 @@
     <string name="msg_note_down_your_password">Si prega di annotare la password, non c\'è modo di recuperarla una volta impostata.</string>
     <string name="hint_leave_it_blank">Lasciare vuoto per non avere una password</string>
     <string name="hint_user_name">Destinatari</string>
+    <string name="item_geotag">Geotag con GPX</string>
+    <string name="checkbox_text_overwrite">Sovrascrivere i dati di localizzazione esistenti</string>
+    <string name="button_text_tag">Geotag</string>
+    <string name="msg_invalid_gpx_file">%1$s non è valido o non è stato trovato alcun timestamp!</string>
+    <string name="hint_gpx_offset">minuti di differenza consentiti</string>
 </resources>

@@ -317,4 +317,9 @@
     <string name="msg_note_down_your_password">Por favor, anote su contraseña, no hay manera de recuperarla una vez establecida.</string>
     <string name="hint_leave_it_blank">Déjelo en blanco para no tener contraseña</string>
     <string name="hint_user_name">Destinatarios</string>
+    <string name="item_geotag">Geoetiqueta con GPX</string>
+    <string name="checkbox_text_overwrite">Sobrescribir los datos de localización existentes</string>
+    <string name="button_text_tag">Geotag</string>
+    <string name="msg_invalid_gpx_file">%1$s no es válido o no se ha encontrado ninguna marca de tiempo.</string>
+    <string name="hint_gpx_offset">minutos de diferencia permitidos</string>
 </resources>
