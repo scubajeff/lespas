@@ -291,7 +291,7 @@
     <string name="button_text_done">結束</string>
     <string name="button_text_post_blog">發佈博文</string>
     <string name="button_text_remove_blog">刪除博文</string>
-    <string name="button_text_share_blog">分享博客鏈接</string>
+    <string name="button_text_share_blog">分享鏈接</string>
     <string name="item_blog">博客管理</string>
     <string name="notice">創建博文需要些許時間，請稍後片刻再行訪問。</string>
     <string name="sync_status_action_create_blog">正在創建相冊《%s》的博文</string>

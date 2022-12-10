@@ -289,7 +289,7 @@
     <string name="button_text_done">结束</string>
     <string name="button_text_post_blog">发布博文</string>
     <string name="button_text_remove_blog">删除博文</string>
-    <string name="button_text_share_blog">分享博客链接</string>
+    <string name="button_text_share_blog">分享链接</string>
     <string name="item_blog">博客管理</string>
     <string name="notice">创建博文需要一些时间，请稍后片刻再行访问。</string>
     <string name="sync_status_action_create_blog">正在创建相册《%s》的博文</string>

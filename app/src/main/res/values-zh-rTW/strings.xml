@@ -289,7 +289,7 @@
     <string name="blog_name_title">網誌名</string>
     <string name="button_text_post_blog">釋出網誌</string>
     <string name="button_text_remove_blog">消去網誌</string>
-    <string name="button_text_share_blog">分享網誌連結</string>
+    <string name="button_text_share_blog">分享連結</string>
     <string name="item_blog">網誌管理</string>
     <string name="title_theme">網誌模板</string>
     <string name="blog_name_default">我的相簿</string>
