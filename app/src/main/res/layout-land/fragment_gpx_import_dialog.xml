@@ -72,7 +72,7 @@
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toTopOf="parent"
                 android:padding="@dimen/small_padding"
-                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.Dense"
                 app:boxStrokeColor="?attr/colorSecondaryVariant"
                 app:suffixText="@string/hint_gpx_offset">
 
