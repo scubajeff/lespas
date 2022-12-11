@@ -17,6 +17,7 @@
 package site.leos.apps.lespas.gpx
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.ColorMatrixColorFilter
@@ -31,14 +32,13 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -60,7 +60,7 @@ import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.Action
-import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.ActionRepository
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -76,6 +76,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
     private val track = Polyline()
     private lateinit var trackColor: TrackPaintList
     private val trackPoints = mutableListOf<GPXTrackPoint>()
+
+    private val taggingViewModel: GeoTaggingViewModel by viewModels()
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -115,19 +117,29 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 if (text == getString(R.string.button_text_tag)) {
                     hideSoftKeyboard(it)
                     isEnabled = false
-                    tagPhotos(overwriteCheckBox.isChecked, offsetEditText.text.toString().toInt() * 60000L)
+                    taggingViewModel.run(requireActivity().application, requireArguments().parcelable(ALBUM)!!, requireArguments().parcelableArray<Photo>(PHOTOS)!!.toList(), trackPoints, overwriteCheckBox.isChecked, offsetEditText.text.toString().toInt() * 60000L, ViewModelProvider(requireActivity())[NCShareViewModel::class.java])
                 } else dismiss()
             }
         }
-        savedInstanceState?.let { okButton.text = it.getString(KEY_CURRENT_OK_BUTTON_TEXT) }
+
+        taggingViewModel.isRunning()?.let { isRunning ->
+            if (isRunning) okButton.isEnabled = false
+            else setStatusDone()
+        }
 
         trackColor = TrackPaintList(Tools.getAttributeColor(requireContext(), R.attr.colorPrimary))
         showTrack(savedInstanceState == null)
-    }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putString(KEY_CURRENT_OK_BUTTON_TEXT, okButton.text.toString())
+        viewLifecycleOwner.lifecycleScope.launch {
+            taggingViewModel.progress.collect {
+                if (it == trackPoints.size) setStatusDone()
+                else {
+                    // Show tagging progress on track
+                    trackColor.setCurrentIndex(it)
+                    mapView.invalidate()
+                }
+            }
+        }
     }
 
     private fun showTrack(animateZoom: Boolean) {
@@ -212,25 +224,6 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 trackPoints.sortBy { it.timeStamp }
 
                 // Populate map view
-/*
-                val pin = ContextCompat.getDrawable(mapView.context, R.drawable.ic_baseline_location_marker_24)
-                val points = arrayListOf<IGeoPoint>()
-                trackPoints.forEach { trackPoint ->
-                    mapView.overlays.add(
-                        Marker(mapView).apply {
-                            position = GeoPoint(trackPoint.latitude, trackPoint.longitude, trackPoint.altitude).also { points.add(it) }
-                            icon = pin
-                            setInfoWindow(null)
-                        }
-                    )
-                }
-                mapView.invalidate()
-
-                // Zoom to bounding box
-                if (points.isNotEmpty()) withContext(Dispatchers.Main) {
-                    mapView.zoomToBoundingBox(SimpleFastPointOverlay(SimplePointTheme(points, false), SimpleFastPointOverlayOptions.getDefaultStyle()).boundingBox, true, 100, MAXIMUM_ZOOM, 800)
-                }
-*/
                 val points = mutableListOf<GeoPoint>()
                 trackPoints.forEach { trackPoint -> points.add(GeoPoint(trackPoint.latitude, trackPoint.longitude, trackPoint.altitude)) }
                 track.apply {
@@ -253,7 +246,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                 isAntiAlias = true
                                 style = Paint.Style.FILL
                             },
-                            trackColor.apply { setCurrentIndex(points.size) },
+                            trackColor.apply { setCurrentIndex(if (taggingViewModel.isRunning() == true) 0 else points.size) },
                             false
                         )
                     )
@@ -267,108 +260,120 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         }
     }
 
-    private fun tagPhotos(overwrite: Boolean, diffAllowed: Long) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            var match: Int
-            var diff: Long
-            var minDiff: Long
-            var takenTime: Long
-            val defaultZoneOffset = OffsetDateTime.now().offset
+    private fun hideSoftKeyboard(view: View) { (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(view.windowToken, 0) }}
+    private fun setStatusDone() {
+        okButton.text = getString(R.string.button_text_done)
+        okButton.isEnabled = true
+    }
 
-            val album = requireArguments().parcelable<Album>(ALBUM)!!
-            val localLesPasFolder = Tools.getLocalRoot(requireContext())
-            val remoteLesPasFolder = "${Tools.getRemoteHome(requireContext())}/${album.name}"
-            val actions = mutableListOf<Action>()
-            val ncModel = ViewModelProvider(requireActivity())[NCShareViewModel::class.java]
-            val photoRepository = PhotoRepository(requireActivity().application)
+    class GeoTaggingViewModel: ViewModel() {
+        private val _progress = MutableSharedFlow<Int>(0)
+        val progress: SharedFlow<Int> = _progress
 
-            trackColor.setCurrentIndex(0)
-            mapView.invalidate()
-            requireArguments().parcelableArray<Photo>(PHOTOS)!!.forEach { photo ->
-                // GPS location data won't work on playable media
-                if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
+        private var job: Job? = null
 
-                // Try finding the nearest match in GPX
-                match = NO_MATCH
-                minDiff = Long.MAX_VALUE
-                takenTime = photo.dateTaken.toInstant(defaultZoneOffset).toEpochMilli()
-                trackPoints.forEachIndexed { i, trkpt ->
-                    diff = abs(takenTime - trkpt.timeStamp)
-                    if (diff < diffAllowed && diff < minDiff) {
-                        minDiff = diff
-                        match = i
+        fun run(context: Application, album: Album, photos: List<Photo>, trackPoints: List<GPXTrackPoint>, overwrite: Boolean, diffAllowed: Long, ncModel: NCShareViewModel) {
+            job = viewModelScope.launch(Dispatchers.IO) {
+                val localLesPasFolder = Tools.getLocalRoot(context)
+                val remoteLesPasFolder = "${Tools.getRemoteHome(context)}/${album.name}"
+                val actions = mutableListOf<Action>()
+                val photoRepository = PhotoRepository(context)
+                val actionRepository = ActionRepository(context)
+
+                var match: Int
+                var diff: Long
+                var minDiff: Long
+                var takenTime: Long
+                val defaultZoneOffset = OffsetDateTime.now().offset
+
+                photos.sortedBy { it.dateTaken }.forEach { photo ->
+                    // GPS location data won't work on playable media
+                    if (Tools.isMediaPlayable(photo.mimeType)) return@forEach
+
+                    // Try finding the nearest match in GPX
+                    match = NO_MATCH
+                    minDiff = Long.MAX_VALUE
+                    takenTime = photo.dateTaken.toInstant(defaultZoneOffset).toEpochMilli()
+                    trackPoints.forEachIndexed { i, trkpt ->
+                        diff = abs(takenTime - trkpt.timeStamp)
+                        if (diff < diffAllowed && diff < minDiff) {
+                            minDiff = diff
+                            match = i
+                        }
                     }
-                }
 
-                if (match != NO_MATCH) {
-                    // Got matched, show progress on track
-                    trackColor.setCurrentIndex(match)
-                    mapView.invalidate()
+                    if (match != NO_MATCH) {
+                        // Got matched, show progress on track
+                        _progress.emit(match)
 
-                    if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
-                        // If photo does not have location data yet or user choose to overwrite existing ones
+                        if (overwrite || photo.latitude == Photo.NO_GPS_DATA) {
+                            // If photo does not have location data yet or user choose to overwrite existing ones
 
-                        // Update EXIF
-                        val targetFile = File(localLesPasFolder, photo.name)
-                        ensureActive()
-                        try {
-                            if (Tools.isRemoteAlbum(album)) {
-                                // For remote album's uploaded photo, download original
-                                if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
+                            // Update EXIF
+                            val targetFile = File(localLesPasFolder, photo.name)
+                            ensureActive()
+                            try {
+                                if (Tools.isRemoteAlbum(album)) {
+                                    // For remote album's uploaded photo, download original
+                                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
 
-                                // TODO race condition if file is being uploaded to server
-                                ExifInterface(targetFile).run {
-                                    setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
-                                    if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
-                                    saveAttributes()
+                                    // TODO race condition if file is being uploaded to server
+                                    ExifInterface(targetFile).run {
+                                        setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
+                                        if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
+                                        saveAttributes()
+                                    }
                                 }
-                            }
-                            else {
-                                // For local album, update local photo directly so that MetaDataDialogFragment will show updated information immediately
-                                val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
+                                else {
+                                    // For local album, update local photo directly so that MetaDataDialogFragment will show updated information immediately
+                                    val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
 
-                                // TODO race condition if file is being uploaded to server
-                                ExifInterface(sourceFile).run {
-                                    setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
-                                    if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
-                                    saveAttributes()
-                                }
+                                    // TODO race condition if file is being uploaded to server
+                                    ExifInterface(sourceFile).run {
+                                        setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
+                                        if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
+                                        saveAttributes()
+                                    }
 
-                                if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
-                                    // File need to be located in lespas private storage for Action.ACTION_ADD_FILES_ON_SERVER to work
-                                    sourceFile.inputStream().use { source ->
-                                        targetFile.outputStream().use { target ->
-                                            source.copyTo(target, 8192)
+                                    if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) {
+                                        // File need to be located in lespas private storage for Action.ACTION_ADD_FILES_ON_SERVER to work
+                                        sourceFile.inputStream().use { source ->
+                                            targetFile.outputStream().use { target ->
+                                                source.copyTo(target, 8192)
+                                            }
                                         }
                                     }
                                 }
+
+                                // Update local database
+                                photo.latitude = trackPoints[match].latitude
+                                photo.longitude = trackPoints[match].longitude
+                                photo.altitude = trackPoints[match].altitude
+                                photoRepository.upsert(photo)
+
+                                actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, photo.mimeType, album.name, photo.id, photo.name, System.currentTimeMillis(), album.shareId))
+                            } catch (e: Exception) {
+                                e.printStackTrace()
                             }
 
-                            // Update local database
-                            photo.latitude = trackPoints[match].latitude
-                            photo.longitude = trackPoints[match].longitude
-                            photo.altitude = trackPoints[match].altitude
-                            photoRepository.upsert(photo)
-
-                            actions.add(Action(null, Action.ACTION_ADD_FILES_ON_SERVER, photo.mimeType, album.name, photo.id, photo.name, System.currentTimeMillis(), album.shareId))
-                        } catch (e: Exception) {
-                            e.printStackTrace()
+                            // Sync updated photos to server
+                            if (actions.isNotEmpty()) actionRepository.addActions(actions)
                         }
-
-                        // Sync updated photos to server
-                        if (actions.isNotEmpty()) ViewModelProvider(requireActivity())[ActionViewModel::class.java].addActions(actions)
                     }
                 }
-            }
 
-            withContext(Dispatchers.Main) {
-                okButton.text = getString(R.string.button_text_done)
-                okButton.isEnabled = true
+                // Signaling end of progress
+                _progress.emit(trackPoints.size)
             }
         }
-    }
 
-    private fun hideSoftKeyboard(view: View) { (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).run { hideSoftInputFromWindow(view.windowToken, 0) }}
+        fun isRunning(): Boolean? = job?.isActive
+
+        override fun onCleared() {
+            job?.cancel()
+            super.onCleared()
+        }
+    }
 
     class TrackPaintList(private val fillColor: Int): ColorMapping {
         private var currentIndex = 0
@@ -388,8 +393,6 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
     companion object {
         private const val NO_MATCH = -1
         private const val MAXIMUM_ZOOM = 19.5
-
-        private const val KEY_CURRENT_OK_BUTTON_TEXT = "KEY_CURRENT_OK_BUTTON_TEXT"
 
         private const val GPX_FILE = "GPX_FILE"
         private const val ALBUM = "ALBUM"
