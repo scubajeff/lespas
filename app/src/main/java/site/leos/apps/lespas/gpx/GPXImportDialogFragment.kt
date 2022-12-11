@@ -122,7 +122,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         savedInstanceState?.let { okButton.text = it.getString(KEY_CURRENT_OK_BUTTON_TEXT) }
 
         trackColor = TrackPaintList(Tools.getAttributeColor(requireContext(), R.attr.colorPrimary))
-        showTrack()
+        showTrack(savedInstanceState == null)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -130,7 +130,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         outState.putString(KEY_CURRENT_OK_BUTTON_TEXT, okButton.text.toString())
     }
 
-    private fun showTrack() {
+    private fun showTrack(animateZoom: Boolean) {
         lifecycleScope.launch(Dispatchers.IO) {
             // Gather track points from GPX file
             try {
@@ -261,8 +261,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 mapView.overlays.add(track)
                 mapView.invalidate()
 
-                // Zoom to bounding box
-                if (points.isNotEmpty()) withContext(Dispatchers.Main) { mapView.zoomToBoundingBox(track.bounds, true, 100, MAXIMUM_ZOOM, 800) }
+                // Zoom to bounding box, animate if it's first run
+                if (points.isNotEmpty()) withContext(Dispatchers.Main) { mapView.zoomToBoundingBox(track.bounds, animateZoom, 100, MAXIMUM_ZOOM, 800) }
             }
         }
     }
