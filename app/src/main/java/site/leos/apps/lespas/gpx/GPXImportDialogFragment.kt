@@ -112,6 +112,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         offsetEditText = view.findViewById<TextInputEditText>(R.id.offset_textinputedittext).apply { setOnFocusChangeListener { v, hasFocus -> if (!hasFocus) hideSoftKeyboard(v) }}
         view.findViewById<MaterialButton>(R.id.cancel_button).setOnClickListener {
             hideSoftKeyboard(it)
+            taggingViewModel.stop()
             dismiss()
         }
         okButton = view.findViewById<MaterialButton>(R.id.ok_button).apply {
@@ -351,6 +352,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
 
                                 // Update local database
                                 // Geocoding
+                                ensureActive()
                                 try { nominatim.getFromLocation(trackPoints[match].latitude, trackPoints[match].longitude, 1) } catch (_: Exception) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
                                         photo.locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
@@ -386,6 +388,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
         }
 
         fun isRunning(): Boolean? = job?.isActive
+        fun stop() { job?.cancel() }
 
         override fun onCleared() {
             job?.cancel()
