@@ -39,6 +39,7 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import org.osmdroid.bonuspack.location.GeocoderNominatim
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -64,6 +65,7 @@ import site.leos.apps.lespas.sync.ActionRepository
 import java.io.File
 import java.time.Instant
 import java.time.OffsetDateTime
+import java.util.*
 import kotlin.math.abs
 
 class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import_dialog) {
@@ -279,6 +281,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 val actions = mutableListOf<Action>()
                 val photoRepository = PhotoRepository(context)
                 val actionRepository = ActionRepository(context)
+                val nominatim = GeocoderNominatim(Locale.getDefault(), BuildConfig.APPLICATION_ID)
 
                 var startWith = 0
                 var match: Int
@@ -347,6 +350,18 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                 }
 
                                 // Update local database
+                                // Geocoding
+                                try { nominatim.getFromLocation(trackPoints[match].latitude, trackPoints[match].longitude, 1) } catch (_: Exception) { null }?.get(0)?.let {
+                                    if (it.countryName != null) {
+                                        photo.locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
+                                        photo.country = it.countryName
+                                        photo.countryCode = it.countryCode ?: Photo.NO_ADDRESS
+                                    } else {
+                                        photo.locality = Photo.NO_ADDRESS
+                                        photo.country = Photo.NO_ADDRESS
+                                        photo.countryCode = Photo.NO_ADDRESS
+                                    }
+                                }
                                 photo.latitude = trackPoints[match].latitude
                                 photo.longitude = trackPoints[match].longitude
                                 photo.altitude = trackPoints[match].altitude
