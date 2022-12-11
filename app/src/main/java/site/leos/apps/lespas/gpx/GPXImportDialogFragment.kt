@@ -280,6 +280,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                 val photoRepository = PhotoRepository(context)
                 val actionRepository = ActionRepository(context)
 
+                var startWith = 0
                 var match: Int
                 var diff: Long
                 var minDiff: Long
@@ -294,8 +295,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                     match = NO_MATCH
                     minDiff = Long.MAX_VALUE
                     takenTime = photo.dateTaken.toInstant(defaultZoneOffset).toEpochMilli()
-                    trackPoints.forEachIndexed { i, trkpt ->
-                        diff = abs(takenTime - trkpt.timeStamp)
+                    for (i in startWith until trackPoints.size) {
+                        diff = abs(takenTime - trackPoints[i].timeStamp)
                         if (diff < diffAllowed && diff < minDiff) {
                             minDiff = diff
                             match = i
@@ -359,6 +360,8 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                             // Sync updated photos to server
                             if (actions.isNotEmpty()) actionRepository.addActions(actions)
                         }
+                        
+                        startWith = match
                     }
                 }
 
