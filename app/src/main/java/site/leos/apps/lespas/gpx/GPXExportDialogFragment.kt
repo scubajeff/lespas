@@ -110,7 +110,7 @@ class GPXExportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_export
                                     )
                                 }
                                 // Remove last line break
-                                trackPoints.dropLast(1)
+                                if (trackPoints.isNotEmpty()) trackPoints.dropLast(1) else trackPoints
                             }
                         )
                     ).toByteArray(Charsets.UTF_8)
