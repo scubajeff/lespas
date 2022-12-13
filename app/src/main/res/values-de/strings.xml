@@ -367,4 +367,11 @@
     <string name="msg_note_down_your_password">Bitte notieren Sie sich Ihr Passwort, denn es gibt KEINE Möglichkeit, das einmal festgelegte Passwort wiederherzustellen.</string>
     <string name="hint_leave_it_blank">Lassen Sie das Feld leer für kein Passwort</string>
     <string name="hint_user_name">Empfänger</string>
+    <string name="item_geotag">Geotag mit GPX</string>
+    <string name="checkbox_text_overwrite">Vorhandene Standortdaten überschreiben</string>
+    <string name="button_text_tag">Geotag</string>
+    <string name="msg_invalid_gpx_file">%1$s ist ungültig, oder es wurde kein Zeitstempel gefunden!</string>
+    <string name="hint_gpx_offset">Erlaubte Minuten Differenz</string>
+    <string name="item_export_gpx">GPX exportieren</string>
+    <string name="hint_gpx_export_file_location">Die Datei wird im Ordner \"Download\" gespeichert.</string>
 </resources>

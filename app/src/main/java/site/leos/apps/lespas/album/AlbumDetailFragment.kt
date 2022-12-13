@@ -36,6 +36,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -77,6 +78,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.gpx.GPXExportDialogFragment
+import site.leos.apps.lespas.gpx.GPXImportDialogFragment
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
@@ -129,13 +132,15 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     // Update album meta only when fragment destroy
     private var saveSortOrderChanged = false
 
-    private lateinit var addFileLauncher: ActivityResultLauncher<String>
+    private lateinit var addFileLauncher: ActivityResultLauncher<PickVisualMediaRequest>
+    private lateinit var importGPXLauncher: ActivityResultLauncher<String>
 
     private var isSnapseedEnabled = false
     private var snapseedEditAction: MenuItem? = null
     private var mediaRenameAction: MenuItem? = null
     private var blogOptionMenu: MenuItem? = null
     private var mapOptionMenu: MenuItem? = null
+    private var gpxExportOptionMenu: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
 
@@ -284,10 +289,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             sharedSelection.clear()
         }
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(uris as ArrayList<Uri>, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
+                }
+            }
+        }
+
+        importGPXLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                // TODO check file extension
+                parentFragmentManager.findFragmentByTag(TAG_IMPORT_GPX_DIALOG) ?: run {
+                    GPXImportDialogFragment.newInstance(it, album, mAdapter.currentList).show(parentFragmentManager, TAG_IMPORT_GPX_DIALOG)
                 }
             }
         }
@@ -484,6 +498,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     it.photos.forEach { photo ->
                         if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
                             mapOptionMenu?.isVisible = true
+                            gpxExportOptionMenu?.isVisible = true
                             return@launch
                         }
                     }
@@ -657,6 +672,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.album_detail_menu, menu)
                 mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+                gpxExportOptionMenu = menu.findItem(R.id.option_menu_export_gpx)
                 searchOptionMenu = menu.findItem(R.id.option_menu_search)
                 blogOptionMenu = menu.findItem(R.id.option_menu_blog)
 
@@ -664,6 +680,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
                         if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) {
                             mapOptionMenu?.isVisible = true
+                            gpxExportOptionMenu?.isVisible = true
 
                             return@map
                         }
@@ -697,7 +714,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onMenuItemSelected(item: MenuItem): Boolean {
                 return when(item.itemId) {
                     R.id.option_menu_add_photo-> {
-                        addFileLauncher.launch("*/*")
+                        addFileLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
                         true
                     }
                     R.id.option_menu_rename-> {
@@ -766,6 +783,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                     R.id.option_menu_blog-> {
                         if (parentFragmentManager.findFragmentByTag(BLOG_DIALOG) == null) BlogDialogFragment.newInstance(album).show(parentFragmentManager, BLOG_DIALOG)
+                        true
+                    }
+                    R.id.option_menu_import_gpx-> {
+                        importGPXLauncher.launch(GPXExportDialogFragment.MIMETYPE_GPX)
+                        true
+                    }
+                    R.id.option_menu_export_gpx-> {
+                        if (parentFragmentManager.findFragmentByTag(EXPORT_GPX_DIALOG) == null) GPXExportDialogFragment.newInstance(album.name, mAdapter.currentList).show(parentFragmentManager, EXPORT_GPX_DIALOG)
                         true
                     }
                     else-> false
@@ -1215,6 +1240,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BGM_DIALOG = "BGM_DIALOG"
         private const val BLOG_DIALOG = "BLOG_DIALOG"
+        private const val EXPORT_GPX_DIALOG = "EXPORT_GPX_DIALOG"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"
@@ -1228,6 +1254,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         private const val TAG_DESTINATION_DIALOG = "ALBUM_DETAIL_DESTINATION_DIALOG"
         private const val TAG_ACQUIRING_DIALOG = "ALBUM_DETAIL_ACQUIRING_DIALOG"
+        private const val TAG_IMPORT_GPX_DIALOG = "IMPORT_GPX_DIALOG"
 
         private const val GENERAL_SHARE = 0
         private const val SHARE_TO_SNAPSEED = 1

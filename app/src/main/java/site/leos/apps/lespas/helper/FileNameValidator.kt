@@ -24,7 +24,7 @@ import site.leos.apps.lespas.R
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.util.regex.Pattern
 
-class FileNameValidator(private val edittext: TextInputEditText, private val usedName: ArrayList<String>): TextWatcher {
+class FileNameValidator(private val edittext: TextInputEditText, private val usedName: ArrayList<String>, private val callBack: ((Boolean) -> Unit)? = null): TextWatcher {
     private val slashesPattern =  Pattern.compile("[^\\\\/]+\\z")
     private val devPattern = Pattern.compile("\\A(?!(?:COM[0-9]|CON|LPT[0-9]|NUL|PRN|AUX|com[0-9]|con|lpt[0-9]|nul|prn|aux)|\\s{2,}).{1,254}(?<![.])\\z")
     private val leadingDotPattern = Pattern.compile("^\\..*")
@@ -36,14 +36,17 @@ class FileNameValidator(private val edittext: TextInputEditText, private val use
     override fun afterTextChanged(s: Editable?) {
         val txt = s!!.toString()
 
-        when {
-            txt.isEmpty() -> edittext.error = null
-            txt.length > 200 -> edittext.error = context.getString(R.string.name_too_long)
-            !slashesPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.invalid_character_found)
-            leadingDotPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.leading_dots_found)
-            !devPattern.matcher(txt).matches() -> edittext.error = context.getString(R.string.invalid_name_found)
-            txt in usedName -> edittext.error = context.getString(R.string.name_existed)
-            txt == blogFolder  -> edittext.error = context.getString(R.string.invalid_name_found)
+        val errorText = when {
+            txt.isEmpty() -> null
+            txt.length > 200 -> context.getString(R.string.name_too_long)
+            !slashesPattern.matcher(txt).matches() -> context.getString(R.string.invalid_character_found)
+            leadingDotPattern.matcher(txt).matches() -> context.getString(R.string.leading_dots_found)
+            !devPattern.matcher(txt).matches() -> context.getString(R.string.invalid_name_found)
+            txt in usedName -> context.getString(R.string.name_existed)
+            txt == blogFolder  -> context.getString(R.string.invalid_name_found)
+            else -> null
         }
+        callBack?.invoke(errorText != null)
+        edittext.error = errorText
     }
 }

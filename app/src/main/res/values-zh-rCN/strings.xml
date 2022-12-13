@@ -289,7 +289,7 @@
     <string name="button_text_done">结束</string>
     <string name="button_text_post_blog">发布博文</string>
     <string name="button_text_remove_blog">删除博文</string>
-    <string name="button_text_share_blog">分享博客链接</string>
+    <string name="button_text_share_blog">分享链接</string>
     <string name="item_blog">博客管理</string>
     <string name="notice">创建博文需要一些时间，请稍后片刻再行访问。</string>
     <string name="sync_status_action_create_blog">正在创建相册《%s》的博文</string>
@@ -314,4 +314,11 @@
     <string name="external_publish">外网</string>
     <string name="internal_publish">内网</string>
     <string name="hint_user_name">接收者</string>
+    <string name="item_geotag">使用GPX标记地理信息</string>
+    <string name="checkbox_text_overwrite">覆盖现有的地理信息</string>
+    <string name="button_text_tag">标记</string>
+    <string name="msg_invalid_gpx_file">%1$s无效，或其中没有找到时间戳!</string>
+    <string name="hint_gpx_offset">分钟时间差</string>
+    <string name="item_export_gpx">导出GPX</string>
+    <string name="hint_gpx_export_file_location">文件将被保存在 \"Download\"文件夹中。</string>
 </resources>

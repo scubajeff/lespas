@@ -74,7 +74,8 @@
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
                 <TableRow android:id="@+id/size_row"
-                    android:visibility="gone">
+                    android:visibility="gone"
+                    tools:visibility="visible">
                     <TextView
                         android:layout_column="1"
                         android:padding="@dimen/mini_padding"
@@ -87,7 +88,8 @@
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
                 <TableRow android:id="@+id/mfg_row"
-                    android:visibility="gone">
+                    android:visibility="gone"
+                    tools:visibility="visible">
                     <TextView
                         android:layout_column="1"
                         android:padding="@dimen/mini_padding"
@@ -100,7 +102,8 @@
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
                 <TableRow android:id="@+id/model_row"
-                    android:visibility="gone">
+                    android:visibility="gone"
+                    tools:visibility="visible">
                     <TextView
                         android:layout_column="1"
                         android:padding="@dimen/mini_padding"
@@ -112,7 +115,8 @@
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
                 <TableRow android:id="@+id/param_row"
-                    android:visibility="gone">
+                    android:visibility="gone"
+                    tools:visibility="visible">
                     <TextView
                         android:layout_column="1"
                         android:padding="@dimen/mini_padding"
@@ -125,7 +129,8 @@
                         android:padding="@dimen/mini_padding"/>
                 </TableRow>
                 <TableRow android:id="@+id/artist_row"
-                    android:visibility="gone">
+                    android:visibility="gone"
+                    tools:visibility="visible">
                     <TextView
                         android:layout_column="1"
                         android:padding="@dimen/mini_padding"
@@ -146,7 +151,8 @@
                 app:layout_constraintTop_toBottomOf="@id/statistic_table"
                 android:layout_marginTop="@dimen/small_padding"
                 android:paddingVertical="@dimen/small_padding"
-                android:visibility="gone" />
+                android:visibility="gone"
+                tools:visibility="visible"/>
 
             <TextView
                 android:id="@+id/locality"
@@ -156,7 +162,9 @@
                 android:gravity="center_vertical"
                 android:padding="@dimen/mini_padding"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-                android:visibility="gone"/>
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="San Jose"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/ok_button"

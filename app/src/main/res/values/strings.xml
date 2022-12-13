@@ -337,6 +337,8 @@
     <string name="item_rename">Rename Album</string>
     <string name="item_publish">Publish Album</string>
     <string name="item_blog">Manage Blog</string>
+    <string name="item_geotag">Geotag with GPX</string>
+    <string name="item_export_gpx">Export GPX</string>
     <string name="item_bgm">Manage BGM</string>
     <string name="item_sortby">Sort by</string>
     <string name="item_dateasc">Date Ascending</string>
@@ -423,6 +425,15 @@
     <string name="content_option_copyright_tooltips">Include copyright disclaimer at blog end.</string>
 -->
     <string name="notice">Please allow a moment to create blog pages on server.</string>
+
+    <!-- GPX -->
+    <string name="checkbox_text_overwrite">Overwrite existing location data</string>
+    <string name="button_text_tag">Geotag</string>
+    <string name="msg_invalid_gpx_file">%1$s is invalid, or no timestamp found!</string>
+    <string name="hint_gpx_offset">minutes difference allowed</string>
+
+    <string name="gpx_suffix" translatable="false">.gpx</string>
+    <string name="hint_gpx_export_file_location">File will be saved in \'Download\' folder.</string>
 
     <!-- Media3 Player -->
     <string name="msg_player_skip">5 seconds</string>

@@ -67,8 +67,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/welcome_message"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="@dimen/small_padding"
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         app:boxStrokeColor="?attr/colorSecondary"

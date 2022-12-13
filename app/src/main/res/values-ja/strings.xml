@@ -315,4 +315,11 @@
     <string name="msg_note_down_your_password">一度設定したパスワードは復元できませんので、必ず控えておいてください。</string>
     <string name="hint_leave_it_blank">パスワードがない場合は空欄にします</string>
     <string name="hint_user_name">受信者</string>
+    <string name="item_geotag">GPXでジオタグ</string>
+    <string name="checkbox_text_overwrite">既存の位置情報を上書きする</string>
+    <string name="button_text_tag">ジオタグ</string>
+    <string name="msg_invalid_gpx_file">%1$s が無効か、タイムスタンプが見つかりませんでした!</string>
+    <string name="hint_gpx_offset">分単位の時差</string>
+    <string name="item_export_gpx">GPXのエクスポート</string>
+    <string name="hint_gpx_export_file_location">ファイルは「Download」フォルダに保存されます。</string>
 </resources>

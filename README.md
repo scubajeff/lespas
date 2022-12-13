@@ -27,14 +27,14 @@ Features:
 
 <p float="left">
   <img alt="Welcome Page" title="Welcome Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
-  <img alt="Albums List" title="List of Albums" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" /> 
+  <img alt="Albums List" title="List of Albums" src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_album.png" width="200" />
   <img alt="Album Detail" title="Album Detail" src="fastlane//metadata/android/en-US/images/phoneScreenshots/03_album_detail.png" width="200" />
   <img alt="Photo Viewer" title="Photo Viewer" src="fastlane//metadata/android/en-US/images/phoneScreenshots/04_photo.png" width="200" />
 </p>
 
 <p float="left">
   <img alt="Adding Photo" title="Adding Photos" src="fastlane/metadata/android/en-US/images/phoneScreenshots/05_adding_photos.png" width="200" />
-  <img alt="Browsing Camera Roll" title="Manage Camera Roll and Archive" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" /> 
+  <img alt="Browsing Camera Roll" title="Manage Camera Roll and Archive" src="fastlane/metadata/android/en-US/images/phoneScreenshots/06_camera_roll.png" width="200" />
   <img alt="Publishing Album" title="Publishing Album" src="fastlane//metadata/android/en-US/images/phoneScreenshots/07_publish.png" width="200" />
   <img alt="Search by Objects" title="AI Search" src="fastlane//metadata/android/en-US/images/phoneScreenshots/08_search.png" width="200" />
 </p>
@@ -47,6 +47,7 @@ Features:
 </p>
 
 <p float="left">
+  <img alt="Geotagging with GPX" title="Geotagging with GPX" src="fastlane/metadata/android/en-US/images/phoneScreenshots/13_geotagging.png" width="200" />
   <img alt="Settings" title="Settings" src="fastlane/metadata/android/en-US/images/phoneScreenshots/99_setting.png" width="200" />
 </p>
 
@@ -77,7 +78,7 @@ Les Pas uses folders to group photos on the server, e.g., each album in Les Pas 
 <a href=https://github.com/steviehs>@steviehs</a> make two cool <a href=https://gitlab.com/steviehs/stevemisc>scripts</a> to help you out.
 
 ### Why does Les Pas use a lot of storage space?
-If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br> 
+If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br>
 There are two reasons why Les Pas use private storage. First, Android introduced scope storage policy recently, highly recommends apps to stay out of share storage area. Second, storing photos in apps private storage area can prevent malicious apps scanning, uploading your photo secretly in the backgroud. Yes, they love your pictures so much, especially those with your face in it.<br>
 **For privacy sake, stop using "/Pictures" folder in your phone's internal/external storage.**<br><br>
 Since release 2.5.0, Les Pas support managing albums remotely. With Remote Album, all photo's and video's media file are stored in Nextcloud server, this will dramatically reduces app's storage footprint on mobile device.<br>
@@ -101,7 +102,7 @@ Whenever you did something with your albums on your phone, Les Pas will synchron
 Upon opening Les Pas app, it will sync with server once. If you enable periodic sync setting, Les Pas will synchronize with your server every 6 hours in the background.<br>
 One-way backup of phone's camera roll is a background job which also happen every 6 hours. So don't delete photos from your camera roll too fast too soon.
 If synchronization doesn't seem to work, especially when you phone is a Chinese OEM model, like Huawei, Xiaomi, Oppo etc, please allow Les Pas app to auto start and opt-out battery optimization.
- 
+
 ### Checklist for enabling sharing on Nextcloud server
 To enable publishing (e.g. sharing album to other users on Nextcloud server), there are several things you need to take care beforehand:
 - Make sure your are using LesPas version 2.4.1+ (sroll to the bottom of Setting page to find out)

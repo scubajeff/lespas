@@ -209,8 +209,8 @@ class LocationSearchHostFragment: Fragment() {
                                     nominatim.getFromLocation(latLong[0], latLong[1], 1)
                                 } catch (e: IOException) { null }?.get(0)?.let {
                                     if (it.countryName != null) {
-                                        val locality = it.locality ?: it.adminArea ?: ""
-                                        if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: "")
+                                        val locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
+                                        if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
                                         Pair(it.countryName, locality)
                                     } else null
                                 } ?: run { null }

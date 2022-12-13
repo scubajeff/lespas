@@ -37,6 +37,7 @@ import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -116,7 +117,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
-    private lateinit var addFileLauncher: ActivityResultLauncher<String>
+    private lateinit var addFileLauncher: ActivityResultLauncher<PickVisualMediaRequest>
 
     private var showCameraRoll = true
     private lateinit var cameraRollAlbum: Album
@@ -127,22 +128,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
     private lateinit var remoteBasePath: String
 
-    private val showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).apply {
-            // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
-            showCameraRoll = this
-            // Move album list to the top when popping back from Setting fragment, actual scrolling will happen after setAlbum in livedata observer
-            // Only scroll to top when setting being turned on
-            if (showCameraRoll) scrollTo = 0
-
-            // Maintain option menu
-            cameraRollAsAlbumMenu?.isEnabled = !this
-            cameraRollAsAlbumMenu?.isVisible = !this
-
-            // Selection based on bindingAdapterPosition, must be cleared
-            try { selectionTracker.clearSelection() } catch (_: UninitializedPropertyAccessException) {}
-        }
-    }
+    private lateinit var showCameraRollPreferenceListener: SharedPreferences.OnSharedPreferenceChangeListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -151,7 +137,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+        addFileLauncher = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) {
             if (it.isNotEmpty()) {
                 uris.clear()
                 uris.addAll(it)
@@ -217,6 +203,23 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         requireContext().run {
+            showCameraRollPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+                if (key == getString(R.string.cameraroll_as_album_perf_key)) sharedPreferences.getBoolean(key, true).run {
+                    // Changed this flag accordingly. When popping back from Setting fragment, album list livedata observer will be triggered again
+                    showCameraRoll = this
+                    // Move album list to the top when popping back from Setting fragment, actual scrolling will happen after setAlbum in livedata observer
+                    // Only scroll to top when setting being turned on
+                    if (showCameraRoll) scrollTo = 0
+
+                    // Maintain option menu
+                    cameraRollAsAlbumMenu?.isEnabled = !this
+                    cameraRollAsAlbumMenu?.isVisible = !this
+
+                    // Selection based on bindingAdapterPosition, must be cleared
+                    try { selectionTracker.clearSelection() } catch (_: UninitializedPropertyAccessException) {}
+                }
+            }
+
             // TODO only check first volume
             getCameraRoll(MediaStore.getVersion(this), if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L)
 
@@ -329,7 +332,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_width), 0, 0, resources.getDimensionPixelSize(R.dimen.fast_scroll_thumb_height)
         )
 
-        fab.setOnClickListener { addFileLauncher.launch("*/*") }
+        fab.setOnClickListener { addFileLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
 
         // Confirm dialog result handler
         parentFragmentManager.setFragmentResultListener(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, viewLifecycleOwner) { _, bundle ->

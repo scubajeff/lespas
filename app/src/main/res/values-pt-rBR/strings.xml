@@ -379,4 +379,11 @@
     <string name="msg_note_down_your_password">Por favor, anote sua senha, NÃO há como recuperá-la uma vez definida.</string>
     <string name="hint_leave_it_blank">Deixar em branco para não ter senha</string>
     <string name="hint_user_name">Destinatários</string>
+    <string name="item_geotag">Geotag com GPX</string>
+    <string name="checkbox_text_overwrite">Sobregravar os dados de localização existentes</string>
+    <string name="button_text_tag">Geotag</string>
+    <string name="msg_invalid_gpx_file">%1$s é inválido, ou nenhum carimbo de tempo encontrado!</string>
+    <string name="hint_gpx_offset">diferença de minutos permitida</string>
+    <string name="item_export_gpx">Exportar GPX</string>
+    <string name="hint_gpx_export_file_location">O arquivo será salvo na pasta \'Download\'.</string>
 </resources>

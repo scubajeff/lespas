@@ -28,8 +28,8 @@ class ActionRepository(application: Application){
     fun getAllPendingActions(): List<Action> = actionDao.getAllPendingActions()
     //fun hasPendingActions(): Boolean = actionDao.getPendingTotal() > 0
     //fun deleteAllActions() = actionDao.deleteAllSync()
-    fun addActions(actions: List<Action>) = actionDao.insert(actions)
-    fun addAction(action: Action) = actionDao.insert(action)
+    fun addActions(actions: List<Action>) = actionDao.upsert(actions)
+    fun addAction(action: Action) = actionDao.upsert(action)
     fun updateCoverInPendingActions(albumId: String, coverId: String) { actionDao.updateCoverInPendingActions(albumId, coverId) }
     //fun safeToRemoveFile(photoName: String): Boolean = !actionDao.fileInUse(photoName)
     //fun discardCurrentWorkingAction() { actionDao.deleteFirstRow() }
