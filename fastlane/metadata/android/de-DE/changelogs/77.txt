@@ -1,0 +1,3 @@
+* Neue Funktion: Geotagging von Fotos mit GPX-Datei
+* Neue Funktion: Export der Standortinformationen des Albums in eine GPX-Datei
+* Weitere Verbesserungen und Fehlerkorrekturen

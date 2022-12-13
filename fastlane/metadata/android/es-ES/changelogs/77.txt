@@ -1,0 +1,3 @@
+* Nueva función: geoetiqueta las fotos con un archivo GPX
+* Nueva función: exportar la información de ubicación del álbum a un archivo GPX
+* Otras mejoras y correcciones de errores

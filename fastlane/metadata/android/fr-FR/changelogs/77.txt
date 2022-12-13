@@ -1,0 +1,3 @@
+* Nouvelle fonctionnalité : géotaguer des photos avec un fichier GPX
+* Nouvelle fonctionnalité : exporter les informations de localisation de l'album vers un fichier GPX
+* Autres améliorations et corrections de bogues

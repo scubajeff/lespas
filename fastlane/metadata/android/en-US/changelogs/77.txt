@@ -1,0 +1,3 @@
+* New feature: geotag photos with GPX file
+* New feature: export album's location information to GPX file
+* Other improvements and bugs fixes

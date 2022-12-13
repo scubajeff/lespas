@@ -1,0 +1,3 @@
+* Novo recurso: fotos geotag com arquivo GPX
+* Novo recurso: exportar informações de localização do álbum para o arquivo GPX
+* Outras melhorias e correções de bugs

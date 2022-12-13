@@ -1,3 +1,7 @@
+## Version 2.7.0
+* New feature: geotag photos with GPX file
+* New feature: export album's location information to GPX file
+
 ## Version 2.6.6
 * New feature: publish album to Nextcloud Circle and General Public
 * Fixed video wrongly resumed playing after re-gaining window focus in Camera Roll screen
