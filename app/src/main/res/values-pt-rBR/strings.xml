@@ -384,4 +384,6 @@
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s é inválido, ou nenhum carimbo de tempo encontrado!</string>
     <string name="hint_gpx_offset">diferença de minutos permitida</string>
+    <string name="item_export_gpx">Exportar GPX</string>
+    <string name="hint_gpx_export_file_location">O arquivo será salvo na pasta \'Download\'.</string>
 </resources>

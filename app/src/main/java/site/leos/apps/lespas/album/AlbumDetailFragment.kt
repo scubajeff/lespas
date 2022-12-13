@@ -78,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
+import site.leos.apps.lespas.gpx.GPXExportDialogFragment
 import site.leos.apps.lespas.gpx.GPXImportDialogFragment
 import site.leos.apps.lespas.helper.*
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -139,6 +140,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     private var mediaRenameAction: MenuItem? = null
     private var blogOptionMenu: MenuItem? = null
     private var mapOptionMenu: MenuItem? = null
+    private var gpxExportOptionMenu: MenuItem? = null
 
     private var reuseUris = arrayListOf<Uri>()
 
@@ -496,6 +498,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     it.photos.forEach { photo ->
                         if (photo.mimeType.startsWith("image/") && photo.latitude != Photo.NO_GPS_DATA) {
                             mapOptionMenu?.isVisible = true
+                            gpxExportOptionMenu?.isVisible = true
                             return@launch
                         }
                     }
@@ -669,6 +672,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
                 inflater.inflate(R.menu.album_detail_menu, menu)
                 mapOptionMenu = menu.findItem(R.id.option_menu_in_map)
+                gpxExportOptionMenu = menu.findItem(R.id.option_menu_export_gpx)
                 searchOptionMenu = menu.findItem(R.id.option_menu_search)
                 blogOptionMenu = menu.findItem(R.id.option_menu_blog)
 
@@ -676,6 +680,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     mutableListOf<Photo>().apply { addAll(mAdapter.currentList) }.forEach {
                         if (it.mimeType.startsWith("image/") && it.latitude != Photo.NO_GPS_DATA) {
                             mapOptionMenu?.isVisible = true
+                            gpxExportOptionMenu?.isVisible = true
 
                             return@map
                         }
@@ -781,7 +786,11 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         true
                     }
                     R.id.option_menu_import_gpx-> {
-                        importGPXLauncher.launch("application/octet-stream")
+                        importGPXLauncher.launch(GPXExportDialogFragment.MIMETYPE_GPX)
+                        true
+                    }
+                    R.id.option_menu_export_gpx-> {
+                        if (parentFragmentManager.findFragmentByTag(EXPORT_GPX_DIALOG) == null) GPXExportDialogFragment.newInstance(album.name, mAdapter.currentList).show(parentFragmentManager, EXPORT_GPX_DIALOG)
                         true
                     }
                     else-> false
@@ -1231,6 +1240,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DIALOG = "CONFIRM_DIALOG"
         private const val BGM_DIALOG = "BGM_DIALOG"
         private const val BLOG_DIALOG = "BLOG_DIALOG"
+        private const val EXPORT_GPX_DIALOG = "EXPORT_GPX_DIALOG"
 
         private const val KEY_SELECTION = "KEY_SELECTION"
         private const val KEY_SHARED_SELECTION = "KEY_SHARED_SELECTION"

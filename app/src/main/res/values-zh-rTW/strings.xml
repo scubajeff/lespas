@@ -319,4 +319,6 @@
     <string name="button_text_tag">標記</string>
     <string name="msg_invalid_gpx_file">%1$s無效，或其中沒有找到時間戳!</string>
     <string name="hint_gpx_offset">分鐘時間差</string>
+    <string name="item_export_gpx">匯出GPX</string>
+    <string name="hint_gpx_export_file_location">檔案將被儲存在 \"Download\"資料夾中。</string>
 </resources>

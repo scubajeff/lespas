@@ -322,4 +322,6 @@
     <string name="button_text_tag">Geotag</string>
     <string name="msg_invalid_gpx_file">%1$s no es válido o no se ha encontrado ninguna marca de tiempo.</string>
     <string name="hint_gpx_offset">minutos de diferencia permitidos</string>
+    <string name="item_export_gpx">Exportar GPX</string>
+    <string name="hint_gpx_export_file_location">El archivo se guardará en la carpeta \"Download\".</string>
 </resources>
