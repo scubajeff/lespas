@@ -38,6 +38,7 @@ import site.leos.apps.lespas.helper.Tools.parcelableArray
 import site.leos.apps.lespas.photo.Photo
 import java.io.File
 import java.time.OffsetDateTime
+import java.util.*
 
 class GPXExportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_export_dialog) {
     private lateinit var filenameLayout: TextInputLayout
@@ -102,10 +103,9 @@ class GPXExportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_export
                                 val defaultOffset = OffsetDateTime.now().offset
                                 var trackPoints = ""
                                 requireArguments().parcelableArray<Photo>(PHOTOS)?.filter { photo -> photo.latitude != Photo.NO_GPS_DATA }?.forEach { photo ->
-                                    trackPoints += String.format(
-                                        GPX_TRACK_POINT,
+                                    trackPoints += String.format(Locale.ROOT, GPX_TRACK_POINT,
                                         photo.longitude, photo.latitude,
-                                        if (photo.altitude != Photo.NO_GPS_DATA) String.format(GPX_TRACK_POINT_ELEVATION, photo.altitude) else "",
+                                        if (photo.altitude != Photo.NO_GPS_DATA) String.format(Locale.ROOT, GPX_TRACK_POINT_ELEVATION, photo.altitude) else "",
                                         photo.dateTaken.toInstant(defaultOffset).toString()
                                     )
                                 }
