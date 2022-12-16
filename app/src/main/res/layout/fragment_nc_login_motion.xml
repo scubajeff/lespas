@@ -53,7 +53,7 @@
     <TextView
         android:id="@+id/welcome_message"
         style="@style/TextAppearance.MaterialComponents.Subtitle2"
-        android:layout_width="match_parent"
+        android:layout_width="@dimen/login_input_box_width"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/extra_padding"
         android:labelFor="@id/input_area"
@@ -66,16 +66,16 @@
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/input_area"
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
-        android:layout_width="match_parent"
+        android:layout_width="@dimen/login_input_box_width"
         android:layout_height="wrap_content"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/welcome_message"
         android:layout_marginTop="@dimen/small_padding"
         app:boxStrokeColor="?attr/colorSecondary"
         app:errorEnabled="true"
         app:helperText="@string/http_toggle_helper_text"
         app:helperTextEnabled="true"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/welcome_message"
         app:prefixText="https://">
 
         <com.google.android.material.textfield.TextInputEditText

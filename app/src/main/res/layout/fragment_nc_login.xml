@@ -51,7 +51,7 @@
 
     <TextView
         android:id="@+id/welcome_message"
-        android:layout_width="match_parent"
+        android:layout_width="@dimen/login_input_box_width"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/welcome_message_title"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -64,9 +64,11 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/input_area"
-        android:layout_width="match_parent"
+        android:layout_width="@dimen/login_input_box_width"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/welcome_message"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="@dimen/small_padding"
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
         app:boxStrokeColor="?attr/colorSecondary"
