@@ -132,7 +132,7 @@ object Tools {
                         bearing = getBearing(exif)
 
                         // Taken date
-                        getImageTakenDate(exif)?.let { dateTaken = it }
+                        getImageTakenDate(exif, true)?.let { dateTaken = it }
 /*
                         if (updateCreationDate) {
                             exif.setDateTime(dateTaken.toInstant(OffsetTime.now().offset).toEpochMilli())
