@@ -31,7 +31,7 @@
     <dimen name="exoplayer_control_layout_vertical_margin">56dp</dimen>
 
     <dimen name="login_screen_logo_size">144dp</dimen>
-    <dimen name="login_input_box_width">match_parent</dimen>
+    <dimen name="login_input_box_width">500dp</dimen>
 
     <dimen name="destination_dialog_clipdata_grid_size">64dp</dimen>
     <dimen name="destination_cover_width">88dp</dimen>

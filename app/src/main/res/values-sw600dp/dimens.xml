@@ -17,7 +17,6 @@
 
 <resources>
     <dimen name="login_screen_logo_size">144dp</dimen>
-    <dimen name="login_input_box_width">500dp</dimen>
 
     <dimen name="camera_roll_grid_size">144dp</dimen>
     <dimen name="camera_roll_date_grid_size">56dp</dimen>
