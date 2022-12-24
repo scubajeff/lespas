@@ -1,0 +1,3 @@
+* Corregido el cambio del volumen de audio al máximo en la pantalla del rollo de la cámara o en la pantalla de exploración de imágenes.
+* Corregida la diferencia de zona horaria al añadir una foto a un álbum.
+* Otras mejoras y correcciones de errores

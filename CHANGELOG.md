@@ -1,4 +1,4 @@
-## Version 2.7.1
+## Version 2.7.2
 * Fixed audio volume change to maximum in camera roll screen or picture browsing screen
 * Fixed timezone difference not being handled when adding picture to album
 

@@ -1,0 +1,3 @@
+* Correction du changement du volume audio au maximum dans l'écran du rouleau d'appareil photo ou dans l'écran de navigation des photos.
+* Correction de la différence de fuseau horaire qui n'est pas gérée lors de l'ajout d'une photo à l'album.
+* Autres améliorations et corrections de bogues
