@@ -1,0 +1,3 @@
+* Correzione del problema del volume audio al massimo nella schermata del rullino fotografico o nella schermata di navigazione delle immagini.
+* Corretto il bug della differenza di fuso orario che non veniva gestita quando si aggiungeva un'immagine all'album
+* Altri miglioramenti e correzioni di bug

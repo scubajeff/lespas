@@ -1,3 +1,7 @@
+## Version 2.7.1
+* Fixed audio volume change to maximum in camera roll screen or picture browsing screen
+* Fixed timezone difference not being handled when adding picture to album
+
 ## Version 2.7.0
 * New feature: geotag photos with GPX file
 * New feature: export album's location information to GPX file
