@@ -49,14 +49,13 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private var brightness = Settings.System.getInt(activity.contentResolver, Settings.System.SCREEN_BRIGHTNESS) / 255.0f
     private val audioManager = activity.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-    private val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-    private var currentVolumePercentage = volume.toFloat() / maxVolume
+    private val maxSystemVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    private var currentVolumePercentage = volume.toFloat() / maxSystemVolume
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
         val okHttpDSFactory = DefaultDataSource.Factory(activity, OkHttpDataSource.Factory(callFactory))
         videoPlayer = ExoPlayer.Builder(activity)
-            .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.CONTENT_TYPE_MOVIE).build(), true)
             .setMediaSourceFactory(DefaultMediaSourceFactory(if (cache != null) CacheDataSource.Factory().setCache(cache).setUpstreamDataSourceFactory(okHttpDSFactory) else okHttpDSFactory))
             .build()
         .apply {
@@ -80,13 +79,14 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
             // Retrieve repeat mode setting
             repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
+
+            // Handle audio focus
+            setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.CONTENT_TYPE_MUSIC).build(), true)
+            // Initial volume as maximum of current system volume, effectively no change to current volume at the very beginning, see setVolume()
+            volume = 1f
         }
 
-        // Set maximum volume
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume,0)
-        videoPlayer.volume = currentVolumePercentage
-
-        // Mute the video sound during late night hours
+        // Mute video sound during late night hours
         with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) mute() }
     }
 
@@ -150,16 +150,29 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
+/*
     fun setVolume(increment: Float) {
+        val currentSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        // Make sure maximum volume set if auto mute in midnight activated
+        if (currentSystemVolume < maxSystemVolume && videoPlayer.volume == 0f) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxSystemVolume,0)
+
         val volume = videoPlayer.volume + increment
         when {
             volume < 0f  -> videoPlayer.volume = 0f
-            volume > 1f  -> videoPlayer.volume = 1f
+            volume > 1f  -> {
+                if (currentSystemVolume >= maxSystemVolume ) videoPlayer.volume = 1f
+                else {
+                    // Make sure maximum volume set when adjusting volume for the first time in this session
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxSystemVolume,0)
+                    videoPlayer.volume = currentSystemVolume.toFloat() / maxSystemVolume + increment
+                }
+            }
             else -> videoPlayer.volume = volume
         }
     }
     fun getVolume(): Float = videoPlayer.volume
-/*
+*/
     fun setVolume(increment: Float) {
         currentVolumePercentage += increment
         currentVolumePercentage = when {
@@ -167,10 +180,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             currentVolumePercentage > 1f -> 1f
             else -> currentVolumePercentage
         }
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,(currentVolumePercentage * maxVolume).toInt(),0)
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, (currentVolumePercentage * maxSystemVolume).toInt(), 0)
     }
     fun getVolume(): Float = currentVolumePercentage
- */
+
     fun setBrightness(increment: Float) {
         brightness += increment
         if (brightness < 0f) brightness = 0f
@@ -180,7 +193,11 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
     fun getBrightness(): Float = brightness
     fun resetBrightness() { window.attributes = window.attributes.apply { screenBrightness = -1f }}
-    fun mute() { videoPlayer.volume = 0f }
+    private fun mute() {
+        //videoPlayer.volume = 0f
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0)
+        currentVolumePercentage = 0f
+    }
 /*
     fun unMute() { videoPlayer.volume = 1f }
     fun toggleMuteState() { if (videoPlayer.volume == 0f) unMute() else mute() }
@@ -200,7 +217,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     override fun onCleared() {
         videoPlayer.release()
 
-        // Reset screen auto turn off
+        // Reset screen auto turn off, brightness and volume setting
         Tools.keepScreenOn(window, false)
         resetBrightness()
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
