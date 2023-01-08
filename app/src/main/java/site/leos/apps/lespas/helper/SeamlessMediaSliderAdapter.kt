@@ -98,6 +98,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
 
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                // Ignore flings
+                if (abs(distanceY) > 15) return false
+
                 if (abs(distanceX) < abs(distanceY)) {
                     knobLayout?.isVisible = true
                     // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding

@@ -101,10 +101,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import kotlin.math.atan2
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
@@ -358,6 +355,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                // Ignore scroll
+                if (abs(velocityY) < 1000) return false
+
                 when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
                     in 55.0..125.0-> {
                         //bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
