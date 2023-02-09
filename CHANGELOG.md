@@ -1,3 +1,7 @@
+## Version 2.7.3
+* Fixed swipe up gesture conflict between revealing camera roll list and adjusting video volume/brightness
+* Fixed file name changed when adding file using Android's Photo Picker
+
 ## Version 2.7.2
 * Fixed audio volume change to maximum in camera roll screen or picture browsing screen
 * Fixed timezone difference not being handled when adding picture to album
