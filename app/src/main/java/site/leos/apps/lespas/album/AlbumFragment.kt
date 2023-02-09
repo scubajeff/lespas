@@ -37,7 +37,6 @@ import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
@@ -136,7 +135,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+        addFileLauncher = registerForActivityResult(LesPasGetMediaContract(arrayOf("image/*", "video/*"))) {
             if (it.isNotEmpty()) {
                 uris.clear()
                 uris.addAll(it)

@@ -26,7 +26,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -53,6 +52,7 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.BGMDialogFragment
+import site.leos.apps.lespas.helper.LesPasGetMediaContract
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
@@ -160,7 +160,7 @@ class PublicationDetailFragment: Fragment() {
             }
         })
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        addFileLauncher = registerForActivityResult(LesPasGetMediaContract(arrayOf("image/*", "video/*"))) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(
