@@ -60,6 +60,7 @@ import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.ByteString.Companion.encode
+import okio.ByteString.Companion.toByteString
 import org.json.JSONException
 import org.json.JSONObject
 import site.leos.apps.lespas.R
@@ -67,13 +68,18 @@ import site.leos.apps.lespas.helper.ConfirmDialogFragment
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.SingleLiveEvent
 import site.leos.apps.lespas.helper.Tools
+import java.io.ByteArrayOutputStream
 import java.net.SocketException
 import java.net.UnknownHostException
 import java.nio.charset.StandardCharsets
+import java.security.*
+import java.security.cert.CertPathValidatorException
+import java.security.cert.X509Certificate
+import java.text.DateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
-import javax.net.ssl.SSLHandshakeException
-import javax.net.ssl.SSLPeerUnverifiedException
+import javax.net.ssl.*
 import kotlin.math.roundToInt
 
 class NCLoginFragment: Fragment() {
@@ -185,12 +191,27 @@ class NCLoginFragment: Fragment() {
                     parentFragmentManager.beginTransaction().replace(R.id.container_root, NCAuthenticationFragment.newInstance(false, authenticateModel.getTheming()), NCAuthenticationFragment::class.java.canonicalName).addToBackStack(null).commit()
                 }
                 998 -> {
-                    // Ask user to accept self-signed certificate
+                    // Prompt user to accept self-signed certificate
+                    val cert = authenticateModel.getCredential().certificate
                     AlertDialog.Builder(hostEditText.context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                         .setIcon(ContextCompat.getDrawable(hostEditText.context, android.R.drawable.ic_dialog_alert)?.apply { setTint(ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)) })
                         .setTitle(getString(R.string.verify_ssl_certificate_title))
                         .setCancelable(false)
-                        .setMessage(getString(R.string.verify_ssl_certificate_message, authenticateModel.getCredential().serverUrl.substringAfterLast("://").substringBefore('/')))
+                        .setMessage(
+                            if (cert == null)
+                                // SSLPeerUnverifiedException
+                                getString(R.string.verify_ssl_certificate_message, authenticateModel.getCredential().serverUrl.substringAfterLast("://").substringBefore('/'))
+                            else {
+                                // CertValidatorException
+                                val dFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
+                                getString(
+                                    R.string.untrusted_ssl_certificate_message,
+                                    cert.issuerDN,
+                                    MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString(separator = "") { eachByte -> "%02x:".format(eachByte).uppercase(Locale.ROOT) }.dropLast(1),
+                                    dFormat.format(cert.notBefore), dFormat.format(cert.notAfter)
+                                )
+                            }
+                        )
                         .setPositiveButton(R.string.accept_certificate) { _, _ -> authenticateModel.pingServer(null, true) }
                         .setNegativeButton(android.R.string.cancel) { _, _ -> showError(1001) }
                         .create().show()
@@ -285,6 +306,9 @@ class NCLoginFragment: Fragment() {
             disableInputWhilePinging()
             authenticateModel.setToken(username, token)
             authenticateModel.pingServer(hostUrl, false)
+            // Reset self-signed certificate
+            authenticateModel.setSelfSignedCertificate(null)
+            authenticateModel.setSelfSignedCertificateString("")
         } else hostEditText.error = getString(R.string.host_address_validation_error)
     }
 
@@ -314,7 +338,25 @@ class NCLoginFragment: Fragment() {
                 pingResult.postValue(
                     try {
                         httpCall = OkHttpClient.Builder().apply {
-                            if (acceptSelfSign) hostnameVerifier { _, _ -> true }
+                            if (acceptSelfSign) {
+                                credential.certificate?.let { cert ->
+                                    val trustManagers = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).run {
+                                        init(KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+                                            load(null, null)
+                                            setCertificateEntry(credential.serverUrl.substringAfterLast("//").substringBefore('/'), cert)
+
+                                            // Save certificate in Base64 string for storing in Account's user data later
+                                            ByteArrayOutputStream().let { output ->
+                                                store(output, null)
+                                                credential.certificateString = output.toByteArray().toByteString().base64()
+                                            }
+                                        })
+                                        trustManagers
+                                    }
+                                    sslSocketFactory(SSLContext.getInstance("TLS").apply { init(null, trustManagers, null) }.socketFactory, trustManagers[0] as X509TrustManager)
+                                }
+                                hostnameVerifier { _, _ -> true }
+                            }
                             readTimeout(20, TimeUnit.SECONDS)
                             writeTimeout(20, TimeUnit.SECONDS)
                         }.build().newCall(Request.Builder().url("${credential.serverUrl}${NEXTCLOUD_CAPABILITIES_ENDPOINT}").addHeader(OkHttpWebDav.NEXTCLOUD_OCSAPI_HEADER, "true").build())
@@ -328,15 +370,6 @@ class NCLoginFragment: Fragment() {
                                             //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
                                             serverTheme.textColor = ContextCompat.getColor(context, R.color.lespas_white).let { if (ColorUtils.calculateContrast(it, serverTheme.color) > 1.5f) it else ContextCompat.getColor(context, R.color.lespas_black)}
                                             try { serverTheme.slogan = Html.fromHtml(getString("slogan"), Html.FROM_HTML_MODE_LEGACY).toString() } catch (_: Exception) {}
-/*
-                                            OkHttpClient.Builder().apply {
-                                                if (acceptSelfSign) hostnameVerifier { _, _ -> true }
-                                                readTimeout(20, TimeUnit.SECONDS)
-                                                writeTimeout(20, TimeUnit.SECONDS)
-                                            }.build().newCall(Request.Builder().url(getString("logo")).build()).execute().use { source ->
-                                                File()
-                                            }
-*/
                                         }
                                     }
                                 } catch (_: JSONException) {}
@@ -344,10 +377,32 @@ class NCLoginFragment: Fragment() {
                             response.code
                         } ?: 999
                     } catch (e: SSLPeerUnverifiedException) {
-                        // This certificate is issued by user installed CA, let user decided whether to trust it or not
+                        // This certificate is issued by user installed CA, let user decide whether to trust it or not
                         998
                     } catch (e: SSLHandshakeException) {
                         // SSL related error generally means wrong SSL certificate
+                        var result = 1001
+
+                        // If it's caused by CertPathValidatorException, then we should extract the untrusted certificate and let user decide
+                        var previousCause: Throwable? = null
+                        var cause = e.cause
+                        while (cause != null && cause != previousCause && cause !is CertPathValidatorException) {
+                            previousCause = cause
+                            cause = cause.cause
+                        }
+                        if (cause != null && cause is CertPathValidatorException && cause.certPath.certificates.size > 0) {
+                            try {
+                                credential.certificate = cause.certPath.certificates[if (cause.index == -1) 0 else cause.index] as X509Certificate
+                                result = 998
+                            } catch (_: Exception) {}
+                        }
+
+                        result
+                    } catch (e: KeyStoreException) {
+                        1001
+                    } catch (e: NoSuchAlgorithmException) {
+                        1001
+                    } catch (e: KeyManagementException) {
                         1001
                     } catch (e: UnknownHostException) {
                         1000
@@ -375,7 +430,21 @@ class NCLoginFragment: Fragment() {
                 viewModelScope.launch(Dispatchers.IO) {
                     try {
                         httpCall = OkHttpClient.Builder().apply {
-                            if (credential.selfSigned) hostnameVerifier { _, _ -> true }
+                            if (credential.selfSigned) {
+                                hostnameVerifier { _, _ -> true }
+                                try {
+                                    credential.certificate?.let { cert ->
+                                        val trustManagers = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).run {
+                                            init(KeyStore.getInstance(KeyStore.getDefaultType()).apply {
+                                                load(null, null)
+                                                setCertificateEntry(credential.serverUrl.substringAfterLast("//").substringBefore('/'), cert)
+                                            })
+                                            trustManagers
+                                        }
+                                        sslSocketFactory(SSLContext.getInstance("TLS").apply { init(null, trustManagers, null) }.socketFactory, trustManagers[0] as X509TrustManager)
+                                    }
+                                } catch (_: Exception) {}
+                            }
                             readTimeout(20, TimeUnit.SECONDS)
                             writeTimeout(20, TimeUnit.SECONDS)
                             addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic ${"${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64()}").build()) }
@@ -405,6 +474,8 @@ class NCLoginFragment: Fragment() {
         }
         fun toggleUseHttps() { credential.https = !credential.https }
         fun setSelfSigned(selfSigned: Boolean) { credential.selfSigned = selfSigned }
+        fun setSelfSignedCertificate(certificate: X509Certificate?) { credential.certificate = certificate }
+        fun setSelfSignedCertificateString(certificateString: String) { credential.certificateString = certificateString }
         fun getCredential() = credential
         fun getTheming() = serverTheme
 
@@ -419,6 +490,8 @@ class NCLoginFragment: Fragment() {
             var selfSigned: Boolean = false,
             var https: Boolean = true,
             var userName: String = "",
+            var certificate: X509Certificate? = null,
+            var certificateString: String = ""
         )
 
         @Parcelize

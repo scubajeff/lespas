@@ -34,6 +34,7 @@
     <string name="http_toggle_helper_text">\u2B11Toque no prefixo para usar HTTP inseguro</string>
     <string name="verify_ssl_certificate_title">Certificado SSL Inválido</string>
     <string name="verify_ssl_certificate_message">O certificado do servidor %1$s NÃO PODE ser verificado, você quer confiar neste servidor e continuar assim mesmo?</string>
+    <string name="untrusted_ssl_certificate_message">Emissor:\n%1$s\n\nSHA-256 Impressão digital:\n%2$s\n\nEmitida em: %3$s\n\nExpirado em: %4$s\n\n\nVocê quer confiar neste servidor?</string>
     <string name="accept_certificate">Confiar nele!</string>
 
     <string name="host_address_validation_error">Nome de rede inválido.</string>

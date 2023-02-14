@@ -208,15 +208,7 @@ class LesPasArtProvider: MuzeiArtProvider() {
                                     val serverRoot = getUserData(accounts[0], application.getString(R.string.nc_userdata_server))
 
                                     resourceRoot = "$serverRoot${application.getString(R.string.dav_files_endpoint)}$userName${Tools.getRemoteHome(application)}"
-                                    webDav = OkHttpWebDav(
-                                        userName,
-                                        getUserData(accounts[0], application.getString(R.string.nc_userdata_secret)),
-                                        serverRoot,
-                                        getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(),
-                                        null,
-                                        "LesPas_${application.getString(R.string.lespas_version)}",
-                                        0,
-                                    )
+                                    webDav = OkHttpWebDav(userName, getUserData(accounts[0], application.getString(R.string.nc_userdata_secret)), serverRoot, getUserData(accounts[0], application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(accounts[0], application.getString(R.string.nc_userdata_certificate)), null, "LesPas_${application.getString(R.string.lespas_version)}", 0,)
                                 }
 
                                 webDav.getStream("${resourceRoot}/${album.name}/${photo.name}", false, null).use {

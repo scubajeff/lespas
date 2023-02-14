@@ -34,6 +34,7 @@
     <string name="http_toggle_helper_text">\u2B11Per attivare l\'HTTP non sicuro, tocca il prefisso</string>
     <string name="verify_ssl_certificate_title">Certificato SSL non valido</string>
     <string name="verify_ssl_certificate_message">Il certificato del server %1$s NON PUÒ essere verificato, vuoi fidarti del server e continuare\?</string>
+    <string name="untrusted_ssl_certificate_message">Emittente:\n%1$s\n\nSHA-256 Impronta digitale:\n%2$s\n\nNon prima: %3$s\n\nNon dogo: %4$s\n\n\nVuoi fidarti di questo server?</string>
     <string name="accept_certificate">Mi fido!</string>
 
     <string name="host_address_validation_error">Host non valido.</string>

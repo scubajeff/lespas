@@ -32,6 +32,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.net.http.SslCertificate
 import android.net.http.SslError
 import android.os.Bundle
 import android.view.*
@@ -87,7 +88,10 @@ class NCAuthenticationFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (authWebpage.canGoBack()) authWebpage.goBack() else parentFragmentManager.popBackStack()
+                if (authWebpage.canGoBack()) authWebpage.goBack() else {
+                    authWebpage.stopLoading()
+                    parentFragmentManager.popBackStack()
+                }
             }
         })
 
@@ -174,7 +178,15 @@ class NCAuthenticationFragment: Fragment() {
                 // Have to allow self-signed certificate
                 @SuppressLint("WebViewClientOnReceivedSslError")
                 override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: SslError?) {
-                    if (error?.primaryError == SslError.SSL_IDMISMATCH && authenticateModel.getCredential().selfSigned) handler?.proceed() else handler?.cancel()
+                    error?.let {
+                        if (authenticateModel.getCredential().selfSigned) {
+                            when(error.primaryError) {
+                                SslError.SSL_UNTRUSTED -> if (error.certificate.toString() == SslCertificate(authenticateModel.getCredential().certificate).toString()) handler?.proceed() else handler?.cancel()// TODO is this comparison enough?
+                                SslError.SSL_IDMISMATCH -> handler?.proceed()
+                                else -> handler?.cancel()
+                            }
+                        } else handler?.cancel()
+                    }
                 }
             }
 
@@ -343,6 +355,7 @@ class NCAuthenticationFragment: Fragment() {
                 setUserData(account, getString(R.string.nc_userdata_username), credential.userName)
                 setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
                 setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
+                setUserData(account, getString(R.string.nc_userdata_certificate), credential.certificateString)
             }
 
             lifecycleScope.launch { notifyAccountAuthenticated(account) }

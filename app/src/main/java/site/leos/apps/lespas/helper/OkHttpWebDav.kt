@@ -30,17 +30,18 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.*
+import okio.ByteString.Companion.decodeBase64
+import okio.IOException
 import org.json.JSONObject
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.photo.Photo
-import java.io.File
-import java.io.InputStream
-import java.io.InterruptedIOException
+import java.io.*
 import java.net.SocketTimeoutException
 import java.net.URI
+import java.security.KeyStore
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -48,15 +49,33 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 
-class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSigned: Boolean, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
+class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSigned: Boolean, certificate: String?, cacheFolder: String?, userAgent: String?, cacheSize: Int) {
     private val chunkUploadBase = "${serverAddress}/remote.php/dav/uploads/${userId}"
     private val httpClient: OkHttpClient
     private var cachedHttpClient: OkHttpClient? = null
 
     init {
         val builder = OkHttpClient.Builder().apply {
-            if (selfSigned) hostnameVerifier { _, _ -> true }
+            if (selfSigned) {
+                hostnameVerifier { _, _ -> true }
+                try {
+                    certificate?.let {
+                        if (it.isNotEmpty()) {
+                            it.decodeBase64()?.let { cert ->
+                                val trustManagers = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).run {
+                                    init(KeyStore.getInstance(KeyStore.getDefaultType()).apply { load(ByteArrayInputStream(cert.toByteArray()), null) })
+                                    trustManagers
+                                }
+                                sslSocketFactory(SSLContext.getInstance("TLS").apply { init(null, trustManagers, null) }.socketFactory, trustManagers[0] as X509TrustManager)
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
             addInterceptor { chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "Basic $secret").build()) }
             addNetworkInterceptor { chain -> chain.proceed((chain.request().newBuilder().removeHeader("User-Agent").addHeader("User-Agent", userAgent ?: "OkHttpWebDav").build())) }
             readTimeout(30, TimeUnit.SECONDS)

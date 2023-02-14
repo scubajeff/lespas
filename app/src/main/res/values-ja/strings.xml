@@ -27,6 +27,7 @@
     <string name="host_textinput_label">サーバーURL</string>
     <string name="url_helper_text">例： https://example.com/nextcloud</string>
     <string name="verify_ssl_certificate_title">SSL証明書の検証に失敗しました。</string>
+    <string name="untrusted_ssl_certificate_message">発行者:\n%1$s\n\nSHA-256指紋:\n%2$s\n\n有効期間開始: %3$s\n\n有効期間満了: %4$s\n\n\nこのサーバーを信用しますか？</string>
     <string name="accept_certificate">信頼</string>
     <string name="host_address_validation_error">URLが正しくない</string>
     <string name="host_not_valid">サーバーが応答しない</string>

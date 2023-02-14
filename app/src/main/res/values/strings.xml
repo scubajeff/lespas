@@ -43,8 +43,10 @@
     <string name="nc_userdata_loginname" translatable="false">NC_LOGINNAME</string>
     <string name="nc_userdata_secret" translatable="false">NC_SECRET</string>
     <string name="nc_userdata_selfsigned" translatable="false">NC_SELFSIGNED</string>
+    <string name="nc_userdata_certificate" translatable="false">NC_SELFSIGNED_CERTIFICATE</string>
     <string name="verify_ssl_certificate_title">Bad SSL Certificate</string>
-    <string name="verify_ssl_certificate_message">Server %1$s\'s certificate CAN NOT be verified, do you want to trust this server and continue?</string>
+    <string name="verify_ssl_certificate_message">Server %1$s\'s certificate CAN NOT be verified, do you want to trust this server?</string>
+    <string name="untrusted_ssl_certificate_message">Issuer:\n%1$s\n\nSHA-256 Fingerprint:\n%2$s\n\nIssued on: %3$s\n\nExpired on: %4$s\n\n\nDo you want to trust this server?</string>
     <string name="accept_certificate">Trust it!</string>
 
     <string name="host_address_validation_error">Host not valid.</string>

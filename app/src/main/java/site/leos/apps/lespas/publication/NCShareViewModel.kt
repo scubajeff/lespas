@@ -153,7 +153,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             baseUrl = getUserData(account, application.getString(R.string.nc_userdata_server))
             resourceRoot = "$baseUrl${application.getString(R.string.dav_files_endpoint)}$userName"
             webDav = OkHttpWebDav(
-                userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
+                userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, application.getString(R.string.nc_userdata_certificate)), localCacheFolder,"LesPas_${application.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
 
@@ -169,7 +169,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             val userName = getUserData(account, context.getString(R.string.nc_userdata_username))
             token = getUserData(account, context.getString(R.string.nc_userdata_secret))
             webDav = OkHttpWebDav(
-                userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), localCacheFolder,"LesPas_${context.getString(R.string.lespas_version)}",
+                userName, token, baseUrl, getUserData(account, context.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, context.getString(R.string.nc_userdata_certificate)), localCacheFolder,"LesPas_${context.getString(R.string.lespas_version)}",
                 PreferenceManager.getDefaultSharedPreferences(context).getInt(SettingsFragment.CACHE_SIZE, 800)
             )
         }
