@@ -193,23 +193,24 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 super.onChange(selfChange, uri)
 
                 // ContentObserver got called twice, once for itself, once for it's descendant, all with same last path segment
-                if (uri?.lastPathSegment!! != lastId) {
-                    lastId = uri.lastPathSegment!!
+                uri?.lastPathSegment?.let {
+                    if (it != lastId) {
+                        lastId = it
 
-                    snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(
-                        workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
-                    WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
+                        snapseedWorker = OneTimeWorkRequestBuilder<SnapseedResultWorker>().setInputData(workDataOf(SnapseedResultWorker.KEY_IMAGE_URI to uri.toString(), SnapseedResultWorker.KEY_SHARED_PHOTO to pAdapter.getPhotoAt(slider.currentItem).id, SnapseedResultWorker.KEY_ALBUM to album.id)).build()
+                        WorkManager.getInstance(requireContext()).enqueueUniqueWork(workerName, ExistingWorkPolicy.KEEP, snapseedWorker)
 
-                    WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
-                        if (workInfo != null) {
-                            if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
-                                // When replacing original with Snapseed result, refresh image cache of all size
-                                imageLoaderModel.invalidPhoto(pAdapter.getPhotoAt(slider.currentItem).id)
+                        WorkManager.getInstance(requireContext()).getWorkInfosForUniqueWorkLiveData(workerName).observe(parentFragmentManager.findFragmentById(R.id.container_root)!!) { workInfo ->
+                            if (workInfo != null) {
+                                if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getBoolean(requireContext().getString(R.string.snapseed_replace_pref_key), false)) {
+                                    // When replacing original with Snapseed result, refresh image cache of all size
+                                    imageLoaderModel.invalidPhoto(pAdapter.getPhotoAt(slider.currentItem).id)
+                                }
                             }
                         }
-                    }
 
-                    requireContext().contentResolver.unregisterContentObserver(this)
+                        requireContext().contentResolver.unregisterContentObserver(this)
+                    }
                 }
             }
         }
