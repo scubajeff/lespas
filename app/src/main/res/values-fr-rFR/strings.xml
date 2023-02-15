@@ -32,7 +32,7 @@
     <string name="http_toggle_helper_text">\u2B11Appuyez sur le préfixe pour activer le HTTP non sécurisé</string>
     <string name="verify_ssl_certificate_title">Certificat SSL incorrect</string>
     <string name="verify_ssl_certificate_message">Le certificat du serveur %1$s NE PEUT PAS être vérifié, voulez-vous faire confiance à ce serveur et continuer ?</string>
-    <string name="untrusted_ssl_certificate_message">Délivreur :\n%1$s\n\nSHA-256 Empreinte digitale :\n%2$s\n\nPas avant : %3$s\n\nPas après : %4$s\n\n\nVous voulez faire confiance à ce serveur ?</string>
+    <string name="untrusted_ssl_certificate_message">De l\'objet du certificat :\n%1$s\n\nDélivreur :\n%2$s\n\nSHA-256 Empreinte digitale :\n%3$s\n\nPas avant : %4$s\n\nPas après : %5$s\n\n\nVous voulez faire confiance à ce serveur ?</string>
     <string name="accept_certificate">Lui faire confiance !</string>
     <string name="host_address_validation_error">Hôte non valide.</string>
     <string name="host_not_valid">Adresse non valide.</string>

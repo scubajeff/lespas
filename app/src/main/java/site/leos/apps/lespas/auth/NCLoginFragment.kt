@@ -206,6 +206,7 @@ class NCLoginFragment: Fragment() {
                                 val dFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault())
                                 getString(
                                     R.string.untrusted_ssl_certificate_message,
+                                    cert.subjectDN,
                                     cert.issuerDN,
                                     MessageDigest.getInstance("SHA-256").digest(cert.encoded).joinToString(separator = "") { eachByte -> "%02x:".format(eachByte).uppercase(Locale.ROOT) }.dropLast(1),
                                     dFormat.format(cert.notBefore), dFormat.format(cert.notAfter)
