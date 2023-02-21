@@ -50,6 +50,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okio.ByteString.Companion.decodeBase64
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -353,12 +354,14 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                         setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
                         try {
                             getUserData(account, getString(R.string.nc_userdata_certificate))?.let { certificateString ->
+                                // Restore self-signed certificate if there's one. TODO if self-signed certificate expired, user need to logout and login again
                                 if (certificateString.isNotEmpty()) {
-                                    // Restore self-signed certificate if it exists. TODO if self-signed certificate expired, user need to logout and login again
                                     setSelfSignedCertificateString(certificateString)
-                                    KeyStore.getInstance(KeyStore.getDefaultType()).let {
-                                        it.load(ByteArrayInputStream(certificateString.toByteArray()), null)
-                                        setSelfSignedCertificate(it.getCertificate(serverUrl.substringAfterLast("//").substringBefore('/')) as X509Certificate)
+                                    certificateString.decodeBase64()?.let { cert ->
+                                        KeyStore.getInstance(KeyStore.getDefaultType()).let {
+                                            it.load(ByteArrayInputStream(cert.toByteArray()), null)
+                                            setSelfSignedCertificate(it.getCertificate(serverUrl.substringAfterLast("//").substringBefore('/')) as X509Certificate)
+                                        }
                                     }
                                 }
                             }
