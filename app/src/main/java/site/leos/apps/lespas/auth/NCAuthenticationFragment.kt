@@ -181,7 +181,14 @@ class NCAuthenticationFragment: Fragment() {
                     error?.let {
                         if (authenticateModel.getCredential().selfSigned) {
                             when(error.primaryError) {
-                                SslError.SSL_UNTRUSTED -> if (error.certificate.toString() == SslCertificate(authenticateModel.getCredential().certificate).toString()) handler?.proceed() else handler?.cancel()// TODO is this comparison enough?
+                                SslError.SSL_UNTRUSTED -> {
+                                    try {
+                                        authenticateModel.getCredential().certificate?.let { cert ->
+                                            // TODO is this comparison enough?
+                                            if (error.certificate.toString() == SslCertificate(cert).toString()) handler?.proceed() else handler?.cancel()
+                                        } ?: handler?.cancel()
+                                    } catch (_: Exception) { handler?.cancel() }
+                                }
                                 SslError.SSL_IDMISMATCH -> handler?.proceed()
                                 else -> handler?.cancel()
                             }
@@ -355,7 +362,7 @@ class NCAuthenticationFragment: Fragment() {
                 setUserData(account, getString(R.string.nc_userdata_username), credential.userName)
                 setUserData(account, getString(R.string.nc_userdata_secret), "${credential.loginName}:${credential.token}".encode(StandardCharsets.ISO_8859_1).base64())
                 setUserData(account, getString(R.string.nc_userdata_selfsigned), credential.selfSigned.toString())
-                setUserData(account, getString(R.string.nc_userdata_certificate), credential.certificateString)
+                setUserData(account, getString(R.string.nc_userdata_certificate), credential.certificateString)     // User's self-signed certificate byteString encoded in Base64
             }
 
             lifecycleScope.launch { notifyAccountAuthenticated(account) }
