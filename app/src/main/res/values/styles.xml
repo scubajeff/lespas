@@ -33,6 +33,13 @@
 
     <style name="ThemeOverlay.LesPas.DatePicker" parent="@style/ThemeOverlay.MaterialComponents.MaterialCalendar">
         <item name="colorError">?colorErrorDatePicker</item>
+        <item name="materialCalendarHeaderCancelButton">@style/Theme.LesPas.DatePicker.TextButton</item>
+        <item name="materialCalendarHeaderConfirmButton">@style/Theme.LesPas.DatePicker.TextButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Theme.LesPas.DatePicker.TextButton</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Theme.LesPas.DatePicker.TextButton</item>
+    </style>
+    <style name="Theme.LesPas.DatePicker.TextButton" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">?colorButtonText</item>
     </style>
 
     <style name="LightEdgeEffectColor">
