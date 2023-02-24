@@ -81,10 +81,7 @@ import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.publication.PublicationListFragment
 import site.leos.apps.lespas.search.SearchFragment
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.sync.AcquiringDialogFragment
-import site.leos.apps.lespas.sync.ActionViewModel
-import site.leos.apps.lespas.sync.DestinationDialogFragment
-import site.leos.apps.lespas.sync.SyncAdapter
+import site.leos.apps.lespas.sync.*
 import java.text.Collator
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -584,6 +581,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 mAdapter.currentList.forEach {
                     if (it.id != CameraRollFragment.FROM_CAMERA_ROLL) selectionTracker.select(it.id)
                 }
+                true
+            }
+            R.id.rescan -> {
+                actionModel.rescan(selectionTracker.selection.toList())
                 true
             }
             else -> false

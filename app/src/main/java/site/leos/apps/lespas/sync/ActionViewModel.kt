@@ -39,7 +39,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     val allPendingActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
 
-    fun deleteAlbums(albums: List<Album>) {
+    fun deleteAlbums(albums: List<Album>, sync: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.deleteAlbums(albums)
 
@@ -64,7 +64,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
             }
 
-            actionRepository.addActions(actions)
+            // If sync with server is needed
+            if (sync) actionRepository.addActions(actions)
         }
 
         // Remove blog post of albums
@@ -232,4 +233,24 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
     fun updateBlogSiteTitle() { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_BLOG_SITE_TITLE, "", "", "", "", System.currentTimeMillis(), 1)) }}
+
+    fun rescan(albumIds: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val actions = mutableListOf<Action>()
+            val albums = mutableListOf<Album>()
+            val timestamp = System.currentTimeMillis()
+            albumIds.forEach {
+                albumRepository.getThisAlbum(it).let { album ->
+                    albums.add(album)
+                    actions.add(Action(null, Action.ACTION_META_RESCAN, album.id, album.name, "", "", timestamp, 1))
+                }
+            }
+
+            // Remove local albums and photos
+            deleteAlbums(albums, false)
+
+            // Kick start re-scan
+            actionRepository.addActions(actions)
+        }
+    }
 }

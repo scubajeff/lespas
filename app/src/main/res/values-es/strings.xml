@@ -95,6 +95,7 @@
     <string name="item_nameasc">Nombre Ascendente</string>
     <string name="item_namedesc">Nombre Descendente</string>
     <string name="action_share">Comparte</string>
+    <string name="action_rescan">Reescanear EXIF</string>
     <string name="action_remove">Retire</string>
     <string name="action_select_all">Seleccione todo.</string>
     <plurals name="selected_count">

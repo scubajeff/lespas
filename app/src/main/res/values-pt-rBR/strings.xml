@@ -217,6 +217,7 @@
     <string name="item_nameasc">Nome crescente</string>
     <string name="item_namedesc">Name decrescente</string>
     <string name="action_share">Compartilhar</string>
+    <string name="action_rescan">Re-scan EXIF</string>
     <string name="action_remove">Remover</string>
     <string name="action_hide">Ocultar</string>
     <string name="action_set_remote">Configurar como Remoto</string>

@@ -347,6 +347,7 @@
     <string name="item_namedesc">Name Descending</string>
     <string name="item_wide_list">Show name</string>
     <string name="action_share">Share</string>
+    <string name="action_rescan">Re-scan EXIF</string>
     <string name="action_remove">Remove</string>
     <string name="action_hide">Hide</string>
     <string name="action_set_remote">Set as Remote</string>

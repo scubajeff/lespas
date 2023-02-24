@@ -125,6 +125,7 @@
     <string name="item_namedesc">名前の逆順</string>
     <string name="action_share">共有</string>
     <string name="button_text_share">共有</string>
+    <string name="action_rescan">EXIFの再スキャン</string>
     <string name="action_remove">削除</string>
     <string name="action_select_all">全てを選択</string>
     <plurals name="selected_count">

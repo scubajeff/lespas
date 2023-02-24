@@ -496,6 +496,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     webDav.delete("${lespasBase}/${BLOG_ASSETS_FOLDER}/${action.folderId}")
                 }
                 Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
+                Action.ACTION_META_RESCAN -> {
+                    // Property folderId holds target folder Id
+                    // Property folderName holds target folder name
+                    webDav.delete("${lespasBase}/${action.folderName}/${action.folderId}${CONTENT_META_FILE_SUFFIX}")
+                }
             }
 
             actionRepository.delete(action)

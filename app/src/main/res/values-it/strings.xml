@@ -231,6 +231,7 @@
     <string name="item_namedesc">Ordine alfabetico inverso</string>
     <string name="item_wide_list">Mostra nome</string>
     <string name="action_share">Condividi</string>
+    <string name="action_rescan">Ri-scansione EXIF</string>
     <string name="action_remove">Rimuovi</string>
     <string name="action_hide">Nascondi</string>
     <string name="action_set_remote">Imposta come remoto</string>
