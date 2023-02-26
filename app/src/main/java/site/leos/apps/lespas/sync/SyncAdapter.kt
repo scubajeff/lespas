@@ -1499,12 +1499,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                         changedAlbum.coverMimeType = this.coverMimeType
                         changedAlbum.coverOrientation = coverOrientation
                     }
+                }
 
-                    // Maintain album start and end date
-                    with(photoRepository.getAlbumDuration(changedAlbum.id)) {
-                        if (first < changedAlbum.startDate) changedAlbum.startDate = first
-                        if (second > changedAlbum.endDate) changedAlbum.endDate = second
-                    }
+                // Force update album start and end date when album content changed whether there are photo files got added/deleted or simply just name changed
+                with(photoRepository.getAlbumDuration(changedAlbum.id)) {
+                    if (first < changedAlbum.startDate) changedAlbum.startDate = first
+                    if (second > changedAlbum.endDate) changedAlbum.endDate = second
                 }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
