@@ -1107,6 +1107,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 //val metaFileName = "${changedAlbum.id}.json"
                 val bgmFileName = "${changedAlbum.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                 var contentModifiedTime = LocalDateTime.MIN
+                var updateAlbumPeriodNeeded = false
 
                 // Create changePhotos list
                 //Log.e(TAG, "syncing remote album ${changedAlbum.name}")
@@ -1163,7 +1164,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 contentMetaUpdatedNeeded.add(changedAlbum.name)
 
                                 // Parsing new filename for dataTaken string of yyyyMMddHHmmss or yyyyMMdd_HHmmss
-                                Tools.parseDateFromFileName(remotePhoto.name)?.let { photoRepository.updateDateTaken(remotePhotoId, it) }
+                                Tools.parseDateFromFileName(remotePhoto.name)?.let {
+                                    photoRepository.updateDateTaken(remotePhotoId, it)
+                                    // Might need to update album start/end time, set this flag because file renamed won't be added to chagnedPhotos list
+                                    updateAlbumPeriodNeeded = true
+                                }
 
                                 // If album's cover's filename changed on server
                                 if (remotePhotoId == changedAlbum.cover) {
@@ -1506,6 +1511,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     // Maintain album start and end date
+                    updateAlbumPeriodNeeded = true
+                }
+
+                if (updateAlbumPeriodNeeded) {
                     with(photoRepository.getAlbumDuration(changedAlbum.id)) {
                         if (first < changedAlbum.startDate) changedAlbum.startDate = first
                         if (second > changedAlbum.endDate) changedAlbum.endDate = second
