@@ -39,6 +39,7 @@ import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.*
+import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -60,6 +61,8 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.*
 import kotlin.math.roundToInt
 
 class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialog, 0.8f) {
@@ -92,7 +95,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
 
         // Show basic information
         view.findViewById<TextView>(R.id.info_filename).text = photo.photo.name.substringAfterLast("/")
-        view.findViewById<TextView>(R.id.info_shotat).text = photo.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT))
+        view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", photo.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), photo.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
 
         exifModel.getPhotoMeta().observe(viewLifecycleOwner, Observer { photoMeta ->
             handler.removeCallbacksAndMessages(null)
@@ -128,7 +131,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                     view.findViewById<TableRow>(R.id.artist_row).visibility = View.VISIBLE
                     view.findViewById<TextView>(R.id.info_artist).text = photoMeta.artist
                 }
-                photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT)) }
+                photoMeta.date?.let { view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM))) }
 
                 try {
                     if (latitude != Photo.NO_GPS_DATA) {
