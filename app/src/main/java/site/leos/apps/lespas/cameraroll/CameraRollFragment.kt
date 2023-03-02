@@ -157,8 +157,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var gestureDetector: GestureDetectorCompat
 
-    private var shareOutJob: Job? = null
-
     private val sx = PropertyValuesHolder.ofFloat("scaleX", 1.0f, 0.8f, 1.0f)
     private val sy = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 0.8f, 1.0f)
     private val tx = PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)
@@ -925,6 +923,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 handler.removeCallbacksAndMessages(null)
                 if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
+                val cr = requireActivity().contentResolver
+                val clipData = ClipData.newUri(cr, "", uris[0])
+                for (i in 1 until uris.size) {
+                    if (isActive) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                        else clipData.addItem(ClipData.Item(uris[i]))
+                    }
+                }
                 startActivity(Intent.createChooser(Intent().apply {
                     if (uris.size > 1) {
                         action = Intent.ACTION_SEND_MULTIPLE
