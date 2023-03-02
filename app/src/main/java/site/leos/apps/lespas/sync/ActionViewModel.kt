@@ -30,6 +30,8 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.io.FileOutputStream
+import java.io.ObjectOutputStream
 
 class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val actionRepository = ActionRepository(application)
@@ -68,8 +70,8 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
             if (sync) actionRepository.addActions(actions)
         }
 
-        // Remove blog post of albums
-        deleteBlogPosts(albums)
+        // Remove blog post of albums, if it's not a meta re-scan
+        if (sync) deleteBlogPosts(albums)
     }
 
     fun deletePhotos(photos: List<Photo>, album: Album)  {
@@ -243,10 +245,16 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 albumRepository.getThisAlbum(it).let { album ->
                     albums.add(album)
                     actions.add(Action(null, Action.ACTION_META_RESCAN, album.id, album.name, "", "", timestamp, 1))
+                    try {
+                        ObjectOutputStream(FileOutputStream("${localRootFolder}/${album.id}${SyncAdapter.CAPTION_BACKUP_FILENAME_SUFFIX}")).use { oos -> oos.writeObject(photoRepository.getAllCaptionsInAlbum(album.id)) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // TODO handle exceptions
+                    }
                 }
             }
 
-            // Remove local albums and photos
+            // Remove local albums and photos, TODO if network is not available, album won't re-appear soon
             deleteAlbums(albums, false)
 
             // Kick start re-scan

@@ -46,6 +46,7 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoCaption
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -192,11 +193,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Check network type
         checkConnection()
 
+/*
         // If we don't have any album, clean up the local root folder, this is useful when upgrading to version 2.5.0 when local media files have to be deleted
         if (albumRepository.getAlbumTotal() == 0) {
             try { File(localBaseFolder).deleteRecursively() } catch(_: Exception) {}
             try { File(localBaseFolder).mkdir() } catch(_: Exception) {}
         }
+*/
 
         AccountManager.get(application).run {
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
@@ -209,7 +212,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
-            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${Tools.getLocalRoot(application)}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
+            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${localBaseFolder}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -1512,6 +1515,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (second > changedAlbum.endDate) changedAlbum.endDate = second
                 }
 
+                // Restore captions and blog exclusion setting from local backup during meta re-scan
+                try {
+                    File(localBaseFolder, "${changedAlbum.id}${CAPTION_BACKUP_FILENAME_SUFFIX}").let { backup ->
+                        if (backup.exists()) {
+                            @Suppress("UNCHECKED_CAST")
+                            photoRepository.restoreCaptionsInAlbum(ObjectInputStream(FileInputStream(backup)).readObject() as List<PhotoCaption>)
+                        }
+                        backup.delete()
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
+
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 //Log.e(TAG, "finish syncing album ${changedAlbum.name}")
                 albumRepository.upsert(changedAlbum)
@@ -1888,6 +1902,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
 
+        const val CAPTION_BACKUP_FILENAME_SUFFIX = "-captions"
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val MIME_TYPE_JSON = "application/json"

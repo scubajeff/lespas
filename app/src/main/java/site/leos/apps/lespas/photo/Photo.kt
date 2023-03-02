@@ -85,6 +85,8 @@ data class PhotoWithCoordinate(
     val long: Double,
 ): Parcelable
 
+data class PhotoCaption(val id: String, val caption: String, val shareId: Int): java.io.Serializable
+
 @Dao
 abstract class PhotoDao: BaseDao<Photo>() {
     @Query("DELETE FROM ${Photo.TABLE_NAME} WHERE id = :photoId")
@@ -206,4 +208,12 @@ abstract class PhotoDao: BaseDao<Photo>() {
 
     @Query("SELECT * FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId AND (shareId & ${Photo.EXCLUDE_FROM_BLOG} = 0)")
     abstract fun getPhotosForBlog(albumId: String): List<Photo>
+
+    @Query("SELECT id, caption, shareId FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId")
+    abstract fun getAllCaptionsInAlbum(albumId: String): List<PhotoCaption>
+
+    @Query("UPDATE ${Photo.TABLE_NAME} SET caption = :newCaption, shareId = :exclusionSetting WHERE id = :photoId")
+    abstract fun updateCaptionAndBlogSetting(photoId: String, newCaption: String, exclusionSetting: Int)
+    @Transaction
+    open fun restoreCaptionsInAlbum(captionList: List<PhotoCaption>) { captionList.forEach { updateCaptionAndBlogSetting(it.id, it.caption, it.shareId) }}
 }
