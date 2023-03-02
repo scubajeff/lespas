@@ -710,6 +710,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
                         }
                         BottomSheetBehavior.STATE_COLLAPSED -> {
+                            removeButton.isEnabled = !camerarollModel.shouldDisableRemove()
+                            shareButton.isEnabled = !camerarollModel.shouldDisableShare()
+                            infoButton.isVisible = !camerarollModel.shouldDisableShare()
+                            infoButton.isEnabled = !camerarollModel.shouldDisableShare()
                             selectionTracker.clearSelection()
                             setButtonGroupState(true)
                             setSourceGroupState(false)
