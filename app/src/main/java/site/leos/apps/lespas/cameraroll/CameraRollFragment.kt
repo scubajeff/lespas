@@ -1155,6 +1155,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 cBadge.isVisible = true
             }
         })
+
+        // If launched as picture viewer and last photo get removed, quit immediately. See isCameraRollEmpty function in CameraRollModel for detail
+        camerarollModel.isCameraRollEmpty().observe(viewLifecycleOwner, Observer {
+            if (it) requireActivity().finish()
+        })
     }
 
     @SuppressLint("SetTextI18n")
@@ -1290,8 +1295,11 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         private var shouldDisableShare = false
         private val quickScrollState: Array<Parcelable?> = arrayOf(null, null)
         private val snapshotRemovedList = mutableListOf<String>()
+        private val camerarollIsEmpty = SingleLiveEvent<Boolean>()
 
         init {
+            camerarollIsEmpty.postValue(false)
+
             if (inArchive) {
                 vmState.postValue(STATE_FETCHING_BACKUP)
                 fetchPhotoFromServerBackup()
@@ -1431,6 +1439,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         }
         fun getMediaList(): LiveData<MutableList<Photo>> = mediaList
+        fun isCameraRollEmpty(): SingleLiveEvent<Boolean> = camerarollIsEmpty
 
         fun getPhotoById(photoId: String): Photo? = mediaList.value?.let { list -> list.find { it.id == photoId }}
         fun findPhotoPosition(photoId: String): Int = mediaList.value?.let { list -> list.indexOfFirst { it.id == photoId }} ?: -1
@@ -1442,9 +1451,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             cameraRoll.toMutableList().run {
                 removeAll { removeList.contains(Uri.parse(it.id)) }
 
-                if (position[0] >= size) position[0] = max(size - 1, 0)
-                mediaList.postValue(this)
-                cameraRoll = this
+                if (size == 0 && fileUri != null)
+                    // If launched as picture viewer and last photo get removed, quit immediately
+                    camerarollIsEmpty.postValue(true)
+                else {
+                    if (position[0] >= size) position[0] = max(size - 1, 0)
+                    mediaList.postValue(this)
+                    cameraRoll = this
+                }
             }
         }
         fun removeBackup(removeList: List<String>) {
