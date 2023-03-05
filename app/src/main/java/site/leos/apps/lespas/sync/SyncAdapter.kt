@@ -209,7 +209,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
-            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), "${Tools.getLocalRoot(application)}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
+            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, application.getString(R.string.nc_userdata_certificate)), "${Tools.getLocalRoot(application)}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity

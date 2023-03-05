@@ -50,6 +50,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okio.ByteString.Companion.decodeBase64
 import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
@@ -64,7 +65,10 @@ import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.security.KeyStore
+import java.security.cert.X509Certificate
 
 class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
     private var storageStatisticSummaryString: String? = null
@@ -344,8 +348,27 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
                 AccountManager.get(requireContext()).run {
                     val account = getAccountsByType(getString(R.string.account_type_nc))[0]
                     val loginName = getUserData(account, getString(R.string.nc_userdata_loginname)) ?: getUserData(account, getString(R.string.nc_userdata_username))
-                    authenticateModel.setToken(loginName, "", getUserData(account, getString(R.string.nc_userdata_server)))
-                    authenticateModel.setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
+                    authenticateModel.run {
+                        val serverUrl = getUserData(account, getString(R.string.nc_userdata_server))
+                        setToken(loginName, "", serverUrl)
+                        setSelfSigned(getUserData(account, getString(R.string.nc_userdata_selfsigned)).toBoolean())
+                        try {
+                            getUserData(account, getString(R.string.nc_userdata_certificate))?.let { certificateString ->
+                                // Restore self-signed certificate if there's one. TODO if self-signed certificate expired, user need to logout and login again
+                                if (certificateString.isNotEmpty()) {
+                                    setSelfSignedCertificateString(certificateString)
+                                    certificateString.decodeBase64()?.let { cert ->
+                                        KeyStore.getInstance(KeyStore.getDefaultType()).let {
+                                            it.load(ByteArrayInputStream(cert.toByteArray()), null)
+                                            setSelfSignedCertificate(it.getCertificate(serverUrl.substringAfterLast("//").substringBefore('/')) as X509Certificate)
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e: Exception){
+                            e.printStackTrace()
+                        }
+                    }
                 }
 
                 // Launch authentication webview
