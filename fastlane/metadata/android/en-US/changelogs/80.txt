@@ -1,0 +1,3 @@
+* Fixed swipe up gesture conflict between revealing camera roll list and adjusting video volume/brightness
+* Fixed file name changed when adding file using Android's Photo Picker
+* Other improvements and bugs fixes

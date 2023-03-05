@@ -1,13 +1,13 @@
 ![Feature graphic](fastlane//metadata/android/en-US/images/featureGraphic.png)
 
-## A photo album that saves and shares all your precious memory in the private Nextcloud server
+## A private photo album that saves and shares your precious moments
 <a href='https://play.google.com/store/apps/details?id=site.leos.apps.lespas'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='50'/></a>
 <a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='50'></a>
 
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
 Features:
-- Simple, beautiful and fast photos & videos viewing
+- Powerful photo management tool right in your palm
 - Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
 - Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
@@ -23,6 +23,7 @@ Features:
 - Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage  
 - Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
 - Option to hide album both in Phone and on server
+- Import and Export GPX file
 - Open-source
 
 <p float="left">
@@ -75,7 +76,7 @@ I believe when someone start searching his/her memory for a moment in the past, 
 Les Pas uses folders to group photos on the server, e.g., each album in Les Pas app has a one-to-one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folders, and Nextcloud has it's own file tagging support too. But not every picture format supports tagging, that makes tagging picture file a feature which relies heavily on platform specific functions. I would like my data (and yours too) to be platform neutral instead.
 
 ### I have a hugh photo collection organized in nested folders, Les Pas only support a flat folder structure.
-<a href=https://github.com/steviehs>@steviehs</a> make two cool <a href=https://gitlab.com/steviehs/stevemisc>scripts</a> to help you out.
+<a href=https://github.com/steviehs>@steviehs</a> make very cool <a href=https://gitlab.com/steviehs/digipics>scripts</a> to help you out.
 
 ### Why does Les Pas use a lot of storage space?
 If you set the album as Local Album, Les Pas store photos in it's app private storage, so if you have a large collection of photos, you will find that it use a lot of storage space in Android's setting menu.<br>

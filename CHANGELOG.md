@@ -1,3 +1,14 @@
+## Version 2.7.4
+* New feature: accept self-signed certificate on the fly during login
+
+## Version 2.7.3
+* Fixed swipe up gesture conflict between revealing camera roll list and adjusting video volume/brightness
+* Fixed file name changed when adding file using Android's Photo Picker
+
+## Version 2.7.2
+* Fixed audio volume change to maximum in camera roll screen or picture browsing screen
+* Fixed timezone difference not being handled when adding picture to album
+
 ## Version 2.7.0
 * New feature: geotag photos with GPX file
 * New feature: export album's location information to GPX file

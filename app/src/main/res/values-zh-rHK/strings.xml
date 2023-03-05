@@ -110,6 +110,7 @@
     <string name="same_file_found">同名文件已存在。</string>
     <string name="verify_ssl_certificate_title">SSL證書驗證失敗</string>
     <string name="verify_ssl_certificate_message">伺服器%1$s之證書無法通過驗證，是否信任該伺服器並繼續？</string>
+    <string name="untrusted_ssl_certificate_message">主題：\n%1$s\n\n發行者：\n%2$s\n\nSHA-256 指紋：\n%3$s\n\n簽發日期：%4$s\n\n過期時間：%5$s\n\n\n是否信任該伺服器並繼續？</string>
     <string name="accept_certificate">信任</string>
     <string name="certificate_error">安全證書驗證失敗。</string>
     <string name="item_search">搜索</string>

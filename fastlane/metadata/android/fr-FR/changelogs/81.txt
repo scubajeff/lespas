@@ -1,0 +1,2 @@
+* Nouvelle fonctionnalité : acceptation d'un certificat auto-signé à la volée lors de la connexion.
+* Autres améliorations et corrections de bogues

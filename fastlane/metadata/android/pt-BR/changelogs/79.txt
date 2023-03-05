@@ -1,0 +1,3 @@
+* Corrigido erro de alteração do volume de áudio ao máximo na tela do rolo da câmera ou na tela de navegação de imagens
+* Corrigido erro de diferença de fuso horário não sendo tratado ao adicionar imagem ao álbum
+* Outras melhorias e correções de bugs

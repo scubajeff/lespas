@@ -1,0 +1,3 @@
+* conflito de gestos fixos entre a revelação da lista de rolagem da câmera e o ajuste do volume/brilho do vídeo
+* Nome de arquivo fixo alterado ao adicionar arquivo usando o Photo Picker do Android
+* Outras melhorias e correções de bugs

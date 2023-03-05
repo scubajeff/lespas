@@ -1,0 +1,3 @@
+* Corretto il conflitto del gesto di scorrimento verso l'alto tra la visualizzazione dell'elenco del rullino fotografico e la regolazione del volume/luminosità del video.
+* Correzione del nome del file cambiato durante l'aggiunta di un file con il Photo Picker di Android
+* Altri miglioramenti e correzioni di bug

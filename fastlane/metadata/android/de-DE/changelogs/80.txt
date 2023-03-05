@@ -1,0 +1,3 @@
+* Konflikt zwischen dem Aufrufen der Kamerarollenliste und dem Anpassen der Videolautstärke/Helligkeit durch Wischgesten nach oben behoben
+* Behoben: Dateiname wurde beim Hinzufügen einer Datei mit dem Foto-Picker von Android geändert
+* Weitere Verbesserungen und Fehlerkorrekturen

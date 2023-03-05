@@ -1,0 +1,3 @@
+* Arreglado el conflicto entre el gesto de deslizar hacia arriba al mostrar la lista del rollo de la cámara y ajustar el volumen/brillo del vídeo.
+* Se ha corregido el cambio de nombre de archivo al añadir un archivo mediante el selector de fotos de Android.
+* Otras mejoras y correcciones de errores

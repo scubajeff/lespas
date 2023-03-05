@@ -67,7 +67,8 @@
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="16dp"
         style="@style/ExoMediaButton.Pause"
-        app:tint="@color/lespas_white" />
+        app:tint="@color/lespas_white"
+        android:background="@drawable/play_button_background" />
 
     <ImageButton
         android:id="@id/exo_play"
@@ -78,5 +79,6 @@
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginTop="16dp"
         style="@style/ExoMediaButton.Play"
-        app:tint="@color/lespas_white" />
+        app:tint="@color/lespas_white"
+        android:background="@drawable/play_button_background" />
 </androidx.constraintlayout.widget.ConstraintLayout>

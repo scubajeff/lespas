@@ -36,7 +36,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -132,7 +131,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
     // Update album meta only when fragment destroy
     private var saveSortOrderChanged = false
 
-    private lateinit var addFileLauncher: ActivityResultLauncher<PickVisualMediaRequest>
+    private lateinit var addFileLauncher: ActivityResultLauncher<String>
     private lateinit var importGPXLauncher: ActivityResultLauncher<String>
 
     private var isSnapseedEnabled = false
@@ -289,7 +288,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             sharedSelection.clear()
         }
 
-        addFileLauncher = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+        addFileLauncher = registerForActivityResult(LesPasGetMediaContract(arrayOf("image/*", "video/*"))) { uris ->
             if (uris.isNotEmpty()) {
                 parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) ?: run {
                     AcquiringDialogFragment.newInstance(uris as ArrayList<Uri>, album,false).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
@@ -714,7 +713,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             override fun onMenuItemSelected(item: MenuItem): Boolean {
                 return when(item.itemId) {
                     R.id.option_menu_add_photo-> {
-                        addFileLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                        addFileLauncher.launch("*/*")
                         true
                     }
                     R.id.option_menu_rename-> {
@@ -919,7 +918,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
             R.id.share -> {
                 if (stripSetting == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 }
                 else shareOut(stripSetting == getString(R.string.strip_on_value))

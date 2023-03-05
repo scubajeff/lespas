@@ -101,10 +101,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
-import kotlin.math.atan2
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
     private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
@@ -159,8 +156,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var storagePermissionRequestLauncher: ActivityResultLauncher<Array<String>>
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var gestureDetector: GestureDetectorCompat
-
-    private var shareOutJob: Job? = null
 
     private val sx = PropertyValuesHolder.ofFloat("scaleX", 1.0f, 0.8f, 1.0f)
     private val sy = PropertyValuesHolder.ofFloat("scaleY", 1.0f, 0.8f, 1.0f)
@@ -358,6 +353,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                // Ignore scroll
+                if (abs(velocityY) < 1000) return false
+
                 when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
                     in 55.0..125.0-> {
                         //bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
@@ -712,6 +710,10 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             }
                         }
                         BottomSheetBehavior.STATE_COLLAPSED -> {
+                            removeButton.isEnabled = !camerarollModel.shouldDisableRemove()
+                            shareButton.isEnabled = !camerarollModel.shouldDisableShare()
+                            infoButton.isVisible = !camerarollModel.shouldDisableShare()
+                            infoButton.isEnabled = !camerarollModel.shouldDisableShare()
                             selectionTracker.clearSelection()
                             setButtonGroupState(true)
                             setSourceGroupState(false)
@@ -758,7 +760,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 if (stripExif == getString(R.string.strip_ask_value)) {
                     if (hasExifInSelection()) {
-                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
+                        if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.strip_exif_msg, getString(R.string.strip_exif_title)), requestKey = STRIP_REQUEST_KEY, positiveButtonText = getString(R.string.strip_exif_yes), negativeButtonText = getString(R.string.strip_exif_no), cancelable = true).show(parentFragmentManager, CONFIRM_DIALOG)
                     } else shareOut(false)
                 } else shareOut(stripExif == getString(R.string.strip_on_value))
             } else {
@@ -925,6 +927,14 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 handler.removeCallbacksAndMessages(null)
                 if (waitingMsg?.isShownOrQueued == true) waitingMsg?.dismiss()
 
+                val cr = requireActivity().contentResolver
+                val clipData = ClipData.newUri(cr, "", uris[0])
+                for (i in 1 until uris.size) {
+                    if (isActive) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) clipData.addItem(cr, ClipData.Item(uris[i]))
+                        else clipData.addItem(ClipData.Item(uris[i]))
+                    }
+                }
                 startActivity(Intent.createChooser(Intent().apply {
                     if (uris.size > 1) {
                         action = Intent.ACTION_SEND_MULTIPLE
@@ -1314,7 +1324,7 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                             val userName = getUserData(account, ctx.getString(R.string.nc_userdata_username))
                             val baseUrl = getUserData(account, ctx.getString(R.string.nc_userdata_server))
                             dcimRoot = "$baseUrl${ctx.getString(R.string.dav_files_endpoint)}$userName${Tools.getCameraArchiveHome(ctx)}"
-                            webDav = OkHttpWebDav(userName, getUserData(account, ctx.getString(R.string.nc_userdata_secret)), baseUrl, getUserData(account, ctx.getString(R.string.nc_userdata_selfsigned)).toBoolean(), null, "LesPas_${ctx.getString(R.string.lespas_version)}", 0)
+                            webDav = OkHttpWebDav(userName, getUserData(account, ctx.getString(R.string.nc_userdata_secret)), baseUrl, getUserData(account, ctx.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, ctx.getString(R.string.nc_userdata_certificate)), null, "LesPas_${ctx.getString(R.string.lespas_version)}", 0)
                         }
 
                         webDav.listWithExtraMeta(dcimRoot, OkHttpWebDav.RECURSIVE_DEPTH).forEach { dav ->

@@ -1,0 +1,3 @@
+* Correction du conflit entre le geste de balayage vers le haut et l'affichage de la liste des appareils photo et le réglage du volume et de la luminosité des vidéos.
+* Correction du changement de nom de fichier lors de l'ajout d'un fichier à l'aide du sélecteur de photos d'Android.
+* Autres améliorations et corrections de bogues
