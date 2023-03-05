@@ -1,0 +1,2 @@
+* Neue Funktion: Akzeptieren von selbstsignierten Zertifikaten während der Anmeldung
+* Weitere Verbesserungen und Fehlerkorrekturen

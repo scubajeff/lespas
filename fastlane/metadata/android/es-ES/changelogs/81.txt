@@ -1,0 +1,2 @@
+* Nueva función: aceptar certificados autofirmados sobre la marcha durante el inicio de sesión.
+* Otras mejoras y correcciones de errores

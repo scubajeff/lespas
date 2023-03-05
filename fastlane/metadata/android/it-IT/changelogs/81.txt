@@ -1,0 +1,2 @@
+* Nuova funzione: accettazione del certificato autofirmato al volo durante il login.
+* Altri miglioramenti e correzioni di bug

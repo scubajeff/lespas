@@ -1,3 +1,6 @@
+## Version 2.7.4
+* New feature: accept self-signed certificate on the fly during login
+
 ## Version 2.7.3
 * Fixed swipe up gesture conflict between revealing camera roll list and adjusting video volume/brightness
 * Fixed file name changed when adding file using Android's Photo Picker
