@@ -34,6 +34,7 @@
     <string name="http_toggle_helper_text">\u2B11Tippen Sie auf das Präfix, um das unsichere HTTP zu aktivieren.</string>
     <string name="verify_ssl_certificate_title">Ungültiges SSL-Zertifikat</string>
     <string name="verify_ssl_certificate_message">Das Zertifikat von Server %1$s kann NICHT verifiziert werden. Wollen Sie diesem Server vertrauen und fortfahren?</string>
+    <string name="untrusted_ssl_certificate_message">Zertifikatinhaber:\n%1$s\n\nAussteller:\n%2$s\n\nSHA-256 Fingerabdruck:\n%3$s\n\nGültigkeit von: %4$s\n\nGültigkeit bis: %5$s\n\n\nWollen Sie diesem Server vertrauen?</string>
     <string name="accept_certificate">Zertifikat trotzdem akzeptieren!</string>
 
     <string name="host_address_validation_error">Hostadresse ungültig.</string>

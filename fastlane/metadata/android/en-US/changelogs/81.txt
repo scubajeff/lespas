@@ -1,0 +1,2 @@
+* New feature: accept self-signed certificate on the fly during login
+* Other improvements and bugs fixes

@@ -112,6 +112,7 @@
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>
     <string name="verify_ssl_certificate_message">El certificado del servidor %1$s NO PUEDE ser verificado, ¿desea confiar en este servidor y continuar?</string>
+    <string name="untrusted_ssl_certificate_message">Sujeto:\n%1$s\n\nEmisor:\n%2$s\n\nSHA-256 Huella digital:\n%3$s\n\nNo antes de: %4$s\n\nNo después de: %5$s\n\n\n¿Quiere confiar en este servidor?</string>
     <string name="accept_certificate">Confía en ello.</string>
     <string name="certificate_error">Error en el certificado del sitio.</string>
     <string name="item_search">Buscar</string>

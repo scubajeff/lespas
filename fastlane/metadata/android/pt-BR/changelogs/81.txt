@@ -1,0 +1,2 @@
+* Nova característica: aceitar certificado autoassinado durante o login
+* Outras melhorias e correções de bugs
