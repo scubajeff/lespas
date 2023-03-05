@@ -90,7 +90,7 @@ class PhotoWithMapFragment: Fragment() {
         }
         with(remotePhoto.photo) {
             requireActivity().requestedOrientation =
-                if ((width < height) || (albumId == CameraRollFragment.FROM_CAMERA_ROLL && (shareId == 90 || shareId == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                if ((width < height) || (albumId == CameraRollFragment.FROM_CAMERA_ROLL && (orientation == 90 || orientation == 270)) || (remotePhoto.remotePath.isNotEmpty() && (orientation == 90 || orientation == 270))) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
