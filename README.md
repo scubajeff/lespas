@@ -1,13 +1,13 @@
 ![Feature graphic](fastlane//metadata/android/en-US/images/featureGraphic.png)
 
-## A photo album that saves and shares all your precious memory in the private Nextcloud server
+## A private photo album that saves and shares your precious moments
 <a href='https://play.google.com/store/apps/details?id=site.leos.apps.lespas'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height='50'/></a>
 <a href='https://f-droid.org/packages/site.leos.apps.lespas/'><img alt='Get it on F-Droid' src='https://fdroid.gitlab.io/artwork/badge/get-it-on.png' height='50'></a>
 
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
 Features:
-- Simple, beautiful and fast photos & videos viewing
+- Powerful photo management tool right in your palm
 - Organized photos and videos in albums
 - Manage your phone's camera roll and auto backup to server
 - Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
@@ -23,6 +23,7 @@ Features:
 - Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage  
 - Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
 - Option to hide album both in Phone and on server
+- Import and Export GPX file
 - Open-source
 
 <p float="left">
