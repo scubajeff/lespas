@@ -23,6 +23,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -36,6 +37,10 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import site.leos.apps.lespas.R
 import java.time.LocalDateTime
@@ -51,6 +56,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     private val volume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
     private val maxSystemVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
     private var currentVolumePercentage = volume.toFloat() / maxSystemVolume
+    private var pauseJob: Job? = null
 
     init {
         //private var exoPlayer = SimpleExoPlayer.Builder(ctx, { _, _, _, _, _ -> arrayOf(MediaCodecVideoRenderer(ctx, MediaCodecSelector.DEFAULT)) }) { arrayOf(Mp4Extractor()) }.build()
@@ -74,6 +80,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                     super.onIsPlayingChanged(isPlaying)
 
                     Tools.keepScreenOn(window, isPlaying)
+                    if (!isPlaying) saveVideoPosition(currentVideo)
                 }
             })
 
@@ -97,6 +104,9 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
     }
 
     fun resume(view: PlayerView?, uri: Uri?) {
+        // When device rotated, enable gapless playback by canceling scheduled pause job
+        pauseJob?.cancel(null)
+
         // Hide controller view by default
         view?.hideController()
 
@@ -116,7 +126,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 }
             } else {
                 // Pause the current one
-                if (videoPlayer.isPlaying) pause(currentVideo)
+                if (videoPlayer.isPlaying) pause(currentVideo, false)
 
                 // Switch to new video
                 currentVideo = uri
@@ -137,16 +147,20 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
     }
 
-    fun pause(uri: Uri?) {
-        // Fragment onWindowFocusChanged will call this with Uri.EMPTY since fragment has no knowledge of video uri
-        if (uri == currentVideo || uri == Uri.EMPTY && videoPlayer.playbackState != Player.STATE_IDLE) {
-            // Only pause if current playing video is the same as the argument
-            videoPlayer.pause()
-            saveVideoPosition(currentVideo)
-        }
+    fun pause(uri: Uri?, delayedPause: Boolean = true) {
+        pauseJob = viewModelScope.launch {
+            // Might be called multiple times, cancel previous scheduled job
+            pauseJob?.cancel(null)
 
-        // Reset screen auto turn off
-        Tools.keepScreenOn(window, false)
+            // Pause for 250ms, so that device rotate will resume playing gapless
+            if (delayedPause) delay(250)
+
+            // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
+            // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
+            if (isActive && (uri == currentVideo || uri == Uri.EMPTY)) videoPlayer.pause()
+        }.apply {
+            invokeOnCompletion { pauseJob = null }
+        }
     }
 
     fun skip(seconds: Int) { videoPlayer.seekTo(videoPlayer.currentPosition + seconds * 1000) }
