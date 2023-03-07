@@ -410,13 +410,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
                 parentFragmentManager.findFragmentByTag(CAPTION_DIALOG) ?: run { CaptionEditDialogFragment.newInstance(captionTextView.text.toString()).show(parentFragmentManager, CAPTION_DIALOG) }
             }
             movementMethod = ScrollingMovementMethod()
-            doOnEachNextLayout {
-                // Hide bottom control with delay adapted to caption's length
-                (it as TextView).let { caption ->
-                    handlerBottomControl.removeCallbacks(hideSystemUI)
-                    handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + if (caption.text.isNotEmpty()) min(caption.lineCount, caption.maxLines) * 800 else 0)
-                }
-            }
         }
 
         albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
@@ -608,8 +601,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
         window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
 
-        // trigger auto hide, now triggered by caption view layout adapting to caption's length
-        //hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // trigger auto hide, timeout length adapted to caption's length
+        val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
+        handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
     }
 
     // Delay hiding the system UI while interacting with controls, preventing the jarring behavior of controls going away
@@ -627,8 +621,11 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
             controlsContainer.visibility = if (show) View.VISIBLE else View.GONE
         } catch (e: UninitializedPropertyAccessException) { e.printStackTrace() }
 
-        // auto hide, now triggered by caption view layout adapting to caption's length
-        //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+        // auto hide, timeout length adapted to caption's length
+        if (show) {
+            val extraTimeout = try { if (captionTextView.text.isNotEmpty()) min(captionTextView.lineCount, captionTextView.maxLines) else 0 } catch (_: Exception) { 0 }
+            handlerBottomControl.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS + extraTimeout * 800)
+        }
 
         // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
         wipeActionBar()
