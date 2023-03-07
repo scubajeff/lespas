@@ -81,7 +81,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
 
             // Handle audio focus
-            setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.CONTENT_TYPE_MUSIC).build(), true)
+            setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             // Initial volume as maximum of current system volume, effectively no change to current volume at the very beginning, see setVolume()
             volume = 1f
         }
