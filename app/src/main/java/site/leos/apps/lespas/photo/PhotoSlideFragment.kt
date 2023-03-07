@@ -57,7 +57,6 @@ import androidx.work.*
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialContainerTransform
 import kotlinx.coroutines.*
-import site.leos.apps.lespas.MainActivity
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.album.Album
 import site.leos.apps.lespas.album.AlbumViewModel
@@ -74,7 +73,7 @@ import java.lang.Runnable
 import java.util.*
 import kotlin.math.min
 
-class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
+class PhotoSlideFragment : Fragment() {
     private lateinit var album: Album
 
     private lateinit var window: Window
@@ -115,8 +114,6 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private lateinit var serverPath: String
     private lateinit var serverFullPath: String
     private lateinit var rootPath: String
-
-    private var onPauseCalled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -510,20 +507,9 @@ class PhotoSlideFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         outState.putString(KEY_SHAREOUT_MIMETYPE, shareOutMimeType)
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        // In Android 13, at lease observed in some ROM, when resuming from device rotation, onWindowFocusChanged will be called once with hasFocus as false, we need to differentiate this from the others by checking if onPause has not been called
-        if (onPauseCalled && pAdapter.getPhotoAt(slider.currentItem).mimeType.startsWith("video")) {
-            if (hasFocus) {
-                playerViewModel.resume(null, null)
-                onPauseCalled = false
-            }
-            else playerViewModel.pause(Uri.EMPTY)
-        }
-    }
-
     override fun onPause() {
         super.onPause()
-        onPauseCalled = true
+        playerViewModel.pause(Uri.EMPTY)
     }
 
     override fun onDestroyView() {

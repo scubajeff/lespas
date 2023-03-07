@@ -70,7 +70,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         gestureDetector = GestureDetectorCompat(context, object: GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean = true
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (currentVideoView?.isControllerVisible == false) {
+                if (currentVideoView?.isControllerFullyVisible == false) {
                     currentVideoView?.showController()
                     clickListener(true)
                     handler.removeCallbacks(hideProgressCallback)

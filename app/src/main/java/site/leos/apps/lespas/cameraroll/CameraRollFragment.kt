@@ -103,7 +103,7 @@ import java.time.format.TextStyle
 import java.util.*
 import kotlin.math.*
 
-class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener {
+class CameraRollFragment : Fragment() {
     private lateinit var bottomSheet: BottomSheetBehavior<ConstraintLayout>
     private lateinit var mediaPager: RecyclerView
     private lateinit var quickScroll: RecyclerView
@@ -162,8 +162,6 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
     private val tx = PropertyValuesHolder.ofFloat("translationX", 0f, 100f, 0f)
 
     private lateinit var remoteArchiveBaseFolder: String
-
-    private var onPauseCalled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -440,20 +438,25 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
             adapter = quickScrollAdapter
-/*
 
             layoutManager = object : GridLayoutManager(this.context, resources.getInteger(R.integer.cameraroll_grid_span_count)) {
+                // Overscroll at the top for a period of time will hide the bottom sheet
+                var threshold = 0
                 override fun scrollVerticallyBy(dy: Int, recycler: Recycler?, state: State?): Int {
                     super.scrollVerticallyBy(dy, recycler, state).run {
-                        if (dy - this < 150) {
-                            // Overscroll at the top, hide bottom sheet
-                            bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
-                        }
+                        // state.remainingScrollVertical will not be 0 when flinging the list to top
+                        // dy will be negative if over scrolling at the top
+                        if (state?.remainingScrollVertical == 0 && dy < 0) {
+                            threshold++
+                            if (threshold > 35) {
+                                threshold = 0
+                                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                            }
+                        } else threshold = 0
                         return this
                     }
                 }
             }
-*/
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -1048,23 +1051,9 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
         if (tag == TAG_FROM_CAMERAROLL_ACTIVITY || tag == null || showListFirst) (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
 
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        // In Android 13, at lease observed in some ROM, when resuming from device rotation, onWindowFocusChanged will be called once with hasFocus as false, we need to differentiate this from the others by checking if onPause has not been called
-        if (onPauseCalled) {
-            camerarollModel.getCurrentPhoto()?.mimeType?.let {
-                if (it.startsWith("video")) {
-                    if (hasFocus) {
-                        playerViewModel.resume(null, null)
-                        onPauseCalled = false
-                    } else playerViewModel.pause(Uri.EMPTY)
-                }
-            }
-        }
-    }
-
     override fun onPause() {
         super.onPause()
-        onPauseCalled = true
+        playerViewModel.pause(Uri.EMPTY)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
