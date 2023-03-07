@@ -440,20 +440,25 @@ class CameraRollFragment : Fragment(), MainActivity.OnWindowFocusChangedListener
 
         quickScroll = view.findViewById<RecyclerView>(R.id.quick_scroll).apply {
             adapter = quickScrollAdapter
-/*
 
             layoutManager = object : GridLayoutManager(this.context, resources.getInteger(R.integer.cameraroll_grid_span_count)) {
+                // Overscroll at the top for a period of time will hide the bottom sheet
+                var threshold = 0
                 override fun scrollVerticallyBy(dy: Int, recycler: Recycler?, state: State?): Int {
                     super.scrollVerticallyBy(dy, recycler, state).run {
-                        if (dy - this < 150) {
-                            // Overscroll at the top, hide bottom sheet
-                            bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
-                        }
+                        // state.remainingScrollVertical will not be 0 when flinging the list to top
+                        // dy will be negative if over scrolling at the top
+                        if (state?.remainingScrollVertical == 0 && dy < 0) {
+                            threshold++
+                            if (threshold > 35) {
+                                threshold = 0
+                                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                            }
+                        } else threshold = 0
                         return this
                     }
                 }
             }
-*/
 
             (layoutManager as GridLayoutManager).spanSizeLookup = object: GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
