@@ -1,0 +1,4 @@
+* Se han corregido varios errores del reproductor de vídeo, especialmente la reproducción sin pausas tras girar la pantalla del dispositivo.
+* Corrección de varios errores en la visualización de fotos en el mapa.
+* Corrección de varios errores en la integración con Muzei, especialmente en el recorte de fotos en modo retrato.
+* Otras mejoras y errores corregidos

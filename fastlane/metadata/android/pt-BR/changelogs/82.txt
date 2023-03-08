@@ -1,0 +1,4 @@
+* Diversos bugs corrigidos para o reprodutor de vídeo, especialmente reprodução sem movimento após a rotação da tela do dispositivo
+* Diversos bugs corrigidos para exibição de fotos no mapa
+* Vários bugs corrigidos para a integração Muzei, especialmente o corte de fotos em modo retrato
+* Outras melhorias e correções de bugs

@@ -1,3 +1,8 @@
+## Version 2.7.5
+* Various bugs fixed for video player, especially gapless playback after device screen rotated
+* Various bugs fixed for photo displaying on map
+* Various bugs fixed for Muzei integration, especially portrait mode photo cropping
+
 ## Version 2.7.4
 * New feature: accept self-signed certificate on the fly during login
 
