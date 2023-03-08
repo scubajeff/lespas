@@ -101,6 +101,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var hasBGM = false
     private var isMuted = false
     private lateinit var bgmPlayer: ExoPlayer
+    private var fadingJob: Job? = null
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var remotePath: String
@@ -149,8 +150,6 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 // Mute the video sound during late night hours
                 with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
-
-                playerHandler = Handler(bgmPlayer.applicationLooper)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
@@ -406,39 +405,39 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         if (!hasFocus && isSlideshowPlaying) slideshowJob?.cancel()
     }
 
-    private lateinit var playerHandler: Handler
     private fun fadeInBGM() {
-        Timer().also { timer ->
-            timer.schedule(object : TimerTask() {
-                override fun run() {
-                    if (bgmPlayer.volume < 1f) {
-                        playerHandler.post { bgmPlayer.volume += 0.05f }
-                    } else {
-                        playerHandler.post { bgmPlayer.volume = 1f }
-                        timer.cancel()
-                    }
+        fadingJob?.cancel()
+
+        fadingJob = lifecycleScope.launch {
+            while(true) {
+                delay(75)
+
+                if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
+                else {
+                    bgmPlayer.volume = 1f
+                    break
                 }
-            }, 0, 75)
+            }
         }
     }
+
     private fun fadeOutBGM(stopPlaying: Boolean = false) {
-        Timer().also { timer ->
-            timer.schedule(object : TimerTask() {
-                override fun run() {
-                    if (bgmPlayer.volume > 0f) {
-                        playerHandler.post { bgmPlayer.volume -= 0.05f }
-                    } else {
-                        playerHandler.post {
-                            bgmPlayer.volume = 0f
-                            if (stopPlaying) {
-                                bgmPlayer.stop()
-                                bgmPlayer.seekTo(0)
-                            }
-                        }
-                        timer.cancel()
+        fadingJob?.cancel()
+
+        fadingJob = lifecycleScope.launch {
+            while(true) {
+                delay(75)
+
+                if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
+                else {
+                    bgmPlayer.volume = 0f
+                    if (stopPlaying) {
+                        bgmPlayer.stop()
+                        bgmPlayer.seekTo(0)
                     }
+                    break
                 }
-            }, 0, 75)
+            }
         }
     }
 
