@@ -1,0 +1,4 @@
+* Divers bogues corrigés pour le lecteur vidéo, en particulier la lecture sans interruption après rotation de l'écran de l'appareil.
+* Divers bogues corrigés pour l'affichage des photos sur la carte
+* Divers bogues corrigés pour l'intégration de Muzei, en particulier le recadrage des photos en mode portrait.
+* Autres améliorations et corrections de bugs

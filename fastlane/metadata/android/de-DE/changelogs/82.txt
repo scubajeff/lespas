@@ -1,0 +1,4 @@
+* Verschiedene Fehler im Videoplayer behoben, insbesondere die lückenlose Wiedergabe nach Drehung des Bildschirms
+* Verschiedene Fehler bei der Anzeige von Fotos auf der Karte behoben
+* Verschiedene Fehler bei der Integration von Muzei behoben, insbesondere beim Zuschneiden von Fotos im Hochformat
+* Weitere Verbesserungen und Fehlerkorrekturen

@@ -1,0 +1,4 @@
+* Vari bug risolti per il lettore video, in particolare la riproduzione senza interruzioni dopo la rotazione dello schermo del dispositivo.
+* Vari bug risolti per la visualizzazione delle foto sulla mappa
+* Vari bug risolti per l'integrazione di Muzei, in particolare il ritaglio delle foto in modalità ritratto
+* Altri miglioramenti e correzioni di bug
