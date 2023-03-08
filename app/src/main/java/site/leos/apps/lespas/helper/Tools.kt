@@ -949,10 +949,6 @@ object Tools {
         return bearing
     }
 
-    fun keepScreenOn(window: Window, on: Boolean) {
-        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-    }
-
     fun getStoragePermissionsArray(): Array<String> = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO)
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)

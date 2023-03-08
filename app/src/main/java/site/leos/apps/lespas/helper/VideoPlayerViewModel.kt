@@ -79,7 +79,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     super.onIsPlayingChanged(isPlaying)
 
-                    Tools.keepScreenOn(window, isPlaying)
                     if (!isPlaying) saveVideoPosition(currentVideo)
                 }
             })
@@ -113,9 +112,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
             if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
-
-            // Keep screen on during playing
-            Tools.keepScreenOn(window, true)
 
             if (uri == currentVideo) {
                 // Resuming the same video
@@ -232,7 +228,6 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         videoPlayer.release()
 
         // Reset screen auto turn off, brightness and volume setting
-        Tools.keepScreenOn(window, false)
         resetBrightness()
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
 
