@@ -24,6 +24,7 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -116,8 +117,8 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
-            albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
-            //album = getParcelable(KEY_ALBUM)
+            @Suppress("DEPRECATION", "UNCHECKED_CAST")
+            albumNames = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) getSerializable(KEY_ALBUM_NAMES, HashMap::class.java) else getSerializable(KEY_ALBUM_NAMES)) as HashMap<String, String>?
             album = parcelable(KEY_ALBUM)
         }
 
