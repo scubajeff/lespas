@@ -156,9 +156,10 @@
 
             <TextView
                 android:id="@+id/locality"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/map"
+                app:layout_constraintRight_toRightOf="@id/map"
                 android:gravity="center_vertical"
                 android:padding="@dimen/mini_padding"
                 android:textAppearance="@style/TextAppearance.AppCompat.Caption"
