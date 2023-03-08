@@ -22,46 +22,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ImageButton
-        android:id="@id/exo_play"
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@id/exo_play_pause"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        app:layout_constraintTop_toTopOf="@id/replace_bgm"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:background="@android:color/transparent"
-        android:tint="?android:attr/textColorPrimary"
-        android:src="@drawable/ic_baseline_play_arrow_24"
-        tools:ignore="ContentDescription" />
-
-    <ImageButton
-        android:id="@id/exo_pause"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        app:layout_constraintTop_toTopOf="@id/replace_bgm"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:background="@android:color/transparent"
-        android:tint="?android:attr/textColorPrimary"
-        android:src="@drawable/ic_baseline_pause_24"
-        tools:ignore="ContentDescription" />
+        app:tint="?android:attr/textColorPrimary"
+        android:background="@android:color/transparent" />
 
     <androidx.media3.ui.DefaultTimeBar
         android:id="@id/exo_progress"
         android:layout_width="0dp"
         android:layout_height="36dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toRightOf="@id/guideline"
+        app:layout_constraintLeft_toRightOf="@id/exo_play_pause"
         app:layout_constraintRight_toLeftOf="@id/replace_bgm"
         android:paddingHorizontal="@dimen/tiny_padding"
         app:scrubber_color="?colorPrimary"
         app:played_color="?colorPrimary"
         app:buffered_color="@android:color/darker_gray" />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_begin="36dp" />
 
     <ImageButton
         android:id="@+id/replace_bgm"
@@ -70,7 +50,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@id/remove_bgm"
         android:background="@android:color/transparent"
-        android:tint="?android:attr/textColorPrimary"
+        app:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_music_note_24"
         tools:ignore="ContentDescription" />
 
@@ -81,7 +61,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:background="@android:color/transparent"
-        android:tint="?android:attr/textColorPrimary"
+        app:tint="?android:attr/textColorPrimary"
         android:src="@drawable/ic_baseline_delete_24"
         tools:ignore="ContentDescription" />
 </androidx.constraintlayout.widget.ConstraintLayout>

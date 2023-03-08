@@ -24,6 +24,7 @@ import android.graphics.ColorMatrixColorFilter
 import android.graphics.Matrix
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -101,6 +102,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     private var hasBGM = false
     private var isMuted = false
     private lateinit var bgmPlayer: ExoPlayer
+    private var fadingJob: Job? = null
 
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
     private lateinit var remotePath: String
@@ -115,8 +117,8 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         requireArguments().apply {
             locality = getString(KEY_LOCALITY)
             country = getString(KEY_COUNTRY)
-            albumNames = getSerializable(KEY_ALBUM_NAMES) as HashMap<String, String>?
-            //album = getParcelable(KEY_ALBUM)
+            @Suppress("DEPRECATION", "UNCHECKED_CAST")
+            albumNames = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) getSerializable(KEY_ALBUM_NAMES, HashMap::class.java) else getSerializable(KEY_ALBUM_NAMES)) as HashMap<String, String>?
             album = parcelable(KEY_ALBUM)
         }
 
@@ -149,8 +151,6 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 // Mute the video sound during late night hours
                 with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
-
-                playerHandler = Handler(bgmPlayer.applicationLooper)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
@@ -285,7 +285,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                         R.id.option_menu_map_slideshow -> {
                             if (isSlideshowPlaying) slideshowJob?.cancel()
                             else {
-                                Tools.keepScreenOn(window, true)
+                                keepScreenOn(window, true)
                                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                                 isSlideshowPlaying = true
                                 playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
@@ -391,50 +391,54 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         album?.run {
-            Tools.keepScreenOn(window, false)
+            keepScreenOn(window, false)
             bgmPlayer.release()
         }
 
         super.onDestroy()
     }
 
+    fun keepScreenOn(window: Window, on: Boolean) {
+        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         if (!hasFocus && isSlideshowPlaying) slideshowJob?.cancel()
     }
 
-    private lateinit var playerHandler: Handler
     private fun fadeInBGM() {
-        Timer().also { timer ->
-            timer.schedule(object : TimerTask() {
-                override fun run() {
-                    if (bgmPlayer.volume < 1f) {
-                        playerHandler.post { bgmPlayer.volume += 0.05f }
-                    } else {
-                        playerHandler.post { bgmPlayer.volume = 1f }
-                        timer.cancel()
-                    }
+        fadingJob?.cancel()
+
+        fadingJob = lifecycleScope.launch {
+            while(true) {
+                delay(75)
+
+                if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
+                else {
+                    bgmPlayer.volume = 1f
+                    break
                 }
-            }, 0, 75)
+            }
         }
     }
+
     private fun fadeOutBGM(stopPlaying: Boolean = false) {
-        Timer().also { timer ->
-            timer.schedule(object : TimerTask() {
-                override fun run() {
-                    if (bgmPlayer.volume > 0f) {
-                        playerHandler.post { bgmPlayer.volume -= 0.05f }
-                    } else {
-                        playerHandler.post {
-                            bgmPlayer.volume = 0f
-                            if (stopPlaying) {
-                                bgmPlayer.stop()
-                                bgmPlayer.seekTo(0)
-                            }
-                        }
-                        timer.cancel()
+        fadingJob?.cancel()
+
+        fadingJob = lifecycleScope.launch {
+            while(true) {
+                delay(75)
+
+                if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
+                else {
+                    bgmPlayer.volume = 0f
+                    if (stopPlaying) {
+                        bgmPlayer.stop()
+                        bgmPlayer.seekTo(0)
                     }
+                    break
                 }
-            }, 0, 75)
+            }
         }
     }
 
@@ -443,7 +447,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         mapView.setMapCenterOffset(0, 0)
         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        Tools.keepScreenOn(window, false)
+        keepScreenOn(window, false)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
         if (hasBGM) fadeOutBGM(true)

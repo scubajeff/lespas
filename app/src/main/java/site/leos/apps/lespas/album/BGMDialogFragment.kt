@@ -95,7 +95,7 @@ class BGMDialogFragment: LesPasDialogFragment(R.layout.fragment_bgm_dialog) {
                 if (ContextCompat.checkSelfPermission(context, readAudioPermission) != PackageManager.PERMISSION_GRANTED) readAudioPermissionRequestLauncher.launch(readAudioPermission)
                 else replaceBGMLauncher.launch(GENERAL_AUDIO_MIMETYPE)
             }
-            playButton = findViewById(R.id.exo_play)
+            playButton = findViewById(R.id.exo_play_pause)
             removeButton = findViewById<ImageButton>(R.id.remove_bgm).apply {
                 setOnClickListener {
                     bgmPlayer.stop()
