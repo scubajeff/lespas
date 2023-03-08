@@ -184,6 +184,9 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
             setUseDataConnection(true)
             overlays.add(CopyrightOverlay(requireContext()))
             setTileSource(TileSourceFactory.MAPNIK)
+
+            // Turn off keepScreenOn
+            keepScreenOn = false
         }
 
         mapView.doOnLayout {
@@ -285,7 +288,8 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                         R.id.option_menu_map_slideshow -> {
                             if (isSlideshowPlaying) slideshowJob?.cancel()
                             else {
-                                keepScreenOn(window, true)
+                                mapView.keepScreenOn = true
+
                                 requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                                 isSlideshowPlaying = true
                                 playMenuItem.setIcon(R.drawable.ic_baseline_stop_24)
@@ -390,16 +394,9 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
     override fun onDestroy() {
         slideshowJob?.cancel()
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        album?.run {
-            keepScreenOn(window, false)
-            bgmPlayer.release()
-        }
+        album?.run { bgmPlayer.release() }
 
         super.onDestroy()
-    }
-
-    fun keepScreenOn(window: Window, on: Boolean) {
-        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -447,10 +444,10 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         mapView.setMapCenterOffset(0, 0)
         mapView.zoomToBoundingBox(poiBoundingBox, true, 100, MAXIMUM_ZOOM, 400)
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        keepScreenOn(window, false)
         isSlideshowPlaying = false
         playMenuItem.setIcon(R.drawable.ic_baseline_play_arrow_24)
         if (hasBGM) fadeOutBGM(true)
+        mapView.keepScreenOn = false
     }
 
     private fun closeAllInfoWindow() {
