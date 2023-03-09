@@ -1620,7 +1620,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 var relativePath: String
                 var fileName: String
-                var size: Long
+                var size: Long = 0
                 var mimeType: String
                 var id: Long
                 var photoUri: Uri
@@ -1641,7 +1641,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
-                    size = cursor.getLong(sizeColumn)
+                    size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { 0 }
 
                     reportBackupStatus(fileName, size, cursor.position, cursor.count)
 
