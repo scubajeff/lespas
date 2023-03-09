@@ -1639,7 +1639,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                 var relativePath: String
                 var fileName: String
-                var size: Long
+                var size: Long = 0
                 var mimeType: String
                 var id: Long
                 var photoUri: Uri
@@ -1660,7 +1660,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
 
                     fileName = cursor.getString(nameColumn)
-                    size = cursor.getLong(sizeColumn)
+                    size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { 0 }
 
                     reportBackupStatus(fileName, size, cursor.position, cursor.count)
 
@@ -1668,29 +1668,36 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     mimeType = cursor.getString(typeColumn)
                     //Log.e(TAG, "relative path is $relativePath  server file will be ${dcimRoot}/${relativePath}/${fileName}")
 
-                    // Indefinite while loop is for handling 404 error when folders needed to be created on server before hand
+                    // Indefinite while loop is for handling 404 and 409 (Caddy seems to prefer) error when folders needed to be created on server before hand
                     while(true) {
                         try {
                             webDav.upload(photoUri, "${dcimBase}/${relativePath}/${fileName}", mimeType, cr, size, application)
                             break
                         } catch (e: OkHttpWebDavException) {
                             when (e.statusCode) {
-                                404 -> {
+                                // Caddy seems preferring 409 response code when PUT file to a non-existing folder
+                                404, 409 -> {
                                     // create file in non-existed folder, should create subfolder first
+                                    createSubFoldersRecursively(dcimBase, relativePath)
+/*
                                     var subFolder = dcimBase
                                     relativePath.split("/").forEach {
                                         subFolder += "/$it"
                                         if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
                                     }
+*/
                                 }
                                 else -> throw e
                             }
                         } catch (e: StreamResetException) {
+                            createSubFoldersRecursively(dcimBase, relativePath)
+/*
                             var subFolder = dcimBase
                             relativePath.split("/").forEach {
                                 subFolder += "/$it"
                                 if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
                             }
+*/
                         }
                     }
 
@@ -1761,6 +1768,14 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 // Report finished status
                 reportBackupStatus(" ", 0L, 0, 0)
             }
+        }
+    }
+
+    private fun createSubFoldersRecursively(base: String, path: String) {
+        var subFolder = base
+        path.split("/").forEach {
+            subFolder += "/$it"
+            if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
         }
     }
 

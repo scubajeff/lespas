@@ -410,7 +410,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun upload(source: Uri, dest: String, mimeType: String, contentResolver: ContentResolver, size: Long, ctx: Context): Pair<String, String> {
         contentResolver.openInputStream(source)?.use { input->
             if (size > CHUNK_SIZE) return chunksUpload(input, dest.substringAfterLast('/'), dest, mimeType, size, ctx)
-            else httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), -1L)).build()).execute().use { response->
+            else httpClient.newCall(Request.Builder().url(dest).put(streamRequestBody(input, mimeType.toMediaTypeOrNull(), size)).build()).execute().use { response->
                 if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
                 else throw OkHttpWebDavException(response)
             }
@@ -507,7 +507,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     private fun streamRequestBody(input: InputStream, mediaType: MediaType?, size: Long): RequestBody {
         return object : RequestBody() {
             override fun contentType(): MediaType? = mediaType
-            override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { -1 }
+            override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { 0 }
             override fun writeTo(sink: BufferedSink) { sink.write(input.source(), contentLength()) }
         }
     }
