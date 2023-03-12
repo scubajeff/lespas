@@ -1,0 +1,3 @@
+* Die Sicherung der Kamerarolle blieb bei einigen Server-Software-Stacks wie Caddy stecken
+* Behoben: Die Sicherung der Kamerarolle führte dazu, dass auf dem Server eine Datei der Größe 0 erstellt wurde.
+* Weitere Verbesserungen und Fehlerkorrekturen

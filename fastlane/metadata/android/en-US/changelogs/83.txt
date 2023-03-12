@@ -1,0 +1,3 @@
+* Fixed camera roll backup stuck with some server software stack like Caddy
+* Fixed camera roll backup resulted in 0 size file being created on server
+* Other improvements and bugs fixes

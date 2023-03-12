@@ -1,0 +1,3 @@
+* Fijo rollo de cámara de copia de seguridad atascado con algunas pilas de software de servidor como Caddy
+* Fijo rollo de cámara de copia de seguridad resultó en 0 tamaño de archivo que se crea en el servidor
+* Otras mejoras y correcciones de errores

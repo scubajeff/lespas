@@ -1,3 +1,7 @@
+## Version 2.7.6
+* Fixed camera roll backup stuck with some server software stack like Caddy
+* Fixed camera roll backup resulted in 0 size file being created on server
+
 ## Version 2.7.5
 * Various bugs fixed for video player, especially gapless playback after device screen rotated
 * Various bugs fixed for photo displaying on map

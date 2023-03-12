@@ -1,0 +1,3 @@
+* Il backup del rullino fotografico si è bloccato con alcuni stack software del server come Caddy.
+* Il backup del rullino fotografico risultava in un file di dimensioni pari a 0 creato sul server.
+* Altri miglioramenti e correzioni di bug

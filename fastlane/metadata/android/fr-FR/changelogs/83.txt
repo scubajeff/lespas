@@ -1,0 +1,3 @@
+* Correction de la sauvegarde du rouleau d'appareils photo bloquée avec certains logiciels de serveur comme Caddy
+* Correction de la sauvegarde du rouleau d'appareils photo qui entraînait la création d'un fichier de taille 0 sur le serveur.
+* Autres améliorations et corrections de bugs

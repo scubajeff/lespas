@@ -1,0 +1,3 @@
+* Backup fixo do rolo de câmera preso com alguma pilha de software de servidor como o Caddy
+* O backup fixo do rolo de câmera resultou na criação de um arquivo de tamanho 0 no servidor
+* Outras melhorias e correções de bugs
