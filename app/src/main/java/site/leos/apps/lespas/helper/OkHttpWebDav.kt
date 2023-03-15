@@ -507,7 +507,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     private fun streamRequestBody(input: InputStream, mediaType: MediaType?, size: Long): RequestBody {
         return object : RequestBody() {
             override fun contentType(): MediaType? = mediaType
-            override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { 0 }
+            override fun contentLength(): Long = if (size > 0) size else try { input.available().toLong() } catch (e: IOException) { -1L }
             override fun writeTo(sink: BufferedSink) { sink.write(input.source(), contentLength()) }
         }
     }

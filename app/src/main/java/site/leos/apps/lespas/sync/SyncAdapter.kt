@@ -1621,7 +1621,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
             var relativePath: String
             var fileName: String
-            var size: Long = 0
+            var size: Long
             var mimeType: String
             var id: Long
             var photoUri: Uri
@@ -1650,7 +1650,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) try { photoUri = MediaStore.setRequireOriginal(ContentUris.withAppendedId(contentUri, id)) } catch (_: Exception) {}
 
                 fileName = cursor.getString(nameColumn)
-                size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { 0 }
+                size = try { cursor.getLong(sizeColumn) } catch(_: Exception) { -1L }
 
                 reportBackupStatus(fileName, size, cursor.position, cursor.count)
 
@@ -1668,25 +1668,18 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             404, 409 -> {
                                 // create file in non-existed folder, should create subfolder first
                                 createSubFoldersRecursively(backupFolder, relativePath)
-/*
-                                var subFolder = dcimBase
-                                relativePath.split("/").forEach {
-                                    subFolder += "/$it"
-                                    if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
-                                }
-*/
                             }
                             else -> throw e
                         }
                     } catch (e: StreamResetException) {
                         createSubFoldersRecursively(backupFolder, relativePath)
-/*
-                        var subFolder = dcimBase
-                        relativePath.split("/").forEach {
-                            subFolder += "/$it"
-                            if (!webDav.isExisted(subFolder)) webDav.createFolder(subFolder)
+                    } catch (e: EOFException) {
+                        // Under some unknown situation StreamResetException might be suppressed by EOFException
+                        e.suppressed.let {
+                            if (it.isNotEmpty()) {
+                                if (it[0] is StreamResetException) createSubFoldersRecursively(backupFolder, relativePath)
+                            }
                         }
-*/
                     }
                 }
 
