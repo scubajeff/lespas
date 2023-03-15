@@ -135,7 +135,6 @@
 
     <string name="sync_header">Sincronização</string>
     <string name="cameraroll_backup_title">Backup da pasta de Câmera</string>
-    <string name="cameraroll_backup_summary">Encontre seu backup no servidor na pasta \"DCIM/%s\".</string>
     <string name="background_sync_title">Sincronizar periodicamente</string>
     <string name="background_sync_summary">Verificar mudanças no servidor a cada 6 horas</string>
     <string name="wifionly_title">Sincronizar e fazer backup somente em WiFi</string>
@@ -158,6 +157,7 @@
     <string name="install_snapseed_dialog_msg">Instalar Snapseed agora?</string>
 
     <!-- Destination DialogFragment -->
+    <string name="sync_status_stage_backup_pictures">Cópia de segurança da pasta \'Pictures\'...</string>
     <string name="copy_files">Copiar</string>
     <string name="move_files">Mover</string>
     <string name="create_new_album">Criar novo álbum</string>
@@ -308,7 +308,9 @@
     <string name="msg_login_first">Por favor, faça primeiro o login em seu servidor.</string>
     <string name="msg_downloading_exif">Buscando meta dados do servidor…</string>
     <string name="cameraroll_backup_remaining">%d restante</string>
-    <string name="cameraroll_backup_last_time">O último backup terminou %s.</string>
+    <string name="pictures_backup_title">Pasta de Backup \'Pictures\'</string>
+    <string name="backup_summary">Encontre seu backup no servidor na pasta \'%1$s/%2$s\'.</string>
+    <string name="pictures_sub_folder_exclusion_title">Excluir Subpastas do Backup</string>
     <string name="sync_status_action_delete_media">Removendo %1$s no álbum \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Remoção do álbum \'%s\'</string>
     <string name="sync_status_action_add_media">Acrescentando %1$s ao álbum \'%2$s\'</string>
@@ -334,7 +336,7 @@
     <string name="sync_status_stage_started">Iniciando a sincronização…</string>
     <string name="button_text_help">Socorro!</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup">Câmera de backup…</string>
+    <string name="sync_status_stage_backup_camera_roll">Câmera de backup…</string>
     <string name="sync_status_title">Status de sincronização</string>
     <string name="sync_status_result_general_error">Última sincronização falhou %s!</string>
     <string name="sync_status_stage_sync_local">Sincronizando mudanças locais…</string>
@@ -342,7 +344,7 @@
     <string name="sync_status_action_create_album_from_server">Criação do álbum \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Atualização do álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Foto de apoio %s</string>
-    <string name="msg_backup_oldies">Novas fotos serão backups a partir de agora. Você também tem %1$,d fotos em rolo de câmera agora mesmo, com %2$s em tamanho. Você quer fazer backup de todas estas fotos antigas também?</string>
+    <string name="msg_backup_oldies">Novas fotos em \'%1$s\' serão backups a partir de agora. Você também tem %2$,d fotos em dispositivo neste momento, com %3$s em tamanho. Você quer fazer o backup de todas estas fotos antigas agora?</string>
     <string name="button_text_set_as_home">Conjunto</string>
     <string name="pick_home">Configure sua pasta de casa</string>
     <string name="pick_home_note">Les Pas salva seus álbuns e backups nesta pasta em seu servidor.</string>

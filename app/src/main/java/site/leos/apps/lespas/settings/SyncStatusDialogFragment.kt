@@ -57,7 +57,7 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
 
         keySyncStatus = getString(R.string.sync_status_pref_key)
         keySyncStatusLocalAction = getString(R.string.sync_status_local_action_pref_key)
-        keyBackupStatus = getString(R.string.cameraroll_backup_status_pref_key)
+        keyBackupStatus = getString(R.string.backup_status_pref_key)
 
         currentStageTextView = view.findViewById(R.id.current_status)
         currentStageTextView.doOnPreDraw { currentStageTextView.text = getCurrentStage() }
@@ -205,14 +205,15 @@ class SyncStatusDialogFragment: LesPasDialogFragment(R.layout.fragment_sync_stat
                     // Show local action status view when in these stages
                     currentLocalActionTextView.isVisible = stageId == Action.SYNC_STAGE_LOCAL || stageId == Action.SYNC_STAGE_REMOTE || stageId == Action.SYNC_RESULT_ERROR_GENERAL
                     // Update backup status view visibility
-                    if (stageId == Action.SYNC_STAGE_BACKUP) unhideBackupStatusViews() else hideBackupStatusViews()
+                    if (stageId == Action.SYNC_STAGE_BACKUP_CAMERA_ROLL || stageId == Action.SYNC_STAGE_BACKUP_PICTURES) unhideBackupStatusViews() else hideBackupStatusViews()
 
                     when(stageId) {
                         // Various stages
                         Action.SYNC_STAGE_STARTED -> getString(R.string.sync_status_stage_started)
                         Action.SYNC_STAGE_LOCAL -> getString(R.string.sync_status_stage_sync_local)
                         Action.SYNC_STAGE_REMOTE -> getString(R.string.sync_status_stage_sync_remote)
-                        Action.SYNC_STAGE_BACKUP -> getString(R.string.sync_status_stage_backup)
+                        Action.SYNC_STAGE_BACKUP_CAMERA_ROLL -> getString(R.string.sync_status_stage_backup_camera_roll)
+                        Action.SYNC_STAGE_BACKUP_PICTURES -> getString(R.string.sync_status_stage_backup_pictures)
 
                         // Various results
                         Action.SYNC_RESULT_FINISHED -> String.format(getString(R.string.sync_status_result_finished), getLastDateString(action[1].toLong()))

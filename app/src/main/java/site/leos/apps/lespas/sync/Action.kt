@@ -75,7 +75,8 @@ data class Action (
        const val SYNC_STAGE_STARTED = 9000
        const val SYNC_STAGE_LOCAL = 9001
        const val SYNC_STAGE_REMOTE = 9002
-       const val SYNC_STAGE_BACKUP = 9003
+       const val SYNC_STAGE_BACKUP_CAMERA_ROLL = 9003
+       const val SYNC_STAGE_BACKUP_PICTURES = 9004
 
        // Syncing result codes
        const val SYNC_RESULT_FINISHED = 10000
