@@ -47,6 +47,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.TransferStorageWorker
 import site.leos.apps.lespas.muzei.LesPasArtProvider
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.Action
 import site.leos.apps.lespas.sync.ActionViewModel
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
@@ -57,6 +58,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var accounts: Array<Account>
     private var loggedIn = true
+
+    private var prefBackupNeeded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         sp = PreferenceManager.getDefaultSharedPreferences(this)
@@ -111,7 +114,6 @@ class MainActivity : AppCompatActivity() {
                                     putBoolean(getString(R.string.snapseed_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_backup_pref_key), false)
                                     putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
-                                    putBoolean(getString(R.string.cameraroll_as_album_perf_key), false)
                                 }
                             else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) registerForActivityResult(ActivityResultContracts.RequestPermission(), {}).launch(android.Manifest.permission.ACCESS_MEDIA_LOCATION)
 
@@ -146,10 +148,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        // Listener to any preference changes
+        if (accounts.isNotEmpty()) sp.registerOnSharedPreferenceChangeListener(backupPreferenceListener)
+    }
+
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
         if (loggedIn && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
+    }
+
+    override fun onStop() {
+        // Save preference changes on server
+        if (prefBackupNeeded) {
+            actionsPendingModel.addAction(Action(null, Action.ACTION_BACKUP_PREFERENCE, "", "", "", "", System.currentTimeMillis(), 1))
+            prefBackupNeeded = false
+        }
+        if (accounts.isNotEmpty()) sp.unregisterOnSharedPreferenceChangeListener(backupPreferenceListener)
+
+        super.onStop()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -183,6 +203,20 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (_: IndexOutOfBoundsException) {}
+        }
+    }
+
+    // Should intercept preference changes here, since not every setting is managed by SettingsFragment
+    private val backupPreferenceListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        when(key) {
+            // TODO ignore changes of preferences that don't need backup
+            AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
+            SettingsFragment.LAST_BACKUP,
+            getString(R.string.cameraroll_backup_status_pref_key),
+            getString(R.string.sync_status_local_action_pref_key),
+            getString(R.string.sync_status_pref_key) -> {}
+
+            else -> prefBackupNeeded = true
         }
     }
 

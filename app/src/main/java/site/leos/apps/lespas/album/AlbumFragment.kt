@@ -903,7 +903,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
         private const val KEY_SELECTION = "KEY_SELECTION"
 
-        private const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
+        const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 
         private const val ALBUM_LIST_SORT_ORDER = "ALBUM_LIST_SORT_ORDER"
 
