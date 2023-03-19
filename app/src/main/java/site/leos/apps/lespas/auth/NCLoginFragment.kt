@@ -16,9 +16,9 @@
 
 package site.leos.apps.lespas.auth
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -29,7 +29,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
 import android.text.Html
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -45,8 +44,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.android.material.progressindicator.CircularProgressIndicatorSpec
 import com.google.android.material.progressindicator.IndeterminateDrawable
@@ -80,12 +82,10 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 import javax.net.ssl.*
-import kotlin.math.roundToInt
 
 class NCLoginFragment: Fragment() {
     private lateinit var inputArea: TextInputLayout
     private lateinit var hostEditText: TextInputEditText
-    private lateinit var loadingIndicator: IndeterminateDrawable<CircularProgressIndicatorSpec>
 
     private var doAnimation = true
 
@@ -95,7 +95,7 @@ class NCLoginFragment: Fragment() {
     private val scanIntent = Intent("com.google.zxing.client.android.SCAN")
     private lateinit var scanRequestLauncher: ActivityResultLauncher<Intent>
 
-    private val authenticateModel: AuthenticateViewModel by activityViewModels()
+    private val authenticateModel: AuthenticateViewModel by activityViewModels { AuthenticateViewModelFactory(requireActivity()) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,14 +169,6 @@ class NCLoginFragment: Fragment() {
                     error = null
                 }
             }
-        }
-
-        requireContext().let { ctx ->
-            loadingIndicator = IndeterminateDrawable.createCircularDrawable(
-                ctx,
-                // 22sp is android default large text size
-                CircularProgressIndicatorSpec(ctx, null).apply { this.indicatorSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 22f, ctx.resources.displayMetrics).roundToInt() }
-            )
         }
 
         authenticateModel.getPingResult().observe(viewLifecycleOwner) { result ->
@@ -283,7 +275,7 @@ class NCLoginFragment: Fragment() {
             }
             ICON_MODE_PINGING -> {
                 inputArea.endIconMode = TextInputLayout.END_ICON_CUSTOM
-                inputArea.endIconDrawable = loadingIndicator
+                inputArea.endIconDrawable = authenticateModel.getLoadingIndicatorDrawable()
                 inputArea.setEndIconOnClickListener {  }
             }
         }
@@ -314,7 +306,10 @@ class NCLoginFragment: Fragment() {
         } else hostEditText.error = getString(R.string.host_address_validation_error)
     }
 
-    class AuthenticateViewModel(private val context: Application) : AndroidViewModel(context) {
+    class AuthenticateViewModelFactory(private val context: FragmentActivity): ViewModelProvider.NewInstanceFactory() {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = AuthenticateViewModel(context) as T
+    }
+    class AuthenticateViewModel(context: FragmentActivity) : AndroidViewModel(context.application) {
         private val credential = NCCredential()
         private var serverTheme = NCTheming().apply {
             color = ContextCompat.getColor(context, R.color.color_background)
@@ -324,6 +319,13 @@ class NCLoginFragment: Fragment() {
         private var httpCall: Call? = null
 
         private val pingResult = SingleLiveEvent<Int>()
+
+        private val colorWhite = ContextCompat.getColor(context, R.color.lespas_white)
+        private val colorBlack = ContextCompat.getColor(context, R.color.lespas_black)
+        @SuppressLint("PrivateResource")
+        private var loadingIndicator = IndeterminateDrawable.createCircularDrawable(context, CircularProgressIndicatorSpec(context, null, 0, com.google.android.material.R.style.Widget_MaterialComponents_CircularProgressIndicator_ExtraSmall))
+        fun getLoadingIndicatorDrawable(): IndeterminateDrawable<CircularProgressIndicatorSpec> = loadingIndicator
+
         fun isPinging() = pingJob?.isActive ?: false
         fun stopPinging() { pingJob?.let {
             if (it.isActive) {
@@ -370,7 +372,7 @@ class NCLoginFragment: Fragment() {
                                         JSONObject(json).getJSONObject("ocs").getJSONObject("data").getJSONObject("capabilities").getJSONObject("theming").run {
                                             try { serverTheme.color = Color.parseColor(getString("color")) } catch (_: Exception) {}
                                             //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
-                                            serverTheme.textColor = ContextCompat.getColor(context, R.color.lespas_white).let { if (ColorUtils.calculateContrast(it, serverTheme.color) > 1.5f) it else ContextCompat.getColor(context, R.color.lespas_black)}
+                                            serverTheme.textColor = if (ColorUtils.calculateContrast(colorWhite, serverTheme.color) > 1.5f) colorWhite else colorBlack
                                             try { serverTheme.slogan = Html.fromHtml(getString("slogan"), Html.FROM_HTML_MODE_LEGACY).toString() } catch (_: Exception) {}
                                             200
                                         }

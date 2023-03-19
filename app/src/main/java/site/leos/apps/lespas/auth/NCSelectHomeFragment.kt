@@ -18,6 +18,8 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
@@ -48,11 +50,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
+import site.leos.apps.lespas.muzei.LesPasArtProviderSettingActivity
 import site.leos.apps.lespas.settings.SettingsFragment
+import site.leos.apps.lespas.sync.SyncAdapter
 import java.text.Collator
 
 class NCSelectHomeFragment: Fragment() {
@@ -204,16 +209,88 @@ class NCSelectHomeFragment: Fragment() {
 
     @SuppressLint("ApplySharedPref")
     private fun returnResult() {
-        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().apply {
-            putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
-            commit()
-        }
+        // Show progress indicator and disable user input
+        selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply { setTint(serverTheme.textColor) }
+        //selectButton.setCompoundDrawables(null, null, authenticateModel.getLoadingIndicatorDrawable().apply { start() }, null)
+        selectButton.isClickable = false
+        folderList.isEnabled = false
 
-        // Before quitting, notify NCLoginFragment that it can request for storage permission now
-        authenticateModel.setAuthResult(true)
-        container.removeAllViews()
-        requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
-        parentFragmentManager.popBackStack()
+        val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+
+        editor.putString(SettingsFragment.SERVER_HOME_FOLDER, selectedFolder)
+
+        // Try restoring preference from server
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                var value: String
+
+                webDav.read("${resourceRoot}${selectedFolder}${getString(R.string.lespas_base_folder_name)}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
+                    it.split(", ").forEach { setting ->
+                        setting.substringBefore('=', "").let { key ->
+                            value = setting.substringAfter('=', "")
+                            if (value.isNotEmpty()) when(key) {
+                                LesPasArtProviderSettingActivity.KEY_SKIP_LATE_NIGHT_UPDATE,
+                                getString(R.string.true_black_pref_key),
+                                getString(R.string.auto_replay_perf_key),
+                                getString(R.string.auto_rotate_perf_key),
+                                getString(R.string.cameraroll_as_album_perf_key),
+                                getString(R.string.roll_list_first_perf_key),
+                                getString(R.string.snapseed_replace_pref_key),
+                                getString(R.string.sync_pref_key),
+                                getString(R.string.wifionly_pref_key),
+                                getString(R.string.chinese_map_pref_key),
+                                getString(R.string.nearby_convergence_pref_key),
+                                SettingsFragment.KEY_STORAGE_LOCATION, -> editor.putBoolean(key, value.toBoolean())
+
+                                getString(R.string.auto_theme_perf_key),
+                                getString(R.string.default_sort_order_pref_key),
+                                getString(R.string.strip_exif_pref_key),
+                                getString(R.string.blog_name_pref_key),
+                                SettingsFragment.PICO_BLOG_ID,
+                                SettingsFragment.PICO_BLOG_FOLDER, -> editor.putString(key, value)
+
+                                LesPasArtProviderSettingActivity.KEY_PREFER,
+                                SettingsFragment.CACHE_SIZE -> try { editor.putInt(key, value.toInt()) } catch(_: java.lang.NumberFormatException) {}
+
+                                // TODO multiple devices conflict
+                                getString(R.string.cameraroll_backup_pref_key), -> {
+                                    value.toBoolean().let { on ->
+                                        editor.putBoolean(key, on)
+                                        if (on) editor.putLong(SettingsFragment.LAST_BACKUP, System.currentTimeMillis() / 1000)
+                                    }
+                                }
+                                //AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
+                                //SettingsFragment.LAST_BACKUP -> try { editor.putLong(key, value.toLong()) } catch(_: java.lang.NumberFormatException) {}
+
+                                LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(',').toSet())
+
+                                getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)
+
+                                getString(R.string.gallery_launcher_pref_key) -> {
+                                    value.toBoolean().let { on ->
+                                        editor.putBoolean(key, on)
+
+                                        if (on) requireActivity().packageManager.apply {
+                                            setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+                                            setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.MainActivity"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {}
+
+            withContext(Dispatchers.Main) {
+                // Before quitting, notify NCLoginFragment that it can request for storage permission now
+                editor.commit()
+                container.removeAllViews()
+                requireActivity().window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.color_primary)
+                authenticateModel.setAuthResult(true)
+                parentFragmentManager.popBackStack()
+            }
+        }
     }
 
     class FolderAdapter(private val lespas: String, private val textColor: Int, val clickListener: (String) -> Unit) : ListAdapter<String, FolderAdapter.ViewHolder>(FolderDiffCallback()) {

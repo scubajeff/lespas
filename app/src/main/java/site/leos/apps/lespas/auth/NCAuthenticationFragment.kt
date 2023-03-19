@@ -82,8 +82,6 @@ class NCAuthenticationFragment: Fragment() {
         super.onCreate(savedInstanceState)
 
         reLogin = requireArguments().getBoolean(KEY_RELOGIN, false)
-        //@Suppress("DEPRECATION")
-        //serverTheme = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) requireArguments().getParcelable(KEY_THEMING, NCLoginFragment.AuthenticateViewModel.NCTheming::class.java) else requireArguments().getParcelable(KEY_THEMING)) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
         serverTheme = requireArguments().parcelable(KEY_THEMING) ?: NCLoginFragment.AuthenticateViewModel.NCTheming()
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
