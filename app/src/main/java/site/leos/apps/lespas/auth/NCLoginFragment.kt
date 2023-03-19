@@ -372,11 +372,11 @@ class NCLoginFragment: Fragment() {
                                             //try { serverTheme.textColor = Color.parseColor(getString("color-text")) } catch (_: Exception) {}
                                             serverTheme.textColor = ContextCompat.getColor(context, R.color.lespas_white).let { if (ColorUtils.calculateContrast(it, serverTheme.color) > 1.5f) it else ContextCompat.getColor(context, R.color.lespas_black)}
                                             try { serverTheme.slogan = Html.fromHtml(getString("slogan"), Html.FROM_HTML_MODE_LEGACY).toString() } catch (_: Exception) {}
+                                            200
                                         }
-                                    }
-                                } catch (_: JSONException) {}
-                            }
-                            response.code
+                                    } ?: -1
+                                } catch (_: JSONException) { -1 }
+                            } else response.code
                         } ?: 999
                     } catch (e: SSLPeerUnverifiedException) {
                         // This certificate is issued by user installed CA, let user decide whether to trust it or not
