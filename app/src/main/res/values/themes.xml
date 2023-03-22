@@ -53,8 +53,8 @@
         <item name="backgroundColor">@color/color_background</item>
         <item name="android:colorEdgeEffect">@color/color_on_primary</item>
 
-        <item name="android:textColorPrimary">@color/color_on_primary</item>
-        <item name="android:textColorPrimaryInverse">@color/color_on_primary_invert</item>
+        <item name="android:textColorPrimary">@color/primary_text</item>
+        <item name="android:textColorPrimaryInverse">@color/primary_text_inverse</item>
 
         <item name="colorButtonText">@color/borderless_button_text</item>
         <item name="colorBottomSheetBackground">?backgroundColor</item>
@@ -84,10 +84,8 @@
         <item name="backgroundColor">@android:color/black</item>
         <item name="android:colorEdgeEffect">?attr/primaryTextWhite</item>
 
-        <item name="android:textColorPrimary">?primaryTextWhite</item>
-        <item name="android:textColorPrimaryInverse">?primaryTextBlack</item>
-        <item name="android:textColorSecondary">#9E9E9E</item>
-        <item name="android:textColorSecondaryInverse">#9E9E9E</item>
+        <item name="android:textColorSecondary">@color/color_gray_out</item>
+        <item name="android:textColorSecondaryInverse">@color/color_gray_out</item>
 
         <item name="colorButtonText">@color/borderless_button_text_bw</item>
         <item name="colorBottomSheetBackground">#202020</item>

@@ -36,7 +36,7 @@
     <color name="color_text_light">@color/lespas_white</color>
     <color name="color_text_dark">@color/lespas_black</color>
     <color name="color_recipient_chip_text">#89000000</color>
-    <color name="color_gray_out">@android:color/darker_gray</color>
+    <color name="color_gray_out">#9E9E9E</color>
     <color name="color_avatar_default_background">#FFEFE8D8</color>
     <color name="color_remote_media_grid_background">#201B1D1C</color>
     <color name="color_error_date_picker">@android:color/holo_red_dark</color>
