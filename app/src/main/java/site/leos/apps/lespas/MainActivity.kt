@@ -137,12 +137,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // Setup observer to fire up SyncAdapter
-            actionsPendingModel.allPendingActions.observe(this) { actions ->
-                if (actions.isNotEmpty()) ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
-                    putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-                    putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
-                })
-            }
+            actionsPendingModel.allPendingActions.observe(this) { actions -> if (actions.isNotEmpty()) requestSync() }
 
             //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
@@ -166,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         if (prefBackupNeeded) {
             actionsPendingModel.addAction(Action(null, Action.ACTION_BACKUP_PREFERENCE, "", "", "", "", System.currentTimeMillis(), 1))
             prefBackupNeeded = false
+            requestSync()
         }
         if (accounts.isNotEmpty()) sp.unregisterOnSharedPreferenceChangeListener(backupPreferenceListener)
 
@@ -191,6 +187,14 @@ class MainActivity : AppCompatActivity() {
 
     interface OnWindowFocusChangedListener {
         fun onWindowFocusChanged(hasFocus: Boolean)
+    }
+
+
+    private fun requestSync() {
+        ContentResolver.requestSync(accounts[0], getString(R.string.sync_authority), Bundle().apply {
+            putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
+            putInt(SyncAdapter.ACTION, SyncAdapter.SYNC_LOCAL_CHANGES)
+        })
     }
 
     fun observeTransferWorker() {
