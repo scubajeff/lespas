@@ -131,7 +131,6 @@
     <string name="cache_size_setting_hint">Taille du cache :</string>
     <string name="sync_header">Synchronisation</string>
     <string name="cameraroll_backup_title">Sauvegarde de la galerie</string>
-    <string name="cameraroll_backup_summary">Retrouvez votre sauvegarde sur le serveur dans le dossier \'DCIM/%s\'.</string>
     <string name="background_sync_title">Synchroniser périodiquement</string>
     <string name="background_sync_summary">Vérifier les changements sur le serveur toutes les 6 heures</string>
     <string name="wifionly_title">Synchronisation et sauvegarde uniquement en WiFi</string>
@@ -156,6 +155,7 @@
     <string name="proceed_request">Continuer</string>
     <string name="install_snapseed_dialog_msg">Installer Snapseed maintenant ?</string>
     <!-- Destination DialogFragment -->
+    <string name="sync_status_stage_backup_pictures">Sauvegarde du dossier \'Pictures\'...</string>
     <string name="copy_files">Copier</string>
     <string name="move_files">Déplacer</string>
     <string name="create_new_album">Créer un nouvel album</string>
@@ -281,7 +281,9 @@
     <string name="skip_late_night_update">Ignorer la mise à jour de fin de soirée</string>
     <string name="msg_downloading_exif">Récupérer les méta-données du serveur…</string>
     <string name="cameraroll_backup_remaining">%d restant</string>
-    <string name="cameraroll_backup_last_time">La dernière sauvegarde s\'est terminée %s.</string>
+    <string name="pictures_backup_title">Sauvegarde du dossier \'Pictures\'</string>
+    <string name="backup_summary">Trouvez votre sauvegarde sur le serveur dans le dossier \'%1$s/%2$s\'.</string>
+    <string name="pictures_sub_folder_exclusion_title">Exclure des sous-dossiers de la sauvegarde</string>
     <string name="sync_status_action_delete_media">Suppression de %1$s dans l\'album \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Suppression de l\'album \'%s\'</string>
     <string name="sync_status_action_add_media">Ajout de %1$s à l\'album \'%2$s\'</string>
@@ -307,7 +309,7 @@
     <string name="sync_status_stage_started">Démarrer la synchronisation…</string>
     <string name="button_text_help">A l\'aide !</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup">Sauvegarde de la caméra…</string>
+    <string name="sync_status_stage_backup_camera_roll">Sauvegarde de la caméra…</string>
     <string name="sync_status_title">État de la synchronisation</string>
     <string name="sync_status_result_general_error">La dernière synchronisation a échoué %s !</string>
     <string name="sync_status_stage_sync_local">Synchronisation des modifications locales…</string>
@@ -315,7 +317,7 @@
     <string name="sync_status_action_create_album_from_server">Création de l\'album \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Mise à jour de l\'album \'%s\'</string>
     <string name="sync_status_action_backup_file">Sauvegarde de la photo %s</string>
-    <string name="msg_backup_oldies">Les nouvelles photos seront sauvegardées à partir de maintenant. Vous avez également %1$,d photos dans votre rouleau d\'appareil photo en ce moment, avec %2$s de taille. Voulez-vous également sauvegarder toutes ces anciennes photos ?</string>
+    <string name="msg_backup_oldies">Les nouvelles photos dans \'%1$s\' seront désormais sauvegardées. Vous avez également %2$,d photos dans l\'appareil en ce moment, avec %3$s en taille. Souhaitez-vous sauvegarder toutes ces anciennes photos maintenant ?</string>
     <string name="button_text_set_as_home">Définir</string>
     <string name="pick_home">Définir votre dossier d\'accueil</string>
     <string name="pick_home_note">Les Pas enregistre vos albums et vos sauvegardes dans ce dossier sur votre serveur.</string>

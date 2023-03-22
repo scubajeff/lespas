@@ -483,7 +483,7 @@ object Tools {
         )
     }
 
-    fun getCameraRollStatistic(cr: ContentResolver): Pair<Int, Long> {
+    fun getFolderStatistic(cr: ContentResolver, folderName: String): Pair<Int, Long> {
         var itemCount = 0
         var totalSize = 0L
 
@@ -495,7 +495,7 @@ object Tools {
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.SIZE,
         )
-        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%DCIM%')"
+        val selection = "(${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ($pathSelection LIKE '%$folderName%')"
 
         try {
             cr.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
@@ -564,16 +564,48 @@ object Tools {
         }
     }
 
+    fun listSubFolders(parent: String, cr: ContentResolver): List<String> {
+        // TODO Set used here to make sure no duplicate, but what about folder in external SD that has the same name as that in internal storage
+        val subFolders = mutableSetOf<String>()
+        val externalStorageUri = MediaStore.Files.getContentUri("external")
+
+        @Suppress("DEPRECATION")
+        val pathSelection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MediaStore.Files.FileColumns.RELATIVE_PATH else MediaStore.Files.FileColumns.DATA
+        val projection = arrayOf(pathSelection,)
+        val selection = "$pathSelection LIKE '%${parent}%'"
+
+        try {
+            cr.query(externalStorageUri, projection, selection, null, null)?.use { cursor ->
+                val pathColumn = cursor.getColumnIndexOrThrow(pathSelection)
+                while (cursor.moveToNext()) {
+                    cursor.getString(pathColumn).substringAfter("$parent/", "").substringBefore('/', "").run { if (this.isNotEmpty()) subFolders.add(this) }
+                }
+            }
+        } catch (_: Exception) {}
+
+        return subFolders.toList()
+    }
+
     fun getLocalRoot(context: Context): String {
         return "${if (PreferenceManager.getDefaultSharedPreferences(context).getBoolean(SettingsFragment.KEY_STORAGE_LOCATION, true)) "${context.filesDir}" else "${context.getExternalFilesDirs(null)[1]}"}${context.getString(R.string.lespas_base_folder_name)}"
     }
 
     fun getRemoteHome(context: Context): String {
-        return "${(PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "")}${context.getString(R.string.lespas_base_folder_name)}"
+        return getPathOnServer(context, 1)
     }
-
     fun getCameraArchiveHome(context: Context): String {
-        return "${(PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "")}/DCIM"
+        return getPathOnServer(context, 2)
+    }
+    fun getPicturesArchiveHome(context: Context): String {
+        return getPathOnServer(context, 3)
+    }
+    private fun getPathOnServer(context: Context, id: Int): String {
+        return (PreferenceManager.getDefaultSharedPreferences(context).getString(SettingsFragment.SERVER_HOME_FOLDER, "") ?: "") + when(id) {
+            1 -> context.getString(R.string.lespas_base_folder_name)
+            2 -> "/DCIM"
+            3 -> "/Pictures"
+            else -> ""
+        }
     }
 
     fun getStorageSize(context: Context): Long {

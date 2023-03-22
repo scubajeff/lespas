@@ -49,6 +49,7 @@
     <string name="account_header">帐户</string>
     <string name="logout_title">登出服务器</string>
     <string name="msg_logout_dialog">登出帐户%1$s吗？</string>
+    <string name="sync_status_stage_backup_pictures">正在备份“Pictures”文件夹...</string>
     <string name="copy_files">复制</string>
     <string name="create_new_album">创建新相册</string>
     <string name="invalid_character_found">禁止使用目录符号\'\\\'或\'/\'</string>
@@ -103,7 +104,6 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed修图 - 替换</string>
     <string name="item_camera_roll">相机相册</string>
     <string name="cameraroll_backup_title">备份本地相机相册</string>
-    <string name="cameraroll_backup_summary">新拍摄的照片和视频将被自动备份到服务器的DCIM/%s目录下。</string>
     <string name="empty_camera_roll">相机相册空空如也。</string>
     <string name="gallery_launcher_title">“相册”启动图标</string>
     <string name="gallery_app_name">相机相册</string>
@@ -245,7 +245,9 @@
     <string name="msg_login_first">请先登录服务器。</string>
     <string name="msg_downloading_exif">正从服务器上获取照片元数据……</string>
     <string name="cameraroll_backup_remaining">还有%d个</string>
-    <string name="cameraroll_backup_last_time">最近一次备份在%s完成。</string>
+    <string name="pictures_backup_title">备份“Pictures”文件夹</string>
+    <string name="backup_summary">在服务器的“%1$s/%2$s”文件夹中可以找到你的备份。</string>
+    <string name="pictures_sub_folder_exclusion_title">跳过备份以下子文件夹</string>
     <string name="sync_status_action_delete_media">正在删除相册《%2$s》中的照片%1$s</string>
     <string name="sync_status_action_delete_album">正在删除相册《%s》</string>
     <string name="sync_status_action_add_media">正在添加%1$s到相册《%2$s》中</string>
@@ -271,7 +273,7 @@
     <string name="sync_status_stage_started">正在启动同步……</string>
     <string name="button_text_help">求助</string>
     <string name="button_text_resync">再次同步</string>
-    <string name="sync_status_stage_backup">正在备份相机相册……</string>
+    <string name="sync_status_stage_backup_camera_roll">正在备份相机相册……</string>
     <string name="sync_status_title">同步状态</string>
     <string name="sync_status_result_general_error">%s的最后一次同步出错！</string>
     <string name="sync_status_stage_sync_local">正在同步本地更新……</string>
@@ -279,7 +281,7 @@
     <string name="sync_status_action_create_album_from_server">正在创建相册\'%s\'</string>
     <string name="sync_status_action_update_album_from_server">正在更新相册\'%s\'</string>
     <string name="sync_status_action_backup_file">正在备份照片%s</string>
-    <string name="msg_backup_oldies">相机相册备份已开启。相册中现有%1$d张照片，合共%2$s。先备份这些旧照片吗？</string>
+    <string name="msg_backup_oldies">从现在起，文件夹“%1$s”中的新照片将被备份。该文件夹在设备中还有%2$,d的照片，有%3$s的大小。需要备份这些旧照片吗？</string>
     <string name="button_text_set_as_home">选定</string>
     <string name="pick_home">设置主文件夹</string>
     <string name="pick_home_note">Les Pas将在服务器上的这个文件夹里保存相册和备份文件。</string>

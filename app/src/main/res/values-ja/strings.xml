@@ -72,7 +72,6 @@
     <string name="statistic_free_space_message">%2$sの残りの%1$sのスペース</string>
     <string name="sync_header">シンクロ</string>
     <string name="cameraroll_backup_title">ローカルカメラのアルバムをバックアップする</string>
-    <string name="cameraroll_backup_summary">サーバー上のDCIM/%sフォルダーにあるバックアップを探します。</string>
     <string name="background_sync_title">タイムドシンクロ</string>
     <string name="background_sync_summary">6時間ごとにサーバーの更新をチェック</string>
     <string name="wifionly_title">WiFi環境下でのシンク、データバックアップのみ</string>
@@ -90,6 +89,7 @@
     <string name="logout_title">サーバーからのログアウト</string>
     <string name="msg_logout_dialog">アカウント %1$s からログアウトしますか？</string>
     <string name="yes_logout">ログアウトへの同意</string>
+    <string name="sync_status_stage_backup_pictures">Picturesフォルダのバックアップ...</string>
     <string name="copy_files">レプリケート</string>
     <string name="move_files">ポータブル</string>
     <string name="create_new_album">新規アルバムの作成</string>
@@ -245,7 +245,9 @@
     <string name="msg_low_storage_space">内部ストレージの空き容量が10％未満になると、Les Pasとサーバーの同期が停止します。</string>
     <string name="msg_login_first">まず、サーバーにログインしてください。</string>
     <string name="msg_downloading_exif">サーバーからメタデータを取得する</string>
-    <string name="cameraroll_backup_last_time">最後のバックアップは%sで完了しました。</string>
+    <string name="pictures_backup_title">Picturesフォルダのバックアップ</string>
+    <string name="backup_summary">サーバー上のバックアップを「%1$s/%2$s」フォルダーで検索します。</string>
+    <string name="pictures_sub_folder_exclusion_title">サブフォルダをバックアップから除外する</string>
     <string name="sync_status_action_delete_media">アルバム『%2$s』内の写真%1$sを削除しています</string>
     <string name="sync_status_action_delete_album">アルバム『%s』は削除されています</string>
     <string name="sync_status_action_add_media">アルバム『%2$s』に%1$sを追加しました</string>
@@ -271,7 +273,7 @@
     <string name="sync_status_stage_started">同期開始中</string>
     <string name="button_text_help">助けて</string>
     <string name="button_text_resync">再同期</string>
-    <string name="sync_status_stage_backup">カメラのバックアップ</string>
+    <string name="sync_status_stage_backup_camera_roll">カメラのバックアップ</string>
     <string name="sync_status_title">シンクロの状態</string>
     <string name="sync_status_result_general_error">" %s最後の同期に失敗しました!"</string>
     <string name="sync_status_stage_sync_local">ローカルの変更を同期させる</string>
@@ -279,7 +281,7 @@
     <string name="sync_status_action_create_album_from_server">アルバム \'%s\' が作成されています</string>
     <string name="sync_status_action_update_album_from_server">アルバム \'%s\' を更新しています</string>
     <string name="sync_status_action_backup_file">写真 %s をバックアップしています</string>
-    <string name="msg_backup_oldies">新しい写真は今後バックアップされます。また、現在カメラロールに%1$,d枚の写真があり、そのサイズは%2$sです。これらの古い写真もすべてバックアップしますか？</string>
+    <string name="msg_backup_oldies">\'%1$s\'にある新しい写真は、今後バックアップされます。また、現在デバイスには%2$,d枚の写真があり、そのサイズは%3$sです。これらの古い写真もすべてバックアップしますか？</string>
     <string name="button_text_set_as_home">設定</string>
     <string name="pick_home">ホームフォルダの設定</string>
     <string name="pick_home_note">Les Pasは、アルバムとバックアップをサーバーのこのフォルダに保存します。</string>

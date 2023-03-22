@@ -125,6 +125,18 @@
             app:defaultValue="false" />
 
         <SwitchPreferenceCompat
+            app:key="@string/pictures_backup_pref_key"
+            app:title="@string/pictures_backup_title"
+            app:singleLineTitle="false"
+            app:defaultValue="false" />
+
+        <MultiSelectListPreference
+            app:key="@string/pictures_sub_folder_exclusion_pref_key"
+            app:dependency="@string/pictures_backup_pref_key"
+            app:title="@string/pictures_sub_folder_exclusion_title"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
             app:key="@string/sync_pref_key"
             app:title="@string/background_sync_title"
             app:summary="@string/background_sync_summary"

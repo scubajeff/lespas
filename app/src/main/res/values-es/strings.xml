@@ -65,6 +65,7 @@
     <string name="logout_title">Cierre de sesión</string>
     <string name="msg_logout_dialog">¿Desconexión de la cuenta %1$s?</string>
     <string name="yes_logout">Sí, cierre de sesión</string>
+    <string name="sync_status_stage_backup_pictures">Copia de seguridad de la carpeta \'Pictures\'...</string>
     <string name="copy_files">Copiar</string>
     <string name="create_new_album">Crear un nuevo álbum</string>
     <string name="invalid_character_found">El separador de caminos \'\\\' \'/\' no está permitido</string>
@@ -104,7 +105,6 @@
     <string name="button_text_edit_in_snapseed_replace">Snapseed - Sustituir</string>
     <string name="item_camera_roll">Rollo de Cámara</string>
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
-    <string name="cameraroll_backup_summary">Encuentre su copia de seguridad en el servidor en la carpeta \'DCIM/%s\'.</string>
     <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
     <string name="gallery_app_name">Galería</string>
     <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
@@ -246,7 +246,9 @@
     <string name="msg_login_first">Por favor, inicie sesión en su servidor primero.</string>
     <string name="msg_downloading_exif">Obtención de metadatos del servidor…</string>
     <string name="cameraroll_backup_remaining">Quedan %d</string>
-    <string name="cameraroll_backup_last_time">La última copia de seguridad terminó %s.</string>
+    <string name="pictures_backup_title">Copia de seguridad de la carpeta \'Pictures\'</string>
+    <string name="backup_summary">Busque su copia de seguridad en el servidor en la carpeta \'%1$s/%2$s\'.</string>
+    <string name="pictures_sub_folder_exclusion_title">Excluir subcarpetas de la copia de seguridad</string>
     <string name="sync_status_action_delete_media">Eliminando %1$s en el álbum \'%2$s\'</string>
     <string name="sync_status_action_delete_album">Eliminando el álbum \'%s\'</string>
     <string name="sync_status_action_add_media">Añadiendo %1$s al álbum \'%2$s\'</string>
@@ -272,7 +274,7 @@
     <string name="sync_status_stage_started">Iniciando la sincronización…</string>
     <string name="button_text_help">¡Ayuda!</string>
     <string name="button_text_resync">Re-Sync</string>
-    <string name="sync_status_stage_backup">Cámara de respaldo…</string>
+    <string name="sync_status_stage_backup_camera_roll">Cámara de respaldo…</string>
     <string name="sync_status_title">Estado de la sincronización</string>
     <string name="sync_status_result_general_error">¡La última sincronización ha fallado %s!</string>
     <string name="sync_status_stage_sync_local">Sincronizar los cambios locales…</string>
@@ -280,7 +282,7 @@
     <string name="sync_status_action_create_album_from_server">Creando el álbum \'%s\'</string>
     <string name="sync_status_action_update_album_from_server">Actualizando el álbum \'%s\'</string>
     <string name="sync_status_action_backup_file">Haciendo una copia de seguridad de la foto %s</string>
-    <string name="msg_backup_oldies">Las nuevas fotos serán una copia de seguridad a partir de ahora. También tienes %1$,d fotos en el rollo de la cámara ahora mismo, con %2$s de tamaño. ¿Quieres hacer una copia de seguridad de todas estas fotos antiguas también?</string>
+    <string name="msg_backup_oldies">Las nuevas fotos en \'%1$s\' serán copias de seguridad a partir de ahora. También tienes %2$,d fotos en el dispositivo ahora mismo, con %3$s de tamaño. ¿Desea hacer una copia de seguridad de todas estas fotos antiguas?</string>
     <string name="button_text_save">Guardar</string>
     <string name="hint_caption">Añadir un pie de foto</string>
     <string name="button_text_set_as_home">Set</string>

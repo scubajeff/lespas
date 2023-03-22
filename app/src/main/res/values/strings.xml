@@ -189,9 +189,12 @@
     <string name="sync_header">Synchronization</string>
     <string name="cameraroll_backup_pref_key" translatable="false">CAMERAROLL_BACKUP</string>
     <string name="cameraroll_backup_title">Backup Camera Roll</string>
-    <string name="cameraroll_backup_summary">Find your backup on server in the folder \'DCIM/%s\'.</string>
-    <string name="cameraroll_backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
-    <string name="cameraroll_backup_last_time">Last backup finished %s.</string>
+    <string name="pictures_backup_pref_key" translatable="false">PICTURES_BACKUP</string>
+    <string name="pictures_backup_title">Backup \'Pictures\' Folder</string>
+    <string name="pictures_sub_folder_exclusion_pref_key" translatable="false">PICTURES_SUB_FOLDER_EXCLUSION</string>
+    <string name="pictures_sub_folder_exclusion_title">Exclude Sub Folders from Backup</string>
+    <string name="backup_summary">Find your backup on server in the folder \'%1$s/%2$s\'.</string>
+    <string name="backup_status_pref_key" translatable="false">CAMERAROLL_BACKUP_STATUS</string>
     <string name="sync_pref_key" translatable="false">SYNC</string>
     <string name="sync_status_pref_key" translatable="false">SYNC_STATUS</string>
     <string name="sync_status_local_action_pref_key" translatable="false">SYNC_CURRENT_ACTION</string>
@@ -202,7 +205,7 @@
     <string name="wifionly_title">Sync and backup only on WiFi</string>
     <string name="wifionly_summary_on">Yes, will not consume mobile data.</string>
     <string name="wifionly_summary_off">No, consumes mobile data – caution is advised when you have a large collection of photos.</string>
-    <string name="msg_backup_oldies">New photos will be backup from now on. You also have %1$,d photos in camera roll right now, with %2$s in size. Do you want to backup all these old photos too?</string>
+    <string name="msg_backup_oldies">New photos in \'%1$s\' will be backup from now on. You also have %2$,d photos in device right now, with %3$s in size. Do you want to backup all these old photos now?</string>
 
     <string name="map_header">Map</string>
     <string name="chinese_map_pref_key" translatable="false">CHINESE_MAP_APP</string>
@@ -274,7 +277,8 @@
     <string name="sync_status_stage_started">Starting synchronization…</string>
     <string name="sync_status_stage_sync_local">Synchronizing local changes…</string>
     <string name="sync_status_stage_sync_remote">Synchronizing remote changes…</string>
-    <string name="sync_status_stage_backup">Backing up camera roll…</string>
+    <string name="sync_status_stage_backup_camera_roll">Backing up camera roll…</string>
+    <string name="sync_status_stage_backup_pictures">Backing up \'Pictures\' folder…</string>
 
     <!-- Destination DialogFragment -->
     <string name="copy_files">Copy</string>
