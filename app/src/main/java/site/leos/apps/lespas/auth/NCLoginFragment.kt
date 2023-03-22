@@ -307,6 +307,7 @@ class NCLoginFragment: Fragment() {
     }
 
     class AuthenticateViewModelFactory(private val context: FragmentActivity): ViewModelProvider.NewInstanceFactory() {
+        @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = AuthenticateViewModel(context) as T
     }
     class AuthenticateViewModel(context: FragmentActivity) : AndroidViewModel(context.application) {

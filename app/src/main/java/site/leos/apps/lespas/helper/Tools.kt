@@ -1036,6 +1036,7 @@ object Tools {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableArrayList(key, T::class.java)
         else -> @Suppress("DEPRECATION") getParcelableArrayList(key)
     }
+    @Suppress("UNCHECKED_CAST")
     inline fun <reified T : Parcelable> Bundle.parcelableArray(key: String): Array<T>? = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> getParcelableArray(key, T::class.java)
         else -> @Suppress("DEPRECATION") (getParcelableArray(key) as Array<T>?)
