@@ -211,8 +211,9 @@ class MainActivity : AppCompatActivity() {
         when(key) {
             // TODO ignore changes of preferences that don't need backup
             AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
-            SettingsFragment.LAST_BACKUP,
-            getString(R.string.cameraroll_backup_status_pref_key),
+            SettingsFragment.LAST_BACKUP_CAMERA,
+            SettingsFragment.LAST_BACKUP_PICTURE,
+            getString(R.string.backup_status_pref_key),
             getString(R.string.sync_status_local_action_pref_key),
             getString(R.string.sync_status_pref_key) -> {}
 

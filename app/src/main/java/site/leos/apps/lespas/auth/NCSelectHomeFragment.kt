@@ -256,7 +256,13 @@ class NCSelectHomeFragment: Fragment() {
                                 getString(R.string.cameraroll_backup_pref_key), -> {
                                     value.toBoolean().let { on ->
                                         editor.putBoolean(key, on)
-                                        if (on) editor.putLong(SettingsFragment.LAST_BACKUP, System.currentTimeMillis() / 1000)
+                                        if (on) editor.putLong(SettingsFragment.LAST_BACKUP_CAMERA, System.currentTimeMillis() / 1000)
+                                    }
+                                }
+                                getString(R.string.pictures_backup_pref_key), -> {
+                                    value.toBoolean().let { on ->
+                                        editor.putBoolean(key, on)
+                                        if (on) editor.putLong(SettingsFragment.LAST_BACKUP_PICTURE, System.currentTimeMillis() / 1000)
                                     }
                                 }
                                 //AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
