@@ -84,6 +84,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     private val metaUpdatedNeeded = mutableSetOf<String>()
     private val contentMetaUpdatedNeeded = mutableSetOf<String>()
     private val blogUpdateNeeded = mutableSetOf<String>()
+    private var prefBackupNeeded = false
     private var workingAction: Action? = null
 
     private val keySyncStatus = application.getString(R.string.sync_status_pref_key)
@@ -103,6 +104,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             syncRemoteChanges()
             updateMeta()
             backupCameraRoll()
+            if (prefBackupNeeded) backupPreference()
 
             // Clear status counters
             syncResult.stats.clear()
@@ -181,6 +183,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             // Make sure meta get updated by adding them to action database
             metaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_ALBUM_META, "", it, "", "", 0, 0)) }
             contentMetaUpdatedNeeded.forEach { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_THIS_CONTENT_META, "", it, "", "", 0, 0)) }
+            if (prefBackupNeeded) actionRepository.addAction(Action(null, Action.ACTION_BACKUP_PREFERENCE, "", "", "", "", 0, 0))
 
             if (syncResult.stats.numIoExceptions > 0 || syncResult.stats.numAuthExceptions > 0) reportStage(Action.SYNC_RESULT_ERROR_GENERAL)
         }
@@ -496,6 +499,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     webDav.delete("${lespasBase}/${BLOG_ASSETS_FOLDER}/${action.folderId}")
                 }
                 Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
+                Action.ACTION_BACKUP_PREFERENCE -> { prefBackupNeeded = true }
             }
 
             actionRepository.delete(action)
@@ -1752,6 +1756,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         }
     }
 
+    private fun backupPreference() {
+        webDav.upload(PreferenceManager.getDefaultSharedPreferences(application).all.toString().drop(1).dropLast(1), "${lespasBase}/${PREFERENCE_BACKUP_ON_SERVER}", "text/plain")
+        prefBackupNeeded = false
+    }
+
     private fun createSubFoldersRecursively(base: String, path: String) {
         var subFolder = base
         path.split("/").forEach {
@@ -1898,6 +1907,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val BACKUP_CAMERA_ROLL = 4
         const val SYNC_ALL = 7
 
+        const val PREFERENCE_BACKUP_ON_SERVER = ".mobile_preference"
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val MIME_TYPE_JSON = "application/json"

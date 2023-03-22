@@ -86,7 +86,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedP
     private lateinit var accessMediaLocationPermissionRequestLauncher: ActivityResultLauncher<String>
     private lateinit var installSnapseedLauncher: ActivityResultLauncher<Intent>
 
-    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels()
+    private val authenticateModel: NCLoginFragment.AuthenticateViewModel by activityViewModels { NCLoginFragment.AuthenticateViewModelFactory(requireActivity()) }
 
     private var syncPreference: SwitchPreferenceCompat? = null
 

@@ -390,6 +390,16 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
         httpClient.newCall(Request.Builder().url(url).cacheControl(CacheControl.FORCE_NETWORK).method("PROPPATCH", String.format(Locale.ROOT, PROPPATCH_EXTRA_META_BODY, payload).toRequestBody("text/xml".toMediaType())).header("Brief", "t").build()).execute().use {}
     }
 
+    fun read(source: String): String? {
+        var result: String? = null
+        httpClient.newCall(Request.Builder().url(source).get().build()).execute().use { response->
+            if (response.isSuccessful) response.body?.string()?.let { result = it }
+            else throw OkHttpWebDavException(response)
+        }
+
+        return result
+    }
+
     fun upload(source: String, dest: String, mimeType: String): Pair<String, String> {
         httpClient.newCall(Request.Builder().url(dest).put(source.toRequestBody(mimeType.toMediaTypeOrNull())).build()).execute().use { response->
             if (response.isSuccessful) return Pair(response.header("oc-fileid", "") ?: "", response.header("oc-etag", "") ?: "")
