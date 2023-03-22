@@ -225,7 +225,7 @@ class NCSelectHomeFragment: Fragment() {
                 var value: String
 
                 webDav.read("${resourceRoot}${selectedFolder}${getString(R.string.lespas_base_folder_name)}/${SyncAdapter.PREFERENCE_BACKUP_ON_SERVER}")?.let {
-                    it.split(", ").forEach { setting ->
+                    it.split(SyncAdapter.PREFERENCE_BACKUP_SEPARATOR).forEach { setting ->
                         setting.substringBefore('=', "").let { key ->
                             value = setting.substringAfter('=', "")
                             if (value.isNotEmpty()) when(key) {
@@ -268,7 +268,8 @@ class NCSelectHomeFragment: Fragment() {
                                 //AlbumFragment.KEY_RECEIVED_SHARE_TIMESTAMP,
                                 //SettingsFragment.LAST_BACKUP -> try { editor.putLong(key, value.toLong()) } catch(_: java.lang.NumberFormatException) {}
 
-                                LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(',').toSet())
+                                getString(R.string.pictures_sub_folder_exclusion_pref_key),
+                                LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(", ").toSet())
 
                                 getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)
 

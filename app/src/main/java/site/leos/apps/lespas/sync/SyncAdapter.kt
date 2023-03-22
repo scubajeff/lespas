@@ -1757,7 +1757,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
     }
 
     private fun backupPreference() {
-        webDav.upload(PreferenceManager.getDefaultSharedPreferences(application).all.toString().drop(1).dropLast(1), "${lespasBase}/${PREFERENCE_BACKUP_ON_SERVER}", "text/plain")
+        webDav.upload(
+            StringBuffer().apply {
+                PreferenceManager.getDefaultSharedPreferences(application).all.forEach {
+                    append("${it.key}=${it.value}${PREFERENCE_BACKUP_SEPARATOR}")
+                }
+            }.toString().dropLast(1),
+            "${lespasBase}/${PREFERENCE_BACKUP_ON_SERVER}", "text/plain")
         prefBackupNeeded = false
     }
 
@@ -1913,6 +1919,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         const val SYNC_ALL = 7
 
         const val PREFERENCE_BACKUP_ON_SERVER = ".mobile_preference"
+        const val PREFERENCE_BACKUP_SEPARATOR = "\u0000"
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val MIME_TYPE_JSON = "application/json"
