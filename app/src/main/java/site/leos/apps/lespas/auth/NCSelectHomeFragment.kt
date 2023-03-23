@@ -21,6 +21,8 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -210,8 +212,10 @@ class NCSelectHomeFragment: Fragment() {
     @SuppressLint("ApplySharedPref")
     private fun returnResult() {
         // Show progress indicator and disable user input
-        selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply { setTint(serverTheme.textColor) }
-        //selectButton.setCompoundDrawables(null, null, authenticateModel.getLoadingIndicatorDrawable().apply { start() }, null)
+        selectButton.icon = authenticateModel.getLoadingIndicatorDrawable().apply {
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) colorFilter = BlendModeColorFilter(serverTheme.textColor, BlendMode.SRC_IN) else setColorFilter(serverTheme.textColor, android.graphics.PorterDuff.Mode.SRC_IN)
+        }
         selectButton.isClickable = false
         folderList.isEnabled = false
 
