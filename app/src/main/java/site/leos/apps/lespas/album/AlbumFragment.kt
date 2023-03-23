@@ -266,7 +266,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
         publishViewModel.shareByMe.asLiveData().observe(viewLifecycleOwner) { mAdapter.setRecipients(it) }
-        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it) }
+        publishViewModel.shareWithMe.asLiveData().observe(viewLifecycleOwner) { fixMenuIcon(it, true) }
 
         with(recyclerView) {
             // Stop item from blinking when notifying changes
@@ -415,12 +415,12 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                         return true
                     }
                     R.id.option_menu_received_shares-> {
-                        receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)
                         PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putLong(KEY_RECEIVED_SHARE_TIMESTAMP, newTimestamp).apply()
 
                         exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
                         reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
                         parentFragmentManager.beginTransaction().replace(R.id.container_root, PublicationListFragment(), PublicationListFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        receivedShareMenu?.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_shared_with_me_24)?.apply { setTint(ContextCompat.getColor(requireContext(), R.color.bottom_control_button)) }
                         return true
                     }
                     R.id.option_menu_sortbydateasc, R.id.option_menu_sortbydatedesc, R.id.option_menu_sortbynameasc, R.id.option_menu_sortbynamedesc-> {
@@ -619,17 +619,20 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
     }
 
-    private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>) {
+    private fun fixMenuIcon(shareList: List<NCShareViewModel.ShareWithMe>, animate: Boolean = false) {
         if (shareList.isNotEmpty()) {
             receivedShareMenu?.isEnabled = true
 
-            // Show notification badge
+            // Show notification badge animation and/or change tint
             newTimestamp = shareList[0].lastModified
             if (PreferenceManager.getDefaultSharedPreferences(requireContext()).getLong(KEY_RECEIVED_SHARE_TIMESTAMP, 0L) < newTimestamp)
-                with(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_new_share_coming_24) as AnimatedVectorDrawable) {
-                    receivedShareMenu?.icon = this
-                    this.start()
-                }
+                if (animate) {
+                    with(ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_new_share_coming_24) as AnimatedVectorDrawable) {
+                        receivedShareMenu?.icon = this
+                        this.start()
+                    }
+                } else receivedShareMenu?.icon?.setTint(ContextCompat.getColor(requireContext(), R.color.color_secondary))
+
         }
     }
 
