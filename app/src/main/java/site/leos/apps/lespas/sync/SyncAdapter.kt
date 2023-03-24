@@ -1382,7 +1382,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             exifInterface = null
                         } else {
                             webDav.getStream("$lespasBase/${changedAlbum.name}/${changedPhoto.name}", false, null).use {
-                                exifInterface = try { ExifInterface(it) } catch (e: Exception) { null }
+                                exifInterface = try { ExifInterface(it) } catch (e: Exception) { null } catch (_: OutOfMemoryError) { null }
                             }
                         }
                     } else {
@@ -1394,8 +1394,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             try { metadataRetriever.setDataSource("$localBaseFolder/${changedPhoto.id}")} catch (_: Exception) {}
                             exifInterface = null
                         }
-                        else exifInterface = try { ExifInterface("$localBaseFolder/${changedPhoto.id}")
-                        } catch (e: Exception) { null }
+                        else exifInterface = try { ExifInterface("$localBaseFolder/${changedPhoto.id}") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     }
 
                     with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (isRemoteAlbum) "" else "$localBaseFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = isRemoteAlbum)) {
@@ -1710,7 +1709,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                 }
                             }
                         }
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {} catch (_: OutOfMemoryError) {}
                 } else if (mimeType.startsWith("video/")) {
                     try {
                         mediaMetadataRetriever.setDataSource(application, photoUri)

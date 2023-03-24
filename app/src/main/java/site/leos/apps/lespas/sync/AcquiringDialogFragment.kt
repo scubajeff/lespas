@@ -244,8 +244,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
 
                         if (album.id == Album.JOINT_ALBUM_ID) {
                             // Get media's metadata
-                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
-                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
+                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (_: Exception) {}
+                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                             val meta = Tools.getPhotoParams(metadataRetriever, exifInterface,"$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed
@@ -259,8 +259,8 @@ class AcquiringDialogFragment: LesPasDialogFragment(R.layout.fragment_acquiring_
                                 fileId, System.currentTimeMillis(), 1
                             ))
                         } else {
-                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (e: Exception) {}
-                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (e: Exception) { null }
+                            try { metadataRetriever.setDataSource("$appRootFolder/$fileId") } catch (_: Exception) {}
+                            exifInterface = try { ExifInterface("$appRootFolder/$fileId") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                             val meta = Tools.getPhotoParams(metadataRetriever, exifInterface, "$appRootFolder/$fileId", mimeType, fileId)
                             // Skip those image file we can't handle, like SVG
                             if (meta.width == -1 || meta.height == -1) return@forEachIndexed

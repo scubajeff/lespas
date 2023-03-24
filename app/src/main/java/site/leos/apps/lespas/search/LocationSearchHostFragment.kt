@@ -163,7 +163,7 @@ class LocationSearchHostFragment: Fragment() {
                                     cr.openInputStream(Uri.parse(photo.id))
                                 } catch (e: UnsupportedOperationException) {
                                     cr.openInputStream(Uri.parse(photo.id))
-                                }?.let { try { ExifInterface(it).latLong } catch (e: NullPointerException) { return@forEachIndexed }
+                                }?.let { try { ExifInterface(it).latLong } catch (_: NullPointerException) { return@forEachIndexed } catch (_: OutOfMemoryError) { null }
                                 } ?: run { return@forEachIndexed }
                             }
                             R.id.search_archive -> {

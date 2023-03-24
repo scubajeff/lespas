@@ -628,7 +628,7 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
 
         try {
             response = webDav.getRawResponse("$resourceRoot${remotePhoto.remotePath}/${remotePhoto.photo.name}", true)
-            result = Pair(if (Tools.hasExif(remotePhoto.photo.mimeType)) ExifInterface(response.body!!.byteStream()) else null, response.headersContentLength())
+            result = Pair(if (Tools.hasExif(remotePhoto.photo.mimeType)) try { ExifInterface(response.body!!.byteStream()) } catch (_: OutOfMemoryError) { null } else null, response.headersContentLength())
         } catch (e: Exception) {
             e.printStackTrace()
         } finally {

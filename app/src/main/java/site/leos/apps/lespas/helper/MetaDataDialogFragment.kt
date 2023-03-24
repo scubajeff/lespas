@@ -249,7 +249,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             val fPath = Tools.getLocalRoot(context)
                             with(if (File("${fPath}/${rPhoto.photo.id}").exists()) "${fPath}/${rPhoto.photo.id}" else "${fPath}/${rPhoto.photo.name}") {
                                 pm.size = File(this).length()
-                                if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (e: Exception) { null }
+                                if (Tools.hasExif(rPhoto.photo.mimeType)) exif = try { ExifInterface(this) } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                             }
                         } else {
                             // Media from camera roll
@@ -262,7 +262,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                     context.contentResolver.openInputStream(pUri)
                                 } catch (e: UnsupportedOperationException) {
                                     context.contentResolver.openInputStream(pUri)
-                                }?.use { ExifInterface(it) }
+                                }?.use { try { ExifInterface(it) } catch (_: OutOfMemoryError) { null }}
                             } else {
                                 if (rPhoto.photo.mimeType.startsWith("video/")) {
                                     MediaMetadataRetriever().run {

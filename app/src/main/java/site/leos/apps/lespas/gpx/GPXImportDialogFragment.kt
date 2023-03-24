@@ -323,7 +323,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                     if (photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) ncModel.downloadFile("${remoteLesPasFolder}/${photo.name}", targetFile)
 
                                     // TODO race condition if file is being uploaded to server
-                                    ExifInterface(targetFile).run {
+                                    try { ExifInterface(targetFile) } catch (_: OutOfMemoryError) { null }?.run {
                                         setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
                                         if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
                                         saveAttributes()
@@ -334,7 +334,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
                                     val sourceFile = File(localLesPasFolder, if (photo.eTag == Photo.ETAG_NOT_YET_UPLOADED) photo.name else photo.id)
 
                                     // TODO race condition if file is being uploaded to server
-                                    ExifInterface(sourceFile).run {
+                                    try { ExifInterface(sourceFile) } catch (_: OutOfMemoryError) { null }?.run {
                                         setLatLong(trackPoints[match].latitude, trackPoints[match].longitude)
                                         if (trackPoints[match].altitude != Photo.NO_GPS_DATA) setAltitude(trackPoints[match].altitude)
                                         saveAttributes()

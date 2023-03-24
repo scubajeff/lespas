@@ -112,7 +112,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                     // Update local database
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (e: Exception) { null }
+                    exifInterface = try { ExifInterface("$appRootFolder/$imageName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     val newPhoto = Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$imageName", Photo.DEFAULT_MIMETYPE, imageName).copy(
                         //id = originalPhoto.id, albumId = album.id, name = imageName, eTag = originalPhoto.eTag, shareId = originalPhoto.shareId)
                         // Mark sync status by setting eTag to empty
@@ -171,7 +171,7 @@ class SnapseedResultWorker(private val context: Context, workerParams: WorkerPar
 
                     // Create new photo in local database
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (e: Exception) { null }
+                    exifInterface = try { ExifInterface("$appRootFolder/$fileName") } catch (_: Exception) { null } catch (_: OutOfMemoryError) { null }
                     photoDao.insert(
                         Tools.getPhotoParams(null, exifInterface, "$appRootFolder/$fileName", Photo.DEFAULT_MIMETYPE, fileName)
                             .copy(id = fileName, albumId = album.id, name = fileName, shareId = Photo.DEFAULT_PHOTO_FLAG or Photo.NOT_YET_UPLOADED)
