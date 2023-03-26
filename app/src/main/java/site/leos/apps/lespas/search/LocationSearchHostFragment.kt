@@ -211,11 +211,12 @@ class LocationSearchHostFragment: Fragment() {
                                     if (it.countryName != null) {
                                         val locality = it.locality ?: it.adminArea ?: Photo.NO_ADDRESS
                                         if (searchTarget == R.id.search_album) photoRepository.updateAddress(photo.id, locality, it.countryName, it.countryCode ?: Photo.NO_ADDRESS)
-                                        Pair(it.countryName, locality)
+                                        //Pair(it.countryName, locality)
+                                        LocationAddress(it.countryName, locality, it.countryCode)
                                     } else null
                                 } ?: run { null }
                             } else {
-                                Pair(photo.country, photo.locality)
+                                LocationAddress(photo.country, photo.locality, photo.countryCode)
                             }?.apply {
                                 if (searchTarget == R.id.search_album) {
                                     val album = albums.find { it.id == photo.albumId }
@@ -226,12 +227,12 @@ class LocationSearchHostFragment: Fragment() {
                                     }
                                 } else rp = NCShareViewModel.RemotePhoto(photo.copy(latitude = latLong[0], longitude = latLong[1]), if (searchTarget == R.id.search_cameraroll) "" else remoteCameraArchiveFolder)
 
-                                resultList.find { result -> result.country == this.first && result.locality == this.second }
+                                resultList.find { result -> result.country == this.country && result.locality == this.locality }
                                     ?.let { existed ->
                                         existed.photos.add(rp)
                                         existed.total++
                                     }
-                                    ?: run { resultList.add(LocationSearchResult(arrayListOf(rp), 1, this.first, this.second)) }
+                                    ?: run { resultList.add(LocationSearchResult(arrayListOf(rp), 1, this.country, this.locality, getFlagEmoji(this.countryCode.uppercase()))) }
 
                                 // Update UI
                                 result.postValue(resultList)
@@ -259,6 +260,9 @@ class LocationSearchHostFragment: Fragment() {
         fun getCurrentLocality(): String = currentLocality
         fun putCurrentLocality(locality: String) { currentLocality = locality }
 */
+
+        private fun getFlagEmoji(countryCode: String): String =
+            String(Character.toChars(Character.codePointAt(countryCode, 0) - 0x41 + 0x1F1E6)) + String(Character.toChars(Character.codePointAt(countryCode, 1) - 0x41 + 0x1F1E6))
     }
 
     data class LocationSearchResult (
@@ -266,6 +270,13 @@ class LocationSearchHostFragment: Fragment() {
         var total: Int,
         val country: String,
         val locality: String,
+        val flag: String,
+    )
+
+    data class LocationAddress (
+        val country: String,
+        val locality: String,
+        val countryCode: String,
     )
 
     companion object {

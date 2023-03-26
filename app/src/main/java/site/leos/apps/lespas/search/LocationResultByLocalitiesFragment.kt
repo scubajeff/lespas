@@ -98,7 +98,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
             result.forEach {
                 // Take the last 4 since we only show 4, this also create a new list which is crucial for DiffUtil to detect changes in nested list
                 photoList = it.photos.takeLast(4)
-                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality))
+                items.add(LocationSearchHostFragment.LocationSearchResult(photoList.asReversed().toMutableList(), it.total, it.country, it.locality, it.flag))
             }
 
             resultAdapter.submitList(items.sortedWith(compareBy<LocationSearchHostFragment.LocationSearchResult, String>(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.country }.then(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.locality })))
@@ -151,7 +151,7 @@ class LocationResultByLocalitiesFragment: Fragment() {
 
             fun bind(item: LocationSearchHostFragment.LocationSearchResult) {
                 tvLocality.text = item.locality
-                tvCountry.text = item.country
+                tvCountry.text = String.format("%s %s", item.flag, item.country)
                 tvCount.text = if (item.total >= 4) item.total.toString() else ""
 
                 photoAdapter.submitList(item.photos)

@@ -76,7 +76,8 @@
         android:textAppearance="?attr/textAppearanceHeadline6"
         android:clickable="false"
         android:focusable="false"
-        tools:text="Locality" />
+        tools:text="Locality"
+        tools:ignore="UnusedAttribute" />
 
     <TextView
         android:id="@+id/country"
@@ -92,6 +93,7 @@
         android:textColor="?attr/colorControlNormal"
         android:clickable="false"
         android:focusable="false"
-        tools:text="Country" />
+        tools:text="Country"
+        tools:ignore="UnusedAttribute" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
