@@ -1,0 +1,5 @@
+* Neue Funktion: Unterstützung des RAW-Formats
+* Neue Funktion: Sicherung der Einstellungen der App auf dem Server
+* Neue Funktion: Sicherung des Geräteordners 'Bilder' auf dem Server
+* Behoben: Backup bleibt beim Erstellen eines neuen Unterordners hängen
+* Weitere Verbesserungen und Fehlerkorrekturen

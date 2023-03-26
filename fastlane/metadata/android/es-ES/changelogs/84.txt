@@ -1,0 +1,5 @@
+* Nueva función: Compatibilidad con formatos RAW
+* Nueva función: Copia de seguridad de la configuración de la aplicación al servidor
+* Nueva función: Copia de seguridad de la carpeta "Imágenes" del dispositivo al servidor
+* Copia de seguridad fija atascado en la creación de nuevas subcarpetas
+* Otras mejoras y correcciones de errores

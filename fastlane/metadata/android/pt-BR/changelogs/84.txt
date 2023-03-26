@@ -1,0 +1,5 @@
+* Nova característica: Suporte ao formato RAW
+* Nova característica: Configurações do aplicativo de backup para o servidor
+* Nova característica: Pasta 'Fotos' do dispositivo de backup para o servidor
+* Backup fixo preso na criação de uma nova subpasta
+* Outras melhorias e correções de bugs

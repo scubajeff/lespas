@@ -1,0 +1,5 @@
+* Nuova funzione: Supporto del formato RAW
+* Nuova funzione: Backup delle impostazioni dell'applicazione sul server
+* Nuova funzione: Backup della cartella "Immagini" del dispositivo sul server
+* Correzione del backup bloccato durante la creazione di una nuova sottocartella
+* Altri miglioramenti e correzioni di bug

@@ -1,0 +1,5 @@
+* New feature: RAW format support
+* New feature: Backup app's settings to server
+* New feature: Backup device's 'Pictures' folder to server
+* Fixed backup stuck on creating new sub folder
+* Other improvements and bugs fixes

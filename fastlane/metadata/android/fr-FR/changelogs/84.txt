@@ -1,0 +1,5 @@
+* Nouvelle fonctionnalité : Prise en charge du format RAW
+* Nouvelle fonctionnalité : Sauvegarde des paramètres de l'application sur le serveur
+* Nouvelle fonction : Sauvegarde du dossier 'Pictures' de l'appareil sur le serveur
+* Correction du blocage de la sauvegarde lors de la création d'un nouveau sous-dossier
+* Autres améliorations et corrections de bugs

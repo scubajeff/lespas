@@ -1,3 +1,9 @@
+## Version 2.8.0
+* New feature: RAW format support
+* New feature: Backup app's settings to server
+* New feature: Backup device's 'Pictures' folder to server
+* Fixed backup stuck on creating new sub folder
+
 ## Version 2.7.6
 * Fixed camera roll backup stuck with some server software stack like Caddy
 * Fixed camera roll backup resulted in 0 size file being created on server
