@@ -446,7 +446,7 @@ class CameraRollFragment : Fragment() {
                     super.scrollVerticallyBy(dy, recycler, state).run {
                         // state.remainingScrollVertical will not be 0 when flinging the list to top
                         // dy will be negative if over scrolling at the top
-                        if (state?.remainingScrollVertical == 0 && dy < 0) {
+                        if (state?.remainingScrollVertical == 0 && dy < 0 && bottomSheet.isDraggable) {
                             threshold++
                             if (threshold > 35) {
                                 threshold = 0
