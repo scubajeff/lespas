@@ -61,7 +61,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.selection.ItemDetailsLookup
@@ -209,7 +208,7 @@ class CameraRollFragment : Fragment() {
                     startPostponedEnterTransition()
                     if (photo.width == 0 && photo.mimeType.startsWith("image")) {
                         // Patching photo's meta after it has been fetched
-                        Thread { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}.run()
+                        lifecycleScope.launch { imageLoaderModel.getMediaExif(NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder))?.first?.let { exif -> mediaPagerAdapter.patchMeta(photo.id, exif) }}
                     }
                 }},
             { view-> imageLoaderModel.cancelSetImagePhoto(view) }
@@ -544,7 +543,7 @@ class CameraRollFragment : Fragment() {
                 }
             })
 */
-            addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            addOnScrollListener(object: OnScrollListener() {
                 private val hideHandler = Handler(Looper.getMainLooper())
                 private val hideDateIndicator = Runnable {
                     TransitionManager.beginDelayedTransition(quickScroll.parent as ViewGroup, Fade().apply { duration = 800 })
@@ -850,7 +849,7 @@ class CameraRollFragment : Fragment() {
         closeButton.setOnClickListener { if (selectionTracker.hasSelection()) selectionTracker.clearSelection() else bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN }
 
         // Acquiring new medias
-        destinationModel.getDestination().observe(viewLifecycleOwner, Observer {
+        destinationModel.getDestination().observe(viewLifecycleOwner) {
             it?.let { targetAlbum ->
                 if (destinationModel.doOnServer()) {
                     val actions = mutableListOf<Action>()
@@ -881,10 +880,10 @@ class CameraRollFragment : Fragment() {
                     if (parentFragmentManager.findFragmentByTag(TAG_ACQUIRING_DIALOG) == null) AcquiringDialogFragment.newInstance(lastSelection, targetAlbum, destinationModel.shouldRemoveOriginal()).show(parentFragmentManager, TAG_ACQUIRING_DIALOG)
                 }
             }
-        })
+        }
 
-        camerarollModel.getVMState().observe(viewLifecycleOwner, Observer { vmState ->
-            when(vmState) {
+        camerarollModel.getVMState().observe(viewLifecycleOwner) { vmState ->
+            when (vmState) {
                 CameraRollViewModel.STATE_FETCHING_BACKUP -> {
                     toggleBackupsButton.run {
                         icon = ContextCompat.getDrawable(requireContext(), R.drawable.animated_archive_refresh)
@@ -919,7 +918,7 @@ class CameraRollFragment : Fragment() {
                     Snackbar.make(mediaPager, getString(R.string.msg_empty_server_backup), Snackbar.LENGTH_LONG).show()
                 }
             }
-        })
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             imageLoaderModel.shareOutUris.collect { uris ->
@@ -1088,7 +1087,7 @@ class CameraRollFragment : Fragment() {
 
     private fun observeCameraRoll() {
         // Observing media list update
-        camerarollModel.getMediaList().observe(viewLifecycleOwner, Observer {
+        camerarollModel.getMediaList().observe(viewLifecycleOwner) {
 /*
             when(it.size) {
 
@@ -1134,17 +1133,16 @@ class CameraRollFragment : Fragment() {
             if (toggleBackupsButton.isChecked) {
                 aBadge.number = it.size
                 aBadge.isVisible = true
-            }
-            else {
+            } else {
                 cBadge.number = it.size
                 cBadge.isVisible = true
             }
-        })
+        }
 
         // If launched as picture viewer and last photo get removed, quit immediately. See isCameraRollEmpty function in CameraRollModel for detail
-        camerarollModel.isCameraRollEmpty().observe(viewLifecycleOwner, Observer {
+        camerarollModel.isCameraRollEmpty().observe(viewLifecycleOwner) {
             if (it) requireActivity().finish()
-        })
+        }
     }
 
     @SuppressLint("SetTextI18n")
@@ -1160,7 +1158,7 @@ class CameraRollFragment : Fragment() {
                     sizeTextView.isVisible = size > 0
                 }
             }
-        } catch (e: IndexOutOfBoundsException) {}
+        } catch (_: IndexOutOfBoundsException) {}
 
         val primaryTextColor = Tools.getAttributeColor(requireContext(), android.R.attr.textColorPrimary)
         dateTextView.setTextColor(primaryTextColor)
@@ -1386,11 +1384,10 @@ class CameraRollFragment : Fragment() {
                                     try {
                                         cr.query(uri, null, null, null, null)?.use { cursor ->
                                             cursor.moveToFirst()
-                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { filename = it } } catch (e: IllegalArgumentException) { }
-                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { size = it.toInt() }} catch (e: Exception) {
-                                            }
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))?.let { filename = it } } catch (_: IllegalArgumentException) { }
+                                            try { cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE))?.let { size = it.toInt() }} catch (_: Exception) {}
                                         }
-                                    } catch (e: Exception) {}
+                                    } catch (_: Exception) {}
                                 }
                                 "file" -> {
                                     uri.path?.let { filename = it.substringAfterLast('/') }
@@ -1401,7 +1398,7 @@ class CameraRollFragment : Fragment() {
                             var metadataRetriever: MediaMetadataRetriever? = null
                             var exifInterface: ExifInterface? = null
                             if (mimeType.startsWith("video/")) metadataRetriever = try { MediaMetadataRetriever().apply { setDataSource(ctx, uri) }} catch (e: SecurityException) { null } catch (e: RuntimeException) { null }
-                            else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.let { ExifInterface(it) }} catch (_: Exception) {} catch (_: OutOfMemoryError) {}
+                            else if (Tools.hasExif(mimeType)) try { exifInterface = cr.openInputStream(uri)?.use { ExifInterface(it) }} catch (_: Exception) {} catch (_: OutOfMemoryError) {}
                             val photo = Tools.getPhotoParams(metadataRetriever, exifInterface,"", mimeType, filename, keepOriginalOrientation = true, uri = uri, cr = cr).copy(
                                 albumId = FROM_CAMERA_ROLL,
                                 name = filename,
@@ -1489,7 +1486,7 @@ class CameraRollFragment : Fragment() {
                 File(Tools.getLocalRoot(ctx), SNAPSHOT_FILENAME).writer().use {
                     it.write(Tools.photosToMetaJSONString(photos))
                 }
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
         }
         private fun readSnapshot(): MutableList<Photo> {
             val result = mutableListOf<Photo>()
@@ -1497,7 +1494,7 @@ class CameraRollFragment : Fragment() {
                 File(Tools.getLocalRoot(ctx), SNAPSHOT_FILENAME).inputStream().use { fs ->
                     Tools.readContentMeta(fs, "DCIM").forEach { result.add(it.photo) }
                 }
-            } catch (e: Exception) {}
+            } catch (_: Exception) {}
 
             return result
         }
