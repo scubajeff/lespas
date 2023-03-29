@@ -351,16 +351,12 @@ class CameraRollFragment : Fragment() {
         gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
             // Overwrite onFling rather than onScroll, since onScroll will be called multiple times during one scroll
             override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                // Ignore scroll
-                if (abs(velocityY) < 1000) return false
-
-                when(Math.toDegrees(atan2(e1.y - e2.y, e2.x - e1.x).toDouble())) {
-                    in 55.0..125.0-> {
-                        //bottomSheet.state = if (mediaPagerAdapter.itemCount > 1) BottomSheetBehavior.STATE_EXPANDED else BottomSheetBehavior.STATE_COLLAPSED
+                val vY = abs(velocityY)
+                if (vY > abs(velocityX) && vY > 1000) {
+                    if (e2.y < e1.y) {
                         bottomSheet.state = BottomSheetBehavior.STATE_EXPANDED
                         return true
-                    }
-                    in -125.0..-55.0-> {
+                    } else {
                         if (bottomSheet.state == BottomSheetBehavior.STATE_EXPANDED || bottomSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
                             bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
                             return true
