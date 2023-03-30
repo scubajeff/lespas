@@ -274,7 +274,7 @@
     <!-- Muzei Artwork Provider -->
     <string name="muzei_provider_description">Le moment de Les Pas</string>
     <string name="prefer">Préférer :</string>
-    <string name="prefer_day_in_history">Hier et aujourd\'hui</string>
+    <string name="prefer_day_in_history">Ce jour-là</string>
     <string name="prefer_random">Aléatoire (solution de rechange à tout ce qui précède)</string>
     <string name="exclude_albums">Exclure les photos de :</string>
     <string name="prefer_latest">Récent</string>
