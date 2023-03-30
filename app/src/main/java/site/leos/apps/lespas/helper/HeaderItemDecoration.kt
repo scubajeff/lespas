@@ -46,7 +46,7 @@ class HeaderItemDecoration(parent: RecyclerView, private val shouldFadeOutHeader
             // handle click on sticky header
             addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
                 override fun onInterceptTouchEvent(recyclerView: RecyclerView, motionEvent: MotionEvent): Boolean =
-                    if (motionEvent.action == MotionEvent.ACTION_DOWN) motionEvent.x <= currentHeader?.second?.itemView?.right ?: 0
+                    if (motionEvent.action == MotionEvent.ACTION_DOWN) motionEvent.x <= (currentHeader?.second?.itemView?.right ?: 0)
                     else false
             })
         }

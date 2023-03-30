@@ -68,10 +68,10 @@ class LesPasArtProviderSettingActivity: AppCompatActivity() {
             setOnCheckedChangeListener { _, isChecked -> skipLateNightUpdate = isChecked }
         }
 
-        ViewModelProvider(this).get(AlbumViewModel::class.java).allAlbumsByEndDate.observe(this, {
+        ViewModelProvider(this).get(AlbumViewModel::class.java).allAlbumsByEndDate.observe(this) {
             for (album in it) album.shareId = if (exclusionList.contains(album.id)) 1 else 0
             exclusionAdapter.submitList(it.toMutableList())
-        })
+        }
     }
 
     @SuppressLint("ApplySharedPref")

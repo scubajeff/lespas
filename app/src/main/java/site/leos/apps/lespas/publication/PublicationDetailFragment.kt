@@ -396,7 +396,7 @@ class PublicationDetailFragment: Fragment() {
 
     override fun onDestroy() {
         shareModel.resetPublicationContentMeta()
-        try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (e:Exception) {}
+        try { File(requireContext().cacheDir, "${share.albumId}${BGMDialogFragment.BGM_FILE_SUFFIX}").delete() } catch (_:Exception) {}
 
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             displayOptions = androidx.appcompat.app.ActionBar.DISPLAY_HOME_AS_UP or androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE

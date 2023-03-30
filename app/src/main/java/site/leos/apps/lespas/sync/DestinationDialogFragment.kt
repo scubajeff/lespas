@@ -269,7 +269,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         if (destinationModel.isEditing()) showNewAlbumEditText()
 
         jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
-        albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner, Observer { albums ->
+        albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
             val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
             val base = Tools.getRemoteHome(requireContext())
             val remoteAlbums = mutableListOf<RemoteAlbum>()
@@ -278,20 +278,22 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             }
             albumAdapter.submitList(remoteAlbums.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
 
-            jointAlbumLiveData.observe(viewLifecycleOwner, Observer { shared->
+            jointAlbumLiveData.observe(viewLifecycleOwner) { shared ->
                 val jointAlbums = mutableListOf<RemoteAlbum>()
                 for (publication in shared) {
-                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(RemoteAlbum(
-                        Album(
-                            publication.albumId, publication.albumName,
-                            LocalDateTime.now(), LocalDateTime.now(),
-                            publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
-                            LocalDateTime.now(), publication.sortOrder, "",
-                            Album.REMOTE_ALBUM, 1f,
-                            publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
-                        ),
-                        publication.sharePath, publication.shareBy
-                    ))
+                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
+                        RemoteAlbum(
+                            Album(
+                                publication.albumId, publication.albumName,
+                                LocalDateTime.now(), LocalDateTime.now(),
+                                publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
+                                LocalDateTime.now(), publication.sortOrder, "",
+                                Album.REMOTE_ALBUM, 1f,
+                                publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
+                            ),
+                            publication.sharePath, publication.shareBy
+                        )
+                    )
                 }
                 if (jointAlbums.isNotEmpty()) {
                     val newAlbumList = albumAdapter.currentList.toMutableList()
@@ -300,11 +302,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     albumAdapter.submitList(newAlbumList.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
                 }
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
-            })
+            }
 
             // Create new title validator dictionary with current album names
-            newAlbumTitleTextInputEditText.addTextChangedListener(FileNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album-> this.add(album.name)} }))
-        })
+            newAlbumTitleTextInputEditText.addTextChangedListener(FileNameValidator(newAlbumTitleTextInputEditText, arrayListOf<String>().apply { albums.forEach { album -> this.add(album.name) } }))
+        }
     }
 
     override fun onStart() {

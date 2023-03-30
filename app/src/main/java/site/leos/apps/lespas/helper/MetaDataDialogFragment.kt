@@ -39,7 +39,6 @@ import androidx.core.view.isVisible
 import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
@@ -97,7 +96,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
         view.findViewById<TextView>(R.id.info_filename).text = photo.photo.name.substringAfterLast("/")
         view.findViewById<TextView>(R.id.info_shotat).text = String.format("%s %s", photo.photo.dateTaken.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()), photo.photo.dateTaken.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM)))
 
-        exifModel.getPhotoMeta().observe(viewLifecycleOwner, Observer { photoMeta ->
+        exifModel.getPhotoMeta().observe(viewLifecycleOwner) { photoMeta ->
             handler.removeCallbacksAndMessages(null)
             if (waitingMsg.isShownOrQueued) waitingMsg.dismiss()
 
@@ -162,14 +161,16 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                                 this.overlays.add(it)
                             }
                             if (this.context.resources.configuration.uiMode and UI_MODE_NIGHT_MASK == UI_MODE_NIGHT_YES) {
-                                overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(
-                                    floatArrayOf(
-                                        1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
-                                        0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
-                                        0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
-                                        0f, 0f, 0f, 1f, 0f,
+                                overlayManager.tilesOverlay.setColorFilter(
+                                    ColorMatrixColorFilter(
+                                        floatArrayOf(
+                                            1.05f, 0f, 0f, 0f, -72f,  // red, reduce brightness about 1/4, increase contrast by 5%
+                                            0f, 1.05f, 0f, 0f, -72f,  // green, reduce brightness about 1/4, reduced contrast by 5%
+                                            0f, 0f, 1.05f, 0f, -72f,  // blue, reduce brightness about 1/4, reduced contrast by 5%
+                                            0f, 0f, 0f, 1f, 0f,
+                                        )
                                     )
-                                ))
+                                )
                             }
                             invalidate()
 
@@ -199,9 +200,10 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             }
                         }
                     }
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
-        })
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

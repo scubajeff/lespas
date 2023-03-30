@@ -51,24 +51,16 @@ class ShareReceiverActivity: AppCompatActivity() {
         }
 
         // Make sure photo's folder created
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                File(Tools.getLocalRoot(applicationContext)).mkdir()
-            } catch (_: Exception) {}
-        }
+        lifecycleScope.launch(Dispatchers.IO) { try { File(Tools.getLocalRoot(applicationContext)).mkdir() } catch (_: Exception) {} }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 
         if ((intent.action == Intent.ACTION_SEND) && (intent.type?.startsWith("image/")!! || intent.type?.startsWith("video/")!!)) {
-            //files.add(intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as Uri)
             files.add(intent.parcelable<Parcelable>(Intent.EXTRA_STREAM) as Uri)
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
             // MIME type checking will be done in AcquiringDialogFragment
-            //intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
-            intent.parcelableArrayList<Parcelable>(Intent.EXTRA_STREAM)?.forEach {
-                files.add(it as Uri)
-            }
+            intent.parcelableArrayList<Parcelable>(Intent.EXTRA_STREAM)?.forEach { files.add(it as Uri) }
         }
 
         if (files.isNotEmpty()) {

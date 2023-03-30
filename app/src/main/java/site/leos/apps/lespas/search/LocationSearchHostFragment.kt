@@ -30,7 +30,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.*
-import androidx.lifecycle.Observer
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -72,8 +71,8 @@ class LocationSearchHostFragment: Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_location_search_host, container, false)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        searchViewModel.getProgress().observe(viewLifecycleOwner, Observer { progress ->
-            when(progress) {
+        searchViewModel.getProgress().observe(viewLifecycleOwner) { progress ->
+            when (progress) {
                 0 -> loadingProgressBar?.isIndeterminate = true
                 100 -> disableMenuItem(R.id.option_menu_search_progress)
                 else -> loadingProgressBar?.apply {
@@ -82,7 +81,7 @@ class LocationSearchHostFragment: Fragment() {
                 }
 
             }
-        })
+        }
 
         if (childFragmentManager.backStackEntryCount == 0) childFragmentManager.beginTransaction().replace(R.id.container_child_fragment, LocationResultByLocalitiesFragment.newInstance(requireArguments().getInt(KEY_SEARCH_TARGET)), LocationResultByLocalitiesFragment::class.java.canonicalName).addToBackStack(null).commit()
 

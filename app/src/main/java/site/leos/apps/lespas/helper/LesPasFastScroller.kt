@@ -101,7 +101,7 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
         if (mRecyclerView != null) destroyCallbacks()
 
         mRecyclerView = recyclerView
-        if (mRecyclerView != null) setupCallbacks()
+        setupCallbacks()
     }
 
     private fun setupCallbacks() {
@@ -283,7 +283,7 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
                 if (insideHorizontalThumb) {
                     mDragState = DRAG_X
                     mHorizontalDragX = ev.x.toInt().toFloat()
-                } else if (insideVerticalThumb) {
+                } else {
                     mDragState = DRAG_Y
                     mVerticalDragY = ev.y.toInt().toFloat()
                 }
@@ -305,7 +305,7 @@ class LesPasFastScroller(recyclerView: RecyclerView, val mVerticalThumbDrawable:
                 if (insideHorizontalThumb) {
                     mDragState = DRAG_X
                     mHorizontalDragX = me.x.toInt().toFloat()
-                } else if (insideVerticalThumb) {
+                } else {
                     mDragState = DRAG_Y
                     mVerticalDragY = me.y.toInt().toFloat()
                 }

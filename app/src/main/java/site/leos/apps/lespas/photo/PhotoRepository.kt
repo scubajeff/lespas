@@ -49,7 +49,7 @@ class PhotoRepository(application: Application) {
     //suspend fun updatePhoto(oldId: String, newId: String, eTag: String, lastModifiedDate: LocalDateTime, width: Int, height: Int, mimeType: String) { photoDao.updatePhoto(oldId, newId, eTag, lastModifiedDate, width, height, mimeType) }
     //suspend fun replacePhoto(oldPhoto: Photo, newPhoto: Photo) { photoDao.replacePhoto(oldPhoto, newPhoto) }
     //fun removePhoto(photo: Photo) { photoDao.deleteSync(photo) }
-    fun getPhotoName(id: String): String = photoDao.getName(id)
+    //fun getPhotoName(id: String): String = photoDao.getName(id)
     fun getAllImageNotHidden(): List<Photo> {
         val hiddenAlbums = albumDao.getAllHiddenAlbumIds()
         return photoDao.getAllImage().filter { it.albumId !in hiddenAlbums }
