@@ -75,6 +75,9 @@ I believe when someone start searching his/her memory for a moment in the past, 
 ### Why use folder but not tag to group photos?
 Les Pas uses folders to group photos on the server, e.g., each album in Les Pas app has a one-to-one relationship with a folder on your Nextcloud server. You can manage your photo collection by working with folders/files on server side or albums/photos on your phone, Les Pas will sync changes from both sides. But how about tags? Yes, tagging is much more flexible than folders, and Nextcloud has it's own file tagging support too. But not every picture format supports tagging, that makes tagging picture file a feature which relies heavily on platform specific functions. I would like my data (and yours too) to be platform neutral instead.
 
+### Why can't I change the default folder name of `lespas`?
+The hard-coded name of `lespas` is **NOT** a silly logo to show off. It's there for a reason. As you know, Les Pas fully supports Nextcloud's file sharing feature, you can even see other user's avatar in Les Pas's Publishing dialog UI. To make these happen, Les Pas must use [Nextcloud's OCS Share API](https://docs.nextcloud.com/server/latest/developer_manual/client_apis/OCS/ocs-share-api.html). The caveat of this API is that it can only provide a single image of user's share map, e.g., by it's return, one just can't tell which shared resource is shared by which app. That's where the hard-coded folder name jump in to help, otherwise Les Pas app will need to traverse each folder to understand it's origin, and that means a lot of web traffic happening between your device and Nextcloud server, this is a nightmare especially in mobile environment.
+
 ### I have a hugh photo collection organized in nested folders, Les Pas only support a flat folder structure.
 <a href=https://github.com/steviehs>@steviehs</a> make very cool <a href=https://gitlab.com/steviehs/digipics>scripts</a> to help you out.
 
