@@ -111,17 +111,19 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         } catch (e: OkHttpWebDavException) {
             Log.e(TAG, e.stackTraceString)
             when (e.statusCode) {
-                400, 404, 405, 406, 410 -> {
+                400, 404, 405, 406, 409, 410 -> {
                     // create file in non-existed folder, target not found, target readonly, target already existed, etc. should be skipped and move on to next action
-                    //actionRepository.discardCurrentWorkingAction()
+                    // Caddy web server prefer 409 than 404 for 'target not found'
                     workingAction?.let { actionRepository.delete(it) } ?: run { syncResult.stats.numIoExceptions++ }
                 }
                 401, 403, 407 -> {
                     syncResult.stats.numAuthExceptions++
                 }
+/*
                 409 -> {
                     syncResult.stats.numConflictDetectedExceptions++
                 }
+*/
                 423 -> {
                     // Interrupted upload will locked file on server, backoff 90 seconds so that lock gets cleared on server
                     syncResult.stats.numIoExceptions++
@@ -879,7 +881,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 if (!isCover) sourceStream = try {
                     webDav.getStream("${baseUrl}${NCShareViewModel.PREVIEW_ENDPOINT}${photo.id}", true, null)
                 } catch (e: OkHttpWebDavException) {
-                    if (e.statusCode == 404) null else throw e
+                    if (e.statusCode == 404 || e.statusCode == 409) null else throw e
                 }
 
                 // Preview not available, get original instead
@@ -1352,7 +1354,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                             }
                         } catch (e: OkHttpWebDavException) {
                             // If content meta file is not available, quit quick sync
-                            if (e.statusCode == 404) contentMetaUpdatedNeeded.add(changedAlbum.name)
+                            if (e.statusCode == 404 || e.statusCode == 409) contentMetaUpdatedNeeded.add(changedAlbum.name)
                             else throw e
                         } catch (e: JSONException) {
                             // JSON parsing error, quit quick sync

@@ -106,6 +106,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             when {
                 response.isSuccessful -> return
                 response.code == 404 -> return
+                response.code == 409 -> return  // Caddy web server
                 else -> throw OkHttpWebDavException(response)
             }
         }
@@ -209,6 +210,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
             result = when {
                 response.isSuccessful -> true
                 response.code == 404 -> false
+                response.code == 409 -> false  // Caddy web server
                 else -> throw OkHttpWebDavException(response)
             }
         }
@@ -371,7 +373,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun ocsPost(url: String, body: RequestBody): JSONObject? {
         return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").post(body).build()).execute().use { response ->
             when(response.code) {
-                100, 200, 400, 403, 404 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
+                100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
             }
         }
@@ -380,7 +382,7 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
     fun ocsPut(url: String, body: RequestBody): JSONObject? {
         return httpClient.newCall(Request.Builder().url(url).addHeader(NEXTCLOUD_OCSAPI_HEADER, "true").put(body).build()).execute().use { response ->
             when(response.code) {
-                100, 200, 400, 403, 404 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
+                100, 200, 400, 403, 404, 409 -> response.body?.string()?.let { json -> JSONObject(json).getJSONObject("ocs") }
                 else -> null
             }
         }
