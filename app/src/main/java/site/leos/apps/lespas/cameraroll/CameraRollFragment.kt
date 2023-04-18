@@ -977,7 +977,7 @@ class CameraRollFragment : Fragment() {
                                 selectionTracker.selection.forEach { photoId ->
                                     camerarollModel.getPhotoById(photoId)?.let { photo ->
                                         //removeFiles.add("${remoteArchiveBaseFolder}/${photo.name}")
-                                        actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "", photo.id, photo.name, System.currentTimeMillis(), 1))
+                                        actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, "", "", "", photo.name, System.currentTimeMillis(), 1))
                                         removeList.add(photo.id)
                                     }
                                 }
@@ -985,7 +985,7 @@ class CameraRollFragment : Fragment() {
                                 // Current displayed photo
                                 camerarollModel.getCurrentPhoto()?.let { photo ->
                                     //removeFiles.add("${remoteArchiveBaseFolder}/${photo.name}")
-                                    actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, photo.albumId, "", photo.id, photo.name, System.currentTimeMillis(), 1))
+                                    actions.add(Action(null, Action.ACTION_DELETE_CAMERA_BACKUP_FILE, "", "", "", photo.name, System.currentTimeMillis(), 1))
                                     removeList.add(photo.id)
                                 }
                                 // Dismiss BottomSheet when it's in collapsed mode, which means it's working on the current item
