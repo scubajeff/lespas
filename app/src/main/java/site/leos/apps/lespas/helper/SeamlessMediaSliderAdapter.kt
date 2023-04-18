@@ -216,17 +216,11 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 mediumScale = 2.5f
 
                 // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
-                setOnPhotoTapListener { _, _, _ ->
-                    if (scale != 1.0f) setScale(1.0f, true)
-                    setAllowParentInterceptOnEdge(true)
-                    currentWidth = baseWidth.toInt()
-                    clickListener(null)
-                }
-                setOnOutsidePhotoTapListener {
-                    if (scale != 1.0f) setScale(1.0f, true)
-                    setAllowParentInterceptOnEdge(true)
-                    currentWidth = baseWidth.toInt()
-                    clickListener(null)
+                setOnPhotoTapListener { _, _, _ -> touchHandler(this) }
+                setOnOutsidePhotoTapListener {touchHandler(this) }
+                setOnLongClickListener { view ->
+                    touchHandler(view as PhotoView)
+                    true
                 }
 
                 // Disable viewpager2 swipe when in zoom mode
@@ -259,6 +253,15 @@ abstract class SeamlessMediaSliderAdapter<T>(
             ivMedia.apply {
                 imageLoader(photo, this, NCShareViewModel.TYPE_FULL)
                 ViewCompat.setTransitionName(this, transitionName)
+            }
+        }
+
+        private fun touchHandler(photoView: PhotoView) {
+            photoView.run {
+                if (scale != 1.0f) setScale(1.0f, true)
+                setAllowParentInterceptOnEdge(true)
+                currentWidth = baseWidth.toInt()
+                clickListener(null)
             }
         }
     }
