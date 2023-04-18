@@ -8,5 +8,5 @@
       android:fillColor="?colorError"/>
   <path
       android:pathData="m10,16.71 l-4,-4 1.41,-1.41 2.59,2.58 6.59,-6.59 1.41,1.42z"
-      android:fillColor="@color/lespas_black"/>
+      android:fillColor="@color/color_on_primary_invert"/>
 </vector>
