@@ -437,6 +437,7 @@ class PhotoSlideFragment : Fragment() {
                             clipData = ClipData.newUri(requireContext().contentResolver, "", uris[0])
                             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                             putExtra(ShareReceiverActivity.KEY_SHOW_REMOVE_OPTION, true)
+                            putExtra(ShareReceiverActivity.KEY_CURRENT_ALBUM_ID, album.id)
                         }, null))
                     }
                     SHARE_TO_SNAPSEED -> {

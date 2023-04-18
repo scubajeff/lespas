@@ -73,7 +73,7 @@ class ShareReceiverActivity: AppCompatActivity() {
             }
 
             if (supportFragmentManager.findFragmentByTag(TAG_DESTINATION_DIALOG) == null)
-                DestinationDialogFragment.newInstance(files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false)).show(supportFragmentManager, TAG_DESTINATION_DIALOG)
+                DestinationDialogFragment.newInstance(files, intent.flags and Intent.FLAG_GRANT_WRITE_URI_PERMISSION > 0 || intent.getBooleanExtra(KEY_SHOW_REMOVE_OPTION, false), intent.getStringExtra(KEY_CURRENT_ALBUM_ID) ?: "").show(supportFragmentManager, TAG_DESTINATION_DIALOG)
         }
         else {
             finish()
@@ -108,5 +108,6 @@ class ShareReceiverActivity: AppCompatActivity() {
         const val TAG_ACQUIRING_DIALOG = "UPLOAD_ACTIVITY_ACQUIRING_DIALOG"
 
         const val KEY_SHOW_REMOVE_OPTION = "KEY_SHOW_REMOVE_OPTION"
+        const val KEY_CURRENT_ALBUM_ID = "KEY_CURRENT_ALBUM_ID"
     }
 }
