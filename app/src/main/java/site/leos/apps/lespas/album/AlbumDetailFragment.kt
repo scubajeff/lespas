@@ -333,6 +333,13 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
         requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // Quit selection mode
+                if (selectionTracker.hasSelection()) {
+                    selectionTracker.clearSelection()
+                    lastSelection.clear()
+                    return
+                }
+
                 // Cancel EXIF stripping job if it's running
                 waitingMsg?.let {
                     if (it.isShownOrQueued) {

@@ -36,6 +36,7 @@ import android.view.*
 import android.widget.CheckedTextView
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -227,6 +228,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 currentSortOrder = getInt(ALBUM_LIST_SORT_ORDER, Album.BY_DATE_TAKEN_DESC)
             }
         }
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (selectionTracker.hasSelection()) {
+                    selectionTracker.clearSelection()
+                    lastSelection.clear()
+                }
+                else parentFragmentManager.popBackStack()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
