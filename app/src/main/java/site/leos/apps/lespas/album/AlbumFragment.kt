@@ -235,7 +235,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     selectionTracker.clearSelection()
                     lastSelection.clear()
                 }
-                else parentFragmentManager.popBackStack()
+                else requireActivity().finish()
             }
         })
     }
