@@ -1452,6 +1452,8 @@ class CameraRollFragment : Fragment() {
 
                 if (pList.size == 0) {
                     // All element removed
+                    setBackup(mutableListOf())
+
                     vmState.postValue(STATE_BACKUP_NOT_AVAILABLE)
                     mediaList.postValue(cameraRoll)
                 } else {
@@ -1480,7 +1482,7 @@ class CameraRollFragment : Fragment() {
         fun shouldDisableShare(): Boolean = this.shouldDisableShare
 
         override fun onCleared() {
-            if (backups.isNotEmpty()) writeSnapshot(backups)
+            writeSnapshot(backups)
             super.onCleared()
         }
         private fun writeSnapshot(photos: List<Photo>) {
