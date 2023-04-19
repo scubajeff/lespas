@@ -216,15 +216,17 @@ class CameraRollFragment : Fragment() {
 
         quickScrollAdapter = QuickScrollAdapter(
             { photo ->
-                //mediaPagerAdapter.findMediaPosition(photo).let { pos ->
-                camerarollModel.findPhotoPosition(photo.id).let { pos ->
-                    if (pos != -1) {
-                        mediaPager.scrollToPosition(pos)
-                        camerarollModel.setCurrentPosition(pos)
+                if (waitingMsg?.isShownOrQueued != true) {
+                    //mediaPagerAdapter.findMediaPosition(photo).let { pos ->
+                    camerarollModel.findPhotoPosition(photo.id).let { pos ->
+                        if (pos != -1) {
+                            mediaPager.scrollToPosition(pos)
+                            camerarollModel.setCurrentPosition(pos)
+                        }
                     }
+                    bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
+                    if (photo.mimeType.startsWith("image")) ignoreHide = false
                 }
-                bottomSheet.state = BottomSheetBehavior.STATE_HIDDEN
-                if (photo.mimeType.startsWith("image")) ignoreHide = false
             },
             { photo, imageView, type -> imageLoaderModel.setImagePhoto(if (photo.albumId == FROM_CAMERA_ROLL) NCShareViewModel.RemotePhoto(photo) else NCShareViewModel.RemotePhoto(photo, remoteArchiveBaseFolder), imageView, type) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
@@ -466,8 +468,8 @@ class CameraRollFragment : Fragment() {
                 QuickScrollAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object: SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key.isNotEmpty()
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position > 0
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && key.isNotEmpty()
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && position > 0
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object: SelectionTracker.SelectionObserver<String>() {

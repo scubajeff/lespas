@@ -195,35 +195,37 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         mAdapter = PhotoGridAdapter(
             album.id,
             { view, position ->
-                currentPhotoModel.run {
-                    (if (currentQuery.isEmpty()) position else position + 1).let { pos ->
-                        setCurrentPosition(pos)
-                        setLastPosition(pos)
-                    }
-                }
-
-                if (mAdapter.getPhotoAt(position).mimeType.startsWith("video")) {
-                    // Transition to surface view might crash some OEM phones, like Xiaomi
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
-                        .addToBackStack(null)
-                        .commit()
-                } else {
-                    //ViewCompat.setTransitionName(recyclerView, null)
-                    reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
-                    exitTransition = MaterialElevationScale(false).apply {
-                        duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
-                        excludeTarget(view, true)
-                        excludeTarget(android.R.id.statusBarBackground, true)
-                        excludeTarget(android.R.id.navigationBarBackground, true)
+                if (waitingMsg?.isShownOrQueued != true) {
+                    currentPhotoModel.run {
+                        (if (currentQuery.isEmpty()) position else position + 1).let { pos ->
+                            setCurrentPosition(pos)
+                            setLastPosition(pos)
+                        }
                     }
 
-                    parentFragmentManager.beginTransaction()
-                        .setReorderingAllowed(true)
-                        .addSharedElement(view, view.transitionName)
-                        .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
-                        .addToBackStack(null)
-                        .commit()
+                    if (mAdapter.getPhotoAt(position).mimeType.startsWith("video")) {
+                        // Transition to surface view might crash some OEM phones, like Xiaomi
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
+                            .addToBackStack(null)
+                            .commit()
+                    } else {
+                        //ViewCompat.setTransitionName(recyclerView, null)
+                        reenterTransition = MaterialElevationScale(true).apply { duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong() }
+                        exitTransition = MaterialElevationScale(false).apply {
+                            duration = resources.getInteger(android.R.integer.config_mediumAnimTime).toLong()
+                            excludeTarget(view, true)
+                            excludeTarget(android.R.id.statusBarBackground, true)
+                            excludeTarget(android.R.id.navigationBarBackground, true)
+                        }
+
+                        parentFragmentManager.beginTransaction()
+                            .setReorderingAllowed(true)
+                            .addSharedElement(view, view.transitionName)
+                            .replace(R.id.container_root, PhotoSlideFragment.newInstance(album), PhotoSlideFragment::class.java.canonicalName)
+                            .addToBackStack(null)
+                            .commit()
+                    }
                 }
             },
             { photo, view, type -> imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (Tools.isRemoteAlbum(album) && photo.eTag != Album.ETAG_NOT_YET_UPLOADED) "${lespasPath}/${album.name}" else "", album.coverBaseline), view, type) { startPostponedEnterTransition() }},
@@ -398,8 +400,8 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 PhotoGridAdapter.PhotoDetailsLookup(this),
                 StorageStrategy.createStringStorage()
             ).withSelectionPredicate(object : SelectionTracker.SelectionPredicate<String>() {
-                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = key != album.id
-                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = position != 0 || mAdapter.getPhotoAt(0).id != album.id
+                override fun canSetStateForKey(key: String, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && key != album.id
+                override fun canSetStateAtPosition(position: Int, nextState: Boolean): Boolean = waitingMsg?.isShownOrQueued != true && (position != 0 || mAdapter.getPhotoAt(0).id != album.id)
                 override fun canSelectMultiple(): Boolean = true
             }).build().apply {
                 addObserver(object : SelectionTracker.SelectionObserver<String>() {
