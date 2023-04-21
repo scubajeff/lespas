@@ -2,7 +2,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'kotlin-parcelize'
-    id 'com.google.devtools.ksp' version "1.8.10-1.0.9"
+    id 'com.google.devtools.ksp' version '1.8.10-1.0.9'
 }
 
 android {
@@ -24,8 +24,8 @@ android {
         resValue 'string', 'muzei_authority', "${namespace}.muzei.ArtProvider"
 
         ksp {
-            arg("room.schemaLocation", "$projectDir/schemas".toString())
-            arg("room.incremental", "true")
+            arg('oom.schemaLocation', "$projectDir/schemas".toString())
+            arg('room.incremental', 'true')
         }
     }
 
@@ -81,7 +81,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion"
 
     // Kotlin components
-    implementation "androidx.work:work-runtime-ktx:2.8.1"
+    implementation 'androidx.work:work-runtime-ktx:2.8.1'
     def coroutineVersion = '1.6.4'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutineVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"

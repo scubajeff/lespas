@@ -130,7 +130,7 @@ class GPXImportDialogFragment: LesPasDialogFragment(R.layout.fragment_gpx_import
             else setStatusDone()
         }
 
-        trackColor = TrackPaintList(Tools.getAttributeColor(requireContext(), R.attr.colorPrimary))
+        trackColor = TrackPaintList(Tools.getAttributeColor(requireContext(), androidx.appcompat.R.attr.colorPrimary))
         showTrack(savedInstanceState == null)
 
         viewLifecycleOwner.lifecycleScope.launch {
