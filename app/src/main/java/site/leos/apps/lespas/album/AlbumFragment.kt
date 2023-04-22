@@ -693,7 +693,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                     ivCover.let {coverImageview ->
                         if (new) {
                             // When syncing with server, don't repeatedly load the same image
-                            coverImageview.setImageResource(0)
                             imageLoader(album, coverImageview)
                             ViewCompat.setTransitionName(coverImageview, if (album.id == CameraRollFragment.FROM_CAMERA_ROLL) album.cover else album.id)
                         }

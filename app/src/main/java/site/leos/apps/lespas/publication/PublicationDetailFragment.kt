@@ -423,7 +423,6 @@ class PublicationDetailFragment: Fragment() {
             fun bind(item: NCShareViewModel.RemotePhoto) {
                 ivPhoto.apply {
                     if (currentPhotoId != item.photo.id) {
-                        this.setImageResource(0)
                         imageLoader(item, this)
                         ViewCompat.setTransitionName(this, item.photo.id)
                         currentPhotoId = item.photo.id

@@ -154,7 +154,6 @@ class LocationResultSingleLocalityFragment: Fragment() {
             fun bind(item: NCShareViewModel.RemotePhoto) {
                 with(item.photo) {
                     if (currentPhotoId != item.photo.id) {
-                        ivPhoto.setImageResource(0)
                         imageLoader(item, ivPhoto)
                         ViewCompat.setTransitionName(ivPhoto, this.id)
                         currentPhotoId = item.photo.id

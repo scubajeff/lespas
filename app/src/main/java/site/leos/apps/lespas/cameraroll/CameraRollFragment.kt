@@ -1562,7 +1562,6 @@ class CameraRollFragment : Fragment() {
 
                     with(ivPhoto) {
                         if (currentId != item.id) {
-                            this.setImageResource(0)
                             imageLoader(item, this, NCShareViewModel.TYPE_GRID)
                             currentId = item.id
                         }

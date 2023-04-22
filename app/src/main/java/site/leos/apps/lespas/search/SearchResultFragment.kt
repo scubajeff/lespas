@@ -295,7 +295,6 @@ class SearchResultFragment : Fragment() {
             fun bind(item: Result) {
                 with(ivPhoto) {
                     if (currentPhotoId != item.remotePhoto.photo.id) {
-                        this.setImageResource(0)
                         imageLoader(item.remotePhoto, this)
                         ViewCompat.setTransitionName(this, item.remotePhoto.photo.id)
                         currentPhotoId = item.remotePhoto.photo.id

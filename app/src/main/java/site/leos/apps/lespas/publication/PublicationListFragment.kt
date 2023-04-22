@@ -19,7 +19,12 @@ package site.leos.apps.lespas.publication
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -184,7 +189,6 @@ class PublicationListFragment: Fragment() {
 
             fun bind(item: NCShareViewModel.ShareWithMe) {
                 if (currentAlbumId != item.albumId && currentCover.cover != item.cover.cover && currentCover.coverBaseline != item.cover.coverBaseline) {
-                    ivCover.setImageResource(0)
                     imageLoader(item, ivCover)
                     currentAlbumId = item.albumId
                     currentCover = item.cover

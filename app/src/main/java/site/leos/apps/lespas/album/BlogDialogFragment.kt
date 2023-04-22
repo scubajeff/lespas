@@ -319,7 +319,6 @@ class BlogDialogFragment: LesPasDialogFragment(R.layout.fragment_blog_dialog, MA
                     isSelected = selectionTracker.isSelected(photo.id)
 
                     if (currentPhotoName != photo.name) {
-                        this.setImageResource(0)
                         imageLoader(photo, this, NCShareViewModel.TYPE_GRID)
                         ViewCompat.setTransitionName(this, photo.id)
                         currentPhotoName = photo.name
