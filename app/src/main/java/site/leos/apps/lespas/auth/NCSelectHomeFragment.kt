@@ -18,8 +18,6 @@ package site.leos.apps.lespas.auth
 
 import android.accounts.AccountManager
 import android.annotation.SuppressLint
-import android.content.ComponentName
-import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
@@ -52,7 +50,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import site.leos.apps.lespas.BuildConfig
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.Tools
@@ -276,17 +273,6 @@ class NCSelectHomeFragment: Fragment() {
                                 LesPasArtProviderSettingActivity.KEY_EXCLUSION_LIST -> editor.putStringSet(key, value.drop(1).dropLast(1).split(", ").toSet())
 
                                 getString(R.string.snapseed_pref_key) -> editor.putBoolean(key, value.toBoolean() && requireContext().packageManager.getLaunchIntentForPackage(SettingsFragment.SNAPSEED_PACKAGE_NAME) != null)
-
-                                getString(R.string.gallery_launcher_pref_key) -> {
-                                    value.toBoolean().let { on ->
-                                        editor.putBoolean(key, on)
-
-                                        if (on) requireActivity().packageManager.apply {
-                                            setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.Gallery"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
-                                            setComponentEnabledSetting(ComponentName(BuildConfig.APPLICATION_ID, "${BuildConfig.APPLICATION_ID}.MainActivity"), PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

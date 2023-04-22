@@ -107,7 +107,6 @@
     <string name="cameraroll_backup_title">El rollo de la cámara de seguridad</string>
     <string name="empty_camera_roll">No se encontró material en el rollo de la cámara</string>
     <string name="gallery_app_name">Galería</string>
-    <string name="gallery_launcher_title">Icono de la galería de lanzamiento</string>
     <string name="same_file_found">El mismo archivo multimedia ya existía.</string>
     <string name="verify_ssl_certificate_title">Certificado SSL defectuoso</string>
     <string name="verify_ssl_certificate_message">El certificado del servidor %1$s NO PUEDE ser verificado, ¿desea confiar en este servidor y continuar?</string>

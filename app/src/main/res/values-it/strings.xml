@@ -103,7 +103,6 @@
     <string name="default_sort_order_title">Ordine delle foto predefinito per nuovo album</string>
 
     <string name="cameraroll_as_album_title">Mostra rullino foto come album</string>
-    <string name="gallery_launcher_title">Icona di avvio della galleria</string>
     <string name="show_list_first">Mostra l\'elenco dei file multimediali all\'avvio del rullino foto</string>
 
     <string name="edit_header">Modifica</string>

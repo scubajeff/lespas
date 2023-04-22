@@ -83,7 +83,6 @@
     <string name="snapseed_replace_title">元の写真を置き換える</string>
     <string name="snapseed_replace_on_summary">はい、元の写真をSnapseedのレタッチ結果に自動的に置き換えます。</string>
     <string name="snapseed_replace_off_summary">いいえ、元の写真はそのままで、Snapseedのレタッチ結果だけをアルバムに追加します。</string>
-    <string name="gallery_launcher_title">\"フォトアルバム \"起動アイコン</string>
     <string name="storage_access_permission_rationale">Snapseedはレタッチ結果を「Snapseed」というディレクトリに保存するので、これらのファイルを読むためのストレージアクセスを許可してください。</string>
     <string name="proceed_request">デ・オーソライズ</string>
     <string name="logout_title">サーバーからのログアウト</string>

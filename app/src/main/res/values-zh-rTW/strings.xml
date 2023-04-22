@@ -105,7 +105,6 @@
     <string name="item_camera_roll">相機相冊</string>
     <string name="cameraroll_backup_title">備份本地相機相冊</string>
     <string name="empty_camera_roll">相機相冊空空如也。</string>
-    <string name="gallery_launcher_title">「相冊」啟動圖標</string>
     <string name="gallery_app_name">相機相冊</string>
     <string name="same_file_found">同名檔案已存在。</string>
     <string name="verify_ssl_certificate_title">SSL證書驗證失敗</string>

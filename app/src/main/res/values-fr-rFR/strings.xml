@@ -96,7 +96,6 @@
     <string name="auto_replay_title">Reprise automatique de la vidéo</string>
     <string name="default_sort_order_title">Ordre de tri des photos par défaut pour un nouvel album</string>
     <string name="cameraroll_as_album_title">Afficher la galerie comme un album</string>
-    <string name="gallery_launcher_title">Icône de la galerie dans le lanceur</string>
     <string name="show_list_first">Afficher la liste des médias à l\'ouverture de la galerie</string>
     <string name="edit_header">Retouche</string>
     <string name="snapseed_integration_title">Intégration de Snapseed</string>
