@@ -1,0 +1,26 @@
+<!--
+  ~   Copyright 2019 Jeffrey Liu (scubajeffrey@protonmail.ch)
+  ~
+  ~   Licensed under the Apache License, Version 2.0 (the "License");
+  ~   you may not use this file except in compliance with the License.
+  ~   You may obtain a copy of the License at
+  ~
+  ~       http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~   Unless required by applicable law or agreed to in writing, software
+  ~   distributed under the License is distributed on an "AS IS" BASIS,
+  ~   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~   See the License for the specific language governing permissions and
+  ~   limitations under the License.
+  -->
+
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="13.5dp"
+    android:viewportWidth="24"
+    android:viewportHeight="13.5">
+  <path
+      android:fillColor="@color/color_secondary"
+      android:pathData="m19.707,2.901h2.31V4.44H19.707V6.75H18.167V4.44H15.857V2.901h2.31V0.591h1.54V2.901M18.167,11.369V9.06h1.54V12.909H1.984V2.901H13.548V4.44H3.384v6.929z"
+      android:strokeWidth="0.769886"/>
+</vector>

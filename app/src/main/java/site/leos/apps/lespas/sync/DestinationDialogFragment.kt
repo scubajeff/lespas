@@ -170,21 +170,16 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
                 if (uri.scheme != "lespas") withContext(Dispatchers.Main) { view.setImageBitmap(bitmap ?: ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_imagefile_24)!!.toBitmap()) }
             }
-        }.apply {
-            stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
-        }
+        }.apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
+
         clipDataAdapter.submitList(
-            //requireArguments().getParcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
             requireArguments().parcelableArrayList<Uri>(KEY_URIS)?.toMutableList() ?: run {
-                // Mark operation should be carried out on server, if argument KEY_REMOTE_PHOTO is being passed to this fragment
+                // Mark operation should be carried out on server, if KEY_URIS is null, which means the other argument KEY_REMOTE_PHOTO passed to this fragment
                 destinationModel.setOnServer(true)
 
                 val uris = mutableListOf<Uri>()
-                //(requireArguments().getParcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
                 (requireArguments().parcelableArrayList<NCShareViewModel.RemotePhoto>(KEY_REMOTE_PHOTO)?.toMutableList() ?: mutableListOf()).apply {
-                    forEach {
-                        uris.add(Uri.fromParts("lespas", "//${it.remotePath}", ""))
-                    }
+                    forEach { uris.add(Uri.fromParts("lespas", "//${it.remotePath}", "")) }
                     destinationModel.setRemotePhotos(this)
                 }
                 uris
@@ -198,7 +193,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         super.onViewCreated(view, savedInstanceState)
 
         rootLayout = view.findViewById<ConstraintLayout>(R.id.background).apply {
-            // Set the dialog maximum height to 70% of screen/window height
+            // Set the dialog maximum height to 75% of screen/window height
             doOnNextLayout {
                 ConstraintSet().run {
                     val height = with(resources.displayMetrics) { (heightPixels.toFloat() * 0.75 - copyOrMoveToggleGroup.measuredHeight - clipDataRecyclerView.measuredHeight - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 88f, this)).roundToInt() }
@@ -239,9 +234,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
 
         view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
-        savedInstanceState?.let {
-            it.getInt(COPY_OR_MOVE).apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
-        }
+        savedInstanceState?.getInt(COPY_OR_MOVE)?.apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
 
         newAlbumTitleTextInputEditText.run {
             setOnEditorActionListener { _, actionId, keyEvent ->
@@ -272,11 +265,9 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
             val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
             val base = Tools.getRemoteHome(requireContext())
-            val remoteAlbums = mutableListOf<RemoteAlbum>()
-            albums.forEach { album ->
-                if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", ""))
-            }
-            albumAdapter.submitList(remoteAlbums.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
+            val remoteAlbums = mutableListOf(RemoteAlbum(nullAlbum, "", ""))
+            albums.forEach { album -> if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", "")) }
+            albumAdapter.submitList(remoteAlbums)
 
             jointAlbumLiveData.observe(viewLifecycleOwner) { shared ->
                 val jointAlbums = mutableListOf<RemoteAlbum>()
@@ -296,10 +287,13 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     )
                 }
                 if (jointAlbums.isNotEmpty()) {
+/*
                     val newAlbumList = albumAdapter.currentList.toMutableList()
                     if (newAlbumList.last().album.id.isEmpty()) newAlbumList.removeLast()
                     newAlbumList.addAll(jointAlbums)
                     albumAdapter.submitList(newAlbumList.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
+*/
+                    albumAdapter.submitList(albumAdapter.currentList.plus(jointAlbums))
                 }
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
             }
@@ -366,8 +360,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             fun bindViewItems(remoteAlbum: RemoteAlbum) {
                 if (remoteAlbum.album.id.isEmpty()) {
                     ivCover.apply {
-                        this.setImageResource(0)
-                        setImageResource(R.drawable.ic_baseline_add_24)
+                        setImageResource(R.drawable.ic_baseline_new_album_24)
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }
                     tvName.apply {
@@ -377,7 +370,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                 } else {
                     ivCover.apply {
                         if (currentAlbumId != remoteAlbum.album.id) {
-                            this.setImageResource(0)
                             imageLoader(remoteAlbum, this, coverType)
                             currentAlbumId = remoteAlbum.album.id
                         }
