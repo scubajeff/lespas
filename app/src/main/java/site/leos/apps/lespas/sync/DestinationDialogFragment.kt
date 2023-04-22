@@ -360,6 +360,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             fun bindViewItems(remoteAlbum: RemoteAlbum) {
                 if (remoteAlbum.album.id.isEmpty()) {
                     ivCover.apply {
+                        cancelLoader(this)
                         setImageResource(R.drawable.ic_baseline_new_album_24)
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }
