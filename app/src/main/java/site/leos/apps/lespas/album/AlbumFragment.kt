@@ -29,8 +29,6 @@ import android.graphics.drawable.StateListDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.os.StatFs
 import android.provider.MediaStore
 import android.view.*
 import android.widget.CheckedTextView
@@ -492,15 +490,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 val newGeneration = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) MediaStore.getGeneration(this, MediaStore.getExternalVolumeNames(this).first()) else 0L
                 if (newVersion != mediaStoreVersion) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
                 else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && newGeneration != mediaStoreGeneration) getCameraRoll(newVersion, newGeneration).apply { mAdapter.setCameraRollAlbum(this) }
-            }
-        }
-
-        // Check internal storage free space, warn user if it's lower than 10% free
-        lifecycleScope.launch(Dispatchers.IO) {
-            StatFs(Environment.getDataDirectory().path).let {
-                if (it.availableBlocksLong < it.blockCountLong / 10) withContext(Dispatchers.Main) {
-                    if (parentFragmentManager.findFragmentByTag(CONFIRM_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), cancelable = false).show(parentFragmentManager, CONFIRM_DIALOG)
-                }
             }
         }
     }

@@ -25,6 +25,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.StatFs
 import android.os.storage.StorageManager
 import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +38,7 @@ import androidx.preference.PreferenceManager
 import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.album.AlbumDetailFragment
 import site.leos.apps.lespas.album.AlbumFragment
 import site.leos.apps.lespas.album.AlbumRepository
@@ -57,7 +59,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sp: SharedPreferences
 
     private lateinit var accounts: Array<Account>
-    private var loggedIn = true
 
     private var prefBackupNeeded = false
 
@@ -66,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         accounts = AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc))
         if (accounts.isEmpty()) {
-            loggedIn = false
             setTheme(R.style.Theme_LesPas_NoTitleBar)
             sp.getString(getString(R.string.auto_theme_perf_key), getString(R.string.theme_auto_values))?.let { AppCompatDelegate.setDefaultNightMode(it.toInt()) }
             super.onCreate(savedInstanceState)
@@ -134,6 +134,17 @@ class MainActivity : AppCompatActivity() {
 
                 // Create album meta file for all synced albums if needed
                 //WorkManager.getInstance(this).enqueueUniqueWork(MetaFileMaintenanceWorker.WORKER_NAME, ExistingWorkPolicy.KEEP, OneTimeWorkRequestBuilder<MetaFileMaintenanceWorker>().build())
+
+                // Check internal storage free space, warn user if it's lower than 10% free
+                window.decorView.post {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        StatFs(Environment.getDataDirectory().path).let {
+                            if (it.availableBlocksLong < it.blockCountLong / 10) withContext(Dispatchers.Main) {
+                                if (supportFragmentManager.findFragmentByTag(CONFIRM_LOW_STORAGE_SPACE_DIALOG) == null) ConfirmDialogFragment.newInstance(getString(R.string.msg_low_storage_space), cancelable = false).show(supportFragmentManager, CONFIRM_LOW_STORAGE_SPACE_DIALOG)
+                            }
+                        }
+                    }
+                }
             }
 
             // Setup observer to fire up SyncAdapter
@@ -153,7 +164,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // When user removed all accounts from system setting. User data is removed in SystemBroadcastReceiver
-        if (loggedIn && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
+        if (accounts.isNotEmpty() && AccountManager.get(this).getAccountsByType(getString(R.string.account_type_nc)).isEmpty()) finishAndRemoveTask()
     }
 
     override fun onStop() {
@@ -256,6 +267,7 @@ class MainActivity : AppCompatActivity() {
         const val ACTIVITY_DIALOG_REQUEST_KEY = "ACTIVITY_DIALOG_REQUEST_KEY"
         const val CONFIRM_RESTART_DIALOG = "CONFIRM_RESTART_DIALOG"
         const val CONFIRM_REQUIRE_SD_DIALOG = "CONFIRM_REQUIRE_SD_DIALOG"
+        const val CONFIRM_LOW_STORAGE_SPACE_DIALOG = "CONFIRM_LOW_STORAGE_SPACE_DIALOG"
         const val LAUNCH_CAMERAROLL = "LAUNCH_CAMERAROLL"
     }
 }
