@@ -1,0 +1,4 @@
+* Corretto il problema che quando si spostano le foto dall'album 'Locale', le foto spostate non vengono eliminate nell'album originale.
+* Risolto il problema che dopo l'eliminazione dell'ultima foto dall'archivio del rullino fotografico, questa viene ancora visualizzata nell'elenco.
+* Nuovo collegamento all'applicazione che può essere aggiunto al launcher per lanciare direttamente la schermata di gestione del rullino fotografico.
+* Altri miglioramenti e correzioni di bug

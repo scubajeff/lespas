@@ -1,0 +1,4 @@
+* Fixed bug when moving photos from 'Local' album, the moved photos are not deleted in the original album
+* Fixed bug after the last photo deleted from Camera Roll Archive, it's still showing in the list
+* New app shortcut you can add to launcher for launching camera roll manager screen directly
+* Other improvements and bugs fixes

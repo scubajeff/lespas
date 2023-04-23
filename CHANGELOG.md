@@ -1,3 +1,12 @@
+## Version 2.8.1
+* Fixed bug when moving photos from 'Local' album, the moved photos are not deleted in the original album
+* Fixed bug after the last photo deleted from Camera Roll Archive, it's still showing in the list
+* Fixed bug of sync process stuck for Caddy server when deleting a file not existed 
+* New app shortcut you can add to launcher for launching camera roll manager screen directly
+* Move "Create New Album" item to the top of the album list in adding photos dialog
+* Back press now clear selection first instead of closing app directly
+* Show country flag emoji in location search result
+
 ## Version 2.8.0
 * New feature: RAW format support
 * New feature: Backup app's settings to server

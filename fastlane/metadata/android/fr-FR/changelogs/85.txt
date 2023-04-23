@@ -1,0 +1,4 @@
+* Correction d'un bogue lors du déplacement de photos à partir de l'album "Local", les photos déplacées ne sont pas supprimées dans l'album d'origine.
+* Correction d'un bug après la suppression de la dernière photo de l'archive du rouleau d'appareils photo, elle reste affichée dans la liste.
+* Nouveau raccourci d'application que vous pouvez ajouter au lanceur pour lancer directement l'écran de gestion du rouleau d'appareils photo.
+* Autres améliorations et corrections de bugs
