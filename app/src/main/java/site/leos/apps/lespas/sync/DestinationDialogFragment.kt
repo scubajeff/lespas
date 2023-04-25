@@ -286,15 +286,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         )
                     )
                 }
-                if (jointAlbums.isNotEmpty()) {
-/*
-                    val newAlbumList = albumAdapter.currentList.toMutableList()
-                    if (newAlbumList.last().album.id.isEmpty()) newAlbumList.removeLast()
-                    newAlbumList.addAll(jointAlbums)
-                    albumAdapter.submitList(newAlbumList.plus(RemoteAlbum(nullAlbum, "", "")).toMutableList())
-*/
-                    albumAdapter.submitList(albumAdapter.currentList.plus(jointAlbums))
-                }
+                if (jointAlbums.isNotEmpty()) albumAdapter.submitList(albumAdapter.currentList.plus(jointAlbums))
+
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
             }
 
@@ -399,22 +392,16 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             return DestViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: DestViewHolder, position: Int) {
-            holder.bindViewItems(currentList[position])
-        }
+        override fun onBindViewHolder(holder: DestViewHolder, position: Int) { holder.bindViewItems(currentList[position]) }
 
         override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-            for (i in 0 until currentList.size) {
-                recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
-            }
+            for (i in 0 until currentList.size) recyclerView.findViewHolderForAdapterPosition(i)?.let { holder -> holder.itemView.findViewById<View>(R.id.cover)?.let { cancelLoader(it) }}
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
         override fun getItemViewType(position: Int): Int = if (currentList[position].shareBy.isNotEmpty()) 1 else 0
 
-        fun setCoverType(smallCover: Boolean) {
-            coverType = if (smallCover) NCShareViewModel.TYPE_SMALL_COVER else NCShareViewModel.TYPE_COVER
-        }
+        fun setCoverType(smallCover: Boolean) { coverType = if (smallCover) NCShareViewModel.TYPE_SMALL_COVER else NCShareViewModel.TYPE_COVER }
     }
 
     class DestinationDiffCallback: DiffUtil.ItemCallback<RemoteAlbum>() {
@@ -424,19 +411,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     class ClipDataAdapter(private val loadClipData: (Uri, ImageView, Int)-> Unit): ListAdapter<Uri, ClipDataAdapter.MediaViewHolder>(ClipDataDiffCallback()) {
         inner class MediaViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            fun bind(uri: Uri, position: Int) {
-                with(itemView.findViewById<ImageView>(R.id.media)) {
-                    loadClipData(uri, this, position)
-                }
-            }
+            fun bind(uri: Uri, position: Int) { itemView.findViewById<ImageView>(R.id.media)?.let { loadClipData(uri, it, position) }}
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder =
-            MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_clipdata, parent, false))
-
-        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) {
-            holder.bind(currentList[position], position)
-        }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MediaViewHolder = MediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.recyclerview_item_clipdata, parent, false))
+        override fun onBindViewHolder(holder: MediaViewHolder, position: Int) { holder.bind(currentList[position], position) }
     }
 
     class ClipDataDiffCallback: DiffUtil.ItemCallback<Uri>() {

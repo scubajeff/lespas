@@ -215,7 +215,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 maximumScale = 5.0f
                 mediumScale = 2.5f
 
-                // Tapping on iamge will zoom out to normal if currently zoomed in, otherwise show bottom menu
+                // Tapping on image will zoom out to normal if currently zoomed in, otherwise show bottom menu
                 setOnPhotoTapListener { _, _, _ -> touchHandler(this) }
                 setOnOutsidePhotoTapListener {touchHandler(this) }
                 setOnLongClickListener { view ->
