@@ -13,7 +13,7 @@ android {
         minSdk 25
         targetSdk 33
         versionCode 86
-        versionName '2.8.1'
+        versionName '2.8.2'
         multiDexEnabled true
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
