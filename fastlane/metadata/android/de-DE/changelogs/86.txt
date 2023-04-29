@@ -1,0 +1,4 @@
+* Fehler beim Verschieben von Fotos aus dem "Lokalen" Album behoben, die verschobenen Fotos werden nicht im ursprünglichen Album gelöscht
+* Fehler behoben, nachdem das letzte Foto aus dem Camera Roll Archiv gelöscht wurde, wird es immer noch in der Liste angezeigt
+* Neue App-Verknüpfung, die dem Launcher hinzugefügt werden kann, um den Camera Roll Manager Bildschirm direkt zu starten
+* Weitere Verbesserungen und Fehlerkorrekturen

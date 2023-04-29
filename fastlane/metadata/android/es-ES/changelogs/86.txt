@@ -1,0 +1,4 @@
+* Corregido error al mover fotos del álbum "Local", las fotos movidas no se borran en el álbum original.
+* Se ha corregido el error que se producía cuando la última foto eliminada del archivo del rollo de la cámara seguía apareciendo en la lista.
+* Nuevo acceso directo a la aplicación que se puede añadir al lanzador para iniciar directamente la pantalla del administrador del rollo de la cámara.
+* Otras mejoras y correcciones de errores

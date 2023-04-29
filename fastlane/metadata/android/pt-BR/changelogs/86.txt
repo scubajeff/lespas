@@ -1,0 +1,4 @@
+* Corrigido o erro ao mover fotos do álbum 'Local', as fotos movidas não são apagadas no álbum original
+* Corrigido erro após a última foto excluída do Camera Roll Archive, ainda está aparecendo na lista
+* Novo atalho de aplicativo que você pode adicionar ao lançador para lançar a tela do gerenciador de rolos de câmera diretamente
+* Outras melhorias e correções de bugs
