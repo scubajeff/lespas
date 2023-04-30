@@ -104,7 +104,7 @@ class RemoteMediaFragment: Fragment() {
         // Adjusting the shared element mapping
         setEnterSharedElementCallback(object : SharedElementCallback() {
             override fun onMapSharedElements(names: MutableList<String>?, sharedElements: MutableMap<String, View>?) {
-                if (names?.isNotEmpty() == true) slider.getChildAt(0).findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
+                if (names?.isNotEmpty() == true) slider.getChildAt(0)?.findViewById<View>(R.id.media)?.apply { sharedElements?.put(names[0], this) }
             }
         })
 
@@ -290,31 +290,7 @@ class RemoteMediaFragment: Fragment() {
         // BACK TO NORMAL UI
         hideHandler.removeCallbacksAndMessages(null)
 
-        requireActivity().window.run {
-/*
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-                clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-
-                decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-                //decorView.setOnSystemUiVisibilityChangeListener(null)
-            } else {
-                insetsController?.apply {
-                    show(WindowInsets.Type.systemBars())
-                    systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_BARS_BY_TOUCH
-                }
-                statusBarColor = resources.getColor(R.color.color_primary)
-                navigationBarColor = previousNavBarColor
-                setDecorFitsSystemWindows(true)
-                //decorView.setOnApplyWindowInsetsListener(null)
-            }
-*/
-            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-            clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-            //statusBarColor = resources.getColor(R.color.color_primary)
-            decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-            decorView.setOnSystemUiVisibilityChangeListener(null)
-        }
+        Tools.quitImmersive(window)
 
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.apply {
