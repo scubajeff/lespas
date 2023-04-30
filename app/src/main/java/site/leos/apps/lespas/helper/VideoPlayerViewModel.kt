@@ -111,7 +111,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
         if (view != null && uri != null) {
             if (view.context is Activity) window = (view.context as Activity).window
-            if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
+            else if (view.context is ContextWrapper) window = ((view.context as ContextWrapper).baseContext as Activity).window
 
             if (uri == currentVideo) {
                 // Resuming the same video
