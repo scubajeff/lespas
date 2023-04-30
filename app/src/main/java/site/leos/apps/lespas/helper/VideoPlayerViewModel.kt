@@ -38,7 +38,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -122,7 +121,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
                 }
             } else {
                 // Pause the current one
-                if (videoPlayer.isPlaying) pause(currentVideo, false)
+                if (videoPlayer.isPlaying) pause(currentVideo)
 
                 // Switch to new video
                 currentVideo = uri
@@ -143,13 +142,10 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         }
     }
 
-    fun pause(uri: Uri?, delayedPause: Boolean = true) {
+    fun pause(uri: Uri?) {
         pauseJob = viewModelScope.launch {
             // Might be called multiple times, cancel previous scheduled job
             pauseJob?.cancel(null)
-
-            // Pause for 250ms, so that device rotate will resume playing gapless
-            if (delayedPause) delay(250)
 
             // Only pause if current playing video is the same as the argument. When swiping between two video items, onViewAttachedToWindow in SeamlessMediaSliderAdapter will call pause with last item's uri
             // Or after app being send to background, host fragment onPause will call this with Uri.EMPTY since fragment has no knowledge of video uri
