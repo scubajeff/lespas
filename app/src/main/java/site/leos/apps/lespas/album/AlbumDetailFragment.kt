@@ -310,7 +310,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         removeOriginalBroadcastReceiver = RemoveOriginalBroadcastReceiver {
             if (it) {
                 val photos = mutableListOf<Photo>()
-                for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
+                for (photoId in sharedSelection) mAdapter.getPhotoBy(photoId)?.run { if (id != album.cover) photos.add(this) }
                 if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
             }
             sharedSelection.clear()
@@ -410,9 +410,9 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
                         val selectionSize = selectionTracker.selection.size()
 
-                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled && !Tools.isMediaPlayable(mAdapter.getPhotoBy(selectionTracker.selection.first()).mimeType)
+                        snapseedEditAction?.isVisible = selectionSize == 1 && isSnapseedEnabled && !Tools.isMediaPlayable(mAdapter.getPhotoBy(selectionTracker.selection.first())!!.mimeType)
                         // Not allow to change name for not yet uploaded photo TODO make it possible
-                        mediaRenameAction?.isVisible = selectionSize == 1 && mAdapter.getPhotoBy(selectionTracker.selection.first()).eTag != Photo.ETAG_NOT_YET_UPLOADED
+                        mediaRenameAction?.isVisible = selectionSize == 1 && mAdapter.getPhotoBy(selectionTracker.selection.first())!!.eTag != Photo.ETAG_NOT_YET_UPLOADED
 
                         if (selectionTracker.hasSelection() && actionMode == null) {
                             actionMode = (activity as? AppCompatActivity)?.startSupportActionMode(this@AlbumDetailFragment)
@@ -672,7 +672,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                         album.name = newName
                     }
                     RenameDialogFragment.REQUEST_TYPE_PHOTO -> {
-                        mAdapter.getPhotoBy(selectionTracker.selection.first()).let { photo ->
+                        mAdapter.getPhotoBy(selectionTracker.selection.first())?.let { photo ->
                             val newFileName = photo.name.substringAfterLast('.').let { ext ->
                                 if (ext.isNotEmpty()) "${newName}.${ext}" else newName
                             }
@@ -693,7 +693,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 DELETE_REQUEST_KEY-> {
                     if (bundle.getBoolean(ConfirmDialogFragment.CONFIRM_DIALOG_REQUEST_KEY, false)) {
                         val photos = mutableListOf<Photo>()
-                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId).run { if (id != album.cover) photos.add(this) }
+                        for (photoId in selectionTracker.selection) mAdapter.getPhotoBy(photoId)?.run { if (id != album.cover) photos.add(this) }
                         if (photos.isNotEmpty()) actionModel.deletePhotos(photos, album)
                     }
                     selectionTracker.clearSelection()
@@ -972,7 +972,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 if (Tools.isRemoteAlbum(album)) {
                     val rp = arrayListOf<NCShareViewModel.RemotePhoto>()
                     selectionTracker.selection.forEach {
-                        mAdapter.getPhotoBy(it).let { photo ->
+                        mAdapter.getPhotoBy(it)?.let { photo ->
                             rp.add(NCShareViewModel.RemotePhoto(photo, "${lespasPath}/${album.name}", 0))
                         }
                     }
@@ -987,7 +987,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                 mutableListOf<String>().let { names ->
                     mAdapter.currentList.let { photos -> for (i in 1 until photos.size) { names.add(photos[i].name.substringBeforeLast('.')) }}
                     if (parentFragmentManager.findFragmentByTag(RENAME_DIALOG) == null)
-                        RenameDialogFragment.newInstance(mAdapter.getPhotoBy(selectionTracker.selection.first()).name.substringBeforeLast('.'), names, RenameDialogFragment.REQUEST_TYPE_PHOTO).show(parentFragmentManager, RENAME_DIALOG)
+                        RenameDialogFragment.newInstance(mAdapter.getPhotoBy(selectionTracker.selection.first())!!.name.substringBeforeLast('.'), names, RenameDialogFragment.REQUEST_TYPE_PHOTO).show(parentFragmentManager, RENAME_DIALOG)
                 }
 
                 true
@@ -1011,7 +1011,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
 
     private fun hasExifInSelection(): Boolean {
         for (photoId in selectionTracker.selection) {
-            if (Tools.hasExif(mAdapter.getPhotoBy(photoId).mimeType)) return true
+            mAdapter.getPhotoBy(photoId)?.let { if (Tools.hasExif(it.mimeType)) return true }
         }
 
         return false
@@ -1026,12 +1026,14 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         handler.postDelayed({ waitingMsg?.show() }, 500)
 
         // Collect photos for sharing
-        sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())
+        sharedPhoto = mAdapter.getPhotoBy(selectionTracker.selection.first())!!
         sharedSelection.clear()
         val photos = mutableListOf<Photo>()
         for (id in selectionTracker.selection) {
-            photos.add(mAdapter.getPhotoBy(id))
-            sharedSelection.add(id)
+            mAdapter.getPhotoBy(id)?.let {
+                photos.add(it)
+                sharedSelection.add(id)
+            }
         }
         selectionTracker.clearSelection()
 
@@ -1228,7 +1230,7 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
         internal fun setSelectedMarkDrawable(newDrawable: Drawable) { selectedMark = newDrawable }
 
         internal fun getPhotoAt(position: Int): Photo = currentList[position]
-        internal fun getPhotoBy(photoId: String): Photo = currentList.last { it.id == photoId }
+        internal fun getPhotoBy(photoId: String): Photo? = try { currentList.last { it.id == photoId }} catch (e: NoSuchElementException) { null }
         internal fun updateCover() { notifyItemChanged(0) }
 
         internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
