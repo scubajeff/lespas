@@ -99,6 +99,7 @@
     <string name="msg_check_network">Check your server connection.</string>
     <string name="msg_server_operation">Photos will appear in target album after synchronizing with server.</string>
     <string name="option_menu_search">Search for name</string>
+    <string name="option_menu_slideshow">Slideshow</string>
 
     <!-- PhotoSlide fragment -->
     <string name="button_text_set_cover">Set as cover</string>

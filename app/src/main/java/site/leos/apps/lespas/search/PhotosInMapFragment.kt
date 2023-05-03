@@ -407,7 +407,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         fadingJob?.cancel()
 
         fadingJob = lifecycleScope.launch {
-            while(true) {
+            while(isActive) {
                 delay(75)
 
                 if (bgmPlayer.volume < 1f) bgmPlayer.volume += 0.05f
@@ -423,7 +423,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
         fadingJob?.cancel()
 
         fadingJob = lifecycleScope.launch {
-            while(true) {
+            while(isActive) {
                 delay(75)
 
                 if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f

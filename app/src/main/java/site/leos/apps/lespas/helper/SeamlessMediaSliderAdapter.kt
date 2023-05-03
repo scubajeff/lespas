@@ -18,13 +18,16 @@ package site.leos.apps.lespas.helper
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.drawable.AnimatedImageDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Parcelable
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
@@ -152,7 +155,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
             else-> (holder as SeamlessMediaSliderAdapter<*>.PhotoViewHolder).bind(getItem(position), getItemTransitionName(position), imageLoader)
         }
     }
-
+    
     override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
         super.onViewAttachedToWindow(holder)
         if (holder is SeamlessMediaSliderAdapter<*>.VideoViewHolder) {
@@ -178,6 +181,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
             holder.forwardMessage.isVisible = false
             holder.rewindMessage.isVisible = false
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && holder is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder) holder.getAnimatedDrawable().clearAnimationCallbacks()
+
         super.onViewDetachedFromWindow(holder)
     }
 
@@ -256,6 +262,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
             }
         }
 
+        fun getPhotoView() = ivMedia
+
         private fun touchHandler(photoView: PhotoView) {
             photoView.run {
                 if (scale != 1.0f) setScale(1.0f, true)
@@ -279,6 +287,9 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 ViewCompat.setTransitionName(this, transitionName)
             }
         }
+
+        @RequiresApi(Build.VERSION_CODES.P)
+        fun getAnimatedDrawable(): AnimatedImageDrawable = ivMedia.drawable as AnimatedImageDrawable
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -313,6 +324,8 @@ abstract class SeamlessMediaSliderAdapter<T>(
                 imageLoader(item, null, NCShareViewModel.TYPE_NULL)
             }
         }
+
+        fun play() { playerViewModel.play() }
     }
 
     @Parcelize

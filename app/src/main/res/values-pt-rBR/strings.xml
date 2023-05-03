@@ -72,6 +72,7 @@
     <string name="msg_check_network">Verifique sua conexão.</string>
 
     <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Mostra de slides</string>
     <string name="button_text_set_cover">Configurar como capa</string>
     <string name="button_text_share">Compartilhar</string>
     <string name="button_text_set_as">Usar como fundo de tela</string>

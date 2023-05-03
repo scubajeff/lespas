@@ -35,6 +35,7 @@
     <string name="duration_weeks">Semanas: %1$d</string>
     <string name="duration_months">Meses: %1$d</string>
     <string name="duration_years">Años: %1$d</string>
+    <string name="option_menu_slideshow">Diaporama</string>
     <string name="button_text_set_cover">Portada del álbum</string>
     <string name="button_text_share">Comparte esto</string>
     <string name="button_text_set_as">Fondo de pantalla</string>

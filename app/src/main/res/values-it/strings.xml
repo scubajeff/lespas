@@ -78,6 +78,7 @@
     <string name="msg_server_operation">Le foto appariranno nell\'album di destinazione dopo la sincronizzazione con il server.</string>
 
     <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Presentazione</string>
     <string name="button_text_set_cover">Imposta come copertina</string>
     <string name="button_text_share">Condividi</string>
     <string name="button_text_set_as">Imposta sfondo</string>

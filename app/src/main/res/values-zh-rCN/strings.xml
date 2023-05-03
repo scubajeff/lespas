@@ -33,6 +33,7 @@
     <string name="duration_weeks">行程%1$d周</string>
     <string name="duration_months">行程%1$d个月</string>
     <string name="duration_years">行程%1$d年</string>
+    <string name="option_menu_slideshow">幻灯片播放</string>
     <string name="button_text_set_cover">设为相册封面</string>
     <string name="button_text_share">分享</string>
     <string name="button_text_info">照片信息</string>

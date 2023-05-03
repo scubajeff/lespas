@@ -63,6 +63,7 @@
     <string name="striping_exif">Entfernen von EXIF-Bildinformationen…</string>
 
      <!-- PhotoSlide fragment -->
+    <string name="option_menu_slideshow">Diashow</string>
     <string name="button_text_set_cover">Als Albumcover</string>
     <string name="button_text_share">Teilen</string>
     <string name="button_text_set_as">Als Hintergrundbild</string>

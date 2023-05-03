@@ -45,7 +45,7 @@ import site.leos.apps.lespas.R
 import java.time.LocalDateTime
 
 @androidx.annotation.OptIn(UnstableApi::class)
-class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?): ViewModel() {
+class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache: SimpleCache?, private val slideshowMode: Boolean): ViewModel() {
     private val videoPlayer: ExoPlayer
     private var currentVideo = Uri.EMPTY
     private var addedListener: Player.Listener? = null
@@ -70,7 +70,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
 
                     if (playbackState == Player.STATE_ENDED) {
                         playWhenReady = false
-                        seekTo(0L)
+                        //seekTo(0L)
                         saveVideoPosition(currentVideo)
                     }
                 }
@@ -83,7 +83,13 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             })
 
             // Retrieve repeat mode setting
-            repeatMode = if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true)) ExoPlayer.REPEAT_MODE_ALL else ExoPlayer.REPEAT_MODE_OFF
+            repeatMode = when {
+                slideshowMode -> ExoPlayer.REPEAT_MODE_OFF
+                PreferenceManager.getDefaultSharedPreferences(activity).getBoolean(activity.getString(R.string.auto_replay_perf_key), true) -> ExoPlayer.REPEAT_MODE_ALL
+                else -> ExoPlayer.REPEAT_MODE_OFF
+            }
+
+            playWhenReady = !slideshowMode
 
             // Handle audio focus
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
@@ -100,6 +106,8 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
         addedListener = listener
         videoPlayer.addListener(listener)
     }
+
+    fun play() { videoPlayer.play() }
 
     fun resume(view: PlayerView?, uri: Uri?) {
         // When device rotated, enable gapless playback by canceling scheduled pause job
@@ -134,7 +142,7 @@ class VideoPlayerViewModel(activity: Activity, callFactory: OkHttpClient, cache:
             with(videoPlayer) {
                 setMediaItem(MediaItem.fromUri(currentVideo), getVideoPosition(currentVideo))
                 prepare()
-                play()
+                if (!slideshowMode) play()
             }
         } else {
             // OnWindowFocusChange called with hasFocus true

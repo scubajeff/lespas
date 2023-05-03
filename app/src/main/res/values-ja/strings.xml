@@ -43,6 +43,7 @@
     <string name="duration_weeks">旅行 %1$d 週</string>
     <string name="duration_months">旅行 %1$d 月</string>
     <string name="duration_years">旅行 %1$d 年</string>
+    <string name="option_menu_slideshow">スライドショー</string>
     <string name="button_text_set_cover">アルバムカバー</string>
     <string name="button_text_set_as">壁紙設定</string>
     <string name="button_text_info">写真情報</string>
