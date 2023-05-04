@@ -38,6 +38,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -68,8 +69,10 @@ import java.time.LocalDateTime
 class StoryFragment : Fragment() {
     private lateinit var album: Album
     private var isRemote: Boolean = false
+    private var isPublication: Boolean = false
     private lateinit var serverPath: String
     private lateinit var serverFullPath: String
+    private lateinit var publicationPath: String
     private lateinit var rootPath: String
     private var total = 0
 
@@ -96,9 +99,11 @@ class StoryFragment : Fragment() {
 
         album = requireArguments().parcelable(KEY_ALBUM)!!
         isRemote = Tools.isRemoteAlbum(album)
+        isPublication = album.eTag == Photo.ETAG_FAKE
         rootPath = Tools.getLocalRoot(requireContext())
+        publicationPath = imageLoaderModel.getResourceRoot()
         serverPath = "${Tools.getRemoteHome(requireContext())}/${album.name}"
-        serverFullPath = "${imageLoaderModel.getResourceRoot()}${serverPath}"
+        serverFullPath = "${publicationPath}${serverPath}"
 
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), slideshowMode = true))[VideoPlayerViewModel::class.java]
         // Advance to next slide after video playback end
@@ -125,18 +130,22 @@ class StoryFragment : Fragment() {
             requireContext(),
             Tools.getDisplayDimension(requireActivity()).first,
             playerViewModel,
-            { photo ->
-                with(photo) {
-                    if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) SeamlessMediaSliderAdapter.VideoItem(Uri.parse("${serverFullPath}/${name}"), mimeType, width, height, id)
-                    else {
-                        var fileName = "${rootPath}/${id}"
-                        if (!(File(fileName).exists())) fileName = "${rootPath}/${name}"
-                        SeamlessMediaSliderAdapter.VideoItem(Uri.parse("file:///$fileName"), mimeType, width, height, id)
+            { rp ->
+                with(rp.photo) {
+                    val uri = when {
+                        isPublication -> Uri.parse("${publicationPath}${rp.remotePath}/${name}")
+                        isRemote && eTag != Photo.ETAG_NOT_YET_UPLOADED -> Uri.parse("${serverFullPath}/${name}")
+                        else -> {
+                            var fileName = "${rootPath}/${id}"
+                            if (!(File(fileName).exists())) fileName = "${rootPath}/${name}"
+                            Uri.parse("file:///$fileName")
+                        }
                     }
+                    SeamlessMediaSliderAdapter.VideoItem(uri, mimeType, width, height, id)
                 }
             },
             { state -> },
-            { photo, imageView, type -> if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(NCShareViewModel.RemotePhoto(photo, if (isRemote && photo.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else ""), imageView!!, type) },
+            { photo, imageView, type -> if (type != NCShareViewModel.TYPE_NULL) imageLoaderModel.setImagePhoto(photo, imageView!!, type) },
             { view -> imageLoaderModel.cancelSetImagePhoto(view) },
         ).apply { stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY }
 
@@ -163,7 +172,7 @@ class StoryFragment : Fragment() {
             var bgmFile = "$localPath/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
             if (File(bgmFile).exists()) setBGM(bgmFile)
             else {
-                // BGM for publication downloaded in cache folder
+                // BGM for publication downloaded in cache folder in PublicationDetailFragment
                 bgmFile = "${requireContext().cacheDir}/${album.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                 if (File(bgmFile).exists()) setBGM(bgmFile)
             }
@@ -246,15 +255,14 @@ class StoryFragment : Fragment() {
             }
         })
 
-        albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
-            total = photos.size - 1
-            Tools.sortPhotos(photos, album.sortOrder).run {
-                if (Tools.isMediaPlayable(this[0].mimeType)) fadeOutBGM()
-                pAdapter.setPhotos(this) {
-                    // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
-                    slider.beginFakeDrag()
-                    slider.fakeDragBy(1f)
-                    slider.endFakeDrag()
+        if (isPublication) {
+            imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { startSlideshow(it) }
+        } else {
+            albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
+                Tools.sortPhotos(photos, album.sortOrder).run {
+                    val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
+                    forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
+                    startSlideshow(rpList)
                 }
             }
         }
@@ -300,6 +308,17 @@ class StoryFragment : Fragment() {
         (requireActivity() as AppCompatActivity).supportActionBar?.run {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             displayOptions = 0
+        }
+    }
+
+    private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>) {
+        total = photos.size - 1
+        if (Tools.isMediaPlayable(photos[0].photo.mimeType)) fadeOutBGM()
+        pAdapter.setPhotos(photos) {
+            // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
+            slider.beginFakeDrag()
+            slider.fakeDragBy(1f)
+            slider.endFakeDrag()
         }
     }
 
@@ -435,16 +454,16 @@ class StoryFragment : Fragment() {
 
     class StoryAdapter(
         context: Context,
-        displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (Photo) -> VideoItem,
-        clickListener: (Boolean?) -> Unit, imageLoader: (Photo, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
-    ): SeamlessMediaSliderAdapter<Photo>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
+        displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem,
+        clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
-        override fun getItemTransitionName(position: Int): String = getItem(position).id
-        override fun getItemMimeType(position: Int): String = getItem(position).mimeType
+        override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
+        override fun getItemMimeType(position: Int): String = getItem(position).photo.mimeType
 
-        fun setPhotos(photos: List<Photo>, callback: () -> Unit) { submitList(photos.toMutableList()) { callback() }}
+        fun setPhotos(photos: List<NCShareViewModel.RemotePhoto>, callback: () -> Unit) { submitList(photos.toMutableList()) { callback() }}
 
-        fun isSlideVideo(position: Int): Boolean = currentList[position].mimeType.startsWith("video")
+        fun isSlideVideo(position: Int): Boolean = currentList[position].photo.mimeType.startsWith("video")
 
         // Maintaining a map between adapter position and it's ViewHolder
         private val vhMap = HashMap<ViewHolder, Int>()
@@ -468,9 +487,9 @@ class StoryFragment : Fragment() {
         }
     }
 
-    class PhotoDiffCallback: DiffUtil.ItemCallback<Photo>() {
-        override fun areItemsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Photo, newItem: Photo): Boolean = oldItem.id == newItem.id
+    class PhotoDiffCallback: DiffUtil.ItemCallback<NCShareViewModel.RemotePhoto>() {
+        override fun areItemsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
+        override fun areContentsTheSame(oldItem: NCShareViewModel.RemotePhoto, newItem: NCShareViewModel.RemotePhoto): Boolean = oldItem.photo.id == newItem.photo.id
     }
 
     companion object {

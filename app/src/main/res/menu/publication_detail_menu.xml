@@ -28,33 +28,41 @@
         android:visible="false"
         android:enabled="false"
         tools:ignore="AlwaysShowAction" />
-    <item android:id="@+id/option_menu_in_map"
-        android:title="@string/option_menu_in_map"
-        android:orderInCategory="96"
-        app:showAsAction="always"
-        android:icon="@drawable/ic_baseline_map_24"
-        android:visible="false"
-        android:enabled="false" />
-    <item
-        android:id="@+id/option_menu_add_photo"
-        android:title="@string/fab_add_photos"
-        android:orderInCategory="97"
-        android:visible="false"
-        android:enabled="false"
-        app:showAsAction="always"
-        android:icon="@drawable/ic_baseline_add_photo_24" />
-    <item
-        android:id="@+id/option_menu_show_meta"
-        android:title="@string/item_show_meta"
-        android:orderInCategory="99"
-        android:visible="false"
-        android:enabled="false"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_meta_off_24" />
     <item
         android:id="@+id/option_menu_search_progress"
         android:title=""
         android:orderInCategory="96"
         app:showAsAction="always"
         app:actionLayout="@layout/menuitem_search_progress" />
+    <item android:id="@+id/option_menu_in_map"
+        android:title="@string/option_menu_in_map"
+        android:orderInCategory="96"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_map_24"
+        android:visible="false"
+        android:enabled="false" />
+    <item
+        android:id="@+id/option_menu_slideshow"
+        android:title="@string/option_menu_slideshow"
+        android:orderInCategory="97"
+        android:visible="false"
+        android:enabled="false"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_play_arrow_24" />
+    <item
+        android:id="@+id/option_menu_add_photo"
+        android:title="@string/fab_add_photos"
+        android:orderInCategory="98"
+        android:visible="false"
+        android:enabled="false"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_add_photo_24" />
+    <item
+        android:id="@+id/option_menu_show_meta"
+        android:title="@string/item_show_meta"
+        android:orderInCategory="100"
+        android:visible="false"
+        android:enabled="false"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_meta_off_24" />
 </menu>

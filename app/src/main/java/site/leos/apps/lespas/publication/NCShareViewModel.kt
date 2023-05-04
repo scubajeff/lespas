@@ -604,7 +604,6 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
         return result
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     suspend fun getRemotePhotoList(share: ShareWithMe, forceNetwork: Boolean) {
         var doRefresh = true
 

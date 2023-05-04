@@ -239,7 +239,7 @@
     <string name="button_text_map">Karten-App</string>
     <string name="object_location">Standort</string>
     <string name="item_location_search">Standort</string>
-    <string name="option_menu_in_map">Alle in Karte</string>
+    <string name="option_menu_in_map">Auf Karte anzeigen</string>
     <string name="object_face">Gesicht</string>
     <string name="action_hide">Ausblenden</string>
     <string name="hidden_albums">Versteckte Alben:</string>

@@ -144,7 +144,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
                 var bgmFile = "$localPath/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                 if (File(bgmFile).exists()) setBGM(bgmFile)
                 else {
-                    // BGM for publication downloaded in cache folder
+                    // BGM for publication downloaded in cache folder in PublicationDetailFragment
                     bgmFile = "${requireContext().cacheDir}/${album?.id}${BGMDialogFragment.BGM_FILE_SUFFIX}"
                     if (File(bgmFile).exists()) setBGM(bgmFile)
                 }

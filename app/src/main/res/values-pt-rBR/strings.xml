@@ -258,7 +258,7 @@
     <string name="downloading_message">Arquivo %1$s será salvo para a pasta Download.</string>
 
     <!-- Location Search Fragment -->
-    <string name="option_menu_in_map">Tudo no mapa</string>
+    <string name="option_menu_in_map">Mostrar no mapa</string>
 
     <!-- Photo in Map Fragment -->
     <string name="option_menu_map_slideshow">Apresentação</string>

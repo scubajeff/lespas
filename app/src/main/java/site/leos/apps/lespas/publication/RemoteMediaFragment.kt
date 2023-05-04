@@ -226,8 +226,6 @@ class RemoteMediaFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        @Suppress("UNCHECKED_CAST")
-        //(arguments?.getParcelableArray(KEY_REMOTE_MEDIA)!! as Array<NCShareViewModel.RemotePhoto>).run {
         (requireArguments().parcelableArray<NCShareViewModel.RemotePhoto>(KEY_REMOTE_MEDIA)!!).run {
             pAdapter.submitList(toMutableList()) {
                 requireArguments().getInt(KEY_SCROLL_TO).let { jumpTo ->
@@ -285,7 +283,6 @@ class RemoteMediaFragment: Fragment() {
         super.onDestroyView()
     }
 
-    @Suppress("DEPRECATION")
     override fun onDestroy() {
         // BACK TO NORMAL UI
         hideHandler.removeCallbacksAndMessages(null)

@@ -58,6 +58,7 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.search.PhotosInMapFragment
+import site.leos.apps.lespas.story.StoryFragment
 import site.leos.apps.lespas.sync.AcquiringDialogFragment
 import site.leos.apps.lespas.sync.SyncAdapter
 import java.io.File
@@ -81,6 +82,7 @@ class PublicationDetailFragment: Fragment() {
     private var addPhotoMenuItem: MenuItem? = null
     private var searchMenuItem: MenuItem? = null
     private var mapMenuItem: MenuItem? = null
+    private var slideshowMenuItem: MenuItem? = null
 
     private var currentItem = -1
 
@@ -228,6 +230,10 @@ class PublicationDetailFragment: Fragment() {
                     isEnabled = false
                     isVisible = false
                 }
+                slideshowMenuItem?.run {
+                    isEnabled = true
+                    isVisible = true
+                }
                 (if (showName) searchMenuItem else showMetaMenuItem)?.run {
                     isVisible = true
                     isEnabled = true
@@ -269,6 +275,7 @@ class PublicationDetailFragment: Fragment() {
                     isIndeterminate = true
                     show()
                 }
+                slideshowMenuItem = menu.findItem(R.id.option_menu_slideshow)
                 addPhotoMenuItem = menu.findItem(R.id.option_menu_add_photo)
                 mapMenuItem = menu.findItem(R.id.option_menu_in_map)
                 showMetaMenuItem = menu.findItem(R.id.option_menu_show_meta).apply {
@@ -355,6 +362,20 @@ class PublicationDetailFragment: Fragment() {
                                 share.sortOrder
                             )
                         ), PhotosInMapFragment::class.java.canonicalName).addToBackStack(null).commit()
+                        true
+                    }
+                    R.id.option_menu_slideshow-> {
+                        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true).apply { duration = resources.getInteger(android.R.integer.config_longAnimTime).toLong() }
+                        parentFragmentManager.beginTransaction().replace(R.id.container_root, StoryFragment.newInstance(
+                            Album(
+                                id = share.albumId,
+                                name = share.albumName,
+                                eTag = Photo.ETAG_FAKE,
+                                shareId = Album.REMOTE_ALBUM,
+                                lastModified = LocalDateTime.MIN
+                            )
+                        ), StoryFragment::class.java.canonicalName).addToBackStack(null).commit()
                         true
                     }
                     else-> false
