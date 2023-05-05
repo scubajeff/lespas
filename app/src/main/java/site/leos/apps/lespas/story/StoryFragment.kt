@@ -64,7 +64,6 @@ import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
-import java.time.LocalDateTime
 
 class StoryFragment : Fragment() {
     private lateinit var album: Album
@@ -88,7 +87,6 @@ class StoryFragment : Fragment() {
     private var previousTitleBarDisplayOption = 0
 
     private var hasBGM = false
-    private var isMuted = false
     private lateinit var bgmPlayer: ExoPlayer
     private var fadingJob: Job? = null
     private lateinit var localPath: String
@@ -110,7 +108,10 @@ class StoryFragment : Fragment() {
         playerViewModel.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
-                if (playbackState == Player.STATE_ENDED) animationHandler.post(advanceSlide)
+                if (playbackState == Player.STATE_ENDED) {
+                    animationHandler.postDelayed(advanceSlide, 300)
+                    if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) fadeInBGM()
+                }
             }
         })
 
@@ -168,8 +169,6 @@ class StoryFragment : Fragment() {
             if (hasBGM) {
                 bgmPlayer.volume = 0f
                 bgmPlayer.prepare()
-                // Mute the video sound during late night hours, otherwise fade in BGM
-                if (LocalDateTime.now().hour in 7..22) fadeInBGM() else isMuted = true
             }
         }
     }
@@ -181,9 +180,6 @@ class StoryFragment : Fragment() {
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
             setPageTransformer(ZoomInPageTransformer())
-
-            // With offscreenPageLimit greater than 0, the next slide will be preloaded, but if current and next slide are all video item, things will get messy
-            //offscreenPageLimit = 1
         }
 
         // Auto slider player with a dreamy style animation
@@ -210,7 +206,6 @@ class StoryFragment : Fragment() {
                                             override fun onAnimationRepeat(animation: Animator) {}
                                             override fun onAnimationCancel(animation: Animator) {}
                                             // Programmatically advance to the next slide after animation end
-                                            //override fun onAnimationEnd(animation: Animator) { animationHandler.postDelayed(advanceSlide, 100) }
                                             override fun onAnimationEnd(animation: Animator) { animationHandler.post(advanceSlide) }
                                         })
                                     }
@@ -224,7 +219,6 @@ class StoryFragment : Fragment() {
                                             it.registerAnimationCallback(object : Animatable2.AnimationCallback() {
                                                 override fun onAnimationEnd(drawable: Drawable?) {
                                                     super.onAnimationEnd(drawable)
-                                                    //animationHandler.postDelayed(advanceSlide, 100)
                                                     animationHandler.post(advanceSlide)
                                                 }
                                             })
@@ -300,8 +294,8 @@ class StoryFragment : Fragment() {
 
     private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>) {
         total = photos.size - 1
-        if (photos[0].photo.mimeType.startsWith("video")) fadeOutBGM()
         pAdapter.setPhotos(photos) {
+            checkSlide(0)
             // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
             slider.beginFakeDrag()
             slider.fakeDragBy(1f)
@@ -358,11 +352,18 @@ class StoryFragment : Fragment() {
         }
     }
 
+    private fun checkSlide(position: Int) {
+        // fade out BGM if next slide is video, do it here to prevent audio mix up
+        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else if (position == 0) fadeInBGM()
+
+        // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fectch of the 2nd one will ruin the playback of the 1st one
+        slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
+    }
+
     private val advanceSlide = Runnable {
         var prevValue = 0
         if (slider.currentItem < total) {
-            // fade out BGM if next slide is video, do it here to prevent audio mix up
-            if (pAdapter.isSlideVideo(slider.currentItem + 1)) fadeOutBGM()
+            checkSlide(slider.currentItem + 1)
 
             // Slow down the default page transformation speed
             ValueAnimator.ofInt(0, slider.width).run {
