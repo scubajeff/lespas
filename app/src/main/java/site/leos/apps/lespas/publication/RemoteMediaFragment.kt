@@ -36,7 +36,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.LinearLayoutCompat
 import androidx.core.app.SharedElementCallback
@@ -77,7 +76,7 @@ class RemoteMediaFragment: Fragment() {
 
     private var autoRotate = false
     private var previousOrientationSetting = 0
-    //private var previousNavBarColor = 0
+    private var previousTitleBarDisplayOption = 0
 
     private var albumId = ""
 
@@ -125,14 +124,24 @@ class RemoteMediaFragment: Fragment() {
 
         this.window = requireActivity().window
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        postponeEnterTransition()
+
+        // Wipe ActionBar
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            previousTitleBarDisplayOption = savedInstanceState?.run {
+                // During fragment recreate, wipe actionbar to avoid flash
+                wipeActionBar()
+
+                getInt(KEY_DISPLAY_OPTION)
+            } ?: displayOptions
+        }
+
         previousOrientationSetting = requireActivity().requestedOrientation
         autoRotate = PreferenceManager.getDefaultSharedPreferences(context).getBoolean(requireContext().getString(R.string.auto_rotate_perf_key), false)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_remote_media, container, false)
-
-        postponeEnterTransition()
 
         captionTextView = view.findViewById<TextView>(R.id.caption).apply {
             movementMethod =  ScrollingMovementMethod()
@@ -278,6 +287,11 @@ class RemoteMediaFragment: Fragment() {
         playerViewModel.pause(Uri.EMPTY)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+    }
+
     override fun onDestroyView() {
         slider.adapter = null
         super.onDestroyView()
@@ -291,12 +305,11 @@ class RemoteMediaFragment: Fragment() {
 
         (requireActivity() as AppCompatActivity).run {
             supportActionBar?.apply {
-                displayOptions = ActionBar.DISPLAY_HOME_AS_UP or ActionBar.DISPLAY_SHOW_TITLE
+                displayOptions = previousTitleBarDisplayOption
                 setBackgroundDrawable(ColorDrawable(Tools.getAttributeColor(requireContext(), android.R.attr.colorPrimary)))
             }
             requestedOrientation = previousOrientationSetting
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
 
         super.onDestroy()
     }
@@ -351,6 +364,16 @@ class RemoteMediaFragment: Fragment() {
 
         // auto hide, now triggered by caption view layout adapting to caption's length
         //if (show) hideHandler.postDelayed(hideSystemUI, AUTO_HIDE_DELAY_MILLIS)
+
+        // Although it seems like repeating this everytime when showing system UI, wiping actionbar here rather than when fragment creating will prevent action bar flashing
+        wipeActionBar()
+    }
+
+    private fun wipeActionBar() {
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
+        }
     }
 
     private fun saveMedia() {
@@ -379,6 +402,8 @@ class RemoteMediaFragment: Fragment() {
         private const val KEY_SCROLL_TO = "SCROLL_TO"
         private const val KEY_ALBUM_ID = "KEY_ALBUM_ID"
         private const val AUTO_HIDE_DELAY_MILLIS = 3000L // The number of milliseconds to wait after user interaction before hiding the system UI.
+
+        private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
 
         private const val TAG_DESTINATION_DIALOG = "REMOTEMEDIA_DESTINATION_DIALOG"
         private const val TAG_INFO_DIALOG = "REMOTEMEDIA_INFO_DIALOG"

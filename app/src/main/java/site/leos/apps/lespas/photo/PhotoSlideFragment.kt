@@ -540,7 +540,6 @@ class PhotoSlideFragment : Fragment() {
             unregisterReceiver(snapseedCatcher)
             contentResolver.unregisterContentObserver(snapseedOutputObserver)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) requireActivity().window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
 
         super.onDestroy()
     }

@@ -728,6 +728,8 @@ object Tools {
             decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
             decorView.setOnSystemUiVisibilityChangeListener(null)
             //navigationBarColor = previousNavBarColor
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
         }
     }
 
