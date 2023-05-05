@@ -308,6 +308,9 @@ class PublicationDetailFragment: Fragment() {
                     loadingIndicator?.isEnabled = false
                     loadingIndicator?.isVisible = false
 
+                    slideshowMenuItem?.isVisible = true
+                    slideshowMenuItem?.isEnabled = true
+
                     if (showName) {
                         searchMenuItem?.isVisible = true
                         searchMenuItem?.isEnabled = true
