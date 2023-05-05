@@ -35,6 +35,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -43,7 +44,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
@@ -110,19 +110,7 @@ class StoryFragment : Fragment() {
         playerViewModel.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
-
-                if (playbackState == Player.STATE_ENDED) {
-                    animationHandler.postDelayed({
-                        if (slider.currentItem < (slider.adapter as StoryAdapter).currentList.size - 1) {
-                            if (!(slider.adapter as StoryAdapter).isSlideVideo(slider.currentItem + 1)) fadeInBGM()
-                            slider.setCurrentItem(slider.currentItem + 1, true)
-                            // Fake drag to next photo
-                            //slider.beginFakeDrag()
-                            //slider.fakeDragBy(-width * 0.8f)
-                            //slider.endFakeDrag()
-                        } else stopSlideshow()
-                    }, 100)
-                }
+                if (playbackState == Player.STATE_ENDED) animationHandler.post(advanceSlide)
             }
         })
 
@@ -194,8 +182,8 @@ class StoryFragment : Fragment() {
             adapter = pAdapter
             setPageTransformer(ZoomInPageTransformer())
 
-            // Without this line, the 2nd slide will most likely not be loaded in advanced, wired!
-            offscreenPageLimit = 1
+            // With offscreenPageLimit greater than 0, the next slide will be preloaded, but if current and next slide are all video item, things will get messy
+            //offscreenPageLimit = 1
         }
 
         // Auto slider player with a dreamy style animation
@@ -250,7 +238,7 @@ class StoryFragment : Fragment() {
                                 }
                             }
                         }
-                    },200)
+                    },300)
                 }
             }
         })
@@ -313,7 +301,7 @@ class StoryFragment : Fragment() {
 
     private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>) {
         total = photos.size - 1
-        if (Tools.isMediaPlayable(photos[0].photo.mimeType)) fadeOutBGM()
+        if (photos[0].photo.mimeType.startsWith("video")) fadeOutBGM()
         pAdapter.setPhotos(photos) {
             // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
             slider.beginFakeDrag()
@@ -373,9 +361,9 @@ class StoryFragment : Fragment() {
 
     private val advanceSlide = Runnable {
         var prevValue = 0
-        if (slider.currentItem < (slider.adapter as StoryAdapter).currentList.size - 1) {
+        if (slider.currentItem < total) {
             // fade out BGM if next slide is video, do it here to prevent audio mix up
-            if ((slider.adapter as StoryAdapter).isSlideVideo(slider.currentItem + 1)) fadeOutBGM()
+            if (pAdapter.isSlideVideo(slider.currentItem + 1)) fadeOutBGM()
 
             // Slow down the default page transformation speed
             ValueAnimator.ofInt(0, slider.width).run {
@@ -402,9 +390,12 @@ class StoryFragment : Fragment() {
     // ViewPager2 PageTransformer for zooming out current slide and zooming in the next
     class ZoomInPageTransformer: ViewPager2.PageTransformer {
         override fun transformPage(page: View, position: Float) {
-            when(page) {
-                !is PlayerView -> {
-                    page.apply {
+            page.apply {
+                when(page) {
+                    is ConstraintLayout -> {
+                        // viewpager_item_exoplayer's first element is a ConstraintLayout, means viewpager_item_photo and viewpager_item_gif can't have the 1st element as ConstraintLayout
+                    }
+                    else -> {
                         when {
                             position <= -1f -> { // [-Infinity, -1)
                                 // This page is way off-screen to the left

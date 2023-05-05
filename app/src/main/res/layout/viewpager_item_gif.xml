@@ -15,6 +15,9 @@
   ~   limitations under the License.
   -->
 
+<!--
+Don't use ConstrainLayout asa the first element, will break slideshow, see comment in StoryFragment
+-->
 <ImageView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -23,4 +26,5 @@
     android:layout_height="match_parent"
     android:background="@android:color/black"
     android:scaleType="fitCenter"
-    tools:src="@drawable/ic_logo" />
+    tools:src="@drawable/ic_logo"
+    tools:ignore="ContentDescription" />
