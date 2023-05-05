@@ -399,8 +399,8 @@ class StoryFragment : Fragment() {
                             position <= -1f -> { // [-Infinity, -1)
                                 // This page is way off-screen to the left
                                 alpha = 0f
-                                scaleX = 1f
-                                scaleY = 1f
+                                scaleX = 1f + DREAMY_SCALE_FACTOR
+                                scaleY = 1f + DREAMY_SCALE_FACTOR
                             }
                             position < 0f -> { // [-1, 0)
                                 // This page is moving off-screen
@@ -415,7 +415,13 @@ class StoryFragment : Fragment() {
                                     scaleY = this
                                 }
                             }
-                            position <= 1f -> { // [0, 1]
+                            position == 0f -> {
+                                alpha = 1f
+                                translationX = 0f
+                                translationZ = 0f
+                                // keep scale factor intact, remove glitch between dreamy zoom and slide zoom out
+                            }
+                            position <= 1f -> { // (0, 1]
                                 // This page is moving into screen
 
                                 alpha = 1f - position
@@ -423,7 +429,8 @@ class StoryFragment : Fragment() {
                                 translationX = width * -position
                                 translationZ = 0f
                                 //(0.5f * (1 - position) + 0.5f).run {
-                                (0.5f * (2f - position)).run {
+                                //(0.5f * (2f - position)).run {
+                                (1f - position * 0.5f).run {
                                     scaleX = this
                                     scaleY = this
                                 }
