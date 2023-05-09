@@ -26,12 +26,6 @@
         app:showAsAction="always|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         android:visible="false" />
-    <item android:id="@+id/option_menu_in_map"
-        android:title="@string/option_menu_in_map"
-        android:orderInCategory="8"
-        app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_baseline_map_24"
-        android:visible="false" />
     <item
         android:id="@+id/option_menu_add_photo"
         android:title="@string/fab_add_photos"
@@ -44,42 +38,48 @@
         android:orderInCategory="7"
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_baseline_play_arrow_24" />
-    <item
-        android:id="@+id/option_menu_publish"
-        android:title="@string/item_publish"
-        android:orderInCategory="9"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/option_menu_blog"
-        android:title="@string/item_blog"
-        android:orderInCategory="10"
-        app:showAsAction="never"
-        android:enabled="false" />
-    <item
-        android:id="@+id/option_menu_import_gpx"
-        android:title="@string/item_geotag"
-        android:orderInCategory="11"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/option_menu_export_gpx"
-        android:title="@string/item_export_gpx"
-        android:orderInCategory="12"
-        app:showAsAction="never"
-        android:visible="false"/>
+    <item android:id="@+id/option_menu_in_map"
+        android:title="@string/option_menu_in_map"
+        android:orderInCategory="8"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_map_24"
+        android:visible="false" />
     <item
         android:id="@+id/option_menu_bgm"
         android:title="@string/item_bgm"
         android:orderInCategory="13"
         app:showAsAction="never" />
     <item
+        android:id="@+id/option_menu_publish"
+        android:title="@string/item_publish"
+        android:orderInCategory="20"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_blog"
+        android:title="@string/item_blog"
+        android:orderInCategory="21"
+        app:showAsAction="never"
+        android:enabled="false" />
+    <item
+        android:id="@+id/option_menu_import_gpx"
+        android:title="@string/item_geotag"
+        android:orderInCategory="25"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/option_menu_export_gpx"
+        android:title="@string/item_export_gpx"
+        android:orderInCategory="26"
+        app:showAsAction="never"
+        android:visible="false"/>
+    <item
         android:id="@+id/option_menu_rename"
         android:title="@string/item_rename"
-        android:orderInCategory="14"
+        android:orderInCategory="50"
         app:showAsAction="never" />
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
-        android:orderInCategory="14"
+        android:orderInCategory="52"
         app:showAsAction="never">
         <menu>
             <item
@@ -103,7 +103,7 @@
     <item
         android:id="@+id/option_menu_wide_list"
         android:title="@string/item_wide_list"
-        android:orderInCategory="13"
+        android:orderInCategory="51"
         android:checkable="true"
         app:showAsAction="never" />
     <item
