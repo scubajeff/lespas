@@ -153,6 +153,8 @@ class StoryFragment : Fragment() {
             } ?: displayOptions
         }
         Tools.goImmersive(requireActivity().window)
+        @Suppress("DEPRECATION")
+        requireActivity().window.decorView.setOnSystemUiVisibilityChangeListener { wipeActionBar() }
 
         // Prepare BGM playing
         localPath = Tools.getLocalRoot(requireContext())
