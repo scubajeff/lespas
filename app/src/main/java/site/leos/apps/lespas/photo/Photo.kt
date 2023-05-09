@@ -75,7 +75,7 @@ data class PhotoETag(val id: String, val eTag: String)
 data class PhotoName(val id: String, val name: String)
 data class AlbumPhotoName(val albumId: String, val name: String)
 data class PhotoMeta(val id: String, val name: String, val dateTaken: LocalDateTime, val mimeType: String, val width: Int, val height: Int, val orientation: Int, val caption: String, val latitude: Double, val longitude: Double, val altitude: Double, val bearing: Double)
-data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int, val orientation: Int, val eTag: String)
+data class MuzeiPhoto(val id: String, val name: String, val albumId: String, val dateTaken: LocalDateTime, val width: Int, val height: Int, val orientation: Int, val eTag: String, val locality: String)
 // Photo extras which don't go with the physical image file like EXIF
 data class PhotoExtras(val id: String, val caption: String, val locality: String, val country: String, val countryCode: String, val classificationId: String)
 @Parcelize
@@ -170,7 +170,7 @@ abstract class PhotoDao: BaseDao<Photo>() {
     @Query("SELECT id, name, albumId, dateTaken, width, height, orientation, eTag FROM ${Photo.TABLE_NAME} WHERE (CASE WHEN :portraitMode THEN width < height ELSE width > height END) AND mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getMuzeiArtwork(exclusion: List<String>, portraitMode: Boolean): List<MuzeiPhoto>
 */
-    @Query("SELECT id, name, albumId, dateTaken, width, height, orientation, eTag FROM ${Photo.TABLE_NAME} WHERE mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
+    @Query("SELECT id, name, albumId, dateTaken, width, height, orientation, eTag, locality FROM ${Photo.TABLE_NAME} WHERE mimeType IN ('image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp', 'image/heic', 'image/heif') AND albumId NOT IN ( :exclusion ) AND eTag != '${Photo.ETAG_NOT_YET_UPLOADED}'")
     abstract fun getMuzeiArtwork(exclusion: List<String>): List<MuzeiPhoto>
 
     @Query("SELECT dateTaken FROM ${Photo.TABLE_NAME} WHERE albumId = :albumId ORDER BY dateTaken ASC")
