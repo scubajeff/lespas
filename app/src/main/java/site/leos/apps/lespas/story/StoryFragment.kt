@@ -74,8 +74,10 @@ class StoryFragment : Fragment() {
     private lateinit var publicationPath: String
     private lateinit var rootPath: String
     private var total = 0
+    private var startAt = 0
 
     private val animationHandler = Handler(Looper.getMainLooper())
+    private var slowSwipeAnimator: ValueAnimator? = null
 
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: StoryAdapter
@@ -91,7 +93,6 @@ class StoryFragment : Fragment() {
     private var fadingJob: Job? = null
     private lateinit var localPath: String
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -103,13 +104,15 @@ class StoryFragment : Fragment() {
         serverPath = "${Tools.getRemoteHome(requireContext())}/${album.name}"
         serverFullPath = "${publicationPath}${serverPath}"
 
+        startAt = savedInstanceState?.getInt(KEY_START_AT) ?: 0
+
         playerViewModel = ViewModelProvider(this, VideoPlayerViewModelFactory(requireActivity(), imageLoaderModel.getCallFactory(), imageLoaderModel.getPlayerCache(), slideshowMode = true))[VideoPlayerViewModel::class.java]
         // Advance to next slide after video playback end
         playerViewModel.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 super.onPlaybackStateChanged(playbackState)
                 if (playbackState == Player.STATE_ENDED) {
-                    animationHandler.postDelayed(advanceSlide, 300)
+                    advanceSlide(300)
                     if (slider.currentItem < total && !pAdapter.isSlideVideo(slider.currentItem + 1)) fadeInBGM()
                 }
             }
@@ -177,9 +180,13 @@ class StoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Prevent screen rotation during slideshow playback
+        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
             setPageTransformer(ZoomInPageTransformer())
+            isUserInputEnabled = false
         }
 
         // Auto slider player with a dreamy style animation
@@ -192,70 +199,87 @@ class StoryFragment : Fragment() {
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     animationHandler.removeCallbacksAndMessages(null)
                     animationHandler.postDelayed({
-                        (slider.adapter as StoryAdapter).getViewHolderByPosition(slider.currentItem)?.apply {
-                            when(this) {
+                        pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
+                            when (this) {
                                 is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> {
-                                    this.getPhotoView().let { photoView ->
+                                    fadeInBGM()
+                                    getPhotoView().let { photoView ->
                                         // Stop any existing animation
                                         photoView.animation?.cancel()
                                         photoView.animation?.reset()
+                                        photoView.clearAnimation()
 
                                         // Start a dreamy animation by scaling image a little by 5% in a long period of time of 5s
                                         photoView.animate().setDuration(5000).scaleX(DREAMY_SCALE_FACTOR).scaleY(DREAMY_SCALE_FACTOR).setListener(object : Animator.AnimatorListener {
+                                            var finished = true
                                             override fun onAnimationStart(animation: Animator) {}
                                             override fun onAnimationRepeat(animation: Animator) {}
-                                            override fun onAnimationCancel(animation: Animator) {}
+                                            override fun onAnimationCancel(animation: Animator) { finished = false }
+
                                             // Programmatically advance to the next slide after animation end
-                                            override fun onAnimationEnd(animation: Animator) { animationHandler.post(advanceSlide) }
+                                            override fun onAnimationEnd(animation: Animator) { if (finished) advanceSlide() }
                                         })
                                     }
                                 }
+
                                 is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
+                                    fadeInBGM()
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                        this.getAnimatedDrawable().let {
+                                        getAnimatedDrawable().let {
                                             it.repeatCount = 1
 
                                             // This callback is unregistered when this AnimatedViewHolder is detached from window
                                             it.registerAnimationCallback(object : Animatable2.AnimationCallback() {
                                                 override fun onAnimationEnd(drawable: Drawable?) {
                                                     super.onAnimationEnd(drawable)
-                                                    animationHandler.post(advanceSlide)
+                                                    advanceSlide()
                                                 }
                                             })
+
+                                            it.start()
                                         }
                                     }
                                 }
-                                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
-                                    this.play()
 
-                                    // For video item, auto forward to next slide is handled by player's listener
+                                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
+                                    play()
+
+                                    // For video item, auto advance to next slide is handled by player's listener
                                 }
                             }
                         }
-                    },300)
+                    }, 300)
                 }
+            }
+
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+
+                startAt = position
             }
         })
 
         if (isPublication) {
-            imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { startSlideshow(it) }
+            imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { startSlideshow(it, startAt) }
         } else {
             albumModel.getAllPhotoInAlbum(album.id).observe(viewLifecycleOwner) { photos ->
                 Tools.sortPhotos(photos, album.sortOrder).run {
                     val rpList = mutableListOf<NCShareViewModel.RemotePhoto>()
                     forEach { rpList.add(NCShareViewModel.RemotePhoto(it, if (isRemote && it.eTag != Photo.ETAG_NOT_YET_UPLOADED) serverPath else "")) }
-                    startSlideshow(rpList)
+                    startSlideshow(rpList, startAt)
                 }
             }
         }
+    }
 
-        // Prevent screen rotation during slideshow playback
-        requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+    override fun onResume() {
+        super.onResume()
+        slider.beginFakeDrag()
+        slider.fakeDragBy(1f)
+        slider.endFakeDrag()
     }
 
     override fun onPause() {
-        animationHandler.removeCallbacksAndMessages(null)
-        playerViewModel.pause(Uri.EMPTY)
         stopSlideshow()
         super.onPause()
     }
@@ -263,10 +287,15 @@ class StoryFragment : Fragment() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_DISPLAY_OPTION, previousTitleBarDisplayOption)
+        outState.putInt(KEY_START_AT, startAt)
     }
 
     override fun onDestroyView() {
         requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+        // Make sure onViewDetachedFromWindow called in SeamlessMediaSliderAdapter
+        slider.adapter = null
+
         super.onDestroyView()
     }
 
@@ -292,10 +321,11 @@ class StoryFragment : Fragment() {
         }
     }
 
-    private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>) {
+    private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>, startAt: Int) {
         total = photos.size - 1
         pAdapter.setPhotos(photos) {
-            checkSlide(0)
+            checkSlide(startAt)
+            //slider.setCurrentItem(startAt, true)
             // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
             slider.beginFakeDrag()
             slider.fakeDragBy(1f)
@@ -304,7 +334,59 @@ class StoryFragment : Fragment() {
     }
 
     private fun stopSlideshow() {
+        animationHandler.removeCallbacksAndMessages(null)
+        // Stop animations
+        pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
+            when(this) {
+                is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> getPhotoView().run {
+                    animate().cancel()
+                    clearAnimation()
+                }
+                is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) getAnimatedDrawable().run {
+                    clearAnimationCallbacks()
+                    stop()
+                }
+                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> pause()
+            }
+        }
+        slowSwipeAnimator?.let { if (it.isStarted) it.cancel() }
+
         fadeOutBGM()
+    }
+
+    private fun checkSlide(position: Int) {
+        // fade out BGM if next slide is video, do it here to prevent audio mix up
+        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else fadeInBGM()
+
+        // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fectch of the 2nd one will ruin the playback of the 1st one
+        slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
+    }
+
+    private fun advanceSlide(delay: Long = 0) {
+        if (slider.currentItem < total) {
+            checkSlide(slider.currentItem + 1)
+            // Slow down the default page transformation speed
+            slowSwipeAnimator = ValueAnimator.ofInt(0, slider.width).apply {
+                var prevValue = 0
+                duration = 800
+                //interpolator = AccelerateDecelerateInterpolator()
+                addUpdateListener {
+                    (it.animatedValue as Int).run {
+                        slider.fakeDragBy((prevValue - this).toFloat())
+                        prevValue = this
+                    }
+                }
+                addListener(object : Animator.AnimatorListener {
+                    override fun onAnimationStart(animation: Animator) { slider.beginFakeDrag() }
+                    override fun onAnimationEnd(animation: Animator) { slider.endFakeDrag() }
+                    override fun onAnimationCancel(animation: Animator) { slider.endFakeDrag() }
+                    override fun onAnimationRepeat(animation: Animator) {}
+                })
+                if (delay > 0) startDelay = delay
+            }
+            slowSwipeAnimator?.start()
+        }
+        else stopSlideshow()
     }
 
     private fun setBGM(bgmFile: String) {
@@ -316,7 +398,7 @@ class StoryFragment : Fragment() {
         if (hasBGM) {
             fadingJob?.cancel()
 
-            fadingJob = lifecycleScope.launch {
+            if (bgmPlayer.volume < 1f) fadingJob = lifecycleScope.launch {
                 bgmPlayer.play()
                 while (isActive) {
                     delay(75)
@@ -335,56 +417,19 @@ class StoryFragment : Fragment() {
         if (hasBGM) {
             fadingJob?.cancel()
 
-            if (bgmPlayer.volume > 0f) {
-                fadingJob = lifecycleScope.launch {
-                    while (isActive) {
-                        delay(75)
+            if (bgmPlayer.volume > 0f) fadingJob = lifecycleScope.launch {
+                while (isActive) {
+                    delay(75)
 
-                        if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
-                        else {
-                            bgmPlayer.volume = 0f
-                            bgmPlayer.pause()
-                            break
-                        }
+                    if (bgmPlayer.volume > 0f) bgmPlayer.volume -= 0.05f
+                    else {
+                        bgmPlayer.volume = 0f
+                        bgmPlayer.pause()
+                        break
                     }
                 }
             }
         }
-    }
-
-    private fun checkSlide(position: Int) {
-        // fade out BGM if next slide is video, do it here to prevent audio mix up
-        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else if (position == 0) fadeInBGM()
-
-        // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fectch of the 2nd one will ruin the playback of the 1st one
-        slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
-    }
-
-    private val advanceSlide = Runnable {
-        var prevValue = 0
-        if (slider.currentItem < total) {
-            checkSlide(slider.currentItem + 1)
-
-            // Slow down the default page transformation speed
-            ValueAnimator.ofInt(0, slider.width).run {
-                duration = 800
-                //interpolator = AccelerateDecelerateInterpolator()
-                addUpdateListener {
-                    (it.animatedValue as Int).run {
-                        slider.fakeDragBy((prevValue - this).toFloat())
-                        prevValue = this
-                    }
-                }
-                addListener(object : Animator.AnimatorListener {
-                    override fun onAnimationStart(animation: Animator) { slider.beginFakeDrag() }
-                    override fun onAnimationEnd(animation: Animator) { slider.endFakeDrag() }
-                    override fun onAnimationCancel(animation: Animator) {}
-                    override fun onAnimationRepeat(animation: Animator) {}
-                })
-                start()
-            }
-        }
-        else stopSlideshow()
     }
 
     // ViewPager2 PageTransformer for zooming out current slide and zooming in the next
@@ -450,10 +495,7 @@ class StoryFragment : Fragment() {
         }
     }
 
-    class StoryAdapter(
-        context: Context,
-        displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem,
-        clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
+    class StoryAdapter(context: Context, displayWidth: Int, playerViewModel: VideoPlayerViewModel, private val videoItemLoader: (NCShareViewModel.RemotePhoto) -> VideoItem, clickListener: (Boolean?) -> Unit, imageLoader: (NCShareViewModel.RemotePhoto, ImageView?, String) -> Unit, cancelLoader: (View) -> Unit
     ): SeamlessMediaSliderAdapter<NCShareViewModel.RemotePhoto>(context, displayWidth, PhotoDiffCallback(), playerViewModel, clickListener, imageLoader, cancelLoader) {
         override fun getVideoItem(position: Int): VideoItem = videoItemLoader(getItem(position))
         override fun getItemTransitionName(position: Int): String = getItem(position).photo.id
@@ -493,6 +535,7 @@ class StoryFragment : Fragment() {
     companion object {
         private const val DREAMY_SCALE_FACTOR = 1.05f
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
+        private const val KEY_START_AT = "KEY_START_AT"
 
         private const val KEY_ALBUM = "ALBUM"
 

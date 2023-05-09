@@ -326,6 +326,7 @@ abstract class SeamlessMediaSliderAdapter<T>(
         }
 
         fun play() { playerViewModel.play() }
+        fun pause() { playerViewModel.pause(videoUri) }
     }
 
     @Parcelize
