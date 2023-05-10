@@ -229,6 +229,7 @@
     <string name="object_vehicle">Fahrzeug</string>
     
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Ende</string>
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="prefer">Bevorzugt:</string>
     <string name="prefer_day_in_history">Damals und heute</string>

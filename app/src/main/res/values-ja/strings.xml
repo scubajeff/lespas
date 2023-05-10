@@ -156,6 +156,7 @@
     <string name="solo_album">ソロ</string>
     <string name="joint_album_tooltips">受信者が編集できます。</string>
     <string name="solo_album_tooltips">受信者のみ表示されます。</string>
+    <string name="the_end">終わり</string>
     <string name="muzei_provider_description">Les Pasの瞬間</string>
     <string name="exclude_albums">の写真を除外します</string>
     <string name="prefer_day_in_history">昔と今</string>

@@ -157,6 +157,7 @@
     <string name="solo_album">Solo</string>
     <string name="joint_album_tooltips">Los destinatarios pueden editar.</string>
     <string name="solo_album_tooltips">Sólo para los destinatarios.</string>
+    <string name="the_end">Fin</string>
     <string name="muzei_provider_description">Momento de Les Pas</string>
     <string name="exclude_albums">Excluye las fotos de:</string>
     <string name="prefer_day_in_history">Antes y ahora</string>

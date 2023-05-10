@@ -453,6 +453,9 @@
     <string name="object_location">Location</string>
     <string name="object_face">Face</string>
 
+    <!-- Story Fragment -->
+    <string name="the_end">The End</string>
+
     <!-- Muzei Artwork Provider -->
     <string name="muzei_provider_description">Les Pas Moment</string>
     <string name="prefer">Prefer:</string>

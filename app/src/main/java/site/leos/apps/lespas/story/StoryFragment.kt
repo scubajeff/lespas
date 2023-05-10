@@ -34,8 +34,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.ViewModelProvider
@@ -81,6 +83,7 @@ class StoryFragment : Fragment() {
 
     private lateinit var slider: ViewPager2
     private lateinit var pAdapter: StoryAdapter
+    private lateinit var endSign: TextView
 
     private val albumModel: AlbumViewModel by activityViewModels()
     private val imageLoaderModel: NCShareViewModel by activityViewModels()
@@ -261,6 +264,8 @@ class StoryFragment : Fragment() {
             }
         })
 
+        endSign = view.findViewById(R.id.the_end)
+
         if (isPublication) {
             imageLoaderModel.publicationContentMeta.asLiveData().observe(viewLifecycleOwner) { startSlideshow(it, startAt) }
         } else {
@@ -282,7 +287,7 @@ class StoryFragment : Fragment() {
     }
 
     override fun onPause() {
-        stopSlideshow()
+        stopSlideshow(endOfSlideshow = false)
         super.onPause()
     }
 
@@ -302,6 +307,8 @@ class StoryFragment : Fragment() {
     }
 
     override fun onDestroy() {
+        animationHandler.removeCallbacksAndMessages(null)
+
         bgmPlayer.release()
 
         Tools.quitImmersive(requireActivity().window)
@@ -316,13 +323,6 @@ class StoryFragment : Fragment() {
         super.onDestroy()
     }
 
-    private fun wipeActionBar() {
-        (requireActivity() as AppCompatActivity).supportActionBar?.run {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            displayOptions = 0
-        }
-    }
-
     private fun startSlideshow(photos: List<NCShareViewModel.RemotePhoto>, startAt: Int) {
         total = photos.size - 1
         pAdapter.setPhotos(photos) {
@@ -335,7 +335,7 @@ class StoryFragment : Fragment() {
         }
     }
 
-    private fun stopSlideshow() {
+    private fun stopSlideshow(endOfSlideshow: Boolean) {
         animationHandler.removeCallbacksAndMessages(null)
         // Stop animations
         pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
@@ -353,7 +353,16 @@ class StoryFragment : Fragment() {
         }
         slowSwipeAnimator?.let { if (it.isStarted) it.cancel() }
 
-        fadeOutBGM()
+        if (endOfSlideshow) {
+            animationHandler.postDelayed({
+                endSign.isVisible = true
+                // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
+                @Suppress("DEPRECATION")
+                requireActivity().window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
+            }, 500)
+            if (hasBGM) animationHandler.postDelayed({ fadeOutBGM() }, 1500)
+        }
+        else fadeOutBGM()
     }
 
     private fun checkSlide(position: Int) {
@@ -388,7 +397,7 @@ class StoryFragment : Fragment() {
             }
             slowSwipeAnimator?.start()
         }
-        else stopSlideshow()
+        else stopSlideshow(endOfSlideshow = true)
     }
 
     private fun setBGM(bgmFile: String) {
@@ -431,6 +440,13 @@ class StoryFragment : Fragment() {
                     }
                 }
             }
+        }
+    }
+
+    private fun wipeActionBar() {
+        (requireActivity() as AppCompatActivity).supportActionBar?.run {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            displayOptions = 0
         }
     }
 
@@ -509,6 +525,10 @@ class StoryFragment : Fragment() {
 
         // Maintaining a map between adapter position and it's ViewHolder
         private val vhMap = HashMap<ViewHolder, Int>()
+        fun getViewHolderByPosition(position: Int): ViewHolder? {
+            vhMap.entries.forEach { if (it.value == position) return it.key }
+            return null
+        }
         override fun onViewAttachedToWindow(holder: ViewHolder) {
             super.onViewAttachedToWindow(holder)
             vhMap[holder] = holder.bindingAdapterPosition
@@ -523,9 +543,10 @@ class StoryFragment : Fragment() {
             vhMap.remove(holder)
             super.onViewRecycled(holder)
         }
-        fun getViewHolderByPosition(position: Int): ViewHolder? {
-            vhMap.entries.forEach { if (it.value == position) return it.key }
-            return null
+
+        override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+            vhMap.clear()
+            super.onDetachedFromRecyclerView(recyclerView)
         }
     }
 

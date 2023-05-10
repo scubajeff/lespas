@@ -275,6 +275,7 @@
     <string name="object_face">Rosto</string>
 
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Fim</string>
     <string name="muzei_provider_description">Momento Les Pas</string>
     <string name="prefer">Preferi:</string>
     <string name="prefer_day_in_history">Antes e agora</string>

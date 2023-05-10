@@ -28,4 +28,16 @@
         android:background="@android:color/black"
         android:keepScreenOn="true" />
 
+    <TextView
+        android:id="@+id/the_end"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/dark_gray_overlay_background"
+        android:text="@string/the_end"
+        android:gravity="center"
+        style="@style/TextAppearance.MaterialComponents.Headline4"
+        android:textColor="@color/lespas_white"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

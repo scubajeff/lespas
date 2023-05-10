@@ -290,6 +290,7 @@
     <string name="object_face">Volti</string>
 
     <!-- Muzei Artwork Provider -->
+    <string name="the_end">Fine</string>
     <string name="muzei_provider_description">Momento Les Pas</string>
     <string name="prefer">Preferisci:</string>
     <string name="prefer_day_in_history">Ieri e oggi</string>
