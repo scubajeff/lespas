@@ -77,6 +77,7 @@
         app:helperTextEnabled="true"
         app:helperText="@string/http_toggle_helper_text"
         app:errorEnabled="true"
+        app:expandedHintEnabled="false"
         app:prefixText="https://">
 
         <com.google.android.material.textfield.TextInputEditText
