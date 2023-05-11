@@ -43,6 +43,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
@@ -151,6 +153,7 @@ class PhotosInMapFragment: Fragment(), MainActivity.OnWindowFocusChangedListener
 
                 // Mute the video sound during late night hours
                 with(LocalDateTime.now().hour) { if (this >= 22 || this < 7) isMuted = true }
+                setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             }
             isLocalAlbum = !Tools.isRemoteAlbum(this)
             remotePhotos = mutableListOf()
