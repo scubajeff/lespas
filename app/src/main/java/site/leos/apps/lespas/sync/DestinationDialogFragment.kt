@@ -16,6 +16,7 @@
 
 package site.leos.apps.lespas.sync
 
+import android.app.Dialog
 import android.content.DialogInterface
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
@@ -34,6 +35,9 @@ import android.webkit.MimeTypeMap
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.ComponentDialog
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
@@ -87,9 +91,13 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private lateinit var newAlbumTitleTextInputEditText: TextInputEditText
     private lateinit var toAlbumTextView: TextView
     private lateinit var remoteAlbumCheckBox: CheckBox
+    private lateinit var nameFilterSearchView: SearchView
     private var remoteAlbumIconDrawableSize = 16
 
     private var ignoreAlbum = ""
+
+    private var albums = listOf<RemoteAlbum>()
+    private var currentFilter = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -189,6 +197,28 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         ignoreAlbum = requireArguments().getString(KEY_IGNORE_ALBUM) ?: ""
     }
 
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return super.onCreateDialog(savedInstanceState).also {
+            (it as ComponentDialog).onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (currentFilter.isNotEmpty()) {
+                        nameFilterSearchView.setQuery("", false)
+                        nameFilterSearchView.isIconified = true
+                        return
+                    }
+
+                    if (tag == ShareReceiverActivity.TAG_DESTINATION_DIALOG) requireActivity().finish()
+                    else {
+                        // Clear editing mode
+                        destinationModel.setEditMode(false)
+
+                        dialog?.dismiss()
+                    }
+                }
+            })
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -207,6 +237,23 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         clipDataRecyclerView = view.findViewById(R.id.clipdata_recyclerview)
         destinationRecyclerView = view.findViewById(R.id.destination_recyclerview)
         copyOrMoveToggleGroup = view.findViewById(R.id.move_or_copy)
+        nameFilterSearchView = view.findViewById<SearchView>(R.id.name_filter).apply {
+            if (currentFilter.isNotEmpty()) setQuery(currentFilter, false)
+
+            queryHint = getString(R.string.option_menu_name_filter)
+
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean = false
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    (newText ?: "").let { text ->
+                        currentFilter = text
+                        setAlbums()
+                    }
+                    return false
+                }
+            })
+        }
+
         newAlbumTextInputLayout = view.findViewById<TextInputLayout?>(R.id.new_album_textinputlayout).apply {
             this.editText?.run {
                 compoundDrawablePadding = 16
@@ -234,7 +281,11 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         }
 
         view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
-        savedInstanceState?.getInt(COPY_OR_MOVE)?.apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
+        savedInstanceState?.let {
+            it.getInt(KEY_COPY_OR_MOVE)?.apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
+            currentFilter = it.getString(KEY_NAME_FILTER) ?: ""
+        }
+
 
         newAlbumTitleTextInputEditText.run {
             setOnEditorActionListener { _, actionId, keyEvent ->
@@ -267,7 +318,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             val base = Tools.getRemoteHome(requireContext())
             val remoteAlbums = mutableListOf(RemoteAlbum(nullAlbum, "", ""))
             albums.forEach { album -> if (album.id != ignoreAlbum) remoteAlbums.add(RemoteAlbum(album, if (Tools.isRemoteAlbum(album)) "${base}/${album.name}" else "", "")) }
-            albumAdapter.submitList(remoteAlbums)
+            this.albums = remoteAlbums
+            setAlbums()
 
             jointAlbumLiveData.observe(viewLifecycleOwner) { shared ->
                 val jointAlbums = mutableListOf<RemoteAlbum>()
@@ -286,7 +338,10 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                         )
                     )
                 }
-                if (jointAlbums.isNotEmpty()) albumAdapter.submitList(albumAdapter.currentList.plus(jointAlbums))
+                if (jointAlbums.isNotEmpty()) {
+                    this.albums = this.albums.plus(jointAlbums)
+                    setAlbums()
+                }
 
                 if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
             }
@@ -304,7 +359,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(COPY_OR_MOVE, copyOrMoveToggleGroup.checkedButtonId)
+        outState.putInt(KEY_COPY_OR_MOVE, copyOrMoveToggleGroup.checkedButtonId)
+        outState.putString(KEY_NAME_FILTER, currentFilter)
     }
 
     override fun onDestroyView() {
@@ -329,10 +385,16 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private fun showNewAlbumEditText() {
         toAlbumTextView.text = getString(R.string.to_new_album)
         destinationRecyclerView.visibility = View.GONE
+        nameFilterSearchView.visibility = View.GONE
+        nameFilterSearchView.setQuery("", false)
         newAlbumTextInputLayout.apply {
             visibility = View.VISIBLE
             requestFocus()
         }
+    }
+
+    private fun setAlbums() {
+        albumAdapter.submitList(if (currentFilter.isNotEmpty()) albums.filter { it.album.name.contains(currentFilter, true) } else albums)
     }
 
     class DestinationAdapter(private val itemClickListener: (RemoteAlbum)-> Unit, private val imageLoader: (RemoteAlbum, ImageView, String)-> Unit, private val avatarLoader: (NCShareViewModel.Sharee, View)-> Unit, private val cancelLoader: (View)-> Unit)
@@ -460,7 +522,8 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         const val KEY_REMOTE_PHOTO = "KEY_REMOTE_PHOTO"
         const val KEY_IGNORE_ALBUM = "KEY_IGNORE_ALBUM"
 
-        private const val COPY_OR_MOVE = "COPY_OR_MOVE"
+        private const val KEY_COPY_OR_MOVE = "KEY_COPY_OR_MOVE"
+        private const val KEY_NAME_FILTER = "KEY_NAME_FILTER"
 
         @JvmName("newInstance1")
         @JvmStatic

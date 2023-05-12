@@ -72,12 +72,25 @@
 
         <TextView
             android:id="@+id/to"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@id/divider"
             android:padding="@dimen/small_padding"
             style="@style/MaterialAlertDialog.MaterialComponents.Title.Text"
             android:text="@string/to_album" />
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/name_filter"
+            android:layout_width="0dp"
+            android:layout_height="28dp"
+            app:layout_constraintLeft_toRightOf="@id/to"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintBottom_toBottomOf="@id/to"
+            app:searchHintIcon="@null"
+            android:imeOptions="actionNone|flagNoEnterAction|flagNoExtractUi|flagNoFullscreen"
+            android:theme="@style/Theme.LesPas.SearchView" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/destination_recyclerview"
