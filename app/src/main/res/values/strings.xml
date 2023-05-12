@@ -74,6 +74,7 @@
     <string name="msg_set_as_remote">"Setting album as 'Remote' will remove all it's media files from this device. Proceed?"</string>
     <string name="msg_set_as_local">"Setting album as 'Local' will download all it's media files from server, hence it would take a while. Proceed?"</string>
     <string name="msg_low_storage_space">"Your internal storage space is less than 10% free, this will stop Les Pas from syncing with server."</string>
+    <string name="option_menu_name_filter">Filter by name</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
     <string name="hidden_albums">Hidden Albums:</string>

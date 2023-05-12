@@ -39,6 +39,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.LinearLayoutCompat
+import androidx.appcompat.widget.SearchView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -109,9 +110,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     private var unhideMenu: MenuItem? = null
     private var toggleRemoteMenu: MenuItem? = null
     private var sortByMenu: MenuItem? = null
+    private var nameFilterMenu: MenuItem? = null
 
     private var scrollTo = -1
-    private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
     private var newTimestamp: Long = System.currentTimeMillis() / 1000
 
     private lateinit var addFileLauncher: ActivityResultLauncher<String>
@@ -133,6 +134,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         remoteBasePath = Tools.getRemoteHome(requireContext())
 
         lastSelection = savedInstanceState?.getStringArray(KEY_SELECTION)?.toMutableSet() ?: mutableSetOf()
+        currentFilter = savedInstanceState?.getString(KEY_NAME_FILTER) ?: ""
 
         addFileLauncher = registerForActivityResult(LesPasGetMediaContract(arrayOf("image/*", "video/*"))) {
             if (it.isNotEmpty()) {
@@ -257,20 +259,19 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             }
         }
 
-        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) {
-            val list = mutableListOf<Album>().apply {
-                if (showCameraRoll) add(cameraRollAlbum)
-                addAll(it)
-            }
-
-            mAdapter.setAlbums(list, currentSortOrder) {
-                if (scrollTo != -1) {
-                    recyclerView.scrollToPosition(scrollTo)
-                    scrollTo = -1
+        albumsModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
+            this.albums = albums
+            if (albums.isNotEmpty()) {
+                setAlbums {
+                    if (scrollTo != -1) {
+                        recyclerView.scrollToPosition(scrollTo)
+                        scrollTo = -1
+                    }
                 }
+            } else {
+                sortByMenu?.isEnabled = false
+                nameFilterMenu?.isEnabled = false
             }
-
-            sortByMenu?.run { isEnabled = it.isNotEmpty() }
         }
         albumsModel.allHiddenAlbums.observe(viewLifecycleOwner) { hidden -> unhideMenu?.isEnabled = hidden.isNotEmpty() }
 
@@ -380,6 +381,27 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 cameraRollAsAlbumMenu = menu.findItem(R.id.option_menu_camera_roll)
                 unhideMenu = menu.findItem(R.id.option_menu_unhide)
                 sortByMenu = menu.findItem(R.id.option_menu_sortby)
+                nameFilterMenu = menu.findItem(R.id.option_menu_album_name_filter).apply {
+                    (actionView as SearchView).let {
+                        if (currentFilter.isNotEmpty()) {
+                            expandActionView()
+                            it.setQuery(currentFilter, false)
+                        }
+
+                        it.queryHint = getString(R.string.option_menu_name_filter)
+
+                        it.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                            override fun onQueryTextSubmit(query: String?): Boolean = false
+                            override fun onQueryTextChange(newText: String?): Boolean {
+                                (newText ?: "").let { text ->
+                                    currentFilter = text
+                                    setAlbums {}
+                                }
+                                return false
+                            }
+                        })
+                    }
+                }
             }
 
             override fun onPrepareMenu(menu: Menu) {
@@ -441,7 +463,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                             else-> -1
                         }
 
-                        mAdapter.setAlbums(null, currentSortOrder) { recyclerView.scrollToPosition(0) }
+                        setAlbums { recyclerView.scrollToPosition(0) }
 
                         PreferenceManager.getDefaultSharedPreferences(requireContext()).edit().putInt(ALBUM_LIST_SORT_ORDER, currentSortOrder).apply()
 
@@ -497,6 +519,7 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putStringArray(KEY_SELECTION, lastSelection.toTypedArray())
+        outState.putString(KEY_NAME_FILTER, currentFilter)
     }
 
     override fun onDestroyView() {
@@ -594,6 +617,29 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         selectionTracker.clearSelection()
         actionMode = null
         fab.isEnabled = true
+    }
+
+    private var albums = listOf<Album>()
+    private var currentSortOrder = Album.BY_DATE_TAKEN_DESC
+    private var currentFilter = ""
+    private fun setAlbums(callback: () -> Unit) {
+        mutableListOf<Album>().run {
+            // Filter albums by name
+            addAll(if (currentFilter.isNotEmpty()) albums.filter { it.name.contains(currentFilter, true) } else albums)
+
+            // Sort albums by user's choice, this sort order is persistence in shared preference
+            when (currentSortOrder) {
+                Album.BY_DATE_TAKEN_ASC -> sortWith(compareBy { it.endDate })
+                Album.BY_DATE_TAKEN_DESC -> sortWith(compareByDescending { it.endDate })
+                Album.BY_NAME_ASC -> sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+                Album.BY_NAME_DESC -> sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
+            }
+
+            // Put camera roll album at the top if need
+            if (showCameraRoll) add(0, cameraRollAlbum)
+
+            mAdapter.submitList(this) { callback() }
+        }
     }
 
     private fun requestSync(syncAction: Int) {
@@ -763,28 +809,6 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
             super.onDetachedFromRecyclerView(recyclerView)
         }
 
-        internal fun setAlbums(albums: MutableList<Album>?, sortOrder: Int, callback: () -> Unit) {
-            val albumList = mutableListOf<Album>().apply { addAll(albums ?: currentList) }
-
-            if (albumList.isNotEmpty()) {
-                // save camera roll album
-                val firstAlbum = albumList.first()
-                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) albumList.removeAt(0)
-
-                when (sortOrder) {
-                    Album.BY_DATE_TAKEN_ASC -> albumList.sortWith(compareBy { it.endDate })
-                    Album.BY_DATE_TAKEN_DESC -> albumList.sortWith(compareByDescending { it.endDate })
-                    Album.BY_NAME_ASC -> albumList.sortWith(compareBy(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                    Album.BY_NAME_DESC -> albumList.sortWith(compareByDescending(Collator.getInstance().apply { strength = Collator.PRIMARY }) { it.name })
-                }
-
-                // restore camera roll album
-                if (firstAlbum.id == CameraRollFragment.FROM_CAMERA_ROLL) albumList.add(0, firstAlbum)
-            }
-
-            submitList(albumList) { callback() }
-        }
-
         internal fun setRecipients(recipients: List<NCShareViewModel.ShareByMe>) {
             this.recipients = recipients
             for (recipient in recipients) { notifyItemChanged(currentList.indexOfFirst { it.id == recipient.fileId }) }
@@ -800,9 +824,10 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         }
 
         internal fun getItemBySelectionKey(key: String): Album? = currentList.find { it.id == key }
+        internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
         private fun getAlbumId(position: Int): String = currentList[position].id
         private fun getPosition(key: String): Int = currentList.indexOfFirst { it.id == key}
-        internal fun setSelectionTracker(selectionTracker: SelectionTracker<String>) { this.selectionTracker = selectionTracker }
+
         class AlbumKeyProvider(private val adapter: AlbumListAdapter): ItemKeyProvider<String>(SCOPE_CACHED) {
             override fun getKey(position: Int): String = adapter.getAlbumId(position)
             override fun getPosition(key: String): Int = adapter.getPosition(key)
@@ -903,7 +928,9 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
         private const val CONFIRM_DELETE_REQUEST = "CONFIRM_DELETE_REQUEST"
         private const val CONFIRM_TOGGLE_REMOTE_REQUEST = "CONFIRM_TOGGLE_REMOTE_REQUEST"
         private const val UNHIDE_DIALOG = "UNHIDE_DIALOG"
+
         private const val KEY_SELECTION = "KEY_SELECTION"
+        private const val KEY_NAME_FILTER = "KEY_NAME_FILTER"
 
         const val KEY_RECEIVED_SHARE_TIMESTAMP = "KEY_RECEIVED_SHARE_TIMESTAMP"
 

@@ -50,6 +50,7 @@
     <string name="msg_set_as_local">"Ao configurar um álbum como 'Local' uma cópia dele será baixada do servidor, pode demorar. Continuar?"</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
+    <string name="option_menu_name_filter">Filtrar por nome</string>
     <string name="hidden_albums">Álbuns escondidos:</string>
     <string name="not_hiding">Os seguintes nomes já existiam na lista de álbuns escondidos: %1$s</string>
 

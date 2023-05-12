@@ -52,6 +52,7 @@
     <string name="msg_set_as_local">"Définir l'album comme "Local" téléchargera tous ses fichiers multimédias depuis le serveur, ce qui prendra un certain temps. Continuer ?"</string>
     <string name="msg_low_storage_space">"Votre espace de stockage libre est inférieur à 10%, cela empêchera Les Pas de se synchroniser avec le serveur."</string>
     <!-- Album fragment, UnhideDialog fragment -->
+    <string name="option_menu_name_filter">Filtrer par nom</string>
     <string name="hidden_albums">Albums cachés :</string>
     <string name="not_hiding">Les noms suivants existaient déjà dans la liste des albums cachés : %1$s</string>
     <!-- AlbumDetail fragment -->

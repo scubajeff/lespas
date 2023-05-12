@@ -54,6 +54,7 @@
     <string name="msg_set_as_local">Impostando l\'album come \"Locale\" tutti i suoi contenuti saranno scaricati dal server. L\'operazione potrebbe richiedere qualche minuto. Vuoi continuare\?</string>
 
     <!-- Album fragment, UnhideDialog fragment -->
+    <string name="option_menu_name_filter">Filtrare per nome</string>
     <string name="hidden_albums">Album nascosti:</string>
     <string name="not_hiding">I seguenti nomi esistono già nell\'elenco degli album nascosti: %1$s</string>
 
