@@ -25,7 +25,6 @@
         android:id="@+id/pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/black"
         android:keepScreenOn="true" />
 
     <TextView
@@ -37,6 +36,7 @@
         android:gravity="center"
         style="@style/TextAppearance.MaterialComponents.Headline4"
         android:textColor="@color/lespas_white"
+        android:textStyle="bold"
         android:visibility="gone"
         tools:visibility="visible" />
 

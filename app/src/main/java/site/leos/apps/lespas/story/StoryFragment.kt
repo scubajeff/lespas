@@ -194,6 +194,7 @@ class StoryFragment : Fragment() {
         slider = view.findViewById<ViewPager2>(R.id.pager).apply {
             adapter = pAdapter
             setPageTransformer(ZoomInPageTransformer())
+            //setPageTransformer(MarginPageTransformer(320))
             isUserInputEnabled = false
         }
 
@@ -312,6 +313,7 @@ class StoryFragment : Fragment() {
 
     private fun animateSlide() {
         animationHandler.removeCallbacksAndMessages(null)
+        // Delayed runnable is necessary because it takes a little bit of time for RecyclerView to return correct ViewHolder at the current position
         animationHandler.postDelayed({
             pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
                 when (this) {
@@ -342,7 +344,7 @@ class StoryFragment : Fragment() {
                             getAnimatedDrawable().let {
                                 it.repeatCount = 1
 
-                                // This callback is unregistered when this AnimatedViewHolder is detached from window
+                                // This callback is unregistered when this AnimatedViewHolder is detached from window in SeamlessMediaSliderAdapter
                                 it.registerAnimationCallback(object : Animatable2.AnimationCallback() {
                                     override fun onAnimationEnd(drawable: Drawable?) {
                                         super.onAnimationEnd(drawable)
@@ -356,21 +358,12 @@ class StoryFragment : Fragment() {
                     }
 
                     is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
-                        play()
-
                         // For video item, auto advance to next slide is handled by player's listener
+                        play()
                     }
                 }
             }
         }, 300)
-    }
-
-    private fun checkSlide(position: Int) {
-        // fade out BGM if next slide is video, do it here to prevent audio mix up
-        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else fadeInBGM()
-
-        // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fectch of the 2nd one will ruin the playback of the 1st one
-        slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
     }
 
     private fun advanceSlide(delay: Long = 0) {
@@ -398,6 +391,14 @@ class StoryFragment : Fragment() {
             slowSwipeAnimator?.start()
         }
         else stopSlideshow(endOfSlideshow = true)
+    }
+
+    private fun checkSlide(position: Int) {
+        // fade out BGM if next slide is video, do it here to prevent audio mix up
+        if (pAdapter.isSlideVideo(position)) fadeOutBGM() else fadeInBGM()
+
+        // With offscreenPageLimit greater than 0, the next slide will be preloaded, however if two consecutive slides are both video, pre-fectch of the 2nd one will ruin the playback of the 1st one
+        slider.offscreenPageLimit = if (position < total && pAdapter.isSlideVideo(position) && pAdapter.isSlideVideo(position + 1)) ViewPager2.OFFSCREEN_PAGE_LIMIT_DEFAULT else 1
     }
 
     private fun setBGM(bgmFile: String) {
