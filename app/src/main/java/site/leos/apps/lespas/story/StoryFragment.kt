@@ -197,67 +197,12 @@ class StoryFragment : Fragment() {
             isUserInputEnabled = false
         }
 
-        // Auto slider player with a dreamy style animation
         slider.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageScrollStateChanged(state: Int) {
                 super.onPageScrollStateChanged(state)
 
-                // Activate here, rather than overwriting onPageSelected, is because onPageSelected is called before page transformer animation ends.
-                // The problem doing here, is that when first slide shown, onPageScrollStateChanged is not called, we have to fake drag the first slide a little to kick start the whole process
-                if (state == ViewPager2.SCROLL_STATE_IDLE) {
-                    animationHandler.removeCallbacksAndMessages(null)
-                    animationHandler.postDelayed({
-                        pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
-                            when (this) {
-                                is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> {
-                                    fadeInBGM()
-                                    getPhotoView().let { photoView ->
-                                        // Stop any existing animation
-                                        photoView.animation?.cancel()
-                                        photoView.animation?.reset()
-                                        photoView.clearAnimation()
-
-                                        // Start a dreamy animation by scaling image a little by 5% in a long period of time of 5s
-                                        photoView.animate().setDuration(5000).scaleX(DREAMY_SCALE_FACTOR).scaleY(DREAMY_SCALE_FACTOR).setListener(object : Animator.AnimatorListener {
-                                            var finished = true
-                                            override fun onAnimationStart(animation: Animator) {}
-                                            override fun onAnimationRepeat(animation: Animator) {}
-                                            override fun onAnimationCancel(animation: Animator) { finished = false }
-
-                                            // Programmatically advance to the next slide after animation end
-                                            override fun onAnimationEnd(animation: Animator) { if (finished) advanceSlide() }
-                                        })
-                                    }
-                                }
-
-                                is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
-                                    fadeInBGM()
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                        getAnimatedDrawable().let {
-                                            it.repeatCount = 1
-
-                                            // This callback is unregistered when this AnimatedViewHolder is detached from window
-                                            it.registerAnimationCallback(object : Animatable2.AnimationCallback() {
-                                                override fun onAnimationEnd(drawable: Drawable?) {
-                                                    super.onAnimationEnd(drawable)
-                                                    advanceSlide()
-                                                }
-                                            })
-
-                                            it.start()
-                                        }
-                                    }
-                                }
-
-                                is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
-                                    play()
-
-                                    // For video item, auto advance to next slide is handled by player's listener
-                                }
-                            }
-                        }
-                    }, 300)
-                }
+                // Activate slide animation here, rather than in onPageSelected, because onPageSelected is called before page transformer animation ends
+                if (state == ViewPager2.SCROLL_STATE_IDLE) { animateSlide() }
             }
 
             override fun onPageSelected(position: Int) {
@@ -331,10 +276,7 @@ class StoryFragment : Fragment() {
         pAdapter.setPhotos(photos) {
             checkSlide(startAt)
             //slider.setCurrentItem(startAt, true)
-            // Kick start the slideshow by fake drag a bit on the first slide, so that onPageScrollStateChanged can be called
-            slider.beginFakeDrag()
-            slider.fakeDragBy(1f)
-            slider.endFakeDrag()
+            animateSlide()
         }
     }
 
@@ -366,6 +308,61 @@ class StoryFragment : Fragment() {
             if (hasBGM) animationHandler.postDelayed({ fadeOutBGM() }, 1500)
         }
         else fadeOutBGM()
+    }
+
+    private fun animateSlide() {
+        animationHandler.removeCallbacksAndMessages(null)
+        animationHandler.postDelayed({
+            pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
+                when (this) {
+                    is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> {
+                        fadeInBGM()
+                        getPhotoView().let { photoView ->
+                            // Stop any existing animation
+                            photoView.animation?.cancel()
+                            photoView.animation?.reset()
+                            photoView.clearAnimation()
+
+                            // Start a dreamy animation by scaling image a little by 5% in a long period of time of 5s
+                            photoView.animate().setDuration(5000).scaleX(DREAMY_SCALE_FACTOR).scaleY(DREAMY_SCALE_FACTOR).setListener(object : Animator.AnimatorListener {
+                                var finished = true
+                                override fun onAnimationStart(animation: Animator) {}
+                                override fun onAnimationRepeat(animation: Animator) {}
+                                override fun onAnimationCancel(animation: Animator) { finished = false }
+
+                                // Programmatically advance to the next slide after animation end
+                                override fun onAnimationEnd(animation: Animator) { if (finished) advanceSlide() }
+                            })
+                        }
+                    }
+
+                    is SeamlessMediaSliderAdapter<*>.AnimatedViewHolder -> {
+                        fadeInBGM()
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            getAnimatedDrawable().let {
+                                it.repeatCount = 1
+
+                                // This callback is unregistered when this AnimatedViewHolder is detached from window
+                                it.registerAnimationCallback(object : Animatable2.AnimationCallback() {
+                                    override fun onAnimationEnd(drawable: Drawable?) {
+                                        super.onAnimationEnd(drawable)
+                                        advanceSlide()
+                                    }
+                                })
+
+                                it.start()
+                            }
+                        }
+                    }
+
+                    is SeamlessMediaSliderAdapter<*>.VideoViewHolder -> {
+                        play()
+
+                        // For video item, auto advance to next slide is handled by player's listener
+                    }
+                }
+            }
+        }, 300)
     }
 
     private fun checkSlide(position: Int) {
