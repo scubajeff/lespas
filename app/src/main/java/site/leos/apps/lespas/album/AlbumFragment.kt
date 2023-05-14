@@ -238,6 +238,16 @@ class AlbumFragment : Fragment(), ActionMode.Callback {
                 else requireActivity().finish()
             }
         })
+
+        requireActivity().onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Clear search query if there is any
+                if (currentFilter.isNotEmpty()) {
+                    (nameFilterMenu?.actionView as? SearchView)?.setQuery("", false)
+                    return
+                } else requireActivity().finish()
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View = inflater.inflate(R.layout.fragment_album, container, false)
