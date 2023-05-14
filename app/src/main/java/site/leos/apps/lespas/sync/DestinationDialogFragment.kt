@@ -419,6 +419,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
                     ivCover.apply {
                         cancelLoader(this)
                         setImageResource(R.drawable.ic_baseline_new_album_24)
+                        setBackgroundResource(0)
                         scaleType = ImageView.ScaleType.FIT_CENTER
                     }
                     tvName.apply {
