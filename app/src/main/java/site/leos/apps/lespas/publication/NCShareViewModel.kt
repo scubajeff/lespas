@@ -612,10 +612,10 @@ class NCShareViewModel(application: Application): AndroidViewModel(application) 
             try {
                 webDav.getStreamBool("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, if (forceNetwork) CacheControl.FORCE_NETWORK else null).apply {
                     if (forceNetwork || this.second) doRefresh = false
-                    this.first.use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder) }
+                    this.first.use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder, true) }
                 }
 
-                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder) }
+                if (doRefresh) webDav.getStream("${resourceRoot}${share.sharePath}/${share.albumId}${SyncAdapter.CONTENT_META_FILE_SUFFIX}", true, CacheControl.FORCE_NETWORK).use { _publicationContentMeta.value = Tools.readContentMeta(it, share.sharePath, share.sortOrder, true) }
             } catch (e: Exception) {
                 e.printStackTrace()
             }

@@ -46,7 +46,6 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.SSLContext
@@ -251,6 +250,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     OC_UNIQUE_ID -> res.fileId = text
                                     DAV_GETETAG -> res.eTag = text
                                     DAV_GETCONTENTTYPE -> res.contentType = text
+                                    // DAV_GETLASTMODIFIED is in GMT timezone, so we use current device timezone to get a local time of human perspective
+                                    //DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.of("Z")).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
                                     DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
@@ -323,9 +324,8 @@ class OkHttpWebDav(userId: String, secret: String, serverAddress: String, selfSi
                                     }
                                     DAV_GETETAG -> res.eTag = text
                                     DAV_GETCONTENTTYPE -> res.contentType = text
-                                    DAV_GETLASTMODIFIED -> {
-                                        res.modified = try { LocalDateTime.parse(text, DateTimeFormatter.RFC_1123_DATE_TIME) } catch (e: DateTimeParseException) { LocalDateTime.now() }
-                                    }
+                                    // DAV_GETLASTMODIFIED is in GMT timezone, so we use current device timezone to get a local time of human perspective
+                                    DAV_GETLASTMODIFIED -> res.modified = try { Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(text)).atZone(ZoneId.systemDefault()).toLocalDateTime() } catch (e: Exception) { LocalDateTime.now() }
                                     DAV_SHARE_TYPE -> res.isShared = true
                                     DAV_GETCONTENTLENGTH -> res.size = try { text.toLong() } catch (e: NumberFormatException) { 0L }
                                     LESPAS_DATE_TAKEN -> res.dateTaken = try { Tools.epochToLocalDateTime(text.toLong()) } catch (e: Exception) { LocalDateTime.MIN }

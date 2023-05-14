@@ -20,6 +20,7 @@ import androidx.room.TypeConverter
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 class Converter {
     // Using LocalDateTime in database is a BAD BAD idea base on a wrong interpretation of "without a time-zone", although the timestamp in Long is correctly converted and saved
@@ -32,13 +33,15 @@ class Converter {
     @TypeConverter
     fun fromLong(value: Long): LocalDateTime {
         return try {
-            if (value > 9999999999) Instant.ofEpochMilli(value).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(value).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            //if (value > 9999999999) Instant.ofEpochMilli(value).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(value).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            // Save in UTC TZ, e.g., as in human perspective
+            LocalDateTime.ofInstant(if (value > 9999999999) Instant.ofEpochMilli(value) else Instant.ofEpochSecond(value), ZoneId.of("Z"))
         } catch (e: Exception) { LocalDateTime.now() }
     }
 
     @TypeConverter
     fun toLong(date: LocalDateTime): Long {
-        //
-        return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        //return date.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        return date.toInstant(ZoneOffset.UTC).toEpochMilli()
     }
 }

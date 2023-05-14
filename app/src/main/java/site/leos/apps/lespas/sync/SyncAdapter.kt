@@ -431,12 +431,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Download Joint Album's latest content meta file, should skip http cache
                     val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                        addAll(Tools.readContentMeta(webDav.getStream(contentMetaUrl, false, null), action.folderName))
+                        addAll(Tools.readContentMeta(webDav.getStream(contentMetaUrl, false, null), action.folderName, useUTC = true))
                     }
 
                     try {
                         // Append change log
-                        Tools.readContentMeta(updateLogFile.inputStream(), action.folderName).forEach { changeItem ->
+                        Tools.readContentMeta(updateLogFile.inputStream(), action.folderName, useUTC = true).forEach { changeItem ->
                             // photo fileId should be unique
                             photos.firstOrNull { it.photo.id == changeItem.photo.id } ?: run { photos.add(changeItem) }
                         }
@@ -945,10 +945,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         try {
             mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "")) }
+                if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "", useUTC = true)) }
                 else logFile.createNewFile()
 
-                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong()) } catch (e: Exception) { LocalDateTime.now() }
+                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong(), true) } catch (e: Exception) { LocalDateTime.now() }
                 add(
                     NCShareViewModel.RemotePhoto(
                         Photo(
@@ -1315,7 +1315,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         Photo(
                                                             id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
                                                             eTag = it.eTag,
-                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"))} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
+                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"), true)} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
                                                             width = getInt("width"), height = getInt("height"),
                                                             caption = getString("caption"),
                                                             orientation = getInt("orientation"),
@@ -1404,8 +1404,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (isRemoteAlbum) "" else "$localBaseFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = isRemoteAlbum)) {
-                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
-                        // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
+                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when it's initialized)
+                        // In Tools.getPhotoParams(), if it can't extract date from EXIF and filename, it will return the local media file creation date which is always more closer to the current moment
                         changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
                         changedPhoto.width = this.width
                         changedPhoto.height = this.height

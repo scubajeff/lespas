@@ -16,7 +16,13 @@
 
 package site.leos.apps.lespas.album
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.ClipData
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.res.ColorStateList
 import android.database.ContentObserver
 import android.graphics.Color
@@ -31,7 +37,14 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -65,7 +78,11 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.transition.Fade
 import androidx.transition.TransitionManager
-import androidx.work.*
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
@@ -79,14 +96,23 @@ import kotlinx.coroutines.launch
 import site.leos.apps.lespas.R
 import site.leos.apps.lespas.gpx.GPXExportDialogFragment
 import site.leos.apps.lespas.gpx.GPXImportDialogFragment
-import site.leos.apps.lespas.helper.*
+import site.leos.apps.lespas.helper.ConfirmDialogFragment
+import site.leos.apps.lespas.helper.LesPasGetMediaContract
+import site.leos.apps.lespas.helper.RemoveOriginalBroadcastReceiver
+import site.leos.apps.lespas.helper.RenameDialogFragment
+import site.leos.apps.lespas.helper.SnapseedResultWorker
+import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.helper.Tools.parcelable
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoSlideFragment
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.search.PhotosInMapFragment
 import site.leos.apps.lespas.settings.SettingsFragment
-import site.leos.apps.lespas.sync.*
+import site.leos.apps.lespas.sync.AcquiringDialogFragment
+import site.leos.apps.lespas.sync.Action
+import site.leos.apps.lespas.sync.ActionViewModel
+import site.leos.apps.lespas.sync.DestinationDialogFragment
+import site.leos.apps.lespas.sync.ShareReceiverActivity
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -1052,8 +1078,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
 
                     val days = Duration.between(
+/*
                         album.startDate.atZone(ZoneId.systemDefault()).toInstant(),
                         album.endDate.atZone(ZoneId.systemDefault()).toInstant()
+*/
+                        album.startDate.atZone(ZoneId.of("Z")).toInstant(),
+                        album.endDate.atZone(ZoneId.of("Z")).toInstant()
                     ).toDays().toInt()
                     tvDuration.text = when (days) {
                         in 0..21 -> resources.getString(R.string.duration_days, days + 1)
