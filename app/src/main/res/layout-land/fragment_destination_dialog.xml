@@ -85,6 +85,7 @@
             android:layout_height="28dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@id/to"
+            app:queryHint="@string/option_menu_name_filter"
             app:searchHintIcon="@null"
             android:imeOptions="actionNone|flagNoEnterAction|flagNoExtractUi|flagNoFullscreen"
             android:theme="@style/Theme.LesPas.SearchView" />

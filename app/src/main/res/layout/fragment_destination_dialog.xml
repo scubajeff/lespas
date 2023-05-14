@@ -89,6 +89,7 @@
             app:layout_constraintTop_toBottomOf="@id/divider"
             app:layout_constraintBottom_toBottomOf="@id/to"
             android:layoutDirection="rtl"
+            app:queryHint="@string/option_menu_name_filter"
             app:searchHintIcon="@null"
             android:imeOptions="actionNone|flagNoEnterAction|flagNoExtractUi|flagNoFullscreen"
             android:theme="@style/Theme.LesPas.SearchView" />

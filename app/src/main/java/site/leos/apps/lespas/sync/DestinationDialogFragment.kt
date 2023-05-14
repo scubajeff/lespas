@@ -241,8 +241,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         nameFilterSearchView = view.findViewById<SearchView>(R.id.name_filter).apply {
             if (currentFilter.isNotEmpty()) setQuery(currentFilter, false)
 
-            queryHint = getString(R.string.option_menu_name_filter)
-
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean = false
                 override fun onQueryTextChange(newText: String?): Boolean {
