@@ -351,6 +351,19 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
                 }
 
+                // Clear search query if there is any
+                if (Tools.isWideListAlbum(album.sortOrder)) {
+                    if (currentQuery.isNotEmpty()) {
+                        searchOptionMenu?.run {
+                            collapseActionView()
+                            (actionView as SearchView).setQuery("", false)
+                        }
+                        currentQuery = ""
+                        currentPhotoModel.setCurrentQuery(currentQuery)
+                        return
+                    }
+                }
+
                 if (parentFragmentManager.backStackEntryCount == 0) requireActivity().finish()
                 else parentFragmentManager.popBackStack()
             }
