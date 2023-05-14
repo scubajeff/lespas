@@ -58,6 +58,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import site.leos.apps.lespas.R
@@ -81,7 +82,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
     private val albumModel: AlbumViewModel by viewModels()
     private val destinationModel: DestinationViewModel by activityViewModels()
     private val publicationModel: NCShareViewModel by activityViewModels()
-    private lateinit var jointAlbumLiveData: LiveData<List<NCShareViewModel.ShareWithMe>>
+    private var sharedWithMeCollectionJob: Job? = null
 
     private lateinit var rootLayout: ConstraintLayout
     private lateinit var clipDataRecyclerView: RecyclerView
@@ -282,7 +283,7 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
 
         view.findViewById<MaterialButton>(R.id.move).isEnabled = arguments?.getBoolean(KEY_CAN_WRITE) == true
         savedInstanceState?.let {
-            it.getInt(KEY_COPY_OR_MOVE)?.apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
+            it.getInt(KEY_COPY_OR_MOVE).apply { copyOrMoveToggleGroup.check(if (this == 0) R.id.copy else this) }
             currentFilter = it.getString(KEY_NAME_FILTER) ?: ""
         }
 
@@ -312,7 +313,6 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
         // Maintain current mode after screen rotation
         if (destinationModel.isEditing()) showNewAlbumEditText()
 
-        jointAlbumLiveData = publicationModel.shareWithMe.asLiveData()
         albumModel.allAlbumsByEndDate.observe(viewLifecycleOwner) { albums ->
             val nullAlbum = Album(shareId = Album.NULL_ALBUM, lastModified = LocalDateTime.now())
             val base = Tools.getRemoteHome(requireContext())
@@ -321,29 +321,33 @@ class DestinationDialogFragment : LesPasDialogFragment(R.layout.fragment_destina
             this.albums = remoteAlbums
             setAlbums()
 
-            jointAlbumLiveData.observe(viewLifecycleOwner) { shared ->
-                val jointAlbums = mutableListOf<RemoteAlbum>()
-                for (publication in shared) {
-                    if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
-                        RemoteAlbum(
-                            Album(
-                                publication.albumId, publication.albumName,
-                                LocalDateTime.now(), LocalDateTime.now(),
-                                publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
-                                LocalDateTime.now(), publication.sortOrder, "",
-                                Album.REMOTE_ALBUM, 1f,
-                                publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
-                            ),
-                            publication.sharePath, publication.shareBy
+            if (sharedWithMeCollectionJob == null) sharedWithMeCollectionJob = viewLifecycleOwner.lifecycleScope.launch {
+                publicationModel.shareWithMe.collect { receivedJointAlbums ->
+                    val jointAlbums = mutableListOf<RemoteAlbum>()
+                    for (publication in receivedJointAlbums) {
+                        if (publication.permission == NCShareViewModel.PERMISSION_JOINT && publication.albumId != ignoreAlbum) jointAlbums.add(
+                            RemoteAlbum(
+                                Album(
+                                    publication.albumId, publication.albumName,
+                                    LocalDateTime.now(), LocalDateTime.now(),
+                                    publication.cover.cover, publication.cover.coverBaseline, publication.cover.coverWidth, publication.cover.coverHeight,
+                                    LocalDateTime.now(), publication.sortOrder, "",
+                                    Album.REMOTE_ALBUM, 1f,
+                                    publication.cover.coverFileName, publication.cover.coverMimeType, publication.cover.coverOrientation
+                                ),
+                                publication.sharePath, publication.shareBy
+                            )
                         )
-                    )
-                }
-                if (jointAlbums.isNotEmpty()) {
-                    this.albums = this.albums.plus(jointAlbums)
-                    setAlbums()
-                }
+                    }
+                    if (jointAlbums.isNotEmpty()) {
+                        this@DestinationDialogFragment.albums = this@DestinationDialogFragment.albums.plus(jointAlbums)
+                        setAlbums()
 
-                if (shared.isNotEmpty()) jointAlbumLiveData.removeObservers(this)
+                        sharedWithMeCollectionJob?.cancel()
+                    }
+                }
+            }.apply {
+                invokeOnCompletion { sharedWithMeCollectionJob = null }
             }
 
             // Create new title validator dictionary with current album names
