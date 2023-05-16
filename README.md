@@ -8,24 +8,35 @@
 Les Pas, is a free, modern, lightweight and fast gallery app. Organize your photos, GIFs and videos into albums for easy viewing and sharing. With built-in two-way sync with your Nextcloud server, your files are kept private, secure and safe.
 
 Features:
-- Powerful photo management tool right in your palm
-- Organized photos and videos in albums
-- Manage your phone's camera roll and auto backup to server
-- Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
-- Share albums and album slideshow with other Nextcloud users, group and circle
-- Joint album, which you and other Nextcloud users can edit together
-- Support photo blogging, refer to this [instruction](https://github.com/scubajeff/pico_lespas)
-- Search for photos by objects with AI
-- Search photos by location, support album slideshow in map (map data provided by <a href=https://www.openstreetmap.org>OpenStreetMap</a>)
-- Integrate with Snapseed for photo editing on mobile devices
-- Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app, act as a source of Today in History
-- Share to social networks，option provided to strip photo's EXIF before sharing
-- Theme design inspired by Wes Anderson's works
-- Manage Remote Album, which have all it's photo's image file stored in Nextcloud server only, free up Phone's storage  
-- Manage Local Album, with all files saved in App's private storage, stop being scanned by malicious apps
-- Option to hide album both in Phone and on server
-- Import and Export GPX file
-- Open-source
+- ***Managing, Syncing and Archiving***
+    * Organize your media files in albums
+    * Easy media importing by simply sharing files to Les Pas
+    * Manage your phone's camera roll and auto backup to server
+    * Integrate with [Snapseed](https://play.google.com/store/apps/details?id=com.niksoftware.snapseed) for photo editing
+    * Support adding caption to photo
+    * Synchronization works with Nextcloud server and among multiple devices, edit albums on Nextcloud server and on all your mobile devices simultaneously
+    * Support Remote Album, which have all it's media file stored in Nextcloud server only, free up Phone's storage
+    * Search for photos by objects with AI
+    * Search photos by location
+    * Support GPX importing, so that you can easily add GPS location data to pictures shoot on your digital camera
+    * Support Nextcloud's external storage
+    * Beautiful theme inspired by works of Wes Anderson
+- ***Sharing***
+    * Share albums and album slideshow with other Nextcloud users, groups and circles
+    * Unique 'Joint Album' feature, which you and other Nextcloud users can edit together
+    * Export GPX file from album, you can share your adventure with others
+- ***Privacy focus***
+    * Media files and thumbnails are all saved in App's private storage, stop being scanned by malicious apps
+    * Option provided to strip photo's EXIF before sharing to other social networks
+    * Option to hide album both in Phone and on server
+    * Authenticate on your Nextcloud server with your Nextcloud's credential
+    * Opensource
+- Any apps that can do the above is merely a media file manager with a fancy UI. Les Pas does not stop here, it strives to provide ***ways of utilizing your photos***. The past shouldn't be resting in the hard-drive, make all those memories shine.
+    *  Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app, deliver 'Today in History' pictures right on your phone's desktop
+    *  Album slideshow
+    *  Unique 'Slideshow on Map' feature which runs picture animation on Map
+    *  Support photo blogging in three ready made templates, with picture and caption you added, you can share your stories with all the world. Refer to this [instruction](https://github.com/scubajeff/pico_lespas)
+
 
 <p float="left">
   <img alt="Welcome Page" title="Welcome Page" src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_Welcome.png" width="200" />
