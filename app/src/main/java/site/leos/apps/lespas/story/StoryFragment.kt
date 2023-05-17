@@ -18,6 +18,7 @@ package site.leos.apps.lespas.story
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.graphics.Color
@@ -29,14 +30,19 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -52,6 +58,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -68,6 +75,7 @@ import site.leos.apps.lespas.helper.VideoPlayerViewModelFactory
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.publication.NCShareViewModel
 import java.io.File
+import kotlin.math.abs
 
 class StoryFragment : Fragment() {
     private lateinit var album: Album
@@ -98,6 +106,15 @@ class StoryFragment : Fragment() {
     private var fadingJob: Job? = null
     private lateinit var localPath: String
 
+    private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var volumeDrawable: Drawable
+    private lateinit var brightnessDrawable: Drawable
+    private lateinit var hideSettingCallback: Runnable
+    private var displayWidth = 0
+    private lateinit var knobLayout: FrameLayout
+    private lateinit var knobIcon: ImageView
+    private lateinit var knobPosition: CircularProgressIndicator
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -123,9 +140,10 @@ class StoryFragment : Fragment() {
             }
         })
 
+        displayWidth = Tools.getDisplayDimension(requireActivity()).first
         pAdapter = StoryAdapter(
             requireContext(),
-            Tools.getDisplayDimension(requireActivity()).first,
+            displayWidth,
             playerViewModel,
             { rp ->
                 with(rp.photo) {
@@ -184,6 +202,7 @@ class StoryFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? = inflater.inflate(R.layout.fragment_story, container, false)
+    @SuppressLint("ClickableViewAccessibility")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -225,6 +244,46 @@ class StoryFragment : Fragment() {
                 }
             }
         }
+
+        // Controls
+        volumeDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_volume_on_24)!!
+        brightnessDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_baseline_brightness_24)!!
+        hideSettingCallback = Runnable { knobLayout.isVisible = false }
+        knobLayout = view.findViewById(R.id.knob)
+        knobIcon = view.findViewById(R.id.knob_icon)
+        knobPosition = view.findViewById(R.id.knob_position)
+        gestureDetector = GestureDetectorCompat(requireContext(), object: GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                // Ignore flings
+                if (abs(distanceY) > 15) return false
+
+                if (abs(distanceX) < abs(distanceY)) {
+                    knobLayout.isVisible = true
+                    // Response to vertical scroll only, horizontal scroll reserved for viewpager sliding
+                    if (e1.x > displayWidth / 2) {
+                        knobIcon.setImageDrawable(volumeDrawable)
+                        // Affect both video player and bgm player
+                        playerViewModel.setVolume(distanceY / 300)
+                        knobPosition.progress = (playerViewModel.getVolume() * 100).toInt()
+                    }
+                    else {
+                        knobIcon.setImageDrawable(brightnessDrawable)
+                        // Affect both video player and bgm player
+                        playerViewModel.setBrightness(distanceY / 300)
+                        knobPosition.progress = (playerViewModel.getBrightness() * 100).toInt()
+                    }
+
+                    animationHandler.removeCallbacks(hideSettingCallback)
+                    animationHandler.postDelayed(hideSettingCallback, 1000)
+                }
+
+                return true
+            }
+        })
+
+        view.findViewById<View>(R.id.touch).run { setOnTouchListener { _, event -> gestureDetector.onTouchEvent(event) }}
     }
 
     override fun onResume() {
