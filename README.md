@@ -31,11 +31,11 @@ Features:
     * Option to hide album both in Phone and on server
     * Authenticate on your Nextcloud server with your Nextcloud's credential
     * Opensource
-- Any apps that can do the above is merely a media file manager with a fancy UI. Les Pas does not stop here, it strives to provide ***ways of utilizing your photos***. The past shouldn't be resting in the hard-drive, make all those memories shine.
+- Any apps that can do the above is merely a media file manager with a fancy UI. Les Pas does not stop here, it strives to provide ways of utilizing your photos. ***The past shouldn't be resting in the hard-drive, make all those memories shine***.
     *  Integrate with <a href=https://github.com/muzei/muzei>Muzei Live Wallpaper</a> app, deliver 'Today in History' pictures right on your phone's desktop
-    *  Album slideshow
-    *  Unique 'Slideshow on Map' feature which runs picture animation on Map
-    *  Support photo blogging in three ready made templates, with picture and caption you added, you can share your stories with all the world. Refer to this [instruction](https://github.com/scubajeff/pico_lespas)
+    *  Album slideshow, with background music
+    *  Unique 'Slideshow on Map' feature which runs album slideshow on Map
+    *  Support photo blogging in three ready made templates. With selected pictures and caption you added, you can share your stories with the world. Refer to this [instruction](https://github.com/scubajeff/pico_lespas) for detail.
 
 
 <p float="left">
