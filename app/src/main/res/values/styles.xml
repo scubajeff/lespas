@@ -114,4 +114,8 @@
         <item name="hintTextColor">?android:attr/textColorHint</item>
         <item name="android:textColorHighlight">?colorOnPrimary</item>
     </style>
+
+    <style name="Theme.LesPas.SearchView" parent="Widget.AppCompat.SearchView">
+        <item name="android:textSize">12sp</item>
+    </style>
 </resources>

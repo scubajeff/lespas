@@ -41,6 +41,12 @@
         android:orderInCategory="82"
         android:enabled="false"
         app:showAsAction="never" />
+    <item android:id="@+id/option_menu_album_name_filter"
+        android:title="@string/option_menu_name_filter"
+        android:orderInCategory="83"
+        app:showAsAction="collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        android:visible="true" />
     <item
         android:id="@+id/option_menu_sortby"
         android:title="@string/item_sortby"
