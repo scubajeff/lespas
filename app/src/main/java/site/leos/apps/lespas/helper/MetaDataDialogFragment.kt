@@ -304,7 +304,7 @@ class MetaDataDialogFragment : LesPasDialogFragment(R.layout.fragment_info_dialo
                             pm.photo.latitude = it[0]
                             pm.photo.longitude = it[1]
                         }
-                        pm.date = Tools.getImageTakenDate(this, applyTZOffset = true)
+                        pm.date = Tools.getImageTakenDate(this)
                     }
 
                     photoMeta.postValue(pm)

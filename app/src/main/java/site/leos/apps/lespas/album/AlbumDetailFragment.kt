@@ -1092,8 +1092,12 @@ class AlbumDetailFragment : Fragment(), ActionMode.Callback {
                     }
 
                     val days = Duration.between(
+/*
                         album.startDate.atZone(ZoneId.systemDefault()).toInstant(),
                         album.endDate.atZone(ZoneId.systemDefault()).toInstant()
+*/
+                        album.startDate.atZone(ZoneId.of("Z")).toInstant(),
+                        album.endDate.atZone(ZoneId.of("Z")).toInstant()
                     ).toDays().toInt()
                     tvDuration.text = when (days) {
                         in 0..21 -> resources.getString(R.string.duration_days, days + 1)

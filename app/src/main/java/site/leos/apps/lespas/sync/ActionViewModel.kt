@@ -30,6 +30,8 @@ import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
 import site.leos.apps.lespas.photo.PhotoRepository
 import java.io.File
+import java.io.FileOutputStream
+import java.io.ObjectOutputStream
 
 class ActionViewModel(application: Application): AndroidViewModel(application) {
     private val actionRepository = ActionRepository(application)
@@ -39,7 +41,7 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
 
     val allPendingActions: LiveData<List<Action>> = actionRepository.pendingActionsFlow().asLiveData()
 
-    fun deleteAlbums(albums: List<Album>) {
+    fun deleteAlbums(albums: List<Album>, sync: Boolean = true) {
         viewModelScope.launch(Dispatchers.IO) {
             albumRepository.deleteAlbums(albums)
 
@@ -64,11 +66,12 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
                 actions.add(Action(null, Action.ACTION_DELETE_DIRECTORY_ON_SERVER, album.id, album.name,"", "", timestamp,1))
             }
 
-            actionRepository.addActions(actions)
+            // If sync with server is needed
+            if (sync) actionRepository.addActions(actions)
         }
 
-        // Remove blog post of albums
-        deleteBlogPosts(albums)
+        // Remove blog post of albums, if it's not a meta re-scan
+        if (sync) deleteBlogPosts(albums)
     }
 
     fun deletePhotos(photos: List<Photo>, album: Album)  {
@@ -232,4 +235,30 @@ class ActionViewModel(application: Application): AndroidViewModel(application) {
         }
     }
     fun updateBlogSiteTitle() { viewModelScope.launch(Dispatchers.IO) { actionRepository.addAction(Action(null, Action.ACTION_UPDATE_BLOG_SITE_TITLE, "", "", "", "", System.currentTimeMillis(), 1)) }}
+
+    fun rescan(albumIds: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val actions = mutableListOf<Action>()
+            val albums = mutableListOf<Album>()
+            val timestamp = System.currentTimeMillis()
+            albumIds.forEach {
+                albumRepository.getThisAlbum(it).let { album ->
+                    albums.add(album)
+                    actions.add(Action(null, Action.ACTION_META_RESCAN, album.id, album.name, "", "", timestamp, 1))
+                    try {
+                        ObjectOutputStream(FileOutputStream("${localRootFolder}/${album.id}${SyncAdapter.CAPTION_BACKUP_FILENAME_SUFFIX}")).use { oos -> oos.writeObject(photoRepository.getAllCaptionsInAlbum(album.id)) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // TODO handle exceptions
+                    }
+                }
+            }
+
+            // Remove local albums and photos, TODO if network is not available, album won't re-appear soon
+            deleteAlbums(albums, false)
+
+            // Kick start re-scan
+            actionRepository.addActions(actions)
+        }
+    }
 }

@@ -62,6 +62,7 @@ data class Action (
        const val ACTION_DELETE_CAMERA_BACKUP_FILE = 21
        const val ACTION_PATCH_PROPERTIES = 22
        const val ACTION_BACKUP_FILE = 23
+       const val ACTION_META_RESCAN = 24
 
        const val ACTION_CREATE_BLOG_POST = 30
        const val ACTION_DELETE_BLOG_POST = 31

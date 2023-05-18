@@ -93,6 +93,7 @@ object Tools {
         val isLocalFileExist = localPath.isNotEmpty()
         var dateTaken: LocalDateTime = LocalDateTime.now()
         val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.systemDefault())
+        //val lastModified = LocalDateTime.ofInstant(Instant.ofEpochMilli(if (isLocalFileExist) File(localPath).lastModified() else System.currentTimeMillis()), ZoneId.of("Z"))
 
         if (mimeType.startsWith("video/", true)) {
             metadataRetriever?.run {
@@ -275,12 +276,23 @@ object Tools {
     }
 
     @SuppressLint("RestrictedApi")
-    fun getImageTakenDate(exif: ExifInterface, applyTZOffset: Boolean = false): LocalDateTime? =
+    fun getImageTakenDate(exif: ExifInterface): LocalDateTime? =
         try {
+/*
             exif.dateTimeOriginal?.let {
                 LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC") else ZoneId.systemDefault())
             } ?: run {
                 exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), if (applyTZOffset) exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC") else ZoneId.systemDefault()) }
+            }
+*/
+            // Get offset time, which is in human perspective
+            (exif.dateTimeOriginal?.let {
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(it), exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC"))
+            } ?: run {
+                exif.dateTimeDigitized?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it), exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_DIGITIZED)?.let { offsetZone -> ZoneId.of(offsetZone) } ?: ZoneId.of("UTC")) }
+            })?.run {
+                // Save it as it's, e.g., in UTC timezone
+                LocalDateTime.ofInstant(toInstant(ZoneOffset.UTC), ZoneId.of("Z"))
             }
         } catch (e: Exception) { null }
 
@@ -291,7 +303,8 @@ object Tools {
     fun parseDateFromFileName(fileName: String): LocalDateTime? {
         return try {
             var matcher = Pattern.compile(wechatPattern).matcher(fileName)
-            if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.systemDefault()) }
+            //if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.systemDefault()) }
+            if (matcher.matches()) matcher.group(1)?.let { LocalDateTime.ofInstant(Instant.ofEpochMilli(it.toLong()), ZoneId.of("Z")) }
             else {
                 matcher = Pattern.compile(timeStampPattern).matcher(fileName)
                 if (matcher.matches()) LocalDateTime.parse(matcher.run { "${group(1)}:${group(2)}:${group(3)} ${group(4)}:${group(5)}:${group(6)}" }, DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss"))
@@ -300,10 +313,10 @@ object Tools {
         } catch (e: Exception) { null }
     }
 
-    fun epochToLocalDateTime(epoch: Long): LocalDateTime =
+    fun epochToLocalDateTime(epoch: Long, useUTC: Boolean = false): LocalDateTime =
         try {
             // Always display time in current timezone
-            if (epoch > 9999999999) Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime() else Instant.ofEpochSecond(epoch).atZone(ZoneId.systemDefault()).toLocalDateTime()
+            LocalDateTime.ofInstant(if (epoch > 9999999999) Instant.ofEpochMilli(epoch) else Instant.ofEpochSecond(epoch), if (useUTC) ZoneId.of("Z") else ZoneId.systemDefault())
         } catch (e: DateTimeException) { LocalDateTime.now() }
 
     fun isMediaPlayable(mimeType: String): Boolean = (mimeType == "image/agif") || (mimeType == "image/awebp") || (mimeType.startsWith("video/", true))
@@ -775,7 +788,7 @@ object Tools {
         return long
     }
 
-    fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC): List<NCShareViewModel.RemotePhoto> {
+    fun readContentMeta(inputStream: InputStream, sharePath: String, sortOrder: Int = Album.BY_DATE_TAKEN_DESC, useUTC: Boolean = false): List<NCShareViewModel.RemotePhoto> {
         val result = mutableListOf<NCShareViewModel.RemotePhoto>()
 
         val lespasJson = try {
@@ -792,7 +805,7 @@ object Tools {
         val photos = lespasJson.getJSONArray("photos")
         for (i in 0 until photos.length()) {
             photos.getJSONObject(i).apply {
-                mDate = try { epochToLocalDateTime(getLong("stime")) } catch (e: DateTimeException) { LocalDateTime.now() }
+                mDate = try { epochToLocalDateTime(getLong("stime"), useUTC) } catch (e: DateTimeException) { LocalDateTime.now() }
                 when {
                     // TODO make sure later version json file downward compatible
                     version >= 2 -> {
@@ -857,7 +870,8 @@ object Tools {
 
         photos.forEach { photo ->
             with(photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
+                //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.of("Z")).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
             }
         }
 
@@ -870,7 +884,8 @@ object Tools {
         remotePhotos.forEach {
             //content += String.format(PHOTO_META_JSON, it.fileId, it.path.substringAfterLast('/'), it.timestamp, it.mimeType, it.width, it.height)
             with(it.photo) {
-                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
+                //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
+                content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, id, name, dateTaken.atZone(ZoneId.of("Z")).toInstant().toEpochMilli(), mimeType, width, height, orientation, caption.replace("\"", "\\\""), latitude, longitude, altitude, bearing)
             }
         }
 
@@ -882,7 +897,8 @@ object Tools {
 
         photoMeta.forEach {
             //content += String.format(PHOTO_META_JSON, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height)
-            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
+            //content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
+            content += String.format(Locale.ROOT, SyncAdapter.PHOTO_META_JSON_V2, it.id, it.name, it.dateTaken.atZone(ZoneId.of("Z")).toInstant().toEpochMilli(), it.mimeType, it.width, it.height, it.orientation, it.caption.replace("\"", "\\\""), it.latitude, it.longitude, it.altitude, it.bearing)
         }
 
         return content.dropLast(1) + "]}}"

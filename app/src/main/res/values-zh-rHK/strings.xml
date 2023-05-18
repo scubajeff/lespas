@@ -71,6 +71,7 @@
     <string name="item_settings">設置</string>
     <string name="item_rename">相冊改名</string>
     <string name="action_share">分享</string>
+    <string name="action_rescan">重新掃描EXIF</string>
     <string name="action_remove">刪除</string>
     <plurals name="selected_count">
         <item quantity="other">已選擇%1$d項</item>

@@ -214,6 +214,7 @@
     <string name="item_namedesc">Nom décroissant</string>
     <string name="item_wide_list">Afficher le nom</string>
     <string name="action_share">Partager</string>
+    <string name="action_rescan">Re-scanner EXIF</string>
     <string name="action_remove">Supprimer</string>
     <string name="action_hide">Cacher</string>
     <string name="action_set_remote">Définir comme Distant</string>

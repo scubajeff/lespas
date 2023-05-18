@@ -184,6 +184,7 @@
     <string name="item_namedesc">Name absteigend</string>
 
     <string name="action_share">Teilen</string>
+    <string name="action_rescan">EXIF erneut scannen</string>
     <string name="action_remove">Löschen</string>
     <string name="action_reuse">Zum Album…</string>
     <string name="action_select_all">Alle auswählen</string>

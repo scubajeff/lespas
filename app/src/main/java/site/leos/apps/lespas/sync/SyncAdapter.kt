@@ -46,6 +46,7 @@ import site.leos.apps.lespas.helper.OkHttpWebDav
 import site.leos.apps.lespas.helper.OkHttpWebDavException
 import site.leos.apps.lespas.helper.Tools
 import site.leos.apps.lespas.photo.Photo
+import site.leos.apps.lespas.photo.PhotoCaption
 import site.leos.apps.lespas.photo.PhotoRepository
 import site.leos.apps.lespas.publication.NCShareViewModel
 import site.leos.apps.lespas.settings.SettingsFragment
@@ -195,11 +196,13 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
         // Check network type
         checkConnection()
 
+/*
         // If we don't have any album, clean up the local root folder, this is useful when upgrading to version 2.5.0 when local media files have to be deleted
         if (albumRepository.getAlbumTotal() == 0) {
             try { File(localBaseFolder).deleteRecursively() } catch(_: Exception) {}
             try { File(localBaseFolder).mkdir() } catch(_: Exception) {}
         }
+*/
 
         AccountManager.get(application).run {
             userName = getUserData(account, application.getString(R.string.nc_userdata_username))
@@ -213,7 +216,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
             localBaseFolder = Tools.getLocalRoot(application)
             blogSiteName = Tools.getBlogSiteName(getUserData(account, application.getString(R.string.nc_userdata_loginname)) ?: userName)
 
-            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, application.getString(R.string.nc_userdata_certificate)), "${Tools.getLocalRoot(application)}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
+            webDav = OkHttpWebDav(userName, token, baseUrl, getUserData(account, application.getString(R.string.nc_userdata_selfsigned)).toBoolean(), getUserData(account, application.getString(R.string.nc_userdata_certificate)), "${localBaseFolder}/cache","LesPas_${application.getString(R.string.lespas_version)}",PreferenceManager.getDefaultSharedPreferences(application).getInt(SettingsFragment.CACHE_SIZE, 800),)
         }
 
         // Make sure lespas base directory is there, and it's really a nice moment to test server connectivity
@@ -432,12 +435,12 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
                     // Download Joint Album's latest content meta file, should skip http cache
                     val photos = mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                        addAll(Tools.readContentMeta(webDav.getStream(contentMetaUrl, false, null), action.folderName))
+                        addAll(Tools.readContentMeta(webDav.getStream(contentMetaUrl, false, null), action.folderName, useUTC = true))
                     }
 
                     try {
                         // Append change log
-                        Tools.readContentMeta(updateLogFile.inputStream(), action.folderName).forEach { changeItem ->
+                        Tools.readContentMeta(updateLogFile.inputStream(), action.folderName, useUTC = true).forEach { changeItem ->
                             // photo fileId should be unique
                             photos.firstOrNull { it.photo.id == changeItem.photo.id } ?: run { photos.add(changeItem) }
                         }
@@ -501,6 +504,11 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                 }
                 Action.ACTION_UPDATE_BLOG_SITE_TITLE -> { updateBlogIndex() }
                 Action.ACTION_BACKUP_PREFERENCE -> { prefBackupNeeded = true }
+                Action.ACTION_META_RESCAN -> {
+                    // Property folderId holds target folder Id
+                    // Property folderName holds target folder name
+                    webDav.delete("${lespasBase}/${action.folderName}/${action.folderId}${CONTENT_META_FILE_SUFFIX}")
+                }
             }
 
             actionRepository.delete(action)
@@ -942,10 +950,10 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         try {
             mutableListOf<NCShareViewModel.RemotePhoto>().apply {
-                if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "")) }
+                if (logFile.exists()) logFile.inputStream().use { addAll(Tools.readContentMeta(it, "", useUTC = true)) }
                 else logFile.createNewFile()
 
-                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong()) } catch (e: Exception) { LocalDateTime.now() }
+                val date = try { Tools.epochToLocalDateTime(metaFromAction[1].toLong(), true) } catch (e: Exception) { LocalDateTime.now() }
                 add(
                     NCShareViewModel.RemotePhoto(
                         Photo(
@@ -1312,7 +1320,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                                                         Photo(
                                                             id = pId, albumId = changedAlbum.id, name = getString("name"), mimeType = getString("mime"),
                                                             eTag = it.eTag,
-                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"))} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
+                                                            dateTaken = try { Tools.epochToLocalDateTime(getLong("stime"), true)} catch (e: Exception) { LocalDateTime.now() }, lastModified = it.lastModified,
                                                             width = getInt("width"), height = getInt("height"),
                                                             caption = getString("caption"),
                                                             orientation = getInt("orientation"),
@@ -1400,8 +1408,8 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     }
 
                     with(Tools.getPhotoParams(metadataRetriever, exifInterface, if (isRemoteAlbum) "" else "$localBaseFolder/${changedPhoto.id}", changedPhoto.mimeType, changedPhoto.name, keepOriginalOrientation = isRemoteAlbum)) {
-                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when record created)
-                        // In Tools.getPhotoParams(), if it can extract date from EXIF and filename, it will return the local media file creation date
+                        // Preserve lastModified date from server if more accurate taken date can't be found (changePhoto.dateTaken is timestamped as when it's initialized)
+                        // In Tools.getPhotoParams(), if it can't extract date from EXIF and filename, it will return the local media file creation date which is always more closer to the current moment
                         changedPhoto.dateTaken = if (this.dateTaken >= changedPhoto.dateTaken) changedPhoto.lastModified else this.dateTaken
                         changedPhoto.width = this.width
                         changedPhoto.height = this.height
@@ -1510,6 +1518,17 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
                     if (first < changedAlbum.startDate) changedAlbum.startDate = first
                     if (second > changedAlbum.endDate) changedAlbum.endDate = second
                 }
+
+                // Restore captions and blog exclusion setting from local backup during meta re-scan
+                try {
+                    File(localBaseFolder, "${changedAlbum.id}${CAPTION_BACKUP_FILENAME_SUFFIX}").let { backup ->
+                        if (backup.exists()) {
+                            @Suppress("UNCHECKED_CAST")
+                            photoRepository.restoreCaptionsInAlbum(ObjectInputStream(FileInputStream(backup)).readObject() as List<PhotoCaption>)
+                        }
+                        backup.delete()
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
 
                 // Every changed photos updated, we can commit changes to the Album table now. The most important column is "eTag", dictates the sync status
                 //Log.e(TAG, "finish syncing album ${changedAlbum.name}")
@@ -1921,6 +1940,7 @@ class SyncAdapter @JvmOverloads constructor(private val application: Application
 
         const val PREFERENCE_BACKUP_ON_SERVER = ".mobile_preference"
         const val PREFERENCE_BACKUP_SEPARATOR = "\u0000"
+        const val CAPTION_BACKUP_FILENAME_SUFFIX = "-captions"
         const val BGM_FILENAME_ON_SERVER = ".bgm"
         const val CONTENT_META_FILE_SUFFIX = "-content.json"
         const val MIME_TYPE_JSON = "application/json"
