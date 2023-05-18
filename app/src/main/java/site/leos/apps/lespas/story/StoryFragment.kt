@@ -87,6 +87,7 @@ class StoryFragment : Fragment() {
     private lateinit var rootPath: String
     private var total = 0
     private var startAt = 0
+    private var animationState = STATE_UNKNOWN
 
     private val animationHandler = Handler(Looper.getMainLooper())
     private var slowSwipeAnimator: ValueAnimator? = null
@@ -288,13 +289,11 @@ class StoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        slider.beginFakeDrag()
-        slider.fakeDragBy(1f)
-        slider.endFakeDrag()
+        if (animationState == STATE_PAUSED) animateSlide()
     }
 
     override fun onPause() {
-        stopSlideshow(endOfSlideshow = false)
+        if (animationState == STATE_STARTED) stopSlideshow(endOfSlideshow = false)
         super.onPause()
     }
 
@@ -358,6 +357,7 @@ class StoryFragment : Fragment() {
         slowSwipeAnimator?.let { if (it.isStarted) it.cancel() }
 
         if (endOfSlideshow) {
+            animationState = STATE_ENDED
             animationHandler.postDelayed({
                 endSign.isVisible = true
                 // Shows the system bars by removing all the flags except for the ones that make the content appear under the system bars.
@@ -366,13 +366,17 @@ class StoryFragment : Fragment() {
             }, 500)
             if (hasBGM) animationHandler.postDelayed({ fadeOutBGM() }, 1500)
         }
-        else fadeOutBGM()
+        else {
+            animationState = STATE_PAUSED
+            fadeOutBGM()
+        }
     }
 
     private fun animateSlide() {
         animationHandler.removeCallbacksAndMessages(null)
         // Delayed runnable is necessary because it takes a little bit of time for RecyclerView to return correct ViewHolder at the current position
         animationHandler.postDelayed({
+            animationState = STATE_STARTED
             pAdapter.getViewHolderByPosition(slider.currentItem)?.apply {
                 when (this) {
                     is SeamlessMediaSliderAdapter<*>.PhotoViewHolder -> {
@@ -615,6 +619,11 @@ class StoryFragment : Fragment() {
     }
 
     companion object {
+        private const val STATE_UNKNOWN = -1
+        private const val STATE_STARTED = 0
+        private const val STATE_ENDED = 1
+        private const val STATE_PAUSED = 2
+
         private const val DREAMY_SCALE_FACTOR = 1.05f
         private const val KEY_DISPLAY_OPTION = "KEY_DISPLAY_OPTION"
         private const val KEY_START_AT = "KEY_START_AT"
